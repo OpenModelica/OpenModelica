@@ -161,7 +161,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evaluateReplaceProtectedFinalEvaluateParameters (simulation):
+// pre-optimization module evaluateParameters (simulation):
 //
 //
 // unknown partition

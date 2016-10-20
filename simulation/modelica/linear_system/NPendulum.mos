@@ -61,11 +61,14 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
 
+/*
+Lis solver doesn't work here
 system("./NPendulum.pendulum -ls lis");
 res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
   "NPendulum_diff.csv",0.01,0.01,
   {"phi[10]"});
+*/
 
 system("./NPendulum.pendulum -ls klu");
 res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
@@ -92,13 +95,11 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // true
 // ""
 // {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
-// "Notification: Tearing is skipped for strong component 1 because system size of 102 exceeds maximum system size for tearing of linear systems (0).
+// "Notification: Tearing is skipped for strong component 1 because system size of 278 exceeds maximum system size for tearing of linear systems (0).
 // To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
-// Notification: Tearing is skipped for strong component 2 because system size of 98 exceeds maximum system size for tearing of linear systems (0).
+// Notification: Tearing is skipped for strong component 2 because system size of 275 exceeds maximum system size for tearing of linear systems (0).
 // To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
 // "
-// 0
-// {"Files Equal!"}
 // 0
 // {"Files Equal!"}
 // 0

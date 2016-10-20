@@ -2319,9 +2319,9 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"17\"
 //     description=\"If true, and reducedX = true, the last element of X will be computed from the other ones\"
 //     variability=\"fixed\"
-//     causality=\"parameter\"
-//     initial=\"exact\">
-//     <Boolean start=\"true\"/>
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Boolean/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"224\" -->
 //   <ScalarVariable
@@ -2379,9 +2379,9 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"23\"
 //     description=\"If true, and reducedX = true, the last element of X will be computed from the other ones\"
 //     variability=\"fixed\"
-//     causality=\"parameter\"
-//     initial=\"exact\">
-//     <Boolean start=\"true\"/>
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Boolean/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"230\" -->
 //   <ScalarVariable

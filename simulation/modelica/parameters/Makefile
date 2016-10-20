@@ -12,6 +12,11 @@ parameterTest8.mos \
 parameterTest9.mos \
 parameterTest10.mos \
 parameterTest11.mos \
+parameterTest12.mos \
+parameterTest13.mos \
+parameterTest14.mos \
+parameterTest15.mos \
+parameterTest16.mos \
 Engine1a_output.mos \
 revoluteConstraint.mos \
 

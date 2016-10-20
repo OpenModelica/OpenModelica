@@ -2,7 +2,6 @@
 // keywords:  parameter evaluation, evaluate, final, override
 // status:    correct
 
-// Evaluate, final, override handling is not implemented in a correct way
 loadString("
 model parameterTest6
   Integer x;
@@ -29,15 +28,19 @@ equation
 end parameterTest6;
 "); getErrorString();
 
-setCommandLineOptions("--preOptModules-=evaluateReplaceProtectedFinalEvaluateParameters --preOptModules+=evaluateReplaceEvaluateParameters -d=evalParameterDump");
+setCommandLineOptions("-d=evalParameterDump");
 simulate(parameterTest6, simflags="-output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
-system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
+system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
 
 
 // Result:
 // true
 // ""
 // true
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
 //
 // ########################################
 // DAE before evaluating parameters
@@ -144,11 +147,14 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 //
 //
 //
-// size: 15
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
 //
-// selectedParameter: 8,7,6,4,3,2
-// nselect: 0
-// ass2: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 15
+// Number of parameters selected for evaluation: 7
+// Selected parameters for evaluation:
+// 8,7,6,5,4,3,2
 //
 // Incidence Matrix (row: equation)
 // ========================================
@@ -188,12 +194,12 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // 14: 14 6
 // 15: 15 14 12 10 6
 //
-// After evaluate selected parameters
 //
-// size: 2053
-// nselect: 2053
-// repl:
-// Replacements: (11)
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (12)
 // ========================================
 // b1 -> false
 // b2 -> true
@@ -203,16 +209,23 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // p4 -> 4
 // p2 -> -3
 // e1 -> 4
+// s -> 3
 // a[1] -> 1
 // a[2] -> 1
 // a[3] -> 1
 //
-// oRepl:
-// Replacements: (6)
+// Replacements that will be replaced in the DAE:
+// Replacements: (12)
 // ========================================
 // b1 -> false
 // b2 -> true
+// p3 -> 5
+// p1 -> 2
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
 // e1 -> 4
+// s -> 3
 // a[1] -> 1
 // a[2] -> 1
 // a[3] -> 1
@@ -230,16 +243,19 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // 9: f2:PARAM(final = true )  = 10  type: Integer 
 // 10: f1:PARAM(final = true )  = p1  type: Integer 
 // 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM()  = f1 + p1  type: Integer 
-// 13: p3:PARAM()  = 5  type: Integer 
-// 14: p2:PARAM()  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
-// 15: p1:PARAM()  = 2  type: Integer 
+// 12: p4:PARAM(final = true )  = f1 + p1  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
 //
 //
 // mark: 1
-// markarr: -1,1,1,1,-1,1,1,1,-1,1,-1,1,1,1,1
+// markarr: -1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1
 //
-// comps:
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
 // 15
 // 13
 // 10
@@ -255,9 +271,11 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // 1
 // 11
 //
-// After evaluate vars with bind expression consists of evaluated vars
-// repl:
-// Replacements: (11)
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (13)
 // ========================================
 // b1 -> false
 // b2 -> true
@@ -267,19 +285,28 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // p4 -> 4
 // p2 -> -3
 // e1 -> 4
+// s -> 3
 // a[1] -> 1
 // a[2] -> 1
 // a[3] -> 1
+// f2 -> 10
 //
-// oRepl:
-// Replacements: (6)
+// Replacements that will be replaced in the DAE:
+// Replacements: (13)
 // ========================================
 // b1 -> false
 // b2 -> true
+// p3 -> 5
+// p1 -> 2
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
 // e1 -> 4
+// s -> 3
 // a[1] -> 1
 // a[2] -> 1
 // a[3] -> 1
+// f2 -> 10
 //
 // globalKnownVars (15)
 // ========================================
@@ -292,20 +319,22 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // 7: b2:PARAM(final = true )  = true  type: Boolean 
 // 8: b1:PARAM(final = true )  = false  type: Boolean 
 // 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = p1  type: Integer 
+// 10: f1:PARAM(final = true )  = 2  type: Integer 
 // 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM()  = f1 + p1  type: Integer 
-// 13: p3:PARAM()  = 5  type: Integer 
-// 14: p2:PARAM()  = p1 - p3  type: Integer 
-// 15: p1:PARAM()  = 2  type: Integer 
+// 12: p4:PARAM(final = true )  = 4  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = -3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
 //
 //
 // mark: 1
-// markarr: -1,1,1,1,-1,1,1,1,-1,1,-1,1,1,1,1
+// markarr: -1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1
 //
-// After replace evaluated parameter in variables
-// repl:
-// Replacements: (11)
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (13)
 // ========================================
 // b1 -> false
 // b2 -> true
@@ -315,19 +344,28 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // p4 -> 4
 // p2 -> -3
 // e1 -> 4
+// s -> 3
 // a[1] -> 1
 // a[2] -> 1
 // a[3] -> 1
+// f2 -> 10
 //
-// oRepl:
-// Replacements: (6)
+// Replacements that will be replaced in the DAE:
+// Replacements: (13)
 // ========================================
 // b1 -> false
 // b2 -> true
+// p3 -> 5
+// p1 -> 2
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
 // e1 -> 4
+// s -> 3
 // a[1] -> 1
 // a[2] -> 1
 // a[3] -> 1
+// f2 -> 10
 //
 // globalKnownVars (15)
 // ========================================
@@ -340,19 +378,20 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // 7: b2:PARAM(final = true )  = true  type: Boolean 
 // 8: b1:PARAM(final = true )  = false  type: Boolean 
 // 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = p1  type: Integer 
+// 10: f1:PARAM(final = true )  = 2  type: Integer 
 // 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM()  = f1 + p1  type: Integer 
-// 13: p3:PARAM()  = 5  type: Integer 
-// 14: p2:PARAM()  = p1 - p3  type: Integer 
-// 15: p1:PARAM()  = 2  type: Integer 
+// 12: p4:PARAM(final = true )  = 4  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = -3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
 //
 //
 // mark: 1
-// markarr: -1,1,1,1,-1,1,1,1,-1,1,-1,1,1,1,1
+// markarr: -1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1
+//
 //
 // ########################################
-// DAE after evaluating parameters
+// DAE after replacing the evaluated parameters
 // ########################################
 //
 //
@@ -368,9 +407,9 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = if b2 then e1 - p3 else f1 - p3   [dynamic]
-// 2/2 (1): y = f1 + p1 + p2 + p4 + p5 + f2   [dynamic]
-// 3/3 (1): z = a[1] + a[2] + a[3] + s   [dynamic]
+// 1/1 (1): x = -1   [dynamic]
+// 2/2 (1): y = 15 + p5   [dynamic]
+// 3/3 (1): z = 6   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -399,12 +438,12 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // 7: b2:PARAM(final = true )  = true  type: Boolean 
 // 8: b1:PARAM(final = true )  = false  type: Boolean 
 // 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = p1  type: Integer 
+// 10: f1:PARAM(final = true )  = 2  type: Integer 
 // 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM()  = f1 + p1  type: Integer 
-// 13: p3:PARAM()  = 5  type: Integer 
-// 14: p2:PARAM()  = p1 - p3  type: Integer 
-// 15: p1:PARAM()  = 2  type: Integer 
+// 12: p4:PARAM(final = true )  = 4  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = -3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -455,6 +494,10 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // ========================================
 //
 //
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
 // record SimulationResult
 //     resultFile = "parameterTest6_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z'",
@@ -462,7 +505,11 @@ system("./parameterTest6 -override s=5 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a
 // "
 // end SimulationResult;
 // ""
-// time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=5,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=8
+// stdout            | warning | It is not possible to override the following quantity: f2
+// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
+// stdout            | warning | It is not possible to override the following quantity: s
+// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
+// time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=3,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=6
 // 0
 // ""
 // endResult

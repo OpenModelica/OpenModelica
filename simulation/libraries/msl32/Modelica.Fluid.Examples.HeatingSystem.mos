@@ -39,11 +39,29 @@ runScript(modelTesting);getErrorString();
 // Compilation succeeded
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: The linear system: 
-// 1 : pump.dp_pump = pump.medium.p - tank.ports[2].p
-// 2 : $STATESET1.J[3] = pump.dp_pump - (pump.p_b_nominal - tank.ports[2].p)
+// 1 : pump.dp_pump = pump.p_b_nominal - tank.ports[2].p
+// 2 : pump.dp_pump = pump.medium.p - tank.ports[2].p
 // [
 //   1.0 , 1.0 ;
-//   -1.0 , -1.0
+//   1.0 , 1.0
+// ]
+//   *
+// [
+//   tank.ports[2].p ;
+//   pump.dp_pump
+// ]
+//   =
+// [
+//   pump.p_b_nominal ;
+//   pump.medium.p
+// ]
+//  might be structurally or numerically singular for variable pump.dp_pump since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
+// Warning: The linear system: 
+// 1 : pump.dp_pump = pump.medium.p - tank.ports[2].p
+// 2 : pump.dp_pump = pump.p_b_nominal - tank.ports[2].p
+// [
+//   1.0 , 1.0 ;
+//   1.0 , 1.0
 // ]
 //   *
 // [
@@ -53,27 +71,9 @@ runScript(modelTesting);getErrorString();
 //   =
 // [
 //   pump.medium.p ;
-//   (-$STATESET1.J[3]) - pump.p_b_nominal
+//   pump.p_b_nominal
 // ]
 //  might be structurally or numerically singular for variable pump.dp_pump since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
-// Warning: The linear system: 
-// 1 : $STATESET1.J[3] = pump.dp_pump - (pump.p_b_nominal - tank.ports[2].p)
-// 2 : pump.dp_pump = pump.medium.p - tank.ports[2].p
-// [
-//   -1.0 , -1.0 ;
-//   1.0 , 1.0
-// ]
-//   *
-// [
-//   pump.dp_pump ;
-//   tank.ports[2].p
-// ]
-//   =
-// [
-//   (-$STATESET1.J[3]) - pump.p_b_nominal ;
-//   pump.medium.p
-// ]
-//  might be structurally or numerically singular for variable tank.ports[2].p since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
 // "true
 // "
 // ""

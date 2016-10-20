@@ -32,13 +32,13 @@ simulate(Tearing12); getErrorString();
 //  * Number of equations: 9901
 //  * Number of variables: 9901
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2365
+//  * Number of independent subsystems: 2031
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 288 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (4058):
-//  * Single equations (assignments): 4057
+// Notification: Strong component statistics for initialization (3895):
+//  * Single equations (assignments): 3894
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -48,16 +48,16 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(31,100.0%) 294}
+//  * Linear torn systems: 1 {(70,73.0%) 838}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 662
+//  * Number of independent subsystems: 1
 //  * Number of states: 62 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1706):
-//  * Single equations (assignments): 1705
+// Notification: Strong component statistics for simulation (1801):
+//  * Single equations (assignments): 1800
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -67,7 +67,7 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(31,100.0%) 269}
+//  * Linear torn systems: 1 {(75,71.0%) 830}
 //  * Non-linear torn systems: 0
 // "
 // endResult

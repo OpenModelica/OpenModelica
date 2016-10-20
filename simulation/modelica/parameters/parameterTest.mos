@@ -73,6 +73,10 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // true
 // ""
 //
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
 // ########################################
 // DAE before evaluating parameters
 // ########################################
@@ -166,11 +170,14 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 //
 //
 //
-// size: 7
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
 //
-// selectedParameter: 7,6,5,4
-// nselect: 0
-// ass2: 1,2,3,4,5,6,7
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 7
+// Number of parameters selected for evaluation: 1
+// Selected parameters for evaluation:
+// 6
 //
 // Incidence Matrix (row: equation)
 // ========================================
@@ -194,25 +201,19 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 6: 6 3
 // 7: 7 3 2
 //
-// After evaluate selected parameters
 //
-// size: 2053
-// nselect: 2053
-// repl:
-// Replacements: (4)
-// ========================================
-// p1 -> 1.0
-// p2 -> 2.0
-// b1 -> false
-// b2 -> true
+// After evaluating the selected parameters:
+// ================================================================================
 //
-// oRepl:
-// Replacements: (4)
+// All replacements:
+// Replacements: (1)
 // ========================================
-// p1 -> 1.0
 // p2 -> 2.0
-// b1 -> false
-// b2 -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (1)
+// ========================================
+// p2 -> 2.0
 //
 // globalKnownVars (7)
 // ========================================
@@ -226,9 +227,12 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 //
 //
 // mark: 1
-// markarr: -1,-1,-1,1,1,1,1
+// markarr: -1,-1,-1,-1,-1,1,-1
 //
-// comps:
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
 // 7
 // 6
 // 5
@@ -237,54 +241,23 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 1
 // 2
 //
-// After evaluate vars with bind expression consists of evaluated vars
-// repl:
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
 // Replacements: (5)
 // ========================================
-// p1 -> 1.0
 // p2 -> 2.0
+// p1 -> 1.0
 // b1 -> false
 // b2 -> true
 // p3 -> 3.0
 //
-// oRepl:
+// Replacements that will be replaced in the DAE:
 // Replacements: (5)
 // ========================================
-// p1 -> 1.0
 // p2 -> 2.0
-// b1 -> false
-// b2 -> true
-// p3 -> 3.0
-//
-// globalKnownVars (7)
-// ========================================
-// 1: p5:PARAM()  = 5.0  type: Real 
-// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
-// 3: p3:PARAM(final = true )  = 3.0  type: Real 
-// 4: b2:PARAM(final = true )  = true  type: Boolean 
-// 5: b1:PARAM(final = true )  = false  type: Boolean 
-// 6: p2:PARAM(final = true )  = 2.0  type: Real 
-// 7: p1:PARAM(final = true )  = 1.0  type: Real 
-//
-//
-// mark: 1
-// markarr: -1,-1,-1,1,1,1,1
-//
-// After replace evaluated parameter in variables
-// repl:
-// Replacements: (5)
-// ========================================
 // p1 -> 1.0
-// p2 -> 2.0
-// b1 -> false
-// b2 -> true
-// p3 -> 3.0
-//
-// oRepl:
-// Replacements: (5)
-// ========================================
-// p1 -> 1.0
-// p2 -> 2.0
 // b1 -> false
 // b2 -> true
 // p3 -> 3.0
@@ -301,42 +274,30 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 //
 //
 // mark: 1
-// markarr: -1,-1,-1,1,1,1,1
-//
-// ########################################
-// DAE after evaluating parameters
-// ########################################
+// markarr: -1,-1,-1,-1,-1,1,-1
 //
 //
-// unknown partition
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (5)
 // ========================================
+// p2 -> 2.0
+// p1 -> 1.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
 //
-// Variables (1)
+// Replacements that will be replaced in the DAE:
+// Replacements: (5)
 // ========================================
-// 1: x:VARIABLE()  type: Real 
+// p2 -> 2.0
+// p1 -> 1.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
 //
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (7)
+// globalKnownVars (7)
 // ========================================
 // 1: p5:PARAM()  = 5.0  type: Real 
 // 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
@@ -347,57 +308,12 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 7: p1:PARAM(final = true )  = 1.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,1,-1
 //
 //
 // ########################################
-// DAE after replacing parameters
+// DAE after replacing the evaluated parameters
 // ########################################
 //
 //
@@ -487,6 +403,10 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // Sub partitions (0)
 // ========================================
 //
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
 //
 // record SimulationResult
 //     resultFile = "parameterTest_res.mat",

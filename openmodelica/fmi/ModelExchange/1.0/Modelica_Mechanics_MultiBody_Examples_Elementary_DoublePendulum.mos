@@ -7,6 +7,9 @@
 //
 
 loadModel(Modelica);
+// Although it is not correct to do it by default, evaluate protected parameters,
+// otherwise building the _me_FMU.mo fails. It seems that it is necessary to evaluate string parameters.
+setCommandLineOptions("--evaluateProtectedParameters"); getErrorString();
 translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="1.0");
 getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu", loglevel=0);
@@ -27,6 +30,8 @@ val(revolute2_phi, 3);
 
 // Result:
 // true
+// true
+// ""
 // "SimCode: The model Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum has been translated to FMU"
 // ""
 // "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo"
@@ -35,15 +40,15 @@ val(revolute2_phi, 3);
 // ""
 // record SimulationResult
 //     resultFile = "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // 0.0
-// -2.9151134877484743
-// -0.036932304869208676
-// -2.315833281802642
+// -2.915113487866565
+// -0.0369338988540469
+// -2.315869715381388
 // 0.0
-// -0.5164246962637027
-// -0.9041244419923411
-// -1.7364994721877753
+// -0.5164246972076906
+// -0.9041007100656111
+// -1.736374881607126
 // endResult

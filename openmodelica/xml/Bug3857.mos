@@ -53,7 +53,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   modelIdentifier=\"Modelica_Blocks_Examples_PID_Controller\"
 //   variableNamingConvention=\"structured\"
 //   numberOfContinuousStates=\"6\"
-//   numberOfEventIndicators=\"4\"
+//   numberOfEventIndicators=\"5\"
 //   >
 //   
 //   <VendorAnnotations>
@@ -406,7 +406,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.Te\"  valueReference=\"28\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"2.57\" fixed=\"false\"   unit=\"s\" />
+//       <Real    unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"Te\"/>
@@ -418,7 +418,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.Tv\"  valueReference=\"29\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.57\" fixed=\"false\"   unit=\"s\" />
+//       <Real    unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"Tv\"/>
@@ -628,7 +628,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable> 
 //     <ScalarVariable name=\"kinematicPTP.noWphase\"  valueReference=\"45\" variability=\"discrete\" causality=\"internal\" alias=\"noAlias\">
-//       <Boolean start=\"0\" fixed=\"false\"/>
+//       <Boolean />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"noWphase\"/>
@@ -1631,7 +1631,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.p_deltaq[1]\"  valueReference=\"124\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.57\" fixed=\"true\"    />
+//       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"p_deltaq\">
@@ -1649,7 +1649,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.p_qd_max[1]\"  valueReference=\"125\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\"    />
+//       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"p_qd_max\">
@@ -1667,7 +1667,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"kinematicPTP.p_qdd_max[1]\"  valueReference=\"126\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\"    />
+//       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"p_qdd_max\">
@@ -2326,54 +2326,6 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:BindingEquation>
 //       <equ:Parameter>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//         <exp:QualifiedNamePart name=\"p_deltaq\">
-//           <exp:ArraySubscripts>
-//             <exp:IndexExpression>
-//               <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//             </exp:IndexExpression>
-//           </exp:ArraySubscripts>
-//         </exp:QualifiedNamePart>
-//       </equ:Parameter>
-//       <equ:BindingExp>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
-//       </equ:BindingExp>
-//     </equ:BindingEquation>
-//
-//     <equ:BindingEquation>
-//       <equ:Parameter>
-//         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//         <exp:QualifiedNamePart name=\"p_qd_max\">
-//           <exp:ArraySubscripts>
-//             <exp:IndexExpression>
-//               <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//             </exp:IndexExpression>
-//           </exp:ArraySubscripts>
-//         </exp:QualifiedNamePart>
-//       </equ:Parameter>
-//       <equ:BindingExp>
-//         <exp:RealLiteral>1.0</exp:RealLiteral>
-//       </equ:BindingExp>
-//     </equ:BindingEquation>
-//
-//     <equ:BindingEquation>
-//       <equ:Parameter>
-//         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//         <exp:QualifiedNamePart name=\"p_qdd_max\">
-//           <exp:ArraySubscripts>
-//             <exp:IndexExpression>
-//               <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//             </exp:IndexExpression>
-//           </exp:ArraySubscripts>
-//         </exp:QualifiedNamePart>
-//       </equ:Parameter>
-//       <equ:BindingExp>
-//         <exp:RealLiteral>1.0</exp:RealLiteral>
-//       </equ:BindingExp>
-//     </equ:BindingEquation>
-//
-//     <equ:BindingEquation>
-//       <equ:Parameter>
-//         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qd_max\">
 //           <exp:ArraySubscripts>
 //             <exp:IndexExpression>
@@ -2642,7 +2594,16 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"noWphase\"/>
 //         </exp:Identifier>
-//         <exp:BooleanLiteral>0</exp:BooleanLiteral>
+//         <exp:LogGeq>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"Ta2\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"Ta1\"/>
+//           </exp:Identifier>
+//         </exp:LogGeq>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -2651,7 +2612,29 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"Tv\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
+//         <fun:If>
+//           <fun:Condition>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"noWphase\"/>
+//             </exp:Identifier>
+//           </fun:Condition>
+//           <fun:Statements>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"Ta1\"/>
+//             </exp:Identifier>
+//           </fun:Statements>
+//           <fun:Else>
+//             <exp:Div>
+//               <exp:RealLiteral>1.0</exp:RealLiteral>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"sd_max\"/>
+//               </exp:Identifier>
+//             </exp:Div>
+//           </fun:Else>
+//         </fun:If>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -2660,7 +2643,35 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"Te\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>2.57</exp:RealLiteral>
+//         <fun:If>
+//           <fun:Condition>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"noWphase\"/>
+//             </exp:Identifier>
+//           </fun:Condition>
+//           <fun:Statements>
+//             <exp:Mul>
+//               <exp:RealLiteral>2.0</exp:RealLiteral>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"Ta1\"/>
+//               </exp:Identifier>
+//             </exp:Mul>
+//           </fun:Statements>
+//           <fun:Else>
+//             <exp:Add>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"Tv\"/>
+//               </exp:Identifier>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"Ta2\"/>
+//               </exp:Identifier>
+//             </exp:Add>
+//           </fun:Else>
+//         </fun:If>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -2829,27 +2840,21 @@ readFile("Bug3857.xml"); getErrorString();
 //           <fun:Else>
 //             <fun:If>
 //               <fun:Condition>
-//                 <exp:LogLt>
-//                   <exp:Time>time</exp:Time>
-//                   <exp:Add>
-//                     <exp:RealLiteral>1.0</exp:RealLiteral>
-//                     <exp:Identifier>
-//                       <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                       <exp:QualifiedNamePart name=\"startTime\"/>
-//                     </exp:Identifier>
-//                   </exp:Add>
-//                 </exp:LogLt>
+//                 <exp:Identifier>
+//                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                   <exp:QualifiedNamePart name=\"noWphase\"/>
+//                 </exp:Identifier>
 //               </fun:Condition>
 //               <fun:Statements>
-//                 <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
-//               </fun:Statements>
-//               <fun:Else>
 //                 <fun:If>
 //                   <fun:Condition>
 //                     <exp:LogLt>
 //                       <exp:Time>time</exp:Time>
 //                       <exp:Add>
-//                         <exp:RealLiteral>1.57</exp:RealLiteral>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"Ta1\"/>
+//                         </exp:Identifier>
 //                         <exp:Identifier>
 //                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //                           <exp:QualifiedNamePart name=\"startTime\"/>
@@ -2858,7 +2863,10 @@ readFile("Bug3857.xml"); getErrorString();
 //                     </exp:LogLt>
 //                   </fun:Condition>
 //                   <fun:Statements>
-//                     <exp:RealLiteral>0.0</exp:RealLiteral>
+//                     <exp:Identifier>
+//                       <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                       <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                     </exp:Identifier>
 //                   </fun:Statements>
 //                   <fun:Else>
 //                     <fun:If>
@@ -2866,7 +2874,10 @@ readFile("Bug3857.xml"); getErrorString();
 //                         <exp:LogLt>
 //                           <exp:Time>time</exp:Time>
 //                           <exp:Add>
-//                             <exp:RealLiteral>2.57</exp:RealLiteral>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"Te\"/>
+//                             </exp:Identifier>
 //                             <exp:Identifier>
 //                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //                               <exp:QualifiedNamePart name=\"startTime\"/>
@@ -2875,10 +2886,92 @@ readFile("Bug3857.xml"); getErrorString();
 //                         </exp:LogLt>
 //                       </fun:Condition>
 //                       <fun:Statements>
-//                         <exp:RealLiteral>-0.6369426751592356</exp:RealLiteral>
+//                           <exp:Neg>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                             </exp:Identifier>
+//                           </exp:Neg>
 //                       </fun:Statements>
 //                       <fun:Else>
 //                         <exp:RealLiteral>0.0</exp:RealLiteral>
+//                       </fun:Else>
+//                     </fun:If>
+//                   </fun:Else>
+//                 </fun:If>
+//               </fun:Statements>
+//               <fun:Else>
+//                 <fun:If>
+//                   <fun:Condition>
+//                     <exp:LogLt>
+//                       <exp:Time>time</exp:Time>
+//                       <exp:Add>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"Ta2\"/>
+//                         </exp:Identifier>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"startTime\"/>
+//                         </exp:Identifier>
+//                       </exp:Add>
+//                     </exp:LogLt>
+//                   </fun:Condition>
+//                   <fun:Statements>
+//                     <exp:Identifier>
+//                       <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                       <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                     </exp:Identifier>
+//                   </fun:Statements>
+//                   <fun:Else>
+//                     <fun:If>
+//                       <fun:Condition>
+//                         <exp:LogLt>
+//                           <exp:Time>time</exp:Time>
+//                           <exp:Add>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"Tv\"/>
+//                             </exp:Identifier>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"startTime\"/>
+//                             </exp:Identifier>
+//                           </exp:Add>
+//                         </exp:LogLt>
+//                       </fun:Condition>
+//                       <fun:Statements>
+//                         <exp:RealLiteral>0.0</exp:RealLiteral>
+//                       </fun:Statements>
+//                       <fun:Else>
+//                         <fun:If>
+//                           <fun:Condition>
+//                             <exp:LogLt>
+//                               <exp:Time>time</exp:Time>
+//                               <exp:Add>
+//                                 <exp:Identifier>
+//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                                   <exp:QualifiedNamePart name=\"Te\"/>
+//                                 </exp:Identifier>
+//                                 <exp:Identifier>
+//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                                   <exp:QualifiedNamePart name=\"startTime\"/>
+//                                 </exp:Identifier>
+//                               </exp:Add>
+//                             </exp:LogLt>
+//                           </fun:Condition>
+//                           <fun:Statements>
+//                               <exp:Neg>
+//                                 <exp:Identifier>
+//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                                   <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                                 </exp:Identifier>
+//                               </exp:Neg>
+//                           </fun:Statements>
+//                           <fun:Else>
+//                             <exp:RealLiteral>0.0</exp:RealLiteral>
+//                           </fun:Else>
+//                         </fun:If>
 //                       </fun:Else>
 //                     </fun:If>
 //                   </fun:Else>
@@ -2902,7 +2995,16 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:QualifiedNamePart>
 //         </exp:Identifier>
 //         <exp:Mul>
-//           <exp:RealLiteral>1.57</exp:RealLiteral>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_deltaq\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
 //           <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //             <exp:QualifiedNamePart name=\"sdd\"/>
@@ -3495,26 +3597,6 @@ readFile("Bug3857.xml"); getErrorString();
 //       <exp:Sub>
 //         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Te\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>2.57</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>
-//
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Tv\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>
-//
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"sdd\"/>
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
@@ -3599,15 +3681,6 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"noWphase\"/>
-//         </exp:Identifier>
-//         <exp:BooleanLiteral>0</exp:BooleanLiteral>
-//       </exp:Sub>
-//     </equ:Equation>
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"loadTorque\"/>
 //           <exp:QualifiedNamePart name=\"phi_support\"/>
 //         </exp:Identifier>
@@ -3636,7 +3709,28 @@ readFile("Bug3857.xml"); getErrorString();
 //             </exp:ArraySubscripts>
 //           </exp:QualifiedNamePart>
 //         </exp:Identifier>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
+//         <exp:Div>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_deltaq\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_qdd_max\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -3651,7 +3745,28 @@ readFile("Bug3857.xml"); getErrorString();
 //             </exp:ArraySubscripts>
 //           </exp:QualifiedNamePart>
 //         </exp:Identifier>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
+//         <exp:Div>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_deltaq\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_qd_max\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -3660,7 +3775,21 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"sd_max\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
+//         <exp:Div>
+//           <exp:RealLiteral>1.0</exp:RealLiteral>
+//           <exp:Abs>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"aux1\">
+//                 <exp:ArraySubscripts>
+//                   <exp:IndexExpression>
+//                     <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                   </exp:IndexExpression>
+//                 </exp:ArraySubscripts>
+//               </exp:QualifiedNamePart>
+//             </exp:Identifier>
+//           </exp:Abs>
+//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -3669,7 +3798,21 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"sdd_max\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
+//         <exp:Div>
+//           <exp:RealLiteral>1.0</exp:RealLiteral>
+//           <exp:Abs>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"aux2\">
+//                 <exp:ArraySubscripts>
+//                   <exp:IndexExpression>
+//                     <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                   </exp:IndexExpression>
+//                 </exp:ArraySubscripts>
+//               </exp:QualifiedNamePart>
+//             </exp:Identifier>
+//           </exp:Abs>
+//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -3678,7 +3821,16 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"Ta2\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>1.0</exp:RealLiteral>
+//         <exp:Div>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sd_max\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sdd_max\"/>
+//           </exp:Identifier>
+//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -3687,7 +3839,329 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"Ta1\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>1.252996408614167</exp:RealLiteral>
+//         <fun:Assertion>
+//           <fun:Condition>
+//             <exp:LogGeq>
+//               <exp:Div>
+//                 <exp:RealLiteral>1.0</exp:RealLiteral>
+//                 <exp:Identifier>
+//                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                   <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                 </exp:Identifier>
+//               </exp:Div>
+//               <exp:RealLiteral>0.0</exp:RealLiteral>
+//             </exp:LogGeq>
+//           </fun:Condition>
+//           <fun:Message>
+//             <exp:StringLiteral>\"Model error: Argument of sqrt should be &gt;= 0\"</exp:StringLiteral>
+//           </fun:Message>
+//         </fun:Assertion>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"noWphase\"/>
+//         </exp:Identifier>
+//         <exp:LogGeq>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"Ta2\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"Ta1\"/>
+//           </exp:Identifier>
+//         </exp:LogGeq>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Tv\"/>
+//         </exp:Identifier>
+//         <fun:If>
+//           <fun:Condition>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"noWphase\"/>
+//             </exp:Identifier>
+//           </fun:Condition>
+//           <fun:Statements>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"Ta1\"/>
+//             </exp:Identifier>
+//           </fun:Statements>
+//           <fun:Else>
+//             <exp:Div>
+//               <exp:RealLiteral>1.0</exp:RealLiteral>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"sd_max\"/>
+//               </exp:Identifier>
+//             </exp:Div>
+//           </fun:Else>
+//         </fun:If>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Te\"/>
+//         </exp:Identifier>
+//         <fun:If>
+//           <fun:Condition>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//               <exp:QualifiedNamePart name=\"noWphase\"/>
+//             </exp:Identifier>
+//           </fun:Condition>
+//           <fun:Statements>
+//             <exp:Mul>
+//               <exp:RealLiteral>2.0</exp:RealLiteral>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"Ta1\"/>
+//               </exp:Identifier>
+//             </exp:Mul>
+//           </fun:Statements>
+//           <fun:Else>
+//             <exp:Add>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"Tv\"/>
+//               </exp:Identifier>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"Ta2\"/>
+//               </exp:Identifier>
+//             </exp:Add>
+//           </fun:Else>
+//         </fun:If>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"sdd\"/>
+//         </exp:Identifier>
+//         <fun:If>
+//           <fun:Condition>
+//             <exp:LogLt>
+//               <exp:Time>time</exp:Time>
+//               <exp:Identifier>
+//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                 <exp:QualifiedNamePart name=\"startTime\"/>
+//               </exp:Identifier>
+//             </exp:LogLt>
+//           </fun:Condition>
+//           <fun:Statements>
+//             <exp:RealLiteral>0.0</exp:RealLiteral>
+//           </fun:Statements>
+//           <fun:Else>
+//             <fun:If>
+//               <fun:Condition>
+//                 <exp:Identifier>
+//                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                   <exp:QualifiedNamePart name=\"noWphase\"/>
+//                 </exp:Identifier>
+//               </fun:Condition>
+//               <fun:Statements>
+//                 <fun:If>
+//                   <fun:Condition>
+//                     <exp:LogLt>
+//                       <exp:Time>time</exp:Time>
+//                       <exp:Add>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"Ta1\"/>
+//                         </exp:Identifier>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"startTime\"/>
+//                         </exp:Identifier>
+//                       </exp:Add>
+//                     </exp:LogLt>
+//                   </fun:Condition>
+//                   <fun:Statements>
+//                     <exp:Identifier>
+//                       <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                       <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                     </exp:Identifier>
+//                   </fun:Statements>
+//                   <fun:Else>
+//                     <fun:If>
+//                       <fun:Condition>
+//                         <exp:LogLt>
+//                           <exp:Time>time</exp:Time>
+//                           <exp:Add>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"Te\"/>
+//                             </exp:Identifier>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"startTime\"/>
+//                             </exp:Identifier>
+//                           </exp:Add>
+//                         </exp:LogLt>
+//                       </fun:Condition>
+//                       <fun:Statements>
+//                           <exp:Neg>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                             </exp:Identifier>
+//                           </exp:Neg>
+//                       </fun:Statements>
+//                       <fun:Else>
+//                         <exp:RealLiteral>0.0</exp:RealLiteral>
+//                       </fun:Else>
+//                     </fun:If>
+//                   </fun:Else>
+//                 </fun:If>
+//               </fun:Statements>
+//               <fun:Else>
+//                 <fun:If>
+//                   <fun:Condition>
+//                     <exp:LogLt>
+//                       <exp:Time>time</exp:Time>
+//                       <exp:Add>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"Ta2\"/>
+//                         </exp:Identifier>
+//                         <exp:Identifier>
+//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                           <exp:QualifiedNamePart name=\"startTime\"/>
+//                         </exp:Identifier>
+//                       </exp:Add>
+//                     </exp:LogLt>
+//                   </fun:Condition>
+//                   <fun:Statements>
+//                     <exp:Identifier>
+//                       <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                       <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                     </exp:Identifier>
+//                   </fun:Statements>
+//                   <fun:Else>
+//                     <fun:If>
+//                       <fun:Condition>
+//                         <exp:LogLt>
+//                           <exp:Time>time</exp:Time>
+//                           <exp:Add>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"Tv\"/>
+//                             </exp:Identifier>
+//                             <exp:Identifier>
+//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                               <exp:QualifiedNamePart name=\"startTime\"/>
+//                             </exp:Identifier>
+//                           </exp:Add>
+//                         </exp:LogLt>
+//                       </fun:Condition>
+//                       <fun:Statements>
+//                         <exp:RealLiteral>0.0</exp:RealLiteral>
+//                       </fun:Statements>
+//                       <fun:Else>
+//                         <fun:If>
+//                           <fun:Condition>
+//                             <exp:LogLt>
+//                               <exp:Time>time</exp:Time>
+//                               <exp:Add>
+//                                 <exp:Identifier>
+//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                                   <exp:QualifiedNamePart name=\"Te\"/>
+//                                 </exp:Identifier>
+//                                 <exp:Identifier>
+//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                                   <exp:QualifiedNamePart name=\"startTime\"/>
+//                                 </exp:Identifier>
+//                               </exp:Add>
+//                             </exp:LogLt>
+//                           </fun:Condition>
+//                           <fun:Statements>
+//                               <exp:Neg>
+//                                 <exp:Identifier>
+//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//                                   <exp:QualifiedNamePart name=\"sdd_max\"/>
+//                                 </exp:Identifier>
+//                               </exp:Neg>
+//                           </fun:Statements>
+//                           <fun:Else>
+//                             <exp:RealLiteral>0.0</exp:RealLiteral>
+//                           </fun:Else>
+//                         </fun:If>
+//                       </fun:Else>
+//                     </fun:If>
+//                   </fun:Else>
+//                 </fun:If>
+//               </fun:Else>
+//             </fun:If>
+//           </fun:Else>
+//         </fun:If>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"y\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//         </exp:Identifier>
+//         <exp:Mul>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_deltaq\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sdd\"/>
+//           </exp:Identifier>
+//         </exp:Mul>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Der>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"integrator\"/>
+//             <exp:QualifiedNamePart name=\"y\"/>
+//           </exp:Identifier>
+//         </exp:Der>
+//         <exp:Mul>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"integrator\"/>
+//             <exp:QualifiedNamePart name=\"k\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"y\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//         </exp:Mul>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -4374,254 +4848,6 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:QualifiedNamePart name=\"w\"/>
 //           </exp:Identifier>
 //         </exp:Sub>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"noWphase\"/>
-//         </exp:Identifier>
-//         <exp:BooleanLiteral>0</exp:BooleanLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Tv\"/>
-//         </exp:Identifier>
-//         <fun:If>
-//           <fun:Condition>
-//             <exp:Identifier>
-//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//               <exp:QualifiedNamePart name=\"noWphase\"/>
-//             </exp:Identifier>
-//           </fun:Condition>
-//           <fun:Statements>
-//             <exp:RealLiteral>1.252996408614167</exp:RealLiteral>
-//           </fun:Statements>
-//           <fun:Else>
-//             <exp:RealLiteral>1.57</exp:RealLiteral>
-//           </fun:Else>
-//         </fun:If>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Te\"/>
-//         </exp:Identifier>
-//         <fun:If>
-//           <fun:Condition>
-//             <exp:Identifier>
-//               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//               <exp:QualifiedNamePart name=\"noWphase\"/>
-//             </exp:Identifier>
-//           </fun:Condition>
-//           <fun:Statements>
-//             <exp:RealLiteral>2.505992817228333</exp:RealLiteral>
-//           </fun:Statements>
-//           <fun:Else>
-//             <exp:Add>
-//               <exp:Identifier>
-//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                 <exp:QualifiedNamePart name=\"Tv\"/>
-//               </exp:Identifier>
-//               <exp:RealLiteral>1.0</exp:RealLiteral>
-//             </exp:Add>
-//           </fun:Else>
-//         </fun:If>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"sdd\"/>
-//         </exp:Identifier>
-//         <fun:If>
-//           <fun:Condition>
-//             <exp:LogLt>
-//               <exp:Time>time</exp:Time>
-//               <exp:Identifier>
-//                 <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                 <exp:QualifiedNamePart name=\"startTime\"/>
-//               </exp:Identifier>
-//             </exp:LogLt>
-//           </fun:Condition>
-//           <fun:Statements>
-//             <exp:RealLiteral>0.0</exp:RealLiteral>
-//           </fun:Statements>
-//           <fun:Else>
-//             <fun:If>
-//               <fun:Condition>
-//                 <exp:Identifier>
-//                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                   <exp:QualifiedNamePart name=\"noWphase\"/>
-//                 </exp:Identifier>
-//               </fun:Condition>
-//               <fun:Statements>
-//                 <fun:If>
-//                   <fun:Condition>
-//                     <exp:LogLt>
-//                       <exp:Time>time</exp:Time>
-//                       <exp:Add>
-//                         <exp:RealLiteral>1.252996408614167</exp:RealLiteral>
-//                         <exp:Identifier>
-//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                           <exp:QualifiedNamePart name=\"startTime\"/>
-//                         </exp:Identifier>
-//                       </exp:Add>
-//                     </exp:LogLt>
-//                   </fun:Condition>
-//                   <fun:Statements>
-//                     <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
-//                   </fun:Statements>
-//                   <fun:Else>
-//                     <fun:If>
-//                       <fun:Condition>
-//                         <exp:LogLt>
-//                           <exp:Time>time</exp:Time>
-//                           <exp:Add>
-//                             <exp:Identifier>
-//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                               <exp:QualifiedNamePart name=\"Te\"/>
-//                             </exp:Identifier>
-//                             <exp:Identifier>
-//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                               <exp:QualifiedNamePart name=\"startTime\"/>
-//                             </exp:Identifier>
-//                           </exp:Add>
-//                         </exp:LogLt>
-//                       </fun:Condition>
-//                       <fun:Statements>
-//                         <exp:RealLiteral>-0.6369426751592356</exp:RealLiteral>
-//                       </fun:Statements>
-//                       <fun:Else>
-//                         <exp:RealLiteral>0.0</exp:RealLiteral>
-//                       </fun:Else>
-//                     </fun:If>
-//                   </fun:Else>
-//                 </fun:If>
-//               </fun:Statements>
-//               <fun:Else>
-//                 <fun:If>
-//                   <fun:Condition>
-//                     <exp:LogLt>
-//                       <exp:Time>time</exp:Time>
-//                       <exp:Add>
-//                         <exp:RealLiteral>1.0</exp:RealLiteral>
-//                         <exp:Identifier>
-//                           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                           <exp:QualifiedNamePart name=\"startTime\"/>
-//                         </exp:Identifier>
-//                       </exp:Add>
-//                     </exp:LogLt>
-//                   </fun:Condition>
-//                   <fun:Statements>
-//                     <exp:RealLiteral>0.6369426751592356</exp:RealLiteral>
-//                   </fun:Statements>
-//                   <fun:Else>
-//                     <fun:If>
-//                       <fun:Condition>
-//                         <exp:LogLt>
-//                           <exp:Time>time</exp:Time>
-//                           <exp:Add>
-//                             <exp:Identifier>
-//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                               <exp:QualifiedNamePart name=\"Tv\"/>
-//                             </exp:Identifier>
-//                             <exp:Identifier>
-//                               <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                               <exp:QualifiedNamePart name=\"startTime\"/>
-//                             </exp:Identifier>
-//                           </exp:Add>
-//                         </exp:LogLt>
-//                       </fun:Condition>
-//                       <fun:Statements>
-//                         <exp:RealLiteral>0.0</exp:RealLiteral>
-//                       </fun:Statements>
-//                       <fun:Else>
-//                         <fun:If>
-//                           <fun:Condition>
-//                             <exp:LogLt>
-//                               <exp:Time>time</exp:Time>
-//                               <exp:Add>
-//                                 <exp:Identifier>
-//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                                   <exp:QualifiedNamePart name=\"Te\"/>
-//                                 </exp:Identifier>
-//                                 <exp:Identifier>
-//                                   <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//                                   <exp:QualifiedNamePart name=\"startTime\"/>
-//                                 </exp:Identifier>
-//                               </exp:Add>
-//                             </exp:LogLt>
-//                           </fun:Condition>
-//                           <fun:Statements>
-//                             <exp:RealLiteral>-0.6369426751592356</exp:RealLiteral>
-//                           </fun:Statements>
-//                           <fun:Else>
-//                             <exp:RealLiteral>0.0</exp:RealLiteral>
-//                           </fun:Else>
-//                         </fun:If>
-//                       </fun:Else>
-//                     </fun:If>
-//                   </fun:Else>
-//                 </fun:If>
-//               </fun:Else>
-//             </fun:If>
-//           </fun:Else>
-//         </fun:If>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"y\">
-//             <exp:ArraySubscripts>
-//               <exp:IndexExpression>
-//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//               </exp:IndexExpression>
-//             </exp:ArraySubscripts>
-//           </exp:QualifiedNamePart>
-//         </exp:Identifier>
-//         <exp:Mul>
-//           <exp:RealLiteral>1.57</exp:RealLiteral>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"sdd\"/>
-//           </exp:Identifier>
-//         </exp:Mul>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Der>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"integrator\"/>
-//             <exp:QualifiedNamePart name=\"y\"/>
-//           </exp:Identifier>
-//         </exp:Der>
-//         <exp:Mul>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"integrator\"/>
-//             <exp:QualifiedNamePart name=\"k\"/>
-//           </exp:Identifier>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"y\">
-//               <exp:ArraySubscripts>
-//                 <exp:IndexExpression>
-//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//                 </exp:IndexExpression>
-//               </exp:ArraySubscripts>
-//             </exp:QualifiedNamePart>
-//           </exp:Identifier>
-//         </exp:Mul>
 //       </exp:Sub>
 //     </equ:Equation>  
 //      

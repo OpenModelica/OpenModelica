@@ -1,26 +1,37 @@
-// name:      parameterTest8
+// name:      parameterTest12
 // keywords:  parameter evaluation, structural
 // status:    correct
 
 loadString("
-model parameterTest8
-  parameter Boolean state = true;
-  Real v;
-  Real r;
-equation
-  if state then // code which is removed during symbolic
-    der(v) = 1; // processing, if state=false
-    der(r) = 2;
-  else
-    v = time;
-    r = 2*time;
-  end if;
-end parameterTest8;
+package ParameterTest12
+  model parameterTest12
+    parameter Integer s1 = 3;
+    parameter Boolean b1 = true;
+    parameter Boolean b2 = false;
+    B obj (s1=s1, b1=true, b2=b2);
+  equation
+
+  end parameterTest12;
+  
+  model B
+    parameter Integer s1 = 5;
+    parameter Boolean b1 = true;
+    parameter Boolean b2 = false;
+    Real x[s1];
+  equation
+    if b1 then
+      x = ones(s1);
+    elseif b2 then
+      x = zeros(s1);
+    else
+      x = ones(s1) + ones(s1);
+    end if;
+  end B;
+end ParameterTest12;
 "); getErrorString();
 
 setCommandLineOptions("-d=evalParameterDump");
-simulate(parameterTest8, simflags="-output=state,v,r"); getErrorString();
-system("./parameterTest8 -override state=false -output=state,v,r"); getErrorString();
+simulate(ParameterTest12.parameterTest12); getErrorString();
 
 
 // Result:
@@ -40,16 +51,18 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // unknown partition
 // ========================================
 //
-// Variables (2)
+// Variables (3)
 // ========================================
-// 1: r:VARIABLE()  type: Real 
-// 2: v:VARIABLE()  type: Real 
+// 1: obj.x[3]:VARIABLE()  type: Real  [3]
+// 2: obj.x[2]:VARIABLE()  type: Real  [3]
+// 3: obj.x[1]:VARIABLE()  type: Real  [3]
 //
 //
-// Equations (2, 2)
+// Equations (3, 3)
 // ========================================
-// 1/1 (1): der(v) = 1.0   [dynamic]
-// 2/2 (1): der(r) = 2.0   [dynamic]
+// 1/1 (1): obj.x[1] = 1.0   [dynamic]
+// 2/2 (1): obj.x[2] = 1.0   [dynamic]
+// 3/3 (1): obj.x[3] = 1.0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -67,9 +80,14 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // BackendDAEType: simulation
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (1)
+// Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM()  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -125,90 +143,132 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // START evaluating parameters:
 // ================================================================================
-// Number of parameters: 1
-// Number of parameters selected for evaluation: 1
+// Number of parameters: 6
+// Number of parameters selected for evaluation: 3
 // Selected parameters for evaluation:
-// 1
+// 6,3,2
 //
 // Incidence Matrix (row: equation)
 // ========================================
-// number of rows: 1
-// 1:
+// number of rows: 6
+// 1: 4
+// 2:
+// 3: 6
+// 4:
+// 5:
+// 6:
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================
-// number of rows: 1
+// number of rows: 6
 // 1: 1
+// 2: 2
+// 3: 3
+// 4: 4 1
+// 5: 5
+// 6: 6 3
 //
 //
 // After evaluating the selected parameters:
 // ================================================================================
 //
 // All replacements:
-// Replacements: (1)
+// Replacements: (3)
 // ========================================
-// state -> true
+// s1 -> 3
+// obj.s1 -> 3
+// obj.b1 -> true
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (1)
+// Replacements: (3)
 // ========================================
-// state -> true
+// s1 -> 3
+// obj.s1 -> 3
+// obj.b1 -> true
 //
-// globalKnownVars (1)
+// globalKnownVars (6)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM()  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
 //
 //
 // mark: 1
-// markarr: 1
+// markarr: -1,1,1,-1,-1,1
 //
 //
 // After sorting parameters:
 // ================================================================================
 // Order:
+// 6
+// 5
+// 4
+// 3
+// 2
 // 1
 //
 //
 // After replacing the evaluated parameters in parameter bindings:
 // ================================================================================
 // All replacements:
-// Replacements: (1)
+// Replacements: (3)
 // ========================================
-// state -> true
+// s1 -> 3
+// obj.s1 -> 3
+// obj.b1 -> true
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (1)
+// Replacements: (3)
 // ========================================
-// state -> true
+// s1 -> 3
+// obj.s1 -> 3
+// obj.b1 -> true
 //
-// globalKnownVars (1)
+// globalKnownVars (6)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM()  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
 //
 //
 // mark: 1
-// markarr: 1
+// markarr: -1,1,1,-1,-1,1
 //
 //
 // After replacing the evaluated parameters in variable bindings and start attributes:
 // ================================================================================
 // All replacements:
-// Replacements: (1)
+// Replacements: (3)
 // ========================================
-// state -> true
+// s1 -> 3
+// obj.s1 -> 3
+// obj.b1 -> true
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (1)
+// Replacements: (3)
 // ========================================
-// state -> true
+// s1 -> 3
+// obj.s1 -> 3
+// obj.b1 -> true
 //
-// globalKnownVars (1)
+// globalKnownVars (6)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM()  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
 //
 //
 // mark: 1
-// markarr: 1
+// markarr: -1,1,1,-1,-1,1
 //
 //
 // ########################################
@@ -219,16 +279,18 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // unknown partition
 // ========================================
 //
-// Variables (2)
+// Variables (3)
 // ========================================
-// 1: r:VARIABLE()  type: Real 
-// 2: v:VARIABLE()  type: Real 
+// 1: obj.x[3]:VARIABLE()  type: Real  [3]
+// 2: obj.x[2]:VARIABLE()  type: Real  [3]
+// 3: obj.x[1]:VARIABLE()  type: Real  [3]
 //
 //
-// Equations (2, 2)
+// Equations (3, 3)
 // ========================================
-// 1/1 (1): der(v) = 1.0   [dynamic]
-// 2/2 (1): der(r) = 2.0   [dynamic]
+// 1/1 (1): obj.x[1] = 1.0   [dynamic]
+// 2/2 (1): obj.x[2] = 1.0   [dynamic]
+// 3/3 (1): obj.x[3] = 1.0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -246,9 +308,14 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // BackendDAEType: simulation
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (1)
+// Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: obj.b2:PARAM()  = b2  type: Boolean 
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
+// 4: b2:PARAM()  = false  type: Boolean 
+// 5: b1:PARAM()  = true  type: Boolean 
+// 6: s1:PARAM(final = true )  = 3  type: Integer 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -304,16 +371,9 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // ********************************************************************************
 //
 // record SimulationResult
-//     resultFile = "parameterTest8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=state,v,r'",
-//     messages = "time=1,state=1,v=1,r=2
-// "
+//     resultFile = "ParameterTest12.parameterTest12_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ParameterTest12.parameterTest12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
-// stdout            | warning | It is not possible to override the following quantity: state
-// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
-// time=1,state=1,v=1,r=2
-// 0
 // ""
 // endResult

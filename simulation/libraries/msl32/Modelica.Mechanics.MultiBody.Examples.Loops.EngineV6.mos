@@ -37,53 +37,43 @@ runScript(modelTesting);getErrorString();
 //  * Number of equations: 11116
 //  * Number of variables: 11116
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1942
+//  * Number of independent subsystems: 1929
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 390 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3430):
-//  * Single equations (assignments): 3405
+// Notification: Strong component statistics for initialization (3136):
+//  * Single equations (assignments): 3123
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 12
+//  * Equation systems (linear and non-linear blocks): 0
 //  * Torn equation systems: 13
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 12 {(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%)}
-//  * Non-linear Jacobian: 0
-//  * Without analytic Jacobian: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 7 {(31,13.2%) 422,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5,(1,100.0%) 5}
-//  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
+//  * Linear torn systems: 7 {(27,17.6%) 751,(2,100.0%) 11,(2,100.0%) 11,(2,100.0%) 11,(2,100.0%) 11,(2,100.0%) 11,(3,88.9%) 10}
+//  * Non-linear torn systems: 6 {2 12,2 12,2 12,2 12,2 12,2 12}
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 690
+//  * Number of independent subsystems: 91
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1653):
-//  * Single equations (assignments): 1628
+// Notification: Strong component statistics for simulation (1313):
+//  * Single equations (assignments): 1300
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
-//  * Equation systems (linear and non-linear blocks): 12
+//  * Equation systems (linear and non-linear blocks): 0
 //  * Torn equation systems: 13
 //  * Mixed (continuous/discrete) equation systems: 0
-// Notification: Equation system details:
-//  * Constant Jacobian: 0
-//  * Linear Jacobian (size,density): 12 {(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%),(2,100.0%)}
-//  * Non-linear Jacobian: 0
-//  * Without analytic Jacobian: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 7 {(31,13.2%) 373,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3}
-//  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
+//  * Linear torn systems: 7 {(25,15.5%) 658,(2,100.0%) 7,(2,100.0%) 7,(2,100.0%) 7,(2,100.0%) 7,(2,100.0%) 7,(2,100.0%) 7}
+//  * Non-linear torn systems: 6 {2 12,2 12,2 12,2 12,2 12,2 12}
 //
 // "true
 // "

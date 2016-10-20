@@ -1,15 +1,18 @@
 // name:      parameterTest5
-// keywords:  parameter evaluation, loops
+// keywords:  parameter evaluation, structural
 // status:    correct
 
 loadString("
 model parameterTest5
   parameter Boolean b1 = true;
-  parameter Boolean b2 = true;
-  parameter Real p1 = if b1 then p2 else 0;
-  parameter Real p2 = if b1 then 0 else p1;
-  parameter Real p3 = if b2 then p4 else 0;
-  parameter Real p4 = if b2 then 0 else p3;  
+  parameter Real a = 5;
+  parameter Real b = 2*a;
+  parameter Real c = 5 + a;
+  final parameter Real d = a + b + c;
+  parameter Real e = d + a;
+  parameter Real f = if b1 then g else 2;
+  parameter Real g = if b1 then 2 else f;
+  parameter Real h = f + g;
 equation
 
 end parameterTest5;
@@ -23,6 +26,10 @@ simulate(parameterTest5); getErrorString();
 // ""
 // true
 // ""
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
 //
 // ########################################
 // DAE before evaluating parameters
@@ -55,14 +62,17 @@ simulate(parameterTest5); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (6)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real 
-// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real 
-// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real 
-// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: h:PARAM()  = f + g  type: Real 
+// 2: g:PARAM()  = if b1 then 2.0 else f  type: Real 
+// 3: f:PARAM()  = if b1 then g else 2.0  type: Real 
+// 4: e:PARAM()  = d + a  type: Real 
+// 5: d:PARAM(final = true )  = a + b + c  type: Real 
+// 6: c:PARAM()  = 5.0 + a  type: Real 
+// 7: b:PARAM()  = 2.0 * a  type: Real 
+// 8: a:PARAM()  = 5.0  type: Real 
+// 9: b1:PARAM(final = true )  = true  type: Boolean 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -114,129 +124,149 @@ simulate(parameterTest5); getErrorString();
 //
 //
 //
-// size: 6
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
 //
-// selectedParameter: 6,5
-// nselect: 0
-// ass2: 1,2,3,4,5,6
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 9
+// Number of parameters selected for evaluation: 1
+// Selected parameters for evaluation:
+// 9
 //
 // Incidence Matrix (row: equation)
 // ========================================
-// number of rows: 6
-// 1: 2 5
-// 2: 1 5
-// 3: 4 6
-// 4: 3 6
-// 5:
-// 6:
+// number of rows: 9
+// 1: 2 3
+// 2: 3 9
+// 3: 2 9
+// 4: 8 5
+// 5: 6 7 8
+// 6: 8
+// 7: 8
+// 8:
+// 9:
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================
-// number of rows: 6
-// 1: 2 1
-// 2: 2 1
-// 3: 4 3
-// 4: 4 3
-// 5: 5 2 1
-// 6: 6 4 3
+// number of rows: 9
+// 1: 1
+// 2: 3 2 1
+// 3: 3 2 1
+// 4: 4
+// 5: 5 4
+// 6: 6 5
+// 7: 7 5
+// 8: 8 7 6 5 4
+// 9: 9 3 2
 //
-// After evaluate selected parameters
 //
-// size: 2053
-// nselect: 2053
-// repl:
-// Replacements: (2)
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (1)
 // ========================================
 // b1 -> true
-// b2 -> true
 //
-// oRepl:
-// Replacements: (2)
+// Replacements that will be replaced in the DAE:
+// Replacements: (1)
 // ========================================
 // b1 -> true
-// b2 -> true
 //
-// globalKnownVars (6)
+// globalKnownVars (9)
 // ========================================
-// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real 
-// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real 
-// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real 
-// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: h:PARAM()  = f + g  type: Real 
+// 2: g:PARAM()  = if b1 then 2.0 else f  type: Real 
+// 3: f:PARAM()  = if b1 then g else 2.0  type: Real 
+// 4: e:PARAM()  = d + a  type: Real 
+// 5: d:PARAM(final = true )  = a + b + c  type: Real 
+// 6: c:PARAM()  = 5.0 + a  type: Real 
+// 7: b:PARAM()  = 2.0 * a  type: Real 
+// 8: a:PARAM()  = 5.0  type: Real 
+// 9: b1:PARAM(final = true )  = true  type: Boolean 
 //
 //
 // mark: 1
-// markarr: -1,-1,-1,-1,1,1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,1
 //
-// comps:
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 9
+// 8
+// 7
 // 6
 // 5
-// 4,3
-// 2,1
+// 4
+// 3,2
+// 1
 //
-// After evaluate vars with bind expression consists of evaluated vars
-// repl:
-// Replacements: (4)
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (2)
 // ========================================
 // b1 -> true
-// b2 -> true
-// p2 -> 0.0
-// p4 -> 0.0
+// g -> 2.0
 //
-// oRepl:
-// Replacements: (4)
+// Replacements that will be replaced in the DAE:
+// Replacements: (2)
 // ========================================
 // b1 -> true
-// b2 -> true
-// p2 -> 0.0
-// p4 -> 0.0
+// g -> 2.0
 //
-// globalKnownVars (6)
+// globalKnownVars (9)
 // ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: h:PARAM()  = 2.0 + f  type: Real 
+// 2: g:PARAM(final = true )  = 2.0  type: Real 
+// 3: f:PARAM()  = g  type: Real 
+// 4: e:PARAM()  = d + a  type: Real 
+// 5: d:PARAM(final = true )  = a + b + c  type: Real 
+// 6: c:PARAM()  = 5.0 + a  type: Real 
+// 7: b:PARAM()  = 2.0 * a  type: Real 
+// 8: a:PARAM()  = 5.0  type: Real 
+// 9: b1:PARAM(final = true )  = true  type: Boolean 
 //
 //
 // mark: 1
-// markarr: -1,-1,-1,-1,1,1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,1
 //
-// After replace evaluated parameter in variables
-// repl:
-// Replacements: (4)
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (2)
 // ========================================
 // b1 -> true
-// b2 -> true
-// p2 -> 0.0
-// p4 -> 0.0
+// g -> 2.0
 //
-// oRepl:
-// Replacements: (4)
+// Replacements that will be replaced in the DAE:
+// Replacements: (2)
 // ========================================
 // b1 -> true
-// b2 -> true
-// p2 -> 0.0
-// p4 -> 0.0
+// g -> 2.0
 //
-// globalKnownVars (6)
+// globalKnownVars (9)
 // ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: h:PARAM()  = 2.0 + f  type: Real 
+// 2: g:PARAM(final = true )  = 2.0  type: Real 
+// 3: f:PARAM()  = g  type: Real 
+// 4: e:PARAM()  = d + a  type: Real 
+// 5: d:PARAM(final = true )  = a + b + c  type: Real 
+// 6: c:PARAM()  = 5.0 + a  type: Real 
+// 7: b:PARAM()  = 2.0 * a  type: Real 
+// 8: a:PARAM()  = 5.0  type: Real 
+// 9: b1:PARAM(final = true )  = true  type: Boolean 
 //
 //
 // mark: 1
-// markarr: -1,-1,-1,-1,1,1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,1
+//
 //
 // ########################################
-// DAE after evaluating parameters
+// DAE after replacing the evaluated parameters
 // ########################################
 //
 //
@@ -266,14 +296,17 @@ simulate(parameterTest5); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (6)
+// Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: h:PARAM()  = 2.0 + f  type: Real 
+// 2: g:PARAM(final = true )  = 2.0  type: Real 
+// 3: f:PARAM()  = g  type: Real 
+// 4: e:PARAM()  = d + a  type: Real 
+// 5: d:PARAM(final = true )  = a + b + c  type: Real 
+// 6: c:PARAM()  = 5.0 + a  type: Real 
+// 7: b:PARAM()  = 2.0 * a  type: Real 
+// 8: a:PARAM()  = 5.0  type: Real 
+// 9: b1:PARAM(final = true )  = true  type: Boolean 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -325,94 +358,8 @@ simulate(parameterTest5); getErrorString();
 //
 //
 //
-// ########################################
-// DAE after replacing parameters
-// ########################################
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (0)
-// ========================================
-//
-//
-// Equations (0, 0)
-// ========================================
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (6)
-// ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
 //
 // record SimulationResult
 //     resultFile = "parameterTest5_res.mat",
