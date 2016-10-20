@@ -896,6 +896,15 @@ void ComponentParameters::fetchComponentModifiers()
       if (modifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
         QString displayUnit = StringHandler::removeFirstLastQuotes(modifiersIterator.value());
         int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+        if (index < 0) {
+          // add modifier as additional display unit if compatible
+          index = pParameter->getUnitComboBox()->count() - 1;
+          if (index > -1 &&
+              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemText(0), displayUnit)).unitsCompatible) {
+            pParameter->getUnitComboBox()->addItem(displayUnit);
+            index ++;
+          }
+        }
         if (index > -1) {
           pParameter->getUnitComboBox()->setCurrentIndex(index);
           pParameter->setDisplayUnit(displayUnit);
