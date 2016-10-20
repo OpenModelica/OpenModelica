@@ -819,7 +819,7 @@ algorithm
         C = (F - 32)/1.8 = F/1.8 - 32/1.8
         */
         scaleFactor = realDiv(scaleFactor2, scaleFactor1);
-        offset = realSub(offset2, realDiv(offset1, scaleFactor1));
+        offset = realDiv(realSub(offset2, offset1), scaleFactor1);
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
 
