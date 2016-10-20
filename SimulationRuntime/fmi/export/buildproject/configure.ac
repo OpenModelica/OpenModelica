@@ -61,16 +61,17 @@ AC_MSG_CHECKING([looking for $CC to replace $CC_BEFORE])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [CC="$CC_BEFORE";AC_MSG_RESULT([no])])
 fi
 
-LDFLAGS_BEFORE="$LDFLAGS"
-LDFLAGS="$LDFLAGS -Wl,--no-undefined"
-AC_MSG_CHECKING([looking for --no-undefined])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [LDFLAGS="$LDFLAGS_BEFORE";AC_MSG_RESULT([no])])
-
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="$CFLAGS -Werror"
 AC_MSG_CHECKING([if -Werror works])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed (check your CFLAGS)])])
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed (check your CFLAGS=$CFLAGS LDFLAGS=$LDFLAGS CPPFLAGS=$CPPFLAGS)])])
 CFLAGS="$CFLAGS_BEFORE"
+
+LDFLAGS_BEFORE="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,--no-undefined -Werror"
+AC_MSG_CHECKING([looking for --no-undefined])
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
+LDFLAGS="$LDFLAGS_BEFORE"
 
 dnl Disables the default CFLAGS="-g -O2"
 
