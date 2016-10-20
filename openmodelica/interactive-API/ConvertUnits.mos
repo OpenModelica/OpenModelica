@@ -3,6 +3,9 @@
 convertUnits("MW/s","kg");getErrorString();
 convertUnits("degC","K");getErrorString();
 convertUnits("K","degF");getErrorString();
+convertUnits("degC","degF");getErrorString();
+convertUnits("degF","degC");getErrorString();
+convertUnits("K","Unknown");getErrorString();
 
 getDerivedUnits("K");getErrorString();
 getDerivedUnits("W");getErrorString();
@@ -15,6 +18,13 @@ getDerivedUnits("n");getErrorString();
 // ""
 // (true,0.5555555555555556,255.3722222222222)
 // ""
+// (true,0.5555555555555556,-17.77777777777774)
+// ""
+// (true,1.8,31.99999999999994)
+// ""
+// (false,1.0,0.0)
+// "Error: error parsing unit Unknown
+// "
 // {"degC","degF","degRk"}
 // ""
 // {"VA","var"}
