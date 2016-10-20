@@ -1033,15 +1033,19 @@ QString Component::getParameterDisplayString(QString parameterName)
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QString displayString = "";
+  QString typeName = "";
   /* case 1 */
   displayString = mpComponentInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
-  /* case 2 */
-  if (displayString.isEmpty()) {
+  /* case 2 or check for enumeration type if case 1 */
+  if (displayString.isEmpty() || typeName.isEmpty()) {
     if (mpLibraryTreeItem) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
+          if (displayString.isEmpty())
+            displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
+          typeName = pComponent->getComponentInfo()->getClassName();
+          checkEnumerationDisplayString(displayString, typeName);
           break;
         }
       }
@@ -1051,18 +1055,9 @@ QString Component::getParameterDisplayString(QString parameterName)
   if (displayString.isEmpty()) {
     displayString = getParameterDisplayStringFromExtendsModifiers(parameterName);
   }
-  /* case 4 */
-  if (displayString.isEmpty()) {
-    displayString = getParameterDisplayStringFromExtendsParameters(parameterName);
-  }
-  /* Short enumeration value, ModelicaSpec 3.3, section 18.6.5.5, ticket:4084 */
-  /* Note: for now just look for dots in non-numbers to avoid lookup of type */
-  bool ok = false;
-  displayString.toDouble(&ok);
-  if (!ok) {
-    int lastDot = displayString.lastIndexOf(".");
-    if (lastDot >= 0)
-      displayString = displayString.right(displayString.length() - lastDot - 1);
+  /* case 4 or check for enumeration type if case 3 */
+  if (displayString.isEmpty() || typeName.isEmpty()) {
+    displayString = getParameterDisplayStringFromExtendsParameters(parameterName, displayString);
   }
   return displayString;
 }
@@ -1586,11 +1581,13 @@ QString Component::getParameterDisplayStringFromExtendsModifiers(QString paramet
  * \brief Component::getParameterDisplayStringFromExtendsParameters
  * Gets the display string for components from extends parameters.
  * \param parameterName
+ * \param modifierString an existing extends modifier or an empty string
  * \return
  */
-QString Component::getParameterDisplayStringFromExtendsParameters(QString parameterName)
+QString Component::getParameterDisplayStringFromExtendsParameters(QString parameterName, QString modifierString)
 {
-  QString displayString = "";
+  QString displayString = modifierString;
+  QString typeName = "";
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     if (pInheritedComponent->getLibraryTreeItem()) {
       pInheritedComponent->getLibraryTreeItem()->getModelWidget()->loadDiagramView();
@@ -1598,20 +1595,38 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
           OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
           if (pComponent->getLibraryTreeItem()) {
-            displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
-            if (!displayString.isEmpty()) {
+            if (displayString.isEmpty())
+              displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
+            typeName = pComponent->getComponentInfo()->getClassName();
+            checkEnumerationDisplayString(displayString, typeName);
+            if (!(displayString.isEmpty() || typeName.isEmpty())) {
               return displayString;
             }
           }
         }
       }
     }
-    displayString = pInheritedComponent->getParameterDisplayStringFromExtendsParameters(parameterName);
-    if (!displayString.isEmpty()) {
+    displayString = pInheritedComponent->getParameterDisplayStringFromExtendsParameters(parameterName, displayString);
+    if (!(displayString.isEmpty() || typeName.isEmpty())) {
       return displayString;
     }
   }
   return displayString;
+}
+
+/*!
+ * \brief Component::checkEnumerationDisplayString
+ * Checks for enumeration type and shortens enumeration value.
+ * Returns true if displayString was modified.
+ * See ModelicaSpec 3.3, section 18.6.5.5, ticket:4084
+ */
+bool Component::checkEnumerationDisplayString(QString &displayString, const QString &typeName)
+{
+  if (displayString.startsWith(typeName + ".")) {
+    displayString = displayString.right(displayString.length() - typeName.length() - 1);
+    return true;
+  }
+  return false;
 }
 
 /*!
