@@ -306,11 +306,6 @@ algorithm
           createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping);
     if debug then execStat("simCode: createEquationsForSystems"); end if;
 
-    (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
-          translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
-                                    backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
-    if debug then execStat("simCode: translateClockedEquations"); end if;
-
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
     execStat("simCode: created simulation system equations");
 
@@ -318,6 +313,12 @@ algorithm
     //((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(remEqLst), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     if debug then execStat("simCode: traversedlowEqToSimEqSystem"); end if;
+
+    (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
+          translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
+                                    backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
+    if debug then execStat("simCode: translateClockedEquations"); end if;
+
     // Assertions and crap
     // create parameter equations
     ((uniqueEqIndex, startValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}));
