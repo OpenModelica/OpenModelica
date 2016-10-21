@@ -101,15 +101,18 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
 
   _event_system->getConditions(_conditions1);
   //_event_system->getClockConditions(_clockconditions1);
-
-  bool crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
+  bool crestart =false;
+  if(dim>0)
+  {
+     crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
+  }
   //check for event clocks
   /*bool eventclocksrestart =  false;
   if(dimClock>0)
   {
     eventclocksrestart = !std::equal (_clockconditions1, _clockconditions1+dimClock,_clockconditions0);
   }
-*/
+  */
   return((drestart||crestart)); //returns true if new events occurred
 }
 /** @} */ // end of coreSystem
