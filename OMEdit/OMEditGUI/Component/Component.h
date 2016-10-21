@@ -278,7 +278,8 @@ private:
   void setOriginAndExtents();
   void updateConnections();
   QString getParameterDisplayStringFromExtendsModifiers(QString parameterName);
-  QString getParameterDisplayStringFromExtendsParameters(QString parameterName);
+  QString getParameterDisplayStringFromExtendsParameters(QString parameterName, QString modifierString);
+  bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
 signals:
   void added();
