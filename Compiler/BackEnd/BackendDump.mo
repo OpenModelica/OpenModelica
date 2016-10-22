@@ -882,16 +882,24 @@ algorithm
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
+    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
       print("ARRAY_EQUATION: ");
       str = ExpressionDump.printExpStr(e1);
-      print(str);
+      str = str + " = ";
+      str = str + ExpressionDump.printExpStr(e2);
       str = str + " (" + equationKindString(eqKind) + ")\n";
-      str = ExpressionDump.dumpExpStr(e1,0);
+      print(str);
+
+      str = "LHS:\n";
+      str = str + ExpressionDump.dumpExpStr(e1, 0);
+      str = str + "RHS:\n";
+      str = str + ExpressionDump.dumpExpStr(e2, 0);
+      str = str + "\n";
       str = if printExpTree then str else "";
       print(str);
-      print("\n");
+
       dumpBackendDAEEqnList2(res,printExpTree);
+
     then ();
 
     case (BackendDAE.ALGORITHM(alg=alg, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
