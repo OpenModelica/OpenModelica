@@ -4272,16 +4272,9 @@ algorithm
         (eqs, vars, updated) := simplifyComplexFunctionWork(eqn, withTmpVars);
         if updated
         then
-          if listLength(eqs) == 1
-          then
-            //BackendDump.printEquation(eqn);
-            {eqn} := eqs;
-            eqns := BackendEquation.setAtIndex(eqns, i, eqn);
-          else
-            indRemove := i :: indRemove;
-            eqsAll := listAppend(eqs, eqsAll);
-            varsAll := listAppend(vars, varsAll);
-          end if;
+          indRemove := i :: indRemove;
+          eqsAll := listAppend(eqs, eqsAll);
+          varsAll := listAppend(vars, varsAll);
         end if;
       else
         //BackendDump.printEquation(BackendEquation.equationNth1(eqns, i));
@@ -4378,7 +4371,29 @@ protected
   list<DAE.Exp> left_lst, right_lst;
   Boolean expanted = true, _updated;
   BackendDAE.Equation eqn;
+  Boolean expandLeft = true, expandRight = true, restart;
+  DAE.Exp lhs, rhs;
 algorithm
+
+  restart := match(left, right)
+           case (DAE.ARRAY(array = {lhs}),_)
+           equation
+             rhs = Expression.makeASUB(right,{DAE.ICONST(1)});
+           then
+             true;
+           case (_, DAE.ARRAY(array = {rhs}))
+           equation
+             lhs = Expression.makeASUB(left,{DAE.ICONST(1)});
+           then
+             true;
+           else false;
+           end match;
+  if restart
+  then
+     (eqs, vars, updated) := simplifyComplexFunctionWorkCE_AE_WORK(lhs, rhs, withTmpVars, source, attr);
+      return ;
+  end if;
+
 
   if Expression.isTuple(left)
   then
@@ -4393,6 +4408,7 @@ algorithm
         DAE.ARRAY(array=left_lst) := left;
   else
     expanted := false;
+    expandLeft := false;
   end if;
 
   if Expression.isTuple(right)
@@ -4408,11 +4424,24 @@ algorithm
         DAE.ARRAY(array=right_lst) := right;
   else
     expanted := false;
+    expandRight := false;
   end if;
 
-  if expanted then
+
+  if expanted
+  then
     (eqs, vars, updated) := simplifyComplexFunctionWorkTT(left_lst, right_lst, withTmpVars, source, attr);
 
+  elseif expandRight and Expression.isCall(left) and Expression.hasWild(right_lst)
+  then
+    //print(ExpressionDump.printExpStr(left));
+    (right_lst, left_lst) := simplifyComplexFunctionWorkWild(right_lst, left);
+    (eqs, vars, updated) := simplifyComplexFunctionWorkTT(left_lst, right_lst, withTmpVars, source, attr);
+  elseif expandLeft and Expression.isCall(right) and Expression.hasWild(left_lst)
+  then
+    //print(ExpressionDump.printExpStr(left));
+    (left_lst, right_lst) := simplifyComplexFunctionWorkWild(left_lst, right);
+    (eqs, vars, updated) := simplifyComplexFunctionWorkTT(left_lst, right_lst, withTmpVars, source, attr);
   elseif Expression.isWild(left) or Expression.isWild(right)
   then // _ = ... or ... = _
     eqs  := {};
@@ -4439,11 +4468,35 @@ algorithm
 
   else
     eqn := BackendEquation.generateEquation(left, right, source, attr);
-    eqs  := {eqn};
+    eqs := {eqn};
     vars := {};
     updated := false;
   end if;
 end simplifyComplexFunctionWorkCE_AE_WORK;
+
+
+
+protected function simplifyComplexFunctionWorkWild
+  input list<DAE.Exp> _left_lst;
+  input DAE.Exp right;
+  output list<DAE.Exp> left_lst = {};
+  output list<DAE.Exp> right_lst = {};
+protected
+  DAE.Type ty;
+  Integer idx = 1;
+algorithm
+  for left in _left_lst
+  loop
+    if not Expression.isWild(left)
+    then
+      ty := Expression.typeof(left);
+      left_lst := left :: left_lst;
+      right_lst := DAE.TSUB(right, idx, ty) :: right_lst;
+      idx := idx + 1;
+    end if;
+  end for;
+
+end simplifyComplexFunctionWorkWild;
 
 
 protected function simplifyComplexFunctionWorkTT
@@ -4475,10 +4528,17 @@ algorithm
   loop
     lhs :: left_lst := left_lst;
     rhs :: right_lst := right_lst;
-    (_eqs, _vars, _updated) := simplifyComplexFunctionWorkCE_AE_WORK(lhs, rhs, withTmpVars, source, attr);
-     eqs := listAppend(_eqs, eqs);
-     vars := listAppend(_vars, vars);
-     updated := updated or _updated;
+    if Expression.isWild(lhs) or Expression.isWild(rhs)
+    then
+      //print(ExpressionDump.printExpStr(lhs));
+      //print(ExpressionDump.printExpStr(rhs));
+      updated := true;
+    else
+      (_eqs, _vars, _updated) := simplifyComplexFunctionWorkCE_AE_WORK(lhs, rhs, withTmpVars, source, attr);
+       eqs := listAppend(_eqs, eqs);
+       vars := listAppend(_vars, vars);
+       updated := updated or _updated;
+     end if;
   end for;
 end simplifyComplexFunctionWorkTT;
 

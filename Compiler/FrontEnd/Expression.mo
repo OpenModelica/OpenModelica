@@ -10568,6 +10568,21 @@ algorithm
   end match;
 end isWild;
 
+public function hasWild
+  input list<DAE.Exp> lstExp;
+  output Boolean b = false;
+algorithm
+  for elem in lstExp
+  loop
+    if isWild(elem)
+    then
+      b := true;
+      break;
+    end if;
+  end for;
+
+end hasWild;
+
 public function isNotWild
   input DAE.Exp exp;
   output Boolean b;
