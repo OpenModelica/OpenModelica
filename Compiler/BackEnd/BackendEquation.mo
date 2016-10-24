@@ -148,7 +148,7 @@ algorithm
   try
     BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=DAE.CREF(componentRef = outComponentRef), right=outExp)}) := inWhenEquation;
 else
-  print("getWhenEQuationExpr failed\n");
+    Error.addInternalError("BackendEquation.getWhenEquationExpr failed\n", sourceInfo());
   end try;
 end getWhenEquationExpr;
 
@@ -894,15 +894,7 @@ algorithm
     case (BackendDAE.ASSIGN(left = e1, right = e2, source = source)::rest)
       equation
         tp = Expression.typeof(e2);
-        //e1 = Expression.makeCrefExp(cr, tp);
         (e1, extArg) = inFunc(e1, inTypeA);
-        /*
-        if Expression.isCref(e1) then
-          DAE.CREF(cr1, _) = e1;
-        else
-          cr1=cr;
-        end if;
-        */
         (e2, extArg) = inFunc(e2, extArg);
         (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(e1, e2, source)::inAccum);
       then (outWhenOps, extArg);
@@ -1035,7 +1027,6 @@ algorithm
     case (BackendDAE.ASSIGN(left = e1, right = e2)::rest)
       equation
         tp = Expression.typeof(e2);
-        //e1 = Expression.makeCrefExp(cr, tp);
         if inCont then
          (_, b, extArg) = inFunc(e1, inTypeA);
         end if;
