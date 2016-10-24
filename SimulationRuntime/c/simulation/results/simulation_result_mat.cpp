@@ -65,6 +65,7 @@ typedef struct mat_data {
 
   unsigned int negatedboolaliases;
   int numVars;
+  int numParams;
 } mat_data;
 
 static long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment);
@@ -74,6 +75,7 @@ static void generateDataInfo(simulation_result *self,DATA *data, threadData_t *t
 static void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop);
 
 static int calcDataSize(simulation_result *self,DATA *data);
+static int calcParamsSize(simulation_result *self, DATA *data);
 static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize);
 
 static const struct VAR_INFO timeValName = {0,-1,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
@@ -133,14 +135,44 @@ static int calcDataSize(simulation_result *self,DATA *data)
   return sz;
 }
 
-static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize)
+static int calcParamsSize(simulation_result *self, DATA *data)
 {
   mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *modelData = data->modelData;
 
+  int i, sz = 0;
+
+  for (i = 0; i < modelData->nParametersReal; i++)
+    if (!modelData->realParameterData[i].filterOutput)
+    {
+      matData->r_indx_parammap[i] = sz;
+      sz ++;
+    }
+
+  for (i = 0; i < modelData->nParametersInteger; i++)
+    if(!modelData->integerParameterData[i].filterOutput)
+    {
+      matData->i_indx_parammap[i] = sz;
+      sz ++;
+    }
+
+  for (i = 0; i < modelData->nParametersBoolean; i++)
+    if(!modelData->booleanParameterData[i].filterOutput)
+    {
+      matData->b_indx_parammap[i] = sz;
+      sz ++;
+    }
+
+  return sz;
+}
+
+static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize)
+{
+  const MODEL_DATA *modelData = data->modelData;
+
   const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize)*sizeof(struct VAR_INFO*));
   int curVar = 0;
-  int sz = 1;
+
   names[curVar++] = &timeValName;
 
   if(self->cpuTime)
@@ -173,22 +205,20 @@ static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dat
 
   for(int i = 0; i < modelData->nParametersReal; i++)
   {
-    names[curVar++] = &(modelData->realParameterData[i].info);
-    matData->r_indx_parammap[i]=sz;
-    sz++;
+    if (!modelData->realParameterData[i].filterOutput)
+      names[curVar++] = &(modelData->realParameterData[i].info);
   }
   for(int i = 0; i < modelData->nParametersInteger; i++)
   {
-    names[curVar++] = &(modelData->integerParameterData[i].info);
-    matData->i_indx_parammap[i]=sz;
-    sz++;
+    if (!modelData->integerParameterData[i].filterOutput)
+      names[curVar++] = &(modelData->integerParameterData[i].info);
   }
   for(int i = 0; i < modelData->nParametersBoolean; i++)
   {
-    names[curVar++] = &(modelData->booleanParameterData[i].info);
-    matData->b_indx_parammap[i]=sz;
-    sz++;
+    if (!modelData->booleanParameterData[i].filterOutput)
+      names[curVar++] = &(modelData->booleanParameterData[i].info);
   }
+
   return names;
 }
 
@@ -226,7 +256,6 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
 
   const struct VAR_INFO** names = NULL;
-  const int nParams = mData->nParametersReal + mData->nParametersInteger + mData->nParametersBoolean;
 
   char *stringMatrix = NULL;
   int rows, cols;
@@ -236,7 +265,8 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
   assert(sizeof(char) == 1);
   rt_tick(SIM_TIMER_OUTPUT);
   matData->numVars = calcDataSize(self,data);
-  names = calcDataNames(self,data,matData->numVars+nParams);
+  matData->numParams = calcParamsSize(self, data);
+  names = calcDataNames(self, data, matData->numVars + matData->numParams);
   matData->data1HdrPos = -1;
   matData->data2HdrPos = -1;
   matData->ntimepoints = 0;
@@ -253,19 +283,19 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
     /* write `AClass' matrix */
     mat_writeMatVer4Matrix(self,data, threadData,"Aclass", 4, 11, Aclass, sizeof(int8_t));
     /* flatten variables' names */
-    flattenStrBuf(matData->numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
+    flattenStrBuf(matData->numVars + matData->numParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     /* write `name' matrix */
     mat_writeMatVer4Matrix(self,data,threadData,"name", rows, cols, stringMatrix, sizeof(int8_t));
     free(stringMatrix); stringMatrix = NULL;
 
     /* flatten variables' comments */
-    flattenStrBuf(matData->numVars+nParams, names, stringMatrix, rows, cols, false, true);
+    flattenStrBuf(matData->numVars + matData->numParams, names, stringMatrix, rows, cols, false, true);
     /* write `description' matrix */
     mat_writeMatVer4Matrix(self,data,threadData,"description", rows, cols, stringMatrix, sizeof(int8_t));
     free(stringMatrix); stringMatrix = NULL;
 
     /* generate dataInfo table */
-    generateDataInfo(self, data, threadData, intMatrix, rows, cols, matData->numVars, nParams);
+    generateDataInfo(self, data, threadData, intMatrix, rows, cols, matData->numVars, matData->numParams);
     /* write `dataInfo' matrix */
     mat_writeMatVer4Matrix(self, data, threadData, "dataInfo", cols, rows, intMatrix, sizeof(int32_t));
 
@@ -674,24 +704,31 @@ void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& 
   /* double variables */
   for(i = 0; i < mData->nParametersReal; ++i)
   {
-    data_1[offset+i] = sInfo->realParameter[i];
-    data_1[offset+i+cols] = sInfo->realParameter[i];
+    if (!mData->realParameterData[i].filterOutput) {
+      data_1[offset] = sInfo->realParameter[i];
+      data_1[offset+cols] = sInfo->realParameter[i];
+      offset ++;
+    }
   }
-  offset += mData->nParametersReal;
 
   /* integer variables */
   for(i = 0; i < mData->nParametersInteger; ++i)
   {
-    data_1[offset+i] = (double)sInfo->integerParameter[i];
-    data_1[offset+i+cols] = (double)sInfo->integerParameter[i];
+    if (!mData->integerParameterData[i].filterOutput) {
+      data_1[offset] = (double)sInfo->integerParameter[i];
+      data_1[offset+cols] = (double)sInfo->integerParameter[i];
+      offset ++;
+    }
   }
-  offset += mData->nParametersInteger;
 
   /* bool variables */
   for(i = 0; i < mData->nParametersBoolean; ++i)
   {
-    data_1[offset+i] = (double)sInfo->booleanParameter[i];
-    data_1[offset+i+cols] = (double)sInfo->booleanParameter[i];
+    if (!mData->booleanParameterData[i].filterOutput) {
+      data_1[offset] = (double)sInfo->booleanParameter[i];
+      data_1[offset+cols] = (double)sInfo->booleanParameter[i];
+      offset ++;
+    }
   }
 }
 
