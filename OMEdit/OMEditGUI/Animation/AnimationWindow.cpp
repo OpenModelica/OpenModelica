@@ -99,7 +99,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpSpeedTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
   mpSpeedTextBox->setEnabled(false);
   mpPerspectiveDropDownBox = new QComboBox(this);
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("to home position"));
+  //mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("to home position"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("normal to x-y plane"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("normal to y-z plane"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"),QString("normal to x-z plane"));
@@ -266,6 +266,8 @@ void AnimationWindow::loadVisualization()
   }
   //add window title
   this->setWindowTitle(QString::fromStdString(mFileName));
+  //jump to xy-view
+  cameraPositionXY();
 }
 
 /*!
@@ -508,15 +510,12 @@ void AnimationWindow::setPerspective(int value)
 {
   switch(value) {
     case 0:
-      resetCamera();
-      break;
-    case 1:
       cameraPositionXY();
       break;
-    case 2:
+    case 1:
       cameraPositionYZ();
       break;
-    case 3:
+    case 2:
       cameraPositionXZ();
       break;
   }
