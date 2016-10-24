@@ -140,7 +140,7 @@ static int calcParamsSize(simulation_result *self, DATA *data)
   mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *modelData = data->modelData;
 
-  int i, sz = 0;
+  int i, sz = 1;
 
   for (i = 0; i < modelData->nParametersReal; i++)
     if (!modelData->realParameterData[i].filterOutput)
@@ -163,7 +163,7 @@ static int calcParamsSize(simulation_result *self, DATA *data)
       sz ++;
     }
 
-  return sz;
+  return sz - 1;
 }
 
 static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dataSize)
