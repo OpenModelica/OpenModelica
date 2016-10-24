@@ -8469,7 +8469,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(comment);
+        hideResult = getHideResult(comment, isProtected);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -8503,7 +8503,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(comment);
+        hideResult = getHideResult(comment, isProtected);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -8531,7 +8531,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(comment);
+        hideResult = getHideResult(comment, isProtected);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10688,7 +10688,11 @@ algorithm
 end getProtected;
 
 protected function getHideResult
+  "Returns the value of the HideResult annotation.
+   Uses isProtected as default if the annotation is not specified.
+   See Modelica Spec 3.3, section 18.3"
   input Option<SCode.Comment> inComment;
+  input Boolean isProtected;
   output Boolean outHideResult;
 protected
   SCode.Annotation ann;
@@ -10702,7 +10706,7 @@ algorithm
       else false;
     end match;
   else
-    outHideResult := false;
+    outHideResult := isProtected;
   end try;
 end getHideResult;
 
