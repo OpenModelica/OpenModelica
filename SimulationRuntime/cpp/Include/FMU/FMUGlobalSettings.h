@@ -24,9 +24,9 @@ public:
     ///< Output step size (default: 20 ms)
     virtual double gethOutput() { return 20; }
     virtual void sethOutput(double) {}
-    ///< Write out results ([false,true]; default: true)
-    virtual bool getResultsOutput() { return false; }
-    virtual void setResultsOutput(bool) {}
+    ///< Write out results (EMIT_NONE)
+    virtual EmitResults getEmitResults() { return EMIT_NONE; }
+    virtual void setEmitResults(EmitResults) {}
     virtual bool useEndlessSim() {return true; }
     virtual void useEndlessSim(bool) {}
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

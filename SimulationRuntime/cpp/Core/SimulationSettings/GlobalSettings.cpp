@@ -12,7 +12,7 @@ GlobalSettings::GlobalSettings()
   : _startTime(0.0)
   , _endTime(5.0)
   , _hOutput(0.001)
-  , _resultsOutput(true)
+  , _emitResults(EMIT_ALL)
   , _infoOutput(true)
   , _selected_solver("Euler")
   , _selected_lin_solver("Newton")
@@ -22,7 +22,7 @@ GlobalSettings::GlobalSettings()
   , _nonLinSolverContinueOnError(false)
   , _outputPointType(OPT_ALL)
   , _alarm_time(0)
-  ,_outputFormat(MAT)
+  , _outputFormat(MAT)
 {
 }
 
@@ -93,15 +93,15 @@ void GlobalSettings::setLogSettings(LogSettings set)
   _log_settings = set;
 }
 
-///< Write out results ([false,true]; default: true)
-bool GlobalSettings::getResultsOutput()
+///< Write out results (default: EMIT_ALL)
+EmitResults GlobalSettings::getEmitResults()
 {
-  return _resultsOutput;
+  return _emitResults;
 }
 
-void GlobalSettings::setResultsOutput(bool output)
+void GlobalSettings::setEmitResults(EmitResults emitResults)
 {
-  _resultsOutput = output;
+  _emitResults = emitResults;
 }
 
 void GlobalSettings::setResultsFileName(string name)

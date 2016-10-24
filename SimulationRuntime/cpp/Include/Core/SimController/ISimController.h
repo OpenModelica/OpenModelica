@@ -21,7 +21,8 @@ struct SimSettings
   LogSettings logSettings;
   bool nonLinearSolverContinueOnError;
   int solverThreads;
-  OutputFormat outputFomrat;
+  OutputFormat outputFormat;
+  EmitResults emitResults;
 };
 
 /**

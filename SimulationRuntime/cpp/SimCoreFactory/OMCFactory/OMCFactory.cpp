@@ -83,10 +83,12 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      map<string, OutputPointType> outputPointTypeMap = MAP_LIST_OF
        "all", OPT_ALL MAP_LIST_SEP "step", OPT_STEP MAP_LIST_SEP
        "none", OPT_NONE MAP_LIST_END;
-
-	 map<string, OutputFormat> outputFormatTypeMap = MAP_LIST_OF
+     map<string, OutputFormat> outputFormatMap = MAP_LIST_OF
        "csv", CSV MAP_LIST_SEP "mat", MAT MAP_LIST_SEP
        "buffer",  BUFFER MAP_LIST_SEP   "empty", EMPTY MAP_LIST_END;
+     map<string, EmitResults> emitResultsMap = MAP_LIST_OF
+       "all", EMIT_ALL MAP_LIST_SEP "public", EMIT_PUBLIC MAP_LIST_SEP
+       "none", EMIT_NONE MAP_LIST_END;
      po::options_description desc("Allowed options");
 
      //program options that can be overwritten by OMEdit must be declared as vector
@@ -111,6 +113,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("output-format,P", po::value< string >()->default_value("mat"),  "The simulation results output format")
+          ("emit-results,U", po::value< string >()->default_value("public"),  "emit results: all, public, none")
           ;
 
      // a group for all options that should not be visible if '--help' is set
@@ -232,22 +235,26 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      OutputFormat outputFormat;
      if (vm.count("output-format"))
      {
-
-         string outputFormatType_str = vm["output-format"].as<string>();
-         outputFormat = outputFormatTypeMap[outputFormatType_str];
+         string outputFormat_str = vm["output-format"].as<string>();
+         outputFormat = outputFormatMap[outputFormat_str];
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY, "output-format is not set");
 
+     EmitResults emitResults = EMIT_PUBLIC; // emit public per default for OMC use
+     if (vm.count("emit-results"))
+     {
+         string emitResults_str = vm["emit-results"].as<string>();
+         emitResults = emitResultsMap[emitResults_str];
+     }
 
-
-	 fs::path libraries_path = fs::path( runtime_lib_path) ;
+     fs::path libraries_path = fs::path( runtime_lib_path) ;
      fs::path modelica_path = fs::path( modelica_lib_path) ;
 
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads,outputFormat};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads,outputFormat,emitResults};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -340,6 +347,12 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
                   opts[oit->second] = strs[++j];
               }
               else {
+                  // ignore filter for all variables
+                  if (strs[j] == "variableFilter"
+                      && j < strs.size() - 1 && strs[j+1] == ".*") {
+                      ++j;
+                      continue;
+                  }
                   // leave unrecognized overrides
                   if (_overrideOMEdit.size() > 10)
                       _overrideOMEdit += ",";
@@ -365,14 +378,14 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
 void OMCFactory::fillArgumentsToIgnore()
 {
   _argumentsToIgnore = unordered_set<string>();
-  _argumentsToIgnore.insert("-emit_protected");
 }
 
 void OMCFactory::fillArgumentsToReplace()
 {
   _argumentsToReplace = map<string, string>();
-  _argumentsToReplace.insert(pair<string,string>("-r","-F"));
-  _argumentsToReplace.insert(pair<string,string>("-w","-V all=warning"));
+  _argumentsToReplace.insert(pair<string,string>("-r", "-F"));
+  _argumentsToReplace.insert(pair<string,string>("-w", "-V all=warning"));
+  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
 }
 
 pair<shared_ptr<ISimController>,SimSettings>

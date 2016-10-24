@@ -28,7 +28,8 @@ using std::string;
 enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
 enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
 enum OutputPointType {OPT_ALL, OPT_STEP, OPT_NONE};
-enum OutputFormat{CSV, MAT,BUFFER,EMPTY};
+enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
+enum EmitResults {EMIT_ALL, EMIT_PUBLIC, EMIT_NONE};
 struct LogSettings
 {
 	std::vector<LogLevel> modes;
@@ -58,9 +59,9 @@ public:
   ///< Output step size (default: 20 ms)
   virtual double gethOutput() = 0;
   virtual void sethOutput(double) = 0;
-  ///< Write out results ([false,true]; default: true)
-  virtual bool getResultsOutput() = 0;
-  virtual void setResultsOutput(bool) = 0;
+  ///< Write out results (default: EMIT_ALL)
+  virtual EmitResults getEmitResults() = 0;
+  virtual void setEmitResults(EmitResults) = 0;
   virtual OutputPointType getOutputPointType() = 0;
   virtual void setOutputPointType(OutputPointType) = 0;
   virtual LogSettings getLogSettings() = 0;

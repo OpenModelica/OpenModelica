@@ -9,9 +9,10 @@
 #include <fstream>
 #include <iostream>
 
-XmlPropertyReader::XmlPropertyReader(std::string propertyFile)
+XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::string propertyFile)
   : IPropertyReader()
-  ,propertyFile(propertyFile)
+  ,_globalSettings(globalSettings)
+  ,_propertyFile(propertyFile)
   ,_isInitialized(false)
 {
 }
@@ -24,7 +25,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 {
   using boost::property_tree::ptree;
   std::ifstream file;
-  file.open(propertyFile.c_str(), std::ifstream::in);
+  file.open (_propertyFile.c_str(), std::ifstream::in);
   if (file.good())
   {
     double *realVars = sim_vars->getRealVarsVector();
@@ -51,11 +52,22 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
             //boost::property_tree::xml_parser::write_xml(std::cout, vars.second);
             continue;
           }
+
           string name = vars.second.get<string>("<xmlattr>.name");
           boost::optional<string> descriptonOpt = vars.second.get_optional<string>("<xmlattr>.description");
           string descripton;
           if (descriptonOpt)
             descripton  = *descriptonOpt;
+
+          if (_globalSettings->getEmitResults() != EMIT_ALL)
+          {
+            if (name.substr(0, 3) == "_D_")
+              continue;
+            std::string hideResultInfo = vars.second.get<std::string>("<xmlattr>.hideResult");
+            if (hideResultInfo.compare("true") == 0)
+              // Note: we don't need values of hidden variables because the code calculates them
+              continue;
+          }
 
           refIdx = *refIdxOpt;
           std::string aliasInfo = vars.second.get<std::string>("<xmlattr>.alias");
@@ -67,7 +79,6 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
           FOREACH(ptree::value_type const& var, vars.second.get_child(""))
           {
-
             if (var.first == "Real")
             {
                //If a start value is given for the alias and the referred variable, skip the alias declaration
@@ -148,34 +159,52 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
 const output_int_vars_t&  XmlPropertyReader::getIntOutVars()
 {
+  static output_int_vars_t int_none;
   if (_isInitialized)
-    return _intVars;
+  {
+    if (_globalSettings->getEmitResults() == EMIT_NONE)
+      return int_none;
+    else
+      return _intVars;
+  }
   else
-    throw ModelicaSimulationError(UTILITY,"init xml file has not been read");
+    throw ModelicaSimulationError(UTILITY, "init xml file has not been read");
 }
 
 const output_real_vars_t& XmlPropertyReader::getRealOutVars()
 {
+  static output_real_vars_t real_none;
   if (_isInitialized)
-    return _realVars;
+  {
+    if (_globalSettings->getEmitResults() == EMIT_NONE)
+      return real_none;
+    else
+      return _realVars;
+  }
   else
-    throw ModelicaSimulationError(UTILITY,"init xml file has not been read");
+    throw ModelicaSimulationError(UTILITY, "init xml file has not been read");
 }
 
 const output_bool_vars_t& XmlPropertyReader::getBoolOutVars()
 {
+  static output_bool_vars_t bool_none;
   if (_isInitialized)
-    return _boolVars;
+  {
+    if (_globalSettings->getEmitResults() == EMIT_NONE)
+      return bool_none;
+    else
+      return _boolVars;
+  }
   else
-    throw ModelicaSimulationError(UTILITY,"init xml file has not been read");
+    throw ModelicaSimulationError(UTILITY, "init xml file has not been read");
 }
 
 std::string XmlPropertyReader::getPropertyFile()
 {
-  return propertyFile;
+  return _propertyFile;
 }
 
 void XmlPropertyReader::setPropertyFile(std::string file)
 {
-  propertyFile = file;
+  _propertyFile = file;
 }

@@ -5876,9 +5876,9 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    {
       #if !defined(FMU_BUILD)
         #if defined(__vxworks)
-        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader("/SYSTEM/bundles/com.boschrexroth.<%modelname%>/<%fileNamePrefix%>_init.xml"));
+        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "/SYSTEM/bundles/com.boschrexroth.<%modelname%>/<%fileNamePrefix%>_init.xml"));
         #else
-        _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader("<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
+        _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
         #endif
         _reader->readInitialValues(*this, getSimVars());
       #endif

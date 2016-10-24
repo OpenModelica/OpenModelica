@@ -21,9 +21,9 @@ public:
   ///< Output step size (default: 20 ms)
   virtual double gethOutput();
   virtual void sethOutput(double);
-  ///< Write out results ([false,true]; default: true)
-  virtual bool getResultsOutput();
-  virtual void setResultsOutput(bool);
+  ///< Write out results (default: EMIT_ALL)
+  virtual EmitResults getEmitResults();
+  virtual void setEmitResults(EmitResults);
   ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false, true]; default: true)
   virtual bool getInfoOutput();
   virtual void setInfoOutput(bool);
@@ -62,12 +62,13 @@ public:
 
 private:
   double
-      _startTime, ///< Start time of integration (default: 0.0)
-      _endTime, ///< End time of integraiton (default: 1.0)
-      _hOutput; //< Output step size (default: 20 ms)
+      _startTime,   ///< Start time of integration (default: 0.0)
+      _endTime,     ///< End time of integraiton (default: 1.0)
+      _hOutput;     ///< Output step size (default: 20 ms)
+  EmitResults
+      _emitResults; ///< Write out results (default: EMIT_ALL)
   bool
-      _resultsOutput,   ///< Write out results ([false,true]; default: true)
-      _infoOutput,      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
+      _infoOutput,  ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
       _endless_sim,
       _nonLinSolverContinueOnError;
   string
