@@ -1922,6 +1922,30 @@ algorithm
   end matchcontinue;
 end generateExtFunctionIncludeDirectoryFlags;
 
+protected function getLinkerLibraryPaths"Builds search paths for the linker to find external libraries.
+ Some libraries need special treatment.
+ author: vwaurich TUD 2016-10"
+  input String uri;
+  input Absyn.Path path;
+  input list<String> inLibs;
+  output list<String> libPaths;
+algorithm
+  libPaths := matchcontinue(uri,path,inLibs)
+    local
+      String str, platform1, platform2;
+  case(_, _,{str as "-lWinmm"}) guard System.os()=="Windows_NT"
+    //Winmm has to be linked from the windows system but not from the resource directories.
+    //This is a fix for M_DD since otherwise the dummy pthread.dll that breaks the built will be linked
+    then {(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")};
+  case(, _,_)
+    equation
+      platform1 = uri + "/" + System.openModelicaPlatform();
+      platform2 = uri + "/" + System.modelicaPlatform();
+    then uri::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::
+      (Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")::{};
+  end matchcontinue;
+end getLinkerLibraryPaths;
+
 protected function generateExtFunctionLibraryDirectoryFlags
   "Process LibraryDirectory and IncludeDirectory"
   input Absyn.Program program;
@@ -1934,7 +1958,7 @@ protected function generateExtFunctionLibraryDirectoryFlags
 algorithm
   (outLibs, installDirs, resources) := matchcontinue (program, path, inMod, inLibs)
     local
-      String str, str1, str2, str3, platform1, platform2, target, dir, resourcesStr;
+      String str, str1, str2, str3, target, dir, resourcesStr;
       list<String> libs, libs2;
       Boolean isLinux;
     case (_, _, _, {}) then ({}, {}, NONE());
@@ -1949,12 +1973,10 @@ algorithm
         end matchcontinue;
         str := CevalScript.getFullPathFromUri(program, str, false);
         resourcesStr := CevalScript.getFullPathFromUri(program, "modelica://" + Absyn.pathFirstIdent(path) + "/Resources", false);
-        platform1 := str + "/" + System.openModelicaPlatform();
-        platform2 := str + "/" + System.modelicaPlatform();
         isLinux := stringEq("linux",System.os());
         target := Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should have the highest priority
-        libs2 := str::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::(Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")::{};
+        libs2 := getLinkerLibraryPaths(str, path, inLibs);
         libs := List.fold2(libs2, generateExtFunctionLibraryDirectoryFlags2, isLinux, target, libs);
       then (libs, listReverse(libs2), SOME(resourcesStr));
     else (inLibs, {}, NONE());
@@ -2140,6 +2162,13 @@ algorithm
       equation
         Error.addCompilerNotification("User32 library is already available. It is not linked from the external library resource directory.\n");
       then  ({},{});
+
+    //winmm is a windows system lib
+    case Absyn.STRING(str as "Winmm") guard System.os()=="Windows_NT"
+      equation
+        str = "-l" + str;
+        Error.addCompilerNotification("Winmm library is a windows system library. It is not linked from the external library resource directory.\n");
+      then  ({str},{});
 
     //do not link X11.dll for Modelica Device Drivers as it is not needed under windows
     case Absyn.STRING(str as "X11") guard System.os()=="Windows_NT"
