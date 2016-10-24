@@ -7,6 +7,8 @@
 //
 loadFile("smallValue.mo");
 //linearize
+setCommandLineOptions("--generateSymbolicLinearization");
+getErrorString();
 linearize(VanDerPolSmallValue, stopTime=0);
 getErrorString();
 loadFile("linear_VanDerPolSmallValue.mo");
@@ -14,6 +16,8 @@ list(linear_VanDerPolSmallValue);
 simulate(linear_VanDerPolSmallValue);
 getErrorString();
 readFile("linear_VanDerPolSmallValue.log"); // Check that output log is empty
+setCommandLineOptions("--generateSymbolicLinearization=false");
+getErrorString();
 
 // 
 //  Case for numeric linearization of VanDerPolSmallValue model
@@ -29,6 +33,8 @@ readFile("linear_VanDerPolSmallValue.log"); // Check that output log is empty
 
 // Result:
 // true
+// true
+// ""
 // record SimulationResult
 //     resultFile = "VanDerPolSmallValue_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VanDerPolSmallValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -68,6 +74,8 @@ readFile("linear_VanDerPolSmallValue.log"); // Check that output log is empty
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
+// ""
+// true
 // ""
 // record SimulationResult
 //     resultFile = "VanDerPolSmallValue_res.mat",

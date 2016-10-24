@@ -1,7 +1,6 @@
 // name:     test_03.mos
 // keywords: <...>
 // status:   correct
-// cflags:   +postOptModules=inlineArrayEqn,constantLinearSystem,removeSimpleEquations,generateSymbolicLinearization
 // teardown_command: rm -rf *simple_test* output.log
 // 
 // <insert description here>
@@ -9,7 +8,11 @@
 
 loadFile("test_03.mo");
 
+setCommandLineOptions("--generateSymbolicLinearization");
+getErrorString();
 linearize(simple_test, stopTime=0);
+getErrorString();
+setCommandLineOptions("--generateSymbolicLinearization=false");
 getErrorString();
 
 loadFile("linear_simple_test.mo");
@@ -33,6 +36,8 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 
 // Result:
 // true
+// true
+// ""
 // record SimulationResult
 //     resultFile = "simple_test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -42,6 +47,8 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
+// true
+// ""
 // true
 // record SimulationResult
 //     resultFile = "linear_simple__test_res.mat",
@@ -76,7 +83,6 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 //     resultFile = "simple_test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
 //     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
-// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 // stdout            | info    | Linear model is created!
 // "
 // end SimulationResult;
@@ -101,12 +107,12 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 //   // data recovery variables
 //   parameter Real x0[1] = {2};
 //   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real z0[2] = {0.3333333333333333, 2.333333333333333};
+//   parameter Real z0[2] = {0.333333333333333, 2.333333333333333};
 //   parameter Real A[1, 1] = [0.333333338227402];
 //   parameter Real B[1, 0] = zeros(1, 0);
 //   parameter Real C[0, 1] = zeros(0, 1);
 //   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[2, 1] = [-0.3333333337847341; -0.3333333337847341];
+//   parameter Real Cz[2, 1] = [-0.3333333293420662; -0.3333333337847341];
 //   parameter Real Dz[2, 0] = zeros(2, 0);
 //   Real x[1](start = x0);
 //   input Real u[0];
