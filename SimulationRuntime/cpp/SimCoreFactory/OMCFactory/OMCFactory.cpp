@@ -378,6 +378,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
 void OMCFactory::fillArgumentsToIgnore()
 {
   _argumentsToIgnore = unordered_set<string>();
+  _argumentsToIgnore.insert("-abortSlowSimulation"); // used by nightly tests
 }
 
 void OMCFactory::fillArgumentsToReplace()
@@ -385,6 +386,7 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace = map<string, string>();
   _argumentsToReplace.insert(pair<string,string>("-r", "-F"));
   _argumentsToReplace.insert(pair<string,string>("-w", "-V all=warning"));
+  _argumentsToReplace.insert(pair<string,string>("-alarm", "--alarm"));
   _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
 }
 
