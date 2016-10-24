@@ -608,7 +608,7 @@ void read_input_xml(MODEL_DATA* modelData,
     { \
       out[j].filterOutput = 1; \
     } \
-    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v, "isProtected"), "true")) \
+    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v, "isProtected"), "true") && 0 == strcmp(findHashStringString(v, "hideResult"), "true")) \
     { \
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", info->name); \
       out[j].filterOutput = 1; \
