@@ -2519,15 +2519,15 @@ algorithm
       list<BackendDAE.WhenOperator> rest;
 
     case {} then inRow;
-    case (BackendDAE.ASSIGN(left = DAE.WILD(), right = e2)::rest)
+    case (BackendDAE.ASSIGN(left = DAE.CREF(componentRef = DAE.WILD()), right = e2)::rest)
       equation
         outRow = incidenceRowExp(e2, inVariables, inRow, functionTree, inIndexType);
         outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
     then outRow;
 
-    case (BackendDAE.ASSIGN(left = cr, right = e2)::rest)
+    case (BackendDAE.ASSIGN(left = e1, right = e2)::rest)
       equation
-        e1 = Expression.crefExp(cr);
+        //e1 = Expression.crefExp(cr);
         outRow = incidenceRowExp(e1, inVariables, inRow, functionTree, inIndexType);
         outRow = incidenceRowExp(e2, inVariables, outRow, functionTree, inIndexType);
         outRow = incidenceRowWhenOps(rest, inVariables, inIndexType, functionTree, outRow);
@@ -4377,16 +4377,30 @@ algorithm
     _ := match(rs)
       local
         Integer varIndx;
+        list<Integer> varIdcs;
         DAE.ComponentRef left;
+        list<DAE.ComponentRef> crefs;
         DAE.Exp right, leftexp;
 
-      case BackendDAE.ASSIGN(left, right) equation
+      case BackendDAE.ASSIGN(left = leftexp as DAE.CREF(componentRef = left), right=right)
+        equation
         (_,{varIndx}) = BackendVariable.getVar(left, vars);
         varsSolvedInWhenEqns = varIndx :: varsSolvedInWhenEqns;
         lst = adjacencyRowExpEnhanced(right, vars, mark, rowmark, lst);
         // mark all negative because the when condition cannot used to solve a variable
         _ = List.fold1(lst,markNegativ,rowmark,mark);
-        leftexp = Expression.crefExp(left);
+        //leftexp = Expression.crefExp(left);
+        lst = adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, lst);
+        outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false);
+      then ();
+
+      case BackendDAE.ASSIGN(leftexp, right) equation
+        crefs = Expression.getAllCrefs(leftexp);
+        (_,varIdcs) = BackendVariable.getVarLst(crefs, vars);
+        varsSolvedInWhenEqns = listAppend(varIdcs, varsSolvedInWhenEqns);
+        lst = adjacencyRowExpEnhanced(right, vars, mark, rowmark, lst);
+        // mark all negative because the when condition cannot used to solve a variable
+        _ = List.fold1(lst,markNegativ,rowmark,mark);
         lst = adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, lst);
         outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false);
       then ();

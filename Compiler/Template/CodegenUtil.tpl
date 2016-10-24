@@ -532,10 +532,16 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
 ::=
   match whenOps
   case ({}) then <<>>
-  case ((e as BackendDAE.ASSIGN(__))::rest) then
+  case ((e as BackendDAE.ASSIGN(left=left as CREF(__)))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    <%crefStr(e.left)%> = <%escapeCComments(dumpExp(e.right,"\""))%>;
+    <%crefStr(left.componentRef)%> = <%escapeCComments(dumpExp(e.right,"\""))%>;
+    <%restbody%>
+    >>
+  case ((e as BackendDAE.ASSIGN(left=left))::rest) then
+    let restbody = dumpWhenOps(rest)
+    <<
+    <%dumpExp(e.left,"\"")%> = <%escapeCComments(dumpExp(e.right,"\""))%>;
     <%restbody%>
     >>
   case ((e as BackendDAE.REINIT(__))::rest) then

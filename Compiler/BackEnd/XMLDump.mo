@@ -3460,8 +3460,8 @@ algorithm
   _:=
   match (inWhenOperators,addMathMLCode)
     local
-      DAE.ComponentRef stateVar, left;
-      DAE.Exp cond, msg, level, e, value, call;
+      DAE.ComponentRef stateVar;
+      DAE.Exp cond, msg, level, left, e, value, call;
       list<DAE.Exp> exps;
       list<BackendDAE.WhenOperator> lst;
       String str, s1, s2;
@@ -3471,7 +3471,7 @@ algorithm
 
     case (BackendDAE.ASSIGN(left, value, _) :: lst, true)
       equation
-        s1 = ComponentReference.printComponentRefStr(left);
+        s1 = printExpStr(left);
         s2 = printExpStr(value);
         str = stringAppendList({s1," := ",s2});
 
@@ -3498,7 +3498,7 @@ algorithm
 
     case (BackendDAE.ASSIGN(left, value, _) :: lst, false)
       equation
-        s1 = ComponentReference.printComponentRefStr(left);
+        s1 = printExpStr(left);
         s2 = printExpStr(value);
         str = stringAppendList({s1," := ",s2});
 
@@ -3999,9 +3999,9 @@ algorithm
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})),indexS,true)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = e,right = e2)})),indexS,true)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
+        s1 = printExpStr(e);
         s2 = printExpStr(e2);
         is = printExpStr(e1);
         res = stringAppendList({s1," - (",s2,") := 0"});
@@ -4030,9 +4030,9 @@ algorithm
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})),indexS,false)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = e,right = e2)})),indexS,false)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
+        s1 = printExpStr(e);
         s2 = printExpStr(e2);
         is = printExpStr(e1);
         res = stringAppendList({s1," - (",s2,") := 0"});

@@ -237,10 +237,10 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
 ::=
   match whenOps
   case ({}) then <<>>
-  case ((e as BackendDAE.ASSIGN(__))::rest) then
+  case ((e as BackendDAE.ASSIGN(left = left as DAE.CREF(componentRef = leftCr)))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    <defines name="<%crefStrNoUnderscore(e.left)%>" />
+    <defines name="<%crefStrNoUnderscore(leftCr)%>" />
     <% extractUniqueCrefsFromExpDerPreStart(e.right) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
     <rhs><%printExpStrEscaped(e.right)%></rhs>
     <%restbody%>

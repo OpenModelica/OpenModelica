@@ -4169,13 +4169,24 @@ algorithm
   oHs := match(inWhenOps)
   local
     DAE.ComponentRef left;
+    list<DAE.ComponentRef> crefLst;
+    DAE.Exp e;
     list<BackendDAE.WhenOperator> rest;
     HashSet.HashSet hs;
 
-    case BackendDAE.ASSIGN(left = left)::rest
+    case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left))::rest
       equation
         left = ComponentReference.crefStripLastSubs(left);
         hs = BaseHashSet.add(left, iHs);
+      then addUnreplaceableFromWhenOps(rest, hs);
+    case BackendDAE.ASSIGN(left = e)::rest
+      algorithm
+        crefLst := Expression.getAllCrefs(e);
+        hs := iHs;
+        for left in crefLst loop
+          left := ComponentReference.crefStripLastSubs(left);
+          hs := BaseHashSet.add(left, hs);
+        end for;
       then addUnreplaceableFromWhenOps(rest, hs);
     else
       then iHs;

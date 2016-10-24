@@ -5249,7 +5249,7 @@ protected function createSingleWhenEqnCode
 algorithm
   (equations_, ouniqueEqIndex, otempvars) := matchcontinue(inEquation, inVars, shared, iuniqueEqIndex, itempvars)
     local
-      DAE.Exp cond;
+      DAE.Exp cond, e;
       DAE.ComponentRef left;
       DAE.ElementSource source;
       list<DAE.ComponentRef> crefs;
@@ -5269,7 +5269,7 @@ algorithm
       algorithm
         for stmt in whenStmtLst loop
           _ :=  match stmt
-            case BackendDAE.ASSIGN(left=left) equation
+            case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left)) equation
               crefs = List.map(inVars, BackendVariable.varCref);
               List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
             then ();
@@ -5321,7 +5321,7 @@ algorithm
     case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelseWhenEquation), _) algorithm
       for stmt in whenStmtLst loop
         _ :=  match stmt
-          case BackendDAE.ASSIGN(left=left) equation
+          case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left)) equation
             crefs = List.map(inVars, BackendVariable.varCref);
             List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
           then ();
@@ -7763,7 +7763,7 @@ algorithm
   for whenOps in whenStmtLst loop
     res := match whenOps
       case e as BackendDAE.ASSIGN()
-      then res + ComponentReference.debugPrintComponentRefTypeStr(e.left) + " = " + ExpressionDump.printExpStr(e.right) + "["+ DAEDump.daeTypeStr(Expression.typeof(e.right)) + "]";
+      then res + ExpressionDump.printExpStr(e.left) + " = " + ExpressionDump.printExpStr(e.right) + "["+ DAEDump.daeTypeStr(Expression.typeof(e.right)) + "]";
       case e as BackendDAE.REINIT()
       then res + "reinit(" + ComponentReference.debugPrintComponentRefTypeStr(e.stateVar) + ", " + ExpressionDump.printExpStr(e.value) + ") ["+ DAEDump.daeTypeStr(Expression.typeof(e.value)) + "]";
       case e as BackendDAE.ASSERT()
@@ -8850,7 +8850,7 @@ algorithm
         whenOps := {};
         for whenOp in whenStmtLst loop
           whenOpNew := match whenOp
-            case BackendDAE.ASSIGN(cr, e, source) then  BackendDAE.ASSIGN(cr, addDivExpErrorMsgtoExp(e, source), source);
+            case BackendDAE.ASSIGN(left, e, source) then  BackendDAE.ASSIGN(left, addDivExpErrorMsgtoExp(e, source), source);
             else whenOp;
           end match;
           whenOps := whenOpNew::whenOps;
@@ -11940,8 +11940,10 @@ algorithm
       then crefs;
     case(SimCode.SES_MIXED(discVars=simVars))
       then list(SimCodeFunctionUtil.varName(v) for v in simVars);
-    case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=cref)}))
-      then {cref};
+    case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=lhs)}))
+      equation
+        crefs = Expression.getAllCrefs(lhs);
+      then crefs;
   end match;
 end getSimEqSystemCrefsLHS;
 

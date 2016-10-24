@@ -145,7 +145,11 @@ public function getWhenEquationExpr "Get the left and right hand parts from an e
   output DAE.ComponentRef outComponentRef;
   output DAE.Exp outExp;
 algorithm
-  BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=outComponentRef, right=outExp)}) := inWhenEquation;
+  try
+    BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=DAE.CREF(componentRef = outComponentRef), right=outExp)}) := inWhenEquation;
+else
+  print("getWhenEQuationExpr failed\n");
+  end try;
 end getWhenEquationExpr;
 
 public function setWhenElsePart
@@ -887,18 +891,20 @@ algorithm
       DAE.ElementSource source;
 
     case {} then (listReverse(inAccum),inTypeA);
-    case (BackendDAE.ASSIGN(left = cr, right = e2, source = source)::rest)
+    case (BackendDAE.ASSIGN(left = e1, right = e2, source = source)::rest)
       equation
         tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr, tp);
+        //e1 = Expression.makeCrefExp(cr, tp);
         (e1, extArg) = inFunc(e1, inTypeA);
+        /*
         if Expression.isCref(e1) then
           DAE.CREF(cr1, _) = e1;
         else
           cr1=cr;
         end if;
+        */
         (e2, extArg) = inFunc(e2, extArg);
-        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(cr1, e2, source)::inAccum);
+        (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(e1, e2, source)::inAccum);
       then (outWhenOps, extArg);
     case (BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)::rest)
       equation
@@ -1026,10 +1032,10 @@ algorithm
       Boolean b;
 
     case {} then (inCont,inTypeA);
-    case (BackendDAE.ASSIGN(left = cr, right = e2)::rest)
+    case (BackendDAE.ASSIGN(left = e1, right = e2)::rest)
       equation
         tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr, tp);
+        //e1 = Expression.makeCrefExp(cr, tp);
         if inCont then
          (_, b, extArg) = inFunc(e1, inTypeA);
         end if;
@@ -1319,8 +1325,8 @@ algorithm
       res = List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
     then res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr1, right=exp1)})), BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=cr2, right=exp2)}))) equation
-      res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2), Expression.expEqual(exp1, exp2));
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=e11, right=e12)})), BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=e21, right=e22)}))) equation
+      res = boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
     then res;
 
     else false;
@@ -3222,8 +3228,8 @@ algorithm
       then Expression.crefExp(cref);
     case(BackendDAE.COMPLEX_EQUATION(left = exp1))
       then exp1;
-    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(left=cref)})))
-      then Expression.crefExp(cref);
+    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(left=exp1)})))
+      then exp1;
     else
       //equation print("BackendEquation.getEquationLHS failed!\n");
       then fail();

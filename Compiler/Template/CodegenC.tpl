@@ -5205,7 +5205,20 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(__) then whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+    case ASSIGN(left = lhs as DAE.CREF(componentRef=left)) then whenAssign(left, typeof(right), right, context, &varDecls, &auxFunction)
+    case ASSIGN(left = lhs as DAE.TUPLE(PR = expLst as firstexp::_), right = DAE.CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
+    let &preExp = buffer ""
+    let &postExp = buffer ""
+    let lhsCrefs = (List.rest(expLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
+    // The tuple expressions might take fewer variables than the number of outputs. No worries.
+    let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expLst))))
+    let call = daeExpCallTuple(right, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
+    let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      <%callassign%>
+      <%postExp%>
+      >>
     case REINIT(__) then
       let &preExp = buffer ""
       let val = daeExp(value, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)

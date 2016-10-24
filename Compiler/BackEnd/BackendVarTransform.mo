@@ -1937,9 +1937,9 @@ algorithm
 
     case ({},_,_,_,_) then (listReverse(iAcc),replacementPerformed);
 
-    case ((wop as BackendDAE.ASSIGN(left=cr,right=exp,source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.ASSIGN(left=cre as DAE.CREF(componentRef = cr),right=exp,source=source))::res,_,_,_,_)
       equation
-        cre = Expression.crefExp(cr);
+        //cre = Expression.crefExp(cr);
         (cre1,b1) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
         (cr1,_) = validWhenLeftHandSide(cre1,cre,cr);
         source = ElementSource.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
@@ -1947,7 +1947,21 @@ algorithm
         (exp1,_) = ExpressionSimplify.condsimplify(b2,exp1);
         source = ElementSource.addSymbolicTransformationSubstitution(b2,source,exp,exp1);
         b = b1 or b2;
-        wop1 = if b then BackendDAE.ASSIGN(cr1,exp1,source) else wop;
+        wop1 = if b then BackendDAE.ASSIGN(cre1,exp1,source) else wop;
+        (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
+      then
+        (res1,b);
+
+    case ((wop as BackendDAE.ASSIGN(left=cre, right=exp, source=source))::res,_,_,_,_)
+      equation
+        //cre = Expression.crefExp(cr);
+        (cre1,b1) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
+        source = ElementSource.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
+        (exp1,b2) = replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
+        (exp1,_) = ExpressionSimplify.condsimplify(b2,exp1);
+        source = ElementSource.addSymbolicTransformationSubstitution(b2,source,exp,exp1);
+        b = b1 or b2;
+        wop1 = if b then BackendDAE.ASSIGN(cre1,exp1,source) else wop;
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);

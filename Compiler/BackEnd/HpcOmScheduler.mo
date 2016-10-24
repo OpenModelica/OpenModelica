@@ -4204,27 +4204,27 @@ algorithm
         changed = List.fold(bLst,boolOr,changed);
         simEqSys = SimCode.SES_MIXED(idx,simEqSys,simVars,simEqSysLst,idxMS);
     then (simEqSys,changed);
-    case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,whenStmtLst={BackendDAE.ASSIGN(left=cref,right=exp)},elseWhen=NONE(),source=source),_)
+    case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,whenStmtLst={BackendDAE.ASSIGN(left=lhs,right=exp)},elseWhen=NONE(),source=source),_)
       equation
         (crefExps,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
         crefs = List.map(crefExps,Expression.expCref);
-        (DAE.CREF(componentRef=cref),changed) = BackendVarTransform.replaceCref(cref,replIn);
+        (lhs,changed) = BackendVarTransform.replaceExp(lhs,replIn, NONE());
         changed = List.fold(bLst,boolOr,changed);
         (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         changed = boolOr(changed,changed1);
-        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,{BackendDAE.ASSIGN(cref, exp, source)},NONE(),source);
+        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,{BackendDAE.ASSIGN(lhs, exp, source)},NONE(),source);
     then (simEqSys,changed);
-    case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,whenStmtLst={BackendDAE.ASSIGN(left=cref,right=exp)},elseWhen=SOME(simEqSys),source=source),_)
+    case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,whenStmtLst={BackendDAE.ASSIGN(left=lhs,right=exp)},elseWhen=SOME(simEqSys),source=source),_)
       equation
         (crefExps,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
         crefs = List.map(crefExps,Expression.expCref);
-        (DAE.CREF(componentRef=cref),changed) = BackendVarTransform.replaceCref(cref,replIn);
+        (lhs,changed) = BackendVarTransform.replaceExp(lhs,replIn, NONE());
         changed = List.fold(bLst,boolOr,changed);
         (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         changed = boolOr(changed,changed1);
         (simEqSys,changed1) = replaceExpsInSimEqSystem(simEqSys,replIn);
         changed = boolOr(changed,changed1);
-        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,{BackendDAE.ASSIGN(cref, exp, source)},SOME(simEqSys),source);
+        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,{BackendDAE.ASSIGN(lhs, exp, source)},SOME(simEqSys),source);
     then (simEqSys,changed);
   else
     equation

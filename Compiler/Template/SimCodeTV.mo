@@ -1146,7 +1146,7 @@ package BackendDAE
 
   uniontype WhenOperator "- Reinit Statement"
     record ASSIGN " left_cr = right_exp"
-      DAE.ComponentRef left     "left hand side of equation";
+      DAE.Exp left     "left hand side of equation";
       DAE.Exp right             "right hand side of equation";
       DAE.ElementSource source  "origin of equation";
     end ASSIGN;

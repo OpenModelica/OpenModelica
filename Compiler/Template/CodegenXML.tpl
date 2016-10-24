@@ -953,12 +953,12 @@ template whenOps(list<WhenOperator> whenOps, Context context, Text &varDecls /*B
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(__) then
+    case ASSIGN(left = lhls as DAE.CREF(componentRef = cr)) then
       let &preExp = buffer "" /*BUFD*/
       let exp = daeExpXml(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
         <exp:Sub>
-          <%crefXml(left)%>
+          <%crefXml(cr)%>
           <%exp%>
         </exp:Sub>
       >>

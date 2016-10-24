@@ -485,14 +485,11 @@ algorithm
     rs := match(rs)
       local
         DAE.ElementSource src;
-        DAE.ComponentRef left, dleft;
-        DAE.Exp right, dright, eleft;
+        DAE.Exp right, dright, eleft, dleft;
 
-      case BackendDAE.ASSIGN(left, right, src) equation
-        eleft = Expression.crefExp(left);
-        (eleft, funcs) = differentiateExp(eleft, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
+      case BackendDAE.ASSIGN(eleft, right, src) equation
+        (dleft, funcs) = differentiateExp(eleft, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
         (dright, funcs) = differentiateExp(right, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter, {});
-        dleft = Expression.expCref(eleft);
       then BackendDAE.ASSIGN(dleft, dright, src);
 
       else rs;

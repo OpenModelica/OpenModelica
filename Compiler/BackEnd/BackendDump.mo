@@ -2010,9 +2010,9 @@ algorithm
       DAE.Exp e,e1;
       Absyn.Path functionName;
       list<DAE.Exp> functionArgs;
-    case BackendDAE.ASSIGN(left=cr, right=e)
+    case BackendDAE.ASSIGN(left=e1, right=e)
      equation
-      scr = ComponentReference.printComponentRefStr(cr);
+      scr = ExpressionDump.printExpStr(e1);
       se = ExpressionDump.printExpStr(e);
       str = stringAppendList({scr," := ",se});
      then

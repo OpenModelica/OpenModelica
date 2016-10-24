@@ -1452,12 +1452,20 @@ template whenOperators(list<WhenOperator> whenOps, Context context, SimCode simC
 ::=
   whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(__) then
+    case ASSIGN(left = lhs as DAE.CREF(componentRef = left)) then
       let preExp = ""
       let rightExp = daeExp(right, context, &preExp, simCode)
       <<
       <%preExp%>
       <%cref(left, simCode)%> = <%rightExp%>;
+      >>
+    case ASSIGN(__) then
+      let preExp = ""
+      let rightExp = daeExp(right, context, &preExp, simCode)
+      let leftExp = daeExp(left, context, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%leftExp%> = <%rightExp%>;
       >>
     case REINIT(__) then
       let &preExp = buffer ""

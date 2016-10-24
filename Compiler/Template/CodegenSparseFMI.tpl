@@ -1204,12 +1204,12 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-    case ASSIGN(__) then
+    case ASSIGN(left = lhs as DAE.CREF(componentRef = cr)) then
       let &preExp = buffer "" /*BUFD*/
       let exp = daeExp(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
         <%preExp%>
-        <%cref(left)%> = <%exp%>;
+        <%cref(cr)%> = <%exp%>;
       >>
     case REINIT(__) then
       let &preExp = buffer "" /*BUFD*/

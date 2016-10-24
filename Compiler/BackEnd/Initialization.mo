@@ -402,10 +402,12 @@ protected function inlineWhenForInitializationWhenEquation "author: lochel"
   output HashSet.HashSet outLeftCrs = inLeftCrs;
   output list<BackendDAE.Equation> outEqns = inEqns;
 protected
-  DAE.Exp crexp, condition, e;
+  DAE.Exp lhs, condition, e;
+  list<DAE.Exp> eLst;
   BackendDAE.Equation eqn;
   list<BackendDAE.WhenOperator> whenStmtLst;
   DAE.ComponentRef cr;
+  list<DAE.ComponentRef > crefLst, crefLst2;
   Boolean active;
 algorithm
   outEqns := match(inWEqn)
@@ -413,15 +415,31 @@ algorithm
       active := Expression.containsInitialCall(condition, false);
       for stmt in whenStmtLst loop
         _ := match stmt
-          case BackendDAE.ASSIGN(left = cr, right = e) equation
+          case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = cr), right = e) equation
             if active then
-              crexp = Expression.crefExp(cr);
-              eqn = BackendEquation.generateEquation(crexp, e, inSource, inEqAttr);
+              lhs = Expression.crefExp(cr);
+              eqn = BackendEquation.generateEquation(lhs, e, inSource, inEqAttr);
               outEqns = eqn::outEqns;
             else
               outLeftCrs = List.fold(ComponentReference.expandCref(cr, true), BaseHashSet.add, outLeftCrs);
             end if;
           then ();
+          case BackendDAE.ASSIGN(left = lhs as DAE.TUPLE(PR = eLst), right = e) algorithm
+            if active then
+              eqn := BackendEquation.generateEquation(lhs, e, inSource, inEqAttr);
+              outEqns := eqn::outEqns;
+            else
+              crefLst := List.flatten(List.map(eLst,Expression.getAllCrefs));
+              crefLst2 := {};
+              for cr in crefLst loop
+                crefLst2 := listAppend(ComponentReference.expandCref(cr, true), crefLst2);
+              end for;
+              outLeftCrs := List.fold(crefLst2, BaseHashSet.add, outLeftCrs);
+            end if;
+          then ();
+
+            else
+            then fail();
         end match;
       end for;
     then outEqns;

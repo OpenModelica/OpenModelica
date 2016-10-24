@@ -390,10 +390,10 @@ algorithm
       list<BackendDAE.WhenOperator> rest;
       DAE.ElementSource source;
 
-    case BackendDAE.ASSIGN(left = cr, right = e2, source = source)
+    case BackendDAE.ASSIGN(left = e1, right = e2, source = source)
       equation
         (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = (if b then BackendDAE.ASSIGN(cr, e2, source) else whenOp)::outWhenOps;
+        outWhenOps = (if b then BackendDAE.ASSIGN(e1, e2, source) else whenOp)::outWhenOps;
         inlined = inlined or b;
       then ();
 

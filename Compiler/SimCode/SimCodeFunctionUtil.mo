@@ -2129,6 +2129,12 @@ algorithm
         Error.addCompilerNotification("pthreads library is already available. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
+   //do not link rt.dll for Modelica Device Drivers as it is not needed under windows
+    case Absyn.STRING(str as "rt") guard System.os()=="Windows_NT"
+      equation
+        Error.addCompilerNotification("rt library is not needed under Windows. It is not linked from the external library resource directory.\n");
+      then  ({},{});
+
     //user32 is already linked under windows
     case Absyn.STRING(str as "User32") guard System.os()=="Windows_NT"
       equation

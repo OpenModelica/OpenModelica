@@ -815,7 +815,7 @@ algorithm
         _ := match whenOps
           case whenOp as BackendDAE.ASSIGN() equation
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
-            serializeCref(file,whenOp.left);
+            serializeExp(file,whenOp.left);
             File.write(file, "],\"uses\":[");
             serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.right)));
             File.write(file, "],\"equation\":[");

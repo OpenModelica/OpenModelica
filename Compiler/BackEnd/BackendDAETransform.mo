@@ -761,15 +761,15 @@ algorithm
     rs := match(rs)
       local
         DAE.ComponentRef cr;
-        DAE.Exp cond, msg, level, exp;
+        DAE.Exp lhs,cond, msg, level, exp;
         DAE.ElementSource src;
         list<DAE.SymbolicOperation> ops;
 
-      case BackendDAE.ASSIGN(cr, cond, src) equation
+      case BackendDAE.ASSIGN(lhs, cond, src) equation
         (cond, (ops, outArg)) = func(cond, ({}, inArg));
-        (DAE.CREF(componentRef = cr), (ops, outArg)) = func(Expression.crefExp(cr), (ops,outArg));
+        (lhs, (ops, outArg)) = func(lhs, (ops,outArg));
         src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
-      then BackendDAE.ASSIGN(cr, cond, src);
+      then BackendDAE.ASSIGN(lhs, cond, src);
 
       case BackendDAE.REINIT(cr, cond, src) equation
         (cond, (ops, outArg)) = func(cond, ({}, inArg));

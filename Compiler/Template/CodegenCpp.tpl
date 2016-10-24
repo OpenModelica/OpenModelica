@@ -11236,7 +11236,7 @@ template preCall(list<WhenOperator> whenOps, Context context, Text &varDecls, Si
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-      case e as ASSIGN(__) then
+      case e as ASSIGN(left= lhs as DAE.CREF(componentRef = cr)) then
 match typeof(e.right)
   case T_ARRAY(dims=dims) then
    let dimensions = checkDimension(dims)
@@ -11245,12 +11245,12 @@ match typeof(e.right)
    let forloop = match listLength(dims) case 1 then
    <<
     <%forLoopIteration%>
-     <%cref1(e.left, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(e.left, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>));
+     <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>));
    >>
    case 2 then
    <<
      <%forLoopIteration%>
-        <%cref1(e.left, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(e.left, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>));
+        <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>));
    >>
    else
     error(sourceInfo(), 'No support for this sort of pre call')
@@ -11258,7 +11258,7 @@ match typeof(e.right)
    forloop
    else
    <<
-    <%cref1(e.left, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(e.left, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>);
+    <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>);
    >>
 end match
         else
@@ -11365,7 +11365,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-      case ASSIGN(__) then whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      case ASSIGN(left = lhs as DAE.CREF(componentRef = left)) then whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       case REINIT(__) then
         let &preExp = buffer "" /*BUFD*/
         let &varDeclsCref = buffer "" /*BUFD*/

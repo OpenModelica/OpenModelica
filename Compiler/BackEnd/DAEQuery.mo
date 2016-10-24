@@ -136,9 +136,9 @@ algorithm
       then
         res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = cr,right = e2)})))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = e1,right = e2)})))
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
+        s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         s3 = ExpressionDump.printExpStr(condition);
         res = stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
