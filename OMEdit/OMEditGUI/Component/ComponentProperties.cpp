@@ -251,8 +251,8 @@ QString Parameter::getFixedState()
 }
 
 /*!
- * \brief Parameter::getUnitFromDerivedClass
- * Returns the unit value by reading the derived classes.
+ * \brief Parameter::getModifierValueFromDerivedClass
+ * Returns the modifier value by reading the derived classes.
  * \param pComponent
  * \param modifierName
  * \return the modifier value.
@@ -272,14 +272,13 @@ QString Parameter::getModifierValueFromDerivedClass(Component *pComponent, QStri
      * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
      * Also don't just return after reading from first inherited class. Check recursively.
      */
-//    if (!pOMCProxy->isBuiltinType(pInheritedComponent->getComponentInfo()->getClassName())) {
-//      return pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getComponentInfo()->getClassName(), modifierName);
-//    }
-//    return getModifierValueFromDerivedClass(pInheritedComponent, modifierName);
     if (pInheritedComponent->getLibraryTreeItem() &&
         !pOMCProxy->isBuiltinType(pInheritedComponent->getLibraryTreeItem()->getNameStructure())) {
       modifierValue = pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getLibraryTreeItem()->getNameStructure(),
                                                               modifierName);
+      if (modifierValue.isEmpty()) {
+        modifierValue = getModifierValueFromDerivedClass(pInheritedComponent, modifierName);
+      }
       if (!modifierValue.isEmpty()) {
         return modifierValue;
       }
