@@ -246,3 +246,44 @@ void PlotCurve::updateLegend(QwtLegend *legend) const
   QwtPlotItem::updateLegend(legend);
 }
 #endif
+
+/*!
+ * \brief QwtPlotCurve::closestPoint
+ * Reimplentation of QwtPlotCurve::closestPoint()
+ * Just doesn't fail if first time f < dmin instead we use the first f value to initialize dmin.
+ * \param pos
+ * \param dist
+ * \return
+ */
+int PlotCurve::closestPoint(const QPoint &pos, double *dist) const
+{
+  const size_t numSamples = dataSize();
+  if (plot() == NULL || numSamples <= 0) {
+    return -1;
+  }
+  const QwtSeriesData<QPointF> *series = data();
+
+  const QwtScaleMap xMap = plot()->canvasMap(xAxis());
+  const QwtScaleMap yMap = plot()->canvasMap(yAxis());
+
+  int index = -1;
+  double dmin = 1.0e10;
+
+  for (uint i = 0; i < numSamples; i++) {
+    const QPointF sample = series->sample( i );
+
+    const double cx = xMap.transform(sample.x() ) - pos.x();
+    const double cy = yMap.transform(sample.y() ) - pos.y();
+
+    const double f = qwtSqr(cx) + qwtSqr(cy);
+    if ((i == 0) || (f < dmin)) {
+      index = i;
+      dmin = f;
+    }
+  }
+  if (dist) {
+    *dist = qSqrt(dmin);
+  }
+
+  return index;
+}

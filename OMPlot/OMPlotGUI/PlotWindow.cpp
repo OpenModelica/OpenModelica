@@ -118,6 +118,7 @@ void PlotWindow::initializePlot(QStringList arguments)
   } else {
     throw PlotException("Invalid input" + arguments[17]);
   }
+  setTimeUnit("");
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)

@@ -32,6 +32,7 @@
  */
 
 #include "PlotWindow.h"
+#include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
 #include "qwt_plot_layout.h"
 #include "qwt_scale_widget.h"
@@ -56,9 +57,8 @@ Plot::Plot(PlotWindow *pParent)
   // create an instance of panner
   mpPlotPanner = new PlotPanner(canvas(), this);
   // create an instance of picker
-  mpPlotPicker = new QwtPlotPicker(canvas());
+  mpPlotPicker = new PlotPicker(canvas(), this);
   mpPlotPicker->setTrackerPen(QPen(Qt::black));
-  mpPlotPicker->setRubberBandPen(QPen(Qt::black));
   mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
@@ -66,6 +66,8 @@ Plot::Plot(PlotWindow *pParent)
   canvas()->setCursor(Qt::ArrowCursor);
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
+  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
+  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
 #if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
   for (int i = 0; i < QwtPlot::axisCnt; i++) {

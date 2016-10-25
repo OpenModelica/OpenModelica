@@ -39,6 +39,7 @@
 #include "PlotGrid.h"
 #include "PlotZoomer.h"
 #include "PlotPanner.h"
+#include "PlotPicker.h"
 #include "PlotCurve.h"
 
 namespace OMPlot
@@ -48,6 +49,7 @@ class Legend;
 class PlotGrid;
 class PlotZoomer;
 class PlotPanner;
+class PlotPicker;
 class PlotCurve;
 
 class Plot : public QwtPlot
@@ -56,10 +58,10 @@ class Plot : public QwtPlot
 private:
   PlotWindow *mpParentPlotWindow;
   Legend *mpLegend;
-  QwtPlotPicker *mpPlotPicker;
   PlotGrid *mpPlotGrid;
   PlotZoomer *mpPlotZoomer;
   PlotPanner *mpPlotPanner;
+  PlotPicker *mpPlotPicker;
   QList<PlotCurve*> mPlotCurvesList;
   QList<QColor> mColorsList;
 public:

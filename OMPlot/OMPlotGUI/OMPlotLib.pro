@@ -22,23 +22,27 @@ SOURCES += Plot.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
     PlotPanner.cpp \
+    PlotPicker.cpp \
     PlotGrid.cpp \
     PlotCurve.cpp \
     PlotWindow.cpp \
     PlotApplication.cpp \
     PlotWindowContainer.cpp \
-    PlotMainWindow.cpp
+    PlotMainWindow.cpp \
+    ScaleDraw.cpp
 
 HEADERS  += OMPlot.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \
+    PlotPicker.h \
     PlotGrid.h \
     PlotCurve.h \
     PlotWindow.h \
     PlotApplication.h \
     PlotWindowContainer.h \
-    PlotMainWindow.h
+    PlotMainWindow.h \
+    ScaleDraw.h
 
 win32 {
   CONFIG(debug, debug|release){

@@ -19,12 +19,14 @@ HEADERS += OMPlot.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \
+    PlotPicker.h \
     PlotGrid.h \
     PlotCurve.h \
     PlotWindow.h \
     PlotApplication.h \
     PlotWindowContainer.h \
-    PlotMainWindow.h
+    PlotMainWindow.h \
+    ScaleDraw.h
 
 win32 {
   QMAKE_LFLAGS += -Wl,--enable-auto-import
