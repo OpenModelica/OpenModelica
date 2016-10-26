@@ -52,6 +52,8 @@
 #include <QGroupBox>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QScrollArea>
+#include <QScrollBar>
 
 #ifdef WIN32
 #include <windows.h>
@@ -374,6 +376,30 @@ signals:
   void colorUpdated();
 private slots:
   void pickColor();
+};
+
+/*!
+ * \brief The VerticalScrollArea class
+ * A scroll area with vertical bar and adjustment of width
+ * See: https://forum.qt.io/topic/13374/solved-qscrollarea-vertical-scroll-only
+ */
+class VerticalScrollArea : public QScrollArea
+{
+public:
+  VerticalScrollArea()
+  {
+    setWidgetResizable(true);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  }
+
+  virtual bool eventFilter(QObject *o, QEvent *e)
+  {
+    if (o && o == widget() && e->type() == QEvent::Resize) {
+      setMinimumWidth(widget()->minimumSizeHint().width() + verticalScrollBar()->width());
+    }
+    return QScrollArea::eventFilter(o, e);
+  }
 };
 
 namespace Utilities {

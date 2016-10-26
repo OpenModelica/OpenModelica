@@ -225,8 +225,9 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
-  if (pixmap() != NULL || mElideMode == Qt::ElideNone)
+  if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
     return QLabel::minimumSizeHint();
+  }
   const QFontMetrics &fm = fontMetrics();
   QSize size(fm.width("..."), fm.height()+5);
   return size;
@@ -250,8 +251,7 @@ void Label::setText(const QString &text)
 
 void Label::resizeEvent(QResizeEvent *event)
 {
-  if (mElideMode != Qt::ElideNone)
-  {
+  if (mElideMode != Qt::ElideNone) {
     QFontMetrics fm(fontMetrics());
     QString str = fm.elidedText(mText, mElideMode, event->size().width());
     QLabel::setText(str);

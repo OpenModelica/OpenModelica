@@ -195,6 +195,7 @@ private:
   void saveExperimentAnnotation();
   void saveSimulationFlagsAnnotation();
   void performSimulation();
+  void saveDialogGeometry();
 public:
   void reSimulate(SimulationOptions simulationOptions);
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);

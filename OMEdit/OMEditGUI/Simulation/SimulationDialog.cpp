@@ -81,11 +81,18 @@ SimulationDialog::~SimulationDialog()
 }
 
 /*!
-  Reimplementation of QDialog::show method.
-  \param pLibraryTreeItem - pointer to LibraryTreeItem
-  */
+ * \brief SimulationDialog::show
+ * Reimplementation of QDialog::show method.
+ * \param pLibraryTreeItem - pointer to LibraryTreeItem
+ * \param isReSimulate
+ * \param simulationOptions
+ */
 void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions)
 {
+  /* restore the window geometry. */
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+    restoreGeometry(Utilities::getApplicationSettings()->value("SimulationDialog/geometry").toByteArray());
+  }
   mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(isReSimulate, simulationOptions);
   setVisible(true);
@@ -109,28 +116,6 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   mpLaunchAnimationCheckBox->setChecked(launchAnimation);
   simulate();
 }
-
-/*!
-  A scroll area with vertical bar and adjustment of width
-  See: https://forum.qt.io/topic/13374/solved-qscrollarea-vertical-scroll-only
-  */
-class VerticalScrollArea : public QScrollArea
-{
-public:
-  VerticalScrollArea()
-  {
-    setWidgetResizable(true);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  }
-
-  virtual bool eventFilter(QObject *o, QEvent *e)
-  {
-    if (o && o == widget() && e->type() == QEvent::Resize)
-      setMinimumWidth(widget()->minimumSizeHint().width() + verticalScrollBar()->width());
-    return QScrollArea::eventFilter(o, e);
-  }
-};
 
 /*!
   Creates all the controls and set their layout.
@@ -1253,6 +1238,17 @@ void SimulationDialog::performSimulation()
   }
 }
 
+/*!
+ * \brief SimulationDialog::saveDialogGeometry
+ */
+void SimulationDialog::saveDialogGeometry()
+{
+  /* save the window geometry. */
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+    Utilities::getApplicationSettings()->setValue("SimulationDialog/geometry", saveGeometry());
+  }
+}
+
 void SimulationDialog::reSimulate(SimulationOptions simulationOptions)
 {
   createAndShowSimulationOutputWidget(simulationOptions);
@@ -1515,6 +1511,7 @@ void SimulationDialog::simulate()
         performSimulation();
       }
     }
+    saveDialogGeometry();
     accept();
   }
 }
