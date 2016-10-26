@@ -6171,11 +6171,8 @@ algorithm
   (olcrefs,orcrefs) := match(inStmt)
     local
       Exp exp1,exp2;
-    case DAE.STMT_ASSERT(cond = exp1)
-      equation
-        orcrefs = extractCrefsFromExpDerPreStart(exp1);
-      then
-        ({},orcrefs);
+      list<DAE.Exp> expLst;
+      list<DAE.Statement> stmtLst;
 
     case DAE.STMT_ASSIGN(exp1 = exp1, exp = exp2)
       equation
@@ -6183,6 +6180,50 @@ algorithm
         orcrefs = extractCrefsFromExpDerPreStart(exp2);
       then
         (olcrefs,orcrefs);
+
+    case DAE.STMT_TUPLE_ASSIGN(expExpLst = expLst, exp = exp2)
+      equation
+        olcrefs = List.flatten(List.map(expLst, extractCrefsFromExpDerPreStart));
+        orcrefs = extractCrefsFromExpDerPreStart(exp2);
+      then
+        (olcrefs,orcrefs);
+
+    case DAE.STMT_ASSIGN_ARR(lhs = exp1, exp = exp2)
+      equation
+        olcrefs = extractCrefsFromExpDerPreStart(exp1);
+        orcrefs = extractCrefsFromExpDerPreStart(exp2);
+      then
+        (olcrefs,orcrefs);
+
+    case DAE.STMT_IF(statementLst = stmtLst)
+      equation
+        (olcrefs,orcrefs) = extractUniqueCrefsFromStatmentS(stmtLst);
+      then
+        (olcrefs,orcrefs);
+
+    case DAE.STMT_FOR(statementLst = stmtLst)
+      equation
+        (olcrefs,orcrefs) = extractUniqueCrefsFromStatmentS(stmtLst);
+      then
+        (olcrefs,orcrefs);
+
+    case DAE.STMT_WHILE(statementLst = stmtLst)
+      equation
+        (olcrefs,orcrefs) = extractUniqueCrefsFromStatmentS(stmtLst);
+      then
+        (olcrefs,orcrefs);
+
+    case DAE.STMT_WHEN(statementLst = stmtLst)
+      equation
+        (olcrefs,orcrefs) = extractUniqueCrefsFromStatmentS(stmtLst);
+      then
+        (olcrefs,orcrefs);
+
+    case DAE.STMT_ASSERT(cond = exp1)
+      equation
+        orcrefs = extractCrefsFromExpDerPreStart(exp1);
+      then
+        ({},orcrefs);
 
     else ({},{});
 

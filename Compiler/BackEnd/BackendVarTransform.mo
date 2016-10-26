@@ -1691,9 +1691,10 @@ algorithm
       list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source;
-      Boolean b1,b2,b3;
+      Boolean b1,b2,b3, hasArrayCref;
       list<Integer> dimSize;
       DAE.Algorithm alg;
+      list<DAE.ComponentRef> crefs;
       list<DAE.Statement> stmts,stmts1;
       list<Boolean> blst;
       list<BackendDAE.Equation> eqns;
@@ -1736,6 +1737,11 @@ algorithm
 
     case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst=stmts), source=source, expand=crefExpand, attr=eqAttr), repl, _, _, _)
       equation
+        (crefs,_) = Expression.extractUniqueCrefsFromStatmentS(stmts);
+        // if there is no need for expanding the original equation, the replaced one shouldn't either
+        hasArrayCref = List.exist(crefs,ComponentReference.isArrayElement);
+        crefExpand = if hasArrayCref then crefExpand else DAE.NOT_EXPAND();
+
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
         // if all statements are removed, remove the whole algorithm
