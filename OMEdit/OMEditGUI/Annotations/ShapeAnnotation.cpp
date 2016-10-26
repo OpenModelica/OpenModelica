@@ -372,6 +372,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mClassFileName = pShapeAnnotation->mClassFileName;
   mImageSource = pShapeAnnotation->mImageSource;
   mImage = pShapeAnnotation->mImage;
+  mDynamicSelect = pShapeAnnotation->mDynamicSelect;
 }
 
 /*!

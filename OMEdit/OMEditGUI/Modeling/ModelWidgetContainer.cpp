@@ -41,6 +41,7 @@
 #include "ComponentProperties.h"
 #include "Commands.h"
 #include "FetchInterfaceDataDialog.h"
+#include "VariablesWidget.h"
 
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
@@ -231,6 +232,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   if (!pLibraryTreeItem) {
     return false;
   }
+  mpModelWidget->removeDynamicResults(); // show static values during editing
   QStringList dialogAnnotation;
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
@@ -2440,6 +2442,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     }
     mpLibraryTreeItem->setClassText(contents);
   }
+  // Clean up model widget if results are removed from variables browser
+  connect(mpModelWidgetContainer->getMainWindow()->getVariablesWidget()->getVariablesTreeModel(),
+          SIGNAL(variableTreeItemRemoved(QString)), this, SLOT(removeDynamicResults(QString)));
 }
 
 /*!
@@ -3032,6 +3037,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   QString modelicaText = pModelicaEditor->getPlainText();
   QString stringToLoad;
   LibraryTreeItem *pParentLibraryTreeItem = mpModelWidgetContainer->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  removeDynamicResults(); // show static values during editing
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
     stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
   } else {
@@ -3230,6 +3236,24 @@ void ModelWidget::updateUndoRedoActions()
   } else {
     mpModelWidgetContainer->getMainWindow()->getUndoAction()->setEnabled(false);
     mpModelWidgetContainer->getMainWindow()->getRedoAction()->setEnabled(false);
+  }
+}
+
+/*!
+ * \brief ModelWidget::updateDynamicResults
+ * Update the model widget with values from resultFile.
+ * Skip update for empty resultFileName -- use removeDynamicResults.
+ */
+void ModelWidget::updateDynamicResults(QString resultFileName)
+{
+  mResultFileName = resultFileName;
+  if (!resultFileName.isEmpty()) {
+    foreach (Component *component, mpDiagramGraphicsView->getInheritedComponentsList()) {
+      component->componentParameterHasChanged();
+    }
+    foreach (Component *component, mpDiagramGraphicsView->getComponentsList()) {
+      component->componentParameterHasChanged();
+    }
   }
 }
 
@@ -4009,6 +4033,29 @@ void ModelWidget::showTextView(bool checked)
   updateUndoRedoActions();
 }
 
+/*!
+ * \brief ModelWidget::removeDynamicResults
+ * Check if resultFileName is empty or equals mResultFileName.
+ * Update the model widget with static values from the model
+ * and empty mResultFileName.
+ */
+void ModelWidget::removeDynamicResults(QString resultFileName)
+{
+  if (mResultFileName.isEmpty()) {
+    // nothing to do
+    return;
+  }
+  if (resultFileName.isEmpty() or resultFileName == mResultFileName) {
+    mResultFileName = "";
+    foreach (Component *component, mpDiagramGraphicsView->getInheritedComponentsList()) {
+      component->componentParameterHasChanged();
+    }
+    foreach (Component *component, mpDiagramGraphicsView->getComponentsList()) {
+      component->componentParameterHasChanged();
+    }
+  }
+}
+
 void ModelWidget::makeFileWritAble()
 {
   const QString &fileName = mpLibraryTreeItem->getFileName();
@@ -4215,6 +4262,20 @@ ModelWidget* ModelWidgetContainer::getCurrentModelWidget()
   } else {
     return qobject_cast<ModelWidget*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
   }
+}
+
+/*!
+ * \brief ModelWidgetContainer::getModelWidget
+ * Returns the ModelWidget for className or NULL if not found.
+ */
+ModelWidget* ModelWidgetContainer::getModelWidget(const QString& className)
+{
+  foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
+    ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
+    if (className == pModelWidget->getLibraryTreeItem()->getNameStructure())
+      return pModelWidget;
+  }
+  return NULL;
 }
 
 /*!

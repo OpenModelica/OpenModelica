@@ -34,6 +34,7 @@
 
 #include "TextAnnotation.h"
 #include "Commands.h"
+#include "VariablesWidget.h"
 
 /*!
  * \class TextAnnotation
@@ -123,7 +124,15 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
   }
   // 10th item of the list contains the textString.
-  mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
+  if (list.at(9).startsWith("{")) {
+    // DynamicSelect
+    mDynamicSelect = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
+    if (mDynamicSelect.count() >= 1)
+      mOriginalTextString = StringHandler::removeFirstLastQuotes(mDynamicSelect.at(0));
+  }
+  else {
+    mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
+  }
   mTextString = mOriginalTextString;
   initUpdateTextString();
   // 11th item of the list contains the fontSize.
@@ -420,7 +429,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpComponent) {
-    if (mOriginalTextString.contains("%")) {
+    if (mOriginalTextString.contains("%") || mDynamicSelect.count() >= 2) {
       updateTextString();
       connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
@@ -470,6 +479,24 @@ void TextAnnotation::updateTextString()
    * - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
+  // first check for available results and DynamicSelect
+  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  if (!pModelWidget->getResultFileName().isEmpty() && mDynamicSelect.count() >= 2) {
+    MainWindow *pMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
+    VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
+    VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(pModelWidget->getResultFileName() + "." + mpComponent->getComponentInfo()->getName() + "." + mDynamicSelect.at(1), pVariablesTreeModel->getRootVariablesTreeItem());
+    if (pVariablesTreeItem != NULL) {
+      mTextString = pVariablesTreeItem->getValue(pVariablesTreeItem->getUnit(), pMainWindow->getOMCProxy()).toString();
+      if (mDynamicSelect.count() >= 3) {
+        int digits = mDynamicSelect.at(2).toInt();
+        mTextString = QString::number(mTextString.toDouble(), 'g', digits);
+      }
+    }
+    else
+      mTextString = mDynamicSelect.at(1); // default value if result not found
+    return;
+  }
+  // alternatively use model value
   mTextString = mOriginalTextString;
   if (!mTextString.contains("%")) {
     return;

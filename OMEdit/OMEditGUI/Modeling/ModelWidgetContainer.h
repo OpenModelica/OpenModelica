@@ -369,6 +369,8 @@ public:
   void updateModelText();
   void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
+  void updateDynamicResults(QString resultFileName);
+  QString getResultFileName() {return mResultFileName;}
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -400,6 +402,7 @@ private:
   QList<LibraryTreeItem*> mInheritedClassesList;
   QList<ComponentInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;
+  QString mResultFileName;
 
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
@@ -427,6 +430,7 @@ public slots:
   bool metaModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
+  void removeDynamicResults(QString resultFileName = "");
 protected:
   virtual void closeEvent(QCloseEvent *event);
 };
@@ -439,6 +443,7 @@ public:
   ModelWidgetContainer(MainWindow *pParent);
   void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true);
   ModelWidget* getCurrentModelWidget();
+  ModelWidget* getModelWidget(const QString &className);
   QMdiSubWindow* getCurrentMdiSubWindow();
   QMdiSubWindow* getMdiSubWindow(ModelWidget *pModelWidget);
   void setPreviousViewType(StringHandler::ViewType viewType) {mPreviousViewType = viewType;}
