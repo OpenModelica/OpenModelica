@@ -73,6 +73,7 @@ public:
   int row() const;
   VariablesTreeItem* parent();
   VariablesTreeItem* rootParent();
+  QVariant getValue(QString unit, OMCProxy *pOMCProxy);
 private:
   QList<VariablesTreeItem*> mChildren;
   VariablesTreeItem *mpParentVariablesTreeItem;
