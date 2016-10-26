@@ -83,6 +83,7 @@ private:
   QTabWidget *mpSimulationTabWidget;
   // General Tab
   QWidget *mpGeneralTab;
+  QScrollArea *mpGeneralTabScrollArea;
   QGroupBox *mpSimulationIntervalGroupBox;
   Label *mpStartTimeLabel;
   QLineEdit *mpStartTimeTextBox;

@@ -512,6 +512,10 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QString str = plotVariable;
       str.chop((str.lastIndexOf("der(")/4)+1);
       variables = StringHandler::makeVariableParts(str.mid(str.lastIndexOf("der(") + 4));
+    } else if (plotVariable.startsWith("previous(")) {
+      QString str = plotVariable;
+      str.chop((str.lastIndexOf("previous(")/9)+1);
+      variables = StringHandler::makeVariableParts(str.mid(str.lastIndexOf("previous(") + 9));
     } else {
       variables = StringHandler::makeVariableParts(plotVariable);
     }
@@ -525,6 +529,8 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* if last item */
       if (variables.size() == count && plotVariable.startsWith("der(")) {
         findVariable = parentVariable.isEmpty() ? fileName + ".der(" + variable + ")" : fileName + "." + parentVariable + ".der(" + variable + ")";
+      } else if (variables.size() == count && plotVariable.startsWith("previous(")) {
+        findVariable = parentVariable.isEmpty() ? fileName + ".previous(" + variable + ")" : fileName + "." + parentVariable + ".previous(" + variable + ")";
       } else {
         findVariable = parentVariable.isEmpty() ? fileName + "." + variable : fileName + "." + parentVariable + "." + variable;
       }
@@ -550,6 +556,8 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* if last item */
       if (variables.size() == count && plotVariable.startsWith("der(")) {
         variableData << filePath << fileName << fileName + "." + plotVariable << "der(" + variable + ")";
+      } else if (variables.size() == count && plotVariable.startsWith("previous(")) {
+        variableData << filePath << fileName << fileName + "." + plotVariable << "previous(" + variable + ")";
       } else {
         variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + variable << variable;
       }

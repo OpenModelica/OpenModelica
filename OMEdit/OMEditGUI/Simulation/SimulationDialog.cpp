@@ -111,6 +111,28 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
 }
 
 /*!
+  A scroll area with vertical bar and adjustment of width
+  See: https://forum.qt.io/topic/13374/solved-qscrollarea-vertical-scroll-only
+  */
+class VerticalScrollArea : public QScrollArea
+{
+public:
+  VerticalScrollArea()
+  {
+    setWidgetResizable(true);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  }
+
+  virtual bool eventFilter(QObject *o, QEvent *e)
+  {
+    if (o && o == widget() && e->type() == QEvent::Resize)
+      setMinimumWidth(widget()->minimumSizeHint().width() + verticalScrollBar()->width());
+    return QScrollArea::eventFilter(o, e);
+  }
+};
+
+/*!
   Creates all the controls and set their layout.
   */
 void SimulationDialog::setUpForm()
@@ -124,6 +146,11 @@ void SimulationDialog::setUpForm()
   mpSimulationTabWidget = new QTabWidget;
   // General Tab
   mpGeneralTab = new QWidget;
+  // General Tab scroll area
+  mpGeneralTabScrollArea = new VerticalScrollArea;
+  mpGeneralTabScrollArea->setFrameShape(QFrame::NoFrame);
+  mpGeneralTabScrollArea->setBackgroundRole(QPalette::Base);
+  mpGeneralTabScrollArea->setWidget(mpGeneralTab);
   // Simulation Interval
   mpSimulationIntervalGroupBox = new QGroupBox(tr("Simulation Interval"));
   mpStartTimeLabel = new Label(tr("Start Time:"));
@@ -270,7 +297,7 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 7, 0, 1, 3);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
+  mpSimulationTabWidget->addTab(mpGeneralTabScrollArea, Helper::general);
   // Output Tab
   mpOutputTab = new QWidget;
   // Output Format
