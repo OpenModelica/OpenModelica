@@ -1011,7 +1011,7 @@ void Component::emitDeleted()
 
 void Component::componentParameterHasChanged()
 {
-  emit displayTextChanged();
+  displayTextChangedRecursive();
   update();
 }
 
@@ -1025,6 +1025,7 @@ void Component::componentParameterHasChanged()
 QString Component::getParameterDisplayString(QString parameterName)
 {
   /* How to get the display value,
+   * 0. If the component is inherited component then check if the value is avaialble in the class extends modifiers.
    * 1. Check if the value is available in component modifier.
    * 2. Check if the value is available in the component's class as a parameter or variable.
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
@@ -1034,8 +1035,18 @@ QString Component::getParameterDisplayString(QString parameterName)
   QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QString displayString = "";
   QString typeName = "";
+  /* Ticket #4095
+   * Handle parameters display of inherited components.
+   */
+  /* case 0 */
+  if (isInheritedComponent()) {
+    QString extendsClass = mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    displayString = mpGraphicsView->getModelWidget()->getExtendsModifiersMap(extendsClass).value(QString("%1.%2").arg(getName()).arg(parameterName), "");
+  }
   /* case 1 */
-  displayString = mpComponentInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
+  if (displayString.isEmpty()) {
+    displayString = mpComponentInfo->getModifiersMap(pOMCProxy, className, this).value(parameterName, "");
+  }
   /* case 2 or check for enumeration type if case 1 */
   if (displayString.isEmpty() || typeName.isEmpty()) {
     if (mpLibraryTreeItem) {

@@ -916,17 +916,19 @@ void ComponentParameters::fetchComponentModifiers()
 void ComponentParameters::fetchExtendsModifiers()
 {
   if (mpComponent->getReferenceComponent()) {
+    OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QMap<QString, QString> extendsModifiersMap = mpComponent->getGraphicsView()->getModelWidget()->getExtendsModifiersMap(inheritedClassName);
     QMap<QString, QString>::iterator extendsModifiersIterator;
     for (extendsModifiersIterator = extendsModifiersMap.begin(); extendsModifiersIterator != extendsModifiersMap.end(); ++extendsModifiersIterator) {
-      // since first word is component name so we remove it.
       QString componentName = StringHandler::getFirstWordBeforeDot(extendsModifiersIterator.key());
       if (mpComponent->getName().compare(componentName) == 0) {
-        QString parameterName = StringHandler::removeFirstWordAfterDot(extendsModifiersIterator.key());
-        parameterName = StringHandler::getFirstWordBeforeDot(parameterName);
-        Parameter *pParameter = findParameter(parameterName);
+        /* Ticket #4095
+         * Handle parameters display of inherited components.
+         */
+        QString parameterName = extendsModifiersIterator.key();
+        Parameter *pParameter = findParameter(StringHandler::removeFirstWordAfterDot(parameterName));
         if (pParameter) {
           if (pParameter->isShowStartAttribute()) {
             if (extendsModifiersIterator.key().compare(parameterName + ".start") == 0) {
@@ -954,6 +956,15 @@ void ComponentParameters::fetchExtendsModifiers()
           if (extendsModifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
             QString displayUnit = StringHandler::removeFirstLastQuotes(extendsModifiersIterator.value());
             int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+            if (index < 0) {
+              // add extends modifier as additional display unit if compatible
+              index = pParameter->getUnitComboBox()->count() - 1;
+              if (index > -1 &&
+                  (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemText(0), displayUnit)).unitsCompatible) {
+                pParameter->getUnitComboBox()->addItem(displayUnit);
+                index ++;
+              }
+            }
             if (index > -1) {
               pParameter->getUnitComboBox()->setCurrentIndex(index);
               pParameter->setDisplayUnit(displayUnit);
