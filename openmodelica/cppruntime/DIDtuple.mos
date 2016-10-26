@@ -1,0 +1,39 @@
+// name: DIDtuple
+// keywords: tuple assignment in when-clause
+// status: correct
+
+loadModel(Modelica,{"3.2.1"});getErrorString();
+loadFile("DIDtuple.mo");getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+simulate(DIDtuple, outputFormat="mat", stopTime = 1.0);getErrorString();
+
+val(y1, 0.0);
+val(y1, 0.35);
+val(y1, 0.55);
+val(y1, 0.95);
+val(y2, 0.0);
+val(y2, 0.35);
+val(y2, 0.85);
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DIDtuple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'DIDtuple', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.8
+// 0.2
+// -0.2
+// -1.0
+// 0.09
+// 0.24
+// 0.09
+// endResult

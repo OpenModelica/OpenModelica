@@ -1,6 +1,7 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+DIDtuple.mos \
 tearnonlin1.mos \
 WhenStatement1.mos \
 BouncingBall.mos \
