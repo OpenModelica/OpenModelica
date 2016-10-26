@@ -11,7 +11,7 @@
 
 #define DEFAULT_CC "@RUNTIMECC@"
 #define DEFAULT_CXX "@CXX@"
-#define DEFAULT_OMPCC "@OMPCC@"
+#define DEFAULT_OMPCC "@CC@ @OMPCFLAGS@"
 #define DEFAULT_MAKE "@MAKE@"
 #define DEFAULT_TRIPLE "@host_short@"
 

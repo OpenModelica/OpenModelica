@@ -11,7 +11,7 @@ GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CJSONINCLUDE = ../../3rdParty/cJSON
 CFLAGS = @CFLAGS@ $(USE_CORBA)
-OMPCC = @OMPCC@
+OMPCC = @CC@ @OMPCFLAGS@
 OMBUILDDIR = @OMBUILDDIR@
 OMC=@OMC@
 

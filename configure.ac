@@ -47,7 +47,7 @@ AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
 AC_SUBST(OMC_LIBS)
-AC_SUBST(OMPCC)
+AC_SUBST(OMPCFLAGS)
 AC_SUBST(RUNTIMECC)
 AC_SUBST(RUNTIMECFLAGS)
 AC_SUBST(MAKE)
@@ -372,42 +372,35 @@ return 0;
 dnl Check if OpenMP is available
 AC_MSG_CHECKING([for OpenMP])
 
-AC_ARG_VAR(OMPCC, [Selects a compiler to be used to compile OpenMP code. Useful if the main CC does not support OpenMP.])
+CONFIG_WITH_OPENMP=0
+for OMPCCTEST in "-fopenmp=libomp" "-fopenmp=libiomp5" "-fopenmp"; do
+  if test "$CONFIG_WITH_OPENMP" = 0; then
+    CFLAGS_OLD="$CFLAGS"
+    CFLAGS="$OMPCCTEST"
 
-CC_OLD="$CC"
-CFLAGS_OLD="$CFLAGS"
-if test -z "$OMPCC"; then
-  CFLAGS=" -fopenmp"
-else
-  CC="$OMPCC"
-  CFLAGS=""
-fi
-
-AC_TRY_LINK([
-#if !defined(_OPENMP)
-  #error "Not an OpenMP compiler"
-#endif
-#include <omp.h>
-#include <stdio.h>
-], [
-  int i;
-#pragma omp parallel for private(i) schedule(dynamic)
-  for (i=0; i<16; i++)
-    printf("Thread %d\n", i);
-  return 0;
-], [OMPCC="$CC$CFLAGS"; AC_MSG_RESULT([$OMPCC]); CONFIG_WITH_OPENMP=1],
-  [
-  if test -z "$OMPCC"; then
-    OMPCC="$CC_OLD"
-    AC_MSG_RESULT([no]);
-  else
-    AC_MSG_ERROR([failed (user gave $OMPCC)]);
+    AC_TRY_LINK([
+    #if !defined(_OPENMP)
+      #error "Not an OpenMP compiler"
+    #endif
+    #include <omp.h>
+    #include <stdio.h>
+    ], [
+      int i;
+    #pragma omp parallel for private(i) schedule(dynamic)
+      for (i=0; i<16; i++)
+        printf("Thread %d doing work %d\n", omp_get_thread_num(), i);
+      return 0;
+    ], [OMPCFLAGS="$CFLAGS"; CONFIG_WITH_OPENMP=1]
+    )
+    CFLAGS="$CFLAGS_OLD"
   fi
-  CONFIG_WITH_OPENMP=0
-  ]
-)
-CC="$CC_OLD"
-CFLAGS="$CFLAGS_OLD"
+done
+
+if test "$CONFIG_WITH_OPENMP" = 0; then
+  AC_MSG_RESULT([no]);
+else
+  AC_MSG_RESULT([$OMPCFLAGS]);
+fi
 
 AC_ARG_VAR(RUNTIMECC, [Selects a compiler to be used to compile generated code. It is more important to compile fast than to generate fast code for the runtime compiler.])
 AC_ARG_VAR(RUNTIMECFLAGS, [CFLAGS for the selected runtime compiler (defaults to -O0 -falign-functions -march=native -mfpmath=sse -fPIC as long as neither gives warnings to the CC). Note that heavy optimisations may cause the run-time to be faster while increasing compile-time. -O0 is often best.])
