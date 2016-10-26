@@ -1301,15 +1301,23 @@ algorithm
 end isOutput;
 
 public function isProtectedVar
-"author: Frenkel TUD 2013-01
-  Returns the DAE.Protected attribute."
+ "Returns the DAE.Protected attribute, overridden with HideResult annotation"
   input BackendDAE.Var v;
-  output Boolean prot;
+  output Boolean hidden;
 protected
-  Option<DAE.VariableAttributes> attr;
+  SCode.Annotation anno;
+  Absyn.Exp val;
 algorithm
-  BackendDAE.VAR(values = attr) := v;
-  prot := DAEUtil.getProtectedAttr(attr);
+  try
+    BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(anno)))) := v;
+    val := SCode.getNamedAnnotation(anno, "HideResult");
+    hidden := match(val)
+      case Absyn.BOOL(true) then true;
+      else false;
+    end match;
+  else
+    hidden := DAEUtil.getProtectedAttr(v.values);
+  end try;
 end isProtectedVar;
 
 public function hasVarEvaluateAnnotationOrFinal
@@ -1697,7 +1705,7 @@ end isFinalVar;
 
 public function isFinalOrProtectedVar
   input BackendDAE.Var inVar;
-  output Boolean b = DAEUtil.getFinalAttr(inVar.values) or DAEUtil.getProtectedAttr(inVar.values);
+  output Boolean b = DAEUtil.getFinalAttr(inVar.values) or isProtectedVar(inVar);
 end isFinalOrProtectedVar;
 
 public function getVariableAttributes "Returns the DAE.VariableAttributes of a variable."
