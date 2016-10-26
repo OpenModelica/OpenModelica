@@ -32,7 +32,7 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: nonlinear_system.problem11
-// assert            | debug   | Solving non-linear system 8 failed at time=0.
+// assert            | debug   | Solving non-linear system 7 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | info    | simulation terminated by an assertion at initialization
 // "

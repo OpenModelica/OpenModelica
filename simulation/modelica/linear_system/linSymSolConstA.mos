@@ -29,14 +29,14 @@ val(max_res,1);
 // record SimulationResult
 //     resultFile = "linear_system.problem4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
-//     messages = "LOG_LS            | info    | Start solving Linear System 43 (size 19) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000028  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000049
+//     messages = "LOG_LS            | info    | Start solving Linear System 42 (size 19) at time 0 with Lapack Solver
+// LOG_LS            | info    | ###  0.000052  time to set Matrix A and vector b.
+// LOG_LS            | info    | Solve System: 0.000080
 // "
 // end SimulationResult;
 // ""
 // 1.0
-// 1.000000000000818
+// 1.000000000000419
 // true
 // ""
 // true
@@ -48,5 +48,5 @@ val(max_res,1);
 // end SimulationResult;
 // ""
 // 1.0
-// 1.000000000000236
+// 1.000000000000229
 // endResult

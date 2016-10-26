@@ -592,6 +592,230 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // unspecified partition
 // ========================================
 //
+// Variables (1)
+// ========================================
+// 1: aimc.inertiaStator.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  "Cut torque in the flange" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.inertiaStator.flange_a.tau = 0.0   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.phiMechanical:DUMMY_DER(fixed = false )  "Mechanical angle of rotor against stator" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.wMechanical:VARIABLE(start = 0.0 unit = "rad/s" fixed = false )  "Mechanical angular velocity of rotor against stator" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.wMechanical = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.friction.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.friction.phi = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.friction.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.friction.w = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.strayLoad.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.strayLoad.phi = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.strayLoad.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.strayLoad.w = aimc.inertiaRotor.w   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
 // Variables (93)
 // ========================================
 // 1: sinevoltage1.i[3]:DUMMY_STATE(unit = "A" )  "Currents flowing into positive plugs" type: Real  [3]
@@ -968,230 +1192,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // {3:26}
 // {2:68}
 // {1:72}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: aimc.strayLoad.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): aimc.strayLoad.w = aimc.inertiaRotor.w   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: $DER.aimc.strayLoad.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): $DER.aimc.strayLoad.phi = aimc.inertiaRotor.w   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: aimc.friction.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): aimc.friction.w = aimc.inertiaRotor.w   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: $DER.aimc.friction.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): $DER.aimc.friction.phi = aimc.inertiaRotor.w   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: aimc.wMechanical:VARIABLE(start = 0.0 unit = "rad/s" fixed = false )  "Mechanical angular velocity of rotor against stator" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): aimc.wMechanical = aimc.inertiaRotor.w   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: $DER.aimc.phiMechanical:DUMMY_DER(fixed = false )  "Mechanical angle of rotor against stator" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: aimc.inertiaStator.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  "Cut torque in the flange" type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): aimc.inertiaStator.flange_a.tau = 0.0   [binding]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
 //
 //
 //

@@ -7,12 +7,8 @@
 //
 
 loadFile("Bug2537.mo"); getErrorString();
-setCommandLineOptions("+removeSimpleEquations=allAcausal --postOptModules+=wrapFunctionCalls"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
 simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
-
-val(Plant.Downcomer.p, {0,1,100,1000});
-val(Plant.SHWall.Tvol[3], {0,1,100,1000});
-val(Plant.HeatSourceRisers.wall.T[6], {0,1,100,1000});
 
 // Result:
 // true
@@ -26,7 +22,4 @@ val(Plant.HeatSourceRisers.wall.T[6], {0,1,100,1000});
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// {6052360.627162183,6052360.627162185,5954155.467607737,5466870.982355908}
-// {553.1087671091474,553.1087671091474,553.4710373043027,549.2824603734048}
-// {552.6822733009336,552.6822733009336,551.1867285813978,545.5448270542495}
 // endResult

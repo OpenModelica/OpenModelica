@@ -29,7 +29,7 @@ val(z,1.0);
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.001, method = 'dassl', fileNamePrefix = 'ModelTestSolve18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: ModelTestSolve18
-// assert            | debug   | Solving non-linear system 4 failed at time=0.
+// assert            | debug   | Solving non-linear system 5 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | info    | simulation terminated by an assertion at initialization
 // "

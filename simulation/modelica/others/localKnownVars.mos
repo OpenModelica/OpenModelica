@@ -43,12 +43,12 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: y:STATE(1)()  type: Real 
+// 1: c:VARIABLE()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): der(y) = b   [dynamic]
+// 1/1 (1): c = b + a   [binding]
 //
 //
 // Simple Equations (0, 0)
@@ -107,12 +107,12 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: c:VARIABLE()  type: Real 
+// 1: y:STATE(1)()  type: Real 
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): c = b + a   [binding]
+// 1/1 (1): der(y) = b   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -194,7 +194,7 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "localKnownVars_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'localKnownVars', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'localKnownVars', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""
