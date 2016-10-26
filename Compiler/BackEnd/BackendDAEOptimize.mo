@@ -4314,20 +4314,19 @@ end simplifyComplexFunctionTrafers;
 protected function simplifyComplexFunctionWork
  input BackendDAE.Equation eqn;
  input Boolean withTmpVars = false;
- output list<BackendDAE.Equation> eqs = {};
+ output list<BackendDAE.Equation> eqs;
  output list<BackendDAE.Var> vars = {};
  output Boolean updated = false;
-
 algorithm
 
-  try
-    if (BackendEquation.isComplexEquation(eqn) or BackendEquation.isArrayEquation(eqn))
-    then
-      (eqs, vars, updated) := simplifyComplexFunctionWorkCE_AE(eqn, withTmpVars);
-    end if;
+  if (BackendEquation.isComplexEquation(eqn) or BackendEquation.isArrayEquation(eqn))
+  then
+    (eqs, vars, updated) := simplifyComplexFunctionWorkCE_AE(eqn, withTmpVars);
   else
-   updated := false;
-  end try;
+    eqs := {};
+    vars := {};
+    updated := false;
+  end if;
 
 end simplifyComplexFunctionWork;
 
@@ -4354,15 +4353,7 @@ algorithm
   end if;
 
   //print(BackendDump.equationString(eqn) + "--In--\n");
-  try
-    (eqs, vars, updated) := simplifyComplexFunctionWorkCE_AE_WORK(left, right, withTmpVars, source, attr);
-  else
-    (eqs, vars, updated) := simplifyComplexFunctionFail(left, right, source, attr);
-    if Flags.isSet(Flags.FAILTRACE)
-    then
-      print(BackendDump.equationString(eqn) + "--failed to simplify--\n");
-    end if;
-  end try;
+  (eqs, vars, updated) := simplifyComplexFunctionWorkCE_AE_WORK(left, right, withTmpVars, source, attr);
 
 end simplifyComplexFunctionWorkCE_AE;
 
@@ -4444,23 +4435,12 @@ algorithm
   elseif expandRight and Expression.isCall(left) and Expression.hasWild(right_lst)
   then
     //print(ExpressionDump.printExpStr(left));
-    try
     (right_lst, left_lst) := simplifyComplexFunctionWorkWild(right_lst, left);
     (eqs, vars, updated) := simplifyComplexFunctionWorkTT(left_lst, right_lst, withTmpVars, source, attr);
-    else
-    (eqs, vars, updated) := simplifyComplexFunctionFail(left, right, source, attr);
-    fail();
-    end try;
   elseif expandLeft and Expression.isCall(right) and Expression.hasWild(left_lst)
   then
     //print(ExpressionDump.printExpStr(left));
-    try
     (left_lst, right_lst) := simplifyComplexFunctionWorkWild(left_lst, right);
-    (eqs, vars, updated) := simplifyComplexFunctionWorkTT(left_lst, right_lst, withTmpVars, source, attr);
-    else
-    (eqs, vars, updated) := simplifyComplexFunctionFail(left, right, source, attr);
-    fail();
-    end try;
     (eqs, vars, updated) := simplifyComplexFunctionWorkTT(left_lst, right_lst, withTmpVars, source, attr);
   elseif Expression.isWild(left) or Expression.isWild(right)
   then // _ = ... or ... = _
@@ -4487,24 +4467,14 @@ algorithm
     (eqs, vars, updated) := simplifyComplexFunctionWorkTC(right, left, source, attr);
 
   else
-    (eqs, vars, updated) := simplifyComplexFunctionFail(left, right, source, attr);
+    eqn := BackendEquation.generateEquation(left, right, source, attr);
+    eqs := {eqn};
+    vars := {};
+    updated := false;
   end if;
 end simplifyComplexFunctionWorkCE_AE_WORK;
 
-protected function simplifyComplexFunctionFail
- input DAE.Exp left;
- input DAE.Exp right;
- input DAE.ElementSource source "origin of equation";
- input BackendDAE.EquationAttributes attr;
- output list<BackendDAE.Equation> eqs;
- output list<BackendDAE.Var> vars;
- output Boolean updated;
-algorithm
-  eqs := {BackendEquation.generateEquation(left, right, source, attr)};
-  vars := {};
-  updated := false;
-  //print(BackendDump.equationString(BackendEquation.generateEquation(left, right, source, attr)) + "--new--\n");
-end simplifyComplexFunctionFail;
+
 
 protected function simplifyComplexFunctionWorkWild
   input list<DAE.Exp> _left_lst;
@@ -4520,10 +4490,6 @@ algorithm
     if not Expression.isWild(left)
     then
       ty := Expression.typeof(left);
-      if Types.isArray(ty) and stringEq(Config.simCodeTarget(), "Cpp")
-      then
-        fail(); // create array = function_call --> create wrong code for cpp // set 0
-      end if;
       left_lst := left :: left_lst;
       right_lst := DAE.TSUB(right, idx, ty) :: right_lst;
       idx := idx + 1;
