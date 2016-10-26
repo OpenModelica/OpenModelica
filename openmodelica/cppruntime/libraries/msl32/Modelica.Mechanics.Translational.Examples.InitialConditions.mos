@@ -38,7 +38,6 @@ runScript(modelTesting);getErrorString();
 // "\"true
 // \"
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// true
 // "
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
