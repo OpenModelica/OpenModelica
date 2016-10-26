@@ -350,7 +350,8 @@ algorithm
 end varHasBindExp;
 
 public function varBindExpStartValue "author: Frenkel TUD 2010-12
-  Returns the bindExp or the start value if no bind is there of a variable."
+  Returns the binding or the start value if no binding is available.
+  This function fails if there is neither a binding nor a start value."
   input BackendDAE.Var v;
   output DAE.Exp sv;
 algorithm
@@ -364,6 +365,22 @@ algorithm
     else varStartValueFail(v);
   end match;
 end varBindExpStartValue;
+
+public function varBindExpStartValueNoFail
+  "Returns the binding or the start value if no binding is available."
+  input BackendDAE.Var v;
+  output DAE.Exp sv;
+algorithm
+  sv := match(v)
+    local
+      DAE.Exp e;
+
+    case (BackendDAE.VAR(bindExp=SOME(e)))
+    then e;
+
+    else varStartValue(v);
+  end match;
+end varBindExpStartValueNoFail;
 
 public function varStateSelect "author: PA
   Extracts the state select attribute of a variable. If no stateselect explicilty set, return

@@ -6306,7 +6306,7 @@ protected
   DAE.ElementSource source;
 algorithm
   cr := BackendVariable.varCref(inVar);
-  e := BackendVariable.varBindExpStartValue(inVar);
+  e := BackendVariable.varBindExpStartValueNoFail(inVar);
   source := BackendVariable.getVarSource(inVar);
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source);
   outUniqueEqIndex := inUniqueEqIndex+1;
@@ -6330,20 +6330,16 @@ algorithm
     BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
   end if;
 
-  // get min/max and nominal asserts
-  varasserts := {};
-  for p in inAllPrimaryParameters loop
-    if BackendVariable.isFinalOrProtectedVar(p) and Expression.isConst(BackendVariable.varBindExpStartValue(p)) then
-      (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
-      outParameterEquations := simEq::outParameterEquations;
-    end if;
-    varasserts2 := createVarAsserts(p);
-    varasserts := List.append_reverse(varasserts2, varasserts);
-  end for;
-
   for p in inPrimaryParameters loop
     (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
     outParameterEquations := simEq::outParameterEquations;
+  end for;
+
+  // get min/max and nominal asserts
+  varasserts := {};
+  for p in inAllPrimaryParameters loop
+    varasserts2 := createVarAsserts(p);
+    varasserts := List.append_reverse(varasserts2, varasserts);
   end for;
 
   varasserts := MetaModelica.Dangerous.listReverseInPlace(varasserts);

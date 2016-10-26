@@ -846,13 +846,10 @@ algorithm
         outVars := BackendVariable.addVar(p, outVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
-        try
-          bindExp := BackendVariable.varBindExpStartValue(p);
-          if not Expression.isConst(bindExp) then
-            outPrimaryParameters := p::outPrimaryParameters;
-          end if;
-        else
-        end try;
+        bindExp := BackendVariable.varBindExpStartValueNoFail(p);
+        if (not Expression.isConst(bindExp)) or BackendVariable.isFinalOrProtectedVar(p) then
+          outPrimaryParameters := p::outPrimaryParameters "this is used in SimCode to generate parameter equations";
+        end if;
       end if;
     end for;
 
