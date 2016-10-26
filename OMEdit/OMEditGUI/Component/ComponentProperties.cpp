@@ -1134,6 +1134,8 @@ void ComponentParameters::updateComponentParameters()
                                                                              newComponentExtendsModifiersMap);
     mpComponent->getGraphicsView()->getModelWidget()->getUndoStack()->push(pUpdateComponentParametersCommand);
     mpComponent->getGraphicsView()->getModelWidget()->updateModelText();
+    // remove possible dynamic results to see the new static values
+    mpComponent->getGraphicsView()->getModelWidget()->removeDynamicResults();
   }
   accept();
 }

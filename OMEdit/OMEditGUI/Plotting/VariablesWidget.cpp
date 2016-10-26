@@ -239,6 +239,31 @@ VariablesTreeItem* VariablesTreeItem::rootParent()
   return pVariablesTreeItem1;
 }
 
+/*!
+ * \brief VariablesTreeItem::getValue
+ * Returns the value in the desired unit or
+ * an empty value in case of conversion error.
+ */
+QVariant VariablesTreeItem::getValue(QString unit, OMCProxy *pOMCProxy)
+{
+  QString value = "";
+  if (mPreviousUnit.compare(unit) == 0) {
+    value = mValue;
+  }
+  else {
+    OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(mPreviousUnit, unit);
+    if (convertUnit.unitsCompatible) {
+      bool ok = false;
+      qreal realValue = mValue.toDouble(&ok);
+      if (ok) {
+        realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
+        value = QString::number(realValue);
+      }
+    }
+  }
+  return value;
+}
+
 VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
   : QAbstractItemModel(pVariablesTreeView)
 {
@@ -701,8 +726,9 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0) {
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
-    if (*changeAble) {
-      *value = hash["start"];
+    QString start = hash["start"];
+    if (*changeAble && !start.isEmpty()) {
+      *value = start;
     } else { /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
@@ -894,6 +920,23 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* In order to improve the response time of insertVariablesItems function we should clear the filter and collapse all the items. */
   mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
   mpVariablesTreeView->collapseAll();
+  /* Show results in model diagram if it is present in ModelWidgetContainer
+     and if switch to plotting perspective is disabled */
+  ModelWidget *pModelWidget = NULL;
+  if (!mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+    pModelWidget = mpMainWindow->getModelWidgetContainer()->getModelWidget(simulationOptions.getClassName());
+  }
+  if (pModelWidget != NULL) {
+    if (simulationOptions.isReSimulate() && pModelWidget->getResultFileName().isEmpty()) {
+      /* skip update of model view if the model has changed */
+      pModelWidget = NULL;
+    }
+    else {
+      /* prevent update during removeVariableTreeItem
+         because the model will be updated below anyway */
+      pModelWidget->updateDynamicResults("");
+    }
+  }
   /* Remove the simulation result if we already had it in tree */
   bool variableItemDeleted = mpVariablesTreeModel->removeVariableTreeItem(fileName);
   /* add the plot variables */
@@ -901,6 +944,10 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* update the plot variables tree */
   if (variableItemDeleted) {
     variablesUpdated();
+  }
+  /* update the model widget */
+  if (pModelWidget != NULL) {
+    pModelWidget->updateDynamicResults(fileName);
   }
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -1023,20 +1070,11 @@ void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTre
   for (int i = 0 ; i < pVariablesTreeItem->getChildren().size() ; i++) {
     VariablesTreeItem *pChildVariablesTreeItem = pVariablesTreeItem->child(i);
     if (pChildVariablesTreeItem->isEditable() && pChildVariablesTreeItem->isValueChanged()) {
-      QString value = pChildVariablesTreeItem->data(1, Qt::DisplayRole).toString();
+      //QString value = pChildVariablesTreeItem->data(1, Qt::DisplayRole).toString();
       /* Ticket #2250, 4031
        * We need to convert the value to base unit since the values stored in init xml are always in base unit.
        */
-      if (pChildVariablesTreeItem->getUnit().compare(pChildVariablesTreeItem->getDisplayUnit()) != 0) {
-        OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pChildVariablesTreeItem->getDisplayUnit(),
-                                                                                               pChildVariablesTreeItem->getUnit());
-        if (convertUnit.unitsCompatible) {
-          bool ok = true;
-          qreal realValue = value.toDouble(&ok);
-          realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-          value = QString::number(realValue);
-        }
-      }
+      QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getUnit(), mpMainWindow->getOMCProxy()).toString();
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
       variableToFind.remove(QRegExp(outputFileName + "."));
       QHash<QString, QString> hash;
@@ -1195,18 +1233,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
          * Update the value of Variables Browser display unit according to the display unit of already plotted curve.
          */
         pVariablesTreeItem->setData(3, pPlotCurve->getDisplayUnit(), Qt::EditRole);
-        OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pVariablesTreeItem->getPreviousUnit(),
-                                                                                               pVariablesTreeItem->getDisplayUnit());
-        if (convertUnit.unitsCompatible) {
-          /* update value */
-          QVariant stringValue = pVariablesTreeItem->data(1, Qt::EditRole);
-          bool ok = true;
-          qreal realValue = stringValue.toDouble(&ok);
-          if (ok) {
-            realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-            pVariablesTreeItem->setData(1, QString::number(realValue), Qt::EditRole);
-          }
-        }
+        QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getDisplayUnit(), mpMainWindow->getOMCProxy()).toString();
+        pVariablesTreeItem->setData(1, value, Qt::EditRole);
         if (pPlotCurve && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
           OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(),
                                                                                                  pVariablesTreeItem->getDisplayUnit());
