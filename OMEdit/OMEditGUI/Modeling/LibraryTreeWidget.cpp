@@ -124,7 +124,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     if (pLibraryTreeProxyModel) {
       QModelIndex sourceIndex = pLibraryTreeProxyModel->mapToSource(index);
       LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
-      if (!pLibraryTreeItem->isSaved()) {
+      if (pLibraryTreeItem && !pLibraryTreeItem->isSaved()) {
         opt.palette.setBrush(QPalette::Highlight, Qt::darkRed);
       }
     }
