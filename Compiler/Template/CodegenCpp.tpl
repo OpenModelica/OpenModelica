@@ -11234,40 +11234,57 @@ template preCall(list<WhenOperator> whenOps, Context context, Text &varDecls, Si
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates assignment for when."
 ::=
-  let body = (whenOps |> whenOp =>
-    match whenOp
-      case e as ASSIGN(left= lhs as DAE.CREF(componentRef = cr)) then
-match typeof(e.right)
-  case T_ARRAY(dims=dims) then
-   let dimensions = checkDimension(dims)
-   let i_tmp_var= System.tmpTick()
-   let forLoopIteration = preCallForArray(dims,i_tmp_var)
-   let forloop = match listLength(dims) case 1 then
-   <<
-    <%forLoopIteration%>
-     <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>));
-   >>
-   case 2 then
-   <<
-     <%forLoopIteration%>
-        <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>));
-   >>
-   else
-    error(sourceInfo(), 'No support for this sort of pre call')
-   end match
-   forloop
-   else
-   <<
-    <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>);
-   >>
-end match
-        else
-          <<; // nothing to do>>
+let body = (whenOps |> whenOp => match whenOp
+  case whenOp as ASSIGN(__) then
+    preCallExp(left, right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else
+    <<; // nothing to do>>
 ;separator="\n")
 <<
   <%body%>
 >>
 end preCall;
+
+template preCallExp(Exp left, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                    Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates assignment for when."
+::=
+match left
+  case left as DAE.TUPLE(PR = eLst) then
+    (eLst |> e => preCallExp(e, right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator="\n")
+  case left as DAE.CREF(componentRef = cr) then
+    match typeof(right)
+      case T_ARRAY(dims=dims) then
+      let dimensions = checkDimension(dims)
+      let i_tmp_var= System.tmpTick()
+      let forLoopIteration = preCallForArray(dims,i_tmp_var)
+      let forloop =
+      match listLength(dims)
+      case 1 then
+        <<
+          <%forLoopIteration%>
+          <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>));
+        >>
+      case 2 then
+        <<
+          <%forLoopIteration%>
+          <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>));
+        >>
+      else
+        error(sourceInfo(), 'No support for this sort of pre call')
+      end match
+      <<
+        <%forloop%>
+      >>
+    else
+      <<
+        <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>);
+      >>
+    end match
+  else
+    <<; // nothing to do>>
+end match
+end preCallExp;
 
 template preCallForArray(Dimensions dims,String tmp)
 ::=
@@ -11281,17 +11298,36 @@ template preCallForArray(Dimensions dims,String tmp)
 end preCallForArray;
 
 
-template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+template whenAssign(Exp left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates assignment for when."
 ::=
+match left
+case left as DAE.CREF(componentRef = cr) then
     let &preExp = buffer "" /*BUFD*/
     let exp = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let lhs = cref1(left, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+    let lhs = cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
     <<
     <%preExp%>
     <%lhs%> = <%exp%>;
     >>
+case left as DAE.TUPLE(PR = expLst) then
+    let &preExp = buffer "" /*BUFD*/
+    let crefs = (expLst |> e => ExpressionDumpTpl.dumpExp(e,"\"") ;separator=", ")
+    let marker = '(<%crefs%>) = <%ExpressionDumpTpl.dumpExp(right,"\"")%>'
+    let retStruct = daeExp(right, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let lhsCrefs = (expLst |> cr hasindex i1 fromindex 0 =>
+                  let rhsStr = 'get<<%i1%>>(<%retStruct%>.data)'
+                  writeLhsCref(cr, rhsStr, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+                  ;separator="\n";empty)
+  <<
+  // whenAssign: preExp <%marker%>
+  <%preExp%>
+  // whenAssign: writeLhsCref
+  <%lhsCrefs%>
+  >>
+else
+  <<dont know whenAssign lhs-type>>
 end whenAssign;
 
 template equationIfEquation(SimEqSystem eq, Context context,Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -11365,7 +11401,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
 ::=
   let body = (whenOps |> whenOp =>
     match whenOp
-      case ASSIGN(left = lhs as DAE.CREF(componentRef = left)) then whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      case ASSIGN(left = lhs) then whenAssign(lhs, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       case REINIT(__) then
         let &preExp = buffer "" /*BUFD*/
         let &varDeclsCref = buffer "" /*BUFD*/
