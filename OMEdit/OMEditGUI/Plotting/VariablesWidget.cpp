@@ -1053,9 +1053,9 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
       }
     }
     mpVariablesTreeModel->blockSignals(state);
-    /* invalidate the view so that the items show the updated values. */
-    mpVariableTreeProxyModel->invalidate();
   }
+  /* invalidate the view so that the items show the updated values. */
+  mpVariableTreeProxyModel->invalidate();
 }
 
 /*!
