@@ -3852,21 +3852,24 @@ protected function elabBuiltinDynamicSelect
 protected
   String msg_str;
   Absyn.Exp astatic, adynamic;
+  DAE.Exp dstatic, ddynamic;
+  DAE.Type ty;
 algorithm
   if listLength(inPosArgs) <> 2 or not listEmpty(inNamedArgs) then
     msg_str := ", expected DynamicSelect(staticExp, dynamicExp)";
     printBuiltinFnArgError("DynamicSelect", msg_str, inPosArgs, inNamedArgs, inPrefix, inInfo);
   end if;
   {astatic, adynamic} := inPosArgs;
-  _ := match adynamic
+  (outCache, dstatic, outProperties as DAE.PROP(ty, _), _) :=
+    elabExpInExpression(inCache, inEnv, astatic, inImplicit, NONE(), true, inPrefix, inInfo);
+  outExp := match (astatic, adynamic)
     local
-      DAE.Exp dstatic, ddynamic;
-      DAE.Type ty;
       Absyn.ComponentRef acref;
       Integer digits;
       list<Absyn.NamedArg> namedArgs;
-    case Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "String"), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = acref)}, argNames = namedArgs)) algorithm
-      // keep DynamicSelect for String with cref arg
+      Boolean bconst;
+    // keep DynamicSelect for String with cref arg (textString)
+    case (Absyn.STRING(), Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "String"), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = acref)}, argNames = namedArgs))) algorithm
       (outCache, dstatic, outProperties as DAE.PROP(ty, _), _) :=
         elabExpInExpression(inCache, inEnv, astatic, inImplicit, NONE(), true, inPrefix, inInfo);
       ddynamic := Expression.crefToExp(absynCrefToComponentReference(acref));
@@ -3880,12 +3883,13 @@ algorithm
           then Expression.makeArray({dstatic, ddynamic, DAE.ICONST(digits)}, ty, true);
           else Expression.makeArray({dstatic, ddynamic}, ty, true);
       end match;
-      then ();
+      then outExp;
+    // keep DynamicSelect for Boolean with cref arg (visible, primitivesVisible)
+    case (Absyn.BOOL(value = bconst), Absyn.CREF(componentRef = acref))
+      then Expression.makeArray({dstatic, Expression.crefToExp(absynCrefToComponentReference(acref))}, ty, true);
+    // return first argument of DynamicSelect for model editing per default
     else algorithm
-      // return static first argument of DynamicSelect per default
-      (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv,
-        astatic, inImplicit, NONE(), true, inPrefix, inInfo);
-      then ();
+      then dstatic;
   end match;
 end elabBuiltinDynamicSelect;
 
