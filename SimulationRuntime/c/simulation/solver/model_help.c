@@ -57,7 +57,8 @@ double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
-double numericalDifferentiationDeltaX = 1e-8;
+double numericalDifferentiationDeltaXlinearize = 1e-8;
+double numericalDifferentiationDeltaXsolver = 1e-8;
 
 static double tolZC;
 

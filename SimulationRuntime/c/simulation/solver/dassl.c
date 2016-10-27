@@ -172,7 +172,6 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
 
   dasslData->idid = 0;
 
-  dasslData->sqrteps = sqrt(DBL_EPSILON);
   dasslData->ysave = (double*) malloc(N*sizeof(double));
   dasslData->ypsave = (double*) malloc(N*sizeof(double));
   dasslData->delta_hh = (double*) malloc(N*sizeof(double));
@@ -1137,7 +1136,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   TRACE_PUSH
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
 
-  double delta_h = dasslData->sqrteps;
+  double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hh,delta_hhh, deltaInv;
   double ysave;
   double ypsave;
@@ -1236,7 +1235,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   TRACE_PUSH
   const int index = data->callback->INDEX_JAC_A;
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  double delta_h = dasslData->sqrteps;
+  double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hhh;
   int ires;
   double* delta_hh = dasslData->delta_hh;

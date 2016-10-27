@@ -187,7 +187,6 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       idaData->yp);
 
   /* allocate memory for jacobians calculation */
-  idaData->sqrteps = sqrt(DBL_EPSILON);
   idaData->ysave = (double*) malloc(idaData->N*sizeof(double));
   idaData->ypsave = (double*) malloc(idaData->N*sizeof(double));
   idaData->delta_hh = (double*) malloc(idaData->N*sizeof(double));
@@ -1102,7 +1101,7 @@ int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = idaData->sqrteps;
+  double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hhh;
   long int i,j,l,ii;
 
@@ -1258,7 +1257,7 @@ int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, d
 
   double ysave, ypsave;
 
-  double delta_h = idaData->sqrteps;
+  double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hh;
   double delta_hhh;
   double deltaInv;
@@ -1384,7 +1383,7 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
   double *ysave = idaData->ysave;
   double *ypsave = idaData->ypsave;
 
-  double delta_h = idaData->sqrteps;
+  double delta_h = numericalDifferentiationDeltaXsolver;
   double *delta_hh = idaData->delta_hh;
   double delta_hhh;
   double deltaInv;

@@ -112,7 +112,7 @@ int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, doubl
 /*  Calculate the jacobian matrix by numerical finite difference */
 int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, double *matrixC, double *matrixCz)
 {
-    const double delta_h = numericalDifferentiationDeltaX;
+    const double delta_h = numericalDifferentiationDeltaXlinearize;
     double delta_hh;
     double xsave;
 
@@ -203,7 +203,7 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
 
 int functionJacBD_num(DATA* data, threadData_t *threadData, double *matrixB, double *matrixD, double *matrixDz)
 {
-    const double delta_h = numericalDifferentiationDeltaX;
+    const double delta_h = numericalDifferentiationDeltaXlinearize;
     double delta_hh;
     double usave;
     double* u;

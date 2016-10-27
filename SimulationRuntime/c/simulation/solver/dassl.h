@@ -67,7 +67,6 @@ typedef struct DASSL_DATA{
   int *jroot;
 
   /* variables used in jacobian calculation */
-  double sqrteps;
   double *ysave;
   double *ypsave;
   double *delta_hh;

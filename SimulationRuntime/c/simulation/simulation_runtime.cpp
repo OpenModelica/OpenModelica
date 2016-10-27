@@ -508,14 +508,21 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     infoStreamPrint(LOG_STDOUT, 0, "Linearization will performed at point of time: %f", data->simulationInfo->stopTime);
   }
 
-  /* set delta x  */
-  if(omc_flag[FLAG_DELTA_X]) {
-    numericalDifferentiationDeltaX = atof(omc_flagValue[FLAG_DELTA_X]);
-    infoStreamPrint(LOG_SOLVER, 0, "Set delta x for numerical differentiation to %f", numericalDifferentiationDeltaX);
+  /* set delta x for linearization */
+  if(omc_flag[FLAG_DELTA_X_LINEARIZE]) {
+    numericalDifferentiationDeltaXlinearize = atof(omc_flagValue[FLAG_DELTA_X_LINEARIZE]);
+    infoStreamPrint(LOG_SOLVER, 0, "Set delta x for numerical differentiation of the linearization to %f", numericalDifferentiationDeltaXlinearize);
   }else{
-    numericalDifferentiationDeltaX = sqrt(DBL_EPSILON*2e1);
+    numericalDifferentiationDeltaXlinearize = sqrt(DBL_EPSILON*2e1);
   }
 
+  /* set delta x for integration methods dassl, ida */
+  if(omc_flag[FLAG_DELTA_X_SOLVER]) {
+    numericalDifferentiationDeltaXsolver = atof(omc_flagValue[FLAG_DELTA_X_SOLVER]);
+    infoStreamPrint(LOG_SOLVER, 0, "Set delta x for numerical differentiation of the integrator to %f", numericalDifferentiationDeltaXsolver);
+  }else{
+    numericalDifferentiationDeltaXsolver = sqrt(DBL_EPSILON);
+  }
 
   if(omc_flag[FLAG_S]) {
     if (omc_flagValue[FLAG_S]) {
