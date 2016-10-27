@@ -64,7 +64,7 @@ end dumpVisualization;
 
 template dumpVecExp (list<DAE.Exp> vector)
 ::=
-let vecDump = vector |> vec => <<<%dumpExp(vec)%>>> ; separator="\t\n"
+let vecDump = vector |> vec => <<<%dumpExp(vec)%>>> ; separator="\n"
     <<
     <%vecDump%>>>
 end dumpVecExp;
