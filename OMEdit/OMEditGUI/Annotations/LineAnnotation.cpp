@@ -58,6 +58,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   : ShapeAnnotation(pParent)
 {
   updateShape(pShapeAnnotation);
+  initUpdateVisible(); // DynamicSelect for visible attribute
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);

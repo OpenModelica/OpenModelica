@@ -53,6 +53,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component 
   : ShapeAnnotation(pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
+  initUpdateVisible(); // DynamicSelect for visible attribute
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));

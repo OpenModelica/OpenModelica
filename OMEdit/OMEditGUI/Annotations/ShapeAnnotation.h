@@ -71,6 +71,7 @@ protected:
   bool mVisible;
   QPointF mOrigin;
   qreal mRotation;
+  QString mDynamicVisible; /* variable for visible attribute */
 };
 
 class FilledShape
@@ -176,6 +177,7 @@ public:
   QString getImageSource();
   void setImage(QImage image);
   QImage getImage();
+  QVariant getDynamicValue(QString name);
   void applyRotation(qreal angle);
   void adjustPointsWithOrigin();
   void adjustExtentsWithOrigin();
@@ -230,6 +232,7 @@ public slots:
   void referenceShapeAdded();
   void referenceShapeChanged();
   void referenceShapeDeleted();
+  void updateVisible();
 protected:
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
@@ -254,8 +257,9 @@ protected:
   QString mClassFileName; /* Used to find the bitmap relative locations. */
   QString mImageSource;
   QImage mImage;
-  QStringList mDynamicSelect; /* list of DynamicSelect arguments */
   QList<CornerItem*> mCornerItemsList;
+  QList<QVariant> mDynamicTextString; /* list of String() arguments */
+  void initUpdateVisible();
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };

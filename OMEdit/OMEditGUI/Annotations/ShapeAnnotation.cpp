@@ -38,6 +38,7 @@
 #include "Commands.h"
 #include "ComponentProperties.h"
 #include "FetchInterfaceDataDialog.h"
+#include "VariablesWidget.h"
 
 /*!
  * \brief GraphicItem::setDefaults
@@ -60,6 +61,7 @@ void GraphicItem::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mVisible = pShapeAnnotation->mVisible;
   mOrigin = pShapeAnnotation->mOrigin;
   mRotation = pShapeAnnotation->mRotation;
+  mDynamicVisible = pShapeAnnotation->mDynamicVisible;
 }
 
 /*!
@@ -73,7 +75,17 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   if (list.size() < 3)
     return;
   // if first item of list is true then the shape should be visible.
-  mVisible = list.at(0).contains("true");
+  if (list.at(0).startsWith("{")) {
+    // DynamicSelect
+    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(0)));
+    if (args.count() > 0)
+      mVisible = args.at(0).contains("true");
+    if (args.count() > 1)
+      mDynamicVisible = args.at(1);  // variable name
+  }
+  else {
+    mVisible = list.at(0).contains("true");
+  }
   // 2nd item is the origin
   QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
   if (originList.size() >= 2)
@@ -301,6 +313,7 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;
+  mpParentComponent = 0;
   mTransformation = Transformation(StringHandler::Diagram);
   mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
@@ -372,7 +385,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mClassFileName = pShapeAnnotation->mClassFileName;
   mImageSource = pShapeAnnotation->mImageSource;
   mImage = pShapeAnnotation->mImage;
-  mDynamicSelect = pShapeAnnotation->mDynamicSelect;
+  mDynamicTextString = pShapeAnnotation->mDynamicTextString;
 }
 
 /*!
@@ -767,6 +780,27 @@ QImage ShapeAnnotation::getImage()
 }
 
 /*!
+  Returns a dynamic value or null if no dynamic value exists
+  */
+QVariant ShapeAnnotation::getDynamicValue(QString name)
+{
+  QVariant dynamicValue; // isNull() per default
+  if (mpParentComponent) {
+    ModelWidget *pModelWidget = mpParentComponent->getGraphicsView()->getModelWidget();
+    if (!pModelWidget->getResultFileName().isEmpty()) {
+      QString fullName = pModelWidget->getResultFileName() + "." + mpParentComponent->getComponentInfo()->getName() + "." + name;
+      MainWindow *pMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
+      VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
+      VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(fullName, pVariablesTreeModel->getRootVariablesTreeItem());
+      if (pVariablesTreeItem != NULL) {
+        dynamicValue = pVariablesTreeItem->getValue(pVariablesTreeItem->getUnit(), pMainWindow->getOMCProxy());
+      }
+    }
+  }
+  return dynamicValue;
+}
+
+/*!
  * \brief ShapeAnnotation::applyRotation
  * Applies the rotation on the shape and sets the shape transformation matrix accordingly.
  * \param angle - the rotation angle to apply.
@@ -943,6 +977,35 @@ void ShapeAnnotation::setShapeFlags(bool enable)
 void ShapeAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 {
   Q_UNUSED(pShapeAnnotation);
+}
+
+/*!
+ * \brief ShapeAnnotation::initUpdateVisible
+ * Initialize optional DynamicSelect for the visible status
+ */
+void ShapeAnnotation::initUpdateVisible()
+{
+  if (mpParentComponent) {
+    if (!mDynamicVisible.isEmpty()) {
+      connect(mpParentComponent, SIGNAL(displayTextChanged()), SLOT(updateVisible()), Qt::UniqueConnection);
+    }
+  }
+}
+
+/*!
+ * \brief ShapeAnnotation::updateVisible
+ * DynamicSelect for the visible status
+ */
+void ShapeAnnotation::updateVisible()
+{
+  bool visible = mVisible; // model provided default value
+  if (!mDynamicVisible.isEmpty()) {
+    QVariant dynamicValue = getDynamicValue(mDynamicVisible);
+    if (!dynamicValue.isNull()) {
+      visible = dynamicValue.toBool();
+    }
+  }
+  setVisible(visible);
 }
 
 /*!
