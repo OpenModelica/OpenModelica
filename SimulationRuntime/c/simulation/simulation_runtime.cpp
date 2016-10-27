@@ -953,10 +953,6 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
 
     data->callback->callExternalObjectDestructors(data, threadData);
     deInitializeDataStruc(data);
-
-    /*  in case of xml log format close root element messages */
-    messagesCloseXMLroot();
-
     fflush(NULL);
   MMC_CATCH_INTERNAL(globalJumpBuffer)
 
