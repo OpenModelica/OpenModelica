@@ -32,6 +32,7 @@ ForStatement8.mos \
 getClassNames.mos \
 GetComponents.mos \
 getDialogAnnotation.mos \
+getIconAnnotation.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 interactive_api_annotations.mos \
