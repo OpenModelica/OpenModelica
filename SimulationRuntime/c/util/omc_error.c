@@ -263,8 +263,30 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
   if (indentNext) level[stream]++;
 }
 
+static int printXMLrootNode = 0;
+
+static void messagesXMLroot()
+{
+  fputs("<messages>\n", stdout);
+  fflush(stdout);
+}
+
+void messagesCloseXMLroot()
+{
+  if (printXMLrootNode){
+    fputs("</messages>\n", stdout);
+    fflush(stdout);
+  }
+}
+
 void messageXML(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
 {
+  /* print xml root node */
+  if(!printXMLrootNode){
+    messagesXMLroot();
+    printXMLrootNode = 1;
+  }
+
   printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
   printEscapedXML(msg);
   if (indexes) {

@@ -144,6 +144,7 @@ extern int showAllWarnings;
 extern char logBuffer[2048];
 
 void setStreamPrintXML(int isXML);
+void messagesCloseXMLroot();
 
 #define ACTIVE_STREAM(stream)    (useStream[stream])
 #define ACTIVE_WARNING_STREAM(stream)    (showAllWarnings || useStream[stream])
