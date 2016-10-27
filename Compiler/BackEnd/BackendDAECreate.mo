@@ -249,7 +249,8 @@ algorithm
     simVar := var2;
     aliasVar := BackendVariable.setBindExp(var1, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
   else
-    Error.addCompilerWarning("No heuristic to choose the alias variable of external objects: " + BackendDump.varString(var1)+" = "+ BackendDump.varString(var2));
+    simVar := var1;
+    aliasVar := BackendVariable.setBindExp(var2, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
   end if;
 end chooseExternalAlias;
 
