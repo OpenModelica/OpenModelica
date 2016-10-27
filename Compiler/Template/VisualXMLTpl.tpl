@@ -33,7 +33,7 @@ end dumpVisXML1;
 template dumpVisualization(VisualXML.Visualization vis)
 ::=
     match vis
-        case vis as SHAPE(__) then
+        case vis as SHAPE(shapeType = sT as DAE.SCONST(string = svalue)) then
           let TDump = arrayList(T) |> T0 => <<
           <%dumpVecExp(T0)%>
           >> ; separator="\n"
@@ -45,7 +45,7 @@ template dumpVisualization(VisualXML.Visualization vis)
             <<
               <shape>
                   <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
-                  <type><%shapeType%></type>
+                  <type><%svalue%></type>
                   <T><%TDump%></T>
                   <r><%rDump%></r>
                   <r_shape><%r_shapeDump%></r_shape>

@@ -66,7 +66,7 @@ import System;
 public uniontype Visualization
   record SHAPE
     DAE.ComponentRef ident;
-    String shapeType;
+    DAE.Exp shapeType;
     array<list<DAE.Exp>> T;
     array<DAE.Exp> r;
     array<DAE.Exp> r_shape;
@@ -119,6 +119,8 @@ algorithm
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
   (visuals,_,_) := List.mapFold2(allVisuals, fillVisualizationObjects,allVarLst, program);
+  //some expressions refer to other known parameters, get them
+  visuals := List.map2(visuals,replaceVisualBinding,globalKnownVars,program);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 
   //dump xml file
@@ -129,6 +131,56 @@ algorithm
   (aliasVars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, setVisVarsPublic,"");
   daeOut := BackendDAE.DAE(eqs=eqs, shared=shared);
 end visualizationInfoXML;
+
+protected function replaceVisualBinding"Replace the cref binding for the given visualization shapeType with the constant expression of its alias.
+author: vwaurich 2016-10"
+  input Visualization visIn;
+  input BackendDAE.Variables varArray;
+  input Absyn.Program program;
+  output Visualization visOut;
+algorithm
+  visOut := matchcontinue(visIn,varArray,program)
+    local
+      DAE.ComponentRef cr, ident;
+      DAE.Exp exp, length, width, height, extra, specularCoeff, shapeType;
+      Real rvalue;
+      String s;
+      array<DAE.Exp> color, r, lengthDir, widthDir, r_shape ;
+      array<list<DAE.Exp>> T;
+  case(SHAPE(ident=ident, shapeType=DAE.CREF(componentRef = cr), T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir,
+     length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff),_,_)
+     equation
+       DAE.SCONST(string=s) = getConstCrefBinding(cr,varArray);
+       s = getFullCADFilePath(s,program);
+    then (SHAPE(ident, DAE.SCONST(s), T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+  else
+    then visIn;
+  end matchcontinue;
+end replaceVisualBinding;
+
+protected function getConstCrefBinding"Get the const binding for the cref. It has to be somewhere in the vars.
+author: vwaurich 2016-10"
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  output DAE.Exp eOut;
+protected
+  DAE.Exp e;
+  BackendDAE.Var var;
+algorithm
+  try
+    ({var},_) := BackendVariable.getVar(cr,vars);
+    e := BackendVariable.varBindExp(var);
+    if Expression.isConst(e) then
+      eOut := e;
+    elseif Expression.isCref(e) then
+      eOut := getConstCrefBinding(cr,vars);
+    else
+      Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ExpressionDump.printExpStr(e)+"\n", sourceInfo());
+    end if;
+  else
+    Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ComponentReference.crefStr(cr)+"\n", sourceInfo());
+  end try;
+end getConstCrefBinding;
 
 public function setVisVarsPublic"Sets the VariableAttributes of protected visualization vars to public.
 author: waurich TUD 08-2016"
@@ -228,7 +280,7 @@ algorithm
       //name := Util.stringReplaceChar(name,"$",".");
       //true := stringEqual(stringCharListString(prefix),"Shape$");
       //name := ComponentReference.printComponentRefStr(crefIn);
-      vis := SHAPE(crefIn,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
+      vis := SHAPE(crefIn,DAE.SCONST("DUMMY"),arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
                            arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
                            DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
       (_,vis) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
@@ -346,17 +398,16 @@ algorithm
     local
       Option<DAE.Exp> bind;
       DAE.ComponentRef ident;
-      DAE.Exp exp, length, width, height, extra, specularCoeff;
-      String shapeType, svalue;
+      DAE.Exp exp, length, width, height, extra, specularCoeff, shapeType;
       Integer ivalue, pos, pos1;
       Real rvalue;
       array<DAE.Exp> color, r, lengthDir, widthDir, r_shape ;
       list<DAE.Exp> T0;
       array<list<DAE.Exp>> T;
-  case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(DAE.SCONST(svalue))),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
+
+  case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(exp)),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
-      svalue := getFullCADFilePath(svalue,program);
-    then (SHAPE(ident, svalue, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+    then (SHAPE(ident, exp, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
 
   case(DAE.CREF_QUAL(ident="R",componentRef=DAE.CREF_IDENT(ident="T", subscriptLst = {DAE.INDEX(DAE.ICONST(pos)),DAE.INDEX(DAE.ICONST(pos1))})),BackendDAE.VAR(bindExp=bind),_ ,_ , SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
@@ -474,12 +525,11 @@ algorithm
   s := match(vis)
     local
       DAE.ComponentRef ident;
-      String shapeType;
-      DAE.Exp length, width, height, extra;
+      DAE.Exp length, width, height, extra, shapeType;
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+shapeType + "'\n r{"+stringDelimitList(List.map1(arrayList(r),ExpressionDump.dumpExpStr,0),",")+"}" +
+  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionDump.printExpStr(shapeType) + "'\n r{"+stringDelimitList(List.map1(arrayList(r),ExpressionDump.dumpExpStr,0),",")+"}" +
         "\nlD{"+stringDelimitList(List.map(arrayList(lengthDir),ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.map(arrayList(widthDir),ExpressionDump.printExpStr),",")+"}"+
         "\ncolor("+stringDelimitList(List.map(arrayList(color),ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
         "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}"+"\nextra{"+ExpressionDump.printExpStr(extra)+"}");

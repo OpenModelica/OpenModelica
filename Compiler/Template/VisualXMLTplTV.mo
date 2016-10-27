@@ -146,7 +146,7 @@ interface package VisualXMLTplTV
 		uniontype Visualization
 		  record SHAPE
 		    DAE.ComponentRef ident;
-		    String shapeType;
+		    DAE.Exp shapeType;
 		    array<list<DAE.Exp>> T;
 		    array<DAE.Exp> r;
 		    array<DAE.Exp> r_shape;
