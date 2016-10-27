@@ -515,6 +515,14 @@ algorithm
     case (e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())), (expand,ht))
       then (e, false, (expand,ht));
 
+    // records are not arays, expand them always
+    case (e as DAE.CREF(componentRef=cr, ty=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), (expand,ht))
+      equation
+        cr = ComponentReference.crefStripSubs(cr);
+        crlst = ComponentReference.expandCref(cr, true);
+        ht = List.fold(crlst, BaseHashSet.add, ht);
+      then (e, false, (expand,ht));
+
     // NOT_EXPAND strategy (needed for equations translated to algorithms)
     case (e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht))
       equation
