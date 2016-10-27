@@ -6,6 +6,7 @@ AlgorithmCondAssign2.mos \
 AlgorithmForInClass.mos \
 algorithms.mos \
 AlgorithmSection.mos \
+AlgorithmSize.mos \
 AlgorithmTupleAssign.mos \
 ArrayInitSorting.mos \
 ASubIfExp.mos \
