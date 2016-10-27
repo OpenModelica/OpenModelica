@@ -963,48 +963,50 @@ void VariablesWidget::variablesUpdated()
 {
   foreach (QMdiSubWindow *pSubWindow, mpMainWindow->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
-    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-      if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
-        QString curveNameStructure = pPlotCurve->getNameStructure();
-        VariablesTreeItem *pVariableTreeItem;
-        pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
-        pPlotCurve->detach();
-        if (pVariableTreeItem) {
-          bool state = mpVariablesTreeModel->blockSignals(true);
-          QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
-          mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
-          mpVariablesTreeModel->blockSignals(state);
-        } else {
-          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-        }
-      } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
-        QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
-        VariablesTreeItem *pXVariableTreeItem;
-        pXVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-        QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
-        VariablesTreeItem *pYVariableTreeItem;
-        pYVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-        pPlotCurve->detach();
-        if (pXVariableTreeItem && pYVariableTreeItem) {
-          bool state = mpVariablesTreeModel->blockSignals(true);
-          QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariableTreeItem);
-          mpVariablesTreeModel->setData(xIndex, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
-          QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariableTreeItem);
-          mpVariablesTreeModel->setData(yIndex, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
-          mpVariablesTreeModel->blockSignals(state);
-        } else {
-          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+    if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
+      foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+        if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
+          QString curveNameStructure = pPlotCurve->getNameStructure();
+          VariablesTreeItem *pVariableTreeItem;
+          pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
           pPlotCurve->detach();
+          if (pVariableTreeItem) {
+            bool state = mpVariablesTreeModel->blockSignals(true);
+            QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
+            mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
+            plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
+            mpVariablesTreeModel->blockSignals(state);
+          } else {
+            pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+          }
+        } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+          QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
+          VariablesTreeItem *pXVariableTreeItem;
+          pXVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+          QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
+          VariablesTreeItem *pYVariableTreeItem;
+          pYVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+          pPlotCurve->detach();
+          if (pXVariableTreeItem && pYVariableTreeItem) {
+            bool state = mpVariablesTreeModel->blockSignals(true);
+            QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariableTreeItem);
+            mpVariablesTreeModel->setData(xIndex, Qt::Checked, Qt::CheckStateRole);
+            plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
+            QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariableTreeItem);
+            mpVariablesTreeModel->setData(yIndex, Qt::Checked, Qt::CheckStateRole);
+            plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotCurve, pPlotWindow);
+            mpVariablesTreeModel->blockSignals(state);
+          } else {
+            pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+            pPlotCurve->detach();
+          }
         }
       }
-    }
-    if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-      pPlotWindow->fitInView();
-    } else {
-      pPlotWindow->getPlot()->replot();
+      if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+        pPlotWindow->fitInView();
+      } else {
+        pPlotWindow->getPlot()->replot();
+      }
     }
   }
   updateVariablesTreeHelper(mpMainWindow->getPlotWindowContainer()->currentSubWindow());
@@ -1012,48 +1014,48 @@ void VariablesWidget::variablesUpdated()
 
 void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
 {
-  if (!pSubWindow)
+  if (!pSubWindow) {
     return;
+  }
   // first clear all the check boxes in the tree
   bool state = mpVariablesTreeModel->blockSignals(true);
   mpVariablesTreeModel->unCheckVariables(mpVariablesTreeModel->getRootVariablesTreeItem());
   mpVariablesTreeModel->blockSignals(state);
   // all plotwindows are closed down then simply return
-  if (mpMainWindow->getPlotWindowContainer()->subWindowList().size() == 0)
+  if (mpMainWindow->getPlotWindowContainer()->subWindowList().size() == 0) {
     return;
-
-  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
-  // update the simulation time unit
-  mpSimulationTimeComboBox->setCurrentIndex(mpSimulationTimeComboBox->findText(pPlotWindow->getTimeUnit(), Qt::MatchExactly));
-  // now loop through the curves and tick variables in the tree whose curves are on the plot
-  state = mpVariablesTreeModel->blockSignals(true);
-  foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
-  {
-    VariablesTreeItem *pVariablesTreeItem;
-    if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
-    {
-      QString variable = pPlotCurve->getNameStructure();
-      pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
-      if (pVariablesTreeItem)
-        mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
-    }
-    else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
-    {
-      // check the xvariable
-      QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
-      pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-      if (pVariablesTreeItem)
-        mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
-      // check the y variable
-      QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
-      pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-      if (pVariablesTreeItem)
-        mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
-    }
   }
-  mpVariablesTreeModel->blockSignals(state);
-  /* invalidate the view so that the items show the updated values. */
-  mpVariableTreeProxyModel->invalidate();
+  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+  if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
+    // update the simulation time unit
+    mpSimulationTimeComboBox->setCurrentIndex(mpSimulationTimeComboBox->findText(pPlotWindow->getTimeUnit(), Qt::MatchExactly));
+    // now loop through the curves and tick variables in the tree whose curves are on the plot
+    state = mpVariablesTreeModel->blockSignals(true);
+    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+      VariablesTreeItem *pVariablesTreeItem;
+      if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
+        QString variable = pPlotCurve->getNameStructure();
+        pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
+        if (pVariablesTreeItem) {
+          mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+        }
+      } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+        // check the xvariable
+        QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
+        pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+        if (pVariablesTreeItem)
+          mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+        // check the y variable
+        QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
+        pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+        if (pVariablesTreeItem)
+          mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+      }
+    }
+    mpVariablesTreeModel->blockSignals(state);
+    /* invalidate the view so that the items show the updated values. */
+    mpVariableTreeProxyModel->invalidate();
+  }
 }
 
 /*!
@@ -1512,14 +1514,6 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
-  //check if its an animation window
-  if (pSubWindow && !pSubWindow->widget()->objectName().compare(QString("animationWidget"))) {
-    // we could distinguish with dynamic_cast as well, but objectString is probably better
-    //if (dynamic_cast<const AnimationWindowContainer*>(pSubWindow->widget()) != 0)
-    //  std::cout<<"its an animation widget"<<std::endl;
-    //std::cout<<"Its an "<<pSubWindow->widget()->objectName().toStdString()<<std::endl;
-    return;
-  }
   updateVariablesTreeHelper(pSubWindow);
 }
 
