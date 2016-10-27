@@ -987,6 +987,7 @@ void ShapeAnnotation::initUpdateVisible()
 {
   if (mpParentComponent) {
     if (!mDynamicVisible.isEmpty()) {
+      updateVisible();
       connect(mpParentComponent, SIGNAL(displayTextChanged()), SLOT(updateVisible()), Qt::UniqueConnection);
     }
   }

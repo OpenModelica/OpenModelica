@@ -221,7 +221,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
     return;
   }
-  if (mVisible) {
+  if (mVisible || !mDynamicVisible.isEmpty()) {
     drawTextAnnotaion(painter);
   }
 }

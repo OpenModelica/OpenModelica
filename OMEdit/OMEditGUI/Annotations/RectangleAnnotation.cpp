@@ -133,8 +133,9 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible)
+  if (mVisible || !mDynamicVisible.isEmpty()) {
     drawRectangleAnnotaion(painter);
+  }
 }
 
 void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)

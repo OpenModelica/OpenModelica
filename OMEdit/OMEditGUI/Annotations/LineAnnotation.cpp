@@ -291,7 +291,7 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible) {
+  if (mVisible || !mDynamicVisible.isEmpty()) {
     drawLineAnnotaion(painter);
   }
 }

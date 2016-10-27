@@ -158,7 +158,7 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible) {
+  if (mVisible || !mDynamicVisible.isEmpty()) {
     drawPolygonAnnotaion(painter);
   }
 }
