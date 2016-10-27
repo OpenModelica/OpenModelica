@@ -52,6 +52,7 @@ EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Componen
   : ShapeAnnotation(pParent)
 {
   updateShape(pShapeAnnotation);
+  initUpdateVisible(); // DynamicSelect for visible attribute
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -125,8 +126,7 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible)
-  {
+  if (mVisible || !mDynamicVisible.isEmpty()) {
     drawEllipseAnnotaion(painter);
   }
 }

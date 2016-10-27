@@ -34,7 +34,6 @@
 
 #include "TextAnnotation.h"
 #include "Commands.h"
-#include "VariablesWidget.h"
 
 /*!
  * \class TextAnnotation
@@ -64,6 +63,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   : ShapeAnnotation(pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
+  initUpdateVisible(); // DynamicSelect for visible attribute
   initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
@@ -126,9 +126,13 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   // 10th item of the list contains the textString.
   if (list.at(9).startsWith("{")) {
     // DynamicSelect
-    mDynamicSelect = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-    if (mDynamicSelect.count() >= 1)
-      mOriginalTextString = StringHandler::removeFirstLastQuotes(mDynamicSelect.at(0));
+    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
+    if (args.count() > 0)
+      mOriginalTextString = StringHandler::removeFirstLastQuotes(args.at(0));
+    if (args.count() > 1)
+      mDynamicTextString << args.at(1);  // variable name
+    if (args.count() > 2)
+      mDynamicTextString << args.at(2);  // significantDigits
   }
   else {
     mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
@@ -217,7 +221,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
     return;
   }
-  if (mVisible) {
+  if (mVisible || !mDynamicVisible.isEmpty()) {
     drawTextAnnotaion(painter);
   }
 }
@@ -429,7 +433,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpComponent) {
-    if (mOriginalTextString.contains("%") || mDynamicSelect.count() >= 2) {
+    if (mOriginalTextString.contains("%") || mDynamicTextString.count() > 0) {
       updateTextString();
       connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
@@ -469,6 +473,24 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
  */
 void TextAnnotation::updateTextString()
 {
+  /* optional DynamicSelect of textString attribute */
+  QVariant dynamicValue; // isNull() per default
+  if (mDynamicTextString.count() > 0) {
+    dynamicValue = getDynamicValue(mDynamicTextString.at(0).toString());
+  }
+  if (!dynamicValue.isNull()) {
+    mTextString = dynamicValue.toString();
+    if (mTextString.isEmpty()) {
+      /* use variable name as default value if result not found */
+      mTextString = mDynamicTextString.at(0).toString();
+    }
+    else if (mDynamicTextString.count() > 1) {
+      int digits = mDynamicTextString.at(1).toInt();
+      mTextString = QString::number(mTextString.toDouble(), 'g', digits);
+    }
+    return;
+  }
+  /* alternatively use model provided value */
   /* From Modelica Spec 32revision2,
    * There are a number of common macros that can be used in the text, and they should be replaced when displaying
    * the text as follows:
@@ -479,24 +501,6 @@ void TextAnnotation::updateTextString()
    * - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
-  // first check for available results and DynamicSelect
-  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (!pModelWidget->getResultFileName().isEmpty() && mDynamicSelect.count() >= 2) {
-    MainWindow *pMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
-    VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
-    VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(pModelWidget->getResultFileName() + "." + mpComponent->getComponentInfo()->getName() + "." + mDynamicSelect.at(1), pVariablesTreeModel->getRootVariablesTreeItem());
-    if (pVariablesTreeItem != NULL) {
-      mTextString = pVariablesTreeItem->getValue(pVariablesTreeItem->getUnit(), pMainWindow->getOMCProxy()).toString();
-      if (mDynamicSelect.count() >= 3) {
-        int digits = mDynamicSelect.at(2).toInt();
-        mTextString = QString::number(mTextString.toDouble(), 'g', digits);
-      }
-    }
-    else
-      mTextString = mDynamicSelect.at(1); // default value if result not found
-    return;
-  }
-  // alternatively use model value
   mTextString = mOriginalTextString;
   if (!mTextString.contains("%")) {
     return;
