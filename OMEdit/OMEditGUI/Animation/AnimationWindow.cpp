@@ -123,7 +123,15 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
   mpAnimationToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   addToolBar(Qt::TopToolBarArea,mpAnimationToolBar);
-  setCentralWidget(mpViewerWidget);
+  // Viewer layout
+  QGridLayout *pGridLayout = new QGridLayout;
+  pGridLayout->setContentsMargins(0, 0, 0, 0);
+  pGridLayout->addWidget(mpViewerWidget);
+  // add the viewer to the frame for boxed rectangle around it.
+  QFrame *pCentralWidgetFrame = new QFrame;
+  pCentralWidgetFrame->setFrameStyle(QFrame::StyledPanel);
+  pCentralWidgetFrame->setLayout(pGridLayout);
+  setCentralWidget(pCentralWidgetFrame);
   //connections
   connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
   connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
