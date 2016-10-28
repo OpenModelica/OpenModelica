@@ -11247,56 +11247,34 @@ end preCall;
 
 template preCallExp(Exp left, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates assignment for when."
+ "Generates assignment from pre variable to variable for when."
 ::=
-match left
+  match left
   case left as DAE.TUPLE(PR = eLst) then
     (eLst |> e => preCallExp(e, right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator="\n")
   case left as DAE.CREF(componentRef = cr) then
-    match typeof(right)
-      case T_ARRAY(dims=dims) then
-      let dimensions = checkDimension(dims)
-      let i_tmp_var= System.tmpTick()
-      let forLoopIteration = preCallForArray(dims,i_tmp_var)
-      let forloop =
-      match listLength(dims)
-      case 1 then
-        <<
-          <%forLoopIteration%>
-          <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>));
-        >>
-      case 2 then
-        <<
-          <%forLoopIteration%>
-          <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>));
-        >>
-      else
-        error(sourceInfo(), 'No support for this sort of pre call')
-      end match
+    let var = cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+    match cref2simvar(cr, simCode)
+    case SIMVAR(numArrayElement = {}) then
       <<
-        <%forloop%>
+      <%var%> = _discrete_events->pre(<%var%>);
+      >>
+    case SIMVAR(numArrayElement = nums) then
+      let forLoops = nums |> num hasindex i1 fromindex 1 =>
+        'for (int i<%i1%> = 1; i<%i1%> <= <%num%>; i<%i1%>++)' ;separator=" "
+      let indices = nums |> num hasindex i1 fromindex 1 =>
+        'i<%i1%>' ;separator=","
+      <<
+      <%forLoops%>
+        <%var%>(<%indices%>) = _discrete_events->pre(<%var%>(<%indices%>));
       >>
     else
-      <<
-        <%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>);
-      >>
+      <<; // unknown pre type>>
     end match
   else
-    <<; // nothing to do>>
-end match
+    <<; // unknown lhs for pre>>
+  end match
 end preCallExp;
-
-template preCallForArray(Dimensions dims,String tmp)
-::=
-  let operatorCall= dims |> dim  hasindex i0   =>
-    let dimindex = dimension(dim,contextOther)
-  'for(int i<%i0%>_<%tmp%>=1;i<%i0%>_<%tmp%><= <%dimindex%>;++i<%i0%>_<%tmp%>)'
-  ;separator="\n\t"
-  <<
-   <%operatorCall%>
-  >>
-end preCallForArray;
-
 
 template whenAssign(Exp left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
