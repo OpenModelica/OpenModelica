@@ -3862,7 +3862,8 @@ algorithm
   {astatic, adynamic} := inPosArgs;
   (outCache, dstatic, outProperties as DAE.PROP(ty, _), _) :=
     elabExpInExpression(inCache, inEnv, astatic, inImplicit, NONE(), true, inPrefix, inInfo);
-  outExp := match (astatic, adynamic)
+  try
+    outExp := match (astatic, adynamic)
     local
       Absyn.ComponentRef acref;
       Integer digits;
@@ -3887,10 +3888,11 @@ algorithm
     // keep DynamicSelect for Boolean with cref arg (visible, primitivesVisible)
     case (Absyn.BOOL(value = bconst), Absyn.CREF(componentRef = acref))
       then Expression.makeArray({dstatic, Expression.crefToExp(absynCrefToComponentReference(acref))}, ty, true);
-    // return first argument of DynamicSelect for model editing per default
-    else algorithm
-      then dstatic;
-  end match;
+    end match;
+  // return first argument of DynamicSelect for model editing per default
+  else
+    outExp := dstatic;
+  end try;
 end elabBuiltinDynamicSelect;
 
 protected function elabBuiltinTranspose
