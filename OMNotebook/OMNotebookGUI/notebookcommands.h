@@ -313,7 +313,6 @@ namespace IAEX
 
         PrinterVisitor visitor( printDocument, printer_ );
         doc_->runVisitor( visitor );
-        printDocument->setTextWidth(700);
 
         printDocument->print( printer_ );
 
