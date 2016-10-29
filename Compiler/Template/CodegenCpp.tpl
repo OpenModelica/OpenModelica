@@ -11254,21 +11254,27 @@ template preCallExp(Exp left, Exp right, Context context, Text &varDecls, SimCod
     (eLst |> e => preCallExp(e, right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator="\n")
   case left as DAE.CREF(componentRef = cr) then
     let var = cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
-    match cref2simvar(cr, simCode)
-    case SIMVAR(arrayCref = NONE()) then
+    // ckeck for array element -- var ends with ')'
+    if intEq(stringGet(var, stringLength(var)), 41) then
       <<
       <%var%> = _discrete_events->pre(<%var%>);
       >>
-    case SIMVAR(numArrayElement = nums) then
-      let forLoops = nums |> num hasindex i1 fromindex 1 =>
-        'for (int i<%i1%> = 1; i<%i1%> <= <%num%>; i<%i1%>++)' ;separator=" "
-      let indices = nums |> num hasindex i1 fromindex 1 =>
-        'i<%i1%>' ;separator=","
-      <<
-      <%forLoops%>
-        <%var%>(<%indices%>) = _discrete_events->pre(<%var%>(<%indices%>));
-      >>
-    end match
+    else
+      match cref2simvar(cr, simCode)
+      case SIMVAR(arrayCref = NONE()) then
+        <<
+        <%var%> = _discrete_events->pre(<%var%>);
+        >>
+      case SIMVAR(numArrayElement = nums) then
+        let forLoops = nums |> num hasindex i1 fromindex 1 =>
+          'for (int i<%i1%> = 1; i<%i1%> <= <%num%>; i<%i1%>++)' ;separator=" "
+        let indices = nums |> num hasindex i1 fromindex 1 =>
+          'i<%i1%>' ;separator=","
+        <<
+        <%forLoops%>
+          <%var%>(<%indices%>) = _discrete_events->pre(<%var%>(<%indices%>));
+        >>
+      end match
   else
     <<
     #error unknown preCallExp <%ExpressionDumpTpl.dumpExp(left, "\"")%>
