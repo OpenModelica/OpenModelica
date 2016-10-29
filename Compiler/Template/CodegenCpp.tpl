@@ -11255,7 +11255,7 @@ template preCallExp(Exp left, Exp right, Context context, Text &varDecls, SimCod
   case left as DAE.CREF(componentRef = cr) then
     let var = cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
     match cref2simvar(cr, simCode)
-    case SIMVAR(numArrayElement = {}) then
+    case SIMVAR(arrayCref = NONE()) then
       <<
       <%var%> = _discrete_events->pre(<%var%>);
       >>
@@ -11268,11 +11268,11 @@ template preCallExp(Exp left, Exp right, Context context, Text &varDecls, SimCod
       <%forLoops%>
         <%var%>(<%indices%>) = _discrete_events->pre(<%var%>(<%indices%>));
       >>
-    else
-      <<; // unknown pre type>>
     end match
   else
-    <<; // unknown lhs for pre>>
+    <<
+    #error unknown preCallExp <%ExpressionDumpTpl.dumpExp(left, "\"")%>
+    >>
   end match
 end preCallExp;
 
