@@ -87,9 +87,11 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (!(isAlias || isNegatedAlias))
               {
                 boost::optional<double> v = var.second.get_optional<double>("<xmlattr>.start");
-                double value = (v? (*v):0.0);
-                LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value) ,LC_INIT,LL_DEBUG);
-                system.setRealStartValue(realVars[refIdx],value);
+                if (v) {
+                  double value = *v;
+                  LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                  system.setRealStartValue(realVars[refIdx], value);
+                }
               }
               const double& realVar = sim_vars->getRealVar(refIdx);
               const double* realVarPtr = &realVar;
@@ -107,9 +109,11 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (!(isAlias || isNegatedAlias))
               {
                 boost::optional<int> v = var.second.get_optional<int>("<xmlattr>.start");
-                int value = (v? (*v):0);
-                LOGGER_WRITE("XMLPropertyReader: Setting int variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value) ,LC_INIT,LL_DEBUG);
-                system.setIntStartValue(intVars[refIdx],value);
+                if (v) {
+                  int value = *v;
+                  LOGGER_WRITE("XMLPropertyReader: Setting int variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                  system.setIntStartValue(intVars[refIdx], value);
+                }
               }
               const int& intVar = sim_vars->getIntVar(refIdx);
               const int* intVarPtr = &intVar;
@@ -127,9 +131,11 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (!(isAlias || isNegatedAlias))
               {
                 boost::optional<bool> v = var.second.get_optional<bool>("<xmlattr>.start");
-                bool value = (v? (*v):false);
-                LOGGER_WRITE("XMLPropertyReader: Setting bool variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value) ,LC_INIT,LL_DEBUG);
-                system.setBoolStartValue(boolVars[refIdx],value);
+                if (v) {
+                  bool value = *v;
+                  LOGGER_WRITE("XMLPropertyReader: Setting bool variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                  system.setBoolStartValue(boolVars[refIdx], value);
+                }
               }
               const bool& boolVar = sim_vars->getBoolVar(refIdx);
               const bool* boolVarPtr = &boolVar;
@@ -147,9 +153,11 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (!(isAlias || isNegatedAlias))
               {
                 boost::optional<string> v = var.second.get_optional<string>("<xmlattr>.start");
-                string value = (v? (*v):"");
-                LOGGER_WRITE("XMLPropertyReader: Setting string variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value) ,LC_INIT,LL_DEBUG);
-                system.setStringStartValue(stringVars[refIdx],value);
+                if (v) {
+                  string value = *v;
+                  LOGGER_WRITE("XMLPropertyReader: Setting string variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                  system.setStringStartValue(stringVars[refIdx], value);
+                }
               }
             }
           }
