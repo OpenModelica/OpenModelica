@@ -23,7 +23,17 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
 // record SimulationResult
 //     resultFile = "BouncingBall_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-port=41442 -logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS'",
-//     messages = "Warning: unrecognized command line options -port=41442 -logFormat=xml -dasslJacobian=coloredNumerical -lv=LOG_STATS
+//     messages = "<message stream=\"other\" type=\"warning\" text=\"Warning: unrecognized command line options -port=41442 -dasslJacobian=coloredNumerical \" />
+// <message stream=\"solver\" type=\"info\" text=\"SimManager: Start simulation at t = 0.000000\" />
+// <message stream=\"solver\" type=\"info\" text=\"SimManager: Simulation stop time: 1.000000\" />
+// <message stream=\"solver\" type=\"info\" text=\"Simulation info from solver:\" >
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: number steps = 23\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: function evaluations 'f' = 24\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: linear solver setups 'nsetups' = 22\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: nonlinear iterations 'nni' = 23\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: convergence failures 'ncfn' = 0\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: number of evaluateODE calls 'eODE' = 86\" />
+// </message>
 // "
 // end SimulationResult;
 // {"Files Equal!"}
