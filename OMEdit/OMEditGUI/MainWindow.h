@@ -358,10 +358,11 @@ private:
   QToolBar *mpEditToolBar;
   QToolBar *mpViewToolBar;
   QToolBar *mpShapesToolBar;
-  QToolBar *mpSimulationToolBar;
   QToolBar *mpModelSwitcherToolBar;
   QToolButton *mpModelSwitcherToolButton;
   QMenu *mpModelSwitcherMenu;
+  QToolBar *mpCheckToolBar;
+  QToolBar *mpSimulationToolBar;
   QToolBar *mpReSimulationToolBar;
   QToolBar *mpPlotToolBar;
   QToolBar *mpTLMSimulationToolbar;

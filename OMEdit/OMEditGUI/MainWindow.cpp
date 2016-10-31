@@ -2807,10 +2807,11 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpEditToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpViewToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpShapesToolBar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpModelSwitcherToolBar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpCheckToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpReSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
-  pViewToolbarsMenu->addAction(mpModelSwitcherToolBar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
@@ -3173,19 +3174,6 @@ void MainWindow::createToolbars()
   mpShapesToolBar->addAction(mpBitmapShapeAction);
   mpShapesToolBar->addSeparator();
   mpShapesToolBar->addAction(mpConnectModeAction);
-  // Simulation Toolbar
-  mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
-  mpSimulationToolBar->setObjectName("Simulation Toolbar");
-  mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  // add actions to Simulation Toolbar
-  mpSimulationToolBar->addAction(mpInstantiateModelAction);
-  mpSimulationToolBar->addAction(mpCheckModelAction);
-  mpSimulationToolBar->addAction(mpCheckAllModelsAction);
-  mpSimulationToolBar->addAction(mpSimulateModelAction);
-  mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
-  mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
-  mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");
@@ -3203,6 +3191,24 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.svg"));
   connect(mpModelSwitcherToolButton, SIGNAL(clicked()), this, SLOT(openRecentModelWidget()));
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
+  // Check Toolbar
+  mpCheckToolBar = addToolBar(tr("Check Toolbar"));
+  mpCheckToolBar->setObjectName("Check Toolbar");
+  mpCheckToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to Check Toolbar
+  mpCheckToolBar->addAction(mpCheckModelAction);
+  mpCheckToolBar->addAction(mpCheckAllModelsAction);
+  mpCheckToolBar->addAction(mpInstantiateModelAction);
+  // Simulation Toolbar
+  mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
+  mpSimulationToolBar->setObjectName("Simulation Toolbar");
+  mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to Simulation Toolbar
+  mpSimulationToolBar->addAction(mpSimulateModelAction);
+  mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
+  mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
+  mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
+  mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
