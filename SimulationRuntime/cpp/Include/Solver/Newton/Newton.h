@@ -89,5 +89,6 @@ class Newton : public IAlgLoopSolver
     *_jac,                      ///< Temp        - Jacobian
     *_zeroVec;
   long int *_iHelp;
+  LogCategory _lc;              ///< LC_NLS or LC_LS
 
 };/** @} */ // end of solverNewton

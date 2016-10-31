@@ -14,16 +14,22 @@
 #include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
+#ifdef USE_LOGGER
+  #define LOG_VEC(algLoop, name, vec, lc, ll) LogVec(algLoop, name, vec, lc, ll)
+#else
+  #define LOG_VEC(algLoop, name, vec, lc, ll)
+#endif
+
 template <typename S, typename T>
-static inline void LogSysVec(IAlgLoop* algLoop, S name, T vec[]) {
-  if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
+static inline void LogVec(IAlgLoop* algLoop, S name, T vec[],
+                          LogCategory lc, LogLevel ll) {
+  if (LOGGER_IS_SET(lc, ll)) {
     std::stringstream ss;
-    ss << "Newton: eq" << to_string(algLoop->getEquationIndex());
-    ss << ", time " << algLoop->getSimTime() << ": " << name << " = {";
+    ss << name << " = {";
     for (int i = 0; i < algLoop->getDimReal(); i++)
       ss <<  (i > 0? ", ": "") << vec[i];
     ss << "}";
-    Logger::write(ss.str(), LC_NLS, LL_DEBUG);
+    LOGGER_WRITE(ss.str(), lc, ll);
   }
 }
 
@@ -46,6 +52,7 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
   , _dimSys           (0)
   , _firstCall        (true)
   , _iterationStatus  (CONTINUE)
+  , _lc               (algLoop->isLinear()? LC_LS: LC_NLS)
 {
 }
 
@@ -123,11 +130,10 @@ void Newton::initialize()
       _iterationStatus = SOLVERERROR;
     }
   }
-  if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
-    Logger::write("Newton: eq" + to_string(_algLoop->getEquationIndex())
-                  + " initialized", LC_NLS, LL_DEBUG);
-    LogSysVec(_algLoop, "names", _yNames);
-  }
+  LOGGER_WRITE_BEGIN("Newton: eq" + to_string(_algLoop->getEquationIndex()) +
+                     " initialized", _lc, LL_DEBUG);
+  LOG_VEC(_algLoop, "names", _yNames, _lc, LL_DEBUG);
+  LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
 
 void Newton::solve()
@@ -152,6 +158,10 @@ void Newton::solve()
 
   // Reset status flag
   _iterationStatus = CONTINUE;
+
+  LOGGER_WRITE_BEGIN("Newton: eq" + to_string(_algLoop->getEquationIndex()) +
+                     " at time " + to_string(_algLoop->getSimTime()) + ":",
+                     _lc, LL_DEBUG);
 
   while (_iterationStatus == CONTINUE) {
     // Check stopping criterion
@@ -205,8 +215,8 @@ void Newton::solve()
 
         // Determination of Jacobian for non-linear system
         else {
-          LogSysVec(_algLoop, "y" + to_string(totSteps), _y);
-          LogSysVec(_algLoop, "f" + to_string(totSteps), _f);
+          LOG_VEC(_algLoop, "y" + to_string(totSteps), _y, _lc, LL_DEBUG);
+          LOG_VEC(_algLoop, "f" + to_string(totSteps), _f, _lc, LL_DEBUG);
           double phi = 0.0; // line search function
           for (int i = 0; i < _dimSys; ++i) {
             phi += _f[i] * _f[i];
@@ -305,14 +315,10 @@ void Newton::solve()
                   phiHelp += _fHelp[i] * _fHelp[i];
                 }
               }
-              if (Logger::getInstance()->isOutput(LC_NLS, LL_DEBUG)) {
-                std::stringstream ss;
-                ss << "Newton: eq" << to_string(_algLoop->getEquationIndex());
-                ss << ", time " << _algLoop->getSimTime();
-                ss << ": lambda = " << lambda;
-                ss << ", phi = " << phi << " --> " << phiHelp;
-                Logger::write(ss.str(), LC_NLS, LL_DEBUG);
-              }
+              LOGGER_WRITE("lambda = " + to_string(lambda) +
+                           ", phi = " + to_string(phi) +
+                           " --> " + to_string(phiHelp),
+                           _lc, LL_DEBUG);
             }
             // check for sufficient decrease
             if (phiHelp <= (1.0 - alpha * lambda) * phi)
@@ -329,7 +335,9 @@ void Newton::solve()
           "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
     }
   } // end while
-  LogSysVec(_algLoop, "y*", _y);
+
+  LOG_VEC(_algLoop, "y*", _y, _lc, LL_DEBUG);
+  LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
 
 IAlgLoopSolver::ITERATIONSTATUS Newton::getIterationStatus()

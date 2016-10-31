@@ -9,11 +9,17 @@
 #define LOGGER_HPP_
 
 #ifdef USE_LOGGER
-  #define LOGGER_WRITE(msg, cat, lvl) Logger::write(msg, cat, lvl)
-  #define LOGGER_WRITE_TUPLE(msg, mode) Logger::write(msg, mode)
-  #define LOGGER_WRITE_BEGIN(msg, cat, lvl) Logger::writeBegin(msg, cat, lvl)
+  // check for log settings to avoid construction of unused log strings
+  #define LOGGER_IS_SET(cat, lvl) Logger::getInstance()->isSet(cat, lvl)
+  #define LOGGER_WRITE(msg, cat, lvl) \
+    if (LOGGER_IS_SET(cat, lvl)) Logger::write(msg, cat, lvl)
+  #define LOGGER_WRITE_TUPLE(msg, mode) \
+    if (LOGGER_IS_SET(mode.first, mode.second)) Logger::write(msg, mode)
+  #define LOGGER_WRITE_BEGIN(msg, cat, lvl) \
+    if (LOGGER_IS_SET(cat, lvl)) Logger::writeBegin(msg, cat, lvl)
   #define LOGGER_WRITE_END(cat, lvl) Logger::writeEnd(cat, lvl)
 #else
+  #define LOGGER_IS_SET(cat, lvl) false
   #define LOGGER_WRITE(msg, cat, lvl)
   #define LOGGER_WRITE_TUPLE(msg, mode)
   #define LOGGER_WRITE_BEGIN(msg, cat, lvl)
@@ -42,19 +48,19 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     static inline void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
-      if (instance && instance->isOutput(cat, lvl))
+      if (instance && instance->isSet(cat, lvl))
         instance->writeInternal(msg, cat, lvl, true);
     }
 
     static inline void writeBegin(std::string msg, LogCategory cat, LogLevel lvl)
     {
-      if (instance && instance->isOutput(cat, lvl))
+      if (instance && instance->isSet(cat, lvl))
         instance->writeInternal(msg, cat, lvl, false);
     }
 
     static inline void writeEnd(LogCategory cat, LogLevel lvl)
     {
-      if (instance && instance->isOutput(cat, lvl))
+      if (instance && instance->isSet(cat, lvl))
         instance->writeInternal("", cat, lvl, true);
     }
 
@@ -78,14 +84,14 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
       return std::pair<LogCategory, LogLevel>(cat, lvl);
     }
 
-    bool isOutput(LogCategory cat, LogLevel lvl) const
+    bool isSet(LogCategory cat, LogLevel lvl) const
     {
       return _isEnabled && _settings.modes[cat] >= lvl;
     }
 
-    bool isOutput(std::pair<LogCategory,LogLevel> mode) const
+    bool isSet(std::pair<LogCategory,LogLevel> mode) const
     {
-      return isOutput(mode.first, mode.second);
+      return isSet(mode.first, mode.second);
     }
 
   protected:
