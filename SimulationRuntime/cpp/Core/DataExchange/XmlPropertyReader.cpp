@@ -41,6 +41,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
       ptree modelDescription = tree.get_child("ModelDescription");
 
+      LOGGER_WRITE_BEGIN("Initialize start values:", LC_INIT, LL_DEBUG);
       FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
       {
         if (vars.first == "ScalarVariable")
@@ -163,6 +164,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
           }
         }
       }
+      LOGGER_WRITE_END(LC_INIT, LL_DEBUG);
     }
     catch(exception &ex)
     {

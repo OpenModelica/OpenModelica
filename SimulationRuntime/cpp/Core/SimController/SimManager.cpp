@@ -300,15 +300,15 @@ void SimManager::stopSimulation()
 
 void SimManager::writeProperties()
 {
-	// declaration for Logging
-	std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLV, LL_INFO);
+  // declaration for Logging
+  std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLV, LL_INFO);
 
-	LOGGER_WRITE_TUPLE("SimManager: Computation time", logM);
-	LOGGER_WRITE_TUPLE("SimManager: Simulation end time:          " + to_string(_tEnd), logM);
-    //LOGGER_WRITE("Rechenzeit in Sekunden:                 " + to_string>(_tClockEnd-_tClockStart), logM);
+  LOGGER_WRITE_TUPLE("SimManager: Simulation stop time: " + to_string(_tEnd), logM);
+  //LOGGER_WRITE("Rechenzeit in Sekunden:                 " + to_string>(_tClockEnd-_tClockStart), logM);
 
-	LOGGER_WRITE_TUPLE("Simulation info from solver:", logM);
+  LOGGER_WRITE_BEGIN("Simulation info from solver:", LC_SOLV, LL_INFO);
   _solver->writeSimulationInfo();
+  LOGGER_WRITE_END(LC_SOLV, LL_INFO);
 /*
      // Zeit
     if(_settings->_globalSettings->bEndlessSim)
