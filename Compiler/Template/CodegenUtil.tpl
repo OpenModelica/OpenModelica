@@ -272,8 +272,8 @@ template ScalarVariableTypeStartAttribute(Option<DAE.Exp> startValue, DAE.Type t
  "generates code for start attribute"
 ::=
   match startValue
-    case SOME(exp) then 'useStart="true"<%StartString(exp)%>'
-    case NONE() then 'useStart="false"'
+    case SOME(exp) then '<%StartString(exp)%>'
+    else ''
 end ScalarVariableTypeStartAttribute;
 
 template ScalarVariableTypeFixedAttribute(Boolean isFixed)

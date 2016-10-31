@@ -196,7 +196,6 @@ typedef struct REAL_ATTRIBUTE
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
   modelica_real nominal;               /* = 1.0 */
-  modelica_boolean useStart;           /* = false */
   modelica_real start;                 /* = 0.0 */
 }REAL_ATTRIBUTE;
 
@@ -205,20 +204,17 @@ typedef struct INTEGER_ATTRIBUTE
   modelica_integer min;                /* = -Inf */
   modelica_integer max;                /* = +Inf */
   modelica_boolean fixed;              /* depends on the type */
-  modelica_boolean useStart;           /* = false */
   modelica_integer start;              /* = 0 */
 }INTEGER_ATTRIBUTE;
 
 typedef struct BOOLEAN_ATTRIBUTE
 {
   modelica_boolean fixed;              /* depends on the type */
-  modelica_boolean useStart;           /* = false */
   modelica_boolean start;              /* = false */
 }BOOLEAN_ATTRIBUTE;
 
 typedef struct STRING_ATTRIBUTE
 {
-  modelica_boolean useStart;           /* = false */
   modelica_string start;               /* = "" */
 }STRING_ATTRIBUTE;
 

@@ -3006,7 +3006,6 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.min = <%optInitValFMU(minValue,"-DBL_MAX")%>;
       <%attrstr%>.max = <%optInitValFMU(maxValue,"DBL_MAX")%>;
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
     case T_REAL(__) then
@@ -3018,18 +3017,15 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
       <%attrstr%>.nominal = <%optInitValFMU(nominalValue,"0.0")%>;
-      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0.0")%>;
       >>
     case T_BOOL(__) then
       <<
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
     case T_STRING(__) then
       <<
-      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"\"\"")%>;
       >>
     case T_ENUMERATION(__) then
@@ -3037,7 +3033,6 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.min = <%optInitValFMU(minValue,"1")%>;
       <%attrstr%>.max = <%optInitValFMU(maxValue,listLength(names))%>;
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.useStart = <%if startValue then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
     else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')

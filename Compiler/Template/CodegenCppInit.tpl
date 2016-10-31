@@ -186,10 +186,10 @@ template ScalarVariableTypeStartAttribute(SimCode simCode, DAE.ComponentRef simV
               let &complexStartExpressions += '<%varDecls%><%complexPreExpression%>SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%expression%>);<%\n%>'
               ''
             else ''
-          'useStart="false"'
+          ''
         else
-          'useStart="true"<%startString%>'
-    case NONE() then 'useStart="false"'
+          '<%startString%>'
+    case NONE() then ''
 end ScalarVariableTypeStartAttribute;
 
 template algLoopXML(SimEqSystem eqs, SimCode simCode, HashTableCrIListArray.HashTable varToArrayIndexMapping, String indexForUndefinedReferences)

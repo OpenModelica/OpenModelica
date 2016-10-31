@@ -402,7 +402,7 @@ algorithm
   case Type.T_INTEGER(__)
     algorithm
       File.write(file, "<Integer ");
-      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeAttribute(file, startValue, "start");
       scalarVariableTypeFixedAttribute(file, isFixed);
       scalarVariableTypeAttribute(file, minValue, "min");
       scalarVariableTypeAttribute(file, maxValue, "max");
@@ -413,7 +413,7 @@ algorithm
   case Type.T_REAL(__)
     algorithm
       File.write(file, "<Real ");
-      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeAttribute(file, startValue, "start");
       scalarVariableTypeFixedAttribute(file, isFixed);
       scalarVariableTypeUseAttribute(file, nominalValue, "useNominal", "nominal");
       scalarVariableTypeAttribute(file, minValue, "min");
@@ -424,7 +424,7 @@ algorithm
   case Type.T_BOOL(__)
     algorithm
       File.write(file, "<Boolean ");
-      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeAttribute(file, startValue, "start");
       scalarVariableTypeFixedAttribute(file, isFixed);
       scalarVariableTypeStringAttribute(file, unit, "unit");
       scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
@@ -432,7 +432,7 @@ algorithm
   case Type.T_STRING(__)
     algorithm
       File.write(file, "<String ");
-      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeAttribute(file, startValue, "start");
       scalarVariableTypeFixedAttribute(file, isFixed);
       scalarVariableTypeStringAttribute(file, unit, "unit");
       scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
@@ -440,7 +440,7 @@ algorithm
   case Type.T_ENUMERATION(__)
     algorithm
       File.write(file, "<Integer ");
-      scalarVariableTypeUseAttribute(file, startValue, "useStart", "start");
+      scalarVariableTypeAttribute(file, startValue, "start");
       scalarVariableTypeFixedAttribute(file, isFixed);
       scalarVariableTypeStringAttribute(file, unit, "unit");
       scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");

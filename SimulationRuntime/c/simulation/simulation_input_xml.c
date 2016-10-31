@@ -374,7 +374,6 @@ static void read_var_info(omc_ScalarVariable *v, VAR_INFO *info)
 
 static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attribute)
 {
-  read_value_bool(findHashStringString(v,"useStart"), (modelica_boolean*)&(attribute->useStart));
   read_value_real(findHashStringStringEmpty(v,"start"), &(attribute->start), 0.0);
   read_value_bool(findHashStringString(v,"fixed"), (modelica_boolean*)&(attribute->fixed));
   read_value_bool(findHashStringString(v,"useNominal"), (modelica_boolean*)&(attribute->useNominal));
@@ -382,37 +381,34 @@ static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attri
   read_value_real(findHashStringStringEmpty(v,"min"), &(attribute->min), REAL_MIN);
   read_value_real(findHashStringStringEmpty(v,"max"), &(attribute->max), REAL_MAX);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), (attribute->useStart)?"":"{", attribute->start, (attribute->useStart)?"":"}", (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
+  infoStreamPrint(LOG_DEBUG, 0, "Real %s(start=%g, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), attribute->start, (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_int(omc_ScalarVariable *v, INTEGER_ATTRIBUTE *attribute)
 {
-  read_value_bool(findHashStringString(v,"useStart"), &attribute->useStart);
   read_value_long(findHashStringStringEmpty(v,"start"), &attribute->start, 0);
   read_value_bool(findHashStringString(v,"fixed"), &attribute->fixed);
   read_value_long(findHashStringStringEmpty(v,"min"), &attribute->min, INTEGER_MIN);
   read_value_long(findHashStringStringEmpty(v,"max"), &attribute->max, INTEGER_MAX);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->useStart?"":"{", attribute->start, attribute->useStart?"":"}", attribute->fixed?"true":"false", attribute->min, attribute->max);
+  infoStreamPrint(LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE *attribute)
 {
-  read_value_bool(findHashStringString(v,"useStart"), &attribute->useStart);
   read_value_bool(findHashStringStringEmpty(v,"start"), &attribute->start);
   read_value_bool(findHashStringString(v,"fixed"), &attribute->fixed);
 
-  infoStreamPrint(LOG_DEBUG, 0, "Boolean %s(%sstart=%s%s, fixed=%s)", findHashStringString(v,"name"), attribute->useStart?"":"{", attribute->start?"true":"false", attribute->useStart?"":"}", attribute->fixed?"true":"false");
+  infoStreamPrint(LOG_DEBUG, 0, "Boolean %s(start=%s, fixed=%s)", findHashStringString(v,"name"), attribute->start?"true":"false", attribute->fixed?"true":"false");
 }
 
 static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *attribute)
 {
   const char *start = NULL;
-  read_value_bool(findHashStringString(v,"useStart"), &attribute->useStart);
   read_value_string(findHashStringStringEmpty(v,"start"), &start);
   attribute->start = mmc_mk_scon_persist(start);
 
-  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", findHashStringString(v,"name"), attribute->useStart?"":"{", MMC_STRINGDATA(attribute->start), attribute->useStart?"":"}");
+  infoStreamPrint(LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), MMC_STRINGDATA(attribute->start));
 }
 
 /* \brief
