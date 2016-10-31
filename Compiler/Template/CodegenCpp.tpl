@@ -1648,7 +1648,6 @@ int _tmain(int argc, const _TCHAR* argv[])
   //SimController to start simulation
 
   std::pair<shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
-  //Logger::initialize(simulation.second.logSettings);
 
   //create Modelica system
   shared_ptr<ISimObjects> simObjects= simulation.first->getSimObjects();
@@ -2328,7 +2327,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             //SimController to start simulation
 
             std::pair<shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
-            Logger::initialize(simulation.second.logSettings);
 
             //create Modelica system
             shared_ptr<ISimObjects> simObjects= simulation.first->getSimObjects();

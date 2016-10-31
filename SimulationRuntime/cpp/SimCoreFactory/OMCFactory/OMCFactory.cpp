@@ -5,9 +5,11 @@
 
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/ISimController.h>
+#include <Core/System/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
 #include <boost/container/vector.hpp>
@@ -68,24 +70,136 @@ pair<string, string> OMCFactory::parseIngoredAndWrongFormatOption(const string &
         return make_pair(string(), string());
 }
 
+static LogSettings initializeLogger(const po::variables_map& vm)
+{
+  map<string, LogCategory> logCatMap = MAP_LIST_OF
+    "init", LC_INIT MAP_LIST_SEP "nls", LC_NLS MAP_LIST_SEP
+    "ls", LC_LS MAP_LIST_SEP "solv", LC_SOLV MAP_LIST_SEP
+    "output", LC_OUT MAP_LIST_SEP "event", LC_EVT MAP_LIST_SEP
+    "model", LC_MOD MAP_LIST_SEP "other", LC_OTHER MAP_LIST_END;
+  map<string, LogLevel> logLvlMap = MAP_LIST_OF
+    "error", LL_ERROR MAP_LIST_SEP "warning", LL_WARNING MAP_LIST_SEP
+    "info", LL_INFO MAP_LIST_SEP "debug", LL_DEBUG MAP_LIST_END;
+  map<string, LogFormat> logFormatMap = MAP_LIST_OF
+    "txt", LF_TXT MAP_LIST_SEP "xml", LF_XML MAP_LIST_END;
+  map<string, LogOMEdit> logOMEditMap = MAP_LIST_OF
+    "LOG_EVENTS", LOG_EVENTS MAP_LIST_SEP "LOG_INIT", LOG_INIT MAP_LIST_SEP
+    "LOG_LS", LOG_LS  MAP_LIST_SEP "LOG_NLS", LOG_NLS  MAP_LIST_SEP
+    "LOG_SOLVER", LOG_SOLVER  MAP_LIST_SEP "LOG_STATS", LOG_STATS MAP_LIST_END;
+
+  LogSettings logSettings;
+  std::string logOMEditWarning;
+  if (vm.count("log-settings"))
+    {
+      vector<string> log_vec = vm["log-settings"].as<vector<string> >();
+      vector<string> tmpvec;
+      for (int i = 0; i < log_vec.size(); i++) {
+        // translate XML stream options to native options
+        if (log_vec[i].compare(0, 4, "LOG_") == 0) {
+          LogOMEdit logOMEdit;
+          boost::split(tmpvec, log_vec[i], boost::is_any_of(","));
+          for (int j = 0; j < tmpvec.size(); j++) {
+            if (logOMEditMap.find(tmpvec[j]) != logOMEditMap.end())
+              logOMEdit = logOMEditMap[tmpvec[j]];
+            else {
+              if (logOMEditWarning.size() > 0)
+                logOMEditWarning += ",";
+              logOMEditWarning += tmpvec[j];
+              continue;
+            }
+            switch (logOMEdit) {
+            case LOG_EVENTS:
+              logSettings.modes[LC_EVT] = LL_DEBUG;
+              break;
+            case LOG_INIT:
+              logSettings.modes[LC_INIT] = LL_DEBUG;
+              break;
+            case LOG_LS:
+              logSettings.modes[LC_LS] = LL_DEBUG;
+              break;
+            case LOG_NLS:
+              logSettings.modes[LC_NLS] = LL_DEBUG;
+              break;
+            case LOG_SOLVER:
+              logSettings.modes[LC_SOLV] = LL_DEBUG;
+              //case LOG_STATS:
+            default:
+              if (logSettings.modes[LC_SOLV] < LL_INFO)
+                logSettings.modes[LC_SOLV] = LL_INFO;
+            }
+          }
+        }
+        // treat native option
+        else {
+          boost::split(tmpvec, log_vec[i], boost::is_any_of("="));
+
+          if (tmpvec.size() > 1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end()
+              && (tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
+            {
+              if (tmpvec[0] == "all") {
+                logSettings.setAll(logLvlMap[tmpvec[1]]);
+                break;
+              }
+              else
+                logSettings.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
+            }
+          else
+            throw ModelicaSimulationError(MODEL_FACTORY,
+              "log-settings flags not supported: " + log_vec[i] + "\n");
+        }
+      }
+    }
+
+  if (vm.count("warn-all")) {
+    for (int i = 0; i < logSettings.modes.size(); i++)
+      if (logSettings.modes[i] < LL_WARNING)
+        logSettings.modes[i] = LL_WARNING;
+  }
+
+  if (vm.count("log-format")) {
+    string logFormat_str = vm["log-format"].as<string>();
+    if (logFormatMap.find(logFormat_str) != logFormatMap.end())
+      logSettings.format = logFormatMap[logFormat_str];
+    else
+      throw ModelicaSimulationError(MODEL_FACTORY,
+        "Unknown log-format " + logFormat_str);
+  }
+
+  // make sure other infos get issued and initialize logger
+  if (logSettings.modes[LC_OTHER] < LL_INFO)
+    logSettings.modes[LC_OTHER] = LL_INFO;
+
+  // initialize logger if it has been enabled
+  if (Logger::isEnabled())
+    Logger::initialize(logSettings);
+
+  if (logOMEditWarning.size() > 0) {
+    LOGGER_WRITE("Warning: unrecognized logging " + logOMEditWarning,
+                 LC_OTHER, LL_WARNING);
+    ostringstream os;
+    os << "Supported are: ";
+    map<std::string, LogOMEdit>::const_iterator it;
+    for (it = logOMEditMap.begin(); it != logOMEditMap.end(); ++it) {
+      if (it != logOMEditMap.begin())
+        os << ",";
+      os << it->first;
+    }
+    LOGGER_WRITE(os.str(), LC_OTHER, LL_INFO);
+  }
+
+  return logSettings;
+}
+
 SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 {
      int opt;
      int portnum;
-     map<string, LogCategory> logCatMap = MAP_LIST_OF
-       "init", LC_INIT MAP_LIST_SEP "nls", LC_NLS MAP_LIST_SEP
-       "ls", LC_LS MAP_LIST_SEP "solv", LC_SOLV MAP_LIST_SEP
-       "output", LC_OUT MAP_LIST_SEP "event", LC_EVT MAP_LIST_SEP
-       "model", LC_MOD MAP_LIST_SEP "other", LC_OTHER MAP_LIST_END;
-     map<string, LogLevel> logLvlMap = MAP_LIST_OF
-       "error", LL_ERROR MAP_LIST_SEP "warning", LL_WARNING MAP_LIST_SEP
-       "info", LL_INFO MAP_LIST_SEP "debug", LL_DEBUG MAP_LIST_END;
      map<string, OutputPointType> outputPointTypeMap = MAP_LIST_OF
        "all", OPT_ALL MAP_LIST_SEP "step", OPT_STEP MAP_LIST_SEP
        "none", OPT_NONE MAP_LIST_END;
      map<string, OutputFormat> outputFormatMap = MAP_LIST_OF
        "csv", CSV MAP_LIST_SEP "mat", MAT MAP_LIST_SEP
-       "buffer",  BUFFER MAP_LIST_SEP   "empty", EMPTY MAP_LIST_END;
+       "buffer", BUFFER MAP_LIST_SEP "empty", EMPTY MAP_LIST_END;
      map<string, EmitResults> emitResultsMap = MAP_LIST_OF
        "all", EMIT_ALL MAP_LIST_SEP "public", EMIT_PUBLIC MAP_LIST_SEP
        "none", EMIT_NONE MAP_LIST_END;
@@ -97,23 +211,25 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      //the variables of OMEdit are always the first elements of the result vectors, if they are set
      desc.add_options()
           ("help", "produce help message")
-          ("nls-continue", po::bool_switch()->default_value(false),"non linear solver will continue if it can not reach the given precision")
-          ("runtime-library,R", po::value<string>(),"path to cpp runtime libraries")
+          ("nls-continue", po::bool_switch()->default_value(false), "non linear solver will continue if it can not reach the given precision")
+          ("runtime-library,R", po::value<string>(), "path to cpp runtime libraries")
           ("modelica-system-library,M",  po::value<string>(), "path to Modelica library")
           ("results-file,F", po::value<vector<string> >(),"name of results file")
-          ("start-time,S", po::value< double >()->default_value(0.0),  "simulation start time")
-          ("stop-time,E", po::value< double >()->default_value(1.0),  "simulation stop time")
-          ("step-size,H", po::value< double >()->default_value(0.0),  "simulation step size")
-          ("solver,I", po::value< string >()->default_value("euler"),  "solver method")
-          ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver),  "linear solver method")
+          ("start-time,S", po::value< double >()->default_value(0.0), "simulation start time")
+          ("stop-time,E", po::value< double >()->default_value(1.0), "simulation stop time")
+          ("step-size,H", po::value< double >()->default_value(0.0), "simulation step size")
+          ("solver,I", po::value< string >()->default_value("euler"), "solver method")
+          ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver), "linear solver method")
           ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
-          ("number-of-intervals,G", po::value< int >()->default_value(500),  "number of intervals in equidistant grid")
-          ("tolerance,T", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-settings,V", po::value< vector<string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
-          ("alarm,A", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
-          ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
-          ("output-format,P", po::value< string >()->default_value("mat"),  "The simulation results output format")
-          ("emit-results,U", po::value< string >()->default_value("public"),  "emit results: all, public, none")
+          ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
+          ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
+          ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
+          ("log-settings,V", po::value< vector<string> >(), "log information: init, nls, ls, solv, output, event, model, other")
+          ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml")
+          ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
+          ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
+          ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
+          ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, public, none")
           ;
 
      // a group for all options that should not be visible if '--help' is set
@@ -140,20 +256,23 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      po::notify(vm);
 
      if (vm.count("help")) {
-         cout << desc << "\n";
+         cout << desc << endl;
          throw ModelicaSimulationError(MODEL_FACTORY, "Cannot parse command line arguments correctly, because the help message was requested.", "",true);
      }
 
-     // warn about unrecognized command line options, including OMEdit for now
+     LogSettings logSettings = initializeLogger(vm);
+
+     // warn about unrecognized command line options
      vector<string> unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
      if (vm.count("unrecognized")) {
          vector<string> opts = vm["unrecognized"].as<vector<string> >();
          unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
      }
      if (unrecognized.size() > 0) {
-         cerr << "Warning: unrecognized command line options ";
-         copy(unrecognized.begin(), unrecognized.end(), ostream_iterator<string>(cerr, " "));
-         cerr << endl;
+         ostringstream os;
+         os << "Warning: unrecognized command line options ";
+         copy(unrecognized.begin(), unrecognized.end(), ostream_iterator<string>(os, " "));
+         LOGGER_WRITE(os.str(), LC_OTHER, LL_WARNING);
      }
 
      string runtime_lib_path;
@@ -197,55 +316,41 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
 
-     string outputPointType_str;
      OutputPointType outputPointType;
      if (vm.count("output-type"))
      {
-         //cout << "results file: " << vm["results-file"].as<string>() << endl;
-         outputPointType_str = vm["output-type"].as<string>();
-         outputPointType = outputPointTypeMap[outputPointType_str];
+       string outputType_str = vm["output-type"].as<string>();
+       if (outputPointTypeMap.find(outputType_str) != outputPointTypeMap.end())
+         outputPointType = outputPointTypeMap[outputType_str];
+       else
+         throw ModelicaSimulationError(MODEL_FACTORY,
+           "Unknown output-type " + outputType_str);
      }
      else
-         throw ModelicaSimulationError(MODEL_FACTORY, "output-type is not set");
+       throw ModelicaSimulationError(MODEL_FACTORY, "output-type is not set");
 
-     LogSettings logSet;
-     if (vm.count("log-settings"))
-     {
-    	   vector<string> log_vec = vm["log-settings"].as<vector<string> >(),tmpvec;
-    	   for(unsigned i=0;i<log_vec.size();++i)
-    	   {
-    		     //cout << i << ". " << log_vec[i] << endl;
-    		     tmpvec.clear();
-    		     boost::split(tmpvec,log_vec[i],boost::is_any_of("="));
-
-    		     if(tmpvec.size()>1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end() && ( tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
-    		     {
-    		         if(tmpvec[0] == "all")
-    		         {
-    		             logSet.setAll(logLvlMap[tmpvec[1]]);
-    		             break;
-    		         }
-    			   else
-    				     logSet.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
-    	   }
-    		 else
-    			   throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + log_vec[i] + "\n");
-    	 }
-     }
      OutputFormat outputFormat;
      if (vm.count("output-format"))
      {
-         string outputFormat_str = vm["output-format"].as<string>();
+       string outputFormat_str = vm["output-format"].as<string>();
+       if (outputFormatMap.find(outputFormat_str) != outputFormatMap.end())
          outputFormat = outputFormatMap[outputFormat_str];
+       else
+         throw ModelicaSimulationError(MODEL_FACTORY,
+           "Unknown output-format " + outputFormat_str);
      }
      else
-         throw ModelicaSimulationError(MODEL_FACTORY, "output-format is not set");
+       throw ModelicaSimulationError(MODEL_FACTORY, "output-format is not set");
 
      EmitResults emitResults = EMIT_PUBLIC; // emit public per default for OMC use
      if (vm.count("emit-results"))
      {
-         string emitResults_str = vm["emit-results"].as<string>();
+       string emitResults_str = vm["emit-results"].as<string>();
+       if (emitResultsMap.find(emitResults_str) != emitResultsMap.end())
          emitResults = emitResultsMap[emitResults_str];
+       else
+         throw ModelicaSimulationError(MODEL_FACTORY,
+           "Unknown emit-results " + emitResults_str);
      }
 
      fs::path libraries_path = fs::path( runtime_lib_path) ;
@@ -254,7 +359,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSet,nlsContinueOnError,solverThreads,outputFormat,emitResults};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSettings,nlsContinueOnError,solverThreads,outputFormat,emitResults};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -338,7 +443,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
             "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
             "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP
             "solver", "-I" MAP_LIST_SEP "tolerance", "-T" MAP_LIST_SEP
-            "outputFormat", "-O" MAP_LIST_END;
+            "outputFormat", "-P" MAP_LIST_END;
           vector<string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
@@ -385,7 +490,11 @@ void OMCFactory::fillArgumentsToReplace()
 {
   _argumentsToReplace = map<string, string>();
   _argumentsToReplace.insert(pair<string,string>("-r", "-F"));
-  _argumentsToReplace.insert(pair<string,string>("-w", "-V all=warning"));
+  _argumentsToReplace.insert(pair<string,string>("-ls", "-L"));
+  _argumentsToReplace.insert(pair<string,string>("-nls", "-N"));
+  _argumentsToReplace.insert(pair<string,string>("-lv", "--log-settings"));
+  _argumentsToReplace.insert(pair<string,string>("-w", "--warn-all"));
+  _argumentsToReplace.insert(pair<string,string>("-logFormat", "--log-format"));
   _argumentsToReplace.insert(pair<string,string>("-alarm", "--alarm"));
   _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
 }

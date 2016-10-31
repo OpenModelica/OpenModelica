@@ -27,23 +27,28 @@ using std::string;
 
 enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
 enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
+enum LogFormat {LF_TXT = 0, LF_XML = 1};
+enum LogOMEdit {LOG_EVENTS = 0, LOG_INIT, LOG_LS, LOG_NLS, LOG_SOLVER, LOG_STATS};
 enum OutputPointType {OPT_ALL, OPT_STEP, OPT_NONE};
 enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
 enum EmitResults {EMIT_ALL, EMIT_PUBLIC, EMIT_NONE};
+
 struct LogSettings
 {
-	std::vector<LogLevel> modes;
+  std::vector<LogLevel> modes;
+  LogFormat format;
 
-	LogSettings()
-	{
-		modes = std::vector<LogLevel>(8,LL_WARNING);
-	}
+  LogSettings()
+  {
+    modes = std::vector<LogLevel>(8, LL_ERROR);
+    format = LF_TXT;
+  }
 
-	void setAll(LogLevel l)
-	{
-		for(unsigned i = 0; i < modes.size() ; ++i)
-			modes[i] = l;
-	}
+  void setAll(LogLevel l)
+  {
+    for (unsigned i = 0; i < modes.size() ; ++i)
+      modes[i] = l;
+  }
 };
 
 class IGlobalSettings
