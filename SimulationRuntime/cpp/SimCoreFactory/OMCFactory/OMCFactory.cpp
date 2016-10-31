@@ -74,8 +74,8 @@ static LogSettings initializeLogger(const po::variables_map& vm)
 {
   map<string, LogCategory> logCatMap = MAP_LIST_OF
     "init", LC_INIT MAP_LIST_SEP "nls", LC_NLS MAP_LIST_SEP
-    "ls", LC_LS MAP_LIST_SEP "solv", LC_SOLV MAP_LIST_SEP
-    "output", LC_OUT MAP_LIST_SEP "event", LC_EVT MAP_LIST_SEP
+    "ls", LC_LS MAP_LIST_SEP "solver", LC_SOLV MAP_LIST_SEP
+    "output", LC_OUT MAP_LIST_SEP "events", LC_EVT MAP_LIST_SEP
     "model", LC_MOD MAP_LIST_SEP "other", LC_OTHER MAP_LIST_END;
   map<string, LogLevel> logLvlMap = MAP_LIST_OF
     "error", LL_ERROR MAP_LIST_SEP "warning", LL_WARNING MAP_LIST_SEP
@@ -224,7 +224,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
           ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
           ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
-          ("log-settings,V", po::value< vector<string> >(), "log information: init, nls, ls, solv, output, event, model, other")
+          ("log-settings,V", po::value< vector<string> >(), "log information: init, nls, ls, solver, output, events, model, other")
           ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml")
           ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
