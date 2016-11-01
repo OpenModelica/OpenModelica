@@ -248,11 +248,11 @@ template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> min
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_INTEGER(__) then '<Integer<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_REAL(__) then '<Real<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_BOOL(__) then '<Boolean<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_STRING(__) then '<String<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_ENUMERATION(__) then '<Integer<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
     else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
 end ScalarVariableType;
