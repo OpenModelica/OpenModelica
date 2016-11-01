@@ -606,7 +606,7 @@ public:
   {
     assert((size1*size2*size3) > (size3*(i-1 + size2*(j-1)) + (k-1)));
     return *(RefArray<T, size1*size2*size3>::
-             _ref_array[size3*(i-1 + size2*(j-1)) + (k-1)]);
+             _ref_array[size3*(size2*(i-1) + (j-1)) + (k-1)]);
   }
 
   /**
