@@ -19,6 +19,7 @@ parameterTest15.mos \
 parameterTest16.mos \
 Engine1a_output.mos \
 revoluteConstraint.mos \
+hideResult.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
