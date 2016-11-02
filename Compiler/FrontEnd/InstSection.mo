@@ -1960,7 +1960,8 @@ algorithm
         dae = makeDaeEquation(lhs,rhs,source,initial_);
         // adrpo: TODO! FIXME! shouldn't we return the dae here??!!
       // PA: do not know, but at least return the functions.
-      then DAE.emptyDae;
+      then
+        dae;
 
     // adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
     //                   as is used in Modelica.Mechanics.MultiBody (Orientation type)
