@@ -77,7 +77,7 @@ void initializeStateSetPivoting(DATA *data)
   unsigned int aid = 0;
   modelica_integer *A = NULL;
 
-  /* go troug all state sets */
+  /* go trough all state sets */
   for(i=0; i<data->modelData->nStateSets; i++)
   {
     set = &(data->simulationInfo->stateSetData[i]);
@@ -86,7 +86,7 @@ void initializeStateSetPivoting(DATA *data)
 
     memset(A, 0, set->nCandidates*set->nStates*sizeof(modelica_integer));
 
-    /* initialize row and col indizes */
+    /* initialize row and col indices */
     for(n=0; n<set->nDummyStates; n++)
       set->rowPivot[n] = n;
 
@@ -191,9 +191,10 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
 
   if(ACTIVE_STREAM(LOG_DSS_JAC))
   {
-    char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[jacIndex].sizeCols*10);
+    char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[jacIndex].sizeCols*20);
 
     infoStreamPrint(LOG_DSS_JAC, 1, "jacobian %dx%d [id: %d]", data->simulationInfo->analyticJacobians[jacIndex].sizeRows, data->simulationInfo->analyticJacobians[jacIndex].sizeCols, jacIndex);
+
     for(i=0; i<data->simulationInfo->analyticJacobians[jacIndex].sizeRows; i++)
     {
       buffer[0] = 0;
@@ -277,7 +278,7 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
     modelica_integer entry = (i < nDummyStates) ? 1: 2;
     newEnable[ newPivot[i] ] = entry;
     oldEnable[ oldPivot[i] ] = entry;
- }
+  }
 
   for(i=0; i<nCandidates; i++)
   {
@@ -299,6 +300,44 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
 
   TRACE_POP
   return ret;
+}
+
+/*! \fn printStateSelectionInfo
+ *
+ *  function prints actually information about current state selection
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [set]
+ *
+ *  \author wbraun
+ */
+void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
+{
+  long k, l;
+
+  infoStreamPrint(LOG_DSS, 1, "Select %ld states from %ld candidates.", set->nStates, set->nCandidates);
+  for(k=0; k < set->nCandidates; k++)
+  {
+    infoStreamPrint(LOG_DSS, 0, "[%ld] cadidate %s", k+1, set->statescandidates[k]->name);
+  }
+  messageClose(LOG_DSS);
+
+  infoStreamPrint(LOG_DSS, 1, "Selected states");
+  {
+    unsigned int aid = set->A->id - data->modelData->integerVarsData[0].info.id;
+    modelica_integer *Adump = &(data->localData[0]->integerVars[aid]);
+    for(k=0; k < set->nStates; k++)
+    {
+      for(l=0; l < set->nCandidates; l++)
+      {
+        if (Adump[k*set->nCandidates+l] == 1)
+        {
+          infoStreamPrint(LOG_DSS, 0, "[%ld] %s", k+1, set->statescandidates[k]->name);
+        }
+      }
+    }
+  }
+  messageClose(LOG_DSS);
 }
 
 /*! \fn stateSelection
@@ -329,29 +368,12 @@ int stateSelection(DATA *data, threadData_t *threadData, char reportError, int s
     modelica_integer* oldColPivot = (modelica_integer*) malloc(set->nCandidates * sizeof(modelica_integer));
     modelica_integer* oldRowPivot = (modelica_integer*) malloc(set->nDummyStates * sizeof(modelica_integer));
 
-
     /* debug */
     if(ACTIVE_STREAM(LOG_DSS))
     {
-      infoStreamPrint(LOG_DSS, 1, "StateSelection Set %ld. Select %ld states from %ld candidates.", i, set->nStates, set->nCandidates);
-      for(k=0; k < set->nCandidates; k++)
-      {
-        infoStreamPrint(LOG_DSS, 0, "[%ld] cadidate %s", k+1, set->statescandidates[k]->name);
-      }
+      infoStreamPrint(LOG_DSS, 1, "StateSelection Set %ld at time = %f", i, data->localData[0]->timeValue);
+      printStateSelectionInfo(data, set);
       messageClose(LOG_DSS);
-
-      infoStreamPrint(LOG_DSS, 0, "StateSelection Matrix A");
-      {
-        unsigned int aid = set->A->id - data->modelData->integerVarsData[0].info.id;
-        modelica_integer *Adump = &(data->localData[0]->integerVars[aid]);
-        for(k=0; k < set->nCandidates; k++)
-        {
-          for(l=0; l < set->nStates; l++)
-          {
-            infoStreamPrint(LOG_DSS, 0, "A[%ld,%ld] = %ld", k+1, l+1, Adump[k*set->nCandidates+l]);
-          }
-        }
-      }
     }
     /* generate jacobian, stored in set->J */
     getAnalyticalJacobianSet(data, threadData, i);

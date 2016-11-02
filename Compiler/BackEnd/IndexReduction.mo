@@ -1596,7 +1596,7 @@ end addStateSets;
 protected function generateStateSets
 "author: Frenkel TUD 2013-01
   generate the found state sets for the system"
-  input StateSets iTplLst "nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
+  input StateSets iTplLst "level,nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
   input Integer iSetIndex;
   input BackendDAE.Variables iVars;
   input BackendDAE.EquationArray iEqns;
@@ -1630,21 +1630,21 @@ algorithm
     b := intGt(rang,1);
     // generate Set Vars
     (_,crset,setVars,crA,aVars,tp,crJ,varJ) := getSetVars(oSetIndex,rang,nStateCandidates,nUnassignedEquations,level);
-     // add Equations
-     // set.x = set.A*set.statecandidates
-     // der(set.x) = set.A*der(set.candidates)
-     expcrstates := List.map(stateCandidates,BackendVariable.varExp);
-     expcrstatesstart := List.map(expcrstates,makeStartExp);
-     expcrdstates := List.map(expcrstates,makeder);
-     expcrset := List.map(crset,Expression.crefExp);
-     expcrdset := List.map(expcrset,makeder);
-     expcrA := Expression.crefExp(crA);
-     expcrA := DAE.CAST(tp,expcrA);
-     tyExpCrStates := DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource);
-     op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}, DAE.emptyTypeSource)) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
-     mulAstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrstates));
-     (mulAstates,_) := Expression.extendArrExp(mulAstates,false);
-     mulAdstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrdstates));
+    // add Equations
+    // set.x = set.A*set.statecandidates
+    // der(set.x) = set.A*der(set.candidates)
+    expcrstates := List.map(stateCandidates,BackendVariable.varExp);
+    expcrstatesstart := List.map(expcrstates,makeStartExp);
+    expcrdstates := List.map(expcrstates,makeder);
+    expcrset := List.map(crset,Expression.crefExp);
+    expcrdset := List.map(expcrset,makeder);
+    expcrA := Expression.crefExp(crA);
+    expcrA := DAE.CAST(tp,expcrA);
+    tyExpCrStates := DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource);
+    op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}, DAE.emptyTypeSource)) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
+    mulAstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrstates));
+    (mulAstates,_) := Expression.extendArrExp(mulAstates,false);
+    mulAdstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrdstates));
     (mulAdstates,_) := Expression.extendArrExp(mulAdstates,false);
     expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listHead(expcrset);
     expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listHead(expcrdset);
@@ -4078,7 +4078,7 @@ protected function getSetVars
 "author: Frenkel TUD 2012-12"
   input Integer index;
   input Integer setsize;
-  input Integer nStates;
+  input Integer nCandidates;
   input Integer nCEqns;
   input Integer level;
   output DAE.ComponentRef crstates;
@@ -4100,16 +4100,16 @@ algorithm
   oSetVars := BackendVariable.generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
-  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
-                            else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
-  realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource)
-                                else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource)
+                            else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource);
+  realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource)
+                                else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource);
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
   oAVars := BackendVariable.generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
-  oAVars := setSetAStart(oAVars,1,1,setsize,{});
+  oAVars := setSetAStart(oAVars,1,1,nCandidates,{});
   tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
   oJVars := BackendVariable.generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
@@ -4121,11 +4121,11 @@ protected function setSetAStart
   input list<BackendDAE.Var> iVars;
   input Integer n;
   input Integer r;
-  input Integer nStates;
+  input Integer nCandidates;
   input list<BackendDAE.Var> iAcc;
   output list<BackendDAE.Var> oAcc;
 algorithm
-  oAcc := match(iVars,n,r,nStates,iAcc)
+  oAcc := match(iVars,n,r,nCandidates,iAcc)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> rest;
@@ -4135,10 +4135,10 @@ algorithm
       equation
         start = if intEq(n,r) then 1 else 0;
         v = BackendVariable.setVarStartValue(v,DAE.ICONST(start));
-        n1 = if intEq(n,nStates) then 1 else (n+1);
-        r1 = if intEq(n,nStates) then (r+1) else r;
+        n1 = if intEq(n,nCandidates) then 1 else (n+1);
+        r1 = if intEq(n,nCandidates) then (r+1) else r;
       then
-        setSetAStart(rest,n1,r1,nStates,v::iAcc);
+        setSetAStart(rest,n1,r1,nCandidates,v::iAcc);
   end match;
 end setSetAStart;
 
