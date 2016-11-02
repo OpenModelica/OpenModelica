@@ -3,6 +3,7 @@ TEST=../../../rtest -v
 TESTFILES=\
 ActivateWhenEquation.mo \
 BouncingBall.mo \
+Bug4124.mos \
 Circle.mo \
 ConditionalArrayExpression1.mo \
 ConditionalArrayExpression2.mo \
