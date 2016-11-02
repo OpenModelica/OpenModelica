@@ -40,6 +40,7 @@
 #include "OMPlot.h"
 #include "Visualizer.h"
 #include "VisualizerMAT.h"
+#include "VisualizerCSV.h"
 
 #include <iostream>
 #include <string>

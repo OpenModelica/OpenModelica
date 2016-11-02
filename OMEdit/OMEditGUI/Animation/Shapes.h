@@ -37,6 +37,7 @@
 #include <iostream>
 
 #include "util/read_matlab4.h"
+#include "util/read_csv.h"
 #include "rapidxml.hpp"
 //#include "fmilib.h"
 #include <osg/Vec3f>

@@ -224,63 +224,63 @@ void OMVisualBase::appendVisVariable(const rapidxml::xml_node<>* node, std::vect
 
 VisualizerAbstract::VisualizerAbstract()
     : _visType(VisType::NONE),
-      _baseData(nullptr),
-      _viewerStuff(nullptr),
-      _nodeUpdater(nullptr)
+      mpOMVisualBase(nullptr),
+      mpOMVisScene(nullptr),
+      mpUpdateVisitor(nullptr)
 {
-  _timeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
+  mpTimeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
 }
 
 VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
     : _visType(visType),
-      _baseData(nullptr),
-      _viewerStuff(new OMVisScene()),
-      _nodeUpdater(new UpdateVisitor()),
-      _timeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
+      mpOMVisualBase(nullptr),
+      mpOMVisScene(new OMVisScene()),
+      mpUpdateVisitor(new UpdateVisitor()),
+      mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
 {
-  _baseData = new OMVisualBase(modelFile, path);
-  _viewerStuff->getScene().setPath(path);
+  mpOMVisualBase = new OMVisualBase(modelFile, path);
+  mpOMVisScene->getScene().setPath(path);
 }
 
 void VisualizerAbstract::initData()
 {
     // In case of reloading, we need to make sure, that we have empty members.
-    _baseData->clearXMLDoc();
+    mpOMVisualBase->clearXMLDoc();
     // Initialize XML file and get visAttributes.
-    _baseData->initXMLDoc();
-    _baseData->initVisObjects();
+    mpOMVisualBase->initXMLDoc();
+    mpOMVisualBase->initVisObjects();
 }
 
 void VisualizerAbstract::initVisualization()
 {
-    initializeVisAttributes(_timeManager->getStartTime());
-    _timeManager->setVisTime(_timeManager->getStartTime());
-    _timeManager->setRealTimeFactor(0.0);
-    _timeManager->setPause(true);
+    initializeVisAttributes(mpTimeManager->getStartTime());
+    mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+    mpTimeManager->setRealTimeFactor(0.0);
+    mpTimeManager->setPause(true);
 }
 
 TimeManager* VisualizerAbstract::getTimeManager() const
 {
-    return _timeManager;
+    return mpTimeManager;
 }
 
 void VisualizerAbstract::sceneUpdate()
 {
   //measure realtime
-    _timeManager->updateTick();
+    mpTimeManager->updateTick();
     //update scene and set next time step
-    if (!_timeManager->isPaused())
+    if (!mpTimeManager->isPaused())
     {
-      updateScene(_timeManager->getVisTime());
-      double newTime = _timeManager->getVisTime() + (_timeManager->getHVisual()*_timeManager->getSpeedUp());
-      if (newTime <= _timeManager->getEndTime())
+      updateScene(mpTimeManager->getVisTime());
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+      if (newTime <= mpTimeManager->getEndTime())
       {
-        _timeManager->setVisTime(newTime);
+        mpTimeManager->setVisTime(newTime);
       }
       //finish animation with pause when endtime is reached
       else
       {
-        _timeManager->setPause(true);
+        mpTimeManager->setPause(true);
       }
     }
 }
@@ -288,7 +288,7 @@ void VisualizerAbstract::sceneUpdate()
 void VisualizerAbstract::setUpScene()
 {
     // Build scene graph.
-    _viewerStuff->getScene().setUpScene(_baseData->_shapes);
+    mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_shapes);
 }
 
 VisType VisualizerAbstract::getVisType() const
@@ -298,26 +298,26 @@ VisType VisualizerAbstract::getVisType() const
 
 OMVisualBase* VisualizerAbstract::getBaseData() const
 {
-    return _baseData;
+    return mpOMVisualBase;
 }
 
 
 
 OMVisScene* VisualizerAbstract::getOMVisScene() const
 {
-    return _viewerStuff;
+    return mpOMVisScene;
 }
 
 std::string VisualizerAbstract::getModelFile() const
 {
-    return _baseData->getModelFile();
+    return mpOMVisualBase->getModelFile();
 }
 
 void VisualizerAbstract::startVisualization()
 {
-    if (_timeManager->getVisTime() < _timeManager->getEndTime() - 1.e-6)
+    if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6)
     {
-        _timeManager->setPause(false);
+        mpTimeManager->setPause(false);
     }
     else
         std::cout<<"There is nothing left to visualize. Initialize the model first."<<std::endl;
@@ -325,7 +325,7 @@ void VisualizerAbstract::startVisualization()
 
 void VisualizerAbstract::pauseVisualization()
 {
-    _timeManager->setPause(true);
+    mpTimeManager->setPause(true);
 }
 
 

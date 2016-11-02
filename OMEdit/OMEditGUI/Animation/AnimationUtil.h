@@ -36,6 +36,9 @@
 #ifndef ANIMATIONUTIL_H
 #define ANIMATIONUTIL_H
 
+#include <QString>
+#include <QRegExp>
+
 #include <sys/stat.h>
 #include <string>
 
@@ -48,7 +51,9 @@ enum class VisType
   FMU = 1,
   FMU_REMOTE = 2,
   MAT = 3,
-  MAT_REMOTE = 4
+  MAT_REMOTE = 4,
+  CSV = 5,
+  CSV_REMOTE = 6
 };
 
 /*!
@@ -70,22 +75,24 @@ inline bool isMAT(const std::string& fileIn){
 }
 
 /*!
+ * \brief isCSV
+ * checks of the file is of type csv
+ */
+inline bool isCSV(const std::string& fileIn){
+  std::size_t csv = fileIn.find(".csv");
+  return (csv != std::string::npos);
+}
+
+/*!
  * \brief assembleXMLFileName
  * constructs the name of the corresponding xml file
  */
 inline std::string assembleXMLFileName(const std::string& modelFile, const std::string& path){
-  int signsOff(0);
-  if (isFMU(modelFile))
-    signsOff = 4;
-  else if (isMAT(modelFile))
-    signsOff = 8;
-  else{
-    // todo: Handle this case.
-  }
-  // Cut off prefix [fmu|mat]
-  std::string fileName = modelFile.substr(0, modelFile.length() - signsOff);
+  QString fileName = QString(modelFile.c_str());
+  QRegExp fileTypeRegExp("(.fmu|.mat|.csv|_res.mat|_res.csv)");
+  fileName.remove(fileTypeRegExp);
   // Construct XML file name
-  std::string xmlFileName = path + fileName + "_visual.xml";
+  std::string xmlFileName = path + fileName.toStdString() + "_visual.xml";
   return xmlFileName;
 }
 

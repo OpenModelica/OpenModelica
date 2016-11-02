@@ -35,53 +35,60 @@
 #include "VisualizerMAT.h"
 
 VisualizerMAT::VisualizerMAT(const std::string& modelFile, const std::string& path)
-        : VisualizerAbstract(modelFile, path, VisType::MAT),
-          _matReader()
+  : VisualizerAbstract(modelFile, path, VisType::MAT),
+    _matReader()
 {
+
 }
 
 void VisualizerMAT::initData()
 {
-    VisualizerAbstract::initData();
-    readMat(_baseData->getModelFile(), _baseData->getPath());
-    _timeManager->setStartTime(omc_matlab4_startTime(&_matReader));
-    _timeManager->setEndTime(omc_matlab4_stopTime(&_matReader));
+  VisualizerAbstract::initData();
+  readMat(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
+  mpTimeManager->setStartTime(omc_matlab4_startTime(&_matReader));
+  mpTimeManager->setEndTime(omc_matlab4_stopTime(&_matReader));
 }
 
 void VisualizerMAT::initializeVisAttributes(const double time)
 {
-    if (0.0 > time)
-        std::cout<<"Cannot load visualization attributes for time point < 0.0."<<std::endl;
-    updateVisAttributes(time);
+  if (0.0 > time)
+    std::cout<<"Cannot load visualization attributes for time point < 0.0."<<std::endl;
+  updateVisAttributes(time);
 }
 
 void VisualizerMAT::readMat(const std::string& modelFile, const std::string& path)
 {
-    std::string resFileName = path + modelFile;     // + "_res.mat";
+  std::string resFileName = path + modelFile;     // + "_res.mat";
 
-    // Check if the MAT file exists.
-    if (!fileExists(resFileName))
+  // Check if the MAT file exists.
+  if (!fileExists(resFileName))
+  {
+    std::string msg = "Could not find MAT file" + resFileName + ".";
+    std::cout<<msg<<std::endl;
+  }
+  else
+  {
+    // Read mat file.
+    auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
+    // Check return value.
+    if (0 != ret)
     {
-        std::string msg = "Could not find MAT file" + resFileName + ".";
-        std::cout<<msg<<std::endl;
+      std::string msg(ret);
+      std::cout<<msg<<std::endl;
     }
-    else
-    {
-        // Read mat file.
-        auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
-        // Check return value.
-        if (0 != ret)
-        {
-            std::string msg(ret);
-            std::cout<<msg<<std::endl;
-        }
-    }
+  }
 
-    /*
+  /*
      FILE * fileA = fopen("allVArs.txt", "w+");
      omc_matlab4_print_all_vars(fileA, &matReader);
      fclose(fileA);
      */
+}
+
+void VisualizerMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
+{
+  auto newVal = simSetMAT.speedup * mpTimeManager->getHVisual();
+  mpTimeManager->setHVisual(newVal);
 }
 
 void VisualizerMAT::updateVisAttributes(const double time)
@@ -94,7 +101,7 @@ void VisualizerMAT::updateVisAttributes(const double time)
   ModelicaMatReader* tmpReaderPtr = &_matReader;
   try
   {
-    for (auto& shape : _baseData->_shapes)
+    for (auto& shape : mpOMVisualBase->_shapes)
     {
       //std::cout<<"shape "<<shape._id <<std::endl;
 
@@ -137,63 +144,57 @@ void VisualizerMAT::updateVisAttributes(const double time)
       updateObjectAttributeMAT(&shape._extra, time, tmpReaderPtr);
 
       rT = rotateModelica2OSG(osg::Vec3f(shape._r[0].exp, shape._r[1].exp, shape._r[2].exp),
-                osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
-                osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
-                       shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
-                       shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
-                osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
-                osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
-                shape._length.exp,/* shape._width.exp, shape._height.exp,*/ shape._type);
+          osg::Vec3f(shape._rShape[0].exp, shape._rShape[1].exp, shape._rShape[2].exp),
+          osg::Matrix3(shape._T[0].exp, shape._T[1].exp, shape._T[2].exp,
+          shape._T[3].exp, shape._T[4].exp, shape._T[5].exp,
+          shape._T[6].exp, shape._T[7].exp, shape._T[8].exp),
+          osg::Vec3f(shape._lDir[0].exp, shape._lDir[1].exp, shape._lDir[2].exp),
+          osg::Vec3f(shape._wDir[0].exp, shape._wDir[1].exp, shape._wDir[2].exp),
+          shape._length.exp,/* shape._width.exp, shape._height.exp,*/ shape._type);
 
       assemblePokeMatrix(shape._mat, rT._T, rT._r);
       // Update the shapes.
-      _nodeUpdater->_shape = shape;
+      mpUpdateVisitor->_shape = shape;
       //shape.dumpVisAttributes();
       // Get the scene graph nodes and stuff.
-      child = _viewerStuff->getScene().getRootNode()->getChild(shapeIdx);  // the transformation
-      child->accept(*_nodeUpdater);
+      child = mpOMVisScene->getScene().getRootNode()->getChild(shapeIdx);  // the transformation
+      child->accept(*mpUpdateVisitor);
       ++shapeIdx;
     }
   }
   catch (std::exception& ex)
   {
     std::string msg = "Error in VisualizerMAT::updateVisAttributes at time point " + std::to_string(time)
-              + "\n" + std::string(ex.what());
+        + "\n" + std::string(ex.what());
     throw(msg);
   }
 }
 
 void VisualizerMAT::updateScene(const double time)
 {
-    _timeManager->updateTick();  //for real-time measurement
-    double visTime = _timeManager->getRealTime();
-    updateVisAttributes(time);
-    _timeManager->updateTick();  //for real-time measurement
-    visTime = _timeManager->getRealTime() - visTime;
-    _timeManager->setRealTimeFactor(_timeManager->getHVisual() / visTime);
+  mpTimeManager->updateTick();  //for real-time measurement
+  double visTime = mpTimeManager->getRealTime();
+  updateVisAttributes(time);
+  mpTimeManager->updateTick();  //for real-time measurement
+  visTime = mpTimeManager->getRealTime() - visTime;
+  mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
 void VisualizerMAT::updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader)
 {
-    if (!attr->isConst)
-        attr->exp = omcGetVarValue(reader, attr->cref.c_str(), time);
+  if (!attr->isConst)
+    attr->exp = omcGetVarValue(reader, attr->cref.c_str(), time);
 }
 
 double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
 {
-    double val = 0.0;
-    ModelicaMatVariable_t* var = nullptr;
-    var = omc_matlab4_find_var(reader, varName);
-    if (var == nullptr)
-        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
-    else
-        omc_matlab4_val(&val, reader, var, time);
+  double val = 0.0;
+  ModelicaMatVariable_t* var = nullptr;
+  var = omc_matlab4_find_var(reader, varName);
+  if (var == nullptr)
+    std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
+  else
+    omc_matlab4_val(&val, reader, var, time);
 
-    return val;
-}
-
-void VisualizerMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
-{
-    auto newVal = simSetMAT.speedup * _timeManager->getHVisual();
-    _timeManager->setHVisual(newVal);
+  return val;
 }

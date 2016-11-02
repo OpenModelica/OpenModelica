@@ -134,6 +134,7 @@ SOURCES += main.cpp \
   Animation/ExtraShapes.cpp \
   Animation/Visualizer.cpp \
   Animation/VisualizerMAT.cpp \
+  Animation/VisualizerCSV.cpp \
   Animation/Shapes.cpp \
   Animation/TimeManager.cpp \
   Component/Component.cpp \
@@ -206,6 +207,7 @@ HEADERS  += Util/Helper.h \
   Animation/ExtraShapes.h \
   Animation/Visualizer.h \
   Animation/VisualizerMAT.h \
+  Animation/VisualizerCSV.h \
   Animation/Shapes.h \
   Animation/TimeManager.h \
   Animation/rapidxml.hpp \
