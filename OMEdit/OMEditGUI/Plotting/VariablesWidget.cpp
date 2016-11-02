@@ -488,7 +488,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                               SimulationOptions simulationOptions)
 {
   QString toolTip = tr("Simulation Result File: %1\n%2: %3/%4").arg(fileName).arg(Helper::fileLocation).arg(filePath).arg(fileName);
-  QRegExp resultTypeRegExp("(_res.mat|_res.plt|_res.csv)");
+  QRegExp resultTypeRegExp("(.mat|.plt|.csv|_res.mat|_res.plt|_res.csv)");
   QString text = QString(fileName).remove(resultTypeRegExp);
   QModelIndex index = variablesTreeItemIndex(mpRootVariablesTreeItem);
   QVector<QVariant> Variabledata;

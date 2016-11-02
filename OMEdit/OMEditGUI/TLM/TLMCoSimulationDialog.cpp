@@ -159,7 +159,7 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
   mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(mpMainWindow);
-  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 90;
+  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
   int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
   mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());
 }
@@ -246,7 +246,7 @@ bool TLMCoSimulationDialog::validate()
 TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
 {
   TLMCoSimulationOptions tlmCoSimulationOptions;
-  tlmCoSimulationOptions.setClassName(mpLibraryTreeItem->getNameStructure());
+  tlmCoSimulationOptions.setClassName(mpLibraryTreeItem->getName());
   tlmCoSimulationOptions.setFileName(mpLibraryTreeItem->getFileName());
   tlmCoSimulationOptions.setTLMPluginPath(mpTLMPluginPathTextBox->text());
   tlmCoSimulationOptions.setManagerProcess(mpManagerProcessTextBox->text());
