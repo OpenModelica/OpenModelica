@@ -36,6 +36,9 @@ FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
 FIND_LIBOMQWT()
 
+AC_CHECK_HEADERS(osg/Vec3f, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(osg/GraphicsContext, [], [AC_MSG_ERROR(Missing header files)])
+
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
