@@ -43,8 +43,10 @@ void VisualizerCSV::initData()
   VisualizerAbstract::initData();
   readCSV(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
   double *time = read_csv_dataset(mpCSVData, "time");
-  mpTimeManager->setStartTime(time[0]);
-  mpTimeManager->setEndTime(time[mpCSVData->numsteps]);
+  if (time) {
+    mpTimeManager->setStartTime(time[0]);
+    mpTimeManager->setEndTime(time[mpCSVData->numsteps - 1]);
+  }
 }
 
 void VisualizerCSV::initializeVisAttributes(const double time)
@@ -171,7 +173,9 @@ double VisualizerCSV::omcGetVarValue(const char* varName, double time)
   for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
     if (timeDataSet[i] == time) {
       double *varDataSet = read_csv_dataset(mpCSVData, varName);
-      return varDataSet[i];
+      if (varDataSet) {
+        return varDataSet[i];
+      }
     }
   }
   return 0.0;

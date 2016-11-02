@@ -62,7 +62,7 @@ QString Helper::exeFileTypes = "Executable files (*)";
 #endif
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
-QString Helper::visualizationFileTypes = "Visualization Files (*.mat, *.csv);;Visualization MAT(*.mat);;Visualization CSV(*.csv)";
+QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv);;Visualization MAT(*.mat);;Visualization CSV(*.csv)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 QSize Helper::buttonIconSize = QSize(16, 16);

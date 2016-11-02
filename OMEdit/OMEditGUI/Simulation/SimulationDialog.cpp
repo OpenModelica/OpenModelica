@@ -1303,12 +1303,16 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
         mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
         // if simulated with animation then open the animation directly.
-        if (mpLaunchAnimationCheckBox->isChecked()) {
+        if (mpLaunchAnimationCheckBox->isChecked() && simulationOptions.getResultFileName().endsWith(".mat")) {
           mpMainWindow->getPlotWindowContainer()->addAnimationWindow();
           AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
           if (pAnimationWindow) {
             pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
           }
+        } else {
+          QString msg = tr("Animation is only supported with mat result files.");
+          mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                       Helper::scriptingKind, Helper::notificationLevel));
         }
       } else {
         // stay in current perspective and show variables browser
