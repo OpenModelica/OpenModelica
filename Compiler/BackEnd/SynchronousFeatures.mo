@@ -1662,6 +1662,7 @@ algorithm
                   varType = inType, bindExp = NONE(),
                   bindValue = inValue, arryDim = {}, source = DAE.emptyElementSource,
                   values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
+                  hideResult = DAE.BCONST(false),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
                   innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false );
 end createVar;

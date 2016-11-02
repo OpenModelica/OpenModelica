@@ -8437,6 +8437,7 @@ algorithm
       list<DAE.Dimension> inst_dims;
       list<String> numArrayElement;
       Option<DAE.VariableAttributes> dae_var_attr;
+      DAE.Exp hideResultExp;
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
       String  commentStr, unit, displayUnit;
@@ -8458,6 +8459,7 @@ algorithm
       varKind = kind as BackendDAE.PARAM(),
       arryDim = inst_dims,
       values = dae_var_attr,
+      hideResult = hideResultExp,
       comment = comment,
       varType = tp,
       source = source)), _, vars)
@@ -8465,7 +8467,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(comment, isProtected);
+        hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -8492,6 +8494,7 @@ algorithm
       varKind = kind as BackendDAE.STATE(),
       arryDim = inst_dims,
       values = dae_var_attr,
+      hideResult = hideResultExp,
       comment = comment,
       varType = tp,
       source = source)), _, vars)
@@ -8499,7 +8502,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(comment, isProtected);
+        hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -8520,6 +8523,7 @@ algorithm
       varKind = kind,
       arryDim = inst_dims,
       values = dae_var_attr,
+      hideResult = hideResultExp,
       comment = comment,
       varType = tp,
       source = source)), _, vars)
@@ -8527,7 +8531,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(comment, isProtected);
+        hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10684,26 +10688,18 @@ algorithm
 end getProtected;
 
 protected function getHideResult
-  "Returns the value of the HideResult annotation.
-   Uses isProtected as default if the annotation is not specified.
-   See Modelica Spec 3.3, section 18.3"
-  input Option<SCode.Comment> inComment;
-  input Boolean isProtected;
-  output Boolean outHideResult;
-protected
-  SCode.Annotation ann;
-  Absyn.Exp val;
+  "Returns the value of the hideResult attribute."
+  input DAE.Exp hideResultExp;
+  output Boolean hideResult;
 algorithm
-  try
-    SOME(SCode.COMMENT(annotation_=SOME(ann))) := inComment;
-    val := SCode.getNamedAnnotation(ann, "HideResult");
-    outHideResult := match(val)
-      case Absyn.BOOL(true) then true;
-      else false;
-    end match;
-  else
-    outHideResult := isProtected;
-  end try;
+  hideResult := match(hideResultExp)
+    case(DAE.BCONST(false)) then false;
+    case(DAE.BCONST(true)) then true;
+    else
+      equation
+        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is set to false by default.");
+     then false;
+  end match;
 end getHideResult;
 
 protected function createVarToArrayIndexMapping "author: marcusw

@@ -227,6 +227,7 @@ uniontype Var "variables"
     .DAE.ElementSource source "origin of variable";
     Option< .DAE.VariableAttributes> values "values on built-in attributes";
     Option<TearingSelect> tearingSelectOption "value for TearingSelect";
+    .DAE.Exp hideResult "expression from the hideResult annotation";
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
     .DAE.VarInnerOuter innerOuter "inner, outer, inner outer or unspecified";

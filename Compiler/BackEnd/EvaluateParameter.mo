@@ -844,16 +844,59 @@ algorithm
       list<DAE.Exp> exps;
       Option<DAE.VariableAttributes> attr;
       Values.Value value;
+      DAE.Exp hideResultExp;
+      Boolean b;
 
     // Parameter with bind expression
-    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e)) equation
+    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e), hideResult=hideResultExp) equation
       // save constant bindings of parameters if parameters are final and fixed
       if Expression.isConst(e) and BackendVariable.isFinalVar(v) and BackendVariable.varFixed(v) then
         // Save all constant bindings of final parameters in replacements
         (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
       else
         // apply replacements
-        (e, true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
+        (e, b) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
+        if b then
+          (e, _) = ExpressionSimplify.simplify(e);
+          // If call with constant arguments then evaluate
+          e = match(e)
+            local DAE.Exp e1;
+            case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+              equation
+               (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+               e1 = ValuesUtil.valueExp(value);
+             then e1;
+            case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+              equation
+               (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+               e1 = ValuesUtil.valueExp(value);
+             then e1;
+            else e;
+          end match;
+          v = BackendVariable.setBindExp(v, SOME(e));
+          (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
+          v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
+        end if;
+      end if;
+      // apply replacements in variable attributes
+      (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
+      v = BackendVariable.setVarAttributes(v, attr);
+      // apply replacements in hideResult attribute
+      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+      if b then
+        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        v.hideResult = hideResultExp;
+      end if;
+      globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
+     then ();
+
+    // Parameter without bind expression but with start attribute
+    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=NONE(), values=attr, hideResult=hideResultExp) equation
+      true = BackendVariable.varFixed(var);
+      e = DAEUtil.getStartAttrFail(attr);
+      // apply replacements
+      (e, b) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
+      if b then
         (e, _) = ExpressionSimplify.simplify(e);
         // If call with constant arguments then evaluate
         e = match(e)
@@ -870,77 +913,69 @@ algorithm
            then e1;
           else e;
         end match;
-        v = BackendVariable.setBindExp(v, SOME(e));
+        v = BackendVariable.setVarStartValue(var, e);
         (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
         v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
       end if;
-      (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
-      v = BackendVariable.setVarAttributes(v, attr);
-      globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
-    then ();
-
-    // Parameter without bind expression but with start attribute
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=NONE(), values=attr) equation
-      true = BackendVariable.varFixed(var);
-      e = DAEUtil.getStartAttrFail(attr);
-      // apply replacements
-      (e, true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
-      (e, _) = ExpressionSimplify.simplify(e);
-      // If call with constant arguments then evaluate
-      e = match(e)
-        local DAE.Exp e1;
-        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
-          equation
-           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-           e1 = ValuesUtil.valueExp(value);
-         then e1;
-        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
-          equation
-           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-           e1 = ValuesUtil.valueExp(value);
-         then e1;
-        else e;
-      end match;
-      v = BackendVariable.setVarStartValue(var, e);
-      (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
+      // apply replacements in variable attributes
       (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
-      v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
+      // apply replacements in hideResult attribute
+      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+      if b then
+        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        v.hideResult = hideResultExp;
+      end if;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
-    then ();
+     then ();
 
     // other vars
-    case BackendDAE.VAR(bindExp=SOME(e)) equation
+    case v as BackendDAE.VAR(bindExp=SOME(e), hideResult=hideResultExp) equation
       // apply replacements
-      (e, true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
-      (e, _) = ExpressionSimplify.simplify(e);
-      // If call with constant arguments then evaluate
-      e = match(e)
-        local DAE.Exp e1;
-        case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
-          equation
-           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-           e1 = ValuesUtil.valueExp(value);
-         then e1;
-        case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
-          equation
-           (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-           e1 = ValuesUtil.valueExp(value);
-         then e1;
-        else e;
-      end match;
-      v = BackendVariable.setBindExp(var, SOME(e));
+      (e, b) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
+      if b then
+        (e, _) = ExpressionSimplify.simplify(e);
+        // If call with constant arguments then evaluate
+        e = match(e)
+          local DAE.Exp e1;
+          case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+            equation
+             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             e1 = ValuesUtil.valueExp(value);
+           then e1;
+          case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+            equation
+             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             e1 = ValuesUtil.valueExp(value);
+           then e1;
+          else e;
+        end match;
+        v = BackendVariable.setBindExp(var, SOME(e));
+      end if;
+      // apply replacements in variable attributes
       (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
+      // apply replacements in hideResult attribute
+      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+      if b then
+        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        v.hideResult = hideResultExp;
+      end if;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
-    then ();
+     then ();
 
-    case BackendDAE.VAR(values=attr) equation
+    case BackendDAE.VAR(values=attr, hideResult=hideResultExp) equation
       // apply replacements
       (attr, (replEvaluate, true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(var, attr);
+      // apply replacements in hideResult attribute
+      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+      if b then
+        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        v.hideResult = hideResultExp;
+      end if;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
-    then ();
+     then ();
 
     else ();
 

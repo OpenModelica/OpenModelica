@@ -1440,7 +1440,7 @@ Create a BackendDAE.Var with some defaults"
   output BackendDAE.Var var;
 algorithm
   var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), NONE(), {},
-    DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(),false);
+    DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(),false);
 end createVarWithDefaults;
 
 public function emptySMS "
@@ -1569,6 +1569,7 @@ protected
   DAE.ElementSource source "origin of variable";
   Option<DAE.VariableAttributes> values "values on built-in attributes";
   Option<BackendDAE.TearingSelect> tearingSelectOption "value for TearingSelect";
+  DAE.Exp hideResult "expression from hideResult annotation";
   Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
   DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   DAE.VarInnerOuter io;
@@ -1577,7 +1578,7 @@ algorithm
   try
     (SOME(var), mt) := inVarModeTable;
     BackendDAE.VAR(varName, varKind, DAE.OUTPUT(), varParallelism, varType, bindExp,
-      bindValue, arryDim, source, values, tearingSelectOption, comment, connectorType, DAE.OUTER()) := var;
+      bindValue, arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, DAE.OUTER()) := var;
 
     DAE.SOURCE(instance=instance as Prefix.PRE()) := source;
     cref := PrefixUtil.prefixToCref(Prefix.PREFIX(instance,Prefix.CLASSPRE(SCode.PARAM())));
@@ -2626,12 +2627,13 @@ protected
   DAE.ElementSource source "origin of variable";
   Option<DAE.VariableAttributes> values "values on built-in attributes";
   Option<BackendDAE.TearingSelect> tearingSelectOption "value for TearingSelect";
+  DAE.Exp hideResult "expression from hideResult annotation";
   Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
   DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   DAE.VarInnerOuter io;
 algorithm
   BackendDAE.VAR(varName, varKind, varDirection, varParallelism, varType,
-   bindExp, bindValue, arryDim, source, values, tearingSelectOption, comment, connectorType, io) := inVar;
+   bindExp, bindValue, arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, io) := inVar;
    sVarName := ComponentReference.crefStr(varName);
    sVarKind := BackendDump.kindString(varKind);
    sVarDirection := DAEDump.dumpDirectionStr(varDirection);
