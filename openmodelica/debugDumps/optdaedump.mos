@@ -6831,6 +6831,136 @@ buildModel(testOptdaedump); getErrorString();
 // Sub partitions (0)
 // ========================================
 //
+//
+// post-optimization module findZeroCrossings (simulation):
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (9)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:STATE(1)()  type: Real 
+// 3: i2:VARIABLE()  type: Real 
+// 4: i1:VARIABLE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:DUMMY_STATE()  type: Real 
+// 7: uL:VARIABLE()  type: Real 
+// 8: u1:VARIABLE()  type: Real 
+// 9: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+//
+//
+// Equations (9, 9)
+// ========================================
+// 1/1 (1): $DER.uC = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): der(iL) = uL / L   [dynamic]
+// 6/6 (1): iC = C * $DER.uC   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+// 9/9 (1): uC = cos(time)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 9
+// var 7 is solved in eqn 4
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {9:6}
+// {{{2:8}, {8:3}, {3:7}}
+// ,{4:4}} Size: 1 linear
+// {5:2}
+// {1:9}
+// {6:1}
+// {7:5}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: C:PARAM()  = 3.0  type: Real 
+// 2: L:PARAM()  = 0.5  type: Real 
+// 3: R2:PARAM()  = 2.0  type: Real 
+// 4: R1:PARAM()  = 1.0  type: Real 
+// 5: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC  type: Real 
+// 2: u2:VARIABLE()  = uL  type: Real 
+// 3: v1:VARIABLE()  = uC  type: Real 
+// 4: v2:VARIABLE()  = uL  type: Real 
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
 // post-optimization done.
 // {"testOptdaedump","testOptdaedump_init.xml"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

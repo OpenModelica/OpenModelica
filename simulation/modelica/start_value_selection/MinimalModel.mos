@@ -57,7 +57,13 @@ buildModel(MinimalModel); getErrroString();
 // ========================================
 //
 //
-// no matching
+// Matching
+// ========================================
+// 0 variables and equations
+//
+//
+// StrongComponents
+// ========================================
 //
 //
 //
