@@ -214,19 +214,20 @@ author: waurich TUD 2016-10"
   input tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplIn;
   output tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplOut;
 protected
+  BackendDAE.Equation eq;
   BackendDAE.Var v1,v2,simVar,aliasVar;
   list<DAE.ComponentRef> crefs;
   list<BackendDAE.Var> extAliasVars;
   BackendVarTransform.VariableReplacements repl;
 algorithm
   (extAliasVars,repl) := tplIn;
+  ({eq},_) := BackendVarTransform.replaceEquations({eqIn},repl,NONE());
   try
     //get alias and sim var
-    crefs := BackendEquation.equationCrefs(eqIn);
+    crefs := BackendEquation.equationCrefs(eq);
     ({v1,v2},_) := BackendVariable.getVarLst(crefs,extVars);
     (simVar,aliasVar) := chooseExternalAlias(v1,v2);
     extAliasVars := aliasVar::extAliasVars;
-
     //build replacement rule
     repl := BackendVarTransform.addReplacement(repl,BackendVariable.varCref(aliasVar), Expression.crefExp(BackendVariable.varCref(simVar)), NONE());
     tplOut := (extAliasVars,repl);
@@ -269,6 +270,13 @@ algorithm
     algorithm
       true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
+
+  case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef= cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
+                           scalar = DAE.CREF(componentRef= cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),_,(noAliasEqs,aliasEqs))
+    algorithm
+      true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
+     then (noAliasEqs,eqIn::aliasEqs);
+
   else
     algorithm
       (noAliasEqs,aliasEqs) := eqTplIn;
