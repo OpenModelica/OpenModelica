@@ -2143,6 +2143,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     else '<%contextFunName(funName, context)%>(<%argStr%><%if explist then if retVar then "," %> <%if retVar then '<%retVar%>'%>);<%\n%>'
      '<%retVar%>'
 
+  else
+    error(sourceInfo(), 'Code generation does not support daeExpCall(<%ExpressionDumpTpl.dumpExp(call,"\"")%>)')
 end daeExpCall;
 
 template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
