@@ -4550,7 +4550,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
+#if !defined(WITHOUT_OSG)
   getMainWindow()->getSimulateWithAnimationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
+#endif
   getMainWindow()->getSimulationSetupAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   getMainWindow()->getInstantiateModelAction()->setEnabled(enabled && modelica);
   getMainWindow()->getCheckModelAction()->setEnabled(enabled && modelica);

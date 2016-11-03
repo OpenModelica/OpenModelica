@@ -95,6 +95,7 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
   }
 }
 
+#if !defined(WITHOUT_OSG)
 /*!
  * \brief PlotWindowContainer::getCurrentAnimationWindow
  * Returns the current animation window, if the last window is plot, return null
@@ -113,6 +114,7 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
     }
   }
 }
+#endif
 
 /*!
  * \brief PlotWindowContainer::eventFilter
@@ -292,9 +294,13 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
  * Adds an animation widget as subwindow
  */
 void PlotWindowContainer::addAnimationWindow(){
+#if !defined(WITHOUT_OSG)
   AnimationWindow *pAnimation = new AnimationWindow(this);
   pAnimation->setWindowTitle(getUniqueName("Animation : "));
   QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
   pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   pAnimation->show();
+#else
+  assert(0);
+#endif
 }

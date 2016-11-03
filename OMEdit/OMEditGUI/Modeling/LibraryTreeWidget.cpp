@@ -2585,10 +2585,12 @@ void LibraryTreeView::createActions()
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
+#if !defined(WITHOUT_OSG)
   // simulate with animation Action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateWithAnimation()));
+#endif
   // simulation setup Action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -2756,7 +2758,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpSimulateAction);
           menu.addAction(mpSimulateWithTransformationalDebuggerAction);
           menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
+#if !defined(WITHOUT_OSG)
           menu.addAction(mpSimulateWithAnimationAction);
+#endif
           menu.addAction(mpSimulationSetupAction);
         }
         /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
@@ -3011,10 +3015,14 @@ void LibraryTreeView::simulateWithAlgorithmicDebugger()
  */
 void LibraryTreeView::simulateWithAnimation()
 {
+#if !defined(WITHOUT_OSG)
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getMainWindow()->simulateWithAnimation(pLibraryTreeItem);
   }
+#else
+  assert(0);
+#endif
 }
 
 /*!
