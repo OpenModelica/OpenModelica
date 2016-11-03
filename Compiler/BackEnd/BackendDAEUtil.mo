@@ -6781,9 +6781,6 @@ algorithm
   // post-optimization phase
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
-  simDAE := FindZeroCrossings.findZeroCrossings(simDAE);
-  execStat("findZeroCrossings");
-
   outSimDAE := calculateValues(simDAE);
   execStat("calculateValue");
 
@@ -7369,6 +7366,7 @@ protected function allPostOptimizationModules
     (BackendDAEOptimize.simplifyTimeIndepFuncCalls, "simplifyTimeIndepFuncCalls"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (BackendDAEOptimize.hets, "hets"),
+    (FindZeroCrossings.findZeroCrossings, "findZeroCrossings"),
     // TODO: move the following modules to the correct position
     (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr"),
     (BackendDump.dumpDAE, "dumpDAE"),

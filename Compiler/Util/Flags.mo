@@ -842,7 +842,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "detectJacobianSparsePattern",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
-    "simplifyAllExpressions"
+    "simplifyAllExpressions",
+    "findZeroCrossings"
     }),
   SOME(STRING_DESC_OPTION({
     ("addScaledVars_states", Util.notrans("added var_norm = var/nominal, where var is state")),
