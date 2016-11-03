@@ -175,7 +175,8 @@ algorithm
   execStat("Generate backend data structure");
 end lower;
 
-protected function getExternalObjectAlias"Checks equations if there is an alias assignment between external objects. If yes, assign alias var, replce equations, remove alia equation.
+protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.
+If yes, assign alias var, replace equations, remove alias equation.
 author: waurich TUD 2016-10"
   input list<BackendDAE.Equation> inEqs;
   input BackendDAE.Variables extVars;
@@ -194,6 +195,10 @@ algorithm
   // get alias equations for external objects
   (oEqs,aliasEqs) := List.fold1(inEqs,getExternalObjectAlias2,extCrefs,({},{}));
 
+  if (not listEmpty(aliasEqs)) then
+    Error.addCompilerWarning("Alias equations of external objects are not Modelica compliant as in:\n    "+stringDelimitList(List.map(aliasEqs,BackendDump.equationString),"\n    ")+"\n");
+  end if;
+
   //assign aliasVariables and set new binding
   repl := BackendVarTransform.emptyReplacements();
   (aliasVarLst,repl) := List.fold1(aliasEqs,getExternalObjectAlias3,extVars,({},repl));
@@ -207,7 +212,7 @@ algorithm
   oEqs := listReverse(oEqs);
 end getExternalObjectAlias;
 
-protected function getExternalObjectAlias3"Gets the alias var and sim var for the given alias equation and adds a replacement rule
+protected function getExternalObjectAlias3 "Gets the alias var and sim var for the given alias equation and adds a replacement rule
 author: waurich TUD 2016-10"
   input BackendDAE.Equation eqIn;
   input BackendDAE.Variables extVars;
@@ -236,7 +241,7 @@ algorithm
   end try;
 end getExternalObjectAlias3;
 
-protected function chooseExternalAlias"Chooses a alias variable depending on which variable has a binding
+protected function chooseExternalAlias "Chooses a alias variable depending on which variable has a binding
 author: waurich TUD 2016-10"
   input BackendDAE.Var var1;
   input BackendDAE.Var var2;
@@ -255,7 +260,7 @@ algorithm
   end if;
 end chooseExternalAlias;
 
-protected function getExternalObjectAlias2"Traverser for equations to check if an external alias assignment an be made
+protected function getExternalObjectAlias2 "Traverser for equations to check if an external alias assignment an be made
 author: waurich TUD 2016-10"
   input BackendDAE.Equation eqIn;
   input list<DAE.ComponentRef> extCrefs;
