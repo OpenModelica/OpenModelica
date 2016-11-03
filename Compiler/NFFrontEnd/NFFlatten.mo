@@ -41,6 +41,7 @@ encapsulated package NFFlatten
 import Inst = NFInst;
 import NFBinding.Binding;
 import NFComponent.Component;
+import NFComponentNode.ComponentNode;
 import NFEquation.Equation;
 import NFInstance.Instance;
 import NFInstanceTree.InstanceTree;
@@ -80,12 +81,8 @@ function flattenNode
   input Prefix prefix = Prefix.NO_PREFIX();
   input list<DAE.Element> inElements = {};
   output list<DAE.Element> elements;
-protected
-  Instance i;
-  String name;
 algorithm
-  InstNode.INST_NODE(name = name, instance = i) := node;
-  elements := flattenInstance(i, prefix, inElements);
+  elements := flattenInstance(InstNode.instance(node), prefix, inElements);
 end flattenNode;
 
 function flattenInstance
@@ -117,30 +114,31 @@ algorithm
 end flattenInstance;
 
 function flattenComponent
-  input Component component;
+  input ComponentNode component;
   input Prefix prefix;
   input output list<DAE.Element> elements;
 protected
+  Component c = ComponentNode.component(component);
   Prefix new_pre;
   DAE.Type ty;
 algorithm
-  _ := match component
+  _ := match c
     case Component.TYPED_COMPONENT()
       algorithm
-        ty := Component.getType(component);
-        new_pre := Prefix.add(Component.name(component), {}, ty, prefix);
+        ty := Component.getType(c);
+        new_pre := Prefix.add(ComponentNode.name(component), {}, ty, prefix);
 
         elements := match ty
           case DAE.T_ARRAY()
-            then flattenArray(Component.unliftType(component), ty.dims, new_pre, flattenScalar, elements);
-          else flattenScalar(component, new_pre, elements);
+            then flattenArray(Component.unliftType(c), ty.dims, new_pre, flattenScalar, elements);
+          else flattenScalar(c, new_pre, elements);
         end match;
       then
         ();
 
     case Component.EXTENDS_NODE()
       algorithm
-        elements := flattenInstance(InstNode.instance(component.node), prefix, elements);
+        elements := flattenInstance(InstNode.instance(c.node), prefix, elements);
       then
         ();
 
@@ -227,7 +225,7 @@ function flattenScalar
   input Prefix prefix;
   input output list<DAE.Element> elements;
 algorithm
-  elements := match component
+  _ := match component
     local
       Instance i;
       DAE.Element var;
@@ -235,35 +233,45 @@ algorithm
       Component.Attributes attr;
       list<DAE.Dimension> dims;
       Option<DAE.Exp> binding_exp;
-      Prefix new_pre;
 
-    case Component.TYPED_COMPONENT(
-        classInst = InstNode.INST_NODE(instance = Instance.INSTANCED_BUILTIN()),
-        attributes = attr as Component.Attributes.ATTRIBUTES())
+    case Component.TYPED_COMPONENT()
       algorithm
-        cref := Prefix.toCref(prefix);
-        binding_exp := flattenBinding(component.binding);
+        i := InstNode.instance(component.classInst);
 
-        var := DAE.VAR(
-          cref,
-          attr.variability,
-          attr.direction,
-          DAE.NON_PARALLEL(),
-          attr.visibility,
-          component.ty,
-          binding_exp,
-          {},
-          attr.connectorType,
-          DAE.emptyElementSource,
-          NONE(),
-          NONE(),
-          Absyn.NOT_INNER_OUTER());
+        elements := match i
+          case Instance.INSTANCED_BUILTIN()
+            algorithm
+              cref := Prefix.toCref(prefix);
+              binding_exp := flattenBinding(component.binding);
+              attr := component.attributes;
 
+              var := DAE.VAR(
+                cref,
+                attr.variability,
+                attr.direction,
+                DAE.NON_PARALLEL(),
+                attr.visibility,
+                component.ty,
+                binding_exp,
+                {},
+                attr.connectorType,
+                DAE.emptyElementSource,
+                NONE(),
+                NONE(),
+                Absyn.NOT_INNER_OUTER());
+            then
+              var :: elements;
+
+          else flattenInstance(i, prefix, elements);
+        end match;
       then
-        var :: elements;
+        ();
 
-    case Component.TYPED_COMPONENT(classInst = InstNode.INST_NODE(instance = i))
-      then flattenInstance(i, prefix, elements);
+    else
+      algorithm
+        Error.addInternalError("NFFlatten.flattenScalar got untyped component.", Absyn.dummyInfo);
+      then
+        fail();
 
   end match;
 end flattenScalar;

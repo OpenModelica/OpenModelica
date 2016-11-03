@@ -57,26 +57,38 @@ uniontype InstParent
   end isEmpty;
 end InstParent;
 
+uniontype InstNodeType
+  record NORMAL_CLASS end NORMAL_CLASS;
+
+  record EXTENDS
+    InstNode parent;
+  end EXTENDS;
+
+  record TOP_SCOPE end TOP_SCOPE;
+end InstNodeType;
+
 uniontype InstNode
   record INST_NODE
     String name;
-    Option<SCode.Element> definition;
-    Instance instance;
-    Integer index;
-    Integer scopeParent;
-    InstParent instParent;
+    SCode.Element definition;
+    array<Instance> instance;
+    InstNode parentScope;
+    InstNodeType nodeType;
   end INST_NODE;
+
+  record EMPTY_NODE end EMPTY_NODE;
 
   function new
     input String name;
     input SCode.Element definition;
-    input Integer index;
-    input Integer scopeParent;
-    input InstParent instParent;
+    input InstNode parent;
+    input InstNodeType nodeType = NORMAL_CLASS();
     output InstNode node;
+  protected
+    array<Instance> i;
   algorithm
-    node := INST_NODE(name, SOME(definition), Instance.NOT_INSTANTIATED(), index,
-      scopeParent, instParent);
+    i := arrayCreate(1, Instance.NOT_INSTANTIATED());
+    node := INST_NODE(name, definition, i, parent, nodeType);
   end new;
 
   function name
@@ -90,58 +102,123 @@ uniontype InstNode
     input output InstNode node;
     input String name;
   algorithm
-    node.name := name;
+    _ := match node
+      case INST_NODE()
+        algorithm
+          node.name := name;
+        then
+          ();
+    end match;
   end rename;
 
-  function index
+  function parentScope
     input InstNode node;
-    output Integer index;
+    output InstNode parentScope;
   algorithm
-    INST_NODE(index = index) := node;
-  end index;
+    INST_NODE(parentScope = parentScope) := node;
+  end parentScope;
 
-  function setIndex
-    input output InstNode node;
-    input Integer index;
-  algorithm
-    node.index := index;
-  end setIndex;
-
-  function scopeParent
+  function topScope
     input InstNode node;
-    output Integer scopeParent = node.scopeParent;
-  end scopeParent;
-
-  function setScopeParent
-    input output InstNode node;
-    input Integer scopeParent;
+    output InstNode topScope;
   algorithm
-    node.scopeParent := scopeParent;
-  end setScopeParent;
+    topScope := match node
+      case INST_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
+      else parentScope(node);
+    end match;
+  end topScope;
 
-  function instParent
-    input InstNode node;
-    output InstParent instParent = node.instParent;
-  end instParent;
-
-  function setInstParent
+  function setParentScope
+    input InstNode parentScope;
     input output InstNode node;
-    input InstParent instParent;
   algorithm
-    node.instParent := instParent;
-  end setInstParent;
+    _ := match node
+      case INST_NODE()
+        algorithm
+          node.parentScope := parentScope;
+        then
+          ();
+    end match;
+  end setParentScope;
 
   function instance
     input InstNode node;
-    output Instance instance = node.instance;
+    output Instance instance;
+  algorithm
+    instance := match node
+      case INST_NODE() then node.instance[1];
+    end match;
   end instance;
 
   function setInstance
-    input output InstNode node;
     input Instance instance;
+    input output InstNode node;
   algorithm
-    node.instance := instance;
+    node := match node
+      case INST_NODE()
+        algorithm
+          arrayUpdate(node.instance, 1, instance);
+        then
+          node;
+    end match;
   end setInstance;
+
+  function nodeType
+    input InstNode node;
+    output InstNodeType nodeType;
+  algorithm
+    nodeType := match node
+      case INST_NODE() then node.nodeType;
+      else NORMAL_CLASS();
+    end match;
+  end nodeType;
+
+  function setNodeType
+    input InstNodeType nodeType;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case INST_NODE()
+        algorithm
+          node.nodeType := nodeType;
+        then
+          ();
+
+      else ();
+    end match;
+  end setNodeType;
+
+  function definition
+    input InstNode node;
+    output SCode.Element definition;
+  algorithm
+    INST_NODE(definition = definition) := node;
+  end definition;
+
+  function setDefinition
+    input SCode.Element definition;
+    input output InstNode node;
+  algorithm
+    _ := match node
+      case INST_NODE()
+        algorithm
+          node.definition := definition;
+        then
+          ();
+    end match;
+  end setDefinition;
+
+  function clone
+    input InstNode node;
+    output InstNode clone;
+  algorithm
+    clone := match node
+      case INST_NODE()
+        then INST_NODE(node.name, node.definition, arrayCopy(node.instance),
+          node.parentScope, node.nodeType);
+      else node;
+    end match;
+  end clone;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -43,6 +43,7 @@ public
 import Absyn;
 import BaseAvlTree;
 import NFBinding.Binding;
+import NFInstNode.InstNode;
 import SCode;
 
 protected
@@ -127,7 +128,7 @@ uniontype Modifier
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
     SCode.Element element;
-    Integer scope;
+    InstNode scope;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -137,7 +138,7 @@ public
     input SCode.Mod mod;
     input String name;
     input ModifierScope modScope;
-    input Integer scope;
+    input InstNode scope;
     output Modifier newMod;
   algorithm
     newMod := match mod
@@ -377,7 +378,7 @@ protected
   function createSubMod
     input SCode.SubMod subMod;
     input ModifierScope modScope;
-    input Integer scope;
+    input InstNode scope;
     output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope);
   end createSubMod;
 

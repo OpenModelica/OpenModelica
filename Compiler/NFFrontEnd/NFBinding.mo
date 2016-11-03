@@ -37,8 +37,9 @@ encapsulated package NFBinding
 "
 
 public
-import SCode;
 import DAE;
+import NFInstNode.InstNode;
+import SCode;
 
 protected
 import Dump;
@@ -52,7 +53,7 @@ uniontype Binding
     Absyn.Exp bindingExp;
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
-    Integer scope;
+    InstNode scope;
     Integer propagatedDims;
     SourceInfo info;
   end RAW_BINDING;
@@ -60,7 +61,7 @@ uniontype Binding
   record UNTYPED_BINDING
     Absyn.Exp bindingExp;
     Boolean isProcessing;
-    Integer scope;
+    InstNode scope;
     Integer propagatedDims;
     SourceInfo info;
   end UNTYPED_BINDING;
@@ -77,7 +78,7 @@ public
     input Option<Absyn.Exp> bindingExp;
     input SCode.Final finalPrefix;
     input SCode.Each eachPrefix;
-    input Integer scope;
+    input InstNode scope;
     input Integer dimensions;
     input SourceInfo info;
     output Binding binding;

@@ -32,26 +32,28 @@
 encapsulated package NFInstance
 
 import BaseAvlTree;
-import NFComponent.Component;
+import NFComponentNode.ComponentNode;
 import NFEquation.Equation;
+import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFStatement.Statement;
 import SCode.Element;
 
-constant array<Component> NO_COMPONENTS = listArray({});
-
 encapsulated package ClassTree
   uniontype Entry
     record CLASS
-      Integer id;
+      InstNode node;
     end CLASS;
 
     record COMPONENT
-      Integer id;
+      Integer index;
     end COMPONENT;
   end Entry;
 
   import BaseAvlTree;
+  import NFInstNode.InstNode;
+  import NFComponentNode.ComponentNode;
+
   extends BaseAvlTree(redeclare type Key = String,
                       redeclare type Value = Entry);
 
@@ -63,8 +65,8 @@ encapsulated package ClassTree
   redeclare function extends valueStr
   algorithm
     outString := match inValue
-      case Entry.CLASS() then "class " + String(inValue.id);
-      case Entry.COMPONENT() then "comp " + String(inValue.id);
+      case Entry.CLASS() then "class " + InstNode.name(inValue.node);
+      case Entry.COMPONENT() then "comp " + String(inValue.index);
     end match;
   end valueStr;
 
@@ -80,12 +82,12 @@ uniontype Instance
 
   record PARTIAL_CLASS
     ClassTree.Tree classes;
-    list<Element> elements;
+    list<SCode.Element> elements;
   end PARTIAL_CLASS;
 
   record EXPANDED_CLASS
     ClassTree.Tree elements;
-    array<Component> components;
+    array<ComponentNode> components;
     list<Equation> equations;
     list<Equation> initialEquations;
     list<list<Statement>> algorithms;
@@ -94,7 +96,7 @@ uniontype Instance
 
   record INSTANCED_CLASS
     ClassTree.Tree elements;
-    array<Component> components;
+    array<ComponentNode> components;
     list<Equation> equations;
     list<Equation> initialEquations;
     list<list<Statement>> algorithms;
@@ -109,24 +111,24 @@ uniontype Instance
     list<Modifier> attributes;
   end INSTANCED_BUILTIN;
 
-  type ElementId = ClassTree.Entry;
+  type Element = ClassTree.Entry;
 
   function emptyInstancedClass
     output Instance instance;
   algorithm
-    instance := INSTANCED_CLASS(ClassTree.new(), NO_COMPONENTS, {}, {}, {}, {});
+    instance := INSTANCED_CLASS(ClassTree.new(), listArray({}), {}, {}, {}, {});
   end emptyInstancedClass;
 
   function initExpandedClass
     input ClassTree.Tree classes;
     output Instance instance;
   algorithm
-    instance := EXPANDED_CLASS(classes, NO_COMPONENTS, {}, {}, {}, {});
+    instance := EXPANDED_CLASS(classes, listArray({}), {}, {}, {}, {});
   end initExpandedClass;
 
   function components
     input Instance instance;
-    output array<Component> components;
+    output array<ComponentNode> components;
   algorithm
     components := match instance
       case EXPANDED_CLASS() then instance.components;
@@ -135,7 +137,7 @@ uniontype Instance
   end components;
 
   function setComponents
-    input array<Component> components;
+    input array<ComponentNode> components;
     input output Instance instance;
   algorithm
     _ := match instance
@@ -190,10 +192,10 @@ uniontype Instance
     end match;
   end setSections;
 
-  function lookupElementId
+  function lookupElement
     input String name;
     input Instance instance;
-    output ElementId element;
+    output Element element;
   protected
     ClassTree.Tree scope;
   algorithm
@@ -203,34 +205,44 @@ uniontype Instance
     end match;
 
     element := ClassTree.get(scope, name);
-  end lookupElementId;
+  end lookupElement;
 
-  function lookupClassId
+  function lookupClass
     input String name;
     input Instance instance;
-    output Integer classId;
+    output InstNode cls;
   algorithm
-    ElementId.CLASS(id = classId) := lookupElementId(name, instance);
-  end lookupClassId;
+    Element.CLASS(node = cls) := lookupElement(name, instance);
+  end lookupClass;
 
   function lookupComponent
     input String name;
     input Instance instance;
-    output Component component;
+    output ComponentNode component;
+  protected
+    Integer index;
   algorithm
-    component := lookupComponentById(lookupElementId(name, instance), instance);
+    component := lookupComponentByElement(lookupElement(name, instance), instance);
   end lookupComponent;
 
-  function lookupComponentById
-    input ElementId id;
+  function lookupComponentByIndex
+    input Integer index;
     input Instance instance;
-    output Component component;
-  protected
-    Integer comp_id;
+    output ComponentNode component;
   algorithm
-    ElementId.COMPONENT(id = comp_id) := id;
-    component := arrayGet(components(instance),  comp_id);
-  end lookupComponentById;
+    component := arrayGet(components(instance), index);
+  end lookupComponentByIndex;
+
+  function lookupComponentByElement
+    input Element element;
+    input Instance instance;
+    output ComponentNode component;
+  protected
+    Integer index;
+  algorithm
+    Element.COMPONENT(index = index) := element;
+    component := arrayGet(components(instance), index);
+  end lookupComponentByElement;
 end Instance;
 
 annotation(__OpenModelica_Interface="frontend");

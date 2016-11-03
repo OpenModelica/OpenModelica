@@ -40,10 +40,10 @@ encapsulated package NFTyping
 
 import NFBinding.Binding;
 import NFComponent.Component;
+import NFComponentNode.ComponentNode;
 import NFDimension.Dimension;
 import NFEquation.Equation;
 import NFInstance.Instance;
-import NFInstanceTree.InstanceTree;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
@@ -61,34 +61,28 @@ import Types;
 public
 function typeClass
   input output InstNode classNode;
-  input output InstanceTree tree;
         output DAE.Type ty;
 protected
   Component top_inst;
 algorithm
-  tree := InstanceTree.pushHierarchy(Component.makeTopComponent(classNode), tree);
-  (classNode, tree, ty) := typeClassNode(classNode, tree);
-  tree := InstanceTree.popHierarchy(tree);
+  (classNode, ty) := typeClassNode(classNode);
 end typeClass;
 
 function typeClassNode
   input output InstNode classNode;
-  input output InstanceTree tree;
         output DAE.Type ty;
 algorithm
-  (classNode, tree, ty) := typeComponents(classNode, tree);
-  (classNode, tree) := typeComponentBindings(classNode, tree);
-  (classNode, tree) := typeSections(classNode, tree);
+  (classNode, ty) := typeComponents(classNode);
+  (classNode) := typeComponentBindings(classNode);
+  (classNode) := typeSections(classNode);
 end typeClassNode;
 
 function typeComponents
   input output InstNode classNode;
-  input output InstanceTree tree;
         output DAE.Type ty;
 protected
   Instance cls;
-  array<Component> components;
-  Component comp;
+  array<ComponentNode> components;
 algorithm
   cls := InstNode.instance(classNode);
 
@@ -96,18 +90,13 @@ algorithm
     case Instance.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
-          comp := components[i];
-          (comp, tree) := typeComponent(comp, tree);
-          components[i] := comp;
+          components[i] := typeComponent(components[i]);
         end for;
       then
         makeComplexType(cls);
 
     case Instance.INSTANCED_BUILTIN()
-      algorithm
-        (ty, tree) := makeBuiltinType(cls, InstNode.name(classNode), tree);
-      then
-        ty;
+      then makeBuiltinType(cls, InstNode.name(classNode), classNode);
 
     else
       algorithm
@@ -120,54 +109,48 @@ end typeComponents;
 
 protected
 function typeComponent
-  input output Component component;
-  input output InstanceTree tree;
+  input output ComponentNode component;
+protected
+  Component c = ComponentNode.component(component);
+  array<Dimension> dims;
+  list<DAE.Dimension> ty_dims;
+  SourceInfo info;
+  InstNode scope, node;
+  DAE.Type ty;
 algorithm
-  component := match component
-    local
-      array<Dimension> dims;
-      Dimension dim;
-      DAE.Type ty;
-      list<DAE.Dimension> ty_dims;
-      Binding binding;
-      InstNode node;
-      SourceInfo info;
-
+  () := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT(dimensions = dims, info = info)
       algorithm
-        tree := InstanceTree.pushHierarchy(component, tree);
         ty_dims := {};
+        scope := InstNode.parentScope(c.classInst);
+
         for i in 1:arrayLength(dims) loop
-          dim := dims[i];
-          (dim, tree) := typeDimension(dim, tree, info);
-          dims[i] := dim;
-          ty_dims := Dimension.dimension(dim) :: ty_dims;
+          dims[i] := typeDimension(dims[i], scope, info);
+          ty_dims := Dimension.dimension(dims[i]) :: ty_dims;
         end for;
 
-        (node, tree, ty) := typeClassNode(component.classInst, tree);
+        (node, ty) := typeClassNode(c.classInst);
         ty := Expression.liftArrayLeftList(ty, ty_dims);
-        tree := InstanceTree.popHierarchy(tree);
+        component := ComponentNode.setComponent(Component.setType(ty, c), component);
       then
-        Component.TYPED_COMPONENT(component.name, node, ty, component.binding, component.attributes);
+        ();
 
     // A component that has already been typed, skip it.
-    case Component.TYPED_COMPONENT() then component;
+    case Component.TYPED_COMPONENT() then ();
 
     case Component.EXTENDS_NODE()
       algorithm
-        (node, tree) := typeComponents(component.node, tree);
-        component.node := node;
+        c.node := typeComponents(c.node);
+        component := ComponentNode.setComponent(c, component);
       then
-        component;
-
-    case Component.COMPONENT_REF() then component;
+        ();
 
     // Any other component shouldn't show up here, give an error.
     else
       algorithm
         Error.addInternalError("Typing.typeComponent got uninstantiated component " +
-          Component.name(component), Absyn.dummyInfo);
+          ComponentNode.name(component), Absyn.dummyInfo);
       then
         fail();
   end match;
@@ -175,7 +158,7 @@ end typeComponent;
 
 function typeDimension
   input output Dimension dimension;
-  input output InstanceTree tree;
+  input InstNode scope;
   input SourceInfo info;
 algorithm
   dimension := match dimension
@@ -186,7 +169,7 @@ algorithm
 
     case Dimension.UNTYPED_DIM(dimension = dim_exp)
       algorithm
-        (typed_exp, tree, _, _) := typeExp(dim_exp, tree, info);
+        typed_exp := typeExp(dim_exp, scope, info);
 
         dim := match typed_exp
           case DAE.ICONST() then DAE.DIM_INTEGER(typed_exp.integer);
@@ -201,11 +184,10 @@ end typeDimension;
 
 function typeComponentBindings
   input output InstNode classNode;
-  input output InstanceTree tree;
 protected
   Instance cls;
-  array<Component> components;
-  Component comp;
+  array<ComponentNode> components;
+  InstNode scope;
 algorithm
   cls := InstNode.instance(classNode);
 
@@ -213,9 +195,7 @@ algorithm
     case Instance.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
-          comp := components[i];
-          (comp, tree) := typeComponentBinding(comp, tree);
-          components[i] := comp;
+          components[i] := typeComponentBinding(components[i]);
         end for;
       then
         ();
@@ -232,10 +212,11 @@ algorithm
 end typeComponentBindings;
 
 function typeComponentBinding
-  input output Component component;
-  input output InstanceTree tree;
+  input output ComponentNode component;
+protected
+  Component c = ComponentNode.component(component);
 algorithm
-  component := match component
+  () := match c
     local
       array<Dimension> dims;
       Dimension dim;
@@ -247,30 +228,27 @@ algorithm
     // An untyped component, type it.
     case Component.TYPED_COMPONENT()
       algorithm
-        //tree := InstanceTree.pushHierarchy(component, tree);
-        (binding, tree) := typeBinding(component.binding, tree);
+        binding := typeBinding(c.binding);
 
-        if not referenceEq(binding, component.binding) then
-          component.binding := binding;
+        if not referenceEq(binding, c.binding) then
+          c.binding := binding;
+          component := ComponentNode.setComponent(c, component);
         end if;
-        //tree := InstanceTree.popHierarchy(tree);
       then
-        component;
+        ();
 
     case Component.EXTENDS_NODE()
       algorithm
-        (node, tree) := typeComponentBindings(component.node, tree);
-        component.node := node;
+        c.node := typeComponentBindings(c.node);
+        component := ComponentNode.setComponent(c, component);
       then
-        component;
-
-    case Component.COMPONENT_REF() then component;
+        ();
 
     // Any other component shouldn't show up here, give an error.
     else
       algorithm
         Error.addInternalError("Typing.typeBindings got uninstantiated component " +
-          Component.name(component), Absyn.dummyInfo);
+          ComponentNode.name(component), Absyn.dummyInfo);
       then
         fail();
   end match;
@@ -278,19 +256,16 @@ end typeComponentBinding;
 
 function typeBinding
   input output Binding binding;
-  input output InstanceTree tree;
 algorithm
   binding := match binding
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
       DAE.Type ty;
-      InstanceTree it;
 
     case Binding.UNTYPED_BINDING(bindingExp = aexp)
       algorithm
-        it := InstanceTree.setCurrentScopeIndex(tree, binding.scope);
-        (dexp, _, ty) := typeExp(aexp, it, binding.info);
+        (dexp, ty) := typeExp(aexp, binding.scope, binding.info);
       then
         Binding.TYPED_BINDING(dexp, ty, binding.propagatedDims, binding.info);
 
@@ -309,28 +284,24 @@ end typeBinding;
 
 function typeSections
   input output InstNode classNode;
-  input output InstanceTree tree;
 protected
   Instance cls, typed_cls;
   array<Component> components;
-  Component comp;
   list<Equation> eq, ieq;
   list<list<Statement>> alg, ialg;
+  InstNode scope;
 algorithm
   cls := InstNode.instance(classNode);
 
   _ := match cls
     case Instance.INSTANCED_CLASS()
       algorithm
-        tree := InstanceTree.setCurrentScope(tree, classNode);
-        //tree := InstanceTree.pushHierarchy(classNode, tree);
-        (eq, tree) := typeEquations(cls.equations, tree);
-        (ieq, tree) := typeEquations(cls.initialEquations, tree);
-        (alg, tree) := typeAlgorithms(cls.algorithms, tree);
-        (ialg, tree) := typeAlgorithms(cls.initialAlgorithms, tree);
-        //tree := InstanceTree.popHierarchy(tree);
+        eq := typeEquations(cls.equations, classNode);
+        ieq := typeEquations(cls.initialEquations, classNode);
+        alg := typeAlgorithms(cls.algorithms, classNode);
+        ialg := typeAlgorithms(cls.initialAlgorithms, classNode);
         typed_cls := Instance.setSections(eq, ieq, alg, ialg, cls);
-        classNode := InstNode.setInstance(classNode, typed_cls);
+        classNode := InstNode.setInstance(typed_cls, classNode);
       then
         ();
 
@@ -347,14 +318,14 @@ end typeSections;
 
 function typeEquations
   input output list<Equation> equations;
-  input output InstanceTree tree;
+  input InstNode scope;
 algorithm
-  (equations, tree) := List.mapFold(equations, typeEquation, tree);
+  equations := list(typeEquation(eq, scope) for eq in equations);
 end typeEquations;
 
 function typeEquation
   input output Equation eq;
-  input output InstanceTree tree;
+  input InstNode scope;
 algorithm
   eq := match eq
     local
@@ -363,8 +334,8 @@ algorithm
 
     case Equation.UNTYPED_EQUALITY()
       algorithm
-        (e1, tree, ty1) := typeExp(eq.lhs, tree, eq.info);
-        (e2, tree, ty2) := typeExp(eq.rhs, tree, eq.info);
+        (e1, ty1) := typeExp(eq.lhs, scope, eq.info);
+        (e2, ty2) := typeExp(eq.rhs, scope, eq.info);
       then
         Equation.EQUALITY(e1, e2, ty1, eq.info);
 
@@ -374,21 +345,21 @@ end typeEquation;
 
 function typeAlgorithms
   input output list<list<Statement>> algorithms;
-  input output InstanceTree tree;
+  input InstNode scope;
 algorithm
-  (algorithms, tree) := List.mapFold(algorithms, typeAlgorithm, tree);
+  algorithms := list(typeAlgorithm(alg, scope) for alg in algorithms);
 end typeAlgorithms;
 
 function typeAlgorithm
   input output list<Statement> alg;
-  input output InstanceTree tree;
+  input InstNode scope;
 algorithm
-  (alg, tree) := List.mapFold(alg, typeStatement, tree);
+  alg := list(typeStatement(stmt, scope) for stmt in alg);
 end typeAlgorithm;
 
 function typeStatement
   input output Statement statement;
-  input output InstanceTree tree;
+  input InstNode scope;
 algorithm
 
 end typeStatement;
@@ -403,8 +374,8 @@ end makeComplexType;
 function makeBuiltinType
   input Instance classInst;
   input String name;
-        output DAE.Type ty;
-  input output InstanceTree tree;
+  input InstNode scope;
+  output DAE.Type ty;
 algorithm
   ty := match classInst
     local
@@ -413,7 +384,7 @@ algorithm
 
     case Instance.INSTANCED_BUILTIN(attributes = type_mods)
       algorithm
-        (type_attr, tree) := List.mapFold(type_mods, makeTypeAttribute, tree);
+        type_attr := list(makeTypeAttribute(tm, scope) for tm in type_mods);
       then
         match name
           case "Real" then DAE.T_REAL(type_attr, DAE.emptyTypeSource);
@@ -429,8 +400,8 @@ end makeBuiltinType;
 
 function makeTypeAttribute
   input Modifier modifier;
-        output DAE.Var attribute;
-  input output InstanceTree tree;
+  input InstNode scope;
+  output DAE.Var attribute;
 algorithm
   attribute := match modifier
     local
@@ -442,7 +413,7 @@ algorithm
 
     case Modifier.MODIFIER(binding = Binding.UNTYPED_BINDING(bindingExp = aexp))
       algorithm
-        (dexp, tree, ty, c) := typeExp(aexp, tree, modifier.info);
+        (dexp, ty, c) := typeExp(aexp, scope, modifier.info);
         binding := DAE.EQBOUND(dexp, NONE(), c, DAE.BindingSource.BINDING_FROM_START_VALUE());
       then
         DAE.TYPES_VAR(modifier.name, DAE.dummyAttrVar, ty, binding, NONE());
@@ -459,11 +430,11 @@ end makeTypeAttribute;
 
 function typeExp
   input Absyn.Exp untypedExp;
-        output DAE.Exp typedExp;
-  input output InstanceTree tree;
-        output DAE.Type ty;
-        output DAE.Const variability;
+  input InstNode scope;
   input SourceInfo info;
+  output DAE.Exp typedExp;
+  output DAE.Type ty;
+  output DAE.Const variability;
 
   import DAE.Const;
 algorithm
@@ -486,20 +457,20 @@ algorithm
 
     case Absyn.Exp.CREF()
       algorithm
-        (cref, tree, ty, variability) := typeCref(untypedExp.componentRef, tree, info);
+        (cref, ty, variability) := typeCref(untypedExp.componentRef, scope, info);
       then
         (DAE.Exp.CREF(cref, ty), ty, variability);
 
     case Absyn.Exp.ARRAY()
       algorithm
-        (typedExp, tree, ty, variability) := typeArray(untypedExp.arrayExp, tree, info);
+        (typedExp, ty, variability) := typeArray(untypedExp.arrayExp, scope, info);
       then
         (typedExp, ty, variability);
 
     case Absyn.Exp.BINARY()
       algorithm
-        (e1, tree, ty1, var1) := typeExp(untypedExp.exp1, tree, info);
-        (e2, tree, ty2, var2) := typeExp(untypedExp.exp2, tree, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, info);
         op := translateOperator(untypedExp.op);
 
         (typedExp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, op, e2, ty2);
@@ -508,8 +479,8 @@ algorithm
 
     case Absyn.Exp.LBINARY()
       algorithm
-        (e1, tree, ty1, var1) := typeExp(untypedExp.exp1, tree, info);
-        (e2, tree, ty2, var2) := typeExp(untypedExp.exp2, tree, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, info);
         op := translateOperator(untypedExp.op);
 
         (typedExp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, op, e2, ty2);
@@ -518,8 +489,8 @@ algorithm
 
     case Absyn.Exp.RELATION()
       algorithm
-        (e1, tree, ty1, var1) := typeExp(untypedExp.exp1, tree, info);
-        (e2, tree, ty2, var2) := typeExp(untypedExp.exp2, tree, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, info);
         op := translateOperator(untypedExp.op);
 
         (typedExp, ty) := TypeCheck.checkRelationOperation(e1, ty1, op, e2, ty2);
@@ -576,11 +547,11 @@ end translateOperator;
 
 function typeArray
   input list<Absyn.Exp> expressions;
-        output DAE.Exp arrayExp;
-  input output InstanceTree tree;
-        output DAE.Type arrayType = DAE.T_UNKNOWN_DEFAULT;
-        output DAE.Const variability = DAE.C_CONST();
+  input InstNode scope;
   input SourceInfo info;
+  output DAE.Exp arrayExp;
+  output DAE.Type arrayType = DAE.T_UNKNOWN_DEFAULT;
+  output DAE.Const variability = DAE.C_CONST();
 protected
   DAE.Exp dexp;
   list<DAE.Exp> expl = {};
@@ -588,7 +559,7 @@ protected
   DAE.Type elem_ty;
 algorithm
   for e in expressions loop
-    (dexp, tree, elem_ty, var) := typeExp(e, tree, info);
+    (dexp, elem_ty, var) := typeExp(e, scope, info);
     variability := Types.constAnd(var, variability);
     expl := dexp :: expl;
   end for;
@@ -599,38 +570,22 @@ end typeArray;
 
 function typeCref
   input Absyn.ComponentRef untypedCref;
-        output DAE.ComponentRef typedCref;
-  input output InstanceTree tree;
-        output DAE.Type ty;
-        output DAE.Const variability;
+  input InstNode scope;
   input SourceInfo info;
+  output DAE.ComponentRef typedCref;
+  output DAE.Type ty;
+  output DAE.Const variability;
 protected
-  Component component;
+  ComponentNode component;
   Prefix prefix;
-  InstanceTree it;
 algorithm
   typedCref := translateCref(untypedCref);
 
-  // Look up the first part of the cref in the scope the cref was declared in.
-  // This checks that inherited crefs can be found in the scope they're
-  // inherited from, as well as checking if the cref refers to a name in the
-  // local scope or in an enclosing scope (i.e. an enclosing package).
-  //(_, _, it) := Lookup.lookupElementId(ComponentReference.crefFirstIdent(typedCref), tree);
-  //typedCref := Prefix.prefixCref(typedCref, InstanceTree.prefix(it));
-
-  //if InstanceTree.currentScopeIndex(it) <> InstanceTree.currentScopeIndex(tree) then
-  //  // The name was found in an enclosing scope, prefix it with the scope.
-  //  typedCref := Prefix.prefixCref(typedCref, InstanceTree.scopePrefix(it));
-  //else
-  //  // The name was found in the local scope, prefix it with the instance hierarchy.
-  //  typedCref := Prefix.prefixCref(typedCref, InstanceTree.hierarchyPrefix(tree));
-  //end if;
-
   // Look up the whole cref, and type the found component.
-  (component, prefix, tree) := Lookup.lookupCref(untypedCref, tree);
+  (component, prefix) := Lookup.lookupCref(untypedCref, scope, info);
   typedCref := Prefix.prefixCref(typedCref, prefix);
-  (component, tree) := typeComponent(component, tree);
-  Component.TYPED_COMPONENT(ty = ty) := component;
+  component := typeComponent(component);
+  Component.TYPED_COMPONENT(ty = ty) := ComponentNode.component(component);
 
   variability := DAE.C_VAR();
 end typeCref;

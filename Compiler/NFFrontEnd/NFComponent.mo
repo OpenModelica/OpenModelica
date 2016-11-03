@@ -51,11 +51,9 @@ uniontype Component
   record COMPONENT_DEF
     Element definition;
     Modifier modifier;
-    Integer scope;
   end COMPONENT_DEF;
 
   record UNTYPED_COMPONENT
-    String name;
     InstNode classInst;
     array<Dimension> dimensions;
     Binding binding;
@@ -64,7 +62,6 @@ uniontype Component
   end UNTYPED_COMPONENT;
 
   record TYPED_COMPONENT
-    String name;
     InstNode classInst;
     Type ty;
     Binding binding;
@@ -76,22 +73,9 @@ uniontype Component
   end EXTENDS_NODE;
 
   record COMPONENT_REF
-    String name;
     Integer node;
     Integer index;
   end COMPONENT_REF;
-
-  function name
-    input Component component;
-    output String name;
-  algorithm
-    name := match component
-      case COMPONENT_DEF(definition = SCode.COMPONENT(name = name)) then name;
-      case UNTYPED_COMPONENT() then component.name;
-      case TYPED_COMPONENT() then component.name;
-      case COMPONENT_REF() then component.name;
-    end match;
-  end name;
 
   function isNamedComponent
     input Component component;
@@ -117,7 +101,7 @@ uniontype Component
     input Modifier modifier;
     input output Component component;
   algorithm
-    _ := match component
+    () := match component
       case COMPONENT_DEF()
         algorithm
           component.modifier := modifier;
@@ -141,8 +125,7 @@ uniontype Component
   algorithm
     component := match component
       case UNTYPED_COMPONENT()
-        then TYPED_COMPONENT(component.name, component.classInst, ty,
-          component.binding, component.attributes);
+        then TYPED_COMPONENT(component.classInst, ty, component.binding, component.attributes);
 
       case TYPED_COMPONENT()
         algorithm
@@ -155,7 +138,7 @@ uniontype Component
   function unliftType
     input output Component component;
   algorithm
-    _ := match component
+    () := match component
       local
         DAE.Type ty;
 
@@ -168,16 +151,6 @@ uniontype Component
       else ();
     end match;
   end unliftType;
-
-  function makeTopComponent
-    input InstNode inst;
-    output Component comp;
-  algorithm
-    comp := TYPED_COMPONENT(InstNode.name(inst), inst, DAE.T_UNKNOWN_DEFAULT,
-      Binding.UNBOUND(), Attributes.ATTRIBUTES(
-        DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
-        DAE.VarVisibility.PUBLIC(), DAE.ConnectorType.NON_CONNECTOR()));
-  end makeTopComponent;
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

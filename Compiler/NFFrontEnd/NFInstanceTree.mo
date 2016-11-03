@@ -61,8 +61,9 @@ uniontype InstanceTree
     InstNode top;
     InstVector.Vector instances;
   algorithm
-    top := InstNode.INST_NODE("<top>", NONE(), Instance.emptyInstancedClass(),
-      TOP_SCOPE, NO_SCOPE, InstParent.NO_PARENT());
+    //top := InstNode.INST_NODE("<top>", NONE(), Instance.emptyInstancedClass(),
+    //  TOP_SCOPE, NO_SCOPE, InstParent.NO_PARENT());
+    top := InstNode.EMPTY_NODE();
     instances := InstVector.new();
     instances := InstVector.add(instances, top);
     tree := INST_TREE(top, instances, {});
@@ -96,14 +97,14 @@ uniontype InstanceTree
   function updateNode
     input InstNode node;
     input output InstanceTree tree;
-  protected
-    Integer idx = InstNode.index(node);
-  algorithm
-    tree.instances := InstVector.set(tree.instances, idx, node);
+  //protected
+  //  Integer idx = InstNode.index(node);
+  //algorithm
+  //  tree.instances := InstVector.set(tree.instances, idx, node);
 
-    if idx == InstNode.index(tree.currentScope) then
-      tree.currentScope := node;
-    end if;
+  //  if idx == InstNode.index(tree.currentScope) then
+  //    tree.currentScope := node;
+  //  end if;
   end updateNode;
 
   function setCurrentScopeIndex
@@ -115,7 +116,8 @@ uniontype InstanceTree
 
   function currentScopeIndex
     input InstanceTree tree;
-    output Integer index = InstNode.index(tree.currentScope);
+    //output Integer index = InstNode.index(tree.currentScope);
+    output Integer index = 0;
   end currentScopeIndex;
 
   function setCurrentScope
@@ -135,8 +137,8 @@ uniontype InstanceTree
   function enterParentScope
     input output InstanceTree tree;
   algorithm
-    tree.currentScope :=
-      InstVector.get(tree.instances, InstNode.scopeParent(tree.currentScope));
+    //tree.currentScope :=
+    //  InstVector.get(tree.instances, InstNode.scopeParent(tree.currentScope));
   end enterParentScope;
 
   function pushHierarchy
@@ -184,80 +186,82 @@ uniontype InstanceTree
   function hierarchyPrefix
     input InstanceTree tree;
     output Prefix prefix = Prefix.NO_PREFIX();
-  protected
-    list<Component> hierarchy = tree.hierarchy;
-    Component c;
-  algorithm
-    // Make a prefix out of all but the last (anonymous) instances in the hierarchy.
-    while listLength(hierarchy) > 1 loop
-      c :: hierarchy := hierarchy;
-      prefix := Prefix.add(Component.name(c), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
-    end while;
+  //protected
+  //  list<Component> hierarchy = tree.hierarchy;
+  //  Component c;
+  //algorithm
+  //  // Make a prefix out of all but the last (anonymous) instances in the hierarchy.
+  //  while listLength(hierarchy) > 1 loop
+  //    c :: hierarchy := hierarchy;
+  //    prefix := Prefix.add(Component.name(c), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+  //  end while;
   end hierarchyPrefix;
 
   function scopePrefix
     input InstanceTree tree;
     output Prefix prefix = Prefix.NO_PREFIX();
-  protected
-    InstNode node = currentScope(tree);
-    Integer parent = NO_SCOPE;
-    list<InstNode> nodes = {};
-  algorithm
-    while parent <> TOP_SCOPE loop
-      nodes := node :: nodes;
-      parent := InstNode.scopeParent(node);
-      node := InstVector.get(tree.instances, parent);
-    end while;
+  //protected
+  //  InstNode node = currentScope(tree);
+  //  Integer parent = NO_SCOPE;
+  //  list<InstNode> nodes = {};
+  //algorithm
+  //  while parent <> TOP_SCOPE loop
+  //    nodes := node :: nodes;
+  //    parent := InstNode.scopeParent(node);
+  //    node := InstVector.get(tree.instances, parent);
+  //  end while;
 
-    for n in nodes loop
-      prefix := Prefix.add(InstNode.name(n), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
-    end for;
+  //  for n in nodes loop
+  //    prefix := Prefix.add(InstNode.name(n), {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+  //  end for;
   end scopePrefix;
 
   function prefix
     input InstNode node;
     output Prefix prefix;
-  protected
-    InstParent ip;
   algorithm
-    ip := InstNode.instParent(node);
+    prefix := Prefix.NO_PREFIX();
+  //protected
+  //  InstParent ip;
+  //algorithm
+  //  ip := InstNode.instParent(node);
 
-    prefix := match ip
-      case InstParent.CLASS()
-        then prefix2(node);
-      //case InstParent.COMPONENT() then hierarchyPrefix(node);
-      case InstParent.NO_PARENT() then Prefix.NO_PREFIX();
-      else Prefix.NO_PREFIX();
-    end match;
+  //  prefix := match ip
+  //    case InstParent.CLASS()
+  //      then prefix2(node);
+  //    //case InstParent.COMPONENT() then hierarchyPrefix(node);
+  //    case InstParent.NO_PARENT() then Prefix.NO_PREFIX();
+  //    else Prefix.NO_PREFIX();
+  //  end match;
   end prefix;
 
-  function prefix2
-    input InstNode node;
-    output Prefix prefix;
-  protected
-    InstParent ip = InstNode.instParent(node);
-    InstNode n;
-    list<InstNode> nodes = {};
-  algorithm
-    while not InstParent.isEmpty(ip) loop
-      ip := match ip
-        case InstParent.CLASS()
-          algorithm
-            nodes := ip.node :: nodes;
-          then
-            InstNode.instParent(ip.node);
+  //function prefix2
+  //  input InstNode node;
+  //  output Prefix prefix;
+  //protected
+  //  InstParent ip = InstNode.instParent(node);
+  //  InstNode n;
+  //  list<InstNode> nodes = {};
+  //algorithm
+  //  while not InstParent.isEmpty(ip) loop
+  //    ip := match ip
+  //      case InstParent.CLASS()
+  //        algorithm
+  //          nodes := ip.node :: nodes;
+  //        then
+  //          InstNode.instParent(ip.node);
 
-        else InstParent.NO_PARENT();
-      end match;
-    end while;
+  //      else InstParent.NO_PARENT();
+  //    end match;
+  //  end while;
 
-    prefix := Prefix.addClass(InstNode.name(node), Prefix.NO_PREFIX());
+  //  prefix := Prefix.addClass(InstNode.name(node), Prefix.NO_PREFIX());
 
-    while listLength(nodes) > 1 loop
-      n :: nodes := nodes;
-      prefix := Prefix.addClass(InstNode.name(n), prefix);
-    end while;
-  end prefix2;
+  //  while listLength(nodes) > 1 loop
+  //    n :: nodes := nodes;
+  //    prefix := Prefix.addClass(InstNode.name(n), prefix);
+  //  end while;
+  //end prefix2;
 end InstanceTree;
 
 annotation(__OpenModelica_Interface="frontend");

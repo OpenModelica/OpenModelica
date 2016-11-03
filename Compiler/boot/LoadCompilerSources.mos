@@ -91,6 +91,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltin.mo",
     "../NFFrontEnd/NFComponent.mo",
+    "../NFFrontEnd/NFComponentNode.mo",
     //"../NFFrontEnd/NFConnect2.mo",
     //"../NFFrontEnd/NFConnectCheck.mo",
     //"../NFFrontEnd/NFConnectEquations.mo",
