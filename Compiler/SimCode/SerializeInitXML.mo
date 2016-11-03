@@ -557,9 +557,9 @@ function getAliasVar "Returns the alias Attribute of ScalarVariable."
 algorithm
   _ := match aliasvar
   case AliasVariable.ALIAS()
-    algorithm File.write(file, "\"alias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName); File.write(file, "\""); then ();
+    algorithm File.write(file, "\"alias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName, XML); File.write(file, "\""); then ();
   case AliasVariable.NEGATEDALIAS()
-    algorithm File.write(file, "\"negatedAlias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName); File.write(file, "\""); then ();
+    algorithm File.write(file, "\"negatedAlias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName, XML); File.write(file, "\""); then ();
   else
     algorithm File.write(file, "\"noAlias\""); then ();
   end match;
