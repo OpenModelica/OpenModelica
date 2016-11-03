@@ -478,6 +478,8 @@ template initParamsDefault(SimVar var, String arrayName) ::=
     case SIMVAR(__) then
     let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
     match initialValue
+      case SOME(v as SCONST(__)) then
+      '<%str%> = mmc_mk_scon(<%initVal(v)%>);'
       case SOME(v) then
       '<%str%> = <%initVal(v)%>;'
 end initParamsDefault;
