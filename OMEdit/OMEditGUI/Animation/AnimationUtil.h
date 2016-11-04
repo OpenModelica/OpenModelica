@@ -41,8 +41,8 @@
 
 #include <sys/stat.h>
 #include <string>
-
 #include <osg/Vec3>
+
 #include "Shapes.h"
 
 enum class VisType

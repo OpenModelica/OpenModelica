@@ -35,11 +35,12 @@
 #ifndef PLOTWINDOWCONTAINER_H
 #define PLOTWINDOWCONTAINER_H
 
-#include "MainWindow.h"
-#include "OMPlot.h"
 #if !defined(WITHOUT_OSG)
 #include "Animation/AnimationWindow.h"
 #endif
+
+#include "MainWindow.h"
+#include "OMPlot.h"
 
 class MainWindow;
 class AnimationWindow;

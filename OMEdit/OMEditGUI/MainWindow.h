@@ -37,6 +37,9 @@
 
 #undef smooth
 
+/* Keep PlotWindowContainer on top to include OSG first */
+#include "Plotting/PlotWindowContainer.h"
+
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
@@ -69,7 +72,6 @@
 #include "DocumentationWidget.h"
 #include "SimulationDialog.h"
 #include "TLMCoSimulationDialog.h"
-#include "Plotting/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
 #include "GDBAdapter.h"
 #include "StackFramesWidget.h"

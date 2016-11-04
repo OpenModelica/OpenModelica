@@ -35,12 +35,6 @@
 #ifndef VISUALIZER_H
 #define VISUALIZER_H
 
-#include "AnimationUtil.h"
-#include "ExtraShapes.h"
-#include "rapidxml.hpp"
-#include "Shapes.h"
-#include "TimeManager.h"
-
 #include <stdlib.h>
 #include <memory.h>
 #include <iostream>
@@ -51,6 +45,12 @@
 #include <osg/ShapeDrawable>
 #include <osg/Material>
 #include <osgDB/ReadFile>
+
+#include "AnimationUtil.h"
+#include "ExtraShapes.h"
+#include "rapidxml.hpp"
+#include "Shapes.h"
+#include "TimeManager.h"
 
 struct UserSimSettingsMAT
 {

@@ -35,13 +35,6 @@
 #ifndef ANIMATIONWINDOW_H
 #define ANIMATIONWINDOW_H
 
-#include "AnimationUtil.h"
-#include "MainWindow.h"
-#include "OMPlot.h"
-#include "Visualizer.h"
-#include "VisualizerMAT.h"
-#include "VisualizerCSV.h"
-
 #include <iostream>
 #include <string>
 
@@ -56,6 +49,13 @@
 #include <osgViewer/CompositeViewer>
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
+
+#include "AnimationUtil.h"
+#include "MainWindow.h"
+#include "OMPlot.h"
+#include "Visualizer.h"
+#include "VisualizerMAT.h"
+#include "VisualizerCSV.h"
 
 class MainWindow;
 class PlotWindowContainer;
