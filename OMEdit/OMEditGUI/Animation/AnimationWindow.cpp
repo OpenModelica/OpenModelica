@@ -192,6 +192,13 @@ void AnimationWindow::setSpeedUpSlotFunction()
     }
 }
 
+AnimationWindow::~AnimationWindow()
+{
+  if (mpVisualizer) {
+    delete mpVisualizer;
+  }
+}
+
 /*!
  * \brief AnimationWindow::setupViewWidget
  * creates the widget for the osg viewer

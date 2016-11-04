@@ -41,7 +41,7 @@ class VisualizerCSV : public VisualizerAbstract
 public:
   VisualizerCSV() = delete;
   VisualizerCSV(const std::string& fileName, const std::string& path);
-  virtual ~VisualizerCSV() = default;
+  ~VisualizerCSV();
   VisualizerCSV(const VisualizerCSV& omvm) = delete;
   VisualizerCSV& operator=(const VisualizerCSV& omvm) = delete;
   void initData();

@@ -30,12 +30,20 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
+
 #include "VisualizerCSV.h"
 
 VisualizerCSV::VisualizerCSV(const std::string& modelFile, const std::string& path)
   : VisualizerAbstract(modelFile, path, VisType::CSV), mpCSVData(0)
 {
 
+}
+
+VisualizerCSV::~VisualizerCSV()
+{
+  if (mpCSVData) {
+    omc_free_csv_reader(mpCSVData);
+  }
 }
 
 void VisualizerCSV::initData()
