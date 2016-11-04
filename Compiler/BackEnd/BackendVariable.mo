@@ -333,6 +333,21 @@ algorithm
   end match;
 end varHasConstantBindExp;
 
+public function varHasConstantStartExp
+"Returns the true if the binding/start value is constant otherwise false."
+  input BackendDAE.Var v;
+  output Boolean out;
+protected
+  DAE.Exp e;
+algorithm
+  try
+    e := varStartValueFail(v);
+    out := Expression.isConst(e);
+  else
+    out := true;
+  end try;
+end varHasConstantStartExp;
+
 public function varHasBindExp
 "Returns the true if a bindExp exists otherwise false."
   input BackendDAE.Var v;

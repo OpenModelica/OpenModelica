@@ -8514,10 +8514,11 @@ algorithm
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
+        isValueChangeable = BackendVariable.varHasConstantStartExp(dlowVar);
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, true, isProtected, hideResult, NONE());
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE());
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
@@ -12797,7 +12798,7 @@ algorithm
 
   for param in inParamSimVars loop
     // take for now only parameters that are changeable and topLevel
-    if param.isValueChangeable == true and ComponentReference.crefIsIdent(param.name) then
+    if param.isValueChangeable and ComponentReference.crefIsIdent(param.name) then
       countSensitivityParams := countSensitivityParams+1;
       sensitivityParams := param::sensitivityParams;
       for state in inStateSimVars loop
