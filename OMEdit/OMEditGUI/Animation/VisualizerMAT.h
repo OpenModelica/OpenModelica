@@ -36,6 +36,7 @@
 #define VISUALIZERMAT_H
 
 #include "Visualizer.h"
+#include "util/read_matlab4.h"
 
 class VisualizerMAT : public VisualizerAbstract
 {

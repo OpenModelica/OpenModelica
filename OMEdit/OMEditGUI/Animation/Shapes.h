@@ -36,10 +36,7 @@
 
 #include <iostream>
 
-#include "util/read_matlab4.h"
-#include "util/read_csv.h"
 #include "rapidxml.hpp"
-//#include "fmilib.h"
 #include <osg/Vec3f>
 #include <osg/Matrix>
 #include <osg/Uniform>
@@ -48,26 +45,26 @@
 class ShapeObjectAttribute
 {
  public:
-	ShapeObjectAttribute();
-	ShapeObjectAttribute(float value);
-	~ShapeObjectAttribute() = default;
-	std::string getValueString() const;
+  ShapeObjectAttribute();
+  ShapeObjectAttribute(float value);
+  ~ShapeObjectAttribute() = default;
+  std::string getValueString() const;
  public:
-	bool isConst;
-	float exp;
-	std::string cref;
-	//fmi1_value_reference_t fmuValueRef;
+  bool isConst;
+  float exp;
+  std::string cref;
+  //fmi1_value_reference_t fmuValueRef;
 };
 
 class ShapeObject
 {
  public:
-	ShapeObject();
-	~ShapeObject() = default;
-	ShapeObject(const ShapeObject&) = default;
-	ShapeObject& operator=(const ShapeObject&) = default;
-	void dumpVisAttributes() const;
-	//void fetchVisAttributes(rapidxml::xml_node<>* node, ModelicaMatReader matReader,/* fmi1_import_t* fmu,*/ double time, bool useFMU);
+  ShapeObject();
+  ~ShapeObject() = default;
+  ShapeObject(const ShapeObject&) = default;
+  ShapeObject& operator=(const ShapeObject&) = default;
+  void dumpVisAttributes() const;
+  //void fetchVisAttributes(rapidxml::xml_node<>* node, ModelicaMatReader matReader,/* fmi1_import_t* fmu,*/ double time, bool useFMU);
  public:
   std::string _id;
   std::string _type;

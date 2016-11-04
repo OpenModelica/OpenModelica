@@ -66,7 +66,6 @@ public:
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node);
   virtual void apply(osg::MatrixTransform& node);
-
 public:
   ShapeObject _shape;
 };

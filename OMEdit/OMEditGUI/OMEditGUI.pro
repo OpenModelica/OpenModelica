@@ -95,6 +95,7 @@ win32 {
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
 
   RC_FILE = rc_omedit.rc
+  CONFIG += osg
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic
@@ -129,14 +130,6 @@ SOURCES += main.cpp \
   Editors/MetaModelEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
-  ../../osgQt/GraphicsWindowQt.cpp \
-  Animation/AnimationWindow.cpp \
-  Animation/ExtraShapes.cpp \
-  Animation/Visualizer.cpp \
-  Animation/VisualizerMAT.cpp \
-  Animation/VisualizerCSV.cpp \
-  Animation/Shapes.cpp \
-  Animation/TimeManager.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
   Component/CornerItem.cpp \
@@ -200,17 +193,6 @@ HEADERS  += Util/Helper.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
   #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
-  ../../osgQt/OMEdit_GraphicsWindowQt.h \
-  ../../osgQt/Export \
-  Animation/AnimationWindow.h \
-  Animation/AnimationUtil.h \
-  Animation/ExtraShapes.h \
-  Animation/Visualizer.h \
-  Animation/VisualizerMAT.h \
-  Animation/VisualizerCSV.h \
-  Animation/Shapes.h \
-  Animation/TimeManager.h \
-  Animation/rapidxml.hpp \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -255,6 +237,30 @@ HEADERS  += Util/Helper.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/backtrace.h \
   CrashReport/CrashReportDialog.h
+
+CONFIG(osg) {
+
+SOURCES += Animation/AnimationWindow.cpp \
+  Animation/ExtraShapes.cpp \
+  Animation/Visualizer.cpp \
+  Animation/VisualizerMAT.cpp \
+  Animation/VisualizerCSV.cpp \
+  Animation/Shapes.cpp \
+  Animation/TimeManager.cpp \
+  ../../osgQt/GraphicsWindowQt.cpp \
+
+HEADERS += Animation/AnimationWindow.h \
+  Animation/AnimationUtil.h \
+  Animation/ExtraShapes.h \
+  Animation/Visualizer.h \
+  Animation/VisualizerMAT.h \
+  Animation/VisualizerCSV.h \
+  Animation/Shapes.h \
+  Animation/TimeManager.h \
+  Animation/rapidxml.hpp \
+  ../../osgQt/OMEdit_GraphicsWindowQt.h \
+  ../../osgQt/Export
+}
 
 LIBS += -lqjson
 INCLUDEPATH += ../../qjson/build/include
