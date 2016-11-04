@@ -1738,12 +1738,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     else
           '_terminal'
 
-   case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2}) then
+   case CALL(path=IDENT(name="DIVISION"), expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
-    'division(<%var1%>,<%var2%>,"<%var3%>")'
+    match context
+     case ALGLOOP_CONTEXT(genInitialisation = false)
+        then
+		<<
+		 division(<%var1%>,<%var2%>,!_system->_initial,"<%var3%>")
+		>>
+    else
+        <<
+		 division(<%var1%>,<%var2%>,!_initial,"<%var3%>")
+		>>
+    end match
+
 
    case CALL(path=IDENT(name="sign"),
             expLst={e1}) then

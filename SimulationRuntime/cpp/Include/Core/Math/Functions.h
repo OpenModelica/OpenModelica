@@ -38,7 +38,7 @@ inline static int sgn (const double &c)
 }
 
 /// Definition of Signum function
-double BOOST_EXTENSION_EXPORT_DECL division (const double &a,const double &b, const char * text);
+double BOOST_EXTENSION_EXPORT_DECL division (const double &a,const double &b, bool throwEx,const char * text);
 
 
 void BOOST_EXTENSION_EXPORT_DECL getSparseMatrixData(sparsematrix_t& A, double** px);

@@ -9,7 +9,7 @@
 
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
-
+//#include <Core/Utils/extension/logger.hpp>
 namespace bindings = boost::numeric::bindings;
 
 /* Matrixes using column major order (as in Fortran) */
@@ -33,14 +33,20 @@ namespace bindings = boost::numeric::bindings;
 #define min(a,b) ((a > b) ? (b) : (a))
 #endif
 
-double  division (const double &a,const double &b, const char* text)
+double  division (const double &a,const double &b, bool throwEx,const char* text)
 {
   if(b != 0)
     return a/b ;
     else
     {
-        std::string error_msg = "Division by zero: ";
-      throw ModelicaSimulationError(UTILITY,error_msg+string(text));
+      std::string error_msg = "Division by zero: ";
+      if(throwEx)
+	   throw ModelicaSimulationError(UTILITY,error_msg+string(text));
+     else
+	 {
+		// LOGGER_WRITE("Division: Solver will try to handle division by zero for" + string(text), LC_INIT, LL_DEBUG);
+		 return a;
+	 }
    }
 }
 
