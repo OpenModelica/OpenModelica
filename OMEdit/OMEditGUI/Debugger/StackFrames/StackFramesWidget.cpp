@@ -342,16 +342,7 @@ StackFramesWidget::StackFramesWidget(MainWindow *pMainWindow)
   pControlButtonsHorizontalLayout->addWidget(mpInterruptToolButton);
   pControlButtonsHorizontalLayout->addWidget(mpExitToolButton);
   pControlButtonsFrame->setLayout(pControlButtonsHorizontalLayout);
-  /* continue tool button */
-  mpStepOverToolButton = new QToolButton;
-  mpStepOverToolButton->setEnabled(false);
-  mpStepOverToolButton->setText(Helper::stepOver);
-  mpStepOverToolButton->setIcon(QIcon(":/Resources/icons/step-over.svg"));
-  mpStepOverToolButton->setIconSize(Helper::buttonIconSize);
-  mpStepOverToolButton->setToolTip(Helper::stepOver);
-  mpStepOverToolButton->setAutoRaise(true);
-  connect(mpStepOverToolButton, SIGNAL(clicked()), SLOT(stepOverButtonClicked()));
-  /* continue tool button */
+  /* step-into tool button */
   mpStepIntoToolButton = new QToolButton;
   mpStepIntoToolButton->setEnabled(false);
   mpStepIntoToolButton->setText(Helper::stepInto);
@@ -360,7 +351,16 @@ StackFramesWidget::StackFramesWidget(MainWindow *pMainWindow)
   mpStepIntoToolButton->setToolTip(Helper::stepInto);
   mpStepIntoToolButton->setAutoRaise(true);
   connect(mpStepIntoToolButton, SIGNAL(clicked()), SLOT(stepIntoButtonClicked()));
-  /* continue tool button */
+  /* step-over tool button */
+  mpStepOverToolButton = new QToolButton;
+  mpStepOverToolButton->setEnabled(false);
+  mpStepOverToolButton->setText(Helper::stepOver);
+  mpStepOverToolButton->setIcon(QIcon(":/Resources/icons/step-over.svg"));
+  mpStepOverToolButton->setIconSize(Helper::buttonIconSize);
+  mpStepOverToolButton->setToolTip(Helper::stepOver);
+  mpStepOverToolButton->setAutoRaise(true);
+  connect(mpStepOverToolButton, SIGNAL(clicked()), SLOT(stepOverButtonClicked()));
+  /* step-return tool button */
   mpStepReturnToolButton = new QToolButton;
   mpStepReturnToolButton->setEnabled(false);
   mpStepReturnToolButton->setText(Helper::stepReturn);
@@ -374,8 +374,8 @@ StackFramesWidget::StackFramesWidget(MainWindow *pMainWindow)
   QHBoxLayout *pFlowButtonsHorizontalLayout = new QHBoxLayout;
   pFlowButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
   pFlowButtonsHorizontalLayout->setSpacing(0);
-  pFlowButtonsHorizontalLayout->addWidget(mpStepOverToolButton);
   pFlowButtonsHorizontalLayout->addWidget(mpStepIntoToolButton);
+  pFlowButtonsHorizontalLayout->addWidget(mpStepOverToolButton);
   pFlowButtonsHorizontalLayout->addWidget(mpStepReturnToolButton);
   pFlowButtonsFrame->setLayout(pFlowButtonsHorizontalLayout);
   /* Threads Label */

@@ -104,8 +104,8 @@ private:
   QToolButton *mpResumeToolButton;
   QToolButton *mpInterruptToolButton;
   QToolButton *mpExitToolButton;
-  QToolButton *mpStepOverToolButton;
   QToolButton *mpStepIntoToolButton;
+  QToolButton *mpStepOverToolButton;
   QToolButton *mpStepReturnToolButton;
   Label *mpThreadsLabel;
   QComboBox *mpThreadsComboBox;
