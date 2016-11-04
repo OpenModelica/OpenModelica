@@ -50,6 +50,7 @@
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
 
+#include "Utilities.h"
 #include "AnimationUtil.h"
 #include "MainWindow.h"
 #include "OMPlot.h"
