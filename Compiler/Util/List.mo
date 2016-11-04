@@ -5901,6 +5901,43 @@ algorithm
   fail();
 end find1;
 
+public function findAndRemove1<T, ArgT1>
+  "This function retrieves the first element of a list for which the passed
+   function evaluates to true. And returns the list with the element removed."
+  input list<T> inList;
+  input SelectFunc inFunc;
+  input ArgT1 arg1;
+  output T outElement;
+  output list<T> rest;
+
+  partial function SelectFunc
+    input T inElement;
+    input ArgT1 arg;
+    output Boolean outSelect;
+  end SelectFunc;
+protected
+  Integer i=0;
+  DoubleEndedList<T> delst;
+  T t;
+algorithm
+  for e in inList loop
+    if inFunc(e, arg1) then
+      outElement := e;
+      delst := DoubleEndedList.fromList({});
+      rest := inList;
+      for i in 1:i loop
+        t::rest := rest;
+        DoubleEndedList.push_back(delst, t);
+      end for;
+      _::rest := rest;
+      rest := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      return;
+    end if;
+    i := i + 1;
+  end for;
+  fail();
+end findAndRemove1;
+
 public function findBoolList<T>
   "This function returns the first value in the given list for which the
    corresponding element in the boolean list is true."

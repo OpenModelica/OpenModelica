@@ -44,6 +44,7 @@ import System;
 import List;
 import StringUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
+import DoubleEndedList;
 
 public
 
@@ -96,6 +97,7 @@ algorithm
     case (_, EMPTY()) then within1::t2;
     else t2;
   end match;
+  t2_updated := moveComments(t1, t2_updated);
   res := treeDiffWork1(t1, t2_updated, nTokens);
 end treeDiff;
 
@@ -223,6 +225,7 @@ algorithm
   tree := inTree;
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.IDENT);
   nodeName::_ := tree;
+  nodeName := parseTreeFilterWhitespace(nodeName);
   if b then
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EQUALS);
     if b then
@@ -765,6 +768,7 @@ function component_list
 protected
   TokenId id;
   Boolean b;
+  ParseTree nodeName;
 algorithm
   (tokens, tree) := component_declaration(tokens, tree);
   while true loop
@@ -779,11 +783,12 @@ end component_list;
 
 function component_declaration
   extends partialParser;
+  output ParseTree nodeName;
 protected
   TokenId id;
   Boolean b;
 algorithm
-  (tokens, tree) := declaration(tokens, tree);
+  (tokens, tree, nodeName) := declaration(tokens, tree);
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.IF);
   if b then
     (tokens, tree) := expression(tokens, tree);
@@ -791,7 +796,7 @@ algorithm
   // print("component_declaration: comment1 "+topTokenStr(tokens)+"\n");
   (tokens, tree) := comment(tokens, tree);
   // print("component_declaration: comment2 "+topTokenStr(tokens)+"\n");
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=nodeName);
 end component_declaration;
 
 function declaration
@@ -803,6 +808,7 @@ protected
 algorithm
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
   nodeName::_ := tree;
+  nodeName := parseTreeFilterWhitespace(nodeName);
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.LBRACK});
   if b then
     (tokens, tree) := array_subscripts(tokens, tree);
@@ -881,13 +887,14 @@ function argument_list
 protected
   TokenId id;
   Boolean b;
+  ParseTree nodeName;
 algorithm
-  (tokens, tree) := argument(tokens, tree);
+  (tokens, tree, nodeName) := argument(tokens, tree);
   b := true;
   while b loop
     (tokens, tree, b) := scanOpt(tokens, tree, TokenId.COMMA);
     if b then
-      (tokens, tree) := argument(tokens, tree);
+      (tokens, tree, nodeName) := argument(tokens, tree);
     end if;
   end while;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
@@ -895,10 +902,11 @@ end argument_list;
 
 function argument
   extends partialParser;
+  output ParseTree nodeName;
 protected
   TokenId id;
   Boolean b;
-  ParseTree nodeName;
+  ParseTree node;
 algorithm
   (tokens, tree, b) := LA1(tokens, tree, {TokenId.REDECLARE});
   if b then
@@ -906,8 +914,8 @@ algorithm
   else
     (tokens, tree, nodeName) := element_modification_or_replaceable(tokens, tree);
   end if;
-  nodeName := makeNode(listReverse(tree), label=nodeName);
-  outTree := nodeName::inTree;
+  node := makeNode(listReverse(tree), label=nodeName);
+  outTree := node::inTree;
 end argument;
 
 function element_redeclaration
@@ -945,6 +953,7 @@ algorithm
   (tokens, tree) := class_prefixes(tokens, tree);
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
   nodeName::_ := tree;
+  nodeName := parseTreeFilterWhitespace(nodeName);
   (tokens, tree) := scan(tokens, tree, TokenId.EQUALS);
   (tokens, tree) := short_class_specifier1(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
@@ -998,6 +1007,7 @@ protected
 algorithm
   (tokens, tree) := name(tokens, tree);
   nodeName::_ := tree;
+  nodeName := parseTreeFilterWhitespace(nodeName);
   (tokens, tree, b) := LA1(tokens, tree, First.modification);
   if b then
     (tokens, tree) := modification(tokens, tree);
@@ -1501,6 +1511,232 @@ algorithm
   end match;
 end findWithin;
 
+function moveComments
+  input list<ParseTree> t1;
+  input output list<ParseTree> t2;
+protected
+  list<tuple<Token, list<ParseTree>, String>> c1, c2, remaining;
+  Token tok;
+  String str1,str2;
+  list<ParseTree> path1, path2, tempTree;
+algorithm
+  // TODO: Collect all comments (in order), diff all comments, walk t1/t2 to mark all of the comments as significant or not...
+  // TODO: OR? Look for moved comments and try to detect if preceeded / succeeded by the same tokens in the same label
+  c1 := findCommentsWithLabels(t1, {}, {});
+  c2 := findCommentsWithLabels(t2, {}, {});
+  (_,c1,c2) := List.intersection1OnTrue(c1, c2, foundCommentEqual);
+  for c in c2 loop
+    try
+      (tok,path1,str1) := c;
+      ((_,path2,str2), c1) := List.findAndRemove1(c1, foundCommentTokenEqual, c);
+      (tempTree, true) := removeCommentAtLabelPath(t2, tok, listReverse(path1));
+      (tempTree, true) := addCommentAtLabelPath(tempTree, tok, listReverse(path2));
+      t2 := tempTree;
+    else
+    end try;
+  end for;
+end moveComments;
+
+function addCommentAtLabelPath
+  input output list<ParseTree> tree;
+  input Token tok;
+  input list<ParseTree> path;
+  output Boolean success=false;
+protected
+  ParseTree n, n2, label, pathFirst;
+  list<ParseTree> rest, nodes, pathRest;
+  DoubleEndedList<ParseTree> delst;
+  Boolean b;
+algorithm
+  if listEmpty(path) then
+    success := true;
+    tree := LEAF(tok)::tree;
+    return;
+  end if;
+  delst := DoubleEndedList.fromList({});
+  rest := tree;
+  while not listEmpty(rest) loop
+    n::rest := rest;
+    (n2,b) := match (n,path)
+      case (NODE(label=EMPTY()),_)
+        algorithm
+          (nodes,b) := addCommentAtLabelPath(n.nodes,tok,path);
+          if b then
+            n2 := NODE(EMPTY(),nodes);
+          else
+            n2 := n;
+          end if;
+        then (n2,b);
+      case (NODE(label=label),pathFirst::pathRest) guard stringEq(labelPathStr({label}), labelPathStr({pathFirst}))
+        algorithm
+          (nodes,b) := addCommentAtLabelPath(n.nodes,tok,pathRest);
+          if b then
+            n2 := NODE(label,nodes);
+          else
+            n2 := n;
+          end if;
+        then (n2,b);
+      else (n,false);
+    end match;
+    DoubleEndedList.push_back(delst, n2);
+    if b then
+      tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      success := true;
+      return;
+    end if;
+  end while;
+  // return tree as it is
+end addCommentAtLabelPath;
+
+function removeCommentAtLabelPath
+  input output list<ParseTree> tree;
+  input Token tok;
+  input list<ParseTree> path;
+  output Boolean success=false;
+protected
+  ParseTree n, n2, label, pathFirst;
+  list<ParseTree> rest, nodes, pathRest;
+  DoubleEndedList<ParseTree> delst;
+  Boolean b;
+algorithm
+  if listEmpty(path) then
+    (tree,success as true) := removeCommentAtThisLabel(tree, tok);
+    return;
+  end if;
+  delst := DoubleEndedList.fromList({});
+  rest := tree;
+  while not listEmpty(rest) loop
+    n::rest := rest;
+    (n2,b) := match (n,path)
+      case (NODE(label=EMPTY()),_)
+        algorithm
+          (nodes,b) := removeCommentAtLabelPath(n.nodes,tok,path);
+          if b then
+            n2 := NODE(EMPTY(),nodes);
+          else
+            n2 := n;
+          end if;
+        then (n2,b);
+      case (NODE(label=label),pathFirst::pathRest) guard stringEq(labelPathStr({label}), labelPathStr({pathFirst}))
+        algorithm
+          (nodes,b) := removeCommentAtLabelPath(n.nodes,tok,pathRest);
+          if b then
+            n2 := NODE(label,nodes);
+          else
+            n2 := n;
+          end if;
+        then (n2,b);
+      else (n,false);
+    end match;
+    DoubleEndedList.push_back(delst, n2);
+    if b then
+      tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      success := true;
+      return;
+    end if;
+  end while;
+  // return tree as it is
+end removeCommentAtLabelPath;
+
+function removeCommentAtThisLabel
+  input output list<ParseTree> tree;
+  input Token tok;
+  output Boolean success=false;
+protected
+  DoubleEndedList<ParseTree> delst;
+  list<ParseTree> rest=tree, nodes;
+  ParseTree n;
+algorithm
+  delst := DoubleEndedList.fromList({});
+  while not listEmpty(rest) loop
+    n::rest := rest;
+    _ := match n
+      case LEAF() guard modelicaDiffTokenEq(n.token, tok)
+        algorithm
+          success := true;
+          tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+          return;
+        then fail();
+      case NODE(label=EMPTY())
+        algorithm
+          (nodes,success) := removeCommentAtThisLabel(n.nodes, tok);
+          if success then
+            DoubleEndedList.push_back(delst, NODE(EMPTY(), nodes));
+            tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+            return;
+          end if;
+        then ();
+      else ();
+    end match;
+    DoubleEndedList.push_back(delst, n);
+  end while;
+end removeCommentAtThisLabel;
+
+function findCommentsWithLabels
+  input list<ParseTree> t1;
+  input list<ParseTree> labelPath;
+  input output list<tuple<Token, list<ParseTree>, String>> acc;
+protected
+  list<ParseTree> nodes;
+  Token tok;
+  TokenId id;
+  String pathStr;
+algorithm
+  for n in t1 loop
+    _ := match n
+      case EMPTY() then ();
+      case LEAF(token=tok as LexerModelicaDiff.TOKEN(id=id)) guard parseTreeIsComment(n)
+        algorithm
+          pathStr := labelPathStr(labelPath);
+          acc := (tok, labelPath, pathStr)::acc;
+        then ();
+      case NODE(label=EMPTY(), nodes=nodes)
+        algorithm
+          acc := findCommentsWithLabels(nodes, labelPath, acc);
+        then ();
+      case NODE(nodes=nodes)
+        algorithm
+          acc := findCommentsWithLabels(nodes, n.label::labelPath, acc);
+        then ();
+      else ();
+    end match;
+  end for;
+end findCommentsWithLabels;
+
+function foundCommentEqual
+  input tuple<Token, list<ParseTree>, String> c1, c2;
+  output Boolean eq;
+protected
+  Token tok1, tok2;
+  String s1, s2;
+algorithm
+  (tok1,_,s1) := c1;
+  (tok2,_,s2) := c2;
+  eq := modelicaDiffTokenEq(tok1, tok2);
+  if not eq then
+    return;
+  end if;
+  eq := stringEq(s1, s2);
+end foundCommentEqual;
+
+function foundCommentTokenEqual
+  input tuple<Token, list<ParseTree>, String> c1, c2;
+  output Boolean eq;
+protected
+  Token tok1, tok2;
+algorithm
+  (tok1,_,_) := c1;
+  (tok2,_,_) := c2;
+  eq := modelicaDiffTokenEq(tok1, tok2);
+end foundCommentTokenEqual;
+
+function labelPathStr
+  input list<ParseTree> labelPath;
+  output String str;
+algorithm
+  str := stringDelimitList(listReverse(parseTreeStr({t}) for t in labelPath), ".");
+end labelPathStr;
+
 function treeDiffWork1
   input list<ParseTree> t1, t2;
   input Integer nTokens "The number of tokens in the larger tree; used to allocate arrays. Should be enough with the smaller tree, but there are no additional bounds checks this way.";
@@ -1879,6 +2115,16 @@ algorithm
   end for;
   res := listReverse(res);
 end replaceLabeledDiff;
+
+function isEmpty
+  input ParseTree tree;
+  output Boolean b;
+algorithm
+  b := match tree
+    case EMPTY() then true;
+    else false;
+  end match;
+end isEmpty;
 
 function isLabeledNode
   input ParseTree tree;
@@ -2361,6 +2607,34 @@ algorithm
   end match;
 end parseTreeIsComment;
 
+function parseTreeFilterWhitespace
+  input output ParseTree t;
+protected
+  TokenId id;
+  Boolean changed;
+  ParseTree n2;
+  list<ParseTree> nodes;
+algorithm
+  t := match t
+    case LEAF() guard listMember(t.token.id, whiteSpaceTokenIds) then EMPTY();
+    case NODE()
+      algorithm
+        changed := false;
+        nodes := {};
+        for n in t.nodes loop
+          n2 := parseTreeFilterWhitespace(n);
+          if not referenceEq(n, n2) then
+            changed := true;
+          end if;
+          if not isEmpty(n2) then
+            nodes := n2::nodes;
+          end if;
+        end for;
+      then if changed then NODE(t.label, listReverse(nodes)) else t;
+    else t;
+  end match;
+end parseTreeFilterWhitespace;
+
 function eatWhitespace
   extends partialParser;
 protected
@@ -2655,9 +2929,6 @@ package First "First token possible for a given non-terminal in the Modelica 3 g
     TokenId.ENCAPSULATED ::
     class_prefixes
   ;
-  constant list<TokenId> class_modification = {
-    TokenId.LPAR
-  };
   constant list<TokenId> type_prefix = {
     TokenId.FLOW,
     TokenId.STREAM,
