@@ -35,24 +35,24 @@
 #include "Shapes.h"
 
 ShapeObjectAttribute::ShapeObjectAttribute()
-		: isConst(true),
-		  exp(0.0),
-		  cref("NONE")
-		  //fmuValueRef(0)
+    : isConst(true),
+      exp(0.0),
+      cref("NONE")
+      //fmuValueRef(0)
 {
 }
 
 ShapeObjectAttribute::ShapeObjectAttribute(float value)
-		: isConst(true),
-		  exp(value),
-		  cref("NONE")
-		  //fmuValueRef(0)
+    : isConst(true),
+      exp(value),
+      cref("NONE")
+      //fmuValueRef(0)
 {
 }
 
 std::string ShapeObjectAttribute::getValueString() const
 {
-	return std::to_string(exp) + "  (" + /*std::to_string(fmuValueRef) + */") " + std::to_string(isConst) + " ";
+  return std::to_string(exp) + "  (" + /*std::to_string(fmuValueRef) + */") " + std::to_string(isConst) + " ";
 }
 
 
@@ -67,30 +67,30 @@ ShapeObject::ShapeObject()
           _mat(osg::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)),
           _extra(ShapeObjectAttribute(0.0))
 {
-	_r[0] = ShapeObjectAttribute(0.1);
-	_r[1] = ShapeObjectAttribute(0.1);
-	_r[2] = ShapeObjectAttribute(0.1);
-	_rShape[0] = ShapeObjectAttribute(0.0);
-	_rShape[1] = ShapeObjectAttribute(0.0);
-	_rShape[2] = ShapeObjectAttribute(0.0);
-	_lDir[0] = ShapeObjectAttribute(1.0);
-	_lDir[1] = ShapeObjectAttribute(0.0);
-	_lDir[2] = ShapeObjectAttribute(0.0);
-	_wDir[0] = ShapeObjectAttribute(0.0);
-	_wDir[1] = ShapeObjectAttribute(1.0);
-	_wDir[2] = ShapeObjectAttribute(0.0);
-	_color[0] = ShapeObjectAttribute(255.0);
-	_color[1] = ShapeObjectAttribute(255.0);
-	_color[2] = ShapeObjectAttribute(255.0);
-	_T[0] = ShapeObjectAttribute(0.0);
-	_T[1] = ShapeObjectAttribute(0.0);
-	_T[2] = ShapeObjectAttribute(1.0);
-	_T[3] = ShapeObjectAttribute(1.0);
-	_T[4] = ShapeObjectAttribute(0.0);
-	_T[5] = ShapeObjectAttribute(0.0);
-	_T[6] = ShapeObjectAttribute(0.0);
-	_T[7] = ShapeObjectAttribute(1.0);
-	_T[8] = ShapeObjectAttribute(0.0);
+  _r[0] = ShapeObjectAttribute(0.1);
+  _r[1] = ShapeObjectAttribute(0.1);
+  _r[2] = ShapeObjectAttribute(0.1);
+  _rShape[0] = ShapeObjectAttribute(0.0);
+  _rShape[1] = ShapeObjectAttribute(0.0);
+  _rShape[2] = ShapeObjectAttribute(0.0);
+  _lDir[0] = ShapeObjectAttribute(1.0);
+  _lDir[1] = ShapeObjectAttribute(0.0);
+  _lDir[2] = ShapeObjectAttribute(0.0);
+  _wDir[0] = ShapeObjectAttribute(0.0);
+  _wDir[1] = ShapeObjectAttribute(1.0);
+  _wDir[2] = ShapeObjectAttribute(0.0);
+  _color[0] = ShapeObjectAttribute(255.0);
+  _color[1] = ShapeObjectAttribute(255.0);
+  _color[2] = ShapeObjectAttribute(255.0);
+  _T[0] = ShapeObjectAttribute(0.0);
+  _T[1] = ShapeObjectAttribute(0.0);
+  _T[2] = ShapeObjectAttribute(1.0);
+  _T[3] = ShapeObjectAttribute(1.0);
+  _T[4] = ShapeObjectAttribute(0.0);
+  _T[5] = ShapeObjectAttribute(0.0);
+  _T[6] = ShapeObjectAttribute(0.0);
+  _T[7] = ShapeObjectAttribute(1.0);
+  _T[8] = ShapeObjectAttribute(0.0);
 }
 
 void ShapeObject::dumpVisAttributes() const

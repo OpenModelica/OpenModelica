@@ -43,71 +43,71 @@
 class TimeManager
 {
  public:
-	TimeManager() = delete;
-	TimeManager(const double simTime, const double realTime, const double realTimeFactor, const double visTime,
-				const double hVisual, const double startTime, const double endTime);
-	~TimeManager() = default;
-	void updateTick();
-	/*! \brief Returns the end time of the simulation. */
-	double getEndTime() const;
-	/*! \brief Sets the end time of the simulation to the given value. */
-	void setEndTime(const double endTime);
+  TimeManager() = delete;
+  TimeManager(const double simTime, const double realTime, const double realTimeFactor, const double visTime,
+        const double hVisual, const double startTime, const double endTime);
+  ~TimeManager() = default;
+  void updateTick();
+  /*! \brief Returns the end time of the simulation. */
+  double getEndTime() const;
+  /*! \brief Sets the end time of the simulation to the given value. */
+  void setEndTime(const double endTime);
 
-	/*! \brief Returns the start time of the simulation. */
-	double getStartTime() const;
-	/*! \brief Sets the start time of the simulation to the given value. */
-	void setStartTime(const double startTime);
+  /*! \brief Returns the start time of the simulation. */
+  double getStartTime() const;
+  /*! \brief Sets the start time of the simulation to the given value. */
+  void setStartTime(const double startTime);
 
-	/*! \brief Returns the current simulation time. */
-	double getSimTime() const;
-	/*! Sets the simulation time to the given value. */
-	void setSimTime(const double simTime);
+  /*! \brief Returns the current simulation time. */
+  double getSimTime() const;
+  /*! Sets the simulation time to the given value. */
+  void setSimTime(const double simTime);
 
-	/*! \brief Returns the current visualization time. */
-	double getVisTime() const;
-	/*! \brief Sets the visualization time to the given value. */
-	void setVisTime(const double visTime);
+  /*! \brief Returns the current visualization time. */
+  double getVisTime() const;
+  /*! \brief Sets the visualization time to the given value. */
+  void setVisTime(const double visTime);
 
-	/*! \brief Returns the current step size of the simulation. */
-	double getHVisual() const;
-	/*! \brief Sets the step size to the given value. */
-	void setHVisual(const double hVis);
+  /*! \brief Returns the current step size of the simulation. */
+  double getHVisual() const;
+  /*! \brief Sets the step size to the given value. */
+  void setHVisual(const double hVis);
 
-	/*! \brief Returns real time. */
-	double getRealTime() const;
+  /*! \brief Returns real time. */
+  double getRealTime() const;
 
-	/*! \brief Returns the real time factor. */
-	double getRealTimeFactor() const;
-	/*! \brief Sets the real time factor to the given value. */
-	void setRealTimeFactor(const double rtf);
+  /*! \brief Returns the real time factor. */
+  double getRealTimeFactor() const;
+  /*! \brief Sets the real time factor to the given value. */
+  void setRealTimeFactor(const double rtf);
 
-	/*! \brief Returns true, if the visualization is currently paused and false otherwise. */
-	bool isPaused() const;
-	/*! \brief Sets pause status to new value. */
-	void setPause(const bool status);
-	int getTimeFraction();
-	void setSpeedUp(double value);
-	double getSpeedUp();
+  /*! \brief Returns true, if the visualization is currently paused and false otherwise. */
+  bool isPaused() const;
+  /*! \brief Sets pause status to new value. */
+  void setPause(const bool status);
+  int getTimeFraction();
+  void setSpeedUp(double value);
+  double getSpeedUp();
 
  private:
-	//! Time of the current simulation step.
-	double _simTime;
-	//! Current real time.
-	double _realTime;
-	//! Real time factor.
-	double _realTimeFactor;
-	//! Time of current scene update.
-	double _visTime;
-	//! Step size for the scene updates in milliseconds.
-	double _hVisual;
-	//! Start time of the simulation.
-	double _startTime;
-	//! End time of the simulation.
-	double _endTime;
-	//! This variable indicates if the simulation/visualization currently pauses.
-	bool _pause;
-	double mSpeedUp;
-	osg::Timer _visualTimer;
+  //! Time of the current simulation step.
+  double _simTime;
+  //! Current real time.
+  double _realTime;
+  //! Real time factor.
+  double _realTimeFactor;
+  //! Time of current scene update.
+  double _visTime;
+  //! Step size for the scene updates in milliseconds.
+  double _hVisual;
+  //! Start time of the simulation.
+  double _startTime;
+  //! End time of the simulation.
+  double _endTime;
+  //! This variable indicates if the simulation/visualization currently pauses.
+  bool _pause;
+  double mSpeedUp;
+  osg::Timer _visualTimer;
 
 };
 
