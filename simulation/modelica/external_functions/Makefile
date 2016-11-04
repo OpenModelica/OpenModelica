@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+MDD_test.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
 ExternalLibraries.mos \
