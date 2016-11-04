@@ -37,7 +37,9 @@
 
 #include "MainWindow.h"
 #include "OMPlot.h"
+#if !defined(WITHOUT_OSG)
 #include "Animation/AnimationWindow.h"
+#endif
 
 class MainWindow;
 class AnimationWindow;
@@ -49,7 +51,9 @@ public:
   PlotWindowContainer(MainWindow *pParent);
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
+#if !defined(WITHOUT_OSG)
   AnimationWindow* getCurrentAnimationWindow();
+#endif
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 public slots:
   void addAnimationWindow();
