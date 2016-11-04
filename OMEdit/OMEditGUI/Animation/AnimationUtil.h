@@ -88,7 +88,7 @@ inline bool isCSV(const std::string& fileIn){
  * constructs the name of the corresponding xml file
  */
 inline std::string assembleXMLFileName(const std::string& modelFile, const std::string& path){
-  QString fileName = QString(modelFile.c_str());
+  QString fileName(modelFile.c_str());
   QRegExp fileTypeRegExp("(.fmu|.mat|.csv|_res.mat|_res.csv)");
   fileName.remove(fileTypeRegExp);
   // Construct XML file name
@@ -117,7 +117,8 @@ inline bool checkForXMLFile(const std::string& modelFile, const std::string& pat
  */
 inline bool isCADType(const std::string& typeName)
 {
-  return (typeName.size() >= 12 && std::string(typeName.begin(), typeName.begin() + 11) == "modelica://");
+  return ((typeName.size() >= 12 && std::string(typeName.begin(), typeName.begin() + 11) == "modelica://")
+          || (typeName.size() >= 8 && std::string(typeName.begin(), typeName.begin() + 7) == "file://"));
 }
 
 
@@ -137,9 +138,16 @@ inline bool stlFileType(const std::string& typeName)
  */
 inline std::string extractCADFilename(const std::string& s)
 {
-  std::string fileKey = "modelica://";
-  std::string s2 = s.substr(fileKey.length(), s.length());
-  return s2;
+  QString str(s.c_str());
+  if (str.startsWith("modelica://")) {
+    std::string fileKey = "modelica://";
+    std::string s2 = s.substr(fileKey.length(), s.length());
+    return s2;
+  } else {
+    std::string fileKey = "file://";
+    std::string s2 = s.substr(fileKey.length(), s.length());
+    return s2;
+  }
 }
 
 #endif //ANIMATIONUTIL_H
