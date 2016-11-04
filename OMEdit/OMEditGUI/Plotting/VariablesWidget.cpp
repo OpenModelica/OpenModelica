@@ -726,9 +726,8 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0) {
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
-    QString start = hash["start"];
-    if (*changeAble && !start.isEmpty()) {
-      *value = start;
+    if (*changeAble) {
+      *value = hash["start"];
     } else { /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
