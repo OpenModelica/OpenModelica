@@ -10949,6 +10949,7 @@ protected
   list<String> tmpVarIndexListNew = {};
   list<DAE.Subscript> arraySubscripts;
   list<Integer> arrayDimensions;
+  Boolean toColumnMajor;
 algorithm
   arraySubscripts := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
@@ -10956,13 +10957,14 @@ algorithm
     ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
     arraySize := arrayLength(varIndices);
     concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
-    if iColumnMajor then
+    toColumnMajor := iColumnMajor and listLength(arrayDimensions) > 1;
+    if toColumnMajor then
       concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
     end if;
     //print("SimCodeUtil.getVarIndexInfosByMapping: Found variable index for '" + ComponentReference.printComponentRefStr(iVarName) + "'. The value is " + intString(concreteVarIndex) + "\n");
     for arrayIdx in 0:(arraySize-1) loop
       idx := arraySize-arrayIdx;
-      if iColumnMajor then
+      if toColumnMajor then
         // convert to row major so that column major access will give this idx
         idx := convertIndexToRowMajor(idx, arrayDimensions);
       end if;
@@ -10978,7 +10980,7 @@ algorithm
         end if;
       end if;
     end for;
-    if isVarIndexListConsecutive(iVarToArrayIndexMapping,iVarName) and iColumnMajor then
+    if isVarIndexListConsecutive(iVarToArrayIndexMapping,iVarName) and toColumnMajor then
       //if the array is not completely stuffed (e.g. some array variables have been derived and became dummy-derivatives), the array will not be initialized as a consecutive array, therefore we cannot take the colMajor-indexes
       // otherwise convert to column major for consecutive array
       concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
@@ -11017,22 +11019,8 @@ protected function convertIndexToRowMajor
   input Integer idx; // one based, row-major ordered
   input list<Integer> arrayDimensions;
   output Integer idxOut; // one based, column-major ordered
-protected
-  Integer idx0, ndim, length, dimj, idxj, fac;
 algorithm
-  ndim := listLength(arrayDimensions);
-  length := List.fold(arrayDimensions, intMul, 1);
-  idx0 := idx - 1; // zero based
-  idxOut := 1; // one based
-  fac := 1;
-  for i in 1:listLength(arrayDimensions) loop
-    dimj := listGet(arrayDimensions, ndim - i + 1);
-    length := intDiv(length, dimj);
-    idxj := intDiv(idx0, length);
-    idx0 := idx0 - idxj*length;
-    idxOut := idxOut + idxj*fac;
-    fac := fac * dimj;
-  end for;
+  idxOut := convertIndexToColumnMajor(idx, listReverse(arrayDimensions));
 end convertIndexToRowMajor;
 
 protected function convertIndexToColumnMajor
