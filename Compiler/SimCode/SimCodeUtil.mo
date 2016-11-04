@@ -10828,7 +10828,6 @@ algorithm
           end if;
           //print("Num of array elements {" + stringDelimitList(List.map(arrayDimensions, intString), ",") + "} : " + intString(listLength(arraySubscripts)) + "  arraySubs "+ExpressionDump.printSubscriptLstStr(arraySubscripts) + "  arrayDimensions[ "+stringDelimitList(List.map(arrayDimensions,intString),",")+"]\n");
           arrayIndex = getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
-          arrayIndex = arrayIndex + 1;
           //print("VarIndices: " + intString(arrayLength(varIndices)) + " arrayIndex: " + intString(arrayIndex) + " varIndex: " + intString(varIdx) + "\n");
           varIndices = arrayUpdate(varIndices, arrayIndex, varIdx);
           tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, (arrayDimensions,varIndices)), tmpVarToArrayIndexMapping);
@@ -10948,27 +10947,24 @@ protected
   Integer arrayIdx, idx, arraySize, concreteVarIndex;
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
-  list<DAE.Subscript> arraySubscripts, arraySubscripts0;
-  list<Integer> arrayDimensions, arrayDimensions0;
+  list<DAE.Subscript> arraySubscripts;
+  list<Integer> arrayDimensions;
 algorithm
-  arraySubscripts0 := ComponentReference.crefLastSubs(varName);
+  arraySubscripts := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
-    ((arrayDimensions0,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
-    arrayDimensions := arrayDimensions0;
-    arraySubscripts := arraySubscripts0;
+    ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
     arraySize := arrayLength(varIndices);
-    if(iColumnMajor) then
-      arraySubscripts := listReverse(arraySubscripts0);
-      arrayDimensions := listReverse(arrayDimensions0);
-    end if;
     concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
+    if iColumnMajor then
+      concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
+    end if;
     //print("SimCodeUtil.getVarIndexInfosByMapping: Found variable index for '" + ComponentReference.printComponentRefStr(iVarName) + "'. The value is " + intString(concreteVarIndex) + "\n");
     for arrayIdx in 0:(arraySize-1) loop
       idx := arraySize-arrayIdx;
       if iColumnMajor then
         // convert to row major so that column major access will give this idx
-        idx := convertIndexToRowMajor(idx, arrayDimensions0);
+        idx := convertIndexToRowMajor(idx, arrayDimensions);
       end if;
       idx := arrayGet(varIndices, idx);
       if(intLt(idx, 0)) then
@@ -10985,9 +10981,9 @@ algorithm
     if isVarIndexListConsecutive(iVarToArrayIndexMapping,iVarName) and iColumnMajor then
       //if the array is not completely stuffed (e.g. some array variables have been derived and became dummy-derivatives), the array will not be initialized as a consecutive array, therefore we cannot take the colMajor-indexes
       // otherwise convert to column major for consecutive array
-      concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex + 1, arrayDimensions0) - 1;
+      concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
     end if;
-    oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
+    oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex);
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
@@ -11107,43 +11103,23 @@ algorithm
   oIsConsecutive := consecutive;
 end isVarIndexListConsecutive;
 
-protected function getUnrolledArrayIndex"author: waurich
-wrapper for getUnrolledArrayIndex1 to reverse the list order to be conform to the cpp runtime array adressing"
-  input list<DAE.Subscript> arraySubs;
-  input list<Integer> arrayTypeDimensions;
+protected function getUnrolledArrayIndex
+ "Calculate the one based memory offset for consecutive row major storage,
+  author: rfranke"
+  input list<DAE.Subscript> arraySubscripts;
+  input list<Integer> arrayDimensions;
   output Integer arrayIndex;
-algorithm
-  ((arrayIndex,_,_)) := List.fold(listReverse(arraySubs), getUnrolledArrayIndex1, (0, 1, listReverse(arrayTypeDimensions)));
-end getUnrolledArrayIndex;
-
-protected function getUnrolledArrayIndex1 "author: marcusw
-  Calculate a flat array index, by the given subscripts. E.g. [2,1] for array of size 3x3 will lead to: 2."
-  input DAE.Subscript iCurrentSubscript;
-  input tuple<Integer,Integer,list<Integer>> iCurrentRowIdxRes; //<result, currentOffset, remainingRows>
-  output tuple<Integer,Integer,list<Integer>> oCurrentRowIdxRes;
 protected
-  list<Integer> tail;
-  Integer head, index, currentOffset, result, subscriptIndex;
+  Integer idx, fac;
 algorithm
-  oCurrentRowIdxRes := match(iCurrentSubscript, iCurrentRowIdxRes)
-    case(_, (_,_,{}))
-      equation
-        print("getUnrolledArrayIndex: failed, not enough dimensions given\n");
-      then iCurrentRowIdxRes;
-    case(_, (index, currentOffset, head::tail))
-      equation
-        subscriptIndex = DAEUtil.getSubscriptIndex(iCurrentSubscript) - 1;
-        if(intEq(currentOffset, 0)) then
-          index = subscriptIndex;
-          currentOffset = head;
-        else
-          //print("getUnrolledArrayIndex: index = " + intString(index) + " + " + intString(currentOffset) + " * " + intString(subscriptIndex) + "\n");
-          index = index + intMul(currentOffset, subscriptIndex);
-          currentOffset = intMul(currentOffset, head);
-        end if;
-      then (index, currentOffset, tail);
-  end match;
-end getUnrolledArrayIndex1;
+  arrayIndex := 1; // one based
+  fac := 1;
+  for i in listLength(arraySubscripts):-1:1 loop
+    idx := DAEUtil.getSubscriptIndex(listGet(arraySubscripts, i));
+    arrayIndex := arrayIndex + (idx - 1) * fac;
+    fac := fac * listGet(arrayDimensions, i);
+  end for;
+end getUnrolledArrayIndex;
 
 public function createIdxSCVarMapping "author: marcusw
   Create a mapping from the SCVar-Index (array-Index) to the SCVariable, as it is used in the c-runtime."
