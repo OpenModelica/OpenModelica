@@ -34,6 +34,7 @@
 #define VISUALIZERCSV_H
 
 #include "Visualizer.h"
+#include "util/read_csv.h"
 
 class VisualizerCSV : public VisualizerAbstract
 {
