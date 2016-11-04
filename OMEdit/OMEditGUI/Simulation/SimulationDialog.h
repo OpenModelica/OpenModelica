@@ -118,9 +118,7 @@ private:
   QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
-#if !defined(WITHOUT_OSG)
   QCheckBox *mpLaunchAnimationCheckBox;
-#endif
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpOutputFormatLabel;

@@ -35,113 +35,113 @@
 #include "TimeManager.h"
 
 TimeManager::TimeManager(const double simTime, const double realTime, const double realTimeFactor, const double visTime,
-             const double hVisual, const double startTime, const double endTime)
-    : _simTime(simTime),
-      _realTime(realTime),
-      _realTimeFactor(realTimeFactor),
-      _visTime(visTime),
-      _hVisual(hVisual),
-      _startTime(startTime),
-      _endTime(endTime),
-      _pause(true),
-      mSpeedUp(1.0),
-      _visualTimer()
+						 const double hVisual, const double startTime, const double endTime)
+		: _simTime(simTime),
+		  _realTime(realTime),
+		  _realTimeFactor(realTimeFactor),
+		  _visTime(visTime),
+		  _hVisual(hVisual),
+		  _startTime(startTime),
+		  _endTime(endTime),
+		  _pause(true),
+		  mSpeedUp(1.0),
+		  _visualTimer()
 {
 }
 
 void TimeManager::updateTick()
 {
-  _visualTimer.tick();
-  _realTime = _visualTimer.time_m() / 1000.0;
+	_visualTimer.tick();
+	_realTime = _visualTimer.time_m() / 1000.0;
 }
 
 int TimeManager::getTimeFraction()
 {
-  return int(_visTime / (_endTime - _startTime)*100);
+	return int(_visTime / (_endTime - _startTime)*100);
 }
 
 double TimeManager::getEndTime() const
 {
-  return _endTime;
+	return _endTime;
 }
 
 void TimeManager::setEndTime(const double endTime)
 {
-  _endTime = endTime;
+	_endTime = endTime;
 }
 
 double TimeManager::getStartTime() const
 {
-  return _startTime;
+	return _startTime;
 }
 
 void TimeManager::setStartTime(const double startTime)
 {
-  _startTime = startTime;
+	_startTime = startTime;
 }
 
 double TimeManager::getSimTime() const
 {
-  return _simTime;
+	return _simTime;
 }
 
 void TimeManager::setSimTime(const double simTime)
 {
-  _simTime = simTime;
+	_simTime = simTime;
 }
 
 double TimeManager::getVisTime() const
 {
-  return _visTime;
+	return _visTime;
 }
 
 void TimeManager::setVisTime(const double visTime)
 {
-  _visTime = visTime;
+	_visTime = visTime;
 }
 
 double TimeManager::getHVisual() const
 {
-  return _hVisual;
+	return _hVisual;
 }
 
 void TimeManager::setHVisual(const double hVis)
 {
-  _hVisual = hVis;
+	_hVisual = hVis;
 }
 
 
 double TimeManager::getRealTime() const
 {
-  return _realTime;
+	return _realTime;
 }
 
 double TimeManager::getRealTimeFactor() const
 {
-  return _realTimeFactor;
+	return _realTimeFactor;
 }
 
 void TimeManager::setRealTimeFactor(const double rtf)
 {
-  _realTimeFactor = rtf;
+	_realTimeFactor = rtf;
 }
 
 bool TimeManager::isPaused() const
 {
-  return _pause;
+	return _pause;
 }
 
 void TimeManager::setPause(const bool status)
 {
-  _pause = status;
+	_pause = status;
 }
 void TimeManager::setSpeedUp(double value)
 {
-  mSpeedUp = value;
+	mSpeedUp = value;
 }
 
 double TimeManager::getSpeedUp()
 {
-  return mSpeedUp;
+	return mSpeedUp;
 }
 

@@ -150,9 +150,7 @@ public:
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
-#if !defined(WITHOUT_OSG)
   QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
-#endif
   QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
@@ -188,9 +186,7 @@ public:
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
-#if !defined(WITHOUT_OSG)
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
-#endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
@@ -297,9 +293,7 @@ private:
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
-#if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
-#endif
   QAction *mpSimulationSetupAction;
   // FMI Menu
   QAction *mpExportFMUAction;
@@ -346,9 +340,7 @@ private:
   QAction *mpReSimulateSetupAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
-#if !defined(WITHOUT_OSG)
   QAction *mpNewAnimationWindowAction;
-#endif
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
   // Other Actions

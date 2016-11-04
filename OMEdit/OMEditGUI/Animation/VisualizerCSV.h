@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -9,9 +9,8 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -29,34 +28,31 @@
  *
  */
 /*
- * @author Volker Waurich <volker.waurich@tu-dresden.de>
+ * @author Adeel Asghar <adeel.asghar@liu.se>
  */
-
-#ifndef VISUALIZERMAT_H
-#define VISUALIZERMAT_H
+#ifndef VISUALIZERCSV_H
+#define VISUALIZERCSV_H
 
 #include "Visualizer.h"
-#include "util/read_matlab4.h"
 
-class VisualizerMAT : public VisualizerAbstract
+class VisualizerCSV : public VisualizerAbstract
 {
 public:
-  VisualizerMAT() = delete;
-  VisualizerMAT(const std::string& fileName, const std::string& path);
-  virtual ~VisualizerMAT() = default;
-  VisualizerMAT(const VisualizerMAT& omvm) = delete;
-  VisualizerMAT& operator=(const VisualizerMAT& omvm) = delete;
+  VisualizerCSV() = delete;
+  VisualizerCSV(const std::string& fileName, const std::string& path);
+  virtual ~VisualizerCSV() = default;
+  VisualizerCSV(const VisualizerCSV& omvm) = delete;
+  VisualizerCSV& operator=(const VisualizerCSV& omvm) = delete;
   void initData();
   void initializeVisAttributes(const double time = -1.0);
-  void readMat(const std::string& modelFile, const std::string& path);
-  void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
+  void readCSV(const std::string& modelFile, const std::string& path);
   //void simulate(TimeManager& omvm){ };
   void updateVisAttributes(const double time) override;
   void updateScene(const double time);
-  void updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader);
-  double omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time);
+  void updateObjectAttributeCSV(ShapeObjectAttribute* attr, double time);
+  double omcGetVarValue(const char* varName, double time);
 private:
-  ModelicaMatReader _matReader;
+  csv_data *mpCSVData;
 };
 
-#endif // end VISUALIZERMAT_H
+#endif // VISUALIZERCSV_H

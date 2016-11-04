@@ -68,6 +68,7 @@ public:
   static QString exeFileTypes;
   static QString txtFileTypes;
   static QString figaroFileTypes;
+  static QString visualizationFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static QSize buttonIconSize;

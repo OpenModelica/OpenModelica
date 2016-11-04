@@ -107,6 +107,7 @@
       <xs:attribute name="ModelFile" type="xs:string" use="required"/>
       <xs:attribute name="Position" type="xs:string" use="optional"/>
       <xs:attribute name="Angle321" type="xs:string" use="optional"/>
+      <xs:attribute name="GeometryFile" type="xs:string" use="optional"/>
     </xs:complexType>
     <xs:complexType name="Connection">
       <xs:sequence>

@@ -52,46 +52,41 @@
 #include <osg/Material>
 #include <osgDB/ReadFile>
 
-
 struct UserSimSettingsMAT
 {
   double speedup;
 };
 
-
 class UpdateVisitor : public osg::NodeVisitor
 {
- public:
+public:
   UpdateVisitor();
   virtual ~UpdateVisitor() = default;
   UpdateVisitor(const UpdateVisitor& uv) = delete;
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
   virtual void apply(osg::Geode& node);
   virtual void apply(osg::MatrixTransform& node);
-
- public:
+public:
   ShapeObject _shape;
 };
 
-
 class InfoVisitor : public osg::NodeVisitor
 {
- public:
-    InfoVisitor();
-    ~InfoVisitor() = default;
-    InfoVisitor(const InfoVisitor& iv) = delete;
-    InfoVisitor& operator=(const InfoVisitor& iv) = delete;
-    std::string spaces();
-    virtual void apply(osg::Node& node);
-    virtual void apply(osg::Geode& node);
- private:
-    unsigned int _level;
+public:
+  InfoVisitor();
+  ~InfoVisitor() = default;
+  InfoVisitor(const InfoVisitor& iv) = delete;
+  InfoVisitor& operator=(const InfoVisitor& iv) = delete;
+  std::string spaces();
+  virtual void apply(osg::Node& node);
+  virtual void apply(osg::Geode& node);
+private:
+  unsigned int _level;
 };
-
 
 class OSGScene
 {
- public:
+public:
   OSGScene();
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
@@ -100,27 +95,27 @@ class OSGScene
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
- private:
+private:
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
 };
 
 class OMVisScene
 {
- public:
+public:
   OMVisScene();
   ~OMVisScene() = default;
   OMVisScene(const OMVisScene& omvv) = delete;
   OMVisScene& operator=(const OMVisScene& omvv) = delete;
   void dumpOSGTreeDebug();
   OSGScene& getScene();
- private:
+private:
   OSGScene _scene;
 };
 
 class OMVisualBase
 {
- public:
+public:
   OMVisualBase(const std::string& modelFile, const std::string& path);
   OMVisualBase() = delete;
   ~OMVisualBase() = default;
@@ -139,18 +134,16 @@ private:
 
 public:
   std::vector<ShapeObject> _shapes;
- private:
+private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
   rapidxml::xml_document<> _xmlDoc;
-
 };
-
 
 class VisualizerAbstract
 {
- public:
+public:
   VisualizerAbstract();
   VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
   virtual ~VisualizerAbstract() = default;
@@ -172,12 +165,12 @@ class VisualizerAbstract
   virtual void updateScene(const double time) = 0;
   virtual void startVisualization();
   virtual void pauseVisualization();
- protected:
+protected:
   const VisType _visType;
-  OMVisualBase* _baseData;
-  OMVisScene* _viewerStuff;
-  UpdateVisitor* _nodeUpdater;
-  TimeManager* _timeManager;
+  OMVisualBase* mpOMVisualBase;
+  OMVisScene* mpOMVisScene;
+  UpdateVisitor* mpUpdateVisitor;
+  TimeManager* mpTimeManager;
 };
 
 osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
@@ -188,6 +181,5 @@ osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
 Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
 void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
 rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::Vec3f lDirIn, osg::Vec3f wDirIn, float length,/* float width, float height,*/ std::string type);
-
 
 #endif

@@ -252,12 +252,16 @@ void AnimationWindow::loadVisualization()
     visType = VisType::FMU;
   } else if (isMAT(mFileName)) {
     visType = VisType::MAT;
+  } else if (isCSV(mFileName)) {
+    visType = VisType::CSV;
   } else {
     std::cout<<"unknown visualization type. "<<std::endl;
   }
   //init visualizer
   if (visType == VisType::MAT) {
     mpVisualizer = new VisualizerMAT(mFileName, mPathName);
+  } else if (visType == VisType::CSV) {
+    mpVisualizer = new VisualizerCSV(mFileName, mPathName);
   } else {
     std::cout<<"could not init "<<mPathName<<mFileName<<std::endl;
   }
@@ -285,7 +289,7 @@ void AnimationWindow::loadVisualization()
 void AnimationWindow::chooseAnimationFileSlotFunction()
 {
   QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
-                                                       NULL, Helper::matFileTypes, NULL);
+                                                       NULL, Helper::visualizationFileTypes, NULL);
   if (fileName.isEmpty()) {
     return;
   }

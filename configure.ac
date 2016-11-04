@@ -10,8 +10,6 @@ AC_SUBST(RPATH_QMAKE)
 AC_SUBST(host_short)
 AC_SUBST(SOURCE_REVISION)
 AC_SUBST(QT4BUILD)
-AC_SUBST(QMAKE_CONFIG_OSG)
-AC_SUBST(LIBOSG)
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
@@ -38,18 +36,8 @@ FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
 FIND_LIBOMQWT()
 
-WITH_OSG=1
-AC_CHECK_HEADERS(osg/Vec3f, [], [WITH_OSG=0])
-AC_CHECK_HEADERS(osg/GraphicsContext, [], [WITH_OSG=0])
-AC_CHECK_HEADERS(osg/Matrix, [], [WITH_OSG=0])
-AC_CHECK_HEADERS(osg/Uniform, [], [WITH_OSG=0])
-
-if test "$WITH_OSG" = 0; then
-  CPPFLAGS="$CPPFLAGS -DWITHOUT_OSG"
-else
-  QMAKE_CONFIG_OSG="CONFIG += osg"
-  LIBOSG="-losg -losgViewer -losgDB -losgGA -lOpenThreads"
-fi
+AC_CHECK_HEADERS(osg/Vec3f, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(osg/GraphicsContext, [], [AC_MSG_ERROR(Missing header files)])
 
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"

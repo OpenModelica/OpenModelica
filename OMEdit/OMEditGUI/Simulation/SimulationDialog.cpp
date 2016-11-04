@@ -113,11 +113,7 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   mpBuildOnlyCheckBox->setChecked(false);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
-#if !defined(WITHOUT_OSG)
   mpLaunchAnimationCheckBox->setChecked(launchAnimation);
-#else
-  assert(false==launchAnimation);
-#endif
   simulate();
 }
 
@@ -268,10 +264,8 @@ void SimulationDialog::setUpForm()
   mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
   // Launch Algorithmic Debugger checkbox
   mpLaunchAlgorithmicDebuggerCheckBox = new QCheckBox(tr("Launch Algorithmic Debugger"));
-#if !defined(WITHOUT_OSG)
   // Launch Animation
   mpLaunchAnimationCheckBox = new QCheckBox(tr("Launch Animation"));
-#endif
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
@@ -285,9 +279,7 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpBuildOnlyCheckBox, 4, 0, 1, 3);
   pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 5, 0, 1, 3);
   pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 6, 0, 1, 3);
-#if !defined(WITHOUT_OSG)
   pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 7, 0, 1, 3);
-#endif
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTabScrollArea, Helper::general);
@@ -701,10 +693,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpLaunchTransformationalDebuggerCheckBox->setChecked(simulationOptions.getLaunchTransformationalDebugger());
     // Launch Algorithmic Debugger checkbox
     mpLaunchAlgorithmicDebuggerCheckBox->setChecked(simulationOptions.getLaunchAlgorithmicDebugger());
-#if !defined(WITHOUT_OSG)
     // Simulate with Animation checkbox
     mpLaunchAnimationCheckBox->setChecked(simulationOptions.getSimulateWithAnimation());
-#endif
     // build only
     mpBuildOnlyCheckBox->setChecked(simulationOptions.getBuildOnly());
     // Number Of Intervals
@@ -806,14 +796,12 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
   // set the debugging flag before translation
   if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("-d=gendebugsymbols");
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=gendebugsymbols");
   }
-#if !defined(WITHOUT_OSG)
   // set the visulation flag before translation
   if (mpLaunchAnimationCheckBox->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("-d=visxml");
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=visxml");
   }
-#endif
   bool result = mpMainWindow->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation setting
   mpMainWindow->getOptionsDialog()->saveSimulationSettings();
@@ -839,9 +827,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
-#if !defined(WITHOUT_OSG)
   simulationOptions.setSimulateWithAnimation(mpLaunchAnimationCheckBox->isChecked());
-#endif
   simulationOptions.setNumberofIntervals(mpNumberofIntervalsSpinBox->value());
   qreal startTime = mpStartTimeTextBox->text().toDouble();
   qreal stopTime = mpStopTimeTextBox->text().toDouble();
@@ -1316,16 +1302,18 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (list.size() > 0) {
       if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
         mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-#if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
-        if (mpLaunchAnimationCheckBox->isChecked()) {
+        if (mpLaunchAnimationCheckBox->isChecked() && simulationOptions.getResultFileName().endsWith(".mat")) {
           mpMainWindow->getPlotWindowContainer()->addAnimationWindow();
           AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
           if (pAnimationWindow) {
             pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
           }
+        } else {
+          QString msg = tr("Animation is only supported with mat result files.");
+          mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                       Helper::scriptingKind, Helper::notificationLevel));
         }
-#endif
       } else {
         // stay in current perspective and show variables browser
         mpMainWindow->getVariablesDockWidget()->show();
@@ -1433,9 +1421,7 @@ void SimulationDialog::updateJacobianToolTip(int index)
 void SimulationDialog::buildOnly(bool checked)
 {
   mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
-#if !defined(WITHOUT_OSG)
   mpLaunchAnimationCheckBox->setEnabled(!checked);
-#endif
   mpSimulationFlagsTab->setEnabled(!checked);
 }
 

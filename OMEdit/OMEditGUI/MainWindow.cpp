@@ -582,7 +582,6 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeIt
   mpSimulationDialog->directSimulate(pLibraryTreeItem, false, true, false);
 }
 
-#if !defined(WITHOUT_OSG)
 void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!mpSimulationDialog) {
@@ -596,7 +595,6 @@ void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
   }
   mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, true);
 }
-#endif
 
 void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 {
@@ -1622,14 +1620,10 @@ void MainWindow::simulateModel()
 //!
 void MainWindow::simulateModelWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     simulateWithAnimation(pModelWidget->getLibraryTreeItem());
   }
-#else
-  assert(0);
-#endif
 }
 
 /*!
@@ -2512,13 +2506,11 @@ void MainWindow::createActions()
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   mpSimulateWithAlgorithmicDebuggerAction->setEnabled(false);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateModelWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
   // simulate with animation action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
   mpSimulateWithAnimationAction->setEnabled(false);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
-#endif
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -2691,12 +2683,10 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Parametric Plot Window"), this);
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
-#if !defined(WITHOUT_OSG)
   // new mpAnimationWindowAction plot action
   mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
   connect(mpNewAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
-#endif
   // export variables action
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
@@ -2859,9 +2849,7 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
-#endif
   pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
@@ -3219,9 +3207,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
-#endif
   mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
@@ -3237,10 +3223,8 @@ void MainWindow::createToolbars()
   // add actions to Plot Toolbar
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
-#if !defined(WITHOUT_OSG)
   mpPlotToolBar->addAction(mpNewAnimationWindowAction);
   mpPlotToolBar->addSeparator();
-#endif
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
@@ -3370,11 +3354,7 @@ AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
   // about text
   QString aboutText = QString("Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />")
       .append("Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />")
-      .append("Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis.")
-#if defined(WITHOUT_OSG)
-      .append("<br><em>Compiled without 3D animation support</em>.")
-#endif
-      ;
+      .append("Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis.");
   Label *pAboutTextLabel = new Label;
   pAboutTextLabel->setTextFormat(Qt::RichText);
   pAboutTextLabel->setTextInteractionFlags(pAboutTextLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);

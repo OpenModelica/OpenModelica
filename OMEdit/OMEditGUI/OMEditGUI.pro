@@ -244,6 +244,7 @@ SOURCES += Animation/AnimationWindow.cpp \
   Animation/ExtraShapes.cpp \
   Animation/Visualizer.cpp \
   Animation/VisualizerMAT.cpp \
+  Animation/VisualizerCSV.cpp \
   Animation/Shapes.cpp \
   Animation/TimeManager.cpp \
   ../../osgQt/GraphicsWindowQt.cpp \
@@ -253,6 +254,7 @@ HEADERS += Animation/AnimationWindow.h \
   Animation/ExtraShapes.h \
   Animation/Visualizer.h \
   Animation/VisualizerMAT.h \
+  Animation/VisualizerCSV.h \
   Animation/Shapes.h \
   Animation/TimeManager.h \
   Animation/rapidxml.hpp \

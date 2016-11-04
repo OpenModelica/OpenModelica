@@ -81,13 +81,13 @@ Pipecylinder::Pipecylinder(float rI, float rO, float l) :
 
   //THE BASE PLANE VERTICES
   // inner base ring
-  for (int i = 0; i < nEdges; i++)  {
+  for (int i = 0; i < nEdges; i++)	{
     vertices->push_back(osg::Vec3(sin(phi*i)*rI, cos(phi*i)*rI, 0));
     normals->push_back(osg::Vec3(0.0f,0.0f,-1.0f));
     vertIdx++;
   }
   // outer base ring
-  for (int i = 0; i < nEdges; i++)  {
+  for (int i = 0; i < nEdges; i++)	{
     vertices->push_back(osg::Vec3(sin(phi*i)*rO, cos(phi*i)*rO, 0));
     normals->push_back(osg::Vec3(0.0f,0.0f,-1.0f));
     vertIdx++;
@@ -142,7 +142,7 @@ Pipecylinder::Pipecylinder(float rI, float rO, float l) :
   }
 
   //AND AGAIN FOR THE OUTER LATERAL PLANES
-  for (int i = 0; i < nEdges; i++)  {
+  for (int i = 0; i < nEdges; i++)	{
   int j = i+1;
   // the vertices
     vertices->push_back(osg::Vec3(sin(phi*i)*rO, cos(phi*i)*rO, 0));
@@ -166,7 +166,7 @@ Pipecylinder::Pipecylinder(float rI, float rO, float l) :
   }
 
     //AND AGAIN FOR THE INNER LATERAL PLANES
-  for (int i = 0; i < nEdges; i++)  {
+  for (int i = 0; i < nEdges; i++)	{
   int j = i+1;
   // the vertices
     vertices->push_back(osg::Vec3(sin(phi*i)*rI, cos(phi*i)*rI, 0));
@@ -257,7 +257,7 @@ float Spring::angleBetweenVectors(osg::Vec3f vec1, osg::Vec3f vec2)
  */
 osg::Vec3f Spring::rotateX(osg::Vec3f vec, float phi)
 {
-  return osg::Vec3f(  vec[0],
+  return osg::Vec3f(	vec[0],
             vec[1] * std::cos(phi) - vec[2] * std::sin(phi),
             vec[1] * std::sin(phi) + vec[2] * std::cos(phi));
 }
@@ -271,7 +271,7 @@ osg::Vec3f Spring::rotateX(osg::Vec3f vec, float phi)
  */
 osg::Vec3f Spring::rotateY(osg::Vec3f vec, float phi)
 {
-  return osg::Vec3f(  vec[2] * std::sin(phi) + vec[0] * std::cos(phi),
+  return osg::Vec3f(	vec[2] * std::sin(phi) + vec[0] * std::cos(phi),
             vec[1],
             vec[2] * std::cos(phi) - vec[0] * std::sin(phi));
 }
@@ -285,7 +285,7 @@ osg::Vec3f Spring::rotateY(osg::Vec3f vec, float phi)
  */
 osg::Vec3f Spring::rotateZ(osg::Vec3f vec, float phi)
 {
-  return osg::Vec3f(  vec[0] * std::cos(phi) - vec[1] * std::sin(phi),
+  return osg::Vec3f(	vec[0] * std::cos(phi) - vec[1] * std::sin(phi),
             vec[0] * std::sin(phi) + vec[1] * std::cos(phi),
             vec[2]);
 }

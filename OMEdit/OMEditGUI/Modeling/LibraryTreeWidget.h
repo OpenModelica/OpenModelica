@@ -313,9 +313,7 @@ private:
   QAction *mpSimulateAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
-#if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
-#endif
   QAction *mpSimulationSetupAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
