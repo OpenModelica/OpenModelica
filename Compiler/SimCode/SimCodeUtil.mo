@@ -10965,7 +10965,12 @@ algorithm
     concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
     //print("SimCodeUtil.getVarIndexInfosByMapping: Found variable index for '" + ComponentReference.printComponentRefStr(iVarName) + "'. The value is " + intString(concreteVarIndex) + "\n");
     for arrayIdx in 0:(arraySize-1) loop
-      idx := arrayGet(varIndices, arraySize-arrayIdx);
+      idx := arraySize-arrayIdx;
+      if iColumnMajor then
+        // convert to row major so that column major access will give this idx
+        idx := convertIndexToRowMajor(idx, arrayDimensions0);
+      end if;
+      idx := arrayGet(varIndices, idx);
       if(intLt(idx, 0)) then
         tmpVarIndexListNew := intString((intMul(idx, -1) - 1))::tmpVarIndexListNew;
         //print("SimCodeUtil.tmpVarIndexListNew: Warning, negativ aliases (" + ComponentReference.printComponentRefStr(iVarName) + ") are not supported at the moment!\n");
@@ -10977,11 +10982,12 @@ algorithm
         end if;
       end if;
     end for;
-    if (not isVarIndexListConsecutive(iVarToArrayIndexMapping,iVarName) and iColumnMajor) then
+    if isVarIndexListConsecutive(iVarToArrayIndexMapping,iVarName) and iColumnMajor then
       //if the array is not completely stuffed (e.g. some array variables have been derived and became dummy-derivatives), the array will not be initialized as a consecutive array, therefore we cannot take the colMajor-indexes
-      concreteVarIndex := getUnrolledArrayIndex(arraySubscripts0,arrayDimensions0);
+      // otherwise convert to column major for consecutive array
+      concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex + 1, arrayDimensions0) - 1;
     end if;
-      oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
+    oConcreteVarIndex := listGet(tmpVarIndexListNew, concreteVarIndex + 1);
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
@@ -11009,6 +11015,51 @@ algorithm
     idxOut := idx;
   end if;
 end convertFlattenedIndexToRowMajor;
+
+protected function convertIndexToRowMajor
+ "Converts column-major unrolled idx to row-major, author: rfranke"
+  input Integer idx; // one based, row-major ordered
+  input list<Integer> arrayDimensions;
+  output Integer idxOut; // one based, column-major ordered
+protected
+  Integer idx0, ndim, length, dimj, idxj, fac;
+algorithm
+  ndim := listLength(arrayDimensions);
+  length := List.fold(arrayDimensions, intMul, 1);
+  idx0 := idx - 1; // zero based
+  idxOut := 1; // one based
+  fac := 1;
+  for i in 1:listLength(arrayDimensions) loop
+    dimj := listGet(arrayDimensions, ndim - i + 1);
+    length := intDiv(length, dimj);
+    idxj := intDiv(idx0, length);
+    idx0 := idx0 - idxj*length;
+    idxOut := idxOut + idxj*fac;
+    fac := fac * dimj;
+  end for;
+end convertIndexToRowMajor;
+
+protected function convertIndexToColumnMajor
+ "Converts row-major unrolled idx to column-major, author: rfranke"
+  input Integer idx; // one based, row-major ordered
+  input list<Integer> arrayDimensions;
+  output Integer idxOut; // one based, column-major ordered
+protected
+  Integer idx0, ndim, length, idxi, fac;
+algorithm
+  ndim := listLength(arrayDimensions);
+  length := List.fold(arrayDimensions, intMul, 1);
+  idx0 := idx - 1; // zero based
+  idxOut := 1; // one based
+  fac := 1;
+  for dimi in arrayDimensions loop
+    length := intDiv(length, dimi);
+    idxi := intDiv(idx0, length);
+    idx0 := idx0 - idxi*length;
+    idxOut := idxOut + idxi*fac;
+    fac := fac * dimi;
+  end for;
+end convertIndexToColumnMajor;
 
 public function isVarIndexListConsecutive "author: marcusw
   Check if all variable indices of the given variables, stored in the hash table, are consecutive."

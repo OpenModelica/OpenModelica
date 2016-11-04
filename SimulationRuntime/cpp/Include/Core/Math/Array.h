@@ -452,9 +452,9 @@ public:
    */
   virtual const T& operator()(const vector<size_t>& idx) const
   {
-    assert((size1*size2) > ((idx[0]-1)*size2 + (idx[1]-1)));
+    assert((size1*size2) > ((idx[0]-1) + size1*(idx[1]-1)));
     return *(RefArray<T, size1*size2>::
-             _ref_array[(idx[0]-1)*size2 + (idx[1]-1)]);
+             _ref_array[(idx[0]-1) + size1*(idx[1]-1)]);
   }
 
   /**
@@ -463,9 +463,9 @@ public:
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    assert((size1*size2) > ((idx[0]-1)*size2 + (idx[1]-1)));
+    assert((size1*size2) > ((idx[0]-1) + size1*(idx[1]-1)));
     return *(RefArray<T, size1*size2>::
-             _ref_array[(idx[0]-1)*size2 + (idx[1]-1)]);
+             _ref_array[(idx[0]-1) + size1*(idx[1]-1)]);
   }
 
   /**
@@ -475,9 +475,9 @@ public:
    */
   inline virtual T& operator()(size_t i, size_t j)
   {
-    assert((size1*size2) > ((i-1)*size2 + (j-1)));
+    assert((size1*size2) > ((i-1) + size1*(j-1)));
     return *(RefArray<T, size1*size2>::
-             _ref_array[(i-1)*size2 + (j-1)]);
+             _ref_array[(i-1) + size1*(j-1)]);
   }
 
   /**
@@ -580,9 +580,9 @@ public:
    */
   virtual const T& operator()(const vector<size_t>& idx) const
   {
-    assert((size1*size2*size3) > (size3*(size2*(idx[0]-1) + (idx[1]-1)) + idx[2]-1));
+    assert(size1*size2*size3 > idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1)));
     return *(RefArray<T, size1*size2*size3>::
-             _ref_array[size3*(size2*(idx[0]-1) + (idx[1]-1)) + idx[2]-1]);
+             _ref_array[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
   }
 
   /**
@@ -591,9 +591,9 @@ public:
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    assert((size1*size2*size3) > (size3*(size2*(idx[0]-1) + (idx[1]-1)) + idx[2]-1));
+    assert(size1*size2*size3 > idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1)));
     return *(RefArray<T, size1*size2*size3>::
-             _ref_array[size3*(size2*(idx[0]-1) + (idx[1]-1)) + idx[2]-1]);
+             _ref_array[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
   }
 
   /**
@@ -604,9 +604,9 @@ public:
    */
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    assert((size1*size2*size3) > (size3*(size2*(i-1) + (j-1)) + (k-1)));
+    assert(size1*size2*size3 > i-1 + size1*(j-1 + size2*(k-1)));
     return *(RefArray<T, size1*size2*size3>::
-             _ref_array[size3*(size2*(i-1) + (j-1)) + (k-1)]);
+             _ref_array[i-1 + size1*(j-1 + size2*(k-1))]);
   }
 
   /**
