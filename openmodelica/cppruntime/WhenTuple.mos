@@ -1,0 +1,65 @@
+// name: WhenTuple
+// keywords: tuple assignment in when-clause, ticket:4093
+// status: correct
+// teardown_command: rm -f *DIDtuple*
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model DIDtuple
+
+  function update
+    input Real pre_y1;
+    input Real[1,1] pre_y2;
+    input Real u;
+    input Real samplePeriod;
+    output Real y1;
+    output Real[1,1] y2;
+  algorithm
+    y1 := pre_y1 + u * samplePeriod;
+    y2[1,1] := pre_y2[1,1] + pre_y1 * samplePeriod + 0.5 * u * samplePeriod^2;
+  end update;
+
+  input Real u(start = -2);
+  Real[1] y1;
+  Real[1,1] y2;
+  parameter Real samplePeriod = 0.1;
+initial equation
+  pre(y1) = {1};
+  pre(y2) = {{1}};
+equation
+  when sample(0, samplePeriod) then
+    (y1[1], y2) = update(pre(y1[1]), pre(y2), u, samplePeriod);
+  end when;
+  annotation(experiment(StopTime=1));
+end DIDtuple;
+"); getErrorString();
+
+simulate(DIDtuple, outputFormat="mat", stopTime = 1.0); getErrorString();
+
+val(y1[1], 0.0);
+val(y1[1], 0.35);
+val(y1[1], 0.55);
+val(y1[1], 0.95);
+val(y2[1,1], 0.0);
+val(y2[1,1], 0.35);
+val(y2[1,1], 0.85);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DIDtuple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DIDtuple', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.8
+// 0.2
+// -0.2
+// -1.0
+// 1.09
+// 1.24
+// 1.09
+// endResult

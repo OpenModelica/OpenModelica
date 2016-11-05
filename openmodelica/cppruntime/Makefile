@@ -1,9 +1,9 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
-DIDtuple.mos \
 tearnonlin1.mos \
 WhenStatement1.mos \
+WhenTuple.mos \
 BouncingBall.mos \
 arraySliceTest.mos \
 clockedEventTest.mos \
