@@ -41,6 +41,7 @@
 
 #include "MainWindow.h"
 #include "OMPlot.h"
+#include "Utilities.h"
 
 class MainWindow;
 class AnimationWindow;
