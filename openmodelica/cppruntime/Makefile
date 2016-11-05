@@ -14,6 +14,7 @@ externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
+RefArrayDim2.mos \
 solveTest.mos \
 testMatrixIO.mos
 
