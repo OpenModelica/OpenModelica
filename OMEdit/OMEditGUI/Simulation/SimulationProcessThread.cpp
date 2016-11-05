@@ -31,9 +31,9 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "SimulationProcessThread.h"
 #include <QTcpSocket>
 #include <QTcpServer>
-#include "SimulationProcessThread.h"
 
 SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget)
   : QThread(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)

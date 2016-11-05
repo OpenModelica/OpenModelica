@@ -35,14 +35,6 @@
 #ifndef MODELWIDGETCONTAINER_H
 #define MODELWIDGETCONTAINER_H
 
-#include <QGraphicsView>
-#include <QGraphicsScene>
-#include <QStatusBar>
-#include <QListWidget>
-#include <QMdiArea>
-#include <QtWebKit>
-#include <QtXmlPatterns>
-
 #include "CoOrdinateSystem.h"
 #include "Component.h"
 #include "StringHandler.h"
@@ -53,6 +45,14 @@
 #include "CEditor.h"
 #include "TextEditor.h"
 #include "MetaModelicaEditor.h"
+
+#include <QGraphicsView>
+#include <QGraphicsScene>
+#include <QStatusBar>
+#include <QListWidget>
+#include <QMdiArea>
+#include <QtWebKit>
+#include <QtXmlPatterns>
 
 class ModelWidget;
 class ComponentInfo;

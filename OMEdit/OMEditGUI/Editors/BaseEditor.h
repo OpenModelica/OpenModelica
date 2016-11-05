@@ -34,14 +34,15 @@
 #ifndef BASEEDITOR_H
 #define BASEEDITOR_H
 
+#include "BreakpointMarker.h"
+#include "Utilities.h"
+
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #else
 #include <QtGui>
 #endif
-#include "BreakpointMarker.h"
-#include "Utilities.h"
 
 class ModelWidget;
 class LineNumberArea;

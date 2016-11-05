@@ -35,6 +35,10 @@
 #ifndef SHAPEANNOTATION_H
 #define SHAPEANNOTATION_H
 
+#include "Helper.h"
+#include "StringHandler.h"
+#include "Transformation.h"
+
 #include <QGraphicsItem>
 #include <QSettings>
 #include <QGroupBox>
@@ -43,10 +47,6 @@
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QVBoxLayout>
-
-#include "Helper.h"
-#include "StringHandler.h"
-#include "Transformation.h"
 
 class MainWindow;
 class GraphicsView;

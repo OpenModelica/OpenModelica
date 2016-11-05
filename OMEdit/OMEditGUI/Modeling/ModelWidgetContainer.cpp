@@ -32,8 +32,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <QNetworkReply>
-
 #include "ModelWidgetContainer.h"
 #include "LibraryTreeWidget.h"
 #include "MainWindow.h"
@@ -42,6 +40,8 @@
 #include "Commands.h"
 #include "FetchInterfaceDataDialog.h"
 #include "VariablesWidget.h"
+
+#include <QNetworkReply>
 
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.

@@ -32,10 +32,10 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "DocumentationWidget.h"
+
 #include <QNetworkRequest>
 #include <QNetworkReply>
-
-#include "DocumentationWidget.h"
 
 //! @class DocumentationWidget
 //! @brief Displays the model documentation.

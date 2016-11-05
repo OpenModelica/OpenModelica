@@ -35,12 +35,12 @@
 #ifndef MODELICAEDITOR_H
 #define MODELICAEDITOR_H
 
-#include <QSyntaxHighlighter>
-
 #include "MainWindow.h"
 #include "Helper.h"
 #include "Utilities.h"
 #include "BaseEditor.h"
+
+#include <QSyntaxHighlighter>
 
 class MainWindow;
 class ModelWidget;

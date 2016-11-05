@@ -32,15 +32,15 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <QTcpSocket>
-#include <QTcpServer>
-#include <QDebug>
-#include <limits>
-
 #include "SimulationDialog.h"
 #include "SimulationOutputWidget.h"
 #include "VariablesWidget.h"
 #include "Commands.h"
+
+#include <QTcpSocket>
+#include <QTcpServer>
+#include <QDebug>
+#include <limits>
 
 /*!
   \class SimulationDialog
