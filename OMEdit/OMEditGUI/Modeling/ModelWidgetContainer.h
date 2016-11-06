@@ -35,6 +35,7 @@
 #ifndef MODELWIDGETCONTAINER_H
 #define MODELWIDGETCONTAINER_H
 
+#include "MainWindow.h"
 #include "CoOrdinateSystem.h"
 #include "Component.h"
 #include "StringHandler.h"
@@ -45,6 +46,7 @@
 #include "CEditor.h"
 #include "TextEditor.h"
 #include "MetaModelicaEditor.h"
+#include "LibraryTreeWidget.h"
 
 #include <QGraphicsView>
 #include <QGraphicsScene>

@@ -56,6 +56,7 @@ class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
+class LibraryTreeItem;
 
 class ComponentInfo : public QObject
 {
