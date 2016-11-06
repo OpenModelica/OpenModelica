@@ -10890,7 +10890,7 @@ protected
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
   list<DAE.Subscript> arraySubscripts;
-  list<Integer> arrayDimensions;
+  list<Integer> arrayDimensions, arrayDimensionsReverse;
   Boolean toColumnMajor;
 algorithm
   arraySubscripts := ComponentReference.crefLastSubs(varName);
@@ -10902,13 +10902,14 @@ algorithm
     toColumnMajor := iColumnMajor and listLength(arrayDimensions) > 1;
     if toColumnMajor then
       concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
+      arrayDimensionsReverse := listReverse(arrayDimensions);
     end if;
     //print("SimCodeUtil.getVarIndexInfosByMapping: Found variable index for '" + ComponentReference.printComponentRefStr(iVarName) + "'. The value is " + intString(concreteVarIndex) + "\n");
     for arrayIdx in 0:(arraySize-1) loop
       idx := arraySize-arrayIdx;
       if toColumnMajor then
         // convert to row major so that column major access will give this idx
-        idx := convertIndexToRowMajor(idx, arrayDimensions);
+        idx := convertIndexToColumnMajor(idx, arrayDimensionsReverse);
       end if;
       idx := arrayGet(varIndices, idx);
       if(intLt(idx, 0)) then
@@ -10937,33 +10938,6 @@ algorithm
   //print("SimCodeUtil.getVarIndexInfosByMapping: Variable " + ComponentReference.printComponentRefStr(iVarName) + " has variable indices {" + stringDelimitList(tmpVarIndexListNew, ",") + "} and concrete index " + oConcreteVarIndex + "\n");
   oVarIndexList := tmpVarIndexListNew;
 end getVarIndexInfosByMapping;
-
-protected function convertFlattenedIndexToRowMajor
-"author: waurich TUD 03/2015"
-  input Integer idx; //1-based, column major ordered
-  input list<Integer> rowMajorDimensions;
-  output Integer idxOut;//1-based, row major ordered
-protected
-  Integer dimRow,dimCol,col,row;
-algorithm
-  if intEq(listLength(rowMajorDimensions),2) then
-    {dimRow,dimCol} := rowMajorDimensions;
-    col := intDiv(idx-1,dimRow);//in which col?(0-based)
-    row := idx - col*dimRow; // in which row (1-based)
-    idxOut := (row-1)*dimCol + (col+1);
-  else
-    idxOut := idx;
-  end if;
-end convertFlattenedIndexToRowMajor;
-
-protected function convertIndexToRowMajor
- "Converts column-major unrolled idx to row-major, author: rfranke"
-  input Integer idx; // one based, row-major ordered
-  input list<Integer> arrayDimensions;
-  output Integer idxOut; // one based, column-major ordered
-algorithm
-  idxOut := convertIndexToColumnMajor(idx, listReverse(arrayDimensions));
-end convertIndexToRowMajor;
 
 protected function convertIndexToColumnMajor
  "Converts row-major unrolled idx to column-major, author: rfranke"
