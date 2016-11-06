@@ -8605,23 +8605,17 @@ algorithm
 end traversingdlowvarToSimvarFold;
 
 protected function traversingdlowvarToSimvar
-  input BackendDAE.Var inVar;
+  input output BackendDAE.Var var;
   input tuple<list<SimCodeVar.SimVar>, BackendDAE.Variables> inTpl;
-  output BackendDAE.Var outVar;
   output tuple<list<SimCodeVar.SimVar>, BackendDAE.Variables> outTpl;
+protected
+  list<SimCodeVar.SimVar> sv_lst;
+  SimCodeVar.SimVar sv;
+  BackendDAE.Variables vars;
 algorithm
-  (outVar,outTpl) := match (inVar,inTpl)
-    local
-      BackendDAE.Var v;
-      list<SimCodeVar.SimVar> sv_lst;
-      SimCodeVar.SimVar sv;
-      BackendDAE.Variables vars;
-    case (v, (sv_lst, vars))
-      equation
-        sv = dlowvarToSimvar(v, NONE(), vars);
-      then (v, (sv::sv_lst, vars));
-    else (inVar,inTpl);
-  end match;
+  (sv_lst, vars) := inTpl;
+  sv := dlowvarToSimvar(var, NONE(), vars);
+  outTpl := (sv::sv_lst, vars);
 end traversingdlowvarToSimvar;
 
 public function getMatchingExpsList
@@ -8638,21 +8632,14 @@ algorithm
   (_, outExpLst) := Expression.traverseExpList(inExps, inFn, {});
 end getMatchingExpsList;
 
-protected function addDivExpErrorMsgtoExp "author: Frenkel TUD 2010-02, Adds the error msg to Expression.Div."
+protected function addDivExpErrorMsgtoExp "author: Frenkel TUD 2010-02
+  Adds the error msg to Expression.Div."
   input DAE.Exp inExp;
   input DAE.ElementSource inSource;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp, inSource)
-    local
-      DAE.Exp exp;
-
-    case(_, _)
-      equation
-        false = Expression.traverseCrefsFromExp(inExp, traversingXLOCExpFinder, false);
-        (exp, _) = Expression.traverseExpBottomUp(inExp, traversingDivExpFinder, inSource);
-      then exp;
-  end match;
+  false := Expression.traverseCrefsFromExp(inExp, traversingXLOCExpFinder, false);
+  (outExp, _) := Expression.traverseExpBottomUp(inExp, traversingDivExpFinder, inSource);
 end addDivExpErrorMsgtoExp;
 
 protected function traversingXLOCExpFinder "author: Frenkel TUD 2010-02"
@@ -8660,10 +8647,11 @@ protected function traversingXLOCExpFinder "author: Frenkel TUD 2010-02"
   input Boolean inB;
   output Boolean  outB;
 algorithm
-  outB := match(inCref, inB)
-    case( DAE.CREF_IDENT(ident="xloc", identType=DAE.T_ARRAY(dims={DAE.DIM_UNKNOWN()})) , _ )
-      then true;
-   case(_, _) then inB;
+  outB := match inCref
+    case DAE.CREF_IDENT(ident="xloc", identType=DAE.T_ARRAY(dims={DAE.DIM_UNKNOWN()}))
+    then true;
+
+    else inB;
   end match;
 end traversingXLOCExpFinder;
 
@@ -8707,20 +8695,16 @@ algorithm
   end matchcontinue;
 end traversingDivExpFinder;
 
-protected function addDivExpErrorMsgtosimJac "helper for addDivExpErrorMsgtoSimEqSystem."
+protected function addDivExpErrorMsgtosimJac
   input tuple<Integer, Integer, SimCode.SimEqSystem> inJac;
   output tuple<Integer, Integer, SimCode.SimEqSystem> outJac;
+protected
+  Integer a, b;
+  SimCode.SimEqSystem ses, ses_;
 algorithm
-  outJac := match inJac
-    local
-      Integer a, b;
-      SimCode.SimEqSystem ses, ses_;
-    case ((a, b, ses))
-      equation
-        ses_ = addDivExpErrorMsgtoSimEqSystem(ses);
-      then
-        (if referenceEq(ses,ses_) then inJac else (a, b, ses_));
-  end match;
+  ((a, b, ses)) := inJac;
+  ses_ := addDivExpErrorMsgtoSimEqSystem(ses);
+  outJac := if referenceEq(ses, ses_) then inJac else (a, b, ses_);
 end addDivExpErrorMsgtosimJac;
 
 protected function addDivExpErrorMsgtosymJac "helper for addDivExpErrorMsgtoSimEqSystem."
@@ -9630,22 +9614,11 @@ end matchcontinue;
 end countDynamicExternalFunctions;
 
 protected function getFilesFromSimVar
-  input SimCodeVar.SimVar inSimVar;
+  input output SimCodeVar.SimVar var;
   input SimCode.Files inFiles;
-  output SimCodeVar.SimVar outSimVar;
   output SimCode.Files outFiles;
 algorithm
-  (outSimVar, outFiles) := match(inSimVar, inFiles)
-    local
-      SimCode.Files files;
-      DAE.ElementSource source;
-
-    case (SimCodeVar.SIMVAR(source = source), files)
-      equation
-        files = getFilesFromDAEElementSource(source, files);
-      then
-        (inSimVar, files);
-  end match;
+  outFiles := getFilesFromDAEElementSource(var.source, inFiles);
 end getFilesFromSimVar;
 
 protected function getFilesFromSimVars
@@ -10052,18 +10025,7 @@ protected function getFilesFromExtObjInfo
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
 algorithm
-  outFiles := match(inExtObjInfo, inFiles)
-    local
-      SimCode.Files files;
-      list<SimCodeVar.SimVar> vars;
-
-    case (SimCode.EXTOBJINFO(vars = vars), files)
-      equation
-        (_, files) = List.mapFold(vars, getFilesFromSimVar, files);
-      then
-        files;
-
-  end match;
+  (_, outFiles) := List.mapFold(inExtObjInfo.vars, getFilesFromSimVar, inFiles);
 end getFilesFromExtObjInfo;
 
 protected function getFilesFromJacobianMatrixes
@@ -10158,39 +10120,19 @@ protected function getFilesFromDAEElementSource
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
 algorithm
-  outFiles := match(inSource, inFiles)
-    local
-      SimCode.Files files;
-      SourceInfo info;
-
-    case (DAE.SOURCE(info = info), files)
-      equation
-        files = getFilesFromAbsynInfo(info, files);
-      then
-        files;
-  end match;
+  outFiles := getFilesFromAbsynInfo(inSource.info, inFiles);
 end getFilesFromDAEElementSource;
 
 protected function getFilesFromAbsynInfo
   input SourceInfo inInfo;
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
+protected
+  SimCode.FileInfo fi;
 algorithm
-  outFiles := match(inInfo, inFiles)
-    local
-      SimCode.Files files;
-      String f;
-      Boolean ro;
-      SimCode.FileInfo fi;
-
-    case (SOURCEINFO(fileName = f, isReadOnly = ro), files)
-      equation
-        fi = SimCode.FILEINFO(f, ro);
-        // add it only if is not already there!
-        files = List.consOnTrue(not listMember(fi, files), fi, files);
-      then
-        files;
-  end match;
+  fi := SimCode.FILEINFO(inInfo.fileName, inInfo.isReadOnly);
+  // add it only if is not already there!
+  outFiles := List.consOnTrue(not listMember(fi, inFiles), fi, inFiles);
 end getFilesFromAbsynInfo;
 
 protected function equalFileInfo
