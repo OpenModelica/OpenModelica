@@ -1815,6 +1815,17 @@ algorithm
     // Do nothing; it's a diff... Just not perfect and might be really slow to process...
   elseif nadd==1 and ndel==1 then
     (addedTree, deletedTree, before, middle, after, addedBeforeDeleted) := extractSingleAddDiffBeforeAndAfter(res);
+    if if not listEmpty(middle) then min(parseTreeIsWhitespace(middleItem) for middleItem in middle) else false then
+      // If we have a change with whitespace in-between the added/deleted
+      // items, move it so the added/deleted are next to each other to
+      // merge them better.
+      if addedBeforeDeleted then
+        before := listAppend(before, middle);
+      else
+        after := listAppend(middle, after);
+      end if;
+      middle := {};
+    end if;
     // print("Doing tree diff on selected 1 addition + 1 deletion\n");
     // print("Added tree:"+parseTreeNodeStr(addedTree)+"\n");
     // print("Deleted tree:"+parseTreeNodeStr(deletedTree)+"\n");
