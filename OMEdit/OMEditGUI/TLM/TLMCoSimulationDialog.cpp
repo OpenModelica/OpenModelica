@@ -176,8 +176,8 @@ TLMCoSimulationDialog::~TLMCoSimulationDialog()
 void TLMCoSimulationDialog::show(LibraryTreeItem *pLibraryTreeItem)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getNameStructure()));
-  mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getNameStructure()));
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getName()));
+  mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getName()));
   // if user has nothing in TLM plugin path then read from OptionsDialog
   if (mpTLMPluginPathTextBox->text().isEmpty()) {
     mpTLMPluginPathTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMPluginPathTextBox()->text());
@@ -398,7 +398,7 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::simulationParams)
-                 .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+                 .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getName()));
   // set heading
   mpSimulationParamsHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::simulationParams)
                                                          .arg(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getName()));

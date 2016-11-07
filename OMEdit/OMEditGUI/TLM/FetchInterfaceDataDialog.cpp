@@ -43,7 +43,7 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTree
   : QDialog(pMainWindow), mpMainWindow(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Fetch Interface Data")).append(" - ")
-                 .append(mpLibraryTreeItem->getNameStructure()));
+                 .append(mpLibraryTreeItem->getName()));
   setAttribute(Qt::WA_DeleteOnClose);
   setMinimumWidth(550);
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -92,7 +92,7 @@ void FetchInterfaceDataDialog::cancelFetchingInterfaceData()
 {
   if (mpFetchInterfaceDataThread->isManagerProcessRunning()) {
     mpFetchInterfaceDataThread->getManagerProcess()->kill();
-    mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b> is cancelled.").arg(mpLibraryTreeItem->getNameStructure()));
+    mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b> is cancelled.").arg(mpLibraryTreeItem->getName()));
     mpCancelButton->setEnabled(false);
     mpFetchAgainButton->setEnabled(true);
   }
@@ -119,7 +119,7 @@ void FetchInterfaceDataDialog::fetchAgainInterfaceData()
  */
 void FetchInterfaceDataDialog::managerProcessStarted()
 {
-  mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getNameStructure()));
+  mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getName()));
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(true);
   mpCancelButton->setEnabled(true);
@@ -135,19 +135,26 @@ void FetchInterfaceDataDialog::managerProcessStarted()
  */
 void FetchInterfaceDataDialog::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
-  /* move the cursor down before adding to the logger. */
+  // move the cursor down before adding to the logger.
   QTextCursor textCursor = mpOutputTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpOutputTextBox->setTextCursor(textCursor);
-  /* set the text color */
-  QTextCharFormat charFormat = mpOutputTextBox->currentCharFormat();
-  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  mpOutputTextBox->setCurrentCharFormat(charFormat);
-  /* append the output */
-  mpOutputTextBox->insertPlainText(output + "\n");
-  /* move the cursor */
-  textCursor.movePosition(QTextCursor::End);
-  mpOutputTextBox->setTextCursor(textCursor);
+  const bool atBottom = mpOutputTextBox->verticalScrollBar()->value() == mpOutputTextBox->verticalScrollBar()->maximum();
+  if (!textCursor.atEnd()) {
+    textCursor.movePosition(QTextCursor::End);
+  }
+  // set the text color
+  QTextCharFormat format;
+  format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  textCursor.beginEditBlock();
+  textCursor.insertText(output, format);
+  textCursor.endEditBlock();
+  // move the cursor
+  if (atBottom) {
+    mpOutputTextBox->verticalScrollBar()->setValue(mpOutputTextBox->verticalScrollBar()->maximum());
+    // QPlainTextEdit destroys the first calls value in case of multiline
+    // text, so make sure that the scroll bar actually gets the value set.
+    // Is a noop if the first call succeeded.
+    mpOutputTextBox->verticalScrollBar()->setValue(mpOutputTextBox->verticalScrollBar()->maximum());
+  }
 }
 
 /*!
@@ -166,7 +173,7 @@ void FetchInterfaceDataDialog::managerProcessFinished(int exitCode, QProcess::Ex
   mpFetchAgainButton->setEnabled(true);
   // if manager process has finished successfully then try reading the interface data.
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    mpProgressLabel->setText(tr("Fetched interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getNameStructure()));
+    mpProgressLabel->setText(tr("Fetched interface data for <b>%1</b>...").arg(mpLibraryTreeItem->getName()));
     emit readInterfaceData(mpLibraryTreeItem);
   }
 }
@@ -196,11 +203,11 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnno
   : QDialog(pModelWidget), mpModelWidget(pModelWidget)
 {
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::alignInterfaces)
-                 .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()));
+                 .arg(mpModelWidget->getLibraryTreeItem()->getName()));
   setAttribute(Qt::WA_DeleteOnClose);
   // set heading
   mpAlignInterfacesHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::alignInterfaces)
-                                                        .arg(mpModelWidget->getLibraryTreeItem()->getNameStructure()));
+                                                        .arg(mpModelWidget->getLibraryTreeItem()->getName()));
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // list of interfaces

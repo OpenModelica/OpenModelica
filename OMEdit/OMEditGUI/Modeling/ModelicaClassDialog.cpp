@@ -1388,7 +1388,11 @@ void SaveChangesDialog::listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem)
     if (!pChildLibraryTreeItem->isSystemLibrary()) {
       if (!pChildLibraryTreeItem->isSaved()) {
         QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
-        pListItem->setText(pChildLibraryTreeItem->getNameStructure());
+        if (pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+          pListItem->setText(pChildLibraryTreeItem->getNameStructure());
+        } else {
+          pListItem->setText(pChildLibraryTreeItem->getName());
+        }
       } else {
         listUnSavedClasses(pChildLibraryTreeItem);
       }
