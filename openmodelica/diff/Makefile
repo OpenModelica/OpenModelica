@@ -17,6 +17,7 @@ Tables.mos \
 TestDiffListAPI.mos \
 Ticket3619.mos \
 ticket3642.mos \
+Ticket4110.mos \
 UTF8.mos
 
 # test that currently fail. Move up when fixed.
