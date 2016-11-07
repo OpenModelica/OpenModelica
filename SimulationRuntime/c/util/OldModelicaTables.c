@@ -92,6 +92,7 @@ static char InterpolationTable_compare(InterpolationTable *tpl, const char* fnam
 
 static double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col, char beforeData);
 static inline double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, size_t i, size_t j);
+static inline double InterpolationTable_interpolateSpline(InterpolationTable *tpl, double time, size_t i, size_t j);
 static inline const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col);
 static void InterpolationTable_checkValidityOfData(InterpolationTable *tpl);
 
@@ -1107,7 +1108,11 @@ static double InterpolationTable_interpolate(InterpolationTable *tpl, double tim
 
   for(i = 0; i < lastIdx; ++i) {
     if(InterpolationTable_getElt(tpl,i,0) > time) {
-      return InterpolationTable_interpolateLin(tpl,time, i-1,col);
+      if(tpl->ipoType == 1 || lastIdx==2)
+        return InterpolationTable_interpolateLin(tpl,time, i-1,col);
+      else if(tpl->ipoType == 2){
+        return InterpolationTable_interpolateSpline(tpl,time, i-1,col);
+      }
     }
   }
   return InterpolationTable_extrapolate(tpl,time,col,time <= InterpolationTable_minTime(tpl));
@@ -1170,6 +1175,93 @@ static double InterpolationTable_interpolateLin(InterpolationTable *tpl, double 
     else
   */
   return (y_1 + ((time-t_1)/(t_2-t_1)) * (y_2-y_1));
+}
+
+static double InterpolationTable_interpolateSpline(InterpolationTable *tpl, double time, size_t i, size_t j)
+{
+  size_t lastIdx = tpl->colWise ? tpl->cols : tpl->rows;
+  double x1,x2,x3,x4,x5,x6;
+  double y1,y2,y3,y4,y5,y6;
+  double m1,m2,m3,m4,m5;
+  double t1,t2;
+  double p0,p1,p2,p3;
+  double x;
+
+  x3 = InterpolationTable_getElt(tpl,i,0);
+  x4 = InterpolationTable_getElt(tpl,i+1,0);
+  y3 = InterpolationTable_getElt(tpl,i,j);
+  y4 = InterpolationTable_getElt(tpl,i+1,j);
+
+  if(i > 1){
+    x1 = InterpolationTable_getElt(tpl,i-2,0);
+    x2 = InterpolationTable_getElt(tpl,i-1,0);
+    y1 = InterpolationTable_getElt(tpl,i-2,j);
+    y2 = InterpolationTable_getElt(tpl,i-1,j);
+  }
+  else if(i == 1){
+    x2 = InterpolationTable_getElt(tpl,i-1,0);
+    x1 = x3 + x2 - x4;
+    y2 = InterpolationTable_getElt(tpl,i-1,j);
+    y1 = (y4-y3)*(x2-x1)/(x4-x3) - 2*(y3-y2)*(x2-x1)/(x3-x2) + y2;
+  }
+  else{
+    x5 = InterpolationTable_getElt(tpl,i+2,0);
+    x1 = 2*x3-x5;
+    x2 = x4 + x3 - x5;
+    y5 = InterpolationTable_getElt(tpl,i+2,j);
+    y2 = (y5-y4)*(x3-x2)/(x5-x4) - 2*(y4-y3)*(x3-x2)/(x4-x3) + y3;
+    y1 = (y4-y3)*(x2-x1)/(x4-x3) - 2*(y3-y2)*(x2-x1)/(x3-x2) + y2;
+  }
+
+  if(i < lastIdx-3){
+    x5 = InterpolationTable_getElt(tpl,i+2,0);
+    x6 = InterpolationTable_getElt(tpl,i+3,0);
+    y5 = InterpolationTable_getElt(tpl,i+2,j);
+    y6 = InterpolationTable_getElt(tpl,i+3,j);
+  }
+  else if(i < lastIdx-2){
+    x5 = InterpolationTable_getElt(tpl,i+2,0);
+    x6 = x5 - x3 + x4;
+    y5 = InterpolationTable_getElt(tpl,i+2,j);
+    y6 = 2*(y5-y4)*(x6-x5)/(x5-x4) - (y4-y3)*(x6-x5)/(x4-x3) + y5;
+  }
+  else{
+    x5 = x4 - x2 + x3;
+    x6 = 2*x4 - x2;
+    y5 = 2*(y4-y3)*(x5-x4)/(x4-x3) - (y3-y2)*(x5-x4)/(x3-x2) + y4;
+    y6 = 2*(y5-y4)*(x6-x5)/(x5-x4) - (y4-y3)*(x6-x5)/(x4-x3) + y5;
+  }
+
+  m1 = (y2-y1)/(x2-x1);
+  m2 = (y3-y2)/(x3-x2);
+  m3 = (y4-y3)/(x4-x3);
+  m4 = (y5-y4)/(x5-x4);
+  m5 = (y6-y5)/(x6-x5);
+
+  if(m1==m2 && m3==m4)
+    t1 = 0.5*(m2+m3);
+  else
+    t1 = (fabs(m4-m3)*m2+fabs(m2-m1)*m3) / (fabs(m4-m3)+fabs(m2-m1));
+
+  if(m2==m3 && m4==m5)
+    t2 = 0.5*(m3+m4);
+  else
+    t2 = (fabs(m5-m4)*m3+fabs(m3-m2)*m4) / (fabs(m5-m4)+fabs(m3-m2));
+
+  p0 = y3;
+  p1 = t1;
+  p2 = (3*(y4-y3)/(x4-x3)-2*t1-t2)/(x4-x3);
+  p3 = (t1+t2-2*(y4-y3)/(x4-x3))/((x4-x3)*(x4-x3));
+
+  // printf("\ni=%d\n", i);
+  // printf("\nx1=%g\nx2=%g\nx3=%g\nx4=%g\nx5=%g\nx6=%g\n", x1,x2,x3,x4,x5,x6);
+  // printf("\ny1=%g\ny2=%g\ny3=%g\ny4=%g\ny5=%g\ny6=%g\n", y1,y2,y3,y4,y5,y6);
+  // printf("\nm1=%g\nm2=%g\nm3=%g\nm4=%g\nm5=%g\n", m1,m2,m3,m4,m5);
+  // printf("\nt1=%g\nt2=%g\n", t1,t2);
+  // printf("\np0=%g\np1=%g\np2=%g\np3=%g\n", p0,p1,p2,p3);
+  // printf("\nx=%g\n", x);
+
+  return p0 + (time-x3) * (p1 + (time-x3) * (p2 + (time-x3) * p3));
 }
 
 static const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col)
