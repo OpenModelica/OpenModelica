@@ -31,6 +31,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MainWindow.h" /* Includes OSG in correct order */
 #include "TransformationsEditor.h"
 
 /*!
