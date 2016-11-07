@@ -1315,11 +1315,10 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
       if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
-        mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
 #if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
         if (mpLaunchAnimationCheckBox->isChecked() && simulationOptions.getResultFileName().endsWith(".mat")) {
-          mpMainWindow->getPlotWindowContainer()->addAnimationWindow();
+          mpMainWindow->getPlotWindowContainer()->addAnimationWindow(mpMainWindow->getPlotWindowContainer()->subWindowList().isEmpty());
           AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
           if (pAnimationWindow) {
             pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
@@ -1330,6 +1329,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
                                                                        Helper::scriptingKind, Helper::notificationLevel));
         }
 #endif
+        mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       } else {
         // stay in current perspective and show variables browser
         mpMainWindow->getVariablesDockWidget()->show();

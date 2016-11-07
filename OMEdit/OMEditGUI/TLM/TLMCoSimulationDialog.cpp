@@ -206,6 +206,17 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
+#if !defined(WITHOUT_OSG)
+      // only show the AnimationWindow if we have a visual xml file.
+      QFileInfo visualFileInfo(fileInfo.absoluteDir().absolutePath() + "/" + fileInfo.completeBaseName() + "_visual.xml");
+      if (visualFileInfo.exists()) {
+        mpMainWindow->getPlotWindowContainer()->addAnimationWindow(mpMainWindow->getPlotWindowContainer()->subWindowList().isEmpty());
+        AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
+        if (pAnimationWindow) {
+          pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
+        }
+      }
+#endif
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
       mpMainWindow->getVariablesDockWidget()->show();

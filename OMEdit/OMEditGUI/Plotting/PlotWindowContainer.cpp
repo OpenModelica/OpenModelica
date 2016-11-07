@@ -191,6 +191,27 @@ void PlotWindowContainer::addParametricPlotWindow()
 }
 
 /*!
+ * \brief PlotWindowContainer::addAnimationWindow
+ * Adds an animation widget as subwindow
+ * \param maximized - sets the window state maximized
+ */
+void PlotWindowContainer::addAnimationWindow(bool maximized)
+{
+#if !defined(WITHOUT_OSG)
+  AnimationWindow *pAnimationWindow = new AnimationWindow(this);
+  pAnimationWindow->setWindowTitle(getUniqueName("Animation : "));
+  QMdiSubWindow *pSubWindow = addSubWindow(pAnimationWindow);
+  pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
+  pAnimationWindow->show();
+  if (maximized) {
+    pAnimationWindow->setWindowState(Qt::WindowMaximized);
+  }
+#else
+  assert(0);
+#endif
+}
+
+/*!
  * \brief PlotWindowContainer::clearPlotWindow
  * Clears the plot window
  */
@@ -287,20 +308,4 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
       }
     } // is plotWidget
   }
-}
-
-/*!
- * \brief PlotWindowContainer::addAnimationWindow
- * Adds an animation widget as subwindow
- */
-void PlotWindowContainer::addAnimationWindow(){
-#if !defined(WITHOUT_OSG)
-  AnimationWindow *pAnimation = new AnimationWindow(this);
-  pAnimation->setWindowTitle(getUniqueName("Animation : "));
-  QMdiSubWindow *pSubWindow = addSubWindow(pAnimation);
-  pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
-  pAnimation->show();
-#else
-  assert(0);
-#endif
 }

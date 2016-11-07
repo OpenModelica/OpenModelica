@@ -58,9 +58,9 @@ public:
 #endif
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 public slots:
-  void addAnimationWindow();
   void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
+  void addAnimationWindow(bool maximized = false);
   void clearPlotWindow();
   void exportVariables();
   void updatePlotWindows(QString variable);
