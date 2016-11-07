@@ -32,8 +32,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "BreakpointMarker.h"
 #include "ModelicaEditor.h"
+#include "BreakpointMarker.h"
 #include "Helper.h"
 
 /*!

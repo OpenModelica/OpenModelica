@@ -31,6 +31,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MainWindow.h"
 #include "BaseEditor.h"
 #include "ModelWidgetContainer.h"
 #include "Helper.h"

@@ -34,6 +34,7 @@
 #ifndef BASEEDITOR_H
 #define BASEEDITOR_H
 
+#include "MainWindow.h"
 #include "BreakpointMarker.h"
 #include "Utilities.h"
 
