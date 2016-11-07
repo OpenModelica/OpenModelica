@@ -17,9 +17,9 @@ end P;";
 loadString(s1, "P.mo");
 deleteClass(P.Inner);
 answer := "package P
-
   model M
   end M;
+
 end P;";
 s2 := listFile(P);
 res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);

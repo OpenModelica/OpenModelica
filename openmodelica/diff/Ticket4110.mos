@@ -1,0 +1,28 @@
+// status: correct
+
+echo(false);
+
+a := "model Test
+  Component component1(x = 5)
+    annotation();
+end Test;";
+
+b := "model Test
+  Component component1(x = 6) annotation();
+end Test;";
+
+echo(true);
+diffModelicaFileListings(
+  a,
+  b,
+  OpenModelica.Scripting.DiffFormat.color);
+getErrorString();
+
+// Result:
+// true
+// "model Test
+//   Component component1(x = [9;31m5[0m[4;32m6[0m)
+//     annotation();
+// end Test;"
+// ""
+// endResult

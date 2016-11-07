@@ -1,5 +1,4 @@
 within ;
-
 encapsulated package withFolder "Package per EV con modello QuasiStationary"
   import Modelica;
   import EVQSPkg = withFolder;

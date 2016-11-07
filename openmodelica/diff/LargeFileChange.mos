@@ -35,11 +35,6 @@ system("diff -uZ old.mo merged.mo | egrep -v '^(@@|---|[+][+][+])'")
 // true
 // true
 // ""
-//  within Modelica.Electrical;
-// +
-//  package PowerConverters "Rectifiers, Inverters and DC/DC converters"
-//    extends Modelica.Icons.Package;
-//    package UsersGuide "User's Guide"
 //              each k=1,
 //              each x0Cos=0,
 //              each x0Sin=0,
