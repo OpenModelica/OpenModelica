@@ -182,7 +182,7 @@ algorithm
   end try;
 end getConstCrefBinding;
 
-public function setVisVarsPublic"Sets the VariableAttributes of protected visualization vars to public.
+public function setVisVarsPublic "Sets the VariableAttributes of protected visualization vars to public.
 author: waurich TUD 08-2016"
   input BackendDAE.Var inVar;
   input String dummyArgIn;
@@ -190,11 +190,11 @@ author: waurich TUD 08-2016"
   output String dummyArgOut = dummyArgIn;
 algorithm
   if isVisualizationVar(inVar) then
-    outVar := makeVarPublic(inVar);
+    outVar := makeVarPublicHideResultFalse(inVar);
   end if;
 end setVisVarsPublic;
 
-protected function makeVarPublic"Sets the VariableAttributes to public.
+protected function makeVarPublicHideResultFalse "Sets the VariableAttributes to public and hideResult to false
 author: waurich TUD 08-2016"
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
@@ -204,9 +204,10 @@ algorithm
   vals := inVar.values;
   vals := DAEUtil.setProtectedAttr(vals,false);
   outVar := BackendVariable.setVarAttributes(inVar,vals);
-end makeVarPublic;
+  outVar := BackendVariable.setHideResult(outVar,DAE.BCONST(false));
+end makeVarPublicHideResultFalse;
 
-protected function setBindingForProtectedVars"searches for protected vars and sets the binding exp with their equation.
+protected function setBindingForProtectedVars "searches for protected vars and sets the binding exp with their equation.
 This is needed since protected, time-dependent variables are not stored in result files (in OMC and Dymola)"
   input BackendDAE.EqSystem eqSysIn;
   output BackendDAE.EqSystem eqSysOut;
@@ -223,7 +224,7 @@ algorithm
   eqSysOut := eqSysIn;
 end setBindingForProtectedVars;
 
-protected function setBindingForProtectedVars1"checks if the var is protected and sets the binding (i.e. the solved equation)"
+protected function setBindingForProtectedVars1 "checks if the var is protected and sets the binding (i.e. the solved equation)"
   input BackendDAE.Var varIn;
   input tuple<Integer,array<Integer>,BackendDAE.EquationArray> tplIn;
   output BackendDAE.Var varOut;
@@ -244,12 +245,12 @@ algorithm
       BackendDAE.EQUATION(exp=exp1, scalar=exp2) = eq;
       (exp1,_) =  ExpressionSolve.solve(exp1,exp2,BackendVariable.varExp(varIn));
       var = BackendVariable.setBindExp(varIn,SOME(exp1));
-      var = makeVarPublic(var);
+      var = makeVarPublicHideResultFalse(var);
     then (var,(idx+1,ass1,eqs));
   case(_,(idx,ass1,eqs))
     equation
       if (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn)) then
-        var = makeVarPublic(varIn);
+        var = makeVarPublicHideResultFalse(varIn);
       else
         var = varIn;
       end if;

@@ -1629,6 +1629,15 @@ algorithm
   outVar.bindValue := inBindValue;
 end setBindValue;
 
+public function setHideResult "Sets BackendDAE.VAR.hideResult expression.
+author: vwaurich 10 2016"
+  input BackendDAE.Var varIn;
+  input DAE.Exp hideResultB;
+  output BackendDAE.Var varOut=varIn;
+algorithm
+  varOut.hideResult := hideResultB;
+end setHideResult;
+
 public function setVarDirectionTpl
   input output BackendDAE.Var var;
   input output DAE.VarDirection dir;
