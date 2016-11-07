@@ -386,7 +386,7 @@ algorithm
   (tokens, tree) := scanOpt(tokens, tree, TokenId.INITIAL);
   (tokens, tree) := scan(tokens, tree, TokenId.ALGORITHM);
   (tokens, tree) := statement_list(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, "$algorithm_section")));
 end algorithm_section;
 
 function statement
@@ -497,7 +497,7 @@ algorithm
   (tokens, tree) := scanOpt(tokens, tree, TokenId.INITIAL);
   (tokens, tree) := scan(tokens, tree, TokenId.EQUATION);
   (tokens, tree) := equation_list(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, "$equation_section")));
 end equation_section;
 
 function _equation
@@ -604,7 +604,7 @@ algorithm
     (tokens, tree) := element(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree))::outTree;
+    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$element")))::outTree;
     tree := {};
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
@@ -1771,7 +1771,7 @@ function treeDiffWork
 protected
   list<ParseTree> before, middle, after, addedTrees, deletedTrees;
   Integer nadd, ndel;
-  ParseTree addedTree, deletedTree, addedLabel, deletedLabel;
+  ParseTree addedTree, deletedTree, addedLabel, deletedLabel, deleted;
   Boolean addedBeforeDeleted, joinTrees;
   tuple<Diff,list<ParseTree>> diff1;
 algorithm
@@ -1883,12 +1883,12 @@ algorithm
     end if;
     // O(D*D)
     for added in addedTrees loop
-      for deleted in deletedTrees loop
-        if compare(nodeLabel(added),nodeLabel(deleted)) then
-          resLocal := treeDiffWork(getNodes(deleted), getNodes(added), depth+1, compare);
-          res := replaceLabeledDiff(res, resLocal, nodeLabel(added), compare);
-        end if;
-      end for;
+      try
+        (deleted, deletedTrees) := List.findAndRemove1(deletedTrees, function compareNodeLabels(compare=compare), added);
+        resLocal := treeDiffWork(getNodes(deleted), getNodes(added), depth+1, compare);
+        res := replaceLabeledDiff(res, resLocal, nodeLabel(added), compare);
+      else
+      end try;
     end for;
   else
     // print(DiffAlgorithm.printDiffXml(res, parseTreeNodeStr) + "\n");
@@ -1906,6 +1906,14 @@ algorithm
     // print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
   end if;
 end treeDiffWork;
+
+function compareNodeLabels
+  input ParseTree t1, t2;
+  input CmpParseTreeFunc compare;
+  output Boolean b;
+algorithm
+  b := compare(nodeLabel(t1),nodeLabel(t2));
+end compareNodeLabels;
 
 function filterDiffWhitespace
   input list<tuple<Diff,list<ParseTree>>> inDiff;
@@ -2085,6 +2093,7 @@ function replaceLabeledDiff
 protected
   list<tuple<Diff,list<ParseTree>>> filtered;
   list<ParseTree> lst, acc;
+  Boolean found=false;
 algorithm
   for diff in inDiff loop
     res := match diff
@@ -2097,7 +2106,9 @@ algorithm
           acc := {};
           for t in lst loop
             // Assuming adjacent to the delete node
-            if compare(nodeLabel(t), labelOfDiffedNodes) then
+            if found then
+              res := (Diff.Add, {t})::res;
+            elseif compare(nodeLabel(t), labelOfDiffedNodes) then
               if not listEmpty(acc) then
                 res := (Diff.Add, listReverse(acc))::res;
                 acc := {};
@@ -2105,6 +2116,7 @@ algorithm
               // filtered := listReverse(diffedNodes);
               filtered := listReverse(i for i guard match i case (Diff.Delete,_) then false; else true; end match in diffedNodes);
               res := listAppend(filtered, res);
+              found := true;
             end if;
           end for;
           if not listEmpty(acc) then
