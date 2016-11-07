@@ -43,7 +43,7 @@ class VisualizerMAT : public VisualizerAbstract
 public:
   VisualizerMAT() = delete;
   VisualizerMAT(const std::string& fileName, const std::string& path);
-  virtual ~VisualizerMAT() = default;
+  ~VisualizerMAT();
   VisualizerMAT(const VisualizerMAT& omvm) = delete;
   VisualizerMAT& operator=(const VisualizerMAT& omvm) = delete;
   void initData();

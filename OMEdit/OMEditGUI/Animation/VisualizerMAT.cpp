@@ -41,6 +41,17 @@ VisualizerMAT::VisualizerMAT(const std::string& modelFile, const std::string& pa
 
 }
 
+/*!
+ * \brief VisualizerMAT::~VisualizerMAT
+ * Free the ModelicaMatReader
+ */
+VisualizerMAT::~VisualizerMAT()
+{
+  if (_matReader.file) {
+    omc_free_matlab4_reader(&_matReader);
+  }
+}
+
 void VisualizerMAT::initData()
 {
   VisualizerAbstract::initData();
