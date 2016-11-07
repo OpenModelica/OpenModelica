@@ -11,6 +11,7 @@ ChangeSourceFile.mos \
 LargeFileChange.mos \
 ListFile.mos \
 MoveComment.mos \
+MoveConnection.mos \
 removeComponentModifiers.mos \
 Tables.mos \
 TestDiffListAPI.mos \
