@@ -32,6 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MainWindow.h"
 #include "Component.h"
 #include "ComponentProperties.h"
 #include "Commands.h"
