@@ -34,6 +34,7 @@
 
 #include <limits>
 
+#include "MainWindow.h"
 #include "ShapePropertiesDialog.h"
 #include "Commands.h"
 
