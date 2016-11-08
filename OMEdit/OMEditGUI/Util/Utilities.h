@@ -438,6 +438,7 @@ namespace Utilities {
 #endif
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
+  void insertText(QPlainTextEdit *pPlainTextEdit, QString text, QTextCharFormat format = QTextCharFormat());
 
   namespace FileIconProvider {
     class FileIconProviderImplementation : public QFileIconProvider

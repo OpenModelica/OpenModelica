@@ -390,19 +390,9 @@ void SimulationOutputWidget::compilationProcessStarted()
 void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color)
 {
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
-  /* move the cursor down before adding to the logger. */
-  QTextCursor textCursor = mpCompilationOutputTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpCompilationOutputTextBox->setTextCursor(textCursor);
-  /* set the text color red */
-  QTextCharFormat charFormat = mpCompilationOutputTextBox->currentCharFormat();
-  charFormat.setForeground(color);
-  mpCompilationOutputTextBox->setCurrentCharFormat(charFormat);
-  /* append the output */
-  mpCompilationOutputTextBox->insertPlainText(output);
-  /* move the cursor */
-  textCursor.movePosition(QTextCursor::End);
-  mpCompilationOutputTextBox->setTextCursor(textCursor);
+  QTextCharFormat format;
+  format.setForeground(color);
+  Utilities::insertText(mpCompilationOutputTextBox, output, format);
   /* make the compilation tab the current one */
   mpGeneratedFilesTabWidget->setCurrentIndex(1);
 }

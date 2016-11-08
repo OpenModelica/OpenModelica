@@ -317,28 +317,11 @@ QString OMCProxy::getResult()
  */
 void OMCProxy::logCommand(QString command, QTime *commandTime)
 {
-  // move the cursor down before adding to the logger.
-  const bool atBottom = mpOMCLoggerTextBox->verticalScrollBar()->value() == mpOMCLoggerTextBox->verticalScrollBar()->maximum();
-  if (!mOMCLoggerTextCursor.atEnd()) {
-    mOMCLoggerTextCursor.movePosition(QTextCursor::End);
-  }
-  // add the expression to commands list
-  mCommandsList.append(command);
-  // log expression
+  // insert the command to the logger window.
   QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
   QTextCharFormat format;
   format.setFont(font);
-  mOMCLoggerTextCursor.beginEditBlock();
-  mOMCLoggerTextCursor.insertText(command + "\n", format);
-  mOMCLoggerTextCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
-  }
+  Utilities::insertText(mpOMCLoggerTextBox, command + "\n", format);
   // set the current command index.
   mCurrentCommandIndex = mCommandsList.count();
   mpExpressionTextBox->setText("");
@@ -365,26 +348,11 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
  */
 void OMCProxy::logResponse(QString response, QTime *responseTime)
 {
-  // move the cursor down before adding to the logger.
-  const bool atBottom = mpOMCLoggerTextBox->verticalScrollBar()->value() == mpOMCLoggerTextBox->verticalScrollBar()->maximum();
-  if (!mOMCLoggerTextCursor.atEnd()) {
-    mOMCLoggerTextCursor.movePosition(QTextCursor::End);
-  }
-  // log expression
+  // insert the response to the logger window.
   QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
   QTextCharFormat format;
   format.setFont(font);
-  mOMCLoggerTextCursor.beginEditBlock();
-  mOMCLoggerTextCursor.insertText(response + "\n\n", format);
-  mOMCLoggerTextCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    mpOMCLoggerTextBox->verticalScrollBar()->setValue(mpOMCLoggerTextBox->verticalScrollBar()->maximum());
-  }
+  Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
   // write the log to communication log file
   if (mCommunicationLogFileTextStream.device()) {
     mCommunicationLogFileTextStream << QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz"));

@@ -34,13 +34,13 @@
 #include "TLMCoSimulationOutputWidget.h"
 
 /*!
-  \class TLMCoSimulationOutputWidget
-  \brief Creates a widget that shows the current TLM co-simulation output.
-  */
-
+ * \class TLMCoSimulationOutputWidget
+ * \brief Creates a widget that shows the current TLM co-simulation output.
+ */
 /*!
-  \param pParent - pointer to MainWindow.
-  */
+ * \brief TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget
+ * \param pMainWindow - pointer to MainWindow.
+ */
 TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(MainWindow *pMainWindow)
   : mpMainWindow(pMainWindow)
 {
@@ -110,11 +110,18 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(MainWindow *pMainWindow
   connect(mpTLMCoSimulationProcessThread, SIGNAL(sendManagerProgress(int)), mpProgressBar, SLOT(setValue(int)));
 }
 
+/*!
+ * \brief TLMCoSimulationOutputWidget::~TLMCoSimulationOutputWidget
+ */
 TLMCoSimulationOutputWidget::~TLMCoSimulationOutputWidget()
 {
   clear();
 }
 
+/*!
+ * \brief TLMCoSimulationOutputWidget::showTLMCoSimulationOutputWidget
+ * \param tlmCoSimulationOptions
+ */
 void TLMCoSimulationOutputWidget::showTLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions)
 {
   mTLMCoSimulationOptions = tlmCoSimulationOptions;
@@ -128,6 +135,9 @@ void TLMCoSimulationOutputWidget::showTLMCoSimulationOutputWidget(TLMCoSimulatio
   mpTLMCoSimulationProcessThread->start();
 }
 
+/*!
+ * \brief TLMCoSimulationOutputWidget::clear
+ */
 void TLMCoSimulationOutputWidget::clear()
 {
   stopMonitor();
@@ -138,9 +148,10 @@ void TLMCoSimulationOutputWidget::clear()
 }
 
 /*!
-  Slot activated when mpStopManagerButton clicked signal is raised.\n
-  Kills the manager process.
-  */
+ * \brief TLMCoSimulationOutputWidget::stopManager
+ * Slot activated when mpStopManagerButton clicked signal is raised.\n
+ * Kills the manager process.
+ */
 void TLMCoSimulationOutputWidget::stopManager()
 {
   if (mpTLMCoSimulationProcessThread->isManagerProcessRunning()) {
@@ -151,9 +162,10 @@ void TLMCoSimulationOutputWidget::stopManager()
 }
 
 /*!
-  Slot activated when mpOpenManagerLogButton clicked signal is raised.\n
-  Opens the manager log file.
-  */
+ * \brief TLMCoSimulationOutputWidget::openManagerLogFile
+ * Slot activated when mpOpenManagerLogButton clicked signal is raised.\n
+ * Opens the manager log file.
+ */
 void TLMCoSimulationOutputWidget::openManagerLogFile()
 {
   QFileInfo fileInfo(mTLMCoSimulationOptions.getFileName());
@@ -162,9 +174,10 @@ void TLMCoSimulationOutputWidget::openManagerLogFile()
 }
 
 /*!
-  Slot activated when mpStopMonitorButton clicked signal is raised.\n
-  Kills the monitor process.
-  */
+ * \brief TLMCoSimulationOutputWidget::stopMonitor
+ * Slot activated when mpStopMonitorButton clicked signal is raised.\n
+ * Kills the monitor process.
+ */
 void TLMCoSimulationOutputWidget::stopMonitor()
 {
   if (mpTLMCoSimulationProcessThread->isMonitorProcessRunning()) {
@@ -174,9 +187,10 @@ void TLMCoSimulationOutputWidget::stopMonitor()
 }
 
 /*!
-  Slot activated when mpOpenMonitorLogButton clicked signal is raised.\n
-  Opens the monitor log file.
-  */
+ * \brief TLMCoSimulationOutputWidget::openMonitorLogFile
+ * Slot activated when mpOpenMonitorLogButton clicked signal is raised.\n
+ * Opens the monitor log file.
+ */
 void TLMCoSimulationOutputWidget::openMonitorLogFile()
 {
   QFileInfo fileInfo(mTLMCoSimulationOptions.getFileName());
@@ -185,9 +199,10 @@ void TLMCoSimulationOutputWidget::openMonitorLogFile()
 }
 
 /*!
-  Slot activated when TLMCoSimulationProcessThread sendManagerStarted signal is raised.\n
-  Updates the progress label, bar and stop manager button controls.
-  */
+ * \brief TLMCoSimulationOutputWidget::managerProcessStarted
+ * Slot activated when TLMCoSimulationProcessThread sendManagerStarted signal is raised.\n
+ * Updates the progress label, bar and stop manager button controls.
+ */
 void TLMCoSimulationOutputWidget::managerProcessStarted()
 {
   mpProgressLabel->setText(tr("Running co-simulation using the <b>%1</b> meta model. Please wait for a while.").arg(mTLMCoSimulationOptions.getClassName()));
@@ -206,36 +221,25 @@ void TLMCoSimulationOutputWidget::managerProcessStarted()
 }
 
 /*!
-  Slot activated when TLMCoSimulationProcessThread sendManagerOutput signal is raised.\n
-  Writes the manager standard output/error to the manager output text box.
-  */
+ * \brief TLMCoSimulationOutputWidget::writeManagerOutput
+ * Slot activated when TLMCoSimulationProcessThread sendManagerOutput signal is raised.\n
+ * Writes the manager standard output/error to the manager output text box.
+ * \param output
+ * \param type
+ */
 void TLMCoSimulationOutputWidget::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpManagerOutputTextBox->textCursor();
-  const bool atBottom = mpManagerOutputTextBox->verticalScrollBar()->value() == mpManagerOutputTextBox->verticalScrollBar()->maximum();
-  if (!textCursor.atEnd()) {
-    textCursor.movePosition(QTextCursor::End);
-  }
-  // set the text color
   QTextCharFormat format;
   format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  textCursor.beginEditBlock();
-  textCursor.insertText(output, format);
-  textCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    mpManagerOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    mpManagerOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
-  }
+  Utilities::insertText(mpManagerOutputTextBox, output, format);
 }
 
 /*!
-  Slot activated when TLMCoSimulationProcessThread sendManagerFinished signal is raised.
-  */
+ * \brief TLMCoSimulationOutputWidget::managerProcessFinished
+ * Slot activated when TLMCoSimulationProcessThread sendManagerFinished signal is raised.
+ * \param exitCode
+ * \param exitStatus
+ */
 void TLMCoSimulationOutputWidget::managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   Q_UNUSED(exitCode);
@@ -247,45 +251,35 @@ void TLMCoSimulationOutputWidget::managerProcessFinished(int exitCode, QProcess:
 }
 
 /*!
-  Slot activated when TLMCoSimulationProcessThread sendMonitorStarted signal is raised.\n
-  Updates the stop monitor button control.
-  */
+ * \brief TLMCoSimulationOutputWidget::monitorProcessStarted
+ * Slot activated when TLMCoSimulationProcessThread sendMonitorStarted signal is raised.\n
+ * Updates the stop monitor button control.
+ */
 void TLMCoSimulationOutputWidget::monitorProcessStarted()
 {
   mpStopMonitorButton->setEnabled(true);
 }
 
 /*!
-  Slot activated when TLMCoSimulationProcessThread sendMonitorOutput signal is raised.\n
-  Writes the monitor standard output/error to the monitor output text box.
-  */
+ * \brief TLMCoSimulationOutputWidget::writeMonitorOutput
+ * Slot activated when TLMCoSimulationProcessThread sendMonitorOutput signal is raised.\n
+ * Writes the monitor standard output/error to the monitor output text box.
+ * \param output
+ * \param type
+ */
 void TLMCoSimulationOutputWidget::writeMonitorOutput(QString output, StringHandler::SimulationMessageType type)
 {
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpMonitorOutputTextBox->textCursor();
-  const bool atBottom = mpMonitorOutputTextBox->verticalScrollBar()->value() == mpMonitorOutputTextBox->verticalScrollBar()->maximum();
-  if (!textCursor.atEnd()) {
-    textCursor.movePosition(QTextCursor::End);
-  }
-  // set the text color
   QTextCharFormat format;
   format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  textCursor.beginEditBlock();
-  textCursor.insertText(output, format);
-  textCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    mpMonitorOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    mpMonitorOutputTextBox->verticalScrollBar()->setValue(mpManagerOutputTextBox->verticalScrollBar()->maximum());
-  }
+  Utilities::insertText(mpMonitorOutputTextBox, output, format);
 }
 
 /*!
-  Slot activated when TLMCoSimulationProcessThread sendMonitorFinished signal is raised.
-  */
+ * \brief TLMCoSimulationOutputWidget::monitorProcessFinished
+ * Slot activated when TLMCoSimulationProcessThread sendMonitorFinished signal is raised.
+ * \param exitCode
+ * \param exitStatus
+ */
 void TLMCoSimulationOutputWidget::monitorProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   Q_UNUSED(exitCode);

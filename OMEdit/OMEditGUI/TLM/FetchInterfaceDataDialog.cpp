@@ -135,26 +135,9 @@ void FetchInterfaceDataDialog::managerProcessStarted()
  */
 void FetchInterfaceDataDialog::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
 {
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpOutputTextBox->textCursor();
-  const bool atBottom = mpOutputTextBox->verticalScrollBar()->value() == mpOutputTextBox->verticalScrollBar()->maximum();
-  if (!textCursor.atEnd()) {
-    textCursor.movePosition(QTextCursor::End);
-  }
-  // set the text color
   QTextCharFormat format;
   format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  textCursor.beginEditBlock();
-  textCursor.insertText(output, format);
-  textCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    mpOutputTextBox->verticalScrollBar()->setValue(mpOutputTextBox->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    mpOutputTextBox->verticalScrollBar()->setValue(mpOutputTextBox->verticalScrollBar()->maximum());
-  }
+  Utilities::insertText(mpOutputTextBox, output, format);
 }
 
 /*!

@@ -118,6 +118,7 @@ public:
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
   LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
   TargetOutputWidget* getTargetOutputWidget() {return mpTargetOutputWidget;}
+  QDockWidget* getTargetOutputDockWidget() {return mpTargetOutputDockWidget;}
   GDBLoggerWidget* getGDBLoggerWidget() {return mpGDBLoggerWidget;}
   DocumentationWidget* getDocumentationWidget() {return mpDocumentationWidget;}
   QDockWidget* getDocumentationDockWidget() {return mpDocumentationDockWidget;}

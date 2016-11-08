@@ -92,15 +92,7 @@ GDBLoggerWidget::GDBLoggerWidget(MainWindow *pMainWindow)
  */
 void GDBLoggerWidget::logDebuggerCommand(QString command)
 {
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpCommandsTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpCommandsTextBox->setTextCursor(textCursor);
-  // log command
-  mpCommandsTextBox->insertPlainText(command + "\n\n");
-  // move the cursor
-  textCursor.movePosition(QTextCursor::End);
-  mpCommandsTextBox->setTextCursor(textCursor);
+  Utilities::insertText(mpCommandsTextBox, command + "\n\n");
 }
 
 /*!
@@ -131,19 +123,10 @@ void GDBLoggerWidget::logDebuggerErrorResponse(QString response)
  */
 void GDBLoggerWidget::logDebuggerResponse(QString response, QColor color)
 {
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpResponseTextBox->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpResponseTextBox->setTextCursor(textCursor);
-  // log response
-  QTextCharFormat charFormat = mpResponseTextBox->currentCharFormat();
-  charFormat.setForeground(color);
-  mpResponseTextBox->setCurrentCharFormat(charFormat);
   QString newLine = response.endsWith("\n") ? "\n" : "\n\n";
-  mpResponseTextBox->insertPlainText(response + newLine);
-  // move the cursor
-  textCursor.movePosition(QTextCursor::End);
-  mpResponseTextBox->setTextCursor(textCursor);
+  QTextCharFormat format;
+  format.setForeground(color);
+  Utilities::insertText(mpResponseTextBox, response + newLine, format);
 }
 
 /*!
@@ -230,19 +213,16 @@ void TargetOutputWidget::logDebuggerErrorOutput(QString output)
  */
 void TargetOutputWidget::logDebuggerOutput(QString output, QColor color)
 {
-  // move the cursor down before adding to the logger.
-  QTextCursor tc = textCursor();
-  tc.movePosition(QTextCursor::End);
-  setTextCursor(tc);
-  // log response
-  QTextCharFormat charFormat = currentCharFormat();
-  charFormat.setForeground(color);
-  setCurrentCharFormat(charFormat);
+  mpMainWindow->getTargetOutputDockWidget()->show();
+  QList<QDockWidget*> tabifiedDockWidgetsList = mpMainWindow->tabifiedDockWidgets(mpMainWindow->getTargetOutputDockWidget());
+  if (tabifiedDockWidgetsList.size() > 0) {
+    mpMainWindow->tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpMainWindow->getTargetOutputDockWidget());
+  }
+  // log the output
   QString newLine = output.endsWith("\n") ? "" : "\n";
-  insertPlainText(output + newLine);
-  // move the cursor
-  tc.movePosition(QTextCursor::End);
-  setTextCursor(tc);
+  QTextCharFormat format;
+  format.setForeground(color);
+  Utilities::insertText(this, output + newLine, format);
 }
 
 /*!
@@ -295,6 +275,11 @@ GDBAdapter::GDBAdapter(MainWindow *pMainWindow)
  */
 void GDBAdapter::launch(QString program, QString workingDirectory, QStringList arguments, QString GDBPath, SimulationOptions simulationOptions)
 {
+  // check if the inferior exists
+  if (!QFile::exists(program)) {
+    mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(tr("The executable to debug does not exist: %1").arg(program));
+    return;
+  }
   mpGDBProcess = new QProcess;
   setGDBKilled(false);
 #ifdef WIN32
@@ -322,13 +307,12 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
     connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStartedForSimulation()));
     connect(mpGDBProcess, SIGNAL(finished(int)), SLOT(handleGDBProcessFinishedForSimulation(int)));
   }
-  /*
-    launch gdb with the default arguments
-    -q  quiet mode. Don't print welcome messages
-    -nw don't use window interface
-    -i  select interface
-    mi  machine interface
-    */
+  /* launch gdb with the default arguments
+   * -q  quiet mode. Don't print welcome messages
+   * -nw don't use window interface
+   * -i  select interface
+   * mi  machine interface
+   */
   mGDBProgram = GDBPath;
   mGDBArguments.clear();
   mInferiorArguments.clear();
@@ -1138,14 +1122,16 @@ void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 
 /*!
  * \brief GDBAdapter::handleGDBMILogStream
- * Handles the GDBMIStreamRecord.
+ * Handles the GDBMIStreamRecord.\n
+ * log-stream-output is output text coming from gdb's internals, for instance messages that should be displayed as part of an error log.\n
+ * All the log output is prefixed by ‘&’.
  * \param pGDBMIStreamRecord
  */
 void GDBAdapter::handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString LogData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
   mPendingLogStreamOutput += LogData;
-  /*! @todo What should we do with log stream???? */
+  mpMainWindow->getTargetOutputWidget()->logDebuggerErrorOutput(LogData);
 }
 
 /*!

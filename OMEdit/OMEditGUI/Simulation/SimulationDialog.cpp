@@ -1317,16 +1317,18 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
 #if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
-        if (mpLaunchAnimationCheckBox->isChecked() && simulationOptions.getResultFileName().endsWith(".mat")) {
-          mpMainWindow->getPlotWindowContainer()->addAnimationWindow(mpMainWindow->getPlotWindowContainer()->subWindowList().isEmpty());
-          AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
-          if (pAnimationWindow) {
-            pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
+        if (mpLaunchAnimationCheckBox->isChecked()) {
+          if (simulationOptions.getResultFileName().endsWith(".mat")) {
+            mpMainWindow->getPlotWindowContainer()->addAnimationWindow(mpMainWindow->getPlotWindowContainer()->subWindowList().isEmpty());
+            AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
+            if (pAnimationWindow) {
+              pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
+            }
+          } else {
+            QString msg = tr("Animation is only supported with mat result files.");
+            mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                         Helper::scriptingKind, Helper::notificationLevel));
           }
-        } else {
-          QString msg = tr("Animation is only supported with mat result files.");
-          mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                       Helper::scriptingKind, Helper::notificationLevel));
         }
 #endif
         mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
