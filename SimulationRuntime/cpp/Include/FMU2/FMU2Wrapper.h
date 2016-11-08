@@ -45,8 +45,8 @@
 
 // define logger as macro that passes through variadic args
 #define FMU2_LOG(w, status, category, ...) \
-  if ((w)->logCategories & (1 << (category))) \
-    (w)->logger((w)->componentEnvironment, (w)->instanceName, \
+  if ((w)->logCategories() & (1 << (category))) \
+    (w)->logger((w)->componentEnvironment(), (w)->instanceName(), \
                 status, (w)->LogCategoryFMUName(category), __VA_ARGS__)
 
 enum LogCategoryFMU {
@@ -74,10 +74,16 @@ class FMU2Wrapper
   virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn,
                                      size_t nCategories,
                                      const fmi2String categories[]);
-  const unsigned int &logCategories;
   const fmi2CallbackLogger &logger;
-  const fmi2ComponentEnvironment &componentEnvironment;
-  const fmi2String &instanceName;
+  unsigned int logCategories() {
+    return _logCategories;
+  }
+  fmi2ComponentEnvironment componentEnvironment() {
+    return _functions.componentEnvironment;
+  }
+  fmi2String instanceName() {
+    return _instanceName.c_str();
+  }
   static fmi2String LogCategoryFMUName(LogCategoryFMU);
 
   // Enter and exit initialization mode, terminate and reset
@@ -154,8 +160,8 @@ class FMU2Wrapper
   } ModelState;
 
   unsigned int _logCategories;
-  fmi2String _instanceName;
-  fmi2String _GUID;
+  string _instanceName;
+  string _GUID;
   fmi2CallbackFunctions _functions;
   ModelState _state;
 };

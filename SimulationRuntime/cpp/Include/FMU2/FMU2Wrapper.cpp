@@ -56,9 +56,9 @@ fmi2String FMU2Wrapper::LogCategoryFMUName(LogCategoryFMU category) {
 FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
                          const fmi2CallbackFunctions *functions,
                          fmi2Boolean loggingOn) :
-  _global_settings(), _functions(*functions), logger(_functions.logger),
-  componentEnvironment(_functions.componentEnvironment),
-  instanceName(_instanceName), logCategories(_logCategories)
+  _global_settings(),
+  _functions(*functions),
+  logger(_functions.logger)
 {
   _instanceName = instanceName;
   _GUID = GUID;
