@@ -678,8 +678,9 @@ algorithm
   if b then
     (tokens, tree) := array_subscripts(tokens, tree);
   end if;
+  tree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$type_specifier")))::{};
   (tokens, tree) := component_list(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, "$component")));
 end component_clause;
 
 function import_clause
@@ -1809,7 +1810,7 @@ algorithm
   end if;
   if debug then
     print("nadd: " + String(nadd) + " ndel: " + String(ndel) + "\n");
-    print(DiffAlgorithm.printDiffXml(res, parseTreeNodeStr) + "\n");
+    print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
   end if;
   if depth>300 then
     // Do nothing; it's a diff... Just not perfect and might be really slow to process...
@@ -1891,6 +1892,7 @@ algorithm
     deletedTrees := list(t for t guard isLabeledNode(t) in deletedTrees);
     if debug then
       print("number of labeled nodes. add="+String(listLength(addedTrees))+" del="+String(listLength(deletedTrees))+"\n");
+      print(DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
     end if;
     // O(D*D)
     for added in addedTrees loop
@@ -1898,6 +1900,9 @@ algorithm
         (deleted, deletedTrees) := List.findAndRemove1(deletedTrees, function compareNodeLabels(compare=compare), added);
         resLocal := treeDiffWork(getNodes(deleted), getNodes(added), depth+1, compare);
         res := replaceLabeledDiff(res, resLocal, nodeLabel(added), compare);
+        if debug then
+          print("replaced labeled diff: " + DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
+        end if;
       else
       end try;
     end for;
