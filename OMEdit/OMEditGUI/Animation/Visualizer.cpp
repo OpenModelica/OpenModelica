@@ -622,7 +622,6 @@ void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f&
     for (int col = 0; col < 3; ++col)
       M(row, col) = T[row * 3 + col];
   }
-  //return M;
 }
 
 
@@ -632,15 +631,17 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
 
   Directions dirs = fixDirections(lDirIn, wDirIn);
   osg::Vec3f hDir = dirs._lDir ^ dirs._wDir;
-
-  //std::cout<<"lDir1 "<<dirs.lDir[0]<<", "<<dirs.lDir[1]<<", "<<dirs.lDir[2]<<", "<<std::endl;
-  //std::cout<<"wDir1 "<<dirs.wDir[0]<<", "<<dirs.wDir[1]<<", "<<dirs.wDir[2]<<", "<<std::endl;
+  //std::cout<<"lDir1 "<<dirs._lDir[0]<<", "<<dirs._lDir[1]<<", "<<dirs._lDir[2]<<", "<<std::endl;
+  //std::cout<<"wDir1 "<<dirs._wDir[0]<<", "<<dirs._wDir[1]<<", "<<dirs._wDir[2]<<", "<<std::endl;
   //std::cout<<"hDir "<<hDir[0]<<", "<<hDir[1]<<", "<<hDir[2]<<", "<<std::endl;
 
   osg::Vec3f r_offset = osg::Vec3f(0.0, 0.0, 0.0);  // since in osg, the rotation starts in the symmetric centre and in msl at the end of the body, we need an offset here of l/2 for some geometries
   osg::Matrix3 T0 = osg::Matrix3(dirs._wDir[0], dirs._wDir[1], dirs._wDir[2], hDir[0], hDir[1], hDir[2], dirs._lDir[0], dirs._lDir[1], dirs._lDir[2]);
+  //std::cout << "T0 " << T0[0] << ", " << T0[1]<< ", " << T0[2]<< ", " << std::endl;
+  //std::cout << "   " << T0[3] << ", " << T0[4] << ", " << T0[5]<< ", " << std::endl;
+  //std::cout << "   " << T0[6]<< ", " << T0[7] << ", " << T0[8]<< ", " << std::endl;
 
-  if (type == "cylinder")
+  if ((type == "cylinder") || (type == "box"))
   {
     r_offset = dirs._lDir * length / 2.0;
     res._r = V3mulMat3(r_shape + r_offset, T);
@@ -655,41 +656,14 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
     res._r = res._r + r;
     res._T = Mat3mulMat3(T0, T);
   }
-  else if (type == "cone")
+  else if ((type == "stl") || (type == "dxf"))
   {
-    // no offset needed
-    res._r = V3mulMat3(r_shape, T);
-    res._r = res._r + r;
-    res._T = Mat3mulMat3(T0, T);
+	T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2], dirs._wDir[0], dirs._wDir[1], dirs._wDir[2], hDir[0], hDir[1], hDir[2]);
+	res._r = V3mulMat3(r_shape, T);
+	res._r = res._r + r;
+	res._T = Mat3mulMat3(T0, T);
   }
-  else if (type == "box")
-  {
-    r_offset = dirs._lDir * length / 2.0;
-    res._r = V3mulMat3(r_shape + r_offset, T);
-    res._r = res._r + r;
-    res._T = Mat3mulMat3(T0, T);
-  }
-  else if (type == "stl")
-  {
-    r = r + r_shape;
-    res._T = T;
-    res._r = r;
-    //r_offset = dirs.lDir*length/2.0;
-  }
-  else if (type == "dxf")
-  {
-    r = r + r_shape;
-    res._T = T;
-    res._r = r;
-    //r_offset = dirs.lDir*length/2.0;
-  }
-  else if (type == "pipecylinder")
-  {
-    res._r = V3mulMat3(r_shape , T);
-    res._r = res._r + r;
-    res._T = Mat3mulMat3(T0, T);
-  }
-  else if (type == "spring")
+  else if ((type == "spring")||(type == "pipecylinder")||(type == "cone"))
   {
     res._r = V3mulMat3(r_shape, T);
     res._r = res._r + r;
@@ -702,12 +676,6 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
     res._r = res._r + r;
     res._T = Mat3mulMat3(T0, T);
   }
-
-  //std::cout<<"lDir "<<dirs.lDir[0]<<", "<<dirs.lDir[1]<<", "<<dirs.lDir[2]<<", "<<std::endl;
-  //std::cout<<"wDir "<<dirs.wDir[0]<<", "<<dirs.wDir[1]<<", "<<dirs.wDir[2]<<", "<<std::endl;
-  //std::cout<<"hDir "<<hDir[0]<<", "<<hDir[1]<<", "<<hDir[2]<<", "<<std::endl;
-  //cout<<"rin "<<r[0]<<", "<<r[1]<<", "<<r[2]<<", "<<std::endl;
-  //cout<<"roffset "<<r_offset[0]<<", "<<r_offset[1]<<", "<<r_offset[2]<<", "<<std::endl;
   return res;
 }
 
