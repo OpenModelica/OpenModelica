@@ -12893,5 +12893,12 @@ algorithm
   files := DoubleEndedList.toListAndClear(delst);
 end getFunctionIndex;
 
+public function nVariablesReal
+  input SimCode.VarInfo varInfo;
+  output Integer n;
+algorithm
+  n := 2*varInfo.numStateVars+varInfo.numAlgVars+varInfo.numDiscreteReal+varInfo.numOptimizeConstraints+varInfo.numOptimizeFinalConstraints;
+end nVariablesReal;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

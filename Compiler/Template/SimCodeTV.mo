@@ -922,6 +922,11 @@ package SimCodeUtil
     input String suffix;
     output String newName;
   end addFunctionIndex;
+
+  function nVariablesReal
+    input SimCode.VarInfo varInfo;
+    output Integer n;
+  end nVariablesReal;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
