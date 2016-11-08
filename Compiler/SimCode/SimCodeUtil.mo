@@ -8470,7 +8470,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, isProtected);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -8505,7 +8505,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, isProtected);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -8535,7 +8535,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, isProtected);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10636,6 +10636,7 @@ end getProtected;
 protected function getHideResult
   "Returns the value of the hideResult attribute."
   input DAE.Exp hideResultExp;
+  input Boolean isProtected;
   output Boolean hideResult;
 algorithm
   hideResult := match(hideResultExp)
@@ -10643,8 +10644,8 @@ algorithm
     case(DAE.BCONST(true)) then true;
     else
       equation
-        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is set to false by default.");
-     then false;
+        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is set to 'isProtected' (=" + boolString(isProtected) + ") by default.");
+     then isProtected;
   end match;
 end getHideResult;
 

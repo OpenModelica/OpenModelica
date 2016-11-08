@@ -5003,7 +5003,7 @@ algorithm
       list<list<DAE.Exp>> mat;
 
     // not true => false, not false => true
-    case (_,DAE.NOT(DAE.T_BOOL()),e1)
+    case (_,DAE.NOT(),e1)
       equation
         b1 = Expression.toBool(e1);
         b1 = not b1;
