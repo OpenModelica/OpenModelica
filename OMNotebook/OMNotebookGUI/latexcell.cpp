@@ -1126,7 +1126,7 @@ void LatexCell::eval()
     {
         expr.replace("\\begin{document}","\\begin{document} \\thispagestyle{empty}");
         if (!expr.contains("\\begin{document}")) {
-            expr.prepend("\\documentclass{article}\\begin{document}\\thispagestyle{empty}");
+            expr.prepend("\\documentclass[12pt]{article}\\usepackage{amsmath}\\usepackage{amsfonts}\\usepackage{amssymb}\\begin{document}\\thispagestyle{empty}");
             expr.append("\\end{document}");
         }
         QFile file(Tex);
