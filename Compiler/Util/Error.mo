@@ -985,6 +985,8 @@ public constant Message PDEModelica_ERROR = MESSAGE(7013, TRANSLATION(), ERROR()
   Util.gettext("PDEModelica: %s"));
 public constant Message TEMPLATE_ERROR_FUNC = MESSAGE(7014, TRANSLATION(), ERROR(),
   Util.gettext("Template error: A template call failed (a call with %s parameters: %s). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics)."));
+public constant Message FMU_EXPORT_NOT_SUPPORTED_CPP = MESSAGE(7015, SCRIPTING(), WARNING(),
+  Util.gettext("Export of FMU type %s is not supported with Cpp target. FMU will be for Model Exchange (me)."));
 
 protected import ErrorExt;
 

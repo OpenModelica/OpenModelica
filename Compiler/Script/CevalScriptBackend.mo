@@ -2989,7 +2989,7 @@ protected function buildModelFMU " author: Frenkel TUD
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String FMUVersion;
-  input String FMUType;
+  input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"dynamic"};
@@ -3004,6 +3004,7 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
+  String FMUType = inFMUType;
 algorithm
   st := inInteractiveSymbolTable;
   cache := inCache;
@@ -3020,6 +3021,10 @@ algorithm
     outValue := Values.STRING("");
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED, {FMUType, FMUVersion});
     return;
+  end if;
+  if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
+    Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
+    FMUType := "me";
   end if;
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix,".","_");
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
