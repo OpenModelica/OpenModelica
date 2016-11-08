@@ -1,0 +1,19 @@
+// status: correct
+// ticket:4110
+
+echo(false);
+a := "model Test\n  Comp component1(x = 5)\n    annotation(origin = {0, 0});\nend Test;";
+
+b := "model Test\n  Icon.Comp component1(x = 5) annotation(origin = {2, 0});\nend Test;";
+
+echo(true);
+diffModelicaFileListings(a, b, OpenModelica.Scripting.DiffFormat.color);getErrorString();
+
+// Result:
+// true
+// "model Test
+//   [4;32mIcon.[0mComp component1(x = 5)
+//     annotation(origin = {[4;32m2[0m, 0});
+// end Test;"
+// ""
+// endResult

@@ -11,6 +11,7 @@ ChangeSourceFile.mos \
 LargeFileChange.mos \
 ListFile.mos \
 MoveComment.mos \
+MoveComponent.mos \
 MoveConnection.mos \
 removeComponentModifiers.mos \
 Tables.mos \
