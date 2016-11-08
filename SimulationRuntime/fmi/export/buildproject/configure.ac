@@ -3,17 +3,24 @@
 AC_PREREQ([2.63])
 AC_INIT([OpenModelica Exported FMU],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 
+AC_SUBST(AR)
 AC_SUBST(DLLEXT)
 AC_SUBST(FMIPLATFORM)
 AC_SUBST(NEED_DGESV)
 AC_SUBST(NEED_RUNTIME)
+AC_SUBST(LIBTYPE_STATIC)
+AC_SUBST(LIBTYPE_DYNAMIC)
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
 build_short=$build_cpu-$build_os
-host_short=$host_cpu-$host_os
+if test "$host_os" = "none"; then
+  host_short=$host_cpu
+else
+  host_short=$host_cpu-$host_os
+fi
 
 echo "build_short: $build_short"
 echo "host_short: $host_short"
@@ -73,9 +80,59 @@ AC_MSG_CHECKING([looking for --no-undefined])
 AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
 LDFLAGS="$LDFLAGS_BEFORE"
 
+dnl Enable to handle AVR pre-processor not handling $ as symbol names; but fails on assembler anyway
+
+AC_MSG_CHECKING([looking for dollars in identifiers])
+AC_TRY_LINK([
+void $a$b$c() {}
+#define $a$b$c$d $a$b$c
+], [$a$b$c$d();], [AC_MSG_RESULT([not needed])], [
+  CPPFLAGS="$CPPFLAGS -fdollars-in-identifiers"
+  AC_TRY_LINK([
+    void fx() {}
+    #define \$a\$b fx
+    ], [\$a\$b();], [AC_MSG_RESULT([CPPFLAGS: -fdollars-in-identifiers])], [
+    AC_MSG_ERROR([the compiler does not handle dollar in identifiers])
+  ])
+])
+
 dnl Disables the default CFLAGS="-g -O2"
 
-LDFLAGS="$LDFLAGS -shared"
+AC_ARG_ENABLE(static, [  --enable-static], [
+  if test "$enableval" = "yes"; then
+    LIBTYPE_STATIC=1
+  elif test "$enableval" = "no"; then
+    LIBTYPE_STATIC=0
+  else
+    AC_MSG_ERROR([Unknown value --enable-static=$withval (use yes or no, or no value)])
+  fi
+], [LIBTYPE_STATIC=0])
+
+AC_ARG_ENABLE(shared, [  --disable-shared], [
+  if test "$enableval" = "yes"; then
+    LIBTYPE_DYNAMIC=1
+  elif test "$enableval" = "no"; then
+    LIBTYPE_DYNAMIC=0
+  else
+    AC_MSG_ERROR([Unknown value --enable-dynamic=$withval (use yes or no, or no value)])
+  fi
+], [LIBTYPE_DYNAMIC=1])
+
+if test "$LIBTYPE_DYNAMIC" = 0 -a "$LIBTYPE_STATIC" = 0; then
+  AC_MSG_ERROR([Need to --enable-shared or --enable-static (both were disabled)])
+fi
+
+if test "$LIBTYPE_DYNAMIC" = 1; then
+  LDFLAGS="$LDFLAGS -shared"
+fi
+
+if test "$LIBTYPE_STATIC" = 1; then
+  AC_CHECK_TOOL([AR], [ar], [:])
+  if test "$AR" = ":"; then
+    AC_MSG_ERROR([Did not find a suitable ar])
+  fi
+fi
+
 
 TRY_FLAGS="-fno-stack-protector -Wno-parentheses-equality -Wno-unused-variable -fPIC"
 
@@ -130,10 +187,20 @@ LIBS="$OLDLIBS -Wl,-Bstatic -lpthread -Wl,-Bdynamic"
 AC_LINK_IFELSE([AC_LANG_CALL([], [pthread_mutex_lock])],[AC_MSG_RESULT([OK (static)])],[
   AC_MSG_RESULT([no])
   LIBS="$OLDLIBS"
-  AC_CHECK_LIB(pthread,[pthread_mutex_lock],[],[AC_MSG_ERROR([pthreads not found])])
+  AC_CHECK_LIB(pthread,[pthread_mutex_lock],[],[
+    if test "$LIBTYPE_DYNAMIC" = 1; then
+      AC_MSG_ERROR([pthreads not found and requested dynamic linking])
+    else
+      AC_MSG_RESULT([pthreads disabled])
+      CPPFLAGS="$CPPFLAGS -DOMC_NO_THREADS"
+    fi
+  ])
 ])
 
 AC_CHECK_LIB([m],[cos],[],[AC_MSG_ERROR([math library not found])])
+
+AC_MSG_CHECKING([for filesystem access])
+AC_TRY_LINK([#include <stdio.h>], [fopen("a.txt", "r");], [AC_MSG_RESULT([OK])], [AC_MSG_RESULT([no]); CPPFLAGS="$CPPFLAGS -DOMC_NO_FILESYSTEM"])
 
 AC_ARG_WITH(dynamic-om-runtime,  [  --with-dynamic-om-runtime    (uses the OMC runtime as a shared object instead of compiling it statically into the the FMU.)],[OPENMODELICADYNAMIC=yes],[OPENMODELICADYNAMIC=no])
 

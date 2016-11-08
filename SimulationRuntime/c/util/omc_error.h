@@ -166,6 +166,8 @@ void setStreamPrintXML(int isXML);
 
 extern void (*messageClose)(int stream);
 extern void (*messageCloseWarning)(int stream);
+
+#if !defined(OMC_MINIMAL_LOGGING)
 extern void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list ap);
 extern void infoStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
@@ -176,6 +178,19 @@ extern void va_warningStreamPrintWithEquationIndexes(int stream, int indentNext,
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap);
 extern void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format,va_list ap);
+#else
+static inline void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list ap) {}
+static inline void infoStreamPrint(int stream, int indentNext, const char *format, ...) {}
+static inline void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) {}
+static inline void warningStreamPrint(int stream, int indentNext, const char *format, ...) {}
+static inline void va_warningStreamPrint(int stream, int indentNext, const char *format,va_list ap) {}
+static inline void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) {}
+static inline void va_warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format,va_list ap) {}
+static inline void errorStreamPrint(int stream, int indentNext, const char *format, ...) {}
+static inline void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap) {}
+static inline void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format,va_list ap) {}
+#endif
+
 extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
 extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), noreturn));

@@ -246,6 +246,7 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
 }STATIC_STRING_DATA;
 
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 typedef struct NONLINEAR_SYSTEM_DATA
 {
   modelica_integer size;
@@ -293,7 +294,11 @@ typedef struct NONLINEAR_SYSTEM_DATA
   rtclock_t totalTimeClock;             /* time clock for the totalTime  */
   void* csvData;                        /* information to save csv data */
 } NONLINEAR_SYSTEM_DATA;
+#else
+typedef void* NONLINEAR_SYSTEM_DATA;
+#endif
 
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 typedef struct LINEAR_SYSTEM_DATA
 {
   /* set matrix A */
@@ -337,7 +342,11 @@ typedef struct LINEAR_SYSTEM_DATA
   double totalTime;                     /* save the totalTime */
   rtclock_t totalTimeClock;             /* time clock for the totalTime  */
 }LINEAR_SYSTEM_DATA;
+#else
+typedef void* LINEAR_SYSTEM_DATA;
+#endif
 
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
 typedef struct MIXED_SYSTEM_DATA
 {
   modelica_integer size;
@@ -356,7 +365,11 @@ typedef struct MIXED_SYSTEM_DATA
   modelica_integer method;          /* not used yet*/
   modelica_boolean solved;          /* 1: solved in current step - else not */
 }MIXED_SYSTEM_DATA;
+#else
+typedef void* MIXED_SYSTEM_DATA;
+#endif
 
+#if !defined(OMC_NO_STATESELECTION)
 typedef struct STATE_SET_DATA
 {
   modelica_integer nCandidates;
@@ -381,6 +394,9 @@ typedef struct STATE_SET_DATA
   int (*initialAnalyticalJacobian)(void*, threadData_t*);
   modelica_integer jacobianIndex;
 }STATE_SET_DATA;
+#else
+typedef void* STATE_SET_DATA;
+#endif
 
 typedef struct DAEMODE_DATA
 {
@@ -538,14 +554,15 @@ typedef struct SIMULATION_INFO
   const char *solverMethod;
   const char *outputFormat;
   const char *variableFilter;
+
   int lsMethod;                        /* linear solver */
   int lssMethod;                       /* linear sparse solver */
   int mixedMethod;                     /* mixed solver */
+
   int nlsMethod;                       /* nonlinear solver */
   int newtonStrategy;                  /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
   int nlsLinearSolver;                 /* nls linear solver setting =1 totalpivot, =2 lapack, =3=klu */
-
   /* current context evaluation, set by dassl and used for extrapolation
    * of next non-linear guess */
   int currentContext;

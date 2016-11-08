@@ -28,6 +28,8 @@
  *
  */
 
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
+
 /*! \file delay.c
  */
 
@@ -207,3 +209,4 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
 
 }
 
+#endif

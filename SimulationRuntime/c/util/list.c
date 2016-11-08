@@ -37,7 +37,6 @@
 #include "list.h"
 #include "omc_error.h"
 
-#include <memory.h>
 #include <stdlib.h>
 
 struct LIST_NODE

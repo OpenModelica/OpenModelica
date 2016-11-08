@@ -28,6 +28,8 @@
  *
  */
 
+#if !defined(OMC_NO_FILESYSTEM)
+
 #include "omc_mmap.h"
 #include "omc_error.h"
 #include <string.h>
@@ -157,3 +159,5 @@ void omc_mmap_close_write_inmemory(omc_mmap_write_inmemory map)
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* OMC_NO_FILESYSTEM */

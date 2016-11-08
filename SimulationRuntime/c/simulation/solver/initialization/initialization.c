@@ -45,9 +45,26 @@
 #include "simulation/solver/stateset.h"
 #include "meta/meta_modelica.h"
 
+#if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
+#define check_mixed_solutions(X,Y) 0
+#else
 #include "simulation/solver/mixedSystem.h"
+#endif
+
+#if defined(OMC_NUM_LINEAR_SYSTEMS) && OMC_NUM_LINEAR_SYSTEMS==0
+#define check_linear_solutions(X,Y) 0
+#define updateStaticDataOfLinearSystems(X,Y)
+#else
 #include "simulation/solver/linearSystem.h"
+#endif
+
+#if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
+#define check_nonlinear_solutions(X,Y) 0
+#define updateStaticDataOfNonlinearSystems(X,Y)
+#else
 #include "simulation/solver/nonlinearSystem.h"
+#endif
+
 #include "simulation/solver/delay.h"
 #include "simulation/solver/synchronous.h"
 
@@ -163,9 +180,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
   long step;
   int retVal;
 
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
   initDelay(data, data->simulationInfo->startTime);
-
+#endif
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
   overwriteOldSimulationData(data);
@@ -200,6 +218,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
       stringVars[i] = mData->stringVarsData[i].attribute.start;
     }
 
+#if !defined(OMC_NO_FILESYSTEM)
     if(ACTIVE_STREAM(LOG_INIT))
     {
       sprintf(buffer, "%s_homotopy.csv", mData->modelFilePrefix);
@@ -209,6 +228,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
         fprintf(pFile, "%s,", mData->realVarsData[i].info.name);
       fprintf(pFile, "\n");
     }
+#endif
 
     infoStreamPrint(LOG_INIT, 1, "homotopy process");
     for(step=0; step<numLambdaSteps; ++step)
@@ -588,15 +608,21 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   /* initialize all (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   for(i=0; i<data->modelData->nNonLinearSystems; ++i) {
     data->simulationInfo->nonlinearSystemData[i].solved = 1;
   }
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
   for(i=0; i<data->modelData->nLinearSystems; ++i) {
     data->simulationInfo->linearSystemData[i].solved = 1;
   }
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   for(i=0; i<data->modelData->nMixedSystems; ++i) {
     data->simulationInfo->mixedSystemData[i].solved = 1;
   }
+#endif
   /* end workaround */
 
   /* select the right initialization-method */
@@ -620,8 +646,10 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   }
   /* end workaround */
 
+#if !defined(OMC_MINIMAL_LOGGING)
   dumpInitialSolution(data);
   infoStreamPrint(LOG_INIT, 0, "### END INITIALIZATION ###");
+#endif
 
   overwriteOldSimulationData(data);     /* overwrite the whole ring-buffer with initialized values */
   storePreValues(data);                 /* save pre-values */
@@ -629,12 +657,14 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   saveZeroCrossings(data, threadData);
 
   /* do pivoting for dynamic state selection if selection changed try again */
+#if !defined(OMC_NO_STATESELECTION)
   if(stateSelection(data, threadData, 0, 1) == 1) {
     if(stateSelection(data, threadData, 1, 1) == 1) {
       /* report a warning about strange start values */
       warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
     }
   }
+#endif
 
   data->simulationInfo->initial = 0;
   /* initialization is done */
@@ -644,8 +674,10 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   data->callback->function_updateRelations(data, threadData, 1);
   initSynchronous(data, threadData, data->simulationInfo->startTime);
 
+#if !defined(OMC_MINIMAL_LOGGING)
   printRelations(data, LOG_EVENTS);
   printZeroCrossings(data, LOG_EVENTS);
+#endif
 
   /* valid system for the first time! */
   TRACE_POP

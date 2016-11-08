@@ -32,9 +32,12 @@
 #include "omc_init.h"
 #include "meta/meta_modelica_segv.h"
 
+#if !defined(OMC_NO_THREADS)
 pthread_key_t mmc_thread_data_key = 0;
-
 pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
+#else
+threadData_t *OMC_MAIN_THREADDATA_NAME = 0;
+#endif
 
 void mmc_init_nogc()
 {

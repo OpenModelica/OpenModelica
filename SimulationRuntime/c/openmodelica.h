@@ -75,7 +75,7 @@ extern "C" {
 #endif
 
 /* BEFORE: compat.h */
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(__AVR__)
 #define EXIT(code) exit(code)
 #else
 /* We need to patch exit() on Unix systems

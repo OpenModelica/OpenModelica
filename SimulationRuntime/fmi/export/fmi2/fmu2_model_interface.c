@@ -31,9 +31,15 @@
 #include "simulation_data.h"
 #include "simulation/solver/stateset.h"
 #include "simulation/solver/model_help.h"
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "simulation/solver/nonlinearSystem.h"
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 #include "simulation/solver/linearSystem.h"
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
 #include "simulation/solver/mixedSystem.h"
+#endif
 #include "simulation/solver/delay.h"
 #include "simulation/simulation_info_json.h"
 #include "simulation/simulation_input_xml.h"
@@ -150,13 +156,14 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
+#if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 1))
     {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate state values changed!")
       /* if new set is calculated reinit the solver */
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
     }
-
+#endif
     storePreValues(comp->fmuData);
 
     /* activate sample event */
@@ -310,8 +317,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp = (ModelInstance *)functions->allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
     DATA* fmudata = NULL;
-	MODEL_DATA* modelData = NULL;
-	SIMULATION_INFO* simInfo = NULL;
+  MODEL_DATA* modelData = NULL;
+  SIMULATION_INFO* simInfo = NULL;
     threadData_t *threadData = NULL;
     int i;
 
@@ -362,21 +369,29 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+#if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
-
+#endif
   /* read input vars */
   //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
   comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData, comp->threadData);
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   /* allocate memory for non-linear system solvers */
   initializeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
   /* allocate memory for non-linear system solvers */
   initializeLinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   /* allocate memory for mixed system solvers */
   initializeMixedSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NO_STATESELECTION)
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
-
+#endif
 #ifdef FMU_EXPERIMENTAL
   /* allocate memory for Jacobian */
   comp->_has_jacobian = !comp->fmuData->callback->initialAnalyticJacobianA(comp->fmuData, comp->threadData);
@@ -450,8 +465,9 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
       /*TODO: Simulation stop time is need to calculate in before hand all sample events
                   We shouldn't generate them all in beforehand */
       initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
       initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
-
+#endif
       /* due to an event overwrite old values */
       overwriteOldSimulationData(comp->fmuData);
 
@@ -499,15 +515,22 @@ fmi2Status fmi2Terminate(fmi2Component c) {
 
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   /* free nonlinear system data */
   freeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   /* free mixed system data */
   freeMixedSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
   /* free linear system data */
   freeLinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NO_STATESELECTION)
   /* free stateset data */
   freeStateSetData(comp->fmuData);
-
+#endif
   /* free data struct */
   deInitializeDataStruc(comp->fmuData);
 
@@ -826,12 +849,14 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
     *enterEventMode = fmi2False;
     *terminateSimulation = fmi2False;
     /******** check state selection ********/
+#if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 0))
     {
       /* if new set is calculated reinit the solver */
       *enterEventMode = fmi2True;
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL,"fmi2CompletedIntegratorStep: Need to iterate state values changed!")
     }
+#endif
     /* TODO: fix the extrapolation in non-linear system
      *       then we can stop to save all variables in
      *       in the whole ringbuffer

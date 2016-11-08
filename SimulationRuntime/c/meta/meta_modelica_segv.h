@@ -33,7 +33,6 @@
 #ifndef META_MODELICA_SEGV_H_
 #define META_MODELICA_SEGV_H_
 
-#include <pthread.h>
 #include <setjmp.h>
 
 #define MMC_TRY_STACK() { jmp_buf *oldMMCJumper = threadData->mmc_jumper; { MMC_TRY_INTERNAL(mmc_stack_overflow_jumper) threadData->mmc_stack_overflow_jumper = &new_mmc_jumper;

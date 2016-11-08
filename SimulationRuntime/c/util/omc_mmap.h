@@ -28,7 +28,7 @@
  *
  */
 
-#ifndef OMC_MMAP_H_
+#if !defined(OMC_MMAP_H_) && !defined(OMC_NO_FILESYSTEM)
 #define OMC_MMAP_H_
 
 #ifdef __cplusplus

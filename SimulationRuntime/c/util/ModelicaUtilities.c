@@ -33,7 +33,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include "omc_error.h"
 
 void ModelicaMessage(const char* string) {

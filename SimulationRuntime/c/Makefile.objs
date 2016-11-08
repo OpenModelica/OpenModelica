@@ -41,7 +41,25 @@ UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h 
 MATH_OBJS=pivot$(OBJ_EXT)
 MATH_HFILES = blaswrap.h
 
-SOLVER_OBJS_FMU=delay$(OBJ_EXT) linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT) mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT) nonlinearSystem$(OBJ_EXT) nonlinearValuesList$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
+ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
+SOLVER_OBJS_NONLINEAR_SYSTEMS=
+else
+SOLVER_OBJS_NONLINEAR_SYSTEMS=nonlinearSystem$(OBJ_EXT) nonlinearValuesList$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT)
+endif
+
+ifeq ($(OMC_NUM_LINEAR_SYSTEMS),0)
+SOLVER_OBJS_LINEAR_SYSTEMS=
+else
+SOLVER_OBJS_LINEAR_SYSTEMS=linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT)
+endif
+
+ifeq ($(OMC_NUM_MIXED_SYSTEMS),0)
+SOLVER_OBJS_MIXED_SYSTEMS=
+else
+SOLVER_OBJS_MIXED_SYSTEMS=mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT)
+endif
+
+SOLVER_OBJS_FMU=delay$(OBJ_EXT) $(SOLVER_OBJS_LINEAR_SYSTEMS) $(SOLVER_OBJS_MIXED_SYSTEMS) $(SOLVER_OBJS_NONLINEAR_SYSTEMS) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
 SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) events$(OBJ_EXT) external_input$(OBJ_EXT) solver_main$(OBJ_EXT) real_time_sync$(OBJ_EXT) embedded_server$(OBJ_EXT)
 
@@ -135,11 +153,18 @@ FMIOBJSPATH = $(FMI_OBJS:%=$(FMIPATH)%)
 ALL_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) meta/meta_modelica_catch$(OBJ_EXT)
 
 # External solvers needed by FMI for ME
+ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
+CMINPACK_OBJS =
+else
 CMINPACK_OBJS = enorm_ hybrj_ dpmpar_ qrfac_ qform_ dogleg_ r1updt_ r1mpyq_
+endif
+
+ifneq ($(OMC_NUM_LINEAR_SYSTEMS)$(OMC_NUM_NONLINEAR_SYSTEMS),00)
 ifneq ($(NEED_DGESV),)
 LAPACK_OBJS = dgesv dgetrf dlamch ilaenv xerbla dgetf2 dgetrs dlaswp ieeeck iparmq
 BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame
 LIBF2C_OBJS = i_nint pow_di s_cmp s_copy
+endif
 endif
 
 # Only objects needed for FMI for Modelica Exchange

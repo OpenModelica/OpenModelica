@@ -28,6 +28,12 @@
  *
  */
 
+#if !defined(OMC_NUM_LINEAR_SYSYTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+
+#if defined(__AVR__)
+#warning "AVR CPUs are not suitable for non-linear solvers"
+#endif
+
 /*! \file nonlinearSolverHomotopy.c
 *  \author bbachmann
 */
@@ -2105,3 +2111,5 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 
   return success;
 }
+
+#endif

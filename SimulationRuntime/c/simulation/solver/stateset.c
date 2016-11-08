@@ -28,10 +28,10 @@
  *
  */
 
+#if !defined(OMC_NO_STATESELECTION)
+
 #include "stateset.h"
 #include "util/omc_error.h"
-
-#include <memory.h>
 
 /*! \fn initializeStateSetJacobians
  *
@@ -420,3 +420,5 @@ int stateSelection(DATA *data, threadData_t *threadData, char reportError, int s
   TRACE_POP
   return globalres;
 }
+
+#endif /* OMC_NO_STATESELECTION */

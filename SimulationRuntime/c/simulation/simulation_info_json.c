@@ -367,15 +367,18 @@ static void readInfoJson(const char *str,MODEL_DATA_XML *xml)
 
 void modelInfoInit(MODEL_DATA_XML* xml)
 {
+#if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_read mmap_reader = {0};
+#endif
   rt_tick(0);
+#if !defined(OMC_NO_FILESYSTEM)
   if (!xml->infoXMLData) {
     mmap_reader = omc_mmap_open_read(xml->fileName);
     xml->infoXMLData = mmap_reader.data;
     xml->modelInfoXmlLength = mmap_reader.size;
     // fprintf(stderr, "Loaded the JSON (%ld kB)...\n", (long) (s.st_size+1023)/1024);
   }
-
+#endif
   xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
   xml->equationInfo[0].id = 0;
@@ -388,7 +391,9 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   // fprintf(stderr, "Parse the JSON %ld...\n", (long) xml->infoXMLData);
   readInfoJson(xml->infoXMLData, xml);
   // fprintf(stderr, "Parsed the JSON in %fms...\n", rt_tock(0) * 1000.0);
+#if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_close_read(mmap_reader);
+#endif
 }
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)

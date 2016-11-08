@@ -330,6 +330,8 @@ void setStreamPrintXML(int isXML)
 }
 
 #define SIZE_LOG_BUFFER 2048
+
+#if !defined(OMC_MINIMAL_LOGGING)
 void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
   if (useStream[stream]) {
@@ -429,6 +431,7 @@ void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const in
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, indexes);
 }
+#endif
 
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...)
@@ -475,29 +478,38 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
+#if !defined(OMC_MINIMAL_LOGGING)
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
+#endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }
 
 void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 {
+#if !defined(OMC_MINIMAL_LOGGING)
   va_list args;
   va_start(args, format);
   va_throwStreamPrint(threadData, format, args);
   va_end(args);
+#else
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  longjmp(*getBestJumpBuffer(threadData), 1);
+#endif
 }
 
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...)
 {
+#if !defined(OMC_MINIMAL_LOGGING)
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   va_end(args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
+#endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }

@@ -44,7 +44,9 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#if !defined(OMC_NO_THREADS)
 #include <pthread.h>
+#endif
 #include <setjmp.h>
 
 #if defined(_MSC_VER)
@@ -126,7 +128,9 @@ typedef struct threadData_s {
   jmp_buf *simulationJumpBuffer;
   errorStage currentErrorStage;
   struct threadData_s *parent;
+#if !defined(OMC_NO_THREADS)
   pthread_mutex_t parentMutex; /* Prevent children from all manipulating the parent at the same time */
+#endif
   void *plotClassPointer;
   PlotCallback plotCB;
   void *stackBottom; /* Actually offset 64 kB from bottom, just to never reach the bottom */

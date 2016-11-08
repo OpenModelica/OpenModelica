@@ -34,7 +34,9 @@
 #endif
 #include "gc/omc_gc.h"
 #include <string.h>
+#if !defined(OMC_NO_THREADS)
 #include <pthread.h>
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
@@ -52,7 +54,9 @@ typedef struct list_s {
   struct list_s *next;
 } list;
 
+#if !defined(OMC_NO_THREADS)
 static pthread_mutex_t memory_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 static list *memory_pools = NULL;
 
 static void pool_init(void)
@@ -100,11 +104,15 @@ static void* pool_malloc(size_t sz)
 {
   void *res;
   sz = round_up(sz,8);
+#if !defined(OMC_NO_THREADS)
   pthread_mutex_lock(&memory_pool_mutex);
+#endif
   pool_expand(sz);
   res = (void*)((char*)memory_pools->memory + memory_pools->used);
   memory_pools->used += sz;
+#if !defined(OMC_NO_THREADS)
   pthread_mutex_unlock(&memory_pool_mutex);
+#endif
   memset(res,0,sz);
   return res;
 }
