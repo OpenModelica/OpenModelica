@@ -32,8 +32,8 @@
  *
  */
 
-#include "BreakpointMarker.h"
 #include "BreakpointsWidget.h"
+#include "BreakpointMarker.h"
 
 BreakpointMarker::BreakpointMarker(const QString &fileName, int lineNumber, BreakpointsTreeModel *pBreakpointsTreeModel)
     : ITextMark()

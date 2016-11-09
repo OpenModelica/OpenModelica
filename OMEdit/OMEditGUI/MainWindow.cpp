@@ -32,9 +32,10 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MainWindow.h"
+
 #include <QtSvg/QSvgGenerator>
 
-#include "MainWindow.h"
 #include "VariablesWidget.h"
 #include "Helper.h"
 #include "SimulationOutputWidget.h"

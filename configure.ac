@@ -38,11 +38,34 @@ FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
 FIND_LIBOMQWT()
 
-WITH_OSG=1
-AC_CHECK_HEADERS(osg/Vec3f, [], [WITH_OSG=0])
-AC_CHECK_HEADERS(osg/GraphicsContext, [], [WITH_OSG=0])
-AC_CHECK_HEADERS(osg/Matrix, [], [WITH_OSG=0])
-AC_CHECK_HEADERS(osg/Uniform, [], [WITH_OSG=0])
+if test -z "$WITH_OSG"; then
+  WITH_OSG=1
+else
+  AC_MSG_RESULT([WITH_OSG=$WITH_OSG])
+fi
+if test "$WITH_OSG" = 1; then
+  AC_PREPROC_IFELSE(
+        [AC_LANG_PROGRAM([[]], [[]])],
+  [],
+  [AC_MSG_ERROR([C++ preprocessor broken?])]
+  )
+  AC_MSG_CHECKING([for osg/qt include order bugs])
+  AC_PREPROC_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <osg/Version>
+#if __arm__==1 && __clang_major__==3 && __clang_minor__==4 && OPENSCENEGRAPH_MAJOR_VERSION==3 && OPENSCENEGRAPH_MINOR_VERSION==2 && OPENSCENEGRAPH_PATCH_VERSION==0
+#error "ARM+clang 3.4+OSG3.2.0 does not work together"
+#endif
+]],
+  [[]])],
+  [AC_MSG_RESULT([OK])],
+  [AC_MSG_RESULT([no (giving up on OSG)]); WITH_OSG=0]
+  )
+  CPPFLAGS="$OLD_CPPFLAGS"
+fi
+if test "$WITH_OSG" = 1; then
+  AC_CHECK_HEADERS(osg/Uniform, [], [WITH_OSG=0])
+fi
 
 if test "$WITH_OSG" = 0; then
   CPPFLAGS="$CPPFLAGS -DWITHOUT_OSG"

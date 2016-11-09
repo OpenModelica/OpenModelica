@@ -32,6 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MainWindow.h"
 #include "Transformation.h"
 #include "Component.h"
 

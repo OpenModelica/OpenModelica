@@ -31,8 +31,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "ModelicaValue.h"
 #include "LocalsWidget.h"
+#include "ModelicaValue.h"
 #include "CommandFactory.h"
 
 ModelicaValue::ModelicaValue(LocalsTreeItem *pLocalsTreeItem)

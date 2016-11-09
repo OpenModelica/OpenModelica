@@ -44,15 +44,15 @@
 #include <osg/Vec3>
 #include <osgDB/ReadFile>
 #include <osgGA/MultiTouchTrackballManipulator>
-#include <../../osgQt/OMEdit_GraphicsWindowQt.h>
 #include <osg/Version>
 #include <osgViewer/CompositeViewer>
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
+#include "MainWindow.h"
+#include <../../osgQt/OMEdit_GraphicsWindowQt.h>
 
 #include "Utilities.h"
 #include "AnimationUtil.h"
-#include "MainWindow.h"
 #include "OMPlot.h"
 #include "Visualizer.h"
 #include "VisualizerMAT.h"

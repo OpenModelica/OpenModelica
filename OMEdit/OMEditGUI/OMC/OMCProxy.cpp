@@ -53,6 +53,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include <stdlib.h>
 #include <iostream>
 
+#include "MainWindow.h"
 #include "OMCProxy.h"
 #include "simulation_options.h"
 #include "omc_error.h"
