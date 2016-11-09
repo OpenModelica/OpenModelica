@@ -752,15 +752,12 @@ void Kinsol::calcFunction(const double *y, double *residual)
 	}
 	_algLoop->getRHS(residual);
 
-
-
-/*
+	// Check for numerical overflow to avoid endless iterations
 	for(int i=0;i<_dimSys;i++)
 	{
-		if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
+		if(!isfinite(residual[i]) || !isfinite(y[i]))
 			_fValid = false;
 	}
-*/
 }
 
 int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)

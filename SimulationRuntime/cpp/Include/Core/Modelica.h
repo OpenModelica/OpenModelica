@@ -93,6 +93,7 @@ namespace ublas = boost::numeric::ublas;
   using std::function;
   using std::make_tuple;
   using std::array;
+  using std::isfinite;
   using std::minmax_element;
   using std::get;
   using std::tuple;
@@ -121,6 +122,7 @@ namespace ublas = boost::numeric::ublas;
   #include <boost/lexical_cast.hpp>
   #include <boost/assign/list_of.hpp>
   #include <boost/array.hpp>
+  #include <boost/math/special_functions/fpclassify.hpp>
   #include <boost/math/special_functions/trunc.hpp>
   #include <boost/unordered_map.hpp>
   #include <boost/unordered_set.hpp>
@@ -168,6 +170,7 @@ namespace ublas = boost::numeric::ublas;
     }
   }
   using boost::array;
+  using boost::math::isfinite;
   using boost::unordered_map;
   using boost::unordered_set;
   using boost::shared_ptr;
