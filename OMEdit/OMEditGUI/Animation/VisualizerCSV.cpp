@@ -183,6 +183,15 @@ double VisualizerCSV::omcGetVarValue(const char* varName, double time)
       double *varDataSet = read_csv_dataset(mpCSVData, varName);
       if (varDataSet) {
         return varDataSet[i];
+      } else {
+        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
+      }
+    } else if ((time > timeDataSet[i]) && (i + 1 < mpCSVData->numsteps) && (time < timeDataSet[i + 1])) { // interpolate
+      double *varDataSet = read_csv_dataset(mpCSVData, varName);
+      if (varDataSet) {
+        return (varDataSet[i] + varDataSet[i + 1]) / 2;
+      } else {
+        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
       }
     }
   }
