@@ -323,6 +323,8 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
   QTextCharFormat format;
   format.setFont(font);
   Utilities::insertText(mpOMCLoggerTextBox, command + "\n", format);
+  // add the expression to commands list
+  mCommandsList.append(command);
   // set the current command index.
   mCurrentCommandIndex = mCommandsList.count();
   mpExpressionTextBox->setText("");
