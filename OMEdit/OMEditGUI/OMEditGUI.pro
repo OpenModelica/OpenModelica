@@ -72,22 +72,22 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     }
     LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
   } else { # debug
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     }
     LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -llibfmilib -lshlwapi\
     -lws2_32
 
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
@@ -192,7 +192,8 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
-  #$$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/build/fmilib.h \
+  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include/fmilib.h \
+  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include/fmilib_config.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -245,9 +246,12 @@ SOURCES += Animation/AnimationWindow.cpp \
   Animation/Visualizer.cpp \
   Animation/VisualizerMAT.cpp \
   Animation/VisualizerCSV.cpp \
+  Animation/VisualizerFMU.cpp \
+  Animation/FMUWrapper.cpp \
   Animation/Shapes.cpp \
   Animation/TimeManager.cpp \
   ../../osgQt/GraphicsWindowQt.cpp \
+
 
 HEADERS += Animation/AnimationWindow.h \
   Animation/AnimationUtil.h \
@@ -255,6 +259,8 @@ HEADERS += Animation/AnimationWindow.h \
   Animation/Visualizer.h \
   Animation/VisualizerMAT.h \
   Animation/VisualizerCSV.h \
+  Animation/VisualizerFMU.h \
+  Animation/FMUWrapper.h \
   Animation/Shapes.h \
   Animation/TimeManager.h \
   Animation/rapidxml.hpp \
@@ -289,6 +295,7 @@ INCLUDEPATH += . \
   Util \
   $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c/util \
+  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include \
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

@@ -37,22 +37,22 @@
 ShapeObjectAttribute::ShapeObjectAttribute()
     : isConst(true),
       exp(0.0),
-      cref("NONE")
-      //fmuValueRef(0)
+      cref("NONE"),
+      fmuValueRef(0)
 {
 }
 
 ShapeObjectAttribute::ShapeObjectAttribute(float value)
     : isConst(true),
       exp(value),
-      cref("NONE")
-      //fmuValueRef(0)
+      cref("NONE"),
+      fmuValueRef(0)
 {
 }
 
 std::string ShapeObjectAttribute::getValueString() const
 {
-  return std::to_string(exp) + "  (" + /*std::to_string(fmuValueRef) + */") " + std::to_string(isConst) + " ";
+  return std::to_string(exp) + "  (" + std::to_string(fmuValueRef) + ") " + std::to_string(isConst) + " ";
 }
 
 

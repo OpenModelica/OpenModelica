@@ -47,7 +47,7 @@ public:
   void initData();
   void initializeVisAttributes(const double time = -1.0);
   void readCSV(const std::string& modelFile, const std::string& path);
-  //void simulate(TimeManager& omvm){ };
+  void simulate(TimeManager& omvm){ };
   void updateVisAttributes(const double time) override;
   void updateScene(const double time);
   void updateObjectAttributeCSV(ShapeObjectAttribute* attr, double time);

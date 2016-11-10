@@ -59,6 +59,8 @@ void VisualizerCSV::initData()
 
 void VisualizerCSV::initializeVisAttributes(const double time)
 {
+    std::cout<<"VisualizerCSV::initializeVisAttributes "<<time<<std::endl;
+
   if (0.0 > time) {
     std::cout<<"Cannot load visualization attributes for time point < 0.0."<<std::endl;
   }

@@ -57,6 +57,7 @@
 #include "Visualizer.h"
 #include "VisualizerMAT.h"
 #include "VisualizerCSV.h"
+#include "VisualizerFMU.h"
 
 class MainWindow;
 class PlotWindowContainer;
@@ -74,6 +75,7 @@ public:
   void setPathName(std::string name);
   void setFileName(std::string name);
   void openAnimationFile(QString fileName);
+  void openFMUSettingsDialog();
 public slots:
   void sliderSetTimeSlotFunction(int value);
   void playSlotFunction();
@@ -89,6 +91,7 @@ public slots:
   void cameraPositionXZ();
   void cameraPositionYZ();
   void setPerspective(int value);
+  void saveSimSettings();
 private:
   PlotWindowContainer *mpPlotWindowContainer;
   //to be animated
@@ -108,6 +111,7 @@ private:
   Label *mpAnimationSpeedLabel;
   QLineEdit *mpSpeedTextBox;
   QComboBox *mpPerspectiveDropDownBox;
+  QDialog *mpFMUSettingsDialog;
   //actions
   QAction *mpAnimationChooseFileAction;
   QAction *mpAnimationInitializeAction;

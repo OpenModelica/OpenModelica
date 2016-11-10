@@ -199,13 +199,20 @@ void VisualizerMAT::updateObjectAttributeMAT(ShapeObjectAttribute* attr, double 
 
 double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
 {
-  double val = 0.0;
-  ModelicaMatVariable_t* var = nullptr;
-  var = omc_matlab4_find_var(reader, varName);
-  if (var == nullptr)
-    std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
-  else
-    omc_matlab4_val(&val, reader, var, time);
+    double val = 0.0;
+    ModelicaMatVariable_t* var = nullptr;
+    var = omc_matlab4_find_var(reader, varName);
+    if (var == nullptr)
+        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
+    else
+        omc_matlab4_val(&val, reader, var, time);
 
-  return val;
+    return val;
 }
+/*
+void VisualizerMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
+{
+    auto newVal = simSetMAT.speedup * _timeManager->getHVisual();
+    _timeManager->setHVisual(newVal);
+}
+*/
