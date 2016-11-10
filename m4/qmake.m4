@@ -55,6 +55,7 @@ if test -n "$QMAKE"; then
 
   AC_MSG_CHECKING([for lrelease])
   LRELEASE=`$QMAKE -query QT_INSTALL_BINS`/lrelease
+  QT_INSTALL_HEADERS=`$QMAKE -query QT_INSTALL_HEADERS`
   if test -f "$LRELEASE"; then
     AC_MSG_RESULT([$LRELEASE])
   else
