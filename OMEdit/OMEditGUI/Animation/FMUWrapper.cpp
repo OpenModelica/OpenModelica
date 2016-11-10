@@ -138,6 +138,9 @@ FMUWrapper_ME_1::~FMUWrapper_ME_1()
     delete (mFMUdata._eventIndicators);
   if (mFMUdata._eventIndicatorsPrev)
     delete (mFMUdata._eventIndicatorsPrev);
+
+  fmi1_import_destroy_dllfmu(mpFMU);
+  fmi1_import_free(mpFMU);
 }
 
 void FMUWrapper_ME_1::fmi_get_real(unsigned int* valueRef, double* res)
@@ -332,6 +335,9 @@ FMUWrapper_ME_2::~FMUWrapper_ME_2()
     delete (mFMUdata._eventIndicators);
   if (mFMUdata._eventIndicatorsPrev)
     delete (mFMUdata._eventIndicatorsPrev);
+
+  fmi2_import_destroy_dllfmu(mpFMU);
+  fmi2_import_free(mpFMU);
 }
 
 void FMUWrapper_ME_2::fmi_get_real(unsigned int* valueRef, double* res)
