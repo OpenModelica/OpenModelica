@@ -269,18 +269,18 @@ void VisualizerAbstract::sceneUpdate()
   //measure realtime
   mpTimeManager->updateTick();
   //update scene and set next time step
-  if (!mpTimeManager->isPaused())
-  {
+  if (!mpTimeManager->isPaused()) {
     updateScene(mpTimeManager->getVisTime());
-    double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
-    if (newTime <= mpTimeManager->getEndTime())
-    {
-      mpTimeManager->setVisTime(newTime);
-    }
     //finish animation with pause when endtime is reached
-    else
-    {
+    if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
       mpTimeManager->setPause(true);
+    } else { // get the new visualization time
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+      if (newTime <= mpTimeManager->getEndTime()) {
+        mpTimeManager->setVisTime(newTime);
+      } else {
+        mpTimeManager->setVisTime(mpTimeManager->getEndTime());
+      }
     }
   }
 }

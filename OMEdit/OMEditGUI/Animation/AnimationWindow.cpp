@@ -148,10 +148,10 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
   connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
-  connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
+  connect(mpAnimationSlider, SIGNAL(valueChanged(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
   connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)),this, SLOT(setSpeedSlotFunction()));
   connect(mpSpeedComboBox->lineEdit(), SIGNAL(textChanged(QString)),this, SLOT(setSpeedSlotFunction()));
-  connect(mpTimeTextBox, SIGNAL(textChanged(QString)),this, SLOT(jumpToTimeSlotFunction()));
+  connect(mpTimeTextBox, SIGNAL(returnPressed()),this, SLOT(jumpToTimeSlotFunction()));
 }
 
 /*!
@@ -166,15 +166,16 @@ void AnimationWindow::jumpToTimeSlotFunction()
   double end = mpVisualizer->getTimeManager()->getEndTime();
   double value = str.toFloat(&isFloat);
   if (isFloat && value >= 0.0) {
-    if (start <= value && value <= end) {
-      mpVisualizer->getTimeManager()->setVisTime(value);
-      mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
-      mpVisualizer->updateScene(value);
-    } else {
-      QString msg = tr("The point of time has to be between start (%1) and end time(%2).").arg(start).arg(end);
-      mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                                             Helper::scriptingKind, Helper::errorLevel));
+    if (value < start) {
+      value = start;
+    } else if (value > end) {
+      value = end;
     }
+    mpVisualizer->getTimeManager()->setVisTime(value);
+    bool state = mpAnimationSlider->blockSignals(true);
+    mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
+    mpAnimationSlider->blockSignals(state);
+    mpVisualizer->updateScene(value);
   }
 }
 
@@ -339,6 +340,7 @@ void AnimationWindow::sliderSetTimeSlotFunction(int value)
                 - mpVisualizer->getTimeManager()->getStartTime())
                 * (float) (value / 100.0);
   mpVisualizer->getTimeManager()->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
   mpVisualizer->updateScene(time);
 }
 
@@ -367,10 +369,10 @@ void AnimationWindow::pauseSlotFunction()
 void AnimationWindow::initSlotFunction()
 {
   mpVisualizer->initVisualization();
+  bool state = mpAnimationSlider->blockSignals(true);
   mpAnimationSlider->setValue(0);
-  bool state = mpTimeTextBox->blockSignals(true);
+  mpAnimationSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
-  mpTimeTextBox->blockSignals(state);
 }
 
 /*!
@@ -382,13 +384,13 @@ void AnimationWindow::updateScene()
   if (!(mpVisualizer == NULL)) {
     //set time label
     if (!mpVisualizer->getTimeManager()->isPaused()) {
-      bool state = mpTimeTextBox->blockSignals(true);
       mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
-      mpTimeTextBox->blockSignals(state);
       // set time slider
       if (mpVisualizer->getVisType() != VisType::FMU) {
         int time = mpVisualizer->getTimeManager()->getTimeFraction();
+        bool state = mpAnimationSlider->blockSignals(true);
         mpAnimationSlider->setValue(time);
+        mpAnimationSlider->blockSignals(state);
       }
     }
     //update the scene
@@ -454,12 +456,12 @@ void AnimationWindow::openAnimationFile(QString fileName)
     mpAnimationPlayAction->setEnabled(true);
     mpAnimationPauseAction->setEnabled(true);
     mpAnimationSlider->setEnabled(true);
+    bool state = mpAnimationSlider->blockSignals(true);
     mpAnimationSlider->setValue(0);
+    mpAnimationSlider->blockSignals(state);
     mpSpeedComboBox->setEnabled(true);
     mpTimeTextBox->setEnabled(true);
-    bool state = mpTimeTextBox->blockSignals(true);
     mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
-    mpTimeTextBox->blockSignals(state);
     state = mpPerspectiveDropDownBox->blockSignals(true);
     mpPerspectiveDropDownBox->setCurrentIndex(0);
     mpPerspectiveDropDownBox->blockSignals(state);
