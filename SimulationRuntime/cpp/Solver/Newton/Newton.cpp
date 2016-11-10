@@ -168,193 +168,189 @@ void Newton::solve()
                      _lc, LL_DEBUG);
 
   while (_iterationStatus == CONTINUE) {
-    if (_iterationStatus == CONTINUE) {
-      if (totSteps < _newtonSettings->getNewtMax()) {
-        // Determination of Jacobian for linear, non-torn system (Fortran-format)
-        if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
-          const matrix_t& A = _algLoop->getSystemMatrix();
-          const double* jac = A.data().begin();
-          std::copy(jac, jac + _dimSys*_dimSys, _jac);
-          dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-          std::copy(_f, _f + _dimSys, _y);
-          _algLoop->setReal(_y);
-          if (info != 0)
-            throw ModelicaSimulationError(ALGLOOP_SOLVER,
-              "error solving linear system (dgesv info: " + to_string(info) + ")");
-          else
-            _iterationStatus = DONE;
+    if (totSteps >= _newtonSettings->getNewtMax())
+      throw ModelicaSimulationError(ALGLOOP_SOLVER,
+        "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
+    // Solve linear non-torn system
+    if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
+      const matrix_t& A = _algLoop->getSystemMatrix();
+      const double* jac = A.data().begin();
+      std::copy(jac, jac + _dimSys*_dimSys, _jac);
+      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+      std::copy(_f, _f + _dimSys, _y);
+      _algLoop->setReal(_y);
+      if (info != 0)
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,
+          "error solving linear system (dgesv info: " + to_string(info) + ")");
+      else
+        _iterationStatus = DONE;
+    }
+
+    // Solve linear torn system
+    else if (_algLoop->isLinearTearing()) {
+      _algLoop->setReal(_zeroVec);
+      _algLoop->evaluate();
+      _algLoop->getRHS(_f);
+
+      const matrix_t& A_sparse = _algLoop->getSystemMatrix();
+      //m_t A_dense(A_sparse);
+      const double* jac = A_sparse.data().begin();
+      std::copy(jac, jac + _dimSys*_dimSys, _jac);
+      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+      for (int i = 0; i < _dimSys; i++)
+        _y[i] = -_f[i];
+      _algLoop->setReal(_y);
+      _algLoop->evaluate();
+      if (info != 0)
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,
+          "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
+      else
+        _iterationStatus = DONE;
+    }
+
+    // Newton step for non-linear system
+    else {
+      LOG_VEC(_algLoop, "y" + to_string(totSteps), _y, _lc, LL_DEBUG);
+      LOG_VEC(_algLoop, "f" + to_string(totSteps), _f, _lc, LL_DEBUG);
+
+      calcJacobian(true);
+      LOG_VEC(_algLoop, "fNominal" + to_string(totSteps), _fNominal, _lc, LL_DEBUG);
+
+      // check stopping criterion
+      _iterationStatus = DONE;
+      for (int i = 0; i < _dimSys; ++i) {
+        if (std::abs(_f[i]) > atol + rtol * _fNominal[i]) {
+          _iterationStatus = CONTINUE;
+          break;
         }
+      }
+      if (_iterationStatus == DONE)
+        break;
 
-        // Determination of Jacobian for linear, torn system
-        else if (_algLoop->isLinearTearing()) {
-          _algLoop->setReal(_zeroVec);
-          _algLoop->evaluate();
-          _algLoop->getRHS(_f);
+      // Scale Jacobian and initialize line search function
+      double phi = 0.0;
+      for (int i = 0; i < _dimSys; i++) {
+        _f[i] /= _fNominal[i];
+        phi += _f[i] * _f[i];
+        for (int j = 0; j < _dimSys; j++)
+          _jac[i + j * _dimSys] *= _yNominal[j] / _fNominal[i];
+      }
 
-          const matrix_t& A_sparse = _algLoop->getSystemMatrix();
-          //m_t A_dense(A_sparse);
-          const double* jac = A_sparse.data().begin();
-          std::copy(jac, jac + _dimSys*_dimSys, _jac);
-          dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-          for (int i = 0; i < _dimSys; i++)
-            _y[i] = -_f[i];
-          _algLoop->setReal(_y);
-          _algLoop->evaluate();
-          if (info != 0)
-            throw ModelicaSimulationError(ALGLOOP_SOLVER,
-              "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
-          else
-            _iterationStatus = DONE;
+      // Solve linear system
+      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+
+      if (info != 0)
+        throw ModelicaSimulationError(ALGLOOP_SOLVER,
+          "error solving nonlinear system (iteration: " + to_string(totSteps)
+          + ", dgesv info: " + to_string(info) + ")");
+
+      // Increase counter
+      ++ totSteps;
+
+      // De-scale result
+      for (int j = 0; j < _dimSys; j++)
+        _f[j] *= _yNominal[j];
+
+      // New iterate
+      double lambda = 1.0; // step size
+      double alpha = 1e-4; // guard for sufficient decrease
+      // first find a feasible step
+      while (true) {
+        for (int i = 0; i < _dimSys; i++) {
+          _yHelp[i] = _y[i] - lambda * _f[i];
+          _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
         }
-
-        // Determination of Jacobian for non-linear system
-        else {
-          LOG_VEC(_algLoop, "y" + to_string(totSteps), _y, _lc, LL_DEBUG);
-          LOG_VEC(_algLoop, "f" + to_string(totSteps), _f, _lc, LL_DEBUG);
-
-          calcJacobian(true);
-          LOG_VEC(_algLoop, "fNominal" + to_string(totSteps), _fNominal, _lc, LL_DEBUG);
-
-          // check stopping criterion
-          _iterationStatus = DONE;
-          for (int i = 0; i < _dimSys; ++i) {
-            if (std::abs(_f[i]) > atol + rtol * _fNominal[i]) {
-              _iterationStatus = CONTINUE;
-              break;
-            }
-          }
-          if (_iterationStatus == DONE)
-            break;
-
-          // Scale Jacobian and initialize line search function
-          double phi = 0.0;
-          for (int i = 0; i < _dimSys; i++) {
-            _f[i] /= _fNominal[i];
-            phi += _f[i] * _f[i];
-            for (int j = 0; j < _dimSys; j++)
-              _jac[i + j * _dimSys] *= _yNominal[j] / _fNominal[i];
-          }
-
-          // Solve linear system
-          dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-
-          if (info != 0)
+        // evaluate function
+        try {
+          calcFunction(_yHelp, _fHelp);
+        }
+        catch (ModelicaSimulationError& ex) {
+          if (lambda < 1e-10)
+            throw ex;
+          // reduce step size
+          lambda *= 0.5;
+          continue;
+        }
+        break;
+      }
+      // check for solution, e.g. if a linear system is treated here
+      _iterationStatus = DONE;
+      for (int i = 0; i < _dimSys; i++) {
+        if (std::abs(_fHelp[i]) > atol + rtol * _fNominal[i]) {
+          _iterationStatus = CONTINUE;
+          break;
+        }
+      }
+      // second do line search with quadratic approximation of phi(lambda)
+      // C.T.Kelley: Solving Nonlinear Equations with Newton's Method,
+      // no 1 in Fundamentals of Algorithms, SIAM 2003. ISBN 0-89871-546-6.
+      double phiHelp = 0.0;
+      for (int i = 0; i < _dimSys; i++) {
+        _fHelp[i] /= _fNominal[i];
+        phiHelp += _fHelp[i] * _fHelp[i];
+      }
+      while (_iterationStatus == CONTINUE) {
+        // test half step that also serves as max bound for step reduction
+        double lambdaTest = 0.5*lambda;
+        for (int i = 0; i < _dimSys; i++) {
+          _yTest[i] = _y[i] - lambdaTest * _f[i];
+          _yTest[i] = std::min(_yMax[i], std::max(_yMin[i], _yTest[i]));
+        }
+        calcFunction(_yTest, _fTest);
+        double phiTest = 0.0;
+        for (int i = 0; i < _dimSys; i++) {
+          _fTest[i] /= _fNominal[i];
+          phiTest += _fTest[i] * _fTest[i];
+        }
+        // check for sufficient decrease of phiHelp
+        // and no further decrease with phiTest
+        // otherwise minimize quadratic approximation of phi(lambda)
+        if (phiHelp > (1.0 - alpha * lambda) * phi ||
+            phiTest < (1.0 - alpha * lambda) * phiHelp) {
+          long int n = 3;
+          long int ipiv[3];
+          double bx[] = {phi, phiTest, phiHelp};
+          double A[] = {1.0, 1.0, 1.0,
+                        0.0, lambdaTest, lambda,
+                        0.0, lambdaTest*lambdaTest, lambda*lambda};
+          dgesv_(&n, &dimRHS, A, &n, ipiv, bx, &n, &info);
+          lambda = std::max(0.1*lambda, -0.5*bx[1]/bx[2]);
+          if (!(lambda >= 1e-10))
             throw ModelicaSimulationError(ALGLOOP_SOLVER,
-              "error solving nonlinear system (iteration: " + to_string(totSteps)
-              + ", dgesv info: " + to_string(info) + ")");
-
-          // Increase counter
-          ++ totSteps;
-
-          // De-scale result
-          for (int j = 0; j < _dimSys; j++)
-            _f[j] *= _yNominal[j];
-
-          // New iterate
-          double lambda = 1.0; // step size
-          double alpha = 1e-4; // guard for sufficient decrease
-          // first find a feasible step
-          while (true) {
+              "Can't get sufficient decrease of solution");
+          if (lambda >= lambdaTest) {
+            // upper bound 0.5*lambda
+            lambda = lambdaTest;
+            std::copy(_yTest, _yTest + _dimSys, _yHelp);
+            std::copy(_fTest, _fTest + _dimSys, _fHelp);
+            phiHelp = phiTest;
+          }
+          else {
             for (int i = 0; i < _dimSys; i++) {
               _yHelp[i] = _y[i] - lambda * _f[i];
               _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
             }
-            // evaluate function
-            try {
-              calcFunction(_yHelp, _fHelp);
-            }
-            catch (ModelicaSimulationError& ex) {
-              if (lambda < 1e-10)
-                throw ex;
-              // reduce step size
-              lambda *= 0.5;
-              continue;
-            }
-            break;
-          }
-          // check for solution, e.g. if a linear system is treated here
-          _iterationStatus = DONE;
-          for (int i = 0; i < _dimSys; i++) {
-            if (std::abs(_fHelp[i]) > atol + rtol * _fNominal[i]) {
-              _iterationStatus = CONTINUE;
-              break;
-            }
-          }
-          // second do line search with quadratic approximation of phi(lambda)
-          // C.T.Kelley: Solving Nonlinear Equations with Newton's Method,
-          // no 1 in Fundamentals of Algorithms, SIAM 2003. ISBN 0-89871-546-6.
-          double phiHelp = 0.0;
-          for (int i = 0; i < _dimSys; i++) {
-            _fHelp[i] /= _fNominal[i];
-            phiHelp += _fHelp[i] * _fHelp[i];
-          }
-          while (_iterationStatus == CONTINUE) {
-            // test half step that also serves as max bound for step reduction
-            double lambdaTest = 0.5*lambda;
+            calcFunction(_yHelp, _fHelp);
+            phiHelp = 0.0;
             for (int i = 0; i < _dimSys; i++) {
-              _yTest[i] = _y[i] - lambdaTest * _f[i];
-              _yTest[i] = std::min(_yMax[i], std::max(_yMin[i], _yTest[i]));
+              _fHelp[i] /= _fNominal[i];
+              phiHelp += _fHelp[i] * _fHelp[i];
             }
-            calcFunction(_yTest, _fTest);
-            double phiTest = 0.0;
-            for (int i = 0; i < _dimSys; i++) {
-              _fTest[i] /= _fNominal[i];
-              phiTest += _fTest[i] * _fTest[i];
-            }
-            // check for sufficient decrease of phiHelp
-            // and no further decrease with phiTest
-            // otherwise minimize quadratic approximation of phi(lambda)
-            if (phiHelp > (1.0 - alpha * lambda) * phi ||
-                phiTest < (1.0 - alpha * lambda) * phiHelp) {
-              long int n = 3;
-              long int ipiv[3];
-              double bx[] = {phi, phiTest, phiHelp};
-              double A[] = {1.0, 1.0, 1.0,
-                            0.0, lambdaTest, lambda,
-                            0.0, lambdaTest*lambdaTest, lambda*lambda};
-              dgesv_(&n, &dimRHS, A, &n, ipiv, bx, &n, &info);
-              lambda = std::max(0.1*lambda, -0.5*bx[1]/bx[2]);
-              if (!(lambda >= 1e-10))
-                throw ModelicaSimulationError(ALGLOOP_SOLVER,
-                  "Can't get sufficient decrease of solution");
-              if (lambda >= lambdaTest) {
-                // upper bound 0.5*lambda
-                lambda = lambdaTest;
-                std::copy(_yTest, _yTest + _dimSys, _yHelp);
-                std::copy(_fTest, _fTest + _dimSys, _fHelp);
-                phiHelp = phiTest;
-              }
-              else {
-                for (int i = 0; i < _dimSys; i++) {
-                  _yHelp[i] = _y[i] - lambda * _f[i];
-                  _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
-                }
-                calcFunction(_yHelp, _fHelp);
-                phiHelp = 0.0;
-                for (int i = 0; i < _dimSys; i++) {
-                  _fHelp[i] /= _fNominal[i];
-                  phiHelp += _fHelp[i] * _fHelp[i];
-                }
-              }
-              LOGGER_WRITE("lambda = " + to_string(lambda) +
-                           ", phi = " + to_string(phi) +
-                           " --> " + to_string(phiHelp),
-                           _lc, LL_DEBUG);
-            }
-            // check for sufficient decrease
-            if (phiHelp <= (1.0 - alpha * lambda) * phi)
-              break;
           }
-          // take iterate
-          std::copy(_yHelp, _yHelp + _dimSys, _y);
-          for (int i = 0; i < _dimSys; i++)
-            _f[i] = _fHelp[i] * _fNominal[i];
-          phi = phiHelp;
+          LOGGER_WRITE("lambda = " + to_string(lambda) +
+                       ", phi = " + to_string(phi) +
+                       " --> " + to_string(phiHelp),
+                       _lc, LL_DEBUG);
         }
+        // check for sufficient decrease
+        if (phiHelp <= (1.0 - alpha * lambda) * phi)
+          break;
       }
-      else
-        throw ModelicaSimulationError(ALGLOOP_SOLVER,
-          "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
+      // take iterate
+      std::copy(_yHelp, _yHelp + _dimSys, _y);
+      for (int i = 0; i < _dimSys; i++)
+        _f[i] = _fHelp[i] * _fNominal[i];
+      phi = phiHelp;
     }
   } // end while
 
