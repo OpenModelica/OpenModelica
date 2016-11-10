@@ -35,18 +35,20 @@
 #include "TimeManager.h"
 
 TimeManager::TimeManager(const double simTime, const double realTime, const double realTimeFactor, const double visTime,
-             const double hVisual, const double startTime, const double endTime)
-    : _simTime(simTime),
-      _realTime(realTime),
-      _realTimeFactor(realTimeFactor),
-      _visTime(visTime),
-      _hVisual(hVisual),
-      _startTime(startTime),
-      _endTime(endTime),
-      _pause(true),
-      mSpeedUp(1.0),
-      _visualTimer()
+                         const double hVisual, const double startTime, const double endTime)
+  : _simTime(simTime),
+    _realTime(realTime),
+    _realTimeFactor(realTimeFactor),
+    _visTime(visTime),
+    _hVisual(hVisual),
+    _startTime(startTime),
+    _endTime(endTime),
+    _pause(true),
+    mSpeedUp(1.0),
+    _visualTimer()
 {
+  mpUpdateSceneTimer = new QTimer;
+  mpUpdateSceneTimer->setInterval(100);
 }
 
 void TimeManager::updateTick()
@@ -110,7 +112,6 @@ void TimeManager::setHVisual(const double hVis)
   _hVisual = hVis;
 }
 
-
 double TimeManager::getRealTime() const
 {
   return _realTime;
@@ -134,7 +135,13 @@ bool TimeManager::isPaused() const
 void TimeManager::setPause(const bool status)
 {
   _pause = status;
+  if (status) {
+    mpUpdateSceneTimer->stop();
+  } else {
+    mpUpdateSceneTimer->start();
+  }
 }
+
 void TimeManager::setSpeedUp(double value)
 {
   mSpeedUp = value;
@@ -144,4 +151,3 @@ double TimeManager::getSpeedUp()
 {
   return mSpeedUp;
 }
-

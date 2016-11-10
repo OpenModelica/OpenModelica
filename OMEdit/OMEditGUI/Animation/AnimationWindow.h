@@ -81,11 +81,11 @@ public slots:
   void playSlotFunction();
   void pauseSlotFunction();
   void initSlotFunction();
-  void renderSlotFunction();
+  void updateScene();
+  void renderFrame();
   void chooseAnimationFileSlotFunction();
   void setSpeedSlotFunction();
   void jumpToTimeSlotFunction();
-  void updateSceneFunction();
   void resetCamera();
   void cameraPositionXY();
   void cameraPositionXZ();
@@ -103,7 +103,7 @@ private:
   VisualizerAbstract* mpVisualizer;
   //widgets
   QWidget* mpViewerWidget;
-  QTimer* mpUpdateTimer;
+  QTimer mRenderFrameTimer;
   QToolBar* mpAnimationToolBar;
   QSlider* mpAnimationSlider;
   QLabel *mpAnimationTimeLabel;

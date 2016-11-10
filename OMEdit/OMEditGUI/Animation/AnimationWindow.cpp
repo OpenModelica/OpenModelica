@@ -51,7 +51,6 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
     mpSceneView(new osgViewer::View()),
     mpVisualizer(nullptr),
     mpViewerWidget(nullptr),
-    mpUpdateTimer(new QTimer()),
     mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
     mpFMUSettingsDialog(nullptr),
     mpAnimationChooseFileAction(nullptr),
@@ -63,14 +62,16 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   this->setObjectName(QString("animationWidget"));
   // the osg threading model
   setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
+  // disable the default setting of viewer.done() by pressing Escape.
+  setKeyEventSetsDone(0);
   //the viewer widget
   mpViewerWidget = setupViewWidget();
   // we need to set the minimum height so that visualization window is still shown when we cascade windows.
   mpViewerWidget->setMinimumHeight(100);
-  // let timer do a scene update at every tick
-  QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(updateSceneFunction()));
-  QObject::connect(mpUpdateTimer, SIGNAL(timeout()), this, SLOT(renderSlotFunction()));
-  mpUpdateTimer->start(100);
+  // let render timer do a render frame at every tick
+  mRenderFrameTimer.setInterval(100);
+  QObject::connect(&mRenderFrameTimer, SIGNAL(timeout()), this, SLOT(renderFrame()));
+  mRenderFrameTimer.start();
   // actions and widgets for the toolbar
   int toolbarIconSize = mpPlotWindowContainer->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::animationChooseFile, this);
@@ -284,6 +285,7 @@ void AnimationWindow::loadVisualization()
     mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
                                                                                            Helper::scriptingKind, Helper::errorLevel));
   } else {
+    connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualizer->initData();
     mpVisualizer->setUpScene();
     mpVisualizer->initVisualization();
@@ -375,7 +377,7 @@ void AnimationWindow::initSlotFunction()
  * \brief AnimationWindow::updateSceneFunction
  * updates the visualization objects
  */
-void AnimationWindow::updateSceneFunction()
+void AnimationWindow::updateScene()
 {
   if (!(mpVisualizer == NULL)) {
     //set time label
@@ -395,10 +397,10 @@ void AnimationWindow::updateSceneFunction()
 }
 
 /*!
- * \brief AnimationWindow::renderSlotFunction
+ * \brief AnimationWindow::renderFrame
  * renders the osg viewer
  */
-void AnimationWindow::renderSlotFunction()
+void AnimationWindow::renderFrame()
 {
   frame();
 }

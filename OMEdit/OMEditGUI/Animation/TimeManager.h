@@ -39,6 +39,7 @@
 
 #include <osg/Timer>
 
+#include <QTimer>
 
 class TimeManager
 {
@@ -88,6 +89,7 @@ class TimeManager
   int getTimeFraction();
   void setSpeedUp(double value);
   double getSpeedUp();
+  QTimer* getUpdateSceneTimer() {return mpUpdateSceneTimer;}
 
  private:
   //! Time of the current simulation step.
@@ -108,7 +110,7 @@ class TimeManager
   bool _pause;
   double mSpeedUp;
   osg::Timer _visualTimer;
-
+  QTimer *mpUpdateSceneTimer;
 };
 
 

@@ -50,7 +50,7 @@ class VisualizerMAT : public VisualizerAbstract
   void initializeVisAttributes(const double time = -1.0);
   void readMat(const std::string& modelFile, const std::string& path);
   void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
-  void simulate(TimeManager& omvm){ };
+  void simulate(TimeManager& omvm) {Q_UNUSED(omvm);}
   void updateVisAttributes(const double time) override;
   void updateScene(const double time);
   void updateObjectAttributeMAT(ShapeObjectAttribute* attr, double time, ModelicaMatReader* reader);

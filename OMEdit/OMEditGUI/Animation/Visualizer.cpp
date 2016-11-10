@@ -36,11 +36,11 @@
 
 
 OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path)
-        : _shapes(),
-          _modelFile(modelFile),
-          _path(path),
-          _xmlFileName(assembleXMLFileName(modelFile, path)),
-          _xmlDoc()
+  : _shapes(),
+    _modelFile(modelFile),
+    _path(path),
+    _xmlFileName(assembleXMLFileName(modelFile, path)),
+    _xmlDoc()
 {
 }
 
@@ -52,21 +52,21 @@ void OMVisualBase::initXMLDoc()
     std::string msg = "Could not find the visual XML file" + _xmlFileName + ".";
     std::cout<<msg<<std::endl;
   }
-    // read xml
-    osgDB::ifstream t;
-    // unused const char * titel = _xmlFileName.c_str();
-    t.open(_xmlFileName.c_str(), std::ios::binary);      // open input file
-    t.seekg(0, std::ios::end);    // go to the end
-    int length = t.tellg();       // report location (this is the length)
-    t.seekg(0, std::ios::beg);    // go back to the beginning
-    char* buffer = new char[length];    // allocate memory for a buffer of appropriate dimension
-    t.read(buffer, length);       // read the whole file into the buffer
-    t.close();
-    std::string buff = std::string(buffer);  // strings are good
-    std::string buff2 = buff.substr(0, buff.find("</visualization>"));  // remove the crappy ending
-    buff2.append("</visualization>");
-    char* buff3 = strdup(buff2.c_str());  // cast to char*
-    _xmlDoc.parse<0>(buff3);
+  // read xml
+  osgDB::ifstream t;
+  // unused const char * titel = _xmlFileName.c_str();
+  t.open(_xmlFileName.c_str(), std::ios::binary);      // open input file
+  t.seekg(0, std::ios::end);    // go to the end
+  int length = t.tellg();       // report location (this is the length)
+  t.seekg(0, std::ios::beg);    // go back to the beginning
+  char* buffer = new char[length];    // allocate memory for a buffer of appropriate dimension
+  t.read(buffer, length);       // read the whole file into the buffer
+  t.close();
+  std::string buff = std::string(buffer);  // strings are good
+  std::string buff2 = buff.substr(0, buff.find("</visualization>"));  // remove the crappy ending
+  buff2.append("</visualization>");
+  char* buff3 = strdup(buff2.c_str());  // cast to char*
+  _xmlDoc.parse<0>(buff3);
 
 }
 
@@ -223,20 +223,20 @@ void OMVisualBase::appendVisVariable(const rapidxml::xml_node<>* node, std::vect
 ///--------------------------------------------------///
 
 VisualizerAbstract::VisualizerAbstract()
-    : _visType(VisType::NONE),
-      mpOMVisualBase(nullptr),
-      mpOMVisScene(nullptr),
-      mpUpdateVisitor(nullptr)
+  : _visType(VisType::NONE),
+    mpOMVisualBase(nullptr),
+    mpOMVisScene(nullptr),
+    mpUpdateVisitor(nullptr)
 {
   mpTimeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
 }
 
 VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType)
-    : _visType(visType),
-      mpOMVisualBase(nullptr),
-      mpOMVisScene(new OMVisScene()),
-      mpUpdateVisitor(new UpdateVisitor()),
-      mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
+  : _visType(visType),
+    mpOMVisualBase(nullptr),
+    mpOMVisScene(new OMVisScene()),
+    mpUpdateVisitor(new UpdateVisitor()),
+    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
 {
   mpOMVisualBase = new OMVisualBase(modelFile, path);
   mpOMVisScene->getScene().setPath(path);
@@ -244,159 +244,159 @@ VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::
 
 void VisualizerAbstract::initData()
 {
-    // In case of reloading, we need to make sure, that we have empty members.
-    mpOMVisualBase->clearXMLDoc();
-    // Initialize XML file and get visAttributes.
-    mpOMVisualBase->initXMLDoc();
-    mpOMVisualBase->initVisObjects();
+  // In case of reloading, we need to make sure, that we have empty members.
+  mpOMVisualBase->clearXMLDoc();
+  // Initialize XML file and get visAttributes.
+  mpOMVisualBase->initXMLDoc();
+  mpOMVisualBase->initVisObjects();
 }
 
 void VisualizerAbstract::initVisualization()
 {
-    initializeVisAttributes(mpTimeManager->getStartTime());
-    mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-    mpTimeManager->setRealTimeFactor(0.0);
-    mpTimeManager->setPause(true);
+  initializeVisAttributes(mpTimeManager->getStartTime());
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  mpTimeManager->setRealTimeFactor(0.0);
+  mpTimeManager->setPause(true);
 }
 
 TimeManager* VisualizerAbstract::getTimeManager() const
 {
-    return mpTimeManager;
+  return mpTimeManager;
 }
 
 void VisualizerAbstract::sceneUpdate()
 {
   //measure realtime
-    mpTimeManager->updateTick();
-    //update scene and set next time step
-    if (!mpTimeManager->isPaused())
+  mpTimeManager->updateTick();
+  //update scene and set next time step
+  if (!mpTimeManager->isPaused())
+  {
+    updateScene(mpTimeManager->getVisTime());
+    double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+    if (newTime <= mpTimeManager->getEndTime())
     {
-      updateScene(mpTimeManager->getVisTime());
-      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
-      if (newTime <= mpTimeManager->getEndTime())
-      {
-        mpTimeManager->setVisTime(newTime);
-      }
-      //finish animation with pause when endtime is reached
-      else
-      {
-        mpTimeManager->setPause(true);
-      }
+      mpTimeManager->setVisTime(newTime);
     }
+    //finish animation with pause when endtime is reached
+    else
+    {
+      mpTimeManager->setPause(true);
+    }
+  }
 }
 
 void VisualizerAbstract::setUpScene()
 {
-    // Build scene graph.
-    mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_shapes);
+  // Build scene graph.
+  mpOMVisScene->getScene().setUpScene(mpOMVisualBase->_shapes);
 }
 
 VisType VisualizerAbstract::getVisType() const
 {
-    return _visType;
+  return _visType;
 }
 
 OMVisualBase* VisualizerAbstract::getBaseData() const
 {
-    return mpOMVisualBase;
+  return mpOMVisualBase;
 }
 
 
 
 OMVisScene* VisualizerAbstract::getOMVisScene() const
 {
-    return mpOMVisScene;
+  return mpOMVisScene;
 }
 
 std::string VisualizerAbstract::getModelFile() const
 {
-    return mpOMVisualBase->getModelFile();
+  return mpOMVisualBase->getModelFile();
 }
 
 void VisualizerAbstract::startVisualization()
 {
-    if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6)
-    {
-        mpTimeManager->setPause(false);
-    }
-    else
-        std::cout<<"There is nothing left to visualize. Initialize the model first."<<std::endl;
+  if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6)
+  {
+    mpTimeManager->setPause(false);
+  }
+  else
+    std::cout<<"There is nothing left to visualize. Initialize the model first."<<std::endl;
 }
 
 void VisualizerAbstract::pauseVisualization()
 {
-    mpTimeManager->setPause(true);
+  mpTimeManager->setPause(true);
 }
 
 
 
 
 OMVisScene::OMVisScene()
-        : _scene()
+  : _scene()
 {
 }
 
 void OMVisScene::dumpOSGTreeDebug()
 {
-    // The node traverser which dumps the tree
-    InfoVisitor infoVisitor;
-    _scene.getRootNode()->accept(infoVisitor);
+  // The node traverser which dumps the tree
+  InfoVisitor infoVisitor;
+  _scene.getRootNode()->accept(infoVisitor);
 }
 
 OSGScene& OMVisScene::getScene()
 {
-    return _scene;
+  return _scene;
 }
 
 
 OSGScene::OSGScene()
-        : _rootNode(new osg::Group()),
-          _path("")
+  : _rootNode(new osg::Group()),
+    _path("")
 {
 }
 
 int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
 {
-    int isOk(0);
+  int isOk(0);
   for (std::vector<ShapeObject>::size_type i = 0; i != allShapes.size(); i++)
+  {
+    ShapeObject shape = allShapes[i];
+    osg::ref_ptr<osg::Geode> geode;
+    osg::ref_ptr<osg::StateSet> ss;
+
+    //color
+    osg::ref_ptr<osg::Material> material = new osg::Material();
+    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
+
+    //matrix transformation
+    osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
+
+    //cad node
+    if ((shape._type.compare("dxf") == 0) or (shape._type.compare("stl") == 0))
     {
-      ShapeObject shape = allShapes[i];
-      osg::ref_ptr<osg::Geode> geode;
-      osg::ref_ptr<osg::StateSet> ss;
+      //std::cout<<"Its a CAD and the filename is "<<shape._fileName<<std::endl;
+      osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
+      osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
 
-      //color
-      osg::ref_ptr<osg::Material> material = new osg::Material();
-      material->setDiffuse(osg::Material::FRONT, osg::Vec4f(0.0, 0.0, 0.0, 0.0));
-
-      //matrix transformation
-      osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
-
-      //cad node
-      if ((shape._type.compare("dxf") == 0) or (shape._type.compare("stl") == 0))
-      {
-        //std::cout<<"Its a CAD and the filename is "<<shape._fileName<<std::endl;
-        osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
-        osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
-
-        ss->setAttribute(material.get());
-        node->setStateSet(ss);
-        transf->addChild(node.get());
-      }
-      //geode with shape drawable
-      else
-      {
-        osg::ref_ptr<osg::ShapeDrawable> shapeDraw = new osg::ShapeDrawable();
-        shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
-        geode = new osg::Geode();
-        geode->addDrawable(shapeDraw.get());
-        osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
-        ss->setAttribute(material.get());
-        geode->setStateSet(ss);
-        transf->addChild(geode.get());
-      }
-      _rootNode->addChild(transf.get());
+      ss->setAttribute(material.get());
+      node->setStateSet(ss);
+      transf->addChild(node.get());
     }
-    return isOk;
+    //geode with shape drawable
+    else
+    {
+      osg::ref_ptr<osg::ShapeDrawable> shapeDraw = new osg::ShapeDrawable();
+      shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+      geode = new osg::Geode();
+      geode->addDrawable(shapeDraw.get());
+      osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
+      ss->setAttribute(material.get());
+      geode->setStateSet(ss);
+      transf->addChild(geode.get());
+    }
+    _rootNode->addChild(transf.get());
+  }
+  return isOk;
 }
 
 osg::ref_ptr<osg::Group> OSGScene::getRootNode()
@@ -416,7 +416,7 @@ void OSGScene::setPath(const std::string path)
 
 
 UpdateVisitor::UpdateVisitor()
-        : _shape()
+  : _shape()
 {
   setTraversalMode(NodeVisitor::TRAVERSE_ALL_CHILDREN);
 }
@@ -436,69 +436,69 @@ void UpdateVisitor::apply(osg::MatrixTransform& node)
  */
 void UpdateVisitor::apply(osg::Geode& node)
 {
-    //std::cout<<"GEODE "<< _shape._id<<" "<<std::endl;
-    osg::ref_ptr<osg::StateSet> ss = node.getOrCreateStateSet();
+  //std::cout<<"GEODE "<< _shape._id<<" "<<std::endl;
+  osg::ref_ptr<osg::StateSet> ss = node.getOrCreateStateSet();
 
-    //its a drawable and not a cad file so we have to create a new drawable
-    if (_shape._type.compare("dxf") != 0 and (_shape._type.compare("stl") != 0))
+  //its a drawable and not a cad file so we have to create a new drawable
+  if (_shape._type.compare("dxf") != 0 and (_shape._type.compare("stl") != 0))
+  {
+    osg::ref_ptr<osg::Drawable> draw = node.getDrawable(0);
+    draw->dirtyDisplayList();
+    //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
+    //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
+    if (_shape._type == "pipe")
     {
-      osg::ref_ptr<osg::Drawable> draw = node.getDrawable(0);
-      draw->dirtyDisplayList();
-      //osg::ref_ptr<osg::ShapeDrawable> shapeDraw = dynamic_cast<osg::ShapeDrawable*>(draw.get());
-      //shapeDraw->setColor(osg::Vec4(visAttr.color,1.0));
-      if (_shape._type == "pipe")
-      {
-        node.removeDrawable(draw);
-        draw = new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp);
-      }
-      else if (_shape._type == "pipecylinder")
-      {
-        node.removeDrawable(draw);
-        draw = new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp);
-      }
-      else if (_shape._type == "spring")
-      {
-        node.removeDrawable(draw);
-        draw = new Spring(_shape._width.exp, _shape._height.exp, _shape._extra.exp, _shape._length.exp);
-      }
-      else if (_shape._type == "cylinder")
-      {
-        draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
-      }
-      else if (_shape._type == "box")
-      {
-        draw->setShape(new osg::Box(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp, _shape._height.exp, _shape._length.exp));
-      }
-      else if (_shape._type == "cone")
-      {
-        draw->setShape(new osg::Cone(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
-      }
-      else if (_shape._type == "sphere")
-      {
-        draw->setShape(new osg::Sphere(osg::Vec3f(0.0, 0.0, 0.0), _shape._length.exp / 2.0));
-      }
-      else
-      {
-        std::cout<<"Unknown type "<<_shape._type<<", we make a capsule."<<std::endl;
-        //string id = string(visAttr.type.begin(), visAttr.type.begin()+11);
-        draw->setShape(new osg::Capsule(osg::Vec3f(0.0, 0.0, 0.0), 0.1, 0.5));
-      }
+      node.removeDrawable(draw);
+      draw = new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp);
+    }
+    else if (_shape._type == "pipecylinder")
+    {
+      node.removeDrawable(draw);
+      draw = new Pipecylinder((_shape._width.exp * _shape._extra.exp) / 2, (_shape._width.exp) / 2, _shape._length.exp);
+    }
+    else if (_shape._type == "spring")
+    {
+      node.removeDrawable(draw);
+      draw = new Spring(_shape._width.exp, _shape._height.exp, _shape._extra.exp, _shape._length.exp);
+    }
+    else if (_shape._type == "cylinder")
+    {
+      draw->setShape(new osg::Cylinder(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
+    }
+    else if (_shape._type == "box")
+    {
+      draw->setShape(new osg::Box(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp, _shape._height.exp, _shape._length.exp));
+    }
+    else if (_shape._type == "cone")
+    {
+      draw->setShape(new osg::Cone(osg::Vec3f(0.0, 0.0, 0.0), _shape._width.exp / 2.0, _shape._length.exp));
+    }
+    else if (_shape._type == "sphere")
+    {
+      draw->setShape(new osg::Sphere(osg::Vec3f(0.0, 0.0, 0.0), _shape._length.exp / 2.0));
+    }
+    else
+    {
+      std::cout<<"Unknown type "<<_shape._type<<", we make a capsule."<<std::endl;
+      //string id = string(visAttr.type.begin(), visAttr.type.begin()+11);
+      draw->setShape(new osg::Capsule(osg::Vec3f(0.0, 0.0, 0.0), 0.1, 0.5));
+    }
     //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
     node.addDrawable(draw.get());
-    }
-    if (_shape._type.compare("dxf") != 0)
-    {
-      //osg::Material *material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
-      osg::ref_ptr<osg::Material> material = new osg::Material;
-      material->setDiffuse(osg::Material::FRONT, osg::Vec4f(_shape._color[0].exp / 255, _shape._color[1].exp / 255, _shape._color[2].exp / 255, 1.0));
-      ss->setAttribute(material);
-      node.setStateSet(ss);
-    }
-    traverse(node);
+  }
+  if (_shape._type.compare("dxf") != 0)
+  {
+    //osg::Material *material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
+    osg::ref_ptr<osg::Material> material = new osg::Material;
+    material->setDiffuse(osg::Material::FRONT, osg::Vec4f(_shape._color[0].exp / 255, _shape._color[1].exp / 255, _shape._color[2].exp / 255, 1.0));
+    ss->setAttribute(material);
+    node.setStateSet(ss);
+  }
+  traverse(node);
 }
 
 InfoVisitor::InfoVisitor()
-    : _level(0)
+  : _level(0)
 {
   setTraversalMode(NodeVisitor::TRAVERSE_ALL_CHILDREN);
 }
@@ -658,10 +658,10 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
   }
   else if ((type == "stl") || (type == "dxf"))
   {
-	T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2], dirs._wDir[0], dirs._wDir[1], dirs._wDir[2], hDir[0], hDir[1], hDir[2]);
-	res._r = V3mulMat3(r_shape, T);
-	res._r = res._r + r;
-	res._T = Mat3mulMat3(T0, T);
+    T0 = osg::Matrix3(dirs._lDir[0], dirs._lDir[1], dirs._lDir[2], dirs._wDir[0], dirs._wDir[1], dirs._wDir[2], hDir[0], hDir[1], hDir[2]);
+    res._r = V3mulMat3(r_shape, T);
+    res._r = res._r + r;
+    res._T = Mat3mulMat3(T0, T);
   }
   else if ((type == "spring")||(type == "pipecylinder")||(type == "cone"))
   {
