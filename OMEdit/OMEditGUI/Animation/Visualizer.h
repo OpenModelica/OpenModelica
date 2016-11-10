@@ -59,7 +59,7 @@ struct UserSimSettingsMAT
 
 class UpdateVisitor : public osg::NodeVisitor
 {
-public:
+ public:
   UpdateVisitor();
   virtual ~UpdateVisitor() = default;
   UpdateVisitor(const UpdateVisitor& uv) = delete;
@@ -86,7 +86,7 @@ private:
 
 class OSGScene
 {
-public:
+ public:
   OSGScene();
   ~OSGScene() = default;
   OSGScene(const OSGScene& osgs) = delete;
@@ -95,27 +95,27 @@ public:
   osg::ref_ptr<osg::Group> getRootNode();
   std::string getPath() const;
   void setPath(const std::string path);
-private:
+ private:
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
 };
 
 class OMVisScene
 {
-public:
+ public:
   OMVisScene();
   ~OMVisScene() = default;
   OMVisScene(const OMVisScene& omvv) = delete;
   OMVisScene& operator=(const OMVisScene& omvv) = delete;
   void dumpOSGTreeDebug();
   OSGScene& getScene();
-private:
+ private:
   OSGScene _scene;
 };
 
 class OMVisualBase
 {
-public:
+ public:
   OMVisualBase(const std::string& modelFile, const std::string& path);
   OMVisualBase() = delete;
   ~OMVisualBase() = default;
@@ -134,35 +134,38 @@ private:
 
 public:
   std::vector<ShapeObject> _shapes;
-private:
+ private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
   rapidxml::xml_document<> _xmlDoc;
+
+
 };
 
 class VisualizerAbstract
 {
-public:
+ public:
   VisualizerAbstract();
   VisualizerAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
   virtual ~VisualizerAbstract() = default;
-  virtual void updateVisAttributes(const double time) = 0;
 
   virtual void initData();
   void initVisualization();
-  virtual void initializeVisAttributes(const double time) = 0;
-  TimeManager* getTimeManager() const;
-  void sceneUpdate();
   void setUpScene();
+  virtual void initializeVisAttributes(const double time) = 0;
+  virtual void updateVisAttributes(const double time) = 0;
+  void sceneUpdate();
+  virtual void simulate(TimeManager& omvm) = 0;
+  virtual void updateScene(const double time) = 0;
+
+  TimeManager* getTimeManager() const;
   OMVisualBase* getBaseData() const;
   VisType getVisType() const;
-
   OMVisScene* getOMVisScene() const;
   std::string getModelFile() const;
   //virtual void setSimulationSettings(const UserSimSettingsFMU& simSetFMU) { };
   //virtual void simulate(TimeManager& omvm) = 0;
-  virtual void updateScene(const double time) = 0;
   virtual void startVisualization();
   virtual void pauseVisualization();
 protected:

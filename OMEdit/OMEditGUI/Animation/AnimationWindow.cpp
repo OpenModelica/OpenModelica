@@ -53,6 +53,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
     mpViewerWidget(nullptr),
     mpUpdateTimer(new QTimer()),
     mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
+    mpFMUSettingsDialog(nullptr),
     mpAnimationChooseFileAction(nullptr),
     mpAnimationInitializeAction(nullptr),
     mpAnimationPlayAction(nullptr),
@@ -267,21 +268,33 @@ void AnimationWindow::loadVisualization()
   //init visualizer
   if (visType == VisType::MAT) {
     mpVisualizer = new VisualizerMAT(mFileName, mPathName);
-  } else if (visType == VisType::CSV) {
+  }
+  else if (visType == VisType::CSV) {
     mpVisualizer = new VisualizerCSV(mFileName, mPathName);
-  } else {
+  }
+  else if (visType == VisType::FMU) {
+    mpVisualizer = new VisualizerFMU(mFileName, mPathName);
+  }
+  else {
     std::cout<<"could not init "<<mPathName<<mFileName<<std::endl;
   }
   //load the XML File, build osgTree, get initial values for the shapes
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     std::cout<<"Could not find the visual XML file "<<assembleXMLFileName(mFileName, mPathName)<<std::endl;
-  } else {
+  }
+  else
+  {
     mpVisualizer->initData();
     mpVisualizer->setUpScene();
     mpVisualizer->initVisualization();
     //add scene for the chosen visualization
     mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
+  }
+  //FMU settings dialog
+  if (visType == VisType::FMU)
+  {
+    //openFMUSettingsDialog();
   }
   //add window title
   this->setWindowTitle(QString::fromStdString(mFileName));
@@ -372,8 +385,11 @@ void AnimationWindow::updateSceneFunction()
       mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
       mpTimeTextBox->blockSignals(state);
       // set time slider
-      int time = mpVisualizer->getTimeManager()->getTimeFraction();
-      mpAnimationSlider->setValue(time);
+      if (mpVisualizer->getVisType() != VisType::FMU)
+      {
+        int time = mpVisualizer->getTimeManager()->getTimeFraction();
+        mpAnimationSlider->setValue(time);
+      }
     }
     //update the scene
     mpVisualizer->sceneUpdate();
@@ -538,4 +554,49 @@ void AnimationWindow::setPerspective(int value)
       cameraPositionXZ();
       break;
   }
+}
+
+/*!
+ * \brief AnimationWindow::openmpFMUSettingsDialog
+ * opens a dialog to set the settings for the FMU visualization
+ */
+void AnimationWindow::openFMUSettingsDialog()
+{
+  //create dialog
+  mpFMUSettingsDialog = new QDialog(this);
+  mpFMUSettingsDialog->setWindowTitle("FMU settings");
+  mpFMUSettingsDialog->setWindowIcon(QIcon(":/Resources/icons/animation.png"));
+  //the layouts
+  QVBoxLayout *mainLayout = new QVBoxLayout;
+  QHBoxLayout *simulationLayout = new QHBoxLayout;
+  QVBoxLayout *leftSimLayout = new QVBoxLayout;
+  QVBoxLayout *rightSimLayout = new QVBoxLayout;
+  //the widgets
+  QLabel *simulationLabel = new QLabel(tr("Simulation settings"));
+  QPushButton *okButton = new QPushButton(tr("OK"));
+  //solver settings
+  QLabel *solverLabel = new QLabel(tr("solver"));
+  QComboBox *solverComboBox = new QComboBox(mpFMUSettingsDialog);
+  solverComboBox->addItem(QString("euler forward"));
+  QLabel *stepsizeLabel = new QLabel(tr("step size"));
+  QTextEdit *stepSizeEdit = new QTextEdit("0.001");
+  stepSizeEdit->setMaximumSize(QSize(48,16));
+  //assemble
+  mainLayout->addWidget(simulationLabel);
+  mainLayout->addLayout(simulationLayout);
+  simulationLayout->addLayout(leftSimLayout);
+  simulationLayout->addLayout(rightSimLayout);
+  leftSimLayout->addWidget(solverLabel);
+  rightSimLayout->addWidget(solverComboBox);
+  mainLayout->addWidget(okButton);
+  mpFMUSettingsDialog->setLayout(mainLayout);
+  //connections
+  connect(okButton, SIGNAL(clicked()),this, SLOT(saveSimSettings()));
+  mpFMUSettingsDialog->show();
+}
+
+void AnimationWindow::saveSimSettings()
+{
+  std::cout<<"save simulation settings"<<std::endl;
+  mpFMUSettingsDialog->close();
 }

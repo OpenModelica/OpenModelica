@@ -36,7 +36,10 @@
 
 #include <iostream>
 
+#include "util/read_matlab4.h"
+#include "util/read_csv.h"
 #include "rapidxml.hpp"
+#include "fmilib.h"
 #include <osg/Vec3f>
 #include <osg/Matrix>
 #include <osg/Uniform>
@@ -53,7 +56,7 @@ class ShapeObjectAttribute
   bool isConst;
   float exp;
   std::string cref;
-  //fmi1_value_reference_t fmuValueRef;
+  unsigned int fmuValueRef;
 };
 
 class ShapeObject

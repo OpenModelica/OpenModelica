@@ -150,4 +150,10 @@ inline std::string extractCADFilename(const std::string& s)
   }
 }
 
+inline const char* boolToString(bool b)
+{
+    return b ? "true" : "false";
+}
+
+
 #endif //ANIMATIONUTIL_H
