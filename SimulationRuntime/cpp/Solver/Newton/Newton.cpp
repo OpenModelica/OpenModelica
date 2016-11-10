@@ -221,7 +221,7 @@ void Newton::solve()
           for (int i = 0; i < _dimSys; ++i) {
             phi += _f[i] * _f[i];
           }
-          calcJacobian(false);
+          calcJacobian(true);
 
           // Solve linear System
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
@@ -360,32 +360,32 @@ void Newton::stepCompleted(double time)
 void Newton::calcJacobian(bool getSymbolicJac)
 {
   // Use analytic Jacobian if available
-  if (getSymbolicJac){
+  if (getSymbolicJac) {
     matrix_t A = _algLoop->getSystemMatrix();
-	if (A.size1() == _dimSys && A.size2() == _dimSys) {
+    if (A.size1() == _dimSys && A.size2() == _dimSys) {
       const double* jac = A.data().begin();
       std::copy(jac, jac + _dimSys*_dimSys, _jac);
-	  return;
-	  }
+      return;
+    }
   }
   else {
-	  // Alternatively apply finite differences
-	  for (int j = 0; j < _dimSys; ++j) {
-		// Reset variables for every column
-		std::copy(_y, _y + _dimSys, _yHelp);
-		double stepsize = 1e-6 * _yNominal[j];
+    // Alternatively apply finite differences
+    for (int j = 0; j < _dimSys; ++j) {
+      // Reset variables for every column
+      std::copy(_y, _y + _dimSys, _yHelp);
+      double stepsize = 1e-6 * _yNominal[j];
 
-		// Finite differences
-		_yHelp[j] += stepsize;
+      // Finite differences
+      _yHelp[j] += stepsize;
 
-		calcFunction(_yHelp, _fHelp);
+      calcFunction(_yHelp, _fHelp);
 
-		// Build Jacobian in Fortran format
-		for (int i = 0; i < _dimSys; ++i)
-		  _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
+      // Build Jacobian in Fortran format
+      for (int i = 0; i < _dimSys; ++i)
+        _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
 
-		_yHelp[j] -= stepsize;
-	}
+      _yHelp[j] -= stepsize;
+    }
   }
 }
 
