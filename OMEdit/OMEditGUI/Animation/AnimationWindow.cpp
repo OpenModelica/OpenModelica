@@ -89,16 +89,24 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationSlider->setMaximum(100);
   mpAnimationSlider->setSliderPosition(0);
   mpAnimationSlider->setEnabled(false);
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  pDoubleValidator->setBottom(0);
   mpAnimationTimeLabel = new QLabel();
   mpAnimationTimeLabel->setText(tr("Time [s]:"));
   mpTimeTextBox = new QLineEdit("0.0", this);
   mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
   mpTimeTextBox->setEnabled(false);
+  mpTimeTextBox->setValidator(pDoubleValidator);
   mpAnimationSpeedLabel = new Label;
   mpAnimationSpeedLabel->setText(tr("Speed:"));
-  mpSpeedTextBox = new QLineEdit("1.0", this);
-  mpSpeedTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
-  mpSpeedTextBox->setEnabled(false);
+  mpSpeedComboBox = new QComboBox(this);
+  mpSpeedComboBox->setEditable(true);
+  mpSpeedComboBox->addItems(QStringList() << "10" << "5" << "2" << "1" << "0.5" << "0.2" << "0.1");
+  mpSpeedComboBox->setCurrentIndex(3);
+  mpSpeedComboBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpSpeedComboBox->setEnabled(false);
+  mpSpeedComboBox->setValidator(pDoubleValidator);
+  mpSpeedComboBox->setCompleter(0);
   mpPerspectiveDropDownBox = new QComboBox(this);
   //mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("to home position"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("normal to x-y plane"));
@@ -119,7 +127,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationToolBar->addWidget(mpTimeTextBox);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationSpeedLabel);
-  mpAnimationToolBar->addWidget(mpSpeedTextBox);
+  mpAnimationToolBar->addWidget(mpSpeedComboBox);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
   mpAnimationToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
@@ -140,7 +148,8 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
   connect(mpAnimationSlider, SIGNAL(sliderMoved(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
-  connect(mpSpeedTextBox, SIGNAL(textChanged(QString)),this, SLOT(setSpeedUpSlotFunction()));
+  connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)),this, SLOT(setSpeedSlotFunction()));
+  connect(mpSpeedComboBox->lineEdit(), SIGNAL(textChanged(QString)),this, SLOT(setSpeedSlotFunction()));
   connect(mpTimeTextBox, SIGNAL(textChanged(QString)),this, SLOT(jumpToTimeSlotFunction()));
 }
 
@@ -155,22 +164,16 @@ void AnimationWindow::jumpToTimeSlotFunction()
   double start = mpVisualizer->getTimeManager()->getStartTime();
   double end = mpVisualizer->getTimeManager()->getEndTime();
   double value = str.toFloat(&isFloat);
-  if (isFloat && value >= 0.0)
-    {
-    if (start <= value && value <= end)
-    {
+  if (isFloat && value >= 0.0) {
+    if (start <= value && value <= end) {
       mpVisualizer->getTimeManager()->setVisTime(value);
       mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
       mpVisualizer->updateScene(value);
+    } else {
+      QString msg = tr("The point of time has to be between start (%1) and end time(%2).").arg(start).arg(end);
+      mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                                             Helper::scriptingKind, Helper::errorLevel));
     }
-    else
-    {
-      std::cout<<"The point of time has to be between start ("<<start<<") and end time("<<end<<")."<<std::endl;
-    }
-    }
-  else
-  {
-    std::cout<<"The point of time has to be a positive real value. "<<std::endl;
   }
 }
 
@@ -178,19 +181,14 @@ void AnimationWindow::jumpToTimeSlotFunction()
  * \brief AnimationWindow::setSpeedUpSlotFunction
  * slot function to set the user input speed up
  */
-void AnimationWindow::setSpeedUpSlotFunction()
+void AnimationWindow::setSpeedSlotFunction()
 {
-  QString str = mpSpeedTextBox->text();
+  QString str = mpSpeedComboBox->lineEdit()->text();
   bool isFloat = true;
   double value = str.toFloat(&isFloat);
-  if (isFloat && value > 0.0)
-    {
+  if (isFloat && value > 0.0) {
     mpVisualizer->getTimeManager()->setSpeedUp(value);
-    }
-  else
-    {
-    std::cout<<"The speedUp has to be a positive real value. "<<std::endl;
-    }
+  }
 }
 
 AnimationWindow::~AnimationWindow()
@@ -263,28 +261,29 @@ void AnimationWindow::loadVisualization()
   } else if (isCSV(mFileName)) {
     visType = VisType::CSV;
   } else {
-    std::cout<<"unknown visualization type. "<<std::endl;
+    mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                                                           tr("Unknown visualization type."),
+                                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   //init visualizer
   if (visType == VisType::MAT) {
     mpVisualizer = new VisualizerMAT(mFileName, mPathName);
-  }
-  else if (visType == VisType::CSV) {
+  } else if (visType == VisType::CSV) {
     mpVisualizer = new VisualizerCSV(mFileName, mPathName);
-  }
-  else if (visType == VisType::FMU) {
+  } else if (visType == VisType::FMU) {
     mpVisualizer = new VisualizerFMU(mFileName, mPathName);
-  }
-  else {
-    std::cout<<"could not init "<<mPathName<<mFileName<<std::endl;
+  } else {
+    QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
+    mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   //load the XML File, build osgTree, get initial values for the shapes
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
-    std::cout<<"Could not find the visual XML file "<<assembleXMLFileName(mFileName, mPathName)<<std::endl;
-  }
-  else
-  {
+    QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
+    mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                                           Helper::scriptingKind, Helper::errorLevel));
+  } else {
     mpVisualizer->initData();
     mpVisualizer->setUpScene();
     mpVisualizer->initVisualization();
@@ -292,8 +291,7 @@ void AnimationWindow::loadVisualization()
     mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
   }
   //FMU settings dialog
-  if (visType == VisType::FMU)
-  {
+  if (visType == VisType::FMU) {
     //openFMUSettingsDialog();
   }
   //add window title
@@ -368,7 +366,9 @@ void AnimationWindow::initSlotFunction()
 {
   mpVisualizer->initVisualization();
   mpAnimationSlider->setValue(0);
+  bool state = mpTimeTextBox->blockSignals(true);
   mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  mpTimeTextBox->blockSignals(state);
 }
 
 /*!
@@ -379,14 +379,12 @@ void AnimationWindow::updateSceneFunction()
 {
   if (!(mpVisualizer == NULL)) {
     //set time label
-    if (!mpVisualizer->getTimeManager()->isPaused())
-    {
+    if (!mpVisualizer->getTimeManager()->isPaused()) {
       bool state = mpTimeTextBox->blockSignals(true);
       mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
       mpTimeTextBox->blockSignals(state);
       // set time slider
-      if (mpVisualizer->getVisType() != VisType::FMU)
-      {
+      if (mpVisualizer->getVisType() != VisType::FMU) {
         int time = mpVisualizer->getTimeManager()->getTimeFraction();
         mpAnimationSlider->setValue(time);
       }
@@ -455,12 +453,9 @@ void AnimationWindow::openAnimationFile(QString fileName)
     mpAnimationPauseAction->setEnabled(true);
     mpAnimationSlider->setEnabled(true);
     mpAnimationSlider->setValue(0);
-    mpSpeedTextBox->setEnabled(true);
-    bool state = mpSpeedTextBox->blockSignals(true);
-    mpSpeedTextBox->setText(QString("1.0"));
-    mpSpeedTextBox->blockSignals(state);
+    mpSpeedComboBox->setEnabled(true);
     mpTimeTextBox->setEnabled(true);
-    state = mpTimeTextBox->blockSignals(true);
+    bool state = mpTimeTextBox->blockSignals(true);
     mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
     mpTimeTextBox->blockSignals(state);
     state = mpPerspectiveDropDownBox->blockSignals(true);

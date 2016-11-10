@@ -83,7 +83,7 @@ public slots:
   void initSlotFunction();
   void renderSlotFunction();
   void chooseAnimationFileSlotFunction();
-  void setSpeedUpSlotFunction();
+  void setSpeedSlotFunction();
   void jumpToTimeSlotFunction();
   void updateSceneFunction();
   void resetCamera();
@@ -109,7 +109,7 @@ private:
   QLabel *mpAnimationTimeLabel;
   QLineEdit *mpTimeTextBox;
   Label *mpAnimationSpeedLabel;
-  QLineEdit *mpSpeedTextBox;
+  QComboBox *mpSpeedComboBox;
   QComboBox *mpPerspectiveDropDownBox;
   QDialog *mpFMUSettingsDialog;
   //actions

@@ -192,8 +192,6 @@ HEADERS  += Util/Helper.h \
   Editors/CEditor.h \
   Editors/MetaModelEditor.h \
   Editors/MetaModelicaEditor.h \
-  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include/fmilib.h \
-  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include/fmilib_config.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -306,6 +304,8 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 
 # Please read the warnings. They are like vegetables; good for you even if you hate them.
 CONFIG += warn_on
+# Only disable the unused variable/function/parameter warning
+QMAKE_CXXFLAGS += -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter
 
 RESOURCES += resource_omedit.qrc
 
