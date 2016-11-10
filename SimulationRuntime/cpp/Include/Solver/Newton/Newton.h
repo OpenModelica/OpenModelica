@@ -81,6 +81,7 @@ class Newton : public IAlgLoopSolver
     *_yMin,
     *_yMax,
     *_y,                        ///< Temp        - Unknowns
+    *_fNominal,
     *_f,                        ///< Temp        - Residuals
     *_yHelp,                    ///< Temp        - Auxillary variables
     *_fHelp,                    ///< Temp        - Auxillary variables

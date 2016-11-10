@@ -43,6 +43,7 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
   , _y                (NULL)
   , _yHelp            (NULL)
   , _yTest            (NULL)
+  , _fNominal         (NULL)
   , _f                (NULL)
   , _fHelp            (NULL)
   , _fTest            (NULL)
@@ -65,6 +66,7 @@ Newton::~Newton()
   if (_y)        delete []    _y;
   if (_yHelp)    delete []    _yHelp;
   if (_yTest)    delete []    _yTest;
+  if (_fNominal) delete []    _fNominal;
   if (_f)        delete []    _f;
   if (_fHelp)    delete []    _fHelp;
   if (_fTest)    delete []    _fTest;
@@ -97,6 +99,7 @@ void Newton::initialize()
       if (_yMin)     delete []    _yMin;
       if (_yMax)     delete []    _yMax;
       if (_y)        delete []    _y;
+      if (_fNominal) delete []    _fNominal;
       if (_f)        delete []    _f;
       if (_yHelp)    delete []    _yHelp;
       if (_yTest)    delete []    _yTest;
@@ -111,6 +114,7 @@ void Newton::initialize()
       _yMin         = new double[_dimSys];
       _yMax         = new double[_dimSys];
       _y            = new double[_dimSys];
+      _fNominal     = new double[_dimSys];
       _f            = new double[_dimSys];
       _yHelp        = new double[_dimSys];
       _yTest        = new double[_dimSys];
@@ -124,7 +128,7 @@ void Newton::initialize()
       _algLoop->getNominalReal(_yNominal);
       _algLoop->getMinReal(_yMin);
       _algLoop->getMaxReal(_yMax);
-      memset(_zeroVec, 0, _dimSys*sizeof(double));
+      std::fill(_zeroVec, _zeroVec + _dimSys, 0.0);
     }
     else {
       _iterationStatus = SOLVERERROR;
@@ -164,16 +168,6 @@ void Newton::solve()
                      _lc, LL_DEBUG);
 
   while (_iterationStatus == CONTINUE) {
-    // Check stopping criterion
-    if (!_algLoop->isLinear()) {
-      _iterationStatus = DONE;
-      for (int i = 0; i < _dimSys; ++i) {
-        if (std::abs(_f[i]) > atol + rtol * std::abs(_y[i])) {
-          _iterationStatus = CONTINUE;
-          break;
-        }
-      }
-    }
     if (_iterationStatus == CONTINUE) {
       if (totSteps < _newtonSettings->getNewtMax()) {
         // Determination of Jacobian for linear, non-torn system (Fortran-format)
@@ -217,13 +211,31 @@ void Newton::solve()
         else {
           LOG_VEC(_algLoop, "y" + to_string(totSteps), _y, _lc, LL_DEBUG);
           LOG_VEC(_algLoop, "f" + to_string(totSteps), _f, _lc, LL_DEBUG);
-          double phi = 0.0; // line search function
-          for (int i = 0; i < _dimSys; ++i) {
-            phi += _f[i] * _f[i];
-          }
-          calcJacobian(true);
 
-          // Solve linear System
+          calcJacobian(true);
+          LOG_VEC(_algLoop, "fNominal" + to_string(totSteps), _fNominal, _lc, LL_DEBUG);
+
+          // check stopping criterion
+          _iterationStatus = DONE;
+          for (int i = 0; i < _dimSys; ++i) {
+            if (std::abs(_f[i]) > atol + rtol * _fNominal[i]) {
+              _iterationStatus = CONTINUE;
+              break;
+            }
+          }
+          if (_iterationStatus == DONE)
+            break;
+
+          // Scale Jacobian and initialize line search function
+          double phi = 0.0;
+          for (int i = 0; i < _dimSys; i++) {
+            _f[i] /= _fNominal[i];
+            phi += _f[i] * _f[i];
+            for (int j = 0; j < _dimSys; j++)
+              _jac[i + j * _dimSys] *= _yNominal[j] / _fNominal[i];
+          }
+
+          // Solve linear system
           dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
 
           if (info != 0)
@@ -233,6 +245,10 @@ void Newton::solve()
 
           // Increase counter
           ++ totSteps;
+
+          // De-scale result
+          for (int j = 0; j < _dimSys; j++)
+            _f[j] *= _yNominal[j];
 
           // New iterate
           double lambda = 1.0; // step size
@@ -259,7 +275,7 @@ void Newton::solve()
           // check for solution, e.g. if a linear system is treated here
           _iterationStatus = DONE;
           for (int i = 0; i < _dimSys; i++) {
-            if (std::abs(_fHelp[i]) > atol + rtol * std::abs(_yHelp[i])) {
+            if (std::abs(_fHelp[i]) > atol + rtol * _fNominal[i]) {
               _iterationStatus = CONTINUE;
               break;
             }
@@ -268,8 +284,10 @@ void Newton::solve()
           // C.T.Kelley: Solving Nonlinear Equations with Newton's Method,
           // no 1 in Fundamentals of Algorithms, SIAM 2003. ISBN 0-89871-546-6.
           double phiHelp = 0.0;
-          for (int i = 0; i < _dimSys; i++)
+          for (int i = 0; i < _dimSys; i++) {
+            _fHelp[i] /= _fNominal[i];
             phiHelp += _fHelp[i] * _fHelp[i];
+          }
           while (_iterationStatus == CONTINUE) {
             // test half step that also serves as max bound for step reduction
             double lambdaTest = 0.5*lambda;
@@ -279,8 +297,10 @@ void Newton::solve()
             }
             calcFunction(_yTest, _fTest);
             double phiTest = 0.0;
-            for (int i = 0; i < _dimSys; i++)
+            for (int i = 0; i < _dimSys; i++) {
+              _fTest[i] /= _fNominal[i];
               phiTest += _fTest[i] * _fTest[i];
+            }
             // check for sufficient decrease of phiHelp
             // and no further decrease with phiTest
             // otherwise minimize quadratic approximation of phi(lambda)
@@ -312,6 +332,7 @@ void Newton::solve()
                 calcFunction(_yHelp, _fHelp);
                 phiHelp = 0.0;
                 for (int i = 0; i < _dimSys; i++) {
+                  _fHelp[i] /= _fNominal[i];
                   phiHelp += _fHelp[i] * _fHelp[i];
                 }
               }
@@ -326,7 +347,8 @@ void Newton::solve()
           }
           // take iterate
           std::copy(_yHelp, _yHelp + _dimSys, _y);
-          std::copy(_fHelp, _fHelp + _dimSys, _f);
+          for (int i = 0; i < _dimSys; i++)
+            _f[i] = _fHelp[i] * _fNominal[i];
           phi = phiHelp;
         }
       }
@@ -359,21 +381,25 @@ void Newton::stepCompleted(double time)
 
 void Newton::calcJacobian(bool getSymbolicJac)
 {
+  const double *jac = NULL;
+  std::fill(_fNominal, _fNominal + _dimSys, _newtonSettings->getAtol());
   // Use analytic Jacobian if available
   if (getSymbolicJac) {
     matrix_t A = _algLoop->getSystemMatrix();
     if (A.size1() == _dimSys && A.size2() == _dimSys) {
-      const double* jac = A.data().begin();
+      jac = A.data().begin();
       std::copy(jac, jac + _dimSys*_dimSys, _jac);
-      return;
+      for (int i = 0; i < _dimSys; i++)
+        for (int j = 0, idx = i; j < _dimSys; j++, idx += _dimSys)
+          _fNominal[i] = std::max(std::abs(_jac[idx]) * _yNominal[j], _fNominal[i]);
     }
   }
-  else {
-    // Alternatively apply finite differences
+  // Alternatively apply finite differences
+  if (jac == NULL) {
     for (int j = 0; j < _dimSys; ++j) {
       // Reset variables for every column
       std::copy(_y, _y + _dimSys, _yHelp);
-      double stepsize = 1e-6 * _yNominal[j];
+      double stepsize = 100.0 * _newtonSettings->getRtol() * _yNominal[j];
 
       // Finite differences
       _yHelp[j] += stepsize;
@@ -381,8 +407,10 @@ void Newton::calcJacobian(bool getSymbolicJac)
       calcFunction(_yHelp, _fHelp);
 
       // Build Jacobian in Fortran format
-      for (int i = 0; i < _dimSys; ++i)
-        _jac[i + j * _dimSys] = (_fHelp[i] - _f[i]) / stepsize;
+      for (int i = 0, idx = j * _dimSys; i < _dimSys; i++, idx++) {
+        _jac[idx] = (_fHelp[i] - _f[i]) / stepsize;
+        _fNominal[i] = std::max(std::abs(_jac[idx]) * _yNominal[j], _fNominal[i]);
+      }
 
       _yHelp[j] -= stepsize;
     }
