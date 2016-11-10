@@ -49,13 +49,28 @@ if test "$WITH_OSG" = 1; then
   [],
   [AC_MSG_ERROR([C++ preprocessor broken?])]
   )
-  AC_MSG_CHECKING([for osg/qt include order bugs])
+  AC_MSG_CHECKING([for osg/qt include order bugs (broken OSG version)])
   AC_PREPROC_IFELSE(
         [AC_LANG_PROGRAM([[
 #include <osg/Version>
 #if __arm__==1 && __clang_major__==3 && __clang_minor__==4 && OPENSCENEGRAPH_MAJOR_VERSION==3 && OPENSCENEGRAPH_MINOR_VERSION==2 && OPENSCENEGRAPH_PATCH_VERSION==0
 #error "ARM+clang 3.4+OSG3.2.0 does not work together"
 #endif
+]],
+  [[]])],
+  [AC_MSG_RESULT([OK])],
+  [AC_MSG_RESULT([no (giving up on OSG)]); WITH_OSG=0]
+  )
+  CPPFLAGS="$OLD_CPPFLAGS"
+fi
+if test "$WITH_OSG" = 1; then
+  AC_MSG_CHECKING([for osg/qt include order bugs (broken OpenGL)])
+  OLD_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -fPIC -I$QT_INSTALL_HEADERS -I$QT_INSTALL_HEADERS/QtOpenGL"
+  AC_PREPROC_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <osgViewer/GraphicsWindow>
+#include <QGLWidget>
 ]],
   [[]])],
   [AC_MSG_RESULT([OK])],
