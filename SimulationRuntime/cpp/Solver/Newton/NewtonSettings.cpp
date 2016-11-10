@@ -10,8 +10,8 @@
 
 NewtonSettings::NewtonSettings()
   : _iNewt_max                 (50)
-  , _dRtol                     (1e-6)
-  , _dAtol                     (1e-6)
+  , _dRtol                     (1e-8)
+  , _dAtol                     (1e-8)
   , _dDelta                    (1)
   , _continueOnError           (false)
 {
