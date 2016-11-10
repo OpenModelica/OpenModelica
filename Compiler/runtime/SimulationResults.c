@@ -453,7 +453,13 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
           c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
           return 0;
         }
-        vals[i] = omc_matlab4_read_vals(&simresglob.matReader, mat_var[i]->index);
+        if (mat_var[i]->isParam) {
+          msg[0] = var;
+          c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not filter parameter %s since the output format is CSV (only variables are allowed)."), msg, 1);
+          return 0;
+        } else {
+          vals[i] = omc_matlab4_read_vals(&simresglob.matReader, mat_var[i]->index);
+        }
       }
       fout = fopen(outFile, "w");
       fprintf(fout, "time");
