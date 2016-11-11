@@ -213,8 +213,7 @@ void Newton::solve()
       LOG_VEC(_algLoop, "y" + to_string(totSteps), _y, _lc, LL_DEBUG);
       LOG_VEC(_algLoop, "f" + to_string(totSteps), _f, _lc, LL_DEBUG);
 
-      calcJacobian(true);
-      LOG_VEC(_algLoop, "fNominal" + to_string(totSteps), _fNominal, _lc, LL_DEBUG);
+      calcJacobian(_jac, _fNominal);
 
       // check stopping criterion
       _iterationStatus = DONE;
@@ -375,24 +374,30 @@ void Newton::stepCompleted(double time)
 
 }
 
-void Newton::calcJacobian(bool getSymbolicJac)
+void Newton::calcJacobian(double *jac, double *fNominal)
 {
-  const double *jac = NULL;
-  std::fill(_fNominal, _fNominal + _dimSys, _newtonSettings->getAtol());
+  const double *Adata = NULL;
+  std::fill(fNominal, fNominal + _dimSys, _newtonSettings->getAtol());
   // Use analytic Jacobian if available
-  if (getSymbolicJac) {
+  try {
     matrix_t A = _algLoop->getSystemMatrix();
     if (A.size1() == _dimSys && A.size2() == _dimSys) {
-      jac = A.data().begin();
-      std::copy(jac, jac + _dimSys*_dimSys, _jac);
-      for (int i = 0; i < _dimSys; i++)
-        for (int j = 0, idx = i; j < _dimSys; j++, idx += _dimSys)
-          _fNominal[i] = std::max(std::abs(_jac[idx]) * _yNominal[j], _fNominal[i]);
+      Adata = A.data().begin();
+      std::copy(Adata, Adata + _dimSys * _dimSys, jac);
+      for (int j = 0, idx = 0; j < _dimSys; j++)
+        for (int i = 0; i < _dimSys; i++, idx++)
+          fNominal[i] = std::max(std::abs(jac[idx]) * _yNominal[j], fNominal[i]);
     }
   }
+  catch (ModelicaSimulationError& ex) {
+    LOGGER_WRITE("Analytic Jacobian failed for eq" +
+                 to_string(_algLoop->getEquationIndex()) + " at time " +
+                 to_string(_algLoop->getSimTime()) + ": " + ex.what(),
+                 _lc, LL_WARNING);
+  }
   // Alternatively apply finite differences
-  if (jac == NULL) {
-    for (int j = 0; j < _dimSys; ++j) {
+  if (Adata == NULL) {
+    for (int j = 0; j < _dimSys; j++) {
       // Reset variables for every column
       std::copy(_y, _y + _dimSys, _yHelp);
       double stepsize = 100.0 * _newtonSettings->getRtol() * _yNominal[j];
@@ -404,13 +409,14 @@ void Newton::calcJacobian(bool getSymbolicJac)
 
       // Build Jacobian in Fortran format
       for (int i = 0, idx = j * _dimSys; i < _dimSys; i++, idx++) {
-        _jac[idx] = (_fHelp[i] - _f[i]) / stepsize;
-        _fNominal[i] = std::max(std::abs(_jac[idx]) * _yNominal[j], _fNominal[i]);
+        jac[idx] = (_fHelp[i] - _f[i]) / stepsize;
+        fNominal[i] = std::max(std::abs(jac[idx]) * _yNominal[j], fNominal[i]);
       }
 
       _yHelp[j] -= stepsize;
     }
   }
+  LOG_VEC(_algLoop, "fNominal", fNominal, _lc, LL_DEBUG);
 }
 
 void Newton::restoreOldValues()
