@@ -9002,7 +9002,7 @@ algorithm
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,redecl,io,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
+          Absyn.COMPONENTS(attr,Absyn.TPATH(Absyn.pathStripSamePrefix(tppath,modelpath),NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
           SOURCEINFO(filename,false,0,0,0,0,0.0),NONE())));
         newp = updateProgram(Absyn.PROGRAM({newcdef},w), p);

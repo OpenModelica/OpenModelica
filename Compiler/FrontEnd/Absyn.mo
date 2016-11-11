@@ -2993,6 +2993,31 @@ algorithm
   end match;
 end pathRest;
 
+public function pathStripSamePrefix
+  "strips the same prefix paths and returns the stripped path. e.g pathStripSamePrefix(P.M.A, P.M.B) => A"
+  input Absyn.Path inPath1;
+  input Absyn.Path inPath2;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath1, inPath2)
+    local
+      Ident ident1, ident2;
+      Absyn.Path path1, path2;
+
+    case (_, _)
+      equation
+        ident1 = pathFirstIdent(inPath1);
+        ident2 = pathFirstIdent(inPath2);
+        true = stringEq(ident1, ident2);
+        path1 = stripFirst(inPath1);
+        path2 = stripFirst(inPath2);
+      then
+        pathStripSamePrefix(path1, path2);
+
+    else inPath1;
+  end matchcontinue;
+end pathStripSamePrefix;
+
 public function pathPrefix
   "Returns the prefix of a path, i.e. this.is.a.path => this.is.a"
   input Path path;
