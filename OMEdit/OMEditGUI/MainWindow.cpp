@@ -1006,15 +1006,10 @@ void MainWindow::findFileAndGoToLine(QString fileName, QString lineNumber)
 {
   LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, lineNumber.toInt());
   if (pLibraryTreeItem) {
-    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
-    if (pModelWidget) {
-      mpModelWidgetContainer->addModelWidget(pModelWidget, false);
-    } else {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    }
-    if (pModelWidget && pModelWidget->getEditor()) {
-      pModelWidget->getTextViewToolButton()->setChecked(true);
-      pModelWidget->getEditor()->goToLineNumber(lineNumber.toInt());
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+      pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
+      pLibraryTreeItem->getModelWidget()->getEditor()->goToLineNumber(lineNumber.toInt());
     }
   } else {
     QString msg = tr("Unable to find the file <b>%1</b> with line number <b>%2</b>").arg(fileName).arg(lineNumber);
