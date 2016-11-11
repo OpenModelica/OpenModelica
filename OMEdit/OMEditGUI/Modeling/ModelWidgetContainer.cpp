@@ -382,17 +382,13 @@ void GraphicsView::addComponentToClass(Component *pComponent)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-    // Add the component to model in OMC Global Scope.
-    QString className;
-    if (pComponent->getLibraryTreeItem()) {
-      className = StringHandler::makeClassNameRelative(pComponent->getLibraryTreeItem()->getNameStructure(),
-                                                       mpModelWidget->getLibraryTreeItem()->getNameStructure());
-      pComponent->getComponentInfo()->setClassName(className);
-    } else {
-      className = pComponent->getComponentInfo()->getClassName();
-    }
-    pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                             pComponent->getPlacementAnnotation());
+    // Add the component to model in OMC.
+    /* Ticket:4132
+     * Always send the full path so that addComponent API doesn't fail when it makes a call to getDefaultPrefixes.
+     * I updated the addComponent API to make path relative.
+     */
+    pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), pComponent->getComponentInfo()->getClassName(),
+                                             mpModelWidget->getLibraryTreeItem()->getNameStructure(), pComponent->getPlacementAnnotation());
     LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
     // get the toplevel class of dragged component
     QString packageName = StringHandler::getFirstWordBeforeDot(pComponent->getLibraryTreeItem()->getNameStructure());
