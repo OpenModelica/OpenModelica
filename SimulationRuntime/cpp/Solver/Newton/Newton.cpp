@@ -157,8 +157,10 @@ void Newton::solve()
 
   // Get current values and residuals from system
   _algLoop->getReal(_y);
-  _algLoop->evaluate();
-  _algLoop->getRHS(_f);
+  if (!_algLoop->isLinearTearing()) {
+    _algLoop->evaluate();
+    _algLoop->getRHS(_f);
+  }
 
   // Reset status flag
   _iterationStatus = CONTINUE;
@@ -173,11 +175,12 @@ void Newton::solve()
         "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
     // Solve linear non-torn system
     if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
-      const matrix_t& A = _algLoop->getSystemMatrix();
-      const double* jac = A.data().begin();
-      std::copy(jac, jac + _dimSys*_dimSys, _jac);
+      calcJacobian(_jac, _fNominal);
+      for (int i = 0; i < _dimSys; i++)
+        _f[i] /= _fNominal[i];
       dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-      std::copy(_f, _f + _dimSys, _y);
+      for (int j = 0; j < _dimSys; j++)
+        _y[j] = _f[j] * _yNominal[j];
       _algLoop->setReal(_y);
       if (info != 0)
         throw ModelicaSimulationError(ALGLOOP_SOLVER,
@@ -188,17 +191,13 @@ void Newton::solve()
 
     // Solve linear torn system
     else if (_algLoop->isLinearTearing()) {
-      _algLoop->setReal(_zeroVec);
-      _algLoop->evaluate();
-      _algLoop->getRHS(_f);
-
-      const matrix_t& A_sparse = _algLoop->getSystemMatrix();
-      //m_t A_dense(A_sparse);
-      const double* jac = A_sparse.data().begin();
-      std::copy(jac, jac + _dimSys*_dimSys, _jac);
-      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+      calcFunction(_zeroVec, _f);
+      calcJacobian(_jac, _fNominal);
       for (int i = 0; i < _dimSys; i++)
-        _y[i] = -_f[i];
+        _f[i] /= _fNominal[i];
+      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+      for (int j = 0; j < _dimSys; j++)
+        _y[j] = -_f[j] * _yNominal[j];
       _algLoop->setReal(_y);
       _algLoop->evaluate();
       if (info != 0)
@@ -226,13 +225,11 @@ void Newton::solve()
       if (_iterationStatus == DONE)
         break;
 
-      // Scale Jacobian and initialize line search function
+      // Initialize line search function
       double phi = 0.0;
       for (int i = 0; i < _dimSys; i++) {
         _f[i] /= _fNominal[i];
         phi += _f[i] * _f[i];
-        for (int j = 0; j < _dimSys; j++)
-          _jac[i + j * _dimSys] *= _yNominal[j] / _fNominal[i];
       }
 
       // Solve linear system
@@ -377,10 +374,11 @@ void Newton::stepCompleted(double time)
 void Newton::calcJacobian(double *jac, double *fNominal)
 {
   const double *Adata = NULL;
-  std::fill(fNominal, fNominal + _dimSys, _newtonSettings->getAtol());
+  std::fill(fNominal, fNominal + _dimSys, 1e2 * _newtonSettings->getAtol());
+
   // Use analytic Jacobian if available
   try {
-    matrix_t A = _algLoop->getSystemMatrix();
+    const matrix_t& A = _algLoop->getSystemMatrix();
     if (A.size1() == _dimSys && A.size2() == _dimSys) {
       Adata = A.data().begin();
       std::copy(Adata, Adata + _dimSys * _dimSys, jac);
@@ -395,12 +393,13 @@ void Newton::calcJacobian(double *jac, double *fNominal)
                  to_string(_algLoop->getSimTime()) + ": " + ex.what(),
                  _lc, LL_WARNING);
   }
+
   // Alternatively apply finite differences
   if (Adata == NULL) {
     for (int j = 0; j < _dimSys; j++) {
       // Reset variables for every column
       std::copy(_y, _y + _dimSys, _yHelp);
-      double stepsize = 100.0 * _newtonSettings->getRtol() * _yNominal[j];
+      double stepsize = 1e2 * _newtonSettings->getRtol() * _yNominal[j];
 
       // Finite differences
       _yHelp[j] += stepsize;
@@ -416,7 +415,12 @@ void Newton::calcJacobian(double *jac, double *fNominal)
       _yHelp[j] -= stepsize;
     }
   }
+
+  // Scale Jacobian
   LOG_VEC(_algLoop, "fNominal", fNominal, _lc, LL_DEBUG);
+  for (int j = 0, idx = 0; j < _dimSys; j++)
+    for (int i = 0; i < _dimSys; i++, idx++)
+      jac[idx] *= _yNominal[j] / fNominal[i];
 }
 
 void Newton::restoreOldValues()
