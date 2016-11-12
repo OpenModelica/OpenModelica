@@ -165,7 +165,12 @@ QVariant LocalsTreeItem::data(int column, int role) const
         case 1:
           return getDisplayType();
         case 2:
-          return getDisplayValue();
+          // display the string type with quotes.
+          if (getDisplayType().compare(Helper::STRING) == 0) {
+            return QString("\"%1\"").arg(getDisplayValue());
+          } else {
+            return getDisplayValue();
+          }
         default:
           break;
       }
@@ -638,8 +643,11 @@ void LocalsWidget::showLocalValue(QModelIndex currentIndex, QModelIndex previous
   if (!pLocalsTreeItem) {
     return;
   }
-
-  mpLocalValueViewer->setPlainText(pLocalsTreeItem->getDisplayValue());
+  if (pLocalsTreeItem->getDisplayType().compare(Helper::STRING) == 0) {
+    mpLocalValueViewer->setPlainText(QString("\"%1\"").arg(pLocalsTreeItem->getDisplayValue()));
+  } else {
+    mpLocalValueViewer->setPlainText(pLocalsTreeItem->getDisplayValue());
+  }
 }
 
 /*!
