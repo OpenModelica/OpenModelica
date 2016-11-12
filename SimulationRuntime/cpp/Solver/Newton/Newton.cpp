@@ -214,17 +214,6 @@ void Newton::solve()
 
       calcJacobian(_jac, _fNominal);
 
-      // check stopping criterion
-      _iterationStatus = DONE;
-      for (int i = 0; i < _dimSys; ++i) {
-        if (std::abs(_f[i]) > atol + rtol * _fNominal[i]) {
-          _iterationStatus = CONTINUE;
-          break;
-        }
-      }
-      if (_iterationStatus == DONE)
-        break;
-
       // Initialize line search function
       double phi = 0.0;
       for (int i = 0; i < _dimSys; i++) {
@@ -243,17 +232,13 @@ void Newton::solve()
       // Increase counter
       ++ totSteps;
 
-      // De-scale result
-      for (int j = 0; j < _dimSys; j++)
-        _f[j] *= _yNominal[j];
-
       // New iterate
       double lambda = 1.0; // step size
       double alpha = 1e-4; // guard for sufficient decrease
       // first find a feasible step
       while (true) {
         for (int i = 0; i < _dimSys; i++) {
-          _yHelp[i] = _y[i] - lambda * _f[i];
+          _yHelp[i] = _y[i] - lambda * _f[i] * _yNominal[i];
           _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
         }
         // evaluate function
@@ -269,7 +254,7 @@ void Newton::solve()
         }
         break;
       }
-      // check for solution, e.g. if a linear system is treated here
+      // check stopping criterion
       _iterationStatus = DONE;
       for (int i = 0; i < _dimSys; i++) {
         if (std::abs(_fHelp[i]) > atol + rtol * _fNominal[i]) {
@@ -289,7 +274,7 @@ void Newton::solve()
         // test half step that also serves as max bound for step reduction
         double lambdaTest = 0.5*lambda;
         for (int i = 0; i < _dimSys; i++) {
-          _yTest[i] = _y[i] - lambdaTest * _f[i];
+          _yTest[i] = _y[i] - lambdaTest * _f[i] * _yNominal[i];
           _yTest[i] = std::min(_yMax[i], std::max(_yMin[i], _yTest[i]));
         }
         calcFunction(_yTest, _fTest);
@@ -323,7 +308,7 @@ void Newton::solve()
           }
           else {
             for (int i = 0; i < _dimSys; i++) {
-              _yHelp[i] = _y[i] - lambda * _f[i];
+              _yHelp[i] = _y[i] - lambda * _f[i] * _yNominal[i];
               _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
             }
             calcFunction(_yHelp, _fHelp);
