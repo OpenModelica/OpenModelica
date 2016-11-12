@@ -127,7 +127,7 @@ public slots:
   void handleInferiorResumed();
   void threadChanged(int threadIndex);
   void fillThreadComboBox(GDBMIValue *pThreadsGDBMIValue, QString currentThreadId);
-  void stackItemDoubleClicked(QTreeWidgetItem *pQTreeWidgetItem);
+  void stackCurrentItemChanged(QTreeWidgetItem *pTreeWidgetItem);
 };
 
 #endif // STACKFRAMESWIDGET_H

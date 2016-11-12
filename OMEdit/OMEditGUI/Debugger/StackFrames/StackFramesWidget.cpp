@@ -164,7 +164,7 @@ StackFramesTreeWidget::StackFramesTreeWidget(StackFramesWidget *pStackFramesWidg
   setContextMenuPolicy(Qt::CustomContextMenu);
   createActions();
   connect(mpStackFramesWidget->getMainWindow()->getGDBAdapter(), SIGNAL(stackListFrames(GDBMIValue*)), SLOT(createStackFrames(GDBMIValue*)));
-  connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpStackFramesWidget, SLOT(stackItemDoubleClicked(QTreeWidgetItem*)));
+  connect(this, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), mpStackFramesWidget, SLOT(stackCurrentItemChanged(QTreeWidgetItem*)));
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 }
 
@@ -209,7 +209,6 @@ void StackFramesTreeWidget::setCurrentStackFrame(QTreeWidgetItem *pQTreeWidgetIt
     }
     /* set the current item and add icon to it */
     mpStackFramesWidget->setSelectedFrame(pStackFrameItem->getLevel().toInt());
-    setCurrentItem(pStackFrameItem);
     pStackFrameItem->setIcon(0, QIcon(":/Resources/icons/next.svg"));
   }
 }
@@ -264,7 +263,7 @@ void StackFramesTreeWidget::createStackFrames(GDBMIValue *pGDBMIValue)
   /* if we get some frames then make the first enabled one selected and fetch the variables for it. */
   for (int i = 0 ; i < topLevelItemCount() ; i++) {
     if (!topLevelItem(i)->isDisabled()) {
-      mpStackFramesWidget->stackItemDoubleClicked(topLevelItem(i));
+      mpStackFramesWidget->stackCurrentItemChanged(topLevelItem(i));
       return;
     }
   }
@@ -628,15 +627,15 @@ void StackFramesWidget::fillThreadComboBox(GDBMIValue *pThreadsGDBMIValue, QStri
 }
 
 /*!
- * \brief StackFramesWidget::stackItemDoubleClicked
- * Slot activated when itemDoubleClicked signal of StackFramesTreeWidget is raised.
+ * \brief StackFramesWidget::stackCurrentItemChanged
+ * Slot activated when currentItemChanged signal of StackFramesTreeWidget is raised.
  * Sends the -stack-list-variables command.
  * \param pQTreeWidgetItem
  * \return
  */
-void StackFramesWidget::stackItemDoubleClicked(QTreeWidgetItem *pQTreeWidgetItem)
+void StackFramesWidget::stackCurrentItemChanged(QTreeWidgetItem *pTreeWidgetItem)
 {
-  StackFrameItem *pStackFrameItem = dynamic_cast<StackFrameItem*>(pQTreeWidgetItem);
+  StackFrameItem *pStackFrameItem = dynamic_cast<StackFrameItem*>(pTreeWidgetItem);
   if (pStackFrameItem && !pStackFrameItem->isDisabled()) {
     mpStackFramesTreeWidget->setCurrentStackFrame(pStackFrameItem);
     QByteArray cmd = CommandFactory::stackListVariables(getSelectedThread(), getSelectedFrame(), "--simple-values");
