@@ -35,7 +35,7 @@ class ModelicaSimulationError : public runtime_error
      * @param suppress Set to true if the error should not appear on std::err and std::out.
      */
     ModelicaSimulationError(SIMULATION_ERROR error_id, const string& error_info, string description = "", bool suppress = false)
-    : runtime_error("simulation error message: " + error_info + (description.size() > 0 ? "\n" + description : ""))
+    : runtime_error(error_info + (description.size() > 0 ? "\n" + description : ""))
     , _error_id(error_id)
     , _suppress(suppress)
     {

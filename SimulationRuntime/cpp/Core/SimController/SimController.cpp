@@ -251,7 +251,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
     catch(ModelicaSimulationError & ex)
     {
         string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
-        throw ModelicaSimulationError(SIMMANAGER,error);
+        throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
     }
 }
 

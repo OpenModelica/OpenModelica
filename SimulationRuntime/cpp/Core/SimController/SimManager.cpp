@@ -277,12 +277,13 @@ void SimManager::runSimulation()
     }
     catch (std::exception & ex)
     {
-        LOGGER_WRITE("SimManager: Simulation finish with errors at t = " + to_string(_tEnd), LC_SOLV, LL_ERROR);
+        LOGGER_WRITE("SimManager: Simulation stopped with errors before t = " +
+                     to_string(_tEnd), LC_SOLV, LL_ERROR);
+        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_SOLV, LL_ERROR);
         writeProperties();
-
-        LOGGER_WRITE("SimManager: Error = " + string(ex.what()), LC_SOLV, LL_ERROR);
-        //ex << error_id(SIMMANAGER);
-        throw;
+        // rethrow with suppress depending on logger setting to not appear twice
+        throw ModelicaSimulationError(SIMMANAGER, ex.what(), "",
+                                      LOGGER_IS_SET(LC_SOLV, LL_ERROR));
     }
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
