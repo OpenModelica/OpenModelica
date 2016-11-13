@@ -14,24 +14,6 @@
 #include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
-#ifdef USE_LOGGER
-  #define LOG_VEC(algLoop, name, vec, lc, ll) LogVec(algLoop, name, vec, lc, ll)
-#else
-  #define LOG_VEC(algLoop, name, vec, lc, ll)
-#endif
-
-template <typename S, typename T>
-static inline void LogVec(IAlgLoop* algLoop, S name, T vec[],
-                          LogCategory lc, LogLevel ll) {
-  if (LOGGER_IS_SET(lc, ll)) {
-    std::stringstream ss;
-    ss << name << " = {";
-    for (int i = 0; i < algLoop->getDimReal(); i++)
-      ss <<  (i > 0? ", ": "") << vec[i];
-    ss << "}";
-    LOGGER_WRITE(ss.str(), lc, ll);
-  }
-}
 
 Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
   : _algLoop          (algLoop)
@@ -136,8 +118,8 @@ void Newton::initialize()
   }
   LOGGER_WRITE_BEGIN("Newton: eq" + to_string(_algLoop->getEquationIndex()) +
                      " initialized", _lc, LL_DEBUG);
-  LOG_VEC(_algLoop, "yNames", _yNames, _lc, LL_DEBUG);
-  LOG_VEC(_algLoop, "yNominal", _yNominal, _lc, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("yNames", _yNames, _dimSys, _lc, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("yNominal", _yNominal, _dimSys, _lc, LL_DEBUG);
   LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
 
@@ -210,8 +192,8 @@ void Newton::solve()
 
     // Newton step for non-linear system
     else {
-      LOG_VEC(_algLoop, "y" + to_string(totSteps), _y, _lc, LL_DEBUG);
-      LOG_VEC(_algLoop, "f" + to_string(totSteps), _f, _lc, LL_DEBUG);
+      LOGGER_WRITE_VECTOR("y" + to_string(totSteps), _y, _dimSys, _lc, LL_DEBUG);
+      LOGGER_WRITE_VECTOR("f" + to_string(totSteps), _f, _dimSys, _lc, LL_DEBUG);
 
       calcJacobian(_jac, _fNominal);
 
@@ -336,7 +318,7 @@ void Newton::solve()
     }
   } // end while
 
-  LOG_VEC(_algLoop, "y*", _y, _lc, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("y*", _y, _dimSys, _lc, LL_DEBUG);
   LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
 
@@ -403,7 +385,7 @@ void Newton::calcJacobian(double *jac, double *fNominal)
   }
 
   // Scale Jacobian
-  LOG_VEC(_algLoop, "fNominal", fNominal, _lc, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("fNominal", fNominal, _dimSys, _lc, LL_DEBUG);
   for (int j = 0, idx = 0; j < _dimSys; j++)
     for (int i = 0; i < _dimSys; i++, idx++)
       //jac[idx] *= _yNominal[j] / fNominal[i];

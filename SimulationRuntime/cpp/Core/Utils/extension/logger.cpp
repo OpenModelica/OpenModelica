@@ -40,8 +40,12 @@ void Logger::initialize(LogSettings settings)
 void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
                            LogStructure ls)
 {
-  if (ls != LS_END)
-    std::cerr << getPrefix(cat, lvl) << ": " << msg << std::endl;
+  if (ls != LS_END) {
+    std::string catStr = getCategory(cat);
+    std::ostream &stream = lvl <= 1? std::cerr: std::cout;
+    stream << getPrefix(cat, lvl) << catStr.append(6 - catStr.length(), ' ')
+           << ": " << msg << std::endl;
+  }
 }
 
 void Logger::setEnabledInternal(bool enabled)
@@ -56,20 +60,18 @@ bool Logger::isEnabledInternal()
 
 std::string Logger::getPrefix(LogCategory cat, LogLevel lvl) const
 {
-	switch(lvl)
-	{
-	case(LL_DEBUG):
-		return "  DEBUG: ";
-	case(LL_ERROR):
-		return "  ERROR: ";
-	case(LL_INFO):
-		return "   INFO: ";
-	case(LL_WARNING):
-		return "WARNING: ";
-	default:
-		return "";
-
-	}
+  switch (lvl) {
+  case(LL_DEBUG):
+    return "DEBUG  : ";
+  case(LL_ERROR):
+    return "ERROR  : ";
+  case(LL_INFO):
+    return "INFO   : ";
+  case(LL_WARNING):
+    return "WARNING: ";
+  default:
+    return "";
+  }
 }
 
 std::string Logger::getCategory(LogCategory cat) const

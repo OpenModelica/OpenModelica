@@ -7,7 +7,7 @@
 #include <Core/System/FactoryExport.h>
 #include <Core/System/ContinuousEvents.h>
 #include <Core/Math/Functions.h>
-
+#include <Core/Utils/extension/logger.hpp>
 
 ContinuousEvents::ContinuousEvents()
 : _event_system(NULL)
@@ -98,13 +98,13 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   //check if discrete variables changed
   bool drestart= _event_system->checkForDiscreteEvents(); //discrete time conditions
 
-
   _event_system->getConditions(_conditions1);
   //_event_system->getClockConditions(_clockconditions1);
   bool crestart =false;
-  if(dim>0)
+  if (dim > 0)
   {
-     crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
+    LOGGER_WRITE_VECTOR("conditions", _conditions1, dim, LC_EVT, LL_DEBUG);
+    crestart = !std::equal(_conditions1, _conditions1 + dim, _conditions0);
   }
   //check for event clocks
   /*bool eventclocksrestart =  false;

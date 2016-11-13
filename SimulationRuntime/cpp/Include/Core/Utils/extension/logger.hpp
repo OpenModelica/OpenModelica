@@ -18,12 +18,15 @@
   #define LOGGER_WRITE_BEGIN(msg, cat, lvl) \
     if (LOGGER_IS_SET(cat, lvl)) Logger::writeBegin(msg, cat, lvl)
   #define LOGGER_WRITE_END(cat, lvl) Logger::writeEnd(cat, lvl)
+  #define LOGGER_WRITE_VECTOR(name, vec, dim, lc, ll) \
+    Logger::writeVector(name, vec, dim, lc, ll)
 #else
   #define LOGGER_IS_SET(cat, lvl) false
   #define LOGGER_WRITE(msg, cat, lvl)
   #define LOGGER_WRITE_TUPLE(msg, mode)
   #define LOGGER_WRITE_BEGIN(msg, cat, lvl)
   #define LOGGER_WRITE_END(cat, lvl)
+  #define LOGGER_WRITE_VECTOR(name, vec, dim, lc, ll)
 #endif //USE_LOGGER
 
 class BOOST_EXTENSION_LOGGER_DECL Logger
@@ -67,6 +70,19 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     static inline void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
     {
       write(msg, mode.first, mode.second);
+    }
+
+    template <typename S, typename T>
+    static inline void writeVector(S name, T vec[], size_t dim, LogCategory lc, LogLevel ll)
+    {
+      if (Logger::getInstance()->isSet(lc, ll)) {
+        std::stringstream ss;
+        ss << name << " = {";
+        for (size_t i = 0; i < dim; i++)
+          ss <<  (i > 0? ", ": "") << vec[i];
+        ss << "}";
+        write(ss.str(), lc, ll);
+      }
     }
 
     static void setEnabled(bool enabled)
