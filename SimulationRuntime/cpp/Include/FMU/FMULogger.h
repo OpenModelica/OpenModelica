@@ -28,7 +28,7 @@ class BOOST_EXTENSION_EXPORT_DECL FMULogger : Logger
     }
 
   protected:
-    virtual void writeInternal(std::string errorMsg, LogCategory cat, LogLevel lvl);
+    virtual void writeInternal(std::string errorMsg, LogCategory cat, LogLevel lvl, LogStructure ls);
   private:
     fmiCallbackLogger callbackLogger;
     fmiComponent component;

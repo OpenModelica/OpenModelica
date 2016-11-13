@@ -53,16 +53,71 @@ fmi2String FMU2Wrapper::LogCategoryFMUName(LogCategoryFMU category) {
   return _LogCategoryFMUNames[category];
 }
 
+FMU2Logger::FMU2Logger(FMU2Wrapper *wrapper,
+                       LogSettings &logSettings, bool enabled) :
+  Logger(logSettings, enabled),
+  _wrapper(wrapper)
+{
+  if (instance != NULL)
+    delete instance;
+  instance = this;
+}
+
+void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
+                               LogStructure ls)
+{
+  LogCategoryFMU category;
+  fmi2Status status;
+
+  if (ls == LS_END)
+    return;
+
+  // determine FMI status and category from LogLevel
+  switch (lvl) {
+  case LL_ERROR:
+    status = fmi2Error;
+    category = logStatusError;
+    break;
+  case LL_WARNING:
+    status = fmi2Warning;
+    category = logStatusWarning;
+    break;
+  default:
+    status = fmi2OK;
+    category = logStatusWarning;
+  }
+
+  // override FMU category with matching LogCategory
+  switch (cat) {
+  case LC_NLS:
+    category = logNonlinearSystems;
+    break;
+  case LC_EVT:
+    category = logEvents;
+    break;
+  }
+
+  // call FMU log function
+  FMU2_LOG(_wrapper, status, category, msg.c_str());
+}
+
 FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
                          const fmi2CallbackFunctions *functions,
                          fmi2Boolean loggingOn) :
   _global_settings(),
   _functions(*functions),
-  logger(_functions.logger)
+  callbackLogger(_functions.logger)
 {
   _instanceName = instanceName;
   _GUID = GUID;
+
+  // setup logger
   _logCategories = loggingOn? 0xFFFF: 0x0000;
+  LogSettings logSettings = _global_settings.getLogSettings();
+  logSettings.setAll(loggingOn? LL_DEBUG: LL_ERROR);
+  _logger = new FMU2Logger(this, logSettings, loggingOn);
+
+  // setup model
   _model = createSystemFMU(&_global_settings);
   _model->initializeMemory();
   _model->initializeFreeVariables();
@@ -76,6 +131,7 @@ FMU2Wrapper::~FMU2Wrapper()
 {
   delete [] _clock_buffer;
   delete _model;
+  delete _logger;
 }
 
 fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
@@ -83,13 +139,17 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
                                         const fmi2String categories[])
 {
   fmi2Status ret = fmi2OK;
-  if (nCategories == 0)
+  _logger->setEnabled(loggingOn);
+  if (nCategories == 0) {
     _logCategories = loggingOn? 0xFFFF: 0x0000;
+    _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
+  }
   else {
     int i, j, nSupported = sizeof(_LogCategoryFMUNames) / sizeof(fmi2String);
     for (i = 0; i < nCategories; i++) {
       if (strcmp(categories[i], "logAll") == 0) {
         _logCategories = loggingOn? 0xFFFF: 0x0000;
+        _logger->setAll(loggingOn? LL_DEBUG: LL_ERROR);
         continue;
       }
       for (j = 0; j < nSupported; j++) {
@@ -98,6 +158,14 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
             _logCategories |= (1 << j);
           else
             _logCategories &= ~(1 << j);
+          switch (j) {
+          case logEvents:
+            _logger->set(LC_EVT, loggingOn? LL_DEBUG: LL_ERROR);
+            break;
+          case logNonlinearSystems:
+            _logger->set(LC_NLS, loggingOn? LL_DEBUG: LL_ERROR);
+            break;
+          }
           break;
         }
       }
@@ -379,4 +447,5 @@ fmi2Status FMU2Wrapper::getNominalsOfContinuousStates(fmi2Real x_nominal[], size
     x_nominal[i] = 1.0;  // TODO
   return fmi2OK;
 }
+
 /** @} */ // end of fmu2

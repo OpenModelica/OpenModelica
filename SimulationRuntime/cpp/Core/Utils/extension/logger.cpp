@@ -37,9 +37,10 @@ void Logger::initialize(LogSettings settings)
   }
 }
 
-void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl, bool)
+void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
+                           LogStructure ls)
 {
-  if (msg != "")
+  if (ls != LS_END)
     std::cerr << getPrefix(cat, lvl) << ": " << msg << std::endl;
 }
 
@@ -119,18 +120,18 @@ LoggerXML::~LoggerXML()
 }
 
 void LoggerXML::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
-                              bool ready)
+                              LogStructure ls)
 {
-  if (msg != "") {
+  if (ls != LS_END) {
     std::cout << "<message stream=\"" << getCategory(cat) << "\" "
               << "type=\"" << getLevel(lvl) << "\" "
               << "text=\"" << msg << "\"";
-    if (ready)
-      std::cout << " />" << std::endl;
-    else
+    if (ls == LS_BEGIN)
       std::cout << " >" << std::endl;
+    else
+      std::cout << " />" << std::endl;
   }
-  else if (ready) {
+  else {
     std::cout << "</message>" << std::endl;
   }
 }

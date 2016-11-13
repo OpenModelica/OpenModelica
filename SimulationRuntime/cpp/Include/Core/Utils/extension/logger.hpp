@@ -49,19 +49,19 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     static inline void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
       if (instance && instance->isSet(cat, lvl))
-        instance->writeInternal(msg, cat, lvl, true);
+        instance->writeInternal(msg, cat, lvl, LS_NONE);
     }
 
     static inline void writeBegin(std::string msg, LogCategory cat, LogLevel lvl)
     {
       if (instance && instance->isSet(cat, lvl))
-        instance->writeInternal(msg, cat, lvl, false);
+        instance->writeInternal(msg, cat, lvl, LS_BEGIN);
     }
 
     static inline void writeEnd(LogCategory cat, LogLevel lvl)
     {
       if (instance && instance->isSet(cat, lvl))
-        instance->writeInternal("", cat, lvl, true);
+        instance->writeInternal("", cat, lvl, LS_END);
     }
 
     static inline void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
@@ -84,6 +84,16 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
       return std::pair<LogCategory, LogLevel>(cat, lvl);
     }
 
+    void setAll(LogLevel lvl)
+    {
+      _settings.setAll(lvl);
+    }
+
+    void set(LogCategory cat, LogLevel lvl)
+    {
+      _settings.modes[cat] = lvl;
+    }
+
     bool isSet(LogCategory cat, LogLevel lvl) const
     {
       return _isEnabled && _settings.modes[cat] >= lvl;
@@ -99,8 +109,10 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     Logger(bool enabled);
 
+    enum LogStructure {LS_NONE, LS_BEGIN, LS_END};
+
     virtual void writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
-                               bool ready);
+                               LogStructure ls);
 
     virtual void setEnabledInternal(bool enabled);
     virtual bool isEnabledInternal();
@@ -127,7 +139,7 @@ class BOOST_EXTENSION_LOGGER_DECL LoggerXML: Logger
     LoggerXML(LogSettings settings, bool enabled);
 
     virtual void writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
-                               bool ready);
+                               LogStructure ls);
 };
 
 #endif /* LOGGER_HPP_ */

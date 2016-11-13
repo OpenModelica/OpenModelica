@@ -46,8 +46,8 @@
 // define logger as macro that passes through variadic args
 #define FMU2_LOG(w, status, category, ...) \
   if ((w)->logCategories() & (1 << (category))) \
-    (w)->logger((w)->componentEnvironment(), (w)->instanceName(), \
-                status, (w)->LogCategoryFMUName(category), __VA_ARGS__)
+    (w)->callbackLogger((w)->componentEnvironment(), (w)->instanceName(), \
+                        status, (w)->LogCategoryFMUName(category), __VA_ARGS__)
 
 enum LogCategoryFMU {
   logEvents = 0,
@@ -62,6 +62,25 @@ enum LogCategoryFMU {
   logFmi2Call
 };
 
+class FMU2Wrapper;
+
+/**
+ * Forward Logger messages to FMI callback function
+ */
+class FMU2Logger: public Logger
+{
+ public:
+  FMU2Logger(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled);
+
+ protected:
+  virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
+                             LogStructure ls);
+  FMU2Wrapper *_wrapper;
+};
+
+/**
+ * Wrap a model and a logger for FMI2
+ */
 class FMU2Wrapper
 {
  public:
@@ -74,7 +93,7 @@ class FMU2Wrapper
   virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn,
                                      size_t nCategories,
                                      const fmi2String categories[]);
-  const fmi2CallbackLogger &logger;
+  const fmi2CallbackLogger &callbackLogger;
   unsigned int logCategories() {
     return _logCategories;
   }
@@ -142,6 +161,7 @@ class FMU2Wrapper
 
  private:
   FMU2GlobalSettings _global_settings;
+  FMU2Logger *_logger;
   MODEL_CLASS *_model;
   std::vector<string> _string_buffer;
   bool *_clock_buffer;
@@ -165,4 +185,5 @@ class FMU2Wrapper
   fmi2CallbackFunctions _functions;
   ModelState _state;
 };
+
 /** @} */ // end of fmu2

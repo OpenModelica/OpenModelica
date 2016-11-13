@@ -23,8 +23,11 @@ FMULogger::~FMULogger()
 {
 }
 
-void FMULogger::writeInternal(std::string errorMsg, LogCategory cat, LogLevel lvl)
+void FMULogger::writeInternal(std::string errorMsg, LogCategory cat, LogLevel lvl, LogStructure ls)
 {
+  if (ls == LS_END)
+    return;
+
   switch(lvl)
   {
   case(LL_ERROR):
