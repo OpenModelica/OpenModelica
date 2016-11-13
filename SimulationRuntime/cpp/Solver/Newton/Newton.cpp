@@ -136,7 +136,8 @@ void Newton::initialize()
   }
   LOGGER_WRITE_BEGIN("Newton: eq" + to_string(_algLoop->getEquationIndex()) +
                      " initialized", _lc, LL_DEBUG);
-  LOG_VEC(_algLoop, "names", _yNames, _lc, LL_DEBUG);
+  LOG_VEC(_algLoop, "yNames", _yNames, _lc, LL_DEBUG);
+  LOG_VEC(_algLoop, "yNominal", _yNominal, _lc, LL_DEBUG);
   LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
 
@@ -180,7 +181,7 @@ void Newton::solve()
         _f[i] /= _fNominal[i];
       dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
       for (int j = 0; j < _dimSys; j++)
-        _y[j] = _f[j] * _yNominal[j];
+        _y[j] = _f[j] /** _yNominal[j]*/;
       _algLoop->setReal(_y);
       if (info != 0)
         throw ModelicaSimulationError(ALGLOOP_SOLVER,
@@ -197,7 +198,7 @@ void Newton::solve()
         _f[i] /= _fNominal[i];
       dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
       for (int j = 0; j < _dimSys; j++)
-        _y[j] = -_f[j] * _yNominal[j];
+        _y[j] = -_f[j] /** _yNominal[j]*/;
       _algLoop->setReal(_y);
       _algLoop->evaluate();
       if (info != 0)
@@ -238,7 +239,7 @@ void Newton::solve()
       // first find a feasible step
       while (true) {
         for (int i = 0; i < _dimSys; i++) {
-          _yHelp[i] = _y[i] - lambda * _f[i] * _yNominal[i];
+          _yHelp[i] = _y[i] - lambda * _f[i] /** _yNominal[i]*/;
           _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
         }
         // evaluate function
@@ -274,7 +275,7 @@ void Newton::solve()
         // test half step that also serves as max bound for step reduction
         double lambdaTest = 0.5*lambda;
         for (int i = 0; i < _dimSys; i++) {
-          _yTest[i] = _y[i] - lambdaTest * _f[i] * _yNominal[i];
+          _yTest[i] = _y[i] - lambdaTest * _f[i] /** _yNominal[i]*/;
           _yTest[i] = std::min(_yMax[i], std::max(_yMin[i], _yTest[i]));
         }
         calcFunction(_yTest, _fTest);
@@ -308,7 +309,7 @@ void Newton::solve()
           }
           else {
             for (int i = 0; i < _dimSys; i++) {
-              _yHelp[i] = _y[i] - lambda * _f[i] * _yNominal[i];
+              _yHelp[i] = _y[i] - lambda * _f[i] /** _yNominal[i]*/;
               _yHelp[i] = std::min(_yMax[i], std::max(_yMin[i], _yHelp[i]));
             }
             calcFunction(_yHelp, _fHelp);
@@ -369,7 +370,7 @@ void Newton::calcJacobian(double *jac, double *fNominal)
       std::copy(Adata, Adata + _dimSys * _dimSys, jac);
       for (int j = 0, idx = 0; j < _dimSys; j++)
         for (int i = 0; i < _dimSys; i++, idx++)
-          fNominal[i] = std::max(std::abs(jac[idx]) * _yNominal[j], fNominal[i]);
+          fNominal[i] = std::max(std::abs(jac[idx]) /** _yNominal[j]*/, fNominal[i]);
     }
   }
   catch (ModelicaSimulationError& ex) {
@@ -394,7 +395,7 @@ void Newton::calcJacobian(double *jac, double *fNominal)
       // Build Jacobian in Fortran format
       for (int i = 0, idx = j * _dimSys; i < _dimSys; i++, idx++) {
         jac[idx] = (_fHelp[i] - _f[i]) / stepsize;
-        fNominal[i] = std::max(std::abs(jac[idx]) * _yNominal[j], fNominal[i]);
+        fNominal[i] = std::max(std::abs(jac[idx]) /** _yNominal[j]*/, fNominal[i]);
       }
 
       _yHelp[j] -= stepsize;
@@ -405,7 +406,8 @@ void Newton::calcJacobian(double *jac, double *fNominal)
   LOG_VEC(_algLoop, "fNominal", fNominal, _lc, LL_DEBUG);
   for (int j = 0, idx = 0; j < _dimSys; j++)
     for (int i = 0; i < _dimSys; i++, idx++)
-      jac[idx] *= _yNominal[j] / fNominal[i];
+      //jac[idx] *= _yNominal[j] / fNominal[i];
+      jac[idx] /= fNominal[i];
 }
 
 void Newton::restoreOldValues()
