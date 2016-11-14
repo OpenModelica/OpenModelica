@@ -92,7 +92,7 @@ void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
   case LC_NLS:
     category = logNonlinearSystems;
     break;
-  case LC_EVT:
+  case LC_EVENTS:
     category = logEvents;
     break;
   }
@@ -160,7 +160,7 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
             _logCategories &= ~(1 << j);
           switch (j) {
           case logEvents:
-            _logger->set(LC_EVT, loggingOn? LL_DEBUG: LL_ERROR);
+            _logger->set(LC_EVENTS, loggingOn? LL_DEBUG: LL_ERROR);
             break;
           case logNonlinearSystems:
             _logger->set(LC_NLS, loggingOn? LL_DEBUG: LL_ERROR);

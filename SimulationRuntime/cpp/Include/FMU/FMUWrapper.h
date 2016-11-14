@@ -151,7 +151,7 @@ public:
     virtual fmiStatus initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
     {
       //LOGGER_WRITE("Initialize",LC_OTHER,LL_DEBUG);
-      Logger::write("Initializing memory and variables", LC_MOD, LL_DEBUG);
+      Logger::write("Initializing memory and variables", LC_MODEL, LL_DEBUG);
       _model->initializeMemory();
       _model->initializeFreeVariables();
       _model->initializeBoundVariables();

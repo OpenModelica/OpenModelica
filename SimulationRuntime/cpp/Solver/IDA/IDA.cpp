@@ -1073,12 +1073,12 @@ void Ida::writeSimulationInfo()
 
   flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
-  LOGGER_WRITE("Cvode: number steps = " + to_string(nst), LC_SOLVER, LL_INFO);
-  LOGGER_WRITE("Cvode: function evaluations 'f' = " + to_string(nfe), LC_SOLVER, LL_INFO);
-  LOGGER_WRITE("Cvode: error test failures 'netf' = " + to_string(netfS), LC_SOLVER, LL_INFO);
-  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLVER, LL_INFO);
-  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLVER, LL_INFO);
-  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("IDA: number steps = " + to_string(nst), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("IDA: function evaluations 'f' = " + to_string(nfe), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("IDA: error test failures 'netf' = " + to_string(netfS), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("IDA: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("IDA: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("IDA: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLVER, LL_INFO);
 }
 
 int Ida::check_flag(void *flagvalue, const char *funcname, int opt)
