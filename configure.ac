@@ -64,10 +64,10 @@ if test "$WITH_OSG" = 1; then
   CPPFLAGS="$OLD_CPPFLAGS"
 fi
 if test "$WITH_OSG" = 1; then
-  AC_MSG_CHECKING([for osg/qt include order bugs (broken OpenGL)])
+  AC_MSG_CHECKING([for osg/qt broken OpenGL])
   OLD_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -fPIC -I$QT_INSTALL_HEADERS -I$QT_INSTALL_HEADERS/QtOpenGL"
-  AC_PREPROC_IFELSE(
+  AC_LINK_IFELSE(
         [AC_LANG_PROGRAM([[
 #include <osgViewer/GraphicsWindow>
 #include <QGLWidget>
