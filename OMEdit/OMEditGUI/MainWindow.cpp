@@ -179,6 +179,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   mpBreakpointsWidget = new BreakpointsWidget(this);
   // Create breakpoints dock widget
   mpBreakpointsDockWidget = new QDockWidget(tr("BreakPoints Browser"), this);
+  mpBreakpointsDockWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
   mpBreakpointsDockWidget->setObjectName("BreakPoints");
   mpBreakpointsDockWidget->setWidget(mpBreakpointsWidget);
   addDockWidget(Qt::TopDockWidgetArea, mpBreakpointsDockWidget);

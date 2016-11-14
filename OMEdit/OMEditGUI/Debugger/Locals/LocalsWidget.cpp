@@ -501,7 +501,7 @@ void LocalsTreeModel::insertLocalItemData(const QVector<QVariant> &localItemData
     QModelIndex index = localsTreeItemIndex(pParentLocalsTreeItem);
     pLocalsTreeItem = new LocalsTreeItem(localItemData, this, pParentLocalsTreeItem);
     pLocalsTreeItem->setNameStructure(nameStructure);
-    int row = pLocalsTreeItem->getChildren().size();
+    int row = pParentLocalsTreeItem->getChildren().size();
     beginInsertRows(index, row, row);
     pParentLocalsTreeItem->insertChild(row, pLocalsTreeItem);
     endInsertRows();
@@ -561,19 +561,58 @@ void LocalsTreeModel::removeLocalItems()
   endRemoveRows();
 }
 
+/*!
+ * \class LocalsTreeProxyModel
+ * \brief A sort filter proxy model for Locals Browser.
+ */
+/*!
+ * \brief LocalsTreeProxyModel::LocalsTreeProxyModel
+ * \param parent
+ */
 LocalsTreeProxyModel::LocalsTreeProxyModel(QObject *parent)
   : QSortFilterProxyModel(parent)
 {
 }
 
+/*!
+ * \brief LocalsTreeProxyModel::clearfilter
+ * Clears the filter
+ */
 void LocalsTreeProxyModel::clearfilter()
 {
   invalidateFilter();
 }
 
+/*!
+ * \brief LocalsTreeProxyModel::filterAcceptsRow
+ * \param sourceRow
+ * \param sourceParent
+ * \return
+ */
 bool LocalsTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+}
+
+/*!
+ * \brief LocalsTreeProxyModel::lessThan
+ * Sorts the LocalsTreeItems except for members of a record type.
+ * \param left
+ * \param right
+ * \return
+ */
+bool LocalsTreeProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+  /* Ticket:4078
+   * Do not sort the record members.
+   */
+  LocalsTreeItem *pLocalsTreeItem = static_cast<LocalsTreeItem*>(left.internalPointer());
+  if (pLocalsTreeItem && pLocalsTreeItem->parent() && pLocalsTreeItem->parent()->getModelicaValue() &&
+      qobject_cast<ModelicaRecordValue*>(pLocalsTreeItem->parent()->getModelicaValue())) {
+    return false;
+  } else {
+    return QSortFilterProxyModel::lessThan(left, right);
+  }
 }
 
 LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)

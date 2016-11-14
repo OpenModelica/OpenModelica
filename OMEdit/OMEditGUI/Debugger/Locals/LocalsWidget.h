@@ -134,6 +134,7 @@ public:
   void clearfilter();
 protected:
   bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const;
 };
 
 class LocalsTreeView : public QTreeView

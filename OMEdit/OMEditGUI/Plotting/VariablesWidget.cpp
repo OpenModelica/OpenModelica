@@ -761,37 +761,45 @@ void VariablesTreeModel::removeVariableTreeItem()
   }
 }
 
+/*!
+ * \class VariableTreeProxyModel
+ * \brief A sort filter proxy model for Variables Browser.
+ */
+/*!
+ * \brief VariableTreeProxyModel::VariableTreeProxyModel
+ * \param parent
+ */
 VariableTreeProxyModel::VariableTreeProxyModel(QObject *parent)
   : QSortFilterProxyModel(parent)
 {
 }
 
+/*!
+ * \brief VariableTreeProxyModel::filterAcceptsRow
+ * Filters the VariablesTreeItems based on the filter reguler expression.
+ * \param sourceRow
+ * \param sourceParent
+ * \return
+ */
 bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-  if (!filterRegExp().isEmpty())
-  {
+  if (!filterRegExp().isEmpty()) {
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
-    if (index.isValid())
-    {
+    if (index.isValid()) {
       // if any of children matches the filter, then current index matches the filter as well
       int rows = sourceModel()->rowCount(index);
-      for (int i = 0 ; i < rows ; ++i)
-      {
-        if (filterAcceptsRow(i, index))
-        {
+      for (int i = 0 ; i < rows ; ++i) {
+        if (filterAcceptsRow(i, index)) {
           return true;
         }
       }
       // check current index itself
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-      if (pVariablesTreeItem)
-      {
+      if (pVariablesTreeItem) {
         QString variableName = pVariablesTreeItem->getVariableName();
         variableName.remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
         return variableName.contains(filterRegExp());
-      }
-      else
-      {
+      } else {
         return sourceModel()->data(index).toString().contains(filterRegExp());
       }
       QString key = sourceModel()->data(index, filterRole()).toString();
@@ -801,6 +809,13 @@ bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
+/*!
+ * \brief VariableTreeProxyModel::lessThan
+ * Sorts the VariablesTreeItems using the natural sort.
+ * \param left
+ * \param right
+ * \return
+ */
 bool VariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
   QVariant l = (left.model() ? left.model()->data(left) : QVariant());
