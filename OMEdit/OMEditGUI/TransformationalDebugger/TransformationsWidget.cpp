@@ -383,7 +383,7 @@ bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex 
       if (pTVariablesTreeItem)
       {
         QString variableName = pTVariablesTreeItem->getVariableName();
-        variableName.remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+        variableName.remove(QRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
         return variableName.contains(filterRegExp());
       }
       else

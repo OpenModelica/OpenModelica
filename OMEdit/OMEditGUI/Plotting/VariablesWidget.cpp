@@ -488,7 +488,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                               SimulationOptions simulationOptions)
 {
   QString toolTip = tr("Simulation Result File: %1\n%2: %3/%4").arg(fileName).arg(Helper::fileLocation).arg(filePath).arg(fileName);
-  QRegExp resultTypeRegExp("(.mat|.plt|.csv|_res.mat|_res.plt|_res.csv)");
+  QRegExp resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
   QString text = QString(fileName).remove(resultTypeRegExp);
   QModelIndex index = variablesTreeItemIndex(mpRootVariablesTreeItem);
   QVector<QVariant> Variabledata;
@@ -797,7 +797,7 @@ bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
       if (pVariablesTreeItem) {
         QString variableName = pVariablesTreeItem->getVariableName();
-        variableName.remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+        variableName.remove(QRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
         return variableName.contains(filterRegExp());
       } else {
         return sourceModel()->data(index).toString().contains(filterRegExp());
