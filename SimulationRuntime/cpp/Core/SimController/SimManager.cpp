@@ -124,8 +124,11 @@ void SimManager::initialize()
     }
     catch (std::exception& ex)
     {
+        LOGGER_WRITE("SimManager: Could not initialize system", LC_INIT, LL_ERROR);
+        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_ERROR);
         //ex << error_id(SIMMANAGER);
-    	throw ModelicaSimulationError(SIMMANAGER,"Could not initialize system.",string(ex.what()),false);
+        throw ModelicaSimulationError(SIMMANAGER, "Could not initialize system",
+                                      string(ex.what()), LOGGER_IS_SET(LC_INIT, LL_ERROR));
     }
 
     if (_timeevent_system)
@@ -282,8 +285,8 @@ void SimManager::runSimulation()
         LOGGER_WRITE("SimManager: " + string(ex.what()), LC_SOLVER, LL_ERROR);
         writeProperties();
         // rethrow with suppress depending on logger setting to not appear twice
-        throw ModelicaSimulationError(SIMMANAGER, ex.what(), "",
-                                      LOGGER_IS_SET(LC_SOLVER, LL_ERROR));
+        throw ModelicaSimulationError(SIMMANAGER, "Simulation stopped with errors before t = " + to_string(_tEnd),
+                                      string(ex.what()), LOGGER_IS_SET(LC_SOLVER, LL_ERROR));
     }
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)

@@ -2719,19 +2719,17 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
     #include <Core/DataExchange/XmlPropertyReader.h>
-
+    #include <Core/Utils/extension/logger.hpp>
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>.h"
-
 
     #include "OMCpp<%fileNamePrefix%>Jacobian.h"
     #include "OMCpp<%fileNamePrefix%>Mixed.h"
     #include "OMCpp<%fileNamePrefix%>StateSelection.h"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
     #include "OMCpp<%fileNamePrefix%>Initialize.h"
-
 
     #include "OMCpp<%fileNamePrefix%>AlgLoopMain.cpp"
     #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
@@ -11708,27 +11706,25 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
 
   <%if msgVar then
       <<
-       <%preExpCond%>
-       if(!<%condVar%>)
-       {
-         <%preExpMsg%>
-          <%match level case ENUM_LITERAL(index=2)
-          then 'cerr <<"Warning: " << <%msgVar%>;'
-          else
-          'throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);'
-          %>
-
-       }
+      <%preExpCond%>
+      if (!<%condVar%>)
+      {
+        <%preExpMsg%>
+        <%match level case ENUM_LITERAL(index=2)
+          then 'LOGGER_WRITE(<%msgVar%>, LC_MODEL, LL_WARNING);'
+          else 'throw ModelicaSimulationError(MODEL_EQ_SYSTEM, <%msgVar%>);'
+        %>
+      }
       >>
       else
       <<
-      if(!<%condVar%>)
+      if (!<%condVar%>)
       {
         <%preExpCond%>
         <%preExpMsg%>
         <%match level case ENUM_LITERAL(index=2)
-         then 'cerr <<"Warning: >Assert in model equation";'
-         else  'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
+          then 'LOGGER_WRITE("Assert in model equation", LC_MODEL, LL_WARNING);'
+          else 'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
         %>
       }
       >>
