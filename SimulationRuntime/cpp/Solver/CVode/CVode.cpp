@@ -322,7 +322,7 @@ void Cvode::initialize()
 
     _cvode_initialized = true;
 
-    LOGGER_WRITE("Cvode: initialized",LC_SOLV,LL_DEBUG);
+    LOGGER_WRITE("Cvode: initialized", LC_SOLVER, LL_DEBUG);
   }
 }
 
@@ -962,12 +962,12 @@ void Cvode::writeSimulationInfo()
 
   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-  LOGGER_WRITE("Cvode: number steps = " + to_string(nst), LC_SOLV, LL_INFO);
-  LOGGER_WRITE("Cvode: function evaluations 'f' = " + to_string(nfe), LC_SOLV, LL_INFO);
-  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLV, LL_INFO);
-  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLV, LL_INFO);
-  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLV, LL_INFO);
-  LOGGER_WRITE("Cvode: number of evaluateODE calls 'eODE' = " + to_string(_numberOfOdeEvaluations), LC_SOLV, LL_INFO);
+  LOGGER_WRITE("Cvode: number steps = " + to_string(nst), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("Cvode: function evaluations 'f' = " + to_string(nfe), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("Cvode: linear solver setups 'nsetups' = " + to_string(nsetups), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("Cvode: nonlinear iterations 'nni' = " + to_string(nni), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("Cvode: convergence failures 'ncfn' = " + to_string(ncfn), LC_SOLVER, LL_INFO);
+  LOGGER_WRITE("Cvode: number of evaluateODE calls 'eODE' = " + to_string(_numberOfOdeEvaluations), LC_SOLVER, LL_INFO);
 
   //// Solver
   //outputStream  << "\nSolver: " << getName()

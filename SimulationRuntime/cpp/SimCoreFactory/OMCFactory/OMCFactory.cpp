@@ -74,9 +74,9 @@ static LogSettings initializeLogger(const po::variables_map& vm)
 {
   map<string, LogCategory> logCatMap = MAP_LIST_OF
     "init", LC_INIT MAP_LIST_SEP "nls", LC_NLS MAP_LIST_SEP
-    "ls", LC_LS MAP_LIST_SEP "solver", LC_SOLV MAP_LIST_SEP
-    "output", LC_OUT MAP_LIST_SEP "events", LC_EVT MAP_LIST_SEP
-    "model", LC_MOD MAP_LIST_SEP "other", LC_OTHER MAP_LIST_END;
+    "ls", LC_LS MAP_LIST_SEP "solver", LC_SOLVER MAP_LIST_SEP
+    "output", LC_OUTPUT MAP_LIST_SEP "events", LC_EVENTS MAP_LIST_SEP
+    "model", LC_MODEL MAP_LIST_SEP "other", LC_OTHER MAP_LIST_END;
   map<string, LogLevel> logLvlMap = MAP_LIST_OF
     "error", LL_ERROR MAP_LIST_SEP "warning", LL_WARNING MAP_LIST_SEP
     "info", LL_INFO MAP_LIST_SEP "debug", LL_DEBUG MAP_LIST_END;
@@ -109,7 +109,7 @@ static LogSettings initializeLogger(const po::variables_map& vm)
             }
             switch (logOMEdit) {
             case LOG_EVENTS:
-              logSettings.modes[LC_EVT] = LL_DEBUG;
+              logSettings.modes[LC_EVENTS] = LL_DEBUG;
               break;
             case LOG_INIT:
               logSettings.modes[LC_INIT] = LL_DEBUG;
@@ -121,11 +121,11 @@ static LogSettings initializeLogger(const po::variables_map& vm)
               logSettings.modes[LC_NLS] = LL_DEBUG;
               break;
             case LOG_SOLVER:
-              logSettings.modes[LC_SOLV] = LL_DEBUG;
+              logSettings.modes[LC_SOLVER] = LL_DEBUG;
               //case LOG_STATS:
             default:
-              if (logSettings.modes[LC_SOLV] < LL_INFO)
-                logSettings.modes[LC_SOLV] = LL_INFO;
+              if (logSettings.modes[LC_SOLVER] < LL_INFO)
+                logSettings.modes[LC_SOLVER] = LL_INFO;
             }
           }
         }
@@ -150,7 +150,7 @@ static LogSettings initializeLogger(const po::variables_map& vm)
       }
     }
 
-  if (vm.count("warn-all")) {
+  if (vm.count("warn-all") && vm["warn-all"].as<bool>()) {
     for (int i = 0; i < logSettings.modes.size(); i++)
       if (logSettings.modes[i] < LL_WARNING)
         logSettings.modes[i] = LL_WARNING;

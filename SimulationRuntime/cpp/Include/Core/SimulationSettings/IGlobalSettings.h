@@ -25,7 +25,7 @@ using std::string;
 
 #include <vector>
 
-enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
+enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLVER = 3, LC_OUTPUT = 4, LC_EVENTS = 5, LC_OTHER = 6, LC_MODEL = 7};
 enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
 enum LogFormat {LF_TXT = 0, LF_XML = 1};
 enum LogOMEdit {LOG_EVENTS = 0, LOG_INIT, LOG_LS, LOG_NLS, LOG_SOLVER, LOG_STATS};

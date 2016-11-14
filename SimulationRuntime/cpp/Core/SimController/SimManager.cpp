@@ -265,25 +265,25 @@ void SimManager::runSimulation()
     #endif
     try
     {
-        LOGGER_WRITE("SimManager: Start simulation at t = " + to_string(_tStart), LC_SOLV, LL_INFO);
+        LOGGER_WRITE("SimManager: Start simulation at t = " + to_string(_tStart), LC_SOLVER, LL_INFO);
         runSingleProcess();
         // Measure time; Output SimInfos
         ISolver::SOLVERSTATUS status = _solver->getSolverStatus();
         if ((status & ISolver::DONE) || (status & ISolver::USER_STOP))
         {
-            //LOGGER_WRITE("SimManager: Simulation done at t = " + to_string(_tEnd), LC_SOLV, LL_INFO);
+            //LOGGER_WRITE("SimManager: Simulation done at t = " + to_string(_tEnd), LC_SOLVER, LL_INFO);
             writeProperties();
         }
     }
     catch (std::exception & ex)
     {
         LOGGER_WRITE("SimManager: Simulation stopped with errors before t = " +
-                     to_string(_tEnd), LC_SOLV, LL_ERROR);
-        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_SOLV, LL_ERROR);
+                     to_string(_tEnd), LC_SOLVER, LL_ERROR);
+        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_SOLVER, LL_ERROR);
         writeProperties();
         // rethrow with suppress depending on logger setting to not appear twice
         throw ModelicaSimulationError(SIMMANAGER, ex.what(), "",
-                                      LOGGER_IS_SET(LC_SOLV, LL_ERROR));
+                                      LOGGER_IS_SET(LC_SOLVER, LL_ERROR));
     }
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
@@ -302,14 +302,14 @@ void SimManager::stopSimulation()
 void SimManager::writeProperties()
 {
   // declaration for Logging
-  std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLV, LL_INFO);
+  std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLVER, LL_INFO);
 
   LOGGER_WRITE_TUPLE("SimManager: Simulation stop time: " + to_string(_tEnd), logM);
   //LOGGER_WRITE("Rechenzeit in Sekunden:                 " + to_string>(_tClockEnd-_tClockStart), logM);
 
-  LOGGER_WRITE_BEGIN("Simulation info from solver:", LC_SOLV, LL_INFO);
+  LOGGER_WRITE_BEGIN("Simulation info from solver:", LC_SOLVER, LL_INFO);
   _solver->writeSimulationInfo();
-  LOGGER_WRITE_END(LC_SOLV, LL_INFO);
+  LOGGER_WRITE_END(LC_SOLVER, LL_INFO);
 /*
      // Zeit
     if(_settings->_globalSettings->bEndlessSim)
@@ -566,7 +566,7 @@ void SimManager::runSingleProcess()
 
 	/* Logs temporarily disabled
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
-    LOGGER_WRITE("SimManager: Run single process",LC_SOLV,LL_DEBUG);
+    LOGGER_WRITE("SimManager: Run single process", LC_SOLVER, LL_DEBUG);
 
     memset(_timeEventCounter, 0, _dimtimeevent * sizeof(int));
     computeEndTimes(tStopsSub);

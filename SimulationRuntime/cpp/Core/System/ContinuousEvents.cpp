@@ -103,7 +103,7 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   bool crestart =false;
   if (dim > 0)
   {
-    LOGGER_WRITE_VECTOR("conditions", _conditions1, dim, LC_EVT, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("conditions", _conditions1, dim, LC_EVENTS, LL_DEBUG);
     crestart = !std::equal(_conditions1, _conditions1 + dim, _conditions0);
   }
   //check for event clocks

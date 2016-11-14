@@ -83,13 +83,13 @@ std::string Logger::getCategory(LogCategory cat) const
     return "nls";
   case(LC_LS):
     return "ls";
-  case(LC_SOLV):
+  case(LC_SOLVER):
     return "solver";
-  case(LC_OUT):
+  case(LC_OUTPUT):
     return "output";
-  case(LC_EVT):
+  case(LC_EVENTS):
     return "events";
-  case(LC_MOD):
+  case(LC_MODEL):
     return "model";
   case(LC_OTHER):
   default:

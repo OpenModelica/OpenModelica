@@ -229,7 +229,7 @@ void MeasureTime::writeToJson()
       {
           if((*data)[i] == NULL)
           {
-              LOGGER_WRITE("Skipped a measured block in '" + block->first + "' because it is null.", LC_OUT, LL_ERROR);
+              LOGGER_WRITE("Skipped a measured block in '" + block->first + "' because it is null.", LC_OUTPUT, LL_ERROR);
               continue;
           }
     	  tmpS = (*data)[i]->serializeToJson();
