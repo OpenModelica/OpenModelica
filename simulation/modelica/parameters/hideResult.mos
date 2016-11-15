@@ -14,7 +14,6 @@ protected
 end hideResult;
 "); getErrorString();
 
-//setCommandLineOptions("-d=evalParameterDump"); getErrorString();
 simulate(hideResult); getErrorString();
 
 val(b, 0.0); getErrorString();
@@ -32,7 +31,6 @@ protected
 end hideResult;
 "); getErrorString();
 
-//setCommandLineOptions("-d=evalParameterDump"); getErrorString();
 simulate(hideResult); getErrorString();
 
 val(b, 0.0); getErrorString();
@@ -49,6 +47,31 @@ end hideResult;
 simulate(hideResult); getErrorString();
 
 val(b, 0.0); getErrorString();
+
+
+loadString("
+package HideResult
+  model hideResult1
+    parameter Real a = 2 annotation(HideResult = not hide_a and not hide_a2);
+    parameter Boolean hide_a = true annotation(Evaluate = true);
+    parameter Boolean hide_a2 = false annotation(Evaluate = true);
+  end hideResult1;
+
+  model hideResult2
+    hideResult1 b (hide_a=hide_b);
+    parameter Boolean hide_b = true;
+  end hideResult2;
+
+  model hideResult3
+    hideResult2 c (hide_b=hide_c);
+    parameter Boolean hide_c = false;
+  end hideResult3;
+end HideResult;
+"); getErrorString();
+
+simulate(HideResult.hideResult3); getErrorString();
+
+val(c.b.a, 0.0); getErrorString();
 
 
 // Result:
@@ -84,5 +107,16 @@ val(b, 0.0); getErrorString();
 // ""
 // NaN
 // "Error: b not found in hideResult_res.mat
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HideResult.hideResult3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'HideResult.hideResult3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// NaN
+// "Error: c.b.a not found in HideResult.hideResult3_res.mat
 // "
 // endResult
