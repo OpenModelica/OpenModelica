@@ -1,7 +1,7 @@
 // name: InvalidConnectorType4
 // keywords:
 // status: incorrect
-// cflags: +d=newInst
+// cflags: -d=newInst
 //
 
 model InvalidConnectorType4

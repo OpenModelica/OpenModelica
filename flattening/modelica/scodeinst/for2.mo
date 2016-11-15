@@ -1,7 +1,7 @@
 // name: for2.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Expansion of for equations not implemented yet.
 //

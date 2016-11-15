@@ -1,7 +1,7 @@
 // name: ExtendSections
 // keywords:
 // status: correct
-// cflags: +d=newInst
+// cflags: -d=newInst
 //
 // Checks that sections are inherited correctly.
 //

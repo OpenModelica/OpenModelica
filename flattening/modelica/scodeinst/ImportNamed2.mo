@@ -1,7 +1,7 @@
 // name:     ImportNamed2
 // keywords: named import
 // status:   correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that named imports with renaming works.
 //

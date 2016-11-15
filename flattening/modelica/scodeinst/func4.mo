@@ -1,7 +1,7 @@
 // name: func4.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Should stream on function variables be allowed?
 //

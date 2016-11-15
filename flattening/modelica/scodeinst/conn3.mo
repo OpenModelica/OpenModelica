@@ -1,7 +1,7 @@
 // name: conn3.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 connector C

@@ -1,7 +1,7 @@
 // name: dim12.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Not good enough error message.
 //

@@ -1,7 +1,7 @@
 // name: func5.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Better error message needed.
 //

@@ -1,7 +1,7 @@
 // name: redeclare3.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Invalid usage of time inside function not checked.
 //

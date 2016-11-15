@@ -1,7 +1,7 @@
 // name: conn6.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Connect equation not expanded.
 //

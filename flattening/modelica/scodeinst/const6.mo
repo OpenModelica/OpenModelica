@@ -1,7 +1,7 @@
 // name: const6.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Variability not yet propagated.
 //

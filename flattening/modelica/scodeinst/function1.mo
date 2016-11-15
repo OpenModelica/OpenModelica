@@ -1,5 +1,5 @@
 // status: correct
-// cflags: +d=newInst
+// cflags: -d=newInst
 
 model function1
   function myfill
@@ -9,11 +9,11 @@ model function1
 
   function f
     input Integer r;
-    output Real o := x + y;
+    output Real o = x + y;
   protected
-    Real x := sin(r);
-    Real y := sin(x);
-    Real z2[integer(x)] := {1};
+    Real x = sin(r);
+    Real y = sin(x);
+    Real z2[integer(x)] = {1};
     Real z[size(z2,1),2];
     Real z3[:];
   algorithm

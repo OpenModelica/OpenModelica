@@ -1,7 +1,7 @@
 // name: if1.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Expansion of if-equations not implemented.
 //

@@ -1,7 +1,7 @@
 // name: compfunc.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 // teardown_command: rm -rf B_a____f*
 //
 

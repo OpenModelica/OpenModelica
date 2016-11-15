@@ -1,7 +1,7 @@
 // name: BuiltinTime
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that the builtin variable time is handled.
 //

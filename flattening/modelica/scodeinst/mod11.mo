@@ -1,7 +1,7 @@
 // name: mod11.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 //
 

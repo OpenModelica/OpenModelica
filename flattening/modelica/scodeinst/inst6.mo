@@ -1,7 +1,7 @@
 // name: inst6.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 model M

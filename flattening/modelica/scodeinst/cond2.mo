@@ -1,7 +1,7 @@
 // name: cond2.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Seems like conditional components are a bit broken.
 //

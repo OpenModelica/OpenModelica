@@ -1,7 +1,7 @@
 // name: RecursiveExtends2
 // keywords:
 // status: incorrect
-// cflags: +d=newInst
+// cflags: -d=newInst
 //
 // Checks that the compiler catches recursive extends.
 //

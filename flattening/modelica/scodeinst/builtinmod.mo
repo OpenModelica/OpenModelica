@@ -1,7 +1,7 @@
 // name: builtinmod.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Enumeration instance m is missing it's start value.
 //

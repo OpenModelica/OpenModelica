@@ -1,7 +1,7 @@
 // name: loop1.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Not good enough error message.
 //

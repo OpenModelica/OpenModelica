@@ -1,7 +1,7 @@
 // name: ExtendsVisibility1
 // keywords: extends visibility
 // status: correct
-// cflags: +d=newInst
+// cflags: -d=newInst
 //
 // Checks that the visibility of extends clauses is handled correctly.
 //

@@ -1,7 +1,7 @@
 // name: eq4.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Equations not yet instantiated.
 //

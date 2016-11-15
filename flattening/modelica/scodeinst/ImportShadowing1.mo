@@ -1,7 +1,7 @@
 // name:     ImportShadowing1
 // keywords: import shadowing
 // status:   correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that a warning is displayed when imports are shadowed.
 //

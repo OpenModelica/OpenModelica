@@ -1,7 +1,7 @@
 // name: NonexistentRedeclareModifier1
 // keywords:
 // status: incorrect
-// cflags: +d=newInst
+// cflags: -d=newInst
 //
 
 model M

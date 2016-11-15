@@ -1,7 +1,7 @@
 // name: conn7.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Connects not handled yet.
 //

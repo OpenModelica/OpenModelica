@@ -1,7 +1,7 @@
 // name: cond3.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Arrays of conditional components not handled.
 //

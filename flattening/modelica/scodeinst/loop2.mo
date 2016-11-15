@@ -1,7 +1,7 @@
 // name: loop2.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 
@@ -11,6 +11,6 @@ end A;
 
 // Result:
 // class A
-//   Real x = 1.0 + x;
+//   Real x = x + 1.0;
 // end A;
 // endResult

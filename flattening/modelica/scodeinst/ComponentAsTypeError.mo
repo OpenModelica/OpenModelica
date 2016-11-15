@@ -1,7 +1,7 @@
 // name: ComponentAsTypeError
 // keywords: type error
 // status: incorrect
-// cflags: +d=newInst
+// cflags: -d=newInst
 //
 // Checks that an error is output if a component is used as type.
 //

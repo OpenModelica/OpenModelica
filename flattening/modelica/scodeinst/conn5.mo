@@ -1,7 +1,7 @@
 // name: conn5.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 connector C1

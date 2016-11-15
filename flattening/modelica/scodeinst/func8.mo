@@ -1,7 +1,7 @@
 // name: func8.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Not all builtin functions have the correct number of arguments yet.
 //

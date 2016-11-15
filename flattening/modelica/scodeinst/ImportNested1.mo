@@ -1,7 +1,7 @@
 // name:     ImportNested1
 // keywords: unqualified import
 // status:   correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that named imports can be 'nested'.
 //

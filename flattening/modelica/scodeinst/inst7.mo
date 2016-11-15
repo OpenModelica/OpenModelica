@@ -1,7 +1,7 @@
 // name: inst7.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Typing of x.start fails. Should this be allowed?
 //

@@ -1,7 +1,7 @@
 // name: FunctionRecordArg1
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON:
 //  * Weird syntax on record constructor R output.

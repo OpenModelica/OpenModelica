@@ -1,7 +1,7 @@
 // name: bindings7.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 model A

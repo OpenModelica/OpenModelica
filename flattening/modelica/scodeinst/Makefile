@@ -1,9 +1,8 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES=\
+arrfunc.mo \
+bindings1.mo \
 bindings5.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
@@ -14,22 +13,28 @@ const3.mo \
 DuplicateMod1.mo \
 DuplicateMod2.mo \
 DuplicateMod3.mo \
+eq1.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNested1.mo \
 ImportQualified1.mo \
+mod10.mo \
 mod1.mo \
 mod4.mo \
+mod5.mo \
 mod6.mo \
-mod8.mo \
-mod10.mo \
+ParameterBug.mos \
+redeclare13.mo \
 redeclare2.mo \
 redeclare6.mo \
-redeclare13.mo \
 usertype1.mo \
 usertype2.mo \
-arrfunc.mo \
-bindings1.mo \
+loop2.mo \
+
+# test that currently fail. Move up when fixed.
+# Run make testfailing
+FAILINGTESTFILES=\
+mod8.mo \
 bindings2.mo \
 bindings3.mo \
 bindings4.mo \
@@ -72,7 +77,6 @@ enum3.mo \
 enum4.mo \
 enum5.mo \
 enum6.mo \
-eq1.mo \
 eq2.mo \
 eq3.mo \
 eq4.mo \
@@ -123,20 +127,17 @@ InvalidConnectorType5.mo \
 InvalidConnectorType6.mo \
 InvalidVariability1.mo \
 InvalidVariability2.mo \
-loop2.mo \
 loop3.mo \
 loop4.mo \
 MissingRedeclare1.mo \
 mod11.mo \
 mod12.mo \
 mod13.mo \
-mod5.mo \
 mod7.mo \
 mod9.mo \
 MultiInheritanceRedeclare2.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
-ParameterBug.mos \
 PartialInst.mo \
 RecursiveExtends1.mo \
 RecursiveExtends2.mo \
@@ -160,7 +161,6 @@ redeclare7.mo \
 redeclare8.mo \
 redeclare9.mo \
 RedeclaredFunction1.mo \
-bindings6.mo \
 cond1.mo \
 cond3.mo \
 cond2.mo \

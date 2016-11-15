@@ -1,7 +1,7 @@
 // name: PartialInst
 // keywords: partial
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that it's not possible to instantiate a partial class.
 //

@@ -1,7 +1,7 @@
 // name: enum4.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 //
 

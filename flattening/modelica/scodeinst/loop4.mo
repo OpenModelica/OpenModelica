@@ -1,7 +1,7 @@
 // name: loop4.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 

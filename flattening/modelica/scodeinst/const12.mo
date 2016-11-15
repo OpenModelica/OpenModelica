@@ -1,7 +1,7 @@
 // name: const12.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Wrong binding on x.
 //

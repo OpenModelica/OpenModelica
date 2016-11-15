@@ -1,7 +1,7 @@
 // name:     ImportNamedInvalid1
 // keywords: named import
 // status:   incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that an error is output for missing named imports.
 //

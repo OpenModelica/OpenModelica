@@ -1,7 +1,7 @@
 // name: inst4.mo
 // keywords:
 // status: incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Invalid mix of extensions not checked.
 //

@@ -1,7 +1,7 @@
 // name: when1.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Expand of when equations not implemented.
 //

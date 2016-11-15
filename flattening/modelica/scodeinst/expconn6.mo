@@ -1,7 +1,7 @@
 // name: expconn6.mo
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // FAILREASON: Expandable connectors not handled yet.
 //

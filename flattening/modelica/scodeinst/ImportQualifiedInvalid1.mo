@@ -1,7 +1,7 @@
 // name:     ImportQualifiedInvalid1
 // keywords: qualified import
 // status:   incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that an error is output for missing qualified imports.
 //

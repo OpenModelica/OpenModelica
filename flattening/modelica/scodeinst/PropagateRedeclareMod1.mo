@@ -1,7 +1,7 @@
 // name: PropagateRedeclareMod1
 // keywords:
 // status: correct
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 
 model A

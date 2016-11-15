@@ -1,7 +1,7 @@
 // name:     ImportQualifiedInvalid2
 // keywords: qualified import
 // status:   incorrect
-// cflags:   +d=newInst
+// cflags:   -d=newInst
 //
 // Checks that imports are really lookup up from the top scope.
 //
