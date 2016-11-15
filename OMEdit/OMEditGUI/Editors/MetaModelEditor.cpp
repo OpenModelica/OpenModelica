@@ -317,23 +317,30 @@ void MetaModelEditor::updateSubModelPlacementAnnotation(QString name, QString vi
  * Updates the SubModel parameters.
  * \param name
  * \param startCommand
- * \param ExactStepflag
+ * \param exactStep
+ * \param geometryFile
  */
-void MetaModelEditor::updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag)
+void MetaModelEditor::updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
     QDomElement subModel = subModelList.at(i).toElement();
     if (subModel.attribute("Name").compare(name) == 0) {
       subModel.setAttribute("StartCommand", startCommand);
-      if (exactStepFlag.compare("true") == 0) {
-        subModel.setAttribute("ExactStep", exactStepFlag);
+      if (exactStep.compare("true") == 0) {
+        subModel.setAttribute("ExactStep", exactStep);
       } else if (subModel.hasAttribute("ExactStep")) {
         subModel.removeAttribute("ExactStep");
       }
+      if (geometryFile.isEmpty()) {
+        subModel.removeAttribute("GeometryFile");
+      } else {
+        QFileInfo geometryFileInfo(geometryFile);
+        subModel.setAttribute("GeometryFile", geometryFileInfo.fileName());
+      }
       setPlainText(mXmlDocument.toString());
       return;
-     }
+    }
   }
 }
 

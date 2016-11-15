@@ -237,13 +237,17 @@ private:
   Label *mpModelFileLabel;
   QLineEdit *mpModelFileTextBox;
   Label *mpExactStepFlagLabel;
-  QCheckBox *mpExactStepFlagCheckBox;
+  QCheckBox *mpExactStepCheckBox;
+  Label *mpGeometryFileLabel;
+  QLineEdit *mpGeometryFileTextBox;
+  QPushButton *mpGeometryFileBrowseButton;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
   void changeSimulationToolStartCommand(QString tool);
   void changeSimulationTool(QString simulationToolStartCommand);
+  void browseGeometryFile();
   void updateSubModelParameters();
 };
 

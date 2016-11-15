@@ -3837,6 +3837,19 @@ void ModelWidget::getMetaModelSubModels()
       MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
     }
+    // Geometry File
+    if (!subModel.attribute("GeometryFile").isEmpty()) {
+      QString absoluteGeometryFilePath = QString("%1/%2/%3").arg(fileInfo.absolutePath()).arg(subModel.attribute("Name"))
+          .arg(subModel.attribute("GeometryFile"));
+      pComponentInfo->setGeometryFile(absoluteGeometryFilePath);
+      // if GeometryFile doesn't exist
+      if (!QFile::exists(absoluteGeometryFilePath)) {
+        QString msg = tr("Unable to find GeometryFile <b>%1</b> for SubModel <b>%2</b>. The file location should be <b>%3</b>.")
+            .arg(subModel.attribute("GeometryFile")).arg(subModel.attribute("Name")).arg(absoluteGeometryFilePath);
+        MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+      }
+    }
     // add submodel as component to view.
     mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), pLibraryTreeItem, transformation, QPointF(0.0, 0.0), dialogAnnotation,
                                               pComponentInfo, false, true);

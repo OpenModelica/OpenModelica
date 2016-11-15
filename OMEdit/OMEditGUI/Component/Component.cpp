@@ -76,6 +76,7 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mStartCommand = "";
   mExactStep = false;
   mModelFile = "";
+  mGeometryFile = "";
   mPosition = "";
   mAngle321 = "";
 }
@@ -122,6 +123,7 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mStartCommand = pComponentInfo->getStartCommand();
   mExactStep = pComponentInfo->getExactStep();
   mModelFile = pComponentInfo->getModelFile();
+  mGeometryFile = pComponentInfo->getGeometryFile();
   mPosition = pComponentInfo->getPosition();
   mAngle321 = pComponentInfo->getAngle321();
 }
@@ -360,8 +362,8 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getModifiersMapWithoutFetching() == this->getModifiersMapWithoutFetching()) &&
       (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
       (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
-      (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getPosition() == this->getPosition()) &&
-      (componentInfo.getAngle321() == this->getAngle321());
+      (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getGeometryFile() == this->getGeometryFile()) &&
+      (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321());
 }
 
 /*!

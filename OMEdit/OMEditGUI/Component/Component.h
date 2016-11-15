@@ -111,6 +111,8 @@ public:
   bool getExactStep() const {return mExactStep;}
   void setModelFile(QString modelFile) {mModelFile = modelFile;}
   QString getModelFile() const {return mModelFile;}
+  void setGeometryFile(QString geometryFile) {mGeometryFile = geometryFile;}
+  QString getGeometryFile() const {return mGeometryFile;}
   void setPosition(QString position) {mPosition = position;}
   QString getPosition() const {return mPosition;}
   void setAngle321(QString angle321) {mAngle321 = angle321;}
@@ -143,6 +145,7 @@ private:
   QString mStartCommand;
   bool mExactStep;
   QString mModelFile;
+  QString mGeometryFile;
   QString mPosition;
   QString mAngle321;
 

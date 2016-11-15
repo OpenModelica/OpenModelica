@@ -4148,12 +4148,21 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
       }
       // copy the submodel file to the created directory
       QFileInfo modelFileInfo(modelFile);
-      QString newFileName = directoryPath + "/" + modelFileInfo.fileName();
-      if (modelFileInfo.absoluteFilePath().compare(newFileName) != 0) {
+      QString newModelFilePath = directoryPath + "/" + modelFileInfo.fileName();
+      if (modelFileInfo.absoluteFilePath().compare(newModelFilePath) != 0) {
         // first try to remove the file because QFile::copy will not override the file.
-        QFile::remove(newFileName);
+        QFile::remove(newModelFilePath);
       }
-      QFile::copy(modelFileInfo.absoluteFilePath(), newFileName);
+      QFile::copy(modelFileInfo.absoluteFilePath(), newModelFilePath);
+      // copy the geomtry file to the created directory
+      QFileInfo geometryFileInfo(pComponent->getComponentInfo()->getGeometryFile());
+      QString newGeometryFilePath = directoryPath + "/" + geometryFileInfo.fileName();
+      if (geometryFileInfo.absoluteFilePath().compare(newGeometryFilePath) != 0) {
+        // first try to remove the file because QFile::copy will not override the file.
+        QFile::remove(newGeometryFilePath);
+      }
+      QFile::copy(geometryFileInfo.absoluteFilePath(), newGeometryFilePath);
+      pComponent->getComponentInfo()->setGeometryFile(newGeometryFilePath);
     }
   } else {
     return false;

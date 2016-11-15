@@ -79,7 +79,7 @@ public:
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
-  void updateSubModelParameters(QString name, QString startCommand, QString exactStepFlag);
+  void updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile);
   void updateSubModelOrientation(QString name, QGenericMatrix<3,1,double> rot, QGenericMatrix<3,1,double> pos);
   bool createConnection(LineAnnotation *pConnectionLineAnnotation);
   void updateConnection(LineAnnotation *pConnectionLineAnnotation);

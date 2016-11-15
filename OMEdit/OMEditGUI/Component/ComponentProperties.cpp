@@ -1392,7 +1392,6 @@ MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, 
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setMinimumWidth(250);
   mpComponent = pComponent;
   mpMainWindow = pMainWindow;
   setUpDialog();
@@ -1428,8 +1427,13 @@ void MetaModelSubModelAttributes::setUpDialog()
   mpModelFileLabel = new Label(tr("Model File:"));
   mpModelFileTextBox = new QLineEdit;
   mpModelFileTextBox->setDisabled(true);
-  // Create the exact step flag check box
-  mpExactStepFlagCheckBox = new QCheckBox(tr("Exact Step Flag"));
+  // Create the exact step check box
+  mpExactStepCheckBox = new QCheckBox(tr("Exact Step"));
+  // geometry file label, text box and browse button
+  mpGeometryFileLabel = new Label(tr("Geometry File:"));
+  mpGeometryFileTextBox = new QLineEdit;
+  mpGeometryFileBrowseButton = new QPushButton(Helper::browse);
+  connect(mpGeometryFileBrowseButton, SIGNAL(clicked()), this, SLOT(browseGeometryFile()));
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1445,15 +1449,18 @@ void MetaModelSubModelAttributes::setUpDialog()
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpNameLabel, 0, 0);
-  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1, 1, 2);
   pMainLayout->addWidget(mpModelFileLabel, 1, 0);
-  pMainLayout->addWidget(mpModelFileTextBox, 1, 1);
+  pMainLayout->addWidget(mpModelFileTextBox, 1, 1, 1, 2);
   pMainLayout->addWidget(mpSimulationToolLabel, 2, 0);
-  pMainLayout->addWidget(mpSimulationToolComboBox, 2, 1);
+  pMainLayout->addWidget(mpSimulationToolComboBox, 2, 1, 1, 2);
   pMainLayout->addWidget(mpStartCommandLabel, 3, 0);
-  pMainLayout->addWidget(mpStartCommandTextBox, 3, 1);
-  pMainLayout->addWidget(mpExactStepFlagCheckBox, 4, 0 );
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(mpStartCommandTextBox, 3, 1, 1, 2);
+  pMainLayout->addWidget(mpExactStepCheckBox, 4, 0 );
+  pMainLayout->addWidget(mpGeometryFileLabel, 5, 0);
+  pMainLayout->addWidget(mpGeometryFileTextBox, 5, 1);
+  pMainLayout->addWidget(mpGeometryFileBrowseButton, 5, 2);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -1467,20 +1474,51 @@ void MetaModelSubModelAttributes::initializeDialog()
   // set the start command
   mpStartCommandTextBox->setText(mpComponent->getComponentInfo()->getStartCommand());
   // set the exact step
-  mpExactStepFlagCheckBox->setChecked(mpComponent->getComponentInfo()->getExactStep());
-  // get the simulation tool of the submodel
+  mpExactStepCheckBox->setChecked(mpComponent->getComponentInfo()->getExactStep());
+  // set the simulation tool of the submodel
   mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(mpStartCommandTextBox->text()));
+  // set the model file name
   mpModelFileTextBox->setText(mpComponent->getComponentInfo()->getModelFile());
+  // set the geometry file name
+  mpGeometryFileTextBox->setText(mpComponent->getComponentInfo()->getGeometryFile());
+
 }
 
+/*!
+ * \brief MetaModelSubModelAttributes::changeSimulationToolStartCommand
+ * Updates the simulation tool start command.\n
+ * Slot activated when mpSimulationToolComboBox currentIndexChanged signal is raised.
+ * \param tool
+ */
 void MetaModelSubModelAttributes::changeSimulationToolStartCommand(QString tool)
 {
   mpStartCommandTextBox->setText(StringHandler::getSimulationToolStartCommand(tool, mpStartCommandTextBox->text()));
 }
 
+/*!
+ * \brief MetaModelSubModelAttributes::changeSimulationTool
+ * Updates the simulation tool.\n
+ * Slot activated when mpStartCommandTextBox textChanged signal is raised.
+ * \param simulationToolStartCommand
+ */
 void MetaModelSubModelAttributes::changeSimulationTool(QString simulationToolStartCommand)
 {
   mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(simulationToolStartCommand));
+}
+
+/*!
+ * \brief MetaModelSubModelAttributes::browseGeometryFile
+ * Updates subModel parameters.\n
+ * Slot activated when mpGeometryFileBrowseButton clicked signal is raised.
+ */
+void MetaModelSubModelAttributes::browseGeometryFile()
+{
+  QString geometryFile = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
+                                                       NULL, "", NULL);
+  if (geometryFile.isEmpty()) {
+    return;
+  }
+  mpGeometryFileTextBox->setText(geometryFile);
 }
 
 /*!
@@ -1495,7 +1533,8 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
   // Create a new ComponentInfo
   ComponentInfo newComponentInfo(mpComponent->getComponentInfo());
   newComponentInfo.setStartCommand(mpStartCommandTextBox->text());
-  newComponentInfo.setExactStep(mpExactStepFlagCheckBox->isChecked());
+  newComponentInfo.setExactStep(mpExactStepCheckBox->isChecked());
+  newComponentInfo.setGeometryFile(mpGeometryFileTextBox->text());
   // If user has really changed the Component's attributes then push that change on the stack.
   if (oldComponentInfo != newComponentInfo) {
     UpdateSubModelAttributesCommand *pUpdateSubModelAttributesCommand = new UpdateSubModelAttributesCommand(mpComponent, oldComponentInfo,

@@ -1149,9 +1149,10 @@ void UpdateSubModelAttributesCommand::redo()
 {
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
   pMetaModelEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
-                                             mNewComponentInfo.getExactStep() ? "true" : "false");
+                                             mNewComponentInfo.getExactStep() ? "true" : "false", mNewComponentInfo.getGeometryFile());
   mpComponent->getComponentInfo()->setStartCommand(mNewComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mNewComponentInfo.getExactStep());
+  mpComponent->getComponentInfo()->setGeometryFile(mNewComponentInfo.getGeometryFile());
 }
 
 /*!
@@ -1162,9 +1163,10 @@ void UpdateSubModelAttributesCommand::undo()
 {
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
   pMetaModelEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
-                                             mOldComponentInfo.getExactStep() ? "true" : "false");
+                                             mOldComponentInfo.getExactStep() ? "true" : "false", mOldComponentInfo.getGeometryFile());
   mpComponent->getComponentInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mOldComponentInfo.getExactStep());
+  mpComponent->getComponentInfo()->setGeometryFile(mOldComponentInfo.getGeometryFile());
 }
 
 UpdateSimulationParamsCommand::UpdateSimulationParamsCommand(LibraryTreeItem *pLibraryTreeItem, QString oldStartTime, QString newStartTime, QString oldStopTime,
