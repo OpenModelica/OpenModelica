@@ -243,6 +243,17 @@ uniontype Instance
     Element.COMPONENT(index = index) := element;
     component := arrayGet(components(instance), index);
   end lookupComponentByElement;
+
+  function isBuiltin
+    input Instance instance;
+    output Boolean isBuiltin;
+  algorithm
+    isBuiltin := match instance
+      case PARTIAL_BUILTIN() then true;
+      case INSTANCED_BUILTIN() then true;
+      else false;
+    end match;
+  end isBuiltin;
 end Instance;
 
 annotation(__OpenModelica_Interface="frontend");

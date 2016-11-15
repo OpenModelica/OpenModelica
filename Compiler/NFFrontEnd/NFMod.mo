@@ -151,8 +151,7 @@ public
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix,
-            mod.eachPrefix, scope, 0, mod.info);
+          binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix, mod.eachPrefix, 0, mod.info);
           submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));

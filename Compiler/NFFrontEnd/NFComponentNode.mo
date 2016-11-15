@@ -33,9 +33,10 @@
 encapsulated package NFComponentNode
 
 import NFComponent.Component;
-import NFMod.Modifier;
-import SCode.Element;
 import NFInstNode.InstNode;
+import NFMod.Modifier;
+import NFPrefix.Prefix;
+import SCode.Element;
 
 uniontype ComponentNode
   record COMPONENT_NODE
@@ -106,6 +107,16 @@ uniontype ComponentNode
     COMPONENT_NODE(parent = parentNode) := node;
   end parent;
 
+  function topComponent
+    input ComponentNode node;
+    output ComponentNode topComponent;
+  algorithm
+    topComponent := match node
+      case COMPONENT_NODE(parent = EMPTY_NODE()) then node;
+      case COMPONENT_NODE() then topComponent(node.parent);
+    end match;
+  end topComponent;
+
   function setParent
     input ComponentNode parent;
     input output ComponentNode node;
@@ -161,6 +172,16 @@ uniontype ComponentNode
     end match;
   end setDefinition;
 
+  function info
+    input ComponentNode node;
+    output SourceInfo info;
+  algorithm
+    info := match node
+      case COMPONENT_NODE() then SCode.elementInfo(node.definition);
+      else Absyn.dummyInfo;
+    end match;
+  end info;
+
   function clone
     input ComponentNode node;
     output ComponentNode clone;
@@ -190,6 +211,23 @@ uniontype ComponentNode
           ();
     end match;
   end apply;
+
+  function instPrefix
+    input ComponentNode node;
+    input output Prefix prefix = Prefix.NO_PREFIX();
+  algorithm
+    prefix := match node
+      case COMPONENT_NODE(parent = EMPTY_NODE()) then prefix;
+
+      case COMPONENT_NODE()
+        algorithm
+          prefix := Prefix.add(node.name, {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+        then
+          instPrefix(node.parent, prefix);
+
+      else prefix;
+    end match;
+  end instPrefix;
 end ComponentNode;
 
 annotation(__OpenModelica_Interface="frontend");

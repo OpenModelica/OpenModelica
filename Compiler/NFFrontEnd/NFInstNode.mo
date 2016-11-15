@@ -33,6 +33,7 @@ encapsulated package NFInstNode
 
 import NFComponent.Component;
 import NFInst.Instance;
+import NFPrefix.Prefix;
 import SCode;
 
 uniontype InstParent
@@ -58,13 +59,22 @@ uniontype InstParent
 end InstParent;
 
 uniontype InstNodeType
-  record NORMAL_CLASS end NORMAL_CLASS;
+  record NORMAL_CLASS
+    "A normal class."
+  end NORMAL_CLASS;
 
-  record EXTENDS
+  record BASE_CLASS
+    "A base class extended by another class."
     InstNode parent;
-  end EXTENDS;
+  end BASE_CLASS;
 
-  record TOP_SCOPE end TOP_SCOPE;
+  record TOP_SCOPE
+    "The unnamed class containing all the top-level classes."
+  end TOP_SCOPE;
+
+  record ROOT_CLASS
+    "The root of the instance tree, i.e. the class that the instantiation starts from."
+  end ROOT_CLASS;
 end InstNodeType;
 
 uniontype InstNode
@@ -124,7 +134,7 @@ uniontype InstNode
   algorithm
     topScope := match node
       case INST_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
-      else parentScope(node);
+      case INST_NODE() then topScope(node.parentScope);
     end match;
   end topScope;
 
@@ -219,6 +229,35 @@ uniontype InstNode
       else node;
     end match;
   end clone;
+
+  function scopePrefix
+    input InstNode node;
+    input output Prefix prefix = Prefix.NO_PREFIX();
+  algorithm
+    prefix := match node
+      local
+        InstNodeType it;
+
+      case INST_NODE()
+        algorithm
+          it := node.nodeType;
+        then
+          match it
+            case InstNodeType.NORMAL_CLASS()
+              algorithm
+                prefix := Prefix.addClass(node.name, prefix);
+              then
+                scopePrefix(node.parentScope, prefix);
+
+            case InstNodeType.BASE_CLASS()
+              then scopePrefix(it.parent, prefix);
+
+            else prefix;
+          end match;
+
+      else prefix;
+    end match;
+  end scopePrefix;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -31,12 +31,18 @@
 
 encapsulated package NFComponent
 
-import DAE.Type;
+import DAE;
 import NFBinding.Binding;
 import NFDimension.Dimension;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import SCode.Element;
+
+constant Component.Attributes DEFAULT_ATTR =
+  Component.Attributes.ATTRIBUTES(DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR());
+constant Component.Attributes INPUT_ATTR =
+  Component.Attributes.ATTRIBUTES(DAE.VARIABLE(), DAE.INPUT(), DAE.PUBLIC(), DAE.NON_CONNECTOR());
+constant Component.Scope DEFAULT_SCOPE = Component.Scope.RELATIVE_COMP(0);
 
 uniontype Component
   uniontype Attributes
@@ -47,6 +53,12 @@ uniontype Component
       DAE.ConnectorType connectorType;
     end ATTRIBUTES;
   end Attributes;
+
+  uniontype Scope
+    record RELATIVE_COMP
+      Integer level;
+    end RELATIVE_COMP;
+  end Scope;
 
   record COMPONENT_DEF
     Element definition;
@@ -63,7 +75,7 @@ uniontype Component
 
   record TYPED_COMPONENT
     InstNode classInst;
-    Type ty;
+    DAE.Type ty;
     Binding binding;
     Component.Attributes attributes;
   end TYPED_COMPONENT;
@@ -142,7 +154,7 @@ uniontype Component
       local
         DAE.Type ty;
 
-      case TYPED_COMPONENT(ty = DAE.T_ARRAY(ty = ty))
+      case TYPED_COMPONENT(ty = DAE.Type.T_ARRAY(ty = ty))
         algorithm
           component.ty := ty;
         then
