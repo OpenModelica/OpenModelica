@@ -7,6 +7,7 @@ bindings5.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
 ComponentAsTypeError.mo \
+cond4.mo \
 conn1.mo \
 conn2.mo \
 const3.mo \
@@ -23,6 +24,7 @@ mod1.mo \
 mod4.mo \
 mod5.mo \
 mod6.mo \
+mod8.mo \
 ParameterBug.mos \
 redeclare13.mo \
 redeclare2.mo \
@@ -34,7 +36,6 @@ loop2.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-mod8.mo \
 bindings2.mo \
 bindings3.mo \
 bindings4.mo \
@@ -164,7 +165,6 @@ RedeclaredFunction1.mo \
 cond1.mo \
 cond3.mo \
 cond2.mo \
-cond4.mo \
 conn6.mo \
 conn7.mo \
 conn10.mo \
