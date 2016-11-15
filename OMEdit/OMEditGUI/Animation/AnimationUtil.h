@@ -89,8 +89,9 @@ inline bool isCSV(const std::string& fileIn){
  */
 inline std::string assembleXMLFileName(const std::string& modelFile, const std::string& path){
   QString fileName(modelFile.c_str());
-  QRegExp fileTypeRegExp("(\\.fmu|\\.mat|\\.csv|_res.mat|_res.csv)");
-  fileName.remove(fileTypeRegExp);
+  QRegExp fileTypeRegExp("(_res.mat|_res.csv|\\.fmu)");
+  int pos = fileName.lastIndexOf(fileTypeRegExp);
+  fileName = fileName.left(pos);
   // Construct XML file name
   std::string xmlFileName = path + fileName.toStdString() + "_visual.xml";
   return xmlFileName;

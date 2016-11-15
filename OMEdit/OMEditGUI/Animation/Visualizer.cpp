@@ -663,7 +663,7 @@ rAndT rotateModelica2OSG(osg::Vec3f r, osg::Vec3f r_shape, osg::Matrix3 T, osg::
     res._r = res._r + r;
     res._T = Mat3mulMat3(T0, T);
   }
-  else if ((type == "spring")||(type == "pipecylinder")||(type == "cone"))
+  else if ((type == "spring")||(type == "pipecylinder")||(type == "cone") || (type == "pipe"))
   {
     res._r = V3mulMat3(r_shape, T);
     res._r = res._r + r;
