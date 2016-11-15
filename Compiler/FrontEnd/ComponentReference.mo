@@ -2236,10 +2236,8 @@ algorithm
 end appendStringLastIdent;
 
 public function joinCrefs
-"Join two component references by concatenating them.
-
+"Joins two component references by concatenating them.
   alternative names: crefAppend
-
   "
   input DAE.ComponentRef inComponentRef1 " first part of the new componentref";
   input DAE.ComponentRef inComponentRef2 " last part of the new componentref";
@@ -2288,6 +2286,24 @@ algorithm
         makeCrefQual(id,t2,sub,cr_1);
   end match;
 end joinCrefsR;
+
+public function joinCrefsExp
+"Like joinCrefs but first argument is an expression"
+  input output DAE.Exp exp;
+  input output DAE.ComponentRef cref;
+algorithm
+  exp := match (exp)
+    local
+      DAE.ComponentRef cr;
+      DAE.Type tp;
+    case (DAE.CREF(cr, tp))
+      equation
+        cr = joinCrefs(cref, cr);
+      then
+        DAE.CREF(cr,tp);
+     else exp;
+  end match;
+end joinCrefsExp;
 
 public function subscriptCref
 "The subscriptCref function adds a subscript to the ComponentRef

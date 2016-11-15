@@ -766,7 +766,7 @@ algorithm
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
         dae_var_attr = setMinMaxFromEnumeration(t, dae_var_attr);
         ts = BackendDAEUtil.setTearingSelectAttribute(comment);
-        hideResult = BackendDAEUtil.setHideResultAttribute(comment, b);
+        hideResult = BackendDAEUtil.setHideResultAttribute(comment, b, name);
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false));
   end match;
@@ -831,7 +831,7 @@ algorithm
         eqLst = buildAssertAlgorithms({},source,assrtEqIn);
         // building an algorithm of the assert
         ts = NONE();
-        hideResult = BackendDAEUtil.setHideResultAttribute(comment, b);
+        hideResult = BackendDAEUtil.setHideResultAttribute(comment, b, name);
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false), iInlineHT, eqLst);
 

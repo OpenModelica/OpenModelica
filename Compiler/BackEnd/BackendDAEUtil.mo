@@ -1240,16 +1240,27 @@ public function setHideResultAttribute
    See Modelica Spec 3.3, section 18.3"
   input Option<SCode.Comment> comment;
   input Boolean isProtected;
+  input DAE.ComponentRef inCref;
   output DAE.Exp hideResult;
 protected
   SCode.Annotation ann;
   Absyn.Exp val;
-  String ts_str;
+  DAE.ComponentRef crefRoot;
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
     val := SCode.getNamedAnnotation(ann, "HideResult");
     hideResult := Expression.fromAbsynExp(val);
+
+    hideResult := match(inCref)
+      case(DAE.CREF_QUAL())
+        equation
+          (crefRoot,_) = ComponentReference.splitCrefLast(inCref);
+          hideResult = Expression.traverseExpBottomUp(hideResult, ComponentReference.joinCrefsExp, crefRoot);
+       then hideResult;
+      else hideResult;
+    end match;
+
   else
     hideResult := DAE.BCONST(isProtected);
   end try;
