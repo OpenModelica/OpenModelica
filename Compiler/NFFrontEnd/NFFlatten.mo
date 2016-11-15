@@ -242,7 +242,7 @@ algorithm
           case Instance.INSTANCED_BUILTIN()
             algorithm
               cref := Prefix.toCref(prefix);
-              binding_exp := flattenBinding(component.binding);
+              binding_exp := flattenBinding(component.binding, prefix);
               attr := component.attributes;
 
               var := DAE.VAR(
@@ -278,6 +278,7 @@ end flattenScalar;
 
 function flattenBinding
   input Binding binding;
+  input Prefix prefix;
   output Option<DAE.Exp> bindingExp;
 algorithm
   bindingExp := match binding
@@ -292,11 +293,10 @@ algorithm
     case Binding.TYPED_BINDING()
       algorithm
         // TODO: Implement this in a saner way.
-        //subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
-        //  binding.propagatedDims);
-      //then
-      //  SOME(Expression.subscriptExp(binding.bindingExp, subs));
-      then SOME(binding.bindingExp);
+        subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
+          binding.propagatedDims);
+      then
+        SOME(Expression.subscriptExp(binding.bindingExp, subs));
 
     else
       algorithm

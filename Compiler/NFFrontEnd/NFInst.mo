@@ -649,7 +649,6 @@ protected
   list<Dimension> dims;
 algorithm
   component := ComponentNode.component(node);
-  name := ComponentNode.name(node);
 
   () := match component
     case Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE())
@@ -662,6 +661,7 @@ algorithm
 
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
+        name := ComponentNode.name(node);
         node := ComponentNode.setParent(parent, node);
 
         // Merge the modifier from the component.
@@ -670,6 +670,9 @@ algorithm
         comp_mod := Modifier.merge(component.modifier, comp_mod);
         comp_mod := Modifier.propagate(comp_mod, listLength(comp.attributes.arrayDims));
 
+        binding := instBinding(Modifier.binding(comp_mod), scope);
+        comp_mod := Modifier.propagateScope(comp_mod);
+
         // Instantiate the type of the component.
         cls := instTypeSpec(comp.typeSpec, comp_mod, scope, node, comp.info);
 
@@ -677,9 +680,8 @@ algorithm
         dims := instDimensions(comp.attributes.arrayDims, scope);
         Modifier.checkEach(comp_mod, listEmpty(dims), name);
 
-        // Instantiate attributes and binding.
+        // Instantiate attributes and create the untyped component.
         attr := instComponentAttributes(comp.attributes, comp.prefixes);
-        binding := instBinding(Modifier.binding(comp_mod), scope);
         inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding, attr, comp.info);
         node := ComponentNode.setComponent(inst_comp, node);
       then

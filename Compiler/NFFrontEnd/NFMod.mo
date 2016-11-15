@@ -43,6 +43,7 @@ public
 import Absyn;
 import BaseAvlTree;
 import NFBinding.Binding;
+import NFComponent.Component;
 import NFInstNode.InstNode;
 import SCode;
 
@@ -314,6 +315,21 @@ public
     end match;
   end propagate;
 
+  function propagateScope
+    input output Modifier modifier;
+  algorithm
+    _ := match modifier
+      case MODIFIER()
+        algorithm
+          modifier.subModifiers := ModTable.map(modifier.subModifiers,
+            propagateSubModScope);
+        then
+          ();
+
+      else ();
+    end match;
+  end propagateScope;
+
   function checkEach
     input Modifier mod;
     input Boolean isScalar;
@@ -471,6 +487,39 @@ protected
     end match;
   end propagateBinding;
 
+  function propagateSubModScope
+    input String name;
+    input output Modifier modifier;
+  algorithm
+    _ := match modifier
+      case MODIFIER()
+        algorithm
+          modifier.binding := propagateBindingScope(modifier.binding);
+          modifier.subModifiers := ModTable.map(modifier.subModifiers,
+            propagateSubModScope);
+        then
+          ();
+
+      else ();
+    end match;
+  end propagateSubModScope;
+
+  function propagateBindingScope
+    input output Binding binding;
+  algorithm
+    _ := match binding
+      local
+        Integer l;
+
+      case Binding.RAW_BINDING(scope = Component.Scope.RELATIVE_COMP(level = l))
+        algorithm
+          binding.scope := Component.Scope.RELATIVE_COMP(l + 1);
+        then
+          ();
+
+      else ();
+    end match;
+  end propagateBindingScope;
 end Modifier;
 
 annotation(__OpenModelica_Interface="frontend");
