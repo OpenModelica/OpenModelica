@@ -77,6 +77,7 @@
 #include "StackFramesWidget.h"
 #include "LocalsWidget.h"
 #include "ImportFMUDialog.h"
+#include "ImportFMUModelDescriptionDialog.h"
 #include "NotificationsDialog.h"
 
 class OMCProxy;
@@ -307,6 +308,7 @@ private:
   // FMI Menu
   QAction *mpExportFMUAction;
   QAction *mpImportFMUAction;
+  QAction *mpImportFMUModelDescriptionAction;
   // Export Menu
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
@@ -417,6 +419,7 @@ public slots:
   void openSimulationDialog();
   void exportModelFMU();
   void importModelFMU();
+  void importFMUModelDescription();
   void exportModelXML();
   void exportModelFigaro();
   void showOpenModelicaCommandPrompt();

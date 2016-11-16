@@ -197,6 +197,7 @@ public:
   bool buildModelFMU(QString className, double version, QString type, QString fileNamePrefix, QList<QString> platforms);
   bool translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
+  QString importFMUModelDescription(QString fmuModelDescriptionName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
   QString getMatchingAlgorithm();
   OMCInterface::getAvailableMatchingAlgorithms_res getAvailableMatchingAlgorithms();
   bool setMatchingAlgorithm(QString matchingAlgorithm);

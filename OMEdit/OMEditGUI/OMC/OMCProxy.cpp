@@ -2108,6 +2108,27 @@ QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLev
 }
 
 /*!
+ * \brief OMCProxy::importFMUModelDescription
+ * Imports the FMU model description xml
+ * \param fmuModelDescriptionName - the modelDescription xml location
+ * \param outputDirectory - the output location
+ * \param logLevel - the logging level
+ * \param debugLogging - enables the debug logging for the imported FMU.
+ * \param generateInputConnectors - generates the input variables as connectors
+ * \param generateOutputConnectors - generates the output variables as connectors.
+ * \return generated Modelica Code file path
+ */
+QString OMCProxy::importFMUModelDescription(QString fmuModelDescriptionName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors,
+                            bool generateOutputConnectors)
+{
+  outputDirectory = outputDirectory.isEmpty() ? "<default>" : outputDirectory;
+  QString fmuFileName = mpOMCInterface->importFMUModelDescription(fmuModelDescriptionName, outputDirectory, logLevel, true, debugLogging, generateInputConnectors,
+                                                  generateOutputConnectors);
+  printMessagesStringInternal();
+  return fmuFileName;
+}
+
+/*!
   Reads the matching algorithm used during the simulation.
   \return the name of the matching algorithm
   */
