@@ -193,7 +193,7 @@ public:
   bool ngspicetoModelica(QString fileName);
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
-  OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-4);
+  OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-6);
   bool buildModelFMU(QString className, double version, QString type, QString fileNamePrefix, QList<QString> platforms);
   bool translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
