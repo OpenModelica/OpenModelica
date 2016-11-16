@@ -582,7 +582,7 @@ QString GUIMessages::getMessage(int type)
     case OPENMODELICAHOME_NOT_FOUND:
       return tr("Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.");
     case ERROR_OCCURRED:
-      return tr("Following error has occurred. \n\n%1");
+      return tr("Following error has occurred.<br />%1");
     case ERROR_IN_TEXT:
       return tr("Problems are found in %1 Text. <br />");
     case REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY:
@@ -594,7 +594,7 @@ QString GUIMessages::getMessage(int type)
     case UNABLE_TO_OPEN_FILE:
       return tr("Unable to open file <b>%1</b>.");
     case UNABLE_TO_SAVE_FILE:
-      return tr("Unable to save the file <b>%1</b>.");
+      return tr("Unable to save the file <b>%1</b>. %2");
     case FILE_NOT_FOUND:
       return tr("The file <b>%1</b> not found.");
     case ERROR_OPENING_FILE:

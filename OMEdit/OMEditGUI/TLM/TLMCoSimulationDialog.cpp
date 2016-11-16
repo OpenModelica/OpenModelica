@@ -393,6 +393,11 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
     TLMCoSimulationOptions tlmCoSimulationOptions = createTLMCoSimulationOptions();
     if (tlmCoSimulationOptions.isValid()) {
       setIsTLMCoSimulationRunning(true);
+      if (!mpLibraryTreeItem->getModelWidget()) {
+        mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+      }
+      mpLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
+      mpLibraryTreeItem->getModelWidget()->writeVisualXMLFile();
       mpTLMCoSimulationOutputWidget->showTLMCoSimulationOutputWidget(tlmCoSimulationOptions);
       showTLMCoSimulationOutputWindow();
       accept();

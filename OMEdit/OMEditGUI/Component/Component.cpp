@@ -1158,10 +1158,12 @@ void Component::renameComponentInConnections(QString newName)
  * Inserts a new interface point.
  * \param interfaceName
  */
-void Component::insertInterfacePoint(QString interfaceName)
+void Component::insertInterfacePoint(QString interfaceName, QString position, QString angle321)
 {
   ComponentInfo *pComponentInfo = new ComponentInfo;
   pComponentInfo->setName(interfaceName);
+  pComponentInfo->setPosition(position);
+  pComponentInfo->setAngle321(angle321);
   mComponentsList.append(new Component(pComponentInfo, this));
 }
 
@@ -1215,6 +1217,8 @@ void Component::drawInterfacePoints()
           QDomElement interfacePoint = interfacePoints.at(j).toElement();
           ComponentInfo *pComponentInfo = new ComponentInfo;
           pComponentInfo->setName(interfacePoint.attribute("Name"));
+          pComponentInfo->setPosition(interfacePoint.attribute("Position", "0,0,0"));
+          pComponentInfo->setAngle321(interfacePoint.attribute("Angle321", "0,0,0"));
           mComponentsList.append(new Component(pComponentInfo, this));
         }
       }

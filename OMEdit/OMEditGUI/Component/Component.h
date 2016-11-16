@@ -222,7 +222,7 @@ public:
   void shapeUpdated();
   void shapeDeleted();
   void renameComponentInConnections(QString newName);
-  void insertInterfacePoint(QString interfaceName);
+  void insertInterfacePoint(QString interfaceName, QString position, QString angle321);
   void removeInterfacePoint(QString interfaceName);
 
   Transformation mTransformation;

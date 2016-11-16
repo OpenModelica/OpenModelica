@@ -98,7 +98,6 @@ private:
   XMLDocument mXmlDocument;
 
   bool existInterfaceData(QString subModelName, QDomElement interfaceDataElement);
-  QGenericMatrix<3,3,double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
   bool getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG, QGenericMatrix<3,1,double> &X_C_PHI_X,
                                      QGenericMatrix<3,1,double> &CG_X_R_CG, QGenericMatrix<3,1,double> &X_C_R_X);
   bool fuzzyCompare(double p1, double p2);

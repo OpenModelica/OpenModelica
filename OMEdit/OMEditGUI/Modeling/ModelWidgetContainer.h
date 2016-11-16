@@ -373,6 +373,7 @@ public:
   void updateUndoRedoActions();
   void updateDynamicResults(QString resultFileName);
   QString getResultFileName() {return mResultFileName;}
+  void writeVisualXMLFile();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;

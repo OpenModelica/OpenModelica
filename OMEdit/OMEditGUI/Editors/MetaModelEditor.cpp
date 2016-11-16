@@ -511,7 +511,8 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
           subModel.appendChild(interfacePoint);
           Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
-            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"));
+            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"), interfaceDataElement.attribute("Position", "0,0,0"),
+                                             interfaceDataElement.attribute("Angle321", "0,0,0"));
           }
         }
       }
@@ -615,11 +616,11 @@ bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
   QGenericMatrix<3,3,double> R_X1_C1, R_CG_X1, R_CG_C1, R_X2_C2, R_CG_X2, R_CG_C2;
 
   //Compute rotation matrices for both interfaces relative to CG and make sure they are the same
-  R_X1_C1 = getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
-  R_CG_X1 = getRotationMatrix(CG_X1_PHI_CG);    //Rotation matrix between CG and X1
+  R_X1_C1 = Utilities::getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
+  R_CG_X1 = Utilities::getRotationMatrix(CG_X1_PHI_CG);    //Rotation matrix between CG and X1
   R_CG_C1 = R_X1_C1*R_CG_X1;                       //Rotation matrix between CG and C1
-  R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
-  R_CG_X2 = getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
+  R_X2_C2 = Utilities::getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
+  R_CG_X2 = Utilities::getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
   R_CG_C2 = R_X2_C2*R_CG_X2;                       //Rotation matrix between CG and C2
 
   bool success=true;
@@ -722,32 +723,6 @@ bool MetaModelEditor::existInterfaceData(QString subModelName, QDomElement inter
 }
 
 /*!
- * \brief MetaModelEditor::getRotationMatrix
- * Computes the corresponding rotation matrix for specified rotation vector
- * \param rotation Rotation vector with Euler angles
- * \return
- */
-QGenericMatrix<3,3, double> MetaModelEditor::getRotationMatrix(QGenericMatrix<3,1,double> rotation)
-{
-  double c1 = cos(rotation(0,0));
-  double s1 = sin(rotation(0,0));
-  double c2 = cos(rotation(0,1));
-  double s2 = sin(rotation(0,1));
-  double c3 = cos(rotation(0,2));
-  double s3 = sin(rotation(0,2));
-
-  double R_data[9];
-  R_data[0] = c2*c3;             R_data[1] = c2*s3;              R_data[2] = -s2;
-  R_data[3] = -c1*s3+s1*s2*c3;   R_data[4] = c1*c3+s1*s2*s3;     R_data[5] = s1*c2;
-  R_data[6] = s1*s3+c1*s2*c3;    R_data[7] = -s1*c3+c1*s2*s3;    R_data[8] = c1*c2;
-
-  QGenericMatrix<3,3,double> R(R_data);
-
-  return R;
-}
-
-
-/*!
  * \brief MetaModelEditor::getRotationVector
  * Computes a rotation vector (321) from a rotation matrix
  * \param R
@@ -755,21 +730,21 @@ QGenericMatrix<3,3, double> MetaModelEditor::getRotationMatrix(QGenericMatrix<3,
  */
 QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3,double> R)
 {
-    double a11 = R(0,0);
-    double a12 = R(0,1);
-    double a13 = R(0,2);
-    double a23 = R(1,2);
-    double a33 = R(2,2);
+  double a11 = R(0,0);
+  double a12 = R(0,1);
+  double a13 = R(0,2);
+  double a23 = R(1,2);
+  double a33 = R(2,2);
 
-    double phi[3];
-    phi[1] = (fabs(a13) < DBL_MIN)? 0.0 : asin((a13<-1.0) ? 1.0 : ((a13>1.0) ? -1.0 : -a13));
-    double tmp = cos(phi[1]);
-    double cosphi1 = tmp+sign(tmp)*1.0e-50;
+  double phi[3];
+  phi[1] = (fabs(a13) < DBL_MIN)? 0.0 : asin((a13<-1.0) ? 1.0 : ((a13>1.0) ? -1.0 : -a13));
+  double tmp = cos(phi[1]);
+  double cosphi1 = tmp+sign(tmp)*1.0e-50;
 
-    phi[0] = atan2(a23/cosphi1, a33/cosphi1);
-    phi[2] = atan2(a12/cosphi1, a11/cosphi1);
+  phi[0] = atan2(a23/cosphi1, a33/cosphi1);
+  phi[2] = atan2(a12/cosphi1, a11/cosphi1);
 
-    return QGenericMatrix<3,1,double>(phi);
+  return QGenericMatrix<3,1,double>(phi);
 }
 
 /*!
@@ -866,11 +841,11 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   QGenericMatrix<3,3,double> R_X2_C2, R_CG_X1, R_CG_X2, R_CG_C2, R_X1_C1;
 
   //Equations from BEAST
-  R_X2_C2 = getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
-  R_CG_X2 = getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
+  R_X2_C2 = Utilities::getRotationMatrix(X2_C2_PHI_X2);    //Rotation matrix between X2 and C2
+  R_CG_X2 = Utilities::getRotationMatrix(CG_X2_PHI_CG);    //Rotation matrix between CG and X2
   R_CG_C2 = R_X2_C2*R_CG_X2;                       //Rotation matrix between CG and C2
 
-  R_X1_C1 = getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
+  R_X1_C1 = Utilities::getRotationMatrix(X1_C1_PHI_X1);    //Rotation matrix between X1 and C1
   R_CG_X1 = R_X1_C1.transposed()*R_CG_C2;          //New rotation matrix between CG and X1
 
   //Extract angles from rotation matrix

@@ -3706,10 +3706,11 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     file.close();
     return true;
   } else {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                                                                 .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
-                                                                      .arg(file.errorString())), Helper::scriptingKind, Helper::errorLevel));
+    QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+        .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
+             .arg(fileName).arg(file.errorString()));
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                 Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }

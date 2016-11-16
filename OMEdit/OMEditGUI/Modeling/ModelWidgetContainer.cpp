@@ -3254,6 +3254,302 @@ void ModelWidget::updateDynamicResults(QString resultFileName)
 }
 
 /*!
+ * \brief ModelWidget::writeVisualXMLFile
+ * Writes the visual xml file for 3d visualization.
+ */
+void ModelWidget::writeVisualXMLFile()
+{
+  // this function is only for meta-models
+  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::MetaModel) {
+    return;
+  }
+  // first remove the visual xml file.
+  QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
+  QString fileName = QString("%1/%2_visual.xml").arg(fileInfo.absolutePath()).arg(fileInfo.baseName());
+  if (QFile::exists(fileName)) {
+    QFile::remove(fileName);
+  }
+  // can we write visual xml file.
+  bool canWriteVisualXMLFile = false;
+  foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+    if (!pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+      canWriteVisualXMLFile = true;
+    }
+  }
+  if (!canWriteVisualXMLFile) {
+    return;
+  }
+  // write the visual xml file.
+  QFile file(fileName);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QTextStream visualFile(&file);
+    // set to UTF-8
+    visualFile.setCodec(Helper::utf8.toStdString().data());
+    visualFile.setGenerateByteOrderMark(false);
+
+    visualFile << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
+    visualFile << "<visualization>\n";
+    visualFile << "  <shape>\n";
+    visualFile << "    <ident>x-axis</ident>\n";
+    visualFile << "    <type>cylinder</type>\n";
+    visualFile << "    <T>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "    </T>\n";
+    visualFile << "    <r>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </r>\n";
+    visualFile << "    <r_shape>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </r_shape>\n";
+    visualFile << "    <lengthDir>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </lengthDir>\n";
+    visualFile << "    <widthDir>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </widthDir>\n";
+    visualFile << "    <length><exp>1.0</exp></length>\n";
+    visualFile << "    <width><exp>0.0025</exp></width>\n";
+    visualFile << "    <height><exp>0.0025</exp></height>\n";
+    visualFile << "    <extra><exp>0.0</exp></extra>\n";
+    visualFile << "    <color>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>255.0</exp>\n";
+    visualFile << "    </color>\n";
+    visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+    visualFile << "  </shape>\n";
+
+    visualFile << "  <shape>\n";
+    visualFile << "    <ident>y-axis</ident>\n";
+    visualFile << "    <type>cylinder</type>\n";
+    visualFile << "    <T>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "    </T>\n";
+    visualFile << "    <r>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </r>\n";
+    visualFile << "    <r_shape>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </r_shape>\n";
+    visualFile << "    <lengthDir>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </lengthDir>\n";
+    visualFile << "    <widthDir>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </widthDir>\n";
+    visualFile << "    <length><exp>1.0</exp></length>\n";
+    visualFile << "    <width><exp>0.0025</exp></width>\n";
+    visualFile << "    <height><exp>0.0025</exp></height>\n";
+    visualFile << "    <extra><exp>0.0</exp></extra>\n";
+    visualFile << "    <color>\n";
+    visualFile << "      <exp>255.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </color>\n";
+    visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+    visualFile << "  </shape>\n";
+
+    visualFile << "  <shape>\n";
+    visualFile << "    <ident>z-axis</ident>\n";
+    visualFile << "    <type>cylinder</type>\n";
+    visualFile << "    <T>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "    </T>\n";
+    visualFile << "    <r>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </r>\n";
+    visualFile << "    <r_shape>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </r_shape>\n";
+    visualFile << "    <lengthDir>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "    </lengthDir>\n";
+    visualFile << "    <widthDir>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>1.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </widthDir>\n";
+    visualFile << "    <length><exp>1.0</exp></length>\n";
+    visualFile << "    <width><exp>0.0025</exp></width>\n";
+    visualFile << "    <height><exp>0.0025</exp></height>\n";
+    visualFile << "    <extra><exp>0.0</exp></extra>\n";
+    visualFile << "    <color>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>255.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "    </color>\n";
+    visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+    visualFile << "  </shape>\n";
+
+    QList<QColor> colorsList;
+    colorsList.append(QColor(Qt::red));
+    colorsList.append(QColor(85,170,0)); // green
+    colorsList.append(QColor(Qt::blue));
+    colorsList.append(QColor(Qt::lightGray));
+    colorsList.append(QColor(Qt::magenta));
+    colorsList.append(QColor(Qt::yellow));
+    colorsList.append(QColor(Qt::darkRed));
+    colorsList.append(QColor(Qt::darkBlue));
+    colorsList.append(QColor(Qt::darkGreen));
+    colorsList.append(QColor(Qt::darkCyan));
+    colorsList.append(QColor(Qt::darkMagenta));
+    colorsList.append(QColor(Qt::darkYellow));
+    int i = 0;
+
+    foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+      // if no geometry file then continue.
+      if (pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+        continue;
+      }
+      bool visited = false;
+      foreach (Component *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
+        if (visited) {
+          break;
+        }
+        QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
+        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
+          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
+              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
+            // get the angle
+            double phi[3] = {0.0, 0.0, 0.0};
+            QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+            if (angleList.size() > 2) {
+              phi[0] = angleList.at(0).toDouble();
+              phi[1] = angleList.at(1).toDouble();
+              phi[2] = angleList.at(2).toDouble();
+            }
+            QGenericMatrix<3, 3, double> T = -Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
+            // get the position
+            double position[3] = {0.0, 0.0, 0.0};
+            QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+            if (positionList.size() > 2) {
+              position[0] = positionList.at(0).toDouble();
+              position[1] = positionList.at(1).toDouble();
+              position[2] = positionList.at(2).toDouble();
+            }
+            QGenericMatrix<3, 1, double> r_shape;
+            r_shape(0, 0) = -position[0];
+            r_shape(0, 1) = -position[1];
+            r_shape(0, 2) = -position[2];
+            r_shape = r_shape*(-T);
+            double lengthDirArr[3] = {1.0, 0.0, 0.0};
+            QGenericMatrix<3, 1, double> lengthDir(lengthDirArr);
+            lengthDir = lengthDir*(-T);
+            double widthDirArr[3] = {0.0, 1.0, 0.0};
+            QGenericMatrix<3, 1, double> widthDir(widthDirArr);
+            widthDir = widthDir*(-T);
+
+            visualFile << "  <shape>\n";
+            visualFile << "    <ident>" << name << "</ident>\n";
+            visualFile << "    <type>file://" << pSubModelComponent->getComponentInfo()->getGeometryFile() << "</type>\n";
+            visualFile << "    <T>\n";
+            visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
+            visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+            visualFile << "    </T>\n";
+            visualFile << "    <r>\n";
+            visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
+            visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
+            visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+            visualFile << "    </r>\n";
+            visualFile << "    <r_shape>\n";
+            visualFile << "      <exp>" << r_shape(0, 0) << "</exp>\n";
+            visualFile << "      <exp>" << r_shape(0, 1) << "</exp>\n";
+            visualFile << "      <exp>" << r_shape(0, 2) << "</exp>\n";
+            visualFile << "    </r_shape>\n";
+            visualFile << "    <lengthDir>\n";
+            visualFile << "      <exp>" << lengthDir(0, 0) << "</exp>\n";
+            visualFile << "      <exp>" << lengthDir(0, 1) << "</exp>\n";
+            visualFile << "      <exp>" << lengthDir(0, 2) << "</exp>\n";
+            visualFile << "    </lengthDir>\n";
+            visualFile << "    <widthDir>\n";
+            visualFile << "      <exp>" << widthDir(0, 0) << "</exp>\n";
+            visualFile << "      <exp>" << widthDir(0, 1) << "</exp>\n";
+            visualFile << "      <exp>" << widthDir(0, 2) << "</exp>\n";
+            visualFile << "    </widthDir>\n";
+            visualFile << "    <length><exp>0.0</exp></length>\n";
+            visualFile << "    <width><exp>0.0</exp></width>\n";
+            visualFile << "    <height><exp>0.0</exp></height>\n";
+            visualFile << "    <extra><exp>0.0</exp></extra>\n";
+            visualFile << "    <color>\n";
+            visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).red() << "</exp>\n";
+            visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).green() << "</exp>\n";
+            visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).blue() << "</exp>\n";
+            visualFile << "    </color>\n";
+            visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+            visualFile << "  </shape>\n";
+            // set the visited flag to true.
+            visited = true;
+            i++;
+            break;
+          }
+        }
+      }
+    }
+
+    visualFile << "</visualization>\n";
+    file.close();
+  } else {
+    MessagesWidget *pMessagesWidget = mpModelWidgetContainer->getMainWindow()->getMessagesWidget();
+    QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
+                                                                           .arg(fileName).arg(file.errorString()));
+    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
  * \brief ModelWidget::getModelInheritedClasses
  * Gets the class inherited classes.
  */
