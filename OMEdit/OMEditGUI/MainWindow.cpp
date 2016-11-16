@@ -1722,6 +1722,13 @@ void MainWindow::importModelFMU()
   pImportFMUDialog->exec();
 }
 
+//! Imports the model from FMU model description
+void MainWindow::importFMUModelDescription()
+{
+  ImportFMUModelDescriptionDialog *pImportFMUModelDescriptionDialog = new ImportFMUModelDescriptionDialog(this);
+  pImportFMUModelDescriptionDialog->exec();
+}
+
 //! Exports the current model to OMNotebook.
 //! Creates a new onb file and add the model text and model image in it.
 //! @see importModelfromOMNotebook();
@@ -2531,6 +2538,10 @@ void MainWindow::createActions()
   mpImportFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::importFMU, this);
   mpImportFMUAction->setStatusTip(Helper::importFMUTip);
   connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
+  // import FMU model description action
+  mpImportFMUModelDescriptionAction = new QAction(tr("Import FMU Model Description"), this);
+  mpImportFMUModelDescriptionAction->setStatusTip(Helper::importFMUTip);
+  connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
   // XML Menu
   // export XML action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
@@ -2868,6 +2879,7 @@ void MainWindow::createMenus()
   // add actions to FMI menu
   pFMIMenu->addAction(mpExportFMUAction);
   pFMIMenu->addAction(mpImportFMUAction);
+  pFMIMenu->addAction(mpImportFMUModelDescriptionAction);
   // add FMI menu to menu bar
   menuBar()->addAction(pFMIMenu->menuAction());
   // Export menu
