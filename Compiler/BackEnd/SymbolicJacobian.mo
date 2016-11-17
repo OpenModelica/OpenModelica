@@ -2390,16 +2390,20 @@ protected
   Boolean b1, b2;
 algorithm
   if not Flags.isSet(Flags.FORCE_NLS_ANALYTIC_JACOBIAN) then
-    (b1, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inResidualEqns, traverserhasEqnNonDiffParts, ({}, true, false));
-    (b2, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inOtherEqns, traverserhasEqnNonDiffParts, ({}, true, false));
-    if not (b1 and b2) then
-      if Flags.isSet(Flags.FAILTRACE) then
-        Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
-      end if;
+    try // might fail because of algorithms TODO: fix it! 
+      (b1, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inResidualEqns, traverserhasEqnNonDiffParts, ({}, true, false));
+      (b2, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inOtherEqns, traverserhasEqnNonDiffParts, ({}, true, false)); 
+	    if not (b1 and b2) then
+	      if Flags.isSet(Flags.FAILTRACE) then
+	        Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
+	      end if;
+	      out := false;
+	    else
+	      out := true;
+	    end if;
+	  else
       out := false;
-    else
-      out := true;
-    end if;
+    end try;
   else
     out := true;
   end if;
@@ -2415,7 +2419,7 @@ protected function calculateTearingSetJacobian
   output BackendDAE.Shared outShared;
 protected
   String name, prename;
-  Boolean debug = false;
+  Boolean debug = false, onlySparsePattern=false;
 
   BackendDAE.Variables diffVars, oVars, resVars;
   BackendDAE.EquationArray resEqns, oEqns;
@@ -2423,7 +2427,7 @@ algorithm
 	try
 	  // check non-linear flag
 	  if not isLinear and not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) then
-	   fail();
+	   onlySparsePattern := true;
 	  end if;
 	  // generate jacobian name
 	  if isLinear then
@@ -2445,11 +2449,11 @@ algorithm
 
     //check if we are able to calc symbolic jacobian
     if not (isLinear or checkForSymbolicJacobian(BackendEquation.equationList(resEqns), BackendEquation.equationList(oEqns), name)) then
-      fail();
+      onlySparsePattern := true;
     end if;
 
 	  // generate generic jacobian backend dae
-    (outJacobian, outShared) := getSymbolicJacobian(diffVars, resEqns, resVars, oEqns, oVars, inShared, inVars, name);
+    (outJacobian, outShared) := getSymbolicJacobian(diffVars, resEqns, resVars, oEqns, oVars, inShared, inVars, name, onlySparsePattern);
 	else
 	  fail();
 	end try;
@@ -2486,7 +2490,7 @@ algorithm
       String name;
       Boolean mixedSystem, linear;
 
-      Boolean debug = false;
+      Boolean debug = false, onlySparsePattern = true;
       BackendDAE.TearingSet strictTearingset, causalTearingSet;
       Option<BackendDAE.TearingSet> optCausalTearingSet;
 
@@ -2512,7 +2516,6 @@ algorithm
 
       case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
         equation
-          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
           //generate jacobian name
           name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
@@ -2525,8 +2528,11 @@ algorithm
           // get residual eqns
           reqns = BackendEquation.getEqns(residualequations, inEqns);
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+
           //check if we are able to calc symbolic jacobian
-          true = checkForSymbolicJacobian(reqns, {}, name);
+          if checkForSymbolicJacobian(reqns, {}, name) and Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) then
+            onlySparsePattern = false;
+          end if;
 
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
@@ -2541,7 +2547,7 @@ algorithm
           ovars =  BackendVariable.emptyVars();
 
           // generate generic jacobian backend dae
-          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name, onlySparsePattern);
 
       then (BackendDAE.EQUATIONSYSTEM(residualequations, iterationvarsInts, jacobian, BackendDAE.JAC_GENERIC(), mixedSystem), shared);
 
@@ -2634,6 +2640,7 @@ protected function getSymbolicJacobian "author: wbraun
   input BackendDAE.Shared inShared;
   input BackendDAE.Variables inAllVars;
   input String inName;
+  input Boolean inOnlySparsePattern;
   output BackendDAE.Jacobian outJacobian;
   output BackendDAE.Shared outShared;
 algorithm
@@ -2740,7 +2747,7 @@ algorithm
           inResVars,
           dependentVarsLst,
           inName,
-          false);
+          inOnlySparsePattern);
 
         shared = BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
 
@@ -2755,6 +2762,16 @@ algorithm
         else (BackendDAE.EMPTY_JACOBIAN(), inShared);
   end matchcontinue;
 end getSymbolicJacobian;
+
+public function hasGenericSymbolicJacobian
+  input BackendDAE.Jacobian inJacobian;
+  output Boolean out;
+algorithm
+  out := match(inJacobian)
+    case (BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(_))) then true;
+    else false;
+  end match;
+end hasGenericSymbolicJacobian;
 
 protected function calculateEqSystemStateSetsJacobians
   input BackendDAE.EqSystem inSyst;
@@ -2872,7 +2889,7 @@ algorithm
         name = "StateSetJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
         // generate generic Jacobian back end dae
-        (jacobian, shared) = getSymbolicJacobian(diffVars, cEqns, resVars, oEqns, oVars, inShared, allvars, name);
+        (jacobian, shared) = getSymbolicJacobian(diffVars, cEqns, resVars, oEqns, oVars, inShared, allvars, name, false);
 
       then (BackendDAE.STATESET(rang, state, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jacobian), shared);
   end match;

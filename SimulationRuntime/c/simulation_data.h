@@ -269,6 +269,8 @@ typedef struct NONLINEAR_SYSTEM_DATA
   int (*initialAnalyticalJacobian)(void*, threadData_t*);
   modelica_integer jacobianIndex;
 
+  SPARSE_PATTERN sparsePattern;       /* sparse pattern if no jacobian is available */
+
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);

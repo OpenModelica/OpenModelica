@@ -1064,6 +1064,12 @@ algorithm
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), homotopySupport, mixedSystem), NONE())::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac as ({},_,_,_,_,_,_)), homotopySupport, mixedSystem), NONE())::rest, _, _, _, _, _, _, _)
+      equation
+        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), homotopySupport, mixedSystem), NONE())::inEqnsAcc, inSymJacsAcc);
+      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac), homotopySupport, mixedSystem), NONE())::rest, _, _, _, _, _, _, _)
       equation
         (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
@@ -1090,6 +1096,13 @@ algorithm
         (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
         (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, NONE(), homotopySupport2, mixedSystem2)))::inEqnsAcc, inSymJacsAcc);
+      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac as ({},_,_,_,_,_,_)), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, SOME(symJac2 as ({},_,_,_,_,_,_)), homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
+      equation
+        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
+        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, SOME(symJac2), homotopySupport2, mixedSystem2)))::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, SOME(symJac2), homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
@@ -4119,6 +4132,7 @@ algorithm
     list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs;
 
     DAE.ComponentRef x;
+    BackendDAE.SparsePattern pattern;
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
     list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs, sparsepatternComRefsT;
@@ -4130,7 +4144,7 @@ algorithm
 
     list<SimCodeVar.SimVar> tempvars;
     String name, s, dummyVar;
-    Integer maxColor, uniqueEqIndex;
+    Integer maxColor, uniqueEqIndex, nonZeroElements;
 
     list<SimCode.SimEqSystem> columnEquations;
     list<SimCodeVar.SimVar> columnVars;
@@ -4146,10 +4160,45 @@ algorithm
 
     case (BackendDAE.FULL_JACOBIAN(_), _, _) then (NONE(), iuniqueEqIndex, itempvars);
 
+    case (BackendDAE.GENERIC_JACOBIAN(NONE(),pattern as (sparsepatternComRefs, sparsepatternComRefsT,
+                                             (independentComRefs, dependentVarsComRefs), nonZeroElements),
+                                             sparseColoring), _, _)
+      equation
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          print("create sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
+          BackendDump.dumpSparsityPattern(pattern, "---+++ SparsePattern +++---");
+        end if;
+        seedVars = list(makeTmpRealSimCodeVar(cr, BackendDAE.SEED_VAR()) for cr in independentComRefs);
+        indexVars = list(makeTmpRealSimCodeVar(cr, BackendDAE.VARIABLE()) for cr in dependentVarsComRefs);
+
+        seedVars = rewriteIndex(seedVars, 0);
+        indexVars = rewriteIndex(indexVars, 0);
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          print("\n---+++ seedVars variables +++---\n");
+          print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+          print("\n---+++ indexVars variables +++---\n");
+          print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+        end if;
+        //sort sparse pattern
+        varsSeedIndex = listAppend(seedVars, indexVars);
+        //sort sparse pattern
+        sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
+        sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
+
+        // set sparse pattern
+        coloring = sortColoring(seedVars, sparseColoring);
+        maxColor = listLength(sparseColoring);
+
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
+        end if;
+
+      then (SOME(({}, {}, "", (sparseInts, sparseIntsT), coloring, maxColor, -1)), iuniqueEqIndex, itempvars);
+
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     independentVarsLst, residualVarsLst, dependentVarsLst)),
-                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
+                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), nonZeroElements),
                                       sparseColoring), _, _)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -4208,16 +4257,15 @@ algorithm
           print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
 
-        then (SOME(({(columnEquations, columnVars, s)}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1)), uniqueEqIndex, tempvars);
+      then (SOME(({(columnEquations, columnVars, s)}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1)), uniqueEqIndex, tempvars);
 
-    case(_, _, _)
+    else
       equation
-        true = Flags.isSet(Flags.JAC_DUMP);
-        errorMessage = "function createSymbolicSimulationJacobian failed.";
-        Error.addInternalError(errorMessage, sourceInfo());
+        if Flags.isSet(Flags.JAC_DUMP) then
+          errorMessage = "function createSymbolicSimulationJacobian failed.";
+          Error.addInternalError(errorMessage, sourceInfo());
+        end if;
       then (NONE(), iuniqueEqIndex, itempvars);
-
-    else (NONE(), iuniqueEqIndex, itempvars);
 
   end matchcontinue;
 end createSymbolicSimulationJacobian;
@@ -4671,6 +4719,17 @@ protected function setSimVarKind
 algorithm
   simVar.varKind := varKind;
 end setSimVarKind;
+
+protected function makeTmpRealSimCodeVar
+  input DAE.ComponentRef inName;
+  input BackendDAE.VarKind inVarKind;
+  output SimCodeVar.SimVar outSimVar;
+algorithm
+  outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
+        NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
+        false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
+        SimCodeVar.NONECAUS(), NONE(), {}, false, false, false, NONE());
+end makeTmpRealSimCodeVar;
 
 protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;
@@ -8724,6 +8783,7 @@ algorithm
         a =  List.map(a, addDivExpErrorMsgtoSimEqSystem);
       then
         (SOME(({(a, b, i)}, c, j, d, e, f, g)));
+    case (SOME(({},c,j,d,e,f,g))) then SOME(({},c,j,d,e,f,g));
     case (NONE()) then NONE();
     else
       equation
