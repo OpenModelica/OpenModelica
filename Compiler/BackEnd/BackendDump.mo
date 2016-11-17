@@ -481,7 +481,7 @@ algorithm
 
     case (curr::rest) equation
       (cr, crList) = curr;
-      crStr = ComponentReference.crefStr(cr);
+      crStr = ComponentReference.printComponentRefStr(cr);
       print(crStr + " affects the following (" + intString(listLength(crList)) + ") outputs\n  ");
       ComponentReference.printComponentRefList(crList);
 
@@ -738,14 +738,14 @@ public function dumpSparsityPattern "author lochel"
   input BackendDAE.SparsePattern inPattern;
   input String heading;
 protected
-  list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern;
+  list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern,patternT;
   list< .DAE.ComponentRef> diffVars, diffedVars;
   Integer nnz;
 algorithm
-  (pattern, _, (diffVars, diffedVars), nnz) := inPattern;
+  (pattern, patternT, (diffVars, diffedVars), nnz) := inPattern;
 
   print("\n" + heading + "\n" + UNDERLINE + "\n");
-  print("Number of non zero elements: " + intString(nnz) + ")\n");
+  print("Number of non zero elements: " + intString(nnz) + "\n");
   print("independents [or inputs] (" + intString(listLength(diffVars)) + ")\n");
   ComponentReference.printComponentRefList(diffVars);
 
@@ -753,7 +753,24 @@ algorithm
   ComponentReference.printComponentRefList(diffedVars);
 
   printSparsityPattern(pattern);
+  print("\n" + "transposed pattern" + "\n");
+  printSparsityPattern(patternT);
 end dumpSparsityPattern;
+
+public function dumpSparseColoring
+  input BackendDAE.SparseColoring inColoring;
+  input String heading;
+protected
+  Integer i=0;
+algorithm
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
+  print("Number of colors: " + intString(listLength(inColoring)) + "\n");
+  for crList in inColoring loop
+    print("The following (" + intString(listLength(crList)) + ") independents belong to one color\n"+intString(i)+": ");
+    ComponentReference.printComponentRefList(crList);
+    i := i+1;
+  end for;
+end dumpSparseColoring;
 
 public function dumpTearing "
   author: Frenkel TUD

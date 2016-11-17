@@ -1192,13 +1192,14 @@ algorithm
         if debug then execStat("generateSparsePattern -> postProcess2 "); end if;
 
         nonZeroElements = List.lengthListElements(sparsepattern);
-        if Flags.isSet(Flags.DUMP_SPARSE) then
+        if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           // dump statistics
           dumpSparsePatternStatistics(nonZeroElements,sparsepatternT);
           BackendDump.dumpSparsePattern(sparsepattern);
           BackendDump.dumpSparsePattern(sparsepatternT);
           //execStat("generateSparsePattern -> nonZeroElements: " + intString(nonZeroElements) + " " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         end if;
+
 
         // translated to DAE.ComRefs
         translated = list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in sparsepattern);
@@ -1216,8 +1217,14 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
         end if;
+
+        outSparsePattern = (sparsetupleT, sparsetuple, (inDepCompRefsLst, depCompRefsLst), nonZeroElements);
+        if Flags.isSet(Flags.DUMP_SPARSE) then
+          BackendDump.dumpSparsityPattern(outSparsePattern, " --- SparsityPattern ---");
+          BackendDump.dumpSparseColoring(coloring, " --- Sparsity Coloring ---");
+        end if;
         if debug then execStat("generateSparsePattern -> final end "); end if;
-      then ((sparsetupleT, sparsetuple, (inDepCompRefsLst, depCompRefsLst), nonZeroElements), coloring);
+      then (outSparsePattern, coloring);
     else
       algorithm
         Error.addInternalError("function generateSparsePattern failed", sourceInfo());
@@ -1274,7 +1281,7 @@ algorithm
     coloredArray := arrayCreate(maxColor, {});
     mapIndexColors(colored, sizeVars, coloredArray);
 
-    if Flags.isSet(Flags.DUMP_SPARSE) then
+    if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
       print("Print Coloring Cols: \n");
       BackendDump.dumpSparsePattern(arrayList(coloredArray));
     end if;
