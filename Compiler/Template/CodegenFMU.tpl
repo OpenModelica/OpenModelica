@@ -1364,10 +1364,10 @@ template importFMUModelDescription(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   <<
-  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+  model <%fmiInfo.fmiModelIdentifier%>_Input_Output_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
     <%dumpFMUModelDescriptionVariablesList("1.0", fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
-  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
+  end <%fmiInfo.fmiModelIdentifier%>_Input_Output_FMU;
   >>
 end importFMUModelDescription;
 
