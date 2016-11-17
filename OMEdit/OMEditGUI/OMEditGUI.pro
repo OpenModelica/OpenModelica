@@ -152,6 +152,7 @@ SOURCES += main.cpp \
   TLM/TLMCoSimulationOutputWidget.cpp \
   TLM/TLMCoSimulationThread.cpp \
   FMI/ImportFMUDialog.cpp \
+  FMI/ImportFMUModelDescriptionDialog.cpp \
   Plotting/VariablesWidget.cpp \
   Options/NotificationsDialog.cpp \
   Annotations/ShapePropertiesDialog.cpp \
@@ -170,8 +171,7 @@ SOURCES += main.cpp \
   Debugger/Attach/AttachToProcessDialog.cpp \
   Debugger/Attach/ProcessListModel.cpp \
   CrashReport/backtrace.c \
-  CrashReport/CrashReportDialog.cpp \
-    FMI/ImportFMUModelDescriptionDialog.cpp
+  CrashReport/CrashReportDialog.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -218,6 +218,7 @@ HEADERS  += Util/Helper.h \
   TLM/TLMCoSimulationOutputWidget.h \
   TLM/TLMCoSimulationThread.h \
   FMI/ImportFMUDialog.h \
+  FMI/ImportFMUModelDescriptionDialog.h \
   Plotting/VariablesWidget.h \
   Options/NotificationsDialog.h \
   Annotations/ShapePropertiesDialog.h \
@@ -236,8 +237,7 @@ HEADERS  += Util/Helper.h \
   Debugger/Attach/AttachToProcessDialog.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/backtrace.h \
-  CrashReport/CrashReportDialog.h \
-    FMI/ImportFMUModelDescriptionDialog.h
+  CrashReport/CrashReportDialog.h
 
 CONFIG(osg) {
 

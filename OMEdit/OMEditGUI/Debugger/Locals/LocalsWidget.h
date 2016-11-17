@@ -72,7 +72,6 @@ public:
   void removeChildren();
   void removeChild(LocalsTreeItem *pLocalsTreeItem);
   int columnCount() const;
-  bool setData(int column, const QVariant &value, int role = Qt::EditRole);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
   LocalsTreeItem *parent();
@@ -111,7 +110,6 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
   QModelIndex parent(const QModelIndex & index) const;
-  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
   LocalsTreeItem* findLocalsTreeItem(const QString &name, LocalsTreeItem *root) const;
   QModelIndex localsTreeItemIndex(const LocalsTreeItem *pLocalsTreeItem) const;
@@ -121,6 +119,7 @@ public:
   void insertLocalsList(const QList<QVector<QVariant> > &locals);
   void removeLocalItem(LocalsTreeItem *pLocalsTreeItem);
   void removeLocalItems();
+  void updateLocalsTreeItem(LocalsTreeItem *pLocalsTreeItem);
 private:
   LocalsWidget *mpLocalsWidget;
   LocalsTreeItem *mpRootLocalsTreeItem;
@@ -131,9 +130,7 @@ class LocalsTreeProxyModel : public QSortFilterProxyModel
   Q_OBJECT
 public:
   LocalsTreeProxyModel(QObject *parent = 0);
-  void clearfilter();
 protected:
-  bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
   virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const;
 };
 

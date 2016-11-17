@@ -272,7 +272,6 @@ void StackFramesTreeWidget::createStackFrames(GDBMIValue *pGDBMIValue)
   mpStackFramesWidget->getMainWindow()->getLocalsWidget()->getLocalsTreeModel()->insertLocalsList(locals);
   /* if we reach here we should suspend the debugger. Otherwise the debugger is suspended in GDBAdapter::stackListVariablesCB */
   mpStackFramesWidget->getMainWindow()->getGDBAdapter()->suspendDebugger();
-  mpStackFramesWidget->getMainWindow()->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
 }
 
 void StackFramesTreeWidget::showContextMenu(QPoint point)

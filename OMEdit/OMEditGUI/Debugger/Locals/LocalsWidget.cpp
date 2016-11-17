@@ -147,14 +147,6 @@ int LocalsTreeItem::columnCount() const
   return 3;
 }
 
-bool LocalsTreeItem::setData(int column, const QVariant &value, int role)
-{
-  Q_UNUSED(column);
-  Q_UNUSED(value);
-  Q_UNUSED(role);
-  return false;
-}
-
 QVariant LocalsTreeItem::data(int column, int role) const
 {
   switch (role) {
@@ -274,8 +266,8 @@ void LocalsTreeItem::setModelicaMetaType(QString type)
   } else {
     retrieveValue();
   }
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeModel->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
+  /* update the view with new values of LocalsTreeItem */
+  mpLocalsTreeModel->updateLocalsTreeItem(this);
 }
 
 void LocalsTreeItem::setValue(QString value)
@@ -321,8 +313,8 @@ void LocalsTreeItem::setValue(QString value)
     /* get the tuple elements size */
     mpModelicaValue->retrieveChildrenSize();
   }
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeModel->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
+  /* update the view with new values of LocalsTreeItem */
+  mpLocalsTreeModel->updateLocalsTreeItem(this);
 }
 
 void LocalsTreeItem::retrieveLocalChildren()
@@ -427,18 +419,6 @@ QModelIndex LocalsTreeModel::parent(const QModelIndex &index) const
   return createIndex(pParentLocalsTreeViewItem->row(), 0, pParentLocalsTreeViewItem);
 }
 
-bool LocalsTreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-  Q_UNUSED(role);
-  LocalsTreeItem *pLocalsTreeViewItem = static_cast<LocalsTreeItem*>(index.internalPointer());
-  if (!pLocalsTreeViewItem) {
-    return false;
-  }
-  bool result = pLocalsTreeViewItem->setData(index.column(), value);
-  emit dataChanged(index, index);
-  return result;
-}
-
 QVariant LocalsTreeModel::data(const QModelIndex &index, int role) const
 {
   if (!index.isValid()) {
@@ -535,6 +515,7 @@ void LocalsTreeModel::insertLocalsList(const QList<QVector<QVariant> > &locals)
   foreach (QVector<QVariant> local, locals) {
     insertLocalItemData(local, mpRootLocalsTreeItem);
   }
+  mpLocalsWidget->getLocalsTreeProxyModel()->invalidate();
 }
 
 void LocalsTreeModel::removeLocalItem(LocalsTreeItem *pLocalsTreeItem)
@@ -562,6 +543,17 @@ void LocalsTreeModel::removeLocalItems()
 }
 
 /*!
+ * \brief LocalsTreeModel::updateLocalsTreeItem
+ * Triggers a view update for the LocalsTreeItem in the Locals Browser.
+ * \param pLocalsTreeItem
+ */
+void LocalsTreeModel::updateLocalsTreeItem(LocalsTreeItem *pLocalsTreeItem)
+{
+  QModelIndex index = localsTreeItemIndex(pLocalsTreeItem);
+  emit dataChanged(index, index);
+}
+
+/*!
  * \class LocalsTreeProxyModel
  * \brief A sort filter proxy model for Locals Browser.
  */
@@ -572,26 +564,6 @@ void LocalsTreeModel::removeLocalItems()
 LocalsTreeProxyModel::LocalsTreeProxyModel(QObject *parent)
   : QSortFilterProxyModel(parent)
 {
-}
-
-/*!
- * \brief LocalsTreeProxyModel::clearfilter
- * Clears the filter
- */
-void LocalsTreeProxyModel::clearfilter()
-{
-  invalidateFilter();
-}
-
-/*!
- * \brief LocalsTreeProxyModel::filterAcceptsRow
- * \param sourceRow
- * \param sourceParent
- * \return
- */
-bool LocalsTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
-{
-  return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
 /*!

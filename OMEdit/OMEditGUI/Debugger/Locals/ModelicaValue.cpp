@@ -87,8 +87,6 @@ QString ModelicaRecordValue::getValueString()
 void ModelicaRecordValue::setChildrenSize(QString size)
 {
   setRecordElements(size.toInt());
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeItem->getLocalsTreeModel()->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
 }
 
 void ModelicaRecordValue::retrieveChildren()
@@ -126,8 +124,6 @@ void ModelicaListValue::setChildrenSize(QString size)
 {
   setListLength(size.toInt());
   mpLocalsTreeItem->setDisplayValue(getValueString());
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeItem->getLocalsTreeModel()->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
 }
 
 void ModelicaListValue::retrieveChildren()
@@ -169,8 +165,6 @@ void ModelicaOptionValue::setChildrenSize(QString size)
     setOptionNone(false);
   }
   mpLocalsTreeItem->setDisplayValue(getValueString());
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeItem->getLocalsTreeModel()->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
 }
 
 void ModelicaOptionValue::retrieveChildren()
@@ -208,8 +202,6 @@ void ModelicaTupleValue::setChildrenSize(QString size)
 {
   setTupleElements(size.toInt());
   mpLocalsTreeItem->setDisplayValue(getValueString());
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeItem->getLocalsTreeModel()->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
 }
 
 void ModelicaTupleValue::retrieveChildren()
@@ -247,8 +239,6 @@ void MetaModelicaArrayValue::setChildrenSize(QString size)
 {
   setArrayLength(size.toInt());
   mpLocalsTreeItem->setDisplayValue(getValueString());
-  /* invalidate the view so that the items show the updated values. */
-  mpLocalsTreeItem->getLocalsTreeModel()->getLocalsWidget()->getLocalsTreeProxyModel()->invalidate();
 }
 
 void MetaModelicaArrayValue::retrieveChildren()

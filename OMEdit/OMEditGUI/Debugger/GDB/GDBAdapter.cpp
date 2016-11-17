@@ -645,6 +645,7 @@ void GDBAdapter::arrayLengthCB(GDBMIResultRecord *pGDBMIResultRecord)
       GDBMICommand cmd = mGDBMICommandsHash.value(pGDBMIResultRecord->token);
       if (ModelicaValue *pModelicaValue = qobject_cast<ModelicaValue*>(cmd.mpCallbackObject)) {
         pModelicaValue->setChildrenSize(value);
+        pModelicaValue->getLocalsTreeItem()->getLocalsTreeModel()->updateLocalsTreeItem(pModelicaValue->getLocalsTreeItem());
       }
     }
   }

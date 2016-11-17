@@ -4513,6 +4513,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     if (!pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->show();
     }
+    pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   }
   else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
