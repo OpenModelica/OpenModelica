@@ -846,9 +846,15 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   }
   ty = malloc(strlen(anyStringBuf) + 1);
   strcpy(ty, anyStringBuf);
-
   /* format the anyStringBuf as array to return it */
-  if (mt == record_metaType) {
+  /* if Integer then unbox the pointer */
+  if (strcmp(ty, "Integer") == 0) {
+    name = (char*)anyString(name);
+    formatString = "^done,omc_element={name=\"%s\",displayName=\"%s\",type=\"%s\"}";
+    if (-1 == GC_asprintf(&formattedString, formatString, name, displayName, ty)) {
+      assert(0);
+    }
+  } else if (mt == record_metaType) {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
     if (-1 == GC_asprintf(&formattedString, formatString, (mmc_uint_t)name, displayName, ty)) {
       assert(0);
