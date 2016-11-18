@@ -14,6 +14,5 @@ simulate(ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator);getErro
 //     messages = ""
 // end SimulationResult;
 // "Warning: The tearing heuristic was not able to avoid discrete iteration variables because otherwise the system could not have been torn. This may lead to problems during simulation.
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult
