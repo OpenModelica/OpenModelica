@@ -54,6 +54,7 @@ import SimCode;
 
 // protected imports
 protected
+import AvlSetString;
 import BackendDAECreate;
 import Builtin;
 import ClockIndexes;
@@ -608,23 +609,28 @@ protected
   partial function PartialRunTpl
     output tuple<Boolean,list<String>> res;
   end PartialRunTpl;
+  AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match target
     local
       String str, guid;
       list<PartialRunTpl> codegenFuncs;
-      Integer numThreads;
+      Integer numThreads, n;
       list<tuple<Boolean,list<String>>> res;
-      list<String> strs, tmp;
+      list<String> strs, tmp, matches;
 
     case "CSharp" equation
       Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
     then ();
 
-    case "Cpp" equation
-      callTargetTemplatesCPP(simCode);
-    then ();
+    case "Cpp"
+      algorithm
+        callTargetTemplatesCPP(simCode);
+        for str in {"CalcHelperMain.o\n",".so\n"} loop
+          generatedObjects := AvlSetString.add(generatedObjects, "OMCpp" + simCode.fileNamePrefix + str);
+        end for;
+      then ();
 
     case "Adevs" equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
@@ -668,6 +674,14 @@ algorithm
         } loop
           (func,str) := f;
           codegenFuncs := (function runTplWriteFile(func=function func(a_simCode=simCode), file=simCode.fileNamePrefix + str)) :: codegenFuncs;
+          (n,matches) := System.regex(str, "\\(.*\\)[.]c$", 2, false, false);
+          if n==2 then
+            _::str::_ := matches;
+            generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str + ".o\n");
+          end if;
+        end for;
+        for str in {"_11mix.o\n","_functions.o\n","_info.json\n","_init.xml\n"} loop
+          generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str);
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
@@ -687,6 +701,14 @@ algorithm
           strs := List.append_reverse(tmp, strs);
         end for;
         strs := listReverse(strs);
+        // Some files are only sometimes generated, like initialization when it has >2000 equations
+        for str in strs loop
+          (n,matches) := System.regex(str, "\\(.*\\)[.]c$", 2, false, false);
+          if n==2 then
+            _::str::_ := matches;
+            generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str + ".o\n");
+          end if;
+        end for;
         // write the makefile last!
         Tpl.closeFile(Tpl.tplCallWithFailError3(CodegenC.simulationMakefile,Config.simulationCodeTarget(),simCode,strs,txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".makefile")));
       then ();
@@ -716,6 +738,9 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
   end match;
+  if Config.getRunningTestsuite() then
+    System.appendFile(Config.getRunningTestsuiteFile(), stringAppendList(AvlSetString.listKeys(generatedObjects)));
+  end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
 
