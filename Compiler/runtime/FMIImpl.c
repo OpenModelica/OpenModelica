@@ -761,7 +761,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
  * Reads the experiment annotation.
  * Reads the model variables.
  */
-int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, int input_connectors, int output_connectors,
+int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, int input_connectors, int output_connectors, int isModelDescriptionImport,
     void** fmiContext, void** fmiInstance, void** fmiInfo, void** typeDefinitionsList, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
 {
   // JM callbacks
@@ -848,7 +848,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     }
     /* remove the following block once we have support for FMI 2.0 CS. */
     fmiType = fmi2_import_get_fmu_kind(fmi);
-    if (fmiType == fmi2_fmu_kind_cs || fmiType == fmi2_fmu_kind_me_and_cs) {
+    if (!isModelDescriptionImport && (fmiType == fmi2_fmu_kind_cs || fmiType == fmi2_fmu_kind_me_and_cs)) {
       const char* tokens[1] = {fmi2_fmu_kind_to_string(fmiType)};
       fmi2_import_free(fmi);
       fmi_import_free_context(context);

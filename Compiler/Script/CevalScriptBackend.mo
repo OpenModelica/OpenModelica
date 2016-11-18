@@ -1567,10 +1567,11 @@ algorithm
         true = System.regularFileExists(filename);
         workdir = if System.directoryExists(workdir) then workdir else System.pwd();
         modeldescriptionfilename="modelDescription.fmu";
-        System.systemCall("zip " +  modeldescriptionfilename + " " + filename);
+        System.systemCall("zip -j " +  modeldescriptionfilename + " " + filename);
         true = System.regularFileExists(modeldescriptionfilename);
         /* Initialize FMI objects */
-        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(modeldescriptionfilename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
+        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) =
+          FMIExt.initializeFMIImport(modeldescriptionfilename, workdir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true = b; /* if something goes wrong while initializing */
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
