@@ -13,10 +13,10 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipeLumpedPressureInitializ
 // true
 // ""
 // {"OverdeterminedInitialization.Fluid.DynamicPipeLumpedPressureInitialization","OverdeterminedInitialization.Fluid.DynamicPipeLumpedPressureInitialization_init.xml"}
-// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[5].p = 0.0
-// Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[2].p = 0.0
+// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[2].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[3].p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[4].p = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe.mediums[1].p = 0.0
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "

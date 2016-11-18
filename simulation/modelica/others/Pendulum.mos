@@ -18,13 +18,13 @@ val(y,3.0);
 // true
 // record SimulationResult
 //     resultFile = "Pendulum_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// -0.9864424195145453
-// 0.7957014346589923
-// -0.18325777889916567
-// -0.16410774808731604
-// -0.6056890513139731
-// -0.9830648943345209
+// -0.9864424195145796
+// 0.795701434659157
+// -0.1832577788991176
+// -0.1641077480871099
+// -0.6056890513137574
+// -0.9830648943345307
 // endResult

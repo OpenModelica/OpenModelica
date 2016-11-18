@@ -41,7 +41,7 @@ simulate(Tearing11); getErrorString();
 //  * Linear torn systems: 1 {(2,100.0%) 8}
 //  * Non-linear torn systems: 0
 // Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
-//   i2:VARIABLE()  type: Real
+//   i5:VARIABLE(start = 0.0 )  type: Real
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)

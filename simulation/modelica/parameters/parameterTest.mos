@@ -183,8 +183,8 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // ========================================
 // number of rows: 7
 // 1:
-// 2: 4 1 7 3 5
-// 3: 6 7
+// 2: 7 5 4 3 1
+// 3: 7 6
 // 4:
 // 5:
 // 6:

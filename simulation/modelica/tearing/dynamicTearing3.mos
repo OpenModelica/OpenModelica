@@ -57,9 +57,9 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 //
 // Variables (4)
 // ========================================
-// 1: y:VARIABLE()  type: Real 
-// 2: z:VARIABLE()  type: Real 
-// 3: a:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real 
+// 2: a:VARIABLE()  type: Real 
+// 3: y:VARIABLE()  type: Real 
 // 4: x:VARIABLE()  type: Real 
 //
 //
@@ -84,17 +84,17 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 4
-// 1: 3 4
-// 2: 1 4 3
-// 3: 2 1 3
-// 4: 1 2 4 3
+// 1: 4 2
+// 2: 4 3 2
+// 3: 3 2 1
+// 4: 4 3 2 1
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 4
-// 1: 4 3 2
-// 2: 4 3
-// 3: 4 3 2 1
+// 1: 4 3
+// 2: 4 3 2 1
+// 3: 4 3 2
 // 4: 4 2 1
 //
 // no matching
@@ -114,18 +114,18 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Adjacency Matrix Enhanced (row == equation)
 // ====================================
 // number of rows: 4
-// 1:(4,unsolvable) (3,solved) 
-// 2:(3,variable(false)) (4,variable(false)) (1,nonlinear) 
-// 3:(3,constone) (1,const(true)) (2,param(true)) 
-// 4:(3,param(false)) (4,variable(true)) (2,variable(true)) (1,constone) 
+// 1:(4,unsolvable) (2,solved) 
+// 2:(2,variable(false)) (4,variable(false)) (3,nonlinear) 
+// 3:(2,constone) (3,const(true)) (1,param(true)) 
+// 4:(2,param(false)) (4,variable(true)) (1,variable(true)) (3,constone) 
 //
 // AdjacencyMatrixTransposedEnhanced:
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
 // number of rows: 4
-// 1:(4,constone) (3,const(true)) (2,nonlinear) 
-// 2:(4,variable(true)) (3,param(true)) 
-// 3:(4,param(false)) (3,constone) (2,variable(false)) (1,solved) 
+// 1:(4,variable(true)) (3,param(true)) 
+// 2:(4,param(false)) (3,constone) (2,variable(false)) (1,solved) 
+// 3:(4,constone) (3,const(true)) (2,nonlinear) 
 // 4:(4,variable(true)) (2,variable(false)) (1,unsolvable) 
 //
 // Forced selection of Tearing Variables:
@@ -136,9 +136,9 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Matching
 // ========================================
 // 4 variables and equations
-// var 1 is solved in eqn 3
-// var 2 is solved in eqn 8
-// var 3 is solved in eqn 1
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
 // var 4 is solved in eqn 8
 //
 // order: 1,3
@@ -152,12 +152,12 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // * No of equations in strong component: 4
 // * No of tVars: 2
 // *
-// * tVars: 4,2
+// * tVars: 4,1
 // *
 // * resEq: 4,2
 // *
 // * innerEquations ({eqn,vars}):
-// * {1:3}, {3:1}
+// * {1:2}, {3:3}
 // *
 // *****************************************
 //
@@ -221,10 +221,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500); getError
 // Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 4
-// 1: 1 4 3
+// 1: 4 3 1
 // 2: 4 3
-// 3: 1 2 4 3
-// 4: 2 1 3
+// 3: 4 3 2 1
+// 4: 3 2 1
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================

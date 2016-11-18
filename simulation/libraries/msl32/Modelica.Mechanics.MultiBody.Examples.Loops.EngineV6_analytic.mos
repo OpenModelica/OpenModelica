@@ -42,8 +42,8 @@ runScript(modelTesting);getErrorString();
 //  * Number of discrete variables: 333 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (2772):
-//  * Single equations (assignments): 2765
+// Notification: Strong component statistics for initialization (2774):
+//  * Single equations (assignments): 2767
 //  * Array equations: 6
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -61,8 +61,8 @@ runScript(modelTesting);getErrorString();
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1321):
-//  * Single equations (assignments): 1320
+// Notification: Strong component statistics for simulation (1323):
+//  * Single equations (assignments): 1322
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

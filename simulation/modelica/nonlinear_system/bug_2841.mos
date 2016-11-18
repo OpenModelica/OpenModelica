@@ -47,26 +47,26 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  0
 // LOG_NLS_V         | info    | System values [2-dim]
-// |                 | |       | |            5e-06            50000 
+// |                 | |       | |            50000            5e-06 
 // LOG_NLS_V         | info    | Nominal values [2-dim]
-// |                 | |       | |            1e-05           100000 
+// |                 | |       | |           100000            1e-05 
 // LOG_NLS_V         | info    | Scaling values [3-dim]
-// |                 | |       | |            1e-05           100000                1 
+// |                 | |       | |           100000            1e-05                1 
 // LOG_NLS_V         | info    | x0 [2-dim]
-// |                 | |       | |            5e-06            50000 
+// |                 | |       | |            50000            5e-06 
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  7
 // LOG_NLS_V         | info    | maximum number of function evaluation:  200
 // LOG_NLS           | info    | nls status
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =            5e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | [ 2]                              x  =            50000		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | [ 1]                              x  =            50000		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | [ 2]                              y  =            5e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | Iteration: 1
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =   -1.7012708e-07		 step =   -5.1701271e-06		 old =            5e-06
-// |                 | |       | | [ 2]                              x  =       -205103.81		 step =       -255103.81		 old =            50000
+// |                 | |       | | [ 1]                              x  =       -205103.81		 step =       -255103.81		 old =            50000
+// |                 | |       | | [ 2]                              y  =   -1.7012708e-07		 step =   -5.1701271e-06		 old =            5e-06
 // LOG_NLS_V         | info    | Need to damp, grad_f =   -4.3608668960e+00
 // LOG_NLS_V         | info    | Need to damp, error_f =    1.4766290827e+00
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
@@ -90,8 +90,8 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | Iteration: 2
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.2515367e-06		 step =    1.3579438e-06		 old =    1.8935929e-06
-// |                 | |       | | [ 2]                              x  =       -73564.004		 step =        29711.975		 old =       -103275.98
+// |                 | |       | | [ 1]                              x  =       -73564.004		 step =        29711.975		 old =       -103275.98
+// |                 | |       | | [ 2]                              y  =    3.2515367e-06		 step =    1.3579438e-06		 old =    1.8935929e-06
 // LOG_NLS_V         | info    | Need to damp, grad_f =   -3.8614516011e-01
 // LOG_NLS_V         | info    | Need to damp, error_f =    4.3940025040e-01
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
@@ -111,8 +111,8 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | Iteration: 3
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.3147787e-06		 step =    6.3242033e-08		 old =    3.2515367e-06
-// |                 | |       | | [ 2]                              x  =       -77453.464		 step =       -3889.4602		 old =       -73564.004
+// |                 | |       | | [ 1]                              x  =       -77453.464		 step =       -3889.4602		 old =       -73564.004
+// |                 | |       | | [ 2]                              y  =    3.3147787e-06		 step =    6.3242033e-08		 old =    3.2515367e-06
 // LOG_NLS_V         | info    | Need to damp, grad_f =   -1.5977646254e-02
 // LOG_NLS_V         | info    | Need to damp, error_f =    8.9380216642e-02
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
@@ -132,12 +132,12 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | Iteration: 4
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.3118182e-06		 step =   -2.9605095e-09		 old =    3.3147787e-06
-// |                 | |       | | [ 2]                              x  =       -77390.717		 step =        62.746972		 old =       -77453.464
+// |                 | |       | | [ 1]                              x  =       -77390.717		 step =        62.746972		 old =       -77453.464
+// |                 | |       | | [ 2]                              y  =    3.3118182e-06		 step =   -2.9605095e-09		 old =    3.3147787e-06
 // LOG_NLS_V         | info    | Need to damp, grad_f =   -9.7443309630e-06
 // LOG_NLS_V         | info    | Need to damp, error_f =    2.2072982312e-03
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
-// LOG_NLS_V         | info    | Need to damp, error_f1 =    1.4052454976e-06
+// LOG_NLS_V         | info    | Need to damp, error_f1 =    1.4052454980e-06
 // LOG_NLS_V         | info    | Need to damp, forced error =    3.8977323852e-06
 // LOG_NLS_V         | info    | function values: [2-dim]
 // |                 | |       | |    1.2530283e-06    6.3610929e-07 
@@ -147,26 +147,26 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | delta_x        =   6.2746972448e+01
 // LOG_NLS_V         | info    | delta_x_scaled =   6.2746972448e-04
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
-// LOG_NLS_V         | info    | error_f        =   1.4052454976e-06
-// LOG_NLS_V         | info    | error_f_scaled =   3.6386816246e-07
+// LOG_NLS_V         | info    | error_f        =   1.4052454980e-06
+// LOG_NLS_V         | info    | error_f_scaled =   3.6386816259e-07
 // LOG_NLS_V         | info    | newtonFTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | Iteration: 5
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.3118158e-06		 step =   -2.4308011e-12		 old =    3.3118182e-06
-// |                 | |       | | [ 2]                              x  =       -77390.689		 step =      0.027596879		 old =       -77390.717
-// LOG_NLS_V         | info    | Need to damp, grad_f =   -3.9494298168e-12
-// LOG_NLS_V         | info    | Need to damp, error_f =    1.4052454976e-06
+// |                 | |       | | [ 1]                              x  =       -77390.689		 step =      0.027596879		 old =       -77390.717
+// |                 | |       | | [ 2]                              y  =    3.3118158e-06		 step =   -2.4308011e-12		 old =    3.3118182e-06
+// LOG_NLS_V         | info    | Need to damp, grad_f =   -3.9494298196e-12
+// LOG_NLS_V         | info    | Need to damp, error_f =    1.4052454980e-06
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    5.5523886249e-13
-// LOG_NLS_V         | info    | Need to damp, forced error =    1.5797719267e-12
+// LOG_NLS_V         | info    | Need to damp, forced error =    1.5797719278e-12
 // LOG_NLS_V         | info    | function values: [2-dim]
 // |                 | |       | |    5.1558757e-13    2.0605739e-13 
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
 // |                 | |       | |    1.0271701e-13     8.595627e-14 
 // LOG_NLS_V         | info    | error measurements:
-// LOG_NLS_V         | info    | delta_x        =   2.7596879188e-02
-// LOG_NLS_V         | info    | delta_x_scaled =   2.7596879189e-07
+// LOG_NLS_V         | info    | delta_x        =   2.7596879198e-02
+// LOG_NLS_V         | info    | delta_x_scaled =   2.7596879199e-07
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   5.5523886249e-13
 // LOG_NLS_V         | info    | error_f_scaled =   1.3393753756e-13
@@ -174,8 +174,8 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | Iteration: 6
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.3118158e-06		 step =   -1.0970356e-18		 old =    3.3118158e-06
-// |                 | |       | | [ 2]                              x  =       -77390.689		 step =    7.4635041e-09		 old =       -77390.689
+// |                 | |       | | [ 1]                              x  =       -77390.689		 step =    7.4635041e-09		 old =       -77390.689
+// |                 | |       | | [ 2]                              y  =    3.3118158e-06		 step =   -1.0970356e-18		 old =    3.3118158e-06
 // LOG_NLS_V         | info    | Need to damp, grad_f =   -6.1658038884e-25
 // LOG_NLS_V         | info    | Need to damp, error_f =    5.5523886249e-13
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
@@ -195,19 +195,19 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!
 // LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | [ 2]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | SYSTEM SOLVED
 // LOG_NLS_V         | info    | homotopy method:           0
 // LOG_NLS_V         | info    | number of function calls:  9
 // LOG_NLS           | info    | nls status
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | [ 2]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
+// |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
-// |                 | |       | |    3.3118158e-06       -77390.689 
+// |                 | |       | |       -77390.689    3.3118158e-06 
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real xn(start=100000, fixed=true) = 100000

@@ -65,15 +65,15 @@ runScript(modelTesting);getErrorString();
 // ]
 //   *
 // [
-//   tank.ports[2].p ;
-//   pump.dp_pump
+//   pump.dp_pump ;
+//   tank.ports[2].p
 // ]
 //   =
 // [
 //   pump.medium.p ;
 //   pump.p_b_nominal
 // ]
-//  might be structurally or numerically singular for variable pump.dp_pump since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
+//  might be structurally or numerically singular for variable tank.ports[2].p since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
 // "true
 // "
 // ""

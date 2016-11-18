@@ -14,7 +14,7 @@ simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1200.0, numberOfIntervals = 1000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'ThermoPower.Examples.CISE.CISESim2States120501', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.Plant.Pipe2Valve.p = 0.0
+// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.Plant.SH.p = 0.0
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "

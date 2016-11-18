@@ -13,8 +13,8 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState); ge
 // true
 // ""
 // {"OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState_init.xml"}
-// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass1.v = 0.0 ($_start(mass2.v) = 0.0)
-// Notification: The following equation is consistent and got removed from the initialization problem: mass2.a = 0.0
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass2.v = $_start(mass2.v) (0.0 = $_start(0.0))
+// Notification: The following equation is consistent and got removed from the initialization problem: mass1.a = 0.0
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

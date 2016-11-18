@@ -358,7 +358,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // </variable>
-// <variable id=\"11\" name=\"body.frame_a.R.T[2,2]\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
+// <variable id=\"11\" name=\"body.frame_a.R.T[2,2]\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
 // <classesNames>
 // <element>
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
@@ -377,7 +377,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // </variable>
-// <variable id=\"12\" name=\"body.frame_a.R.T[2,1]\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
+// <variable id=\"12\" name=\"body.frame_a.R.T[2,1]\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
 // <classesNames>
 // <element>
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
@@ -1020,7 +1020,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </fixed>
 // </attributesValues>
 // </variable>
-// <variable id=\"42\" name=\"$DER.body.frame_a.R.T[2,1]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
+// <variable id=\"42\" name=\"$DER.body.frame_a.R.T[2,2]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
 // <classesNames>
 // <element>
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
@@ -26748,9 +26748,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </equation>
 // <equation id=\"28\">body.frame_a.R.T[2,3] = (rev.e[2] - rev.e[2] * cos(rev.phi)) * rev.e[3] + rev.e[1] * sin(rev.phi)
 // </equation>
-// <equation id=\"29\">body.frame_a.R.T[2,2] = rev.e[2] ^ 2.0 + (1.0 - rev.e[2] ^ 2.0) * cos(rev.phi)
+// <equation id=\"29\">$DER.body.frame_a.R.T[2,2] = (1.0 - rev.e[2] ^ 2.0) * (-sin(rev.phi)) * rev.w
 // </equation>
-// <equation id=\"30\">$DER.body.frame_a.R.T[2,1] = (-rev.e[2]) * (-sin(rev.phi)) * rev.w * rev.e[1] - rev.e[3] * cos(rev.phi) * rev.w
+// <equation id=\"30\">body.frame_a.R.T[2,1] = (rev.e[2] - rev.e[2] * cos(rev.phi)) * rev.e[1] - rev.e[3] * sin(rev.phi)
 // </equation>
 // <equation id=\"31\">body.frame_a.R.T[1,3] = (rev.e[1] - rev.e[1] * cos(rev.phi)) * rev.e[3] - rev.e[2] * sin(rev.phi)
 // </equation>
@@ -26774,7 +26774,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </equation>
 // <equation id=\"41\">rev.R_rel.w[3] = rev.e[3] * rev.w
 // </equation>
-// <equation id=\"42\">body.frame_a.R.T[2,1] = (rev.e[2] - rev.e[2] * cos(rev.phi)) * rev.e[1] - rev.e[3] * sin(rev.phi)
+// <equation id=\"42\">body.frame_a.R.T[2,2] = rev.e[2] ^ 2.0 + (1.0 - rev.e[2] ^ 2.0) * cos(rev.phi)
 // </equation>
 // <equation id=\"43\">body.w_a[1] = rev.R_rel.w[1]
 // </equation>
@@ -27227,23 +27227,23 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <matrix>
 // <matrixrow id=\"1\">
-// <ci>31
-// </ci>
 // <ci>32
 // </ci>
-// <ci>4
+// <ci>31
 // </ci>
-// <ci>5
+// <ci>27
 // </ci>
 // <ci>6
 // </ci>
-// <ci>1
+// <ci>5
 // </ci>
-// <ci>2
+// <ci>4
 // </ci>
 // <ci>3
 // </ci>
-// <ci>27
+// <ci>2
+// </ci>
+// <ci>1
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"2\">
@@ -27251,87 +27251,87 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // <ci>30
 // </ci>
-// <ci>5
+// <ci>28
 // </ci>
 // <ci>6
 // </ci>
+// <ci>5
+// </ci>
 // <ci>4
-// </ci>
-// <ci>1
-// </ci>
-// <ci>2
 // </ci>
 // <ci>3
 // </ci>
-// <ci>28
+// <ci>2
+// </ci>
+// <ci>1
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"3\">
-// <ci>30
-// </ci>
 // <ci>31
 // </ci>
-// <ci>4
-// </ci>
-// <ci>6
-// </ci>
-// <ci>5
-// </ci>
-// <ci>1
-// </ci>
-// <ci>2
-// </ci>
-// <ci>3
+// <ci>30
 // </ci>
 // <ci>29
 // </ci>
-// </matrixrow>
-// <matrixrow id=\"4\">
-// <ci>2
+// <ci>6
 // </ci>
 // <ci>5
 // </ci>
 // <ci>4
 // </ci>
-// <ci>6
-// </ci>
 // <ci>3
+// </ci>
+// <ci>2
+// </ci>
+// <ci>1
+// </ci>
+// </matrixrow>
+// <matrixrow id=\"4\">
+// <ci>30
 // </ci>
 // <ci>8
 // </ci>
-// <ci>30
+// <ci>6
 // </ci>
-// </matrixrow>
-// <matrixrow id=\"5\">
+// <ci>5
+// </ci>
+// <ci>4
+// </ci>
 // <ci>3
-// </ci>
-// <ci>6
-// </ci>
-// <ci>5
-// </ci>
-// <ci>4
-// </ci>
-// <ci>1
-// </ci>
-// <ci>11
-// </ci>
-// <ci>31
-// </ci>
-// </matrixrow>
-// <matrixrow id=\"6\">
-// <ci>1
-// </ci>
-// <ci>4
-// </ci>
-// <ci>6
-// </ci>
-// <ci>5
 // </ci>
 // <ci>2
 // </ci>
+// </matrixrow>
+// <matrixrow id=\"5\">
+// <ci>31
+// </ci>
+// <ci>11
+// </ci>
+// <ci>6
+// </ci>
+// <ci>5
+// </ci>
+// <ci>4
+// </ci>
+// <ci>3
+// </ci>
+// <ci>1
+// </ci>
+// </matrixrow>
+// <matrixrow id=\"6\">
+// <ci>32
+// </ci>
 // <ci>14
 // </ci>
-// <ci>32
+// <ci>6
+// </ci>
+// <ci>5
+// </ci>
+// <ci>4
+// </ci>
+// <ci>2
+// </ci>
+// <ci>1
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"7\">
@@ -27371,123 +27371,123 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"13\">
-// <ci>18
-// </ci>
 // <ci>23
+// </ci>
+// <ci>18
 // </ci>
 // <ci>16
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"14\">
-// <ci>18
-// </ci>
 // <ci>23
+// </ci>
+// <ci>18
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"15\">
-// <ci>27
+// <ci>29
 // </ci>
 // <ci>28
 // </ci>
-// <ci>29
+// <ci>27
 // </ci>
 // <ci>23
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"16\">
+// <ci>33
+// </ci>
 // <ci>29
-// </ci>
-// <ci>13
-// </ci>
-// <ci>27
-// </ci>
-// <ci>7
 // </ci>
 // <ci>28
 // </ci>
+// <ci>27
+// </ci>
+// <ci>13
+// </ci>
 // <ci>10
 // </ci>
-// <ci>33
+// <ci>7
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"17\">
+// <ci>34
+// </ci>
 // <ci>29
-// </ci>
-// <ci>14
-// </ci>
-// <ci>27
-// </ci>
-// <ci>8
 // </ci>
 // <ci>28
 // </ci>
+// <ci>27
+// </ci>
+// <ci>14
+// </ci>
 // <ci>11
 // </ci>
-// <ci>34
+// <ci>8
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"18\">
+// <ci>35
+// </ci>
 // <ci>29
-// </ci>
-// <ci>15
-// </ci>
-// <ci>27
-// </ci>
-// <ci>9
 // </ci>
 // <ci>28
 // </ci>
-// <ci>12
-// </ci>
-// <ci>35
-// </ci>
-// </matrixrow>
-// <matrixrow id=\"19\">
-// <ci>32
-// </ci>
-// <ci>13
-// </ci>
-// <ci>30
-// </ci>
-// <ci>7
-// </ci>
-// <ci>31
-// </ci>
-// <ci>10
-// </ci>
-// <ci>36
-// </ci>
-// </matrixrow>
-// <matrixrow id=\"20\">
-// <ci>32
-// </ci>
-// <ci>14
-// </ci>
-// <ci>30
-// </ci>
-// <ci>8
-// </ci>
-// <ci>31
-// </ci>
-// <ci>11
-// </ci>
-// <ci>37
-// </ci>
-// </matrixrow>
-// <matrixrow id=\"21\">
-// <ci>32
+// <ci>27
 // </ci>
 // <ci>15
 // </ci>
-// <ci>30
+// <ci>12
 // </ci>
 // <ci>9
 // </ci>
+// </matrixrow>
+// <matrixrow id=\"19\">
+// <ci>36
+// </ci>
+// <ci>32
+// </ci>
 // <ci>31
+// </ci>
+// <ci>30
+// </ci>
+// <ci>13
+// </ci>
+// <ci>10
+// </ci>
+// <ci>7
+// </ci>
+// </matrixrow>
+// <matrixrow id=\"20\">
+// <ci>37
+// </ci>
+// <ci>32
+// </ci>
+// <ci>31
+// </ci>
+// <ci>30
+// </ci>
+// <ci>14
+// </ci>
+// <ci>11
+// </ci>
+// <ci>8
+// </ci>
+// </matrixrow>
+// <matrixrow id=\"21\">
+// <ci>38
+// </ci>
+// <ci>32
+// </ci>
+// <ci>31
+// </ci>
+// <ci>30
+// </ci>
+// <ci>15
 // </ci>
 // <ci>12
 // </ci>
-// <ci>38
+// <ci>9
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"22\">
@@ -27509,77 +27509,77 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"25\">
-// <ci>-26
-// </ci>
 // <ci>7
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"26\">
-// <ci>-26
-// </ci>
 // <ci>8
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"27\">
-// <ci>-26
-// </ci>
 // <ci>9
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"28\">
-// <ci>-26
-// </ci>
 // <ci>10
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"29\">
-// <ci>-26
+// <ci>42
 // </ci>
-// <ci>11
-// </ci>
-// </matrixrow>
-// <matrixrow id=\"30\">
 // <ci>-25
 // </ci>
 // <ci>-26
 // </ci>
-// <ci>42
+// </matrixrow>
+// <matrixrow id=\"30\">
+// <ci>12
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"31\">
-// <ci>-26
-// </ci>
 // <ci>13
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"32\">
-// <ci>-26
-// </ci>
 // <ci>14
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"33\">
-// <ci>-26
-// </ci>
 // <ci>15
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"34\">
-// <ci>24
-// </ci>
 // <ci>45
+// </ci>
+// <ci>24
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"35\">
-// <ci>24
-// </ci>
 // <ci>44
+// </ci>
+// <ci>24
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"36\">
-// <ci>24
-// </ci>
 // <ci>43
+// </ci>
+// <ci>24
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"37\">
@@ -27595,27 +27595,27 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"39\">
-// <ci>-25
-// </ci>
 // <ci>22
+// </ci>
+// <ci>-25
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"40\">
-// <ci>-25
-// </ci>
 // <ci>21
+// </ci>
+// <ci>-25
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"41\">
-// <ci>-25
-// </ci>
 // <ci>20
+// </ci>
+// <ci>-25
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"42\">
-// <ci>-26
+// <ci>11
 // </ci>
-// <ci>12
+// <ci>-26
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"43\">
@@ -27637,15 +27637,15 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"46\">
-// <ci>-25
-// </ci>
 // <ci>18
+// </ci>
+// <ci>-25
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"47\">
-// <ci>-26
-// </ci>
 // <ci>19
+// </ci>
+// <ci>-26
 // </ci>
 // </matrixrow>
 // </matrix>
@@ -27654,8 +27654,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </originalIncidenceMatrix>
 // <solvingInfo>
 // <matchingAlgorithm>
-// <solvedIn variableId=\"1\" equationId=\"22\" />
-// <solvedIn variableId=\"2\" equationId=\"3\" />
+// <solvedIn variableId=\"1\" equationId=\"5\" />
+// <solvedIn variableId=\"2\" equationId=\"23\" />
 // <solvedIn variableId=\"3\" equationId=\"24\" />
 // <solvedIn variableId=\"4\" equationId=\"45\" />
 // <solvedIn variableId=\"5\" equationId=\"44\" />
@@ -27664,8 +27664,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <solvedIn variableId=\"8\" equationId=\"26\" />
 // <solvedIn variableId=\"9\" equationId=\"27\" />
 // <solvedIn variableId=\"10\" equationId=\"28\" />
-// <solvedIn variableId=\"11\" equationId=\"29\" />
-// <solvedIn variableId=\"12\" equationId=\"42\" />
+// <solvedIn variableId=\"11\" equationId=\"42\" />
+// <solvedIn variableId=\"12\" equationId=\"30\" />
 // <solvedIn variableId=\"13\" equationId=\"31\" />
 // <solvedIn variableId=\"14\" equationId=\"32\" />
 // <solvedIn variableId=\"15\" equationId=\"33\" />
@@ -27677,14 +27677,14 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <solvedIn variableId=\"21\" equationId=\"40\" />
 // <solvedIn variableId=\"22\" equationId=\"39\" />
 // <solvedIn variableId=\"23\" equationId=\"14\" />
-// <solvedIn variableId=\"24\" equationId=\"35\" />
+// <solvedIn variableId=\"24\" equationId=\"34\" />
 // <solvedIn variableId=\"25\" equationId=\"37\" />
 // <solvedIn variableId=\"26\" equationId=\"38\" />
-// <solvedIn variableId=\"27\" equationId=\"1\" />
+// <solvedIn variableId=\"27\" equationId=\"15\" />
 // <solvedIn variableId=\"28\" equationId=\"2\" />
-// <solvedIn variableId=\"29\" equationId=\"15\" />
+// <solvedIn variableId=\"29\" equationId=\"3\" />
 // <solvedIn variableId=\"30\" equationId=\"4\" />
-// <solvedIn variableId=\"31\" equationId=\"5\" />
+// <solvedIn variableId=\"31\" equationId=\"1\" />
 // <solvedIn variableId=\"32\" equationId=\"6\" />
 // <solvedIn variableId=\"33\" equationId=\"16\" />
 // <solvedIn variableId=\"34\" equationId=\"17\" />
@@ -27695,10 +27695,10 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <solvedIn variableId=\"39\" equationId=\"9\" />
 // <solvedIn variableId=\"40\" equationId=\"8\" />
 // <solvedIn variableId=\"41\" equationId=\"7\" />
-// <solvedIn variableId=\"42\" equationId=\"30\" />
+// <solvedIn variableId=\"42\" equationId=\"29\" />
 // <solvedIn variableId=\"43\" equationId=\"36\" />
-// <solvedIn variableId=\"44\" equationId=\"23\" />
-// <solvedIn variableId=\"45\" equationId=\"34\" />
+// <solvedIn variableId=\"44\" equationId=\"35\" />
+// <solvedIn variableId=\"45\" equationId=\"22\" />
 // <solvedIn variableId=\"46\" equationId=\"10\" />
 // <solvedIn variableId=\"47\" equationId=\"11\" />
 // </matchingAlgorithm>
@@ -27772,21 +27772,21 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </bltBlock>
 // <bltBlock id=\"23\">
 // <involvedEquation equationId=\"1\" />
-// <involvedEquation equationId=\"15\" />
-// <involvedEquation equationId=\"3\" />
-// <involvedEquation equationId=\"23\" />
-// <involvedEquation equationId=\"35\" />
+// <involvedEquation equationId=\"5\" />
+// <involvedEquation equationId=\"22\" />
+// <involvedEquation equationId=\"34\" />
 // <involvedEquation equationId=\"36\" />
 // <involvedEquation equationId=\"24\" />
-// <involvedEquation equationId=\"5\" />
 // <involvedEquation equationId=\"4\" />
+// <involvedEquation equationId=\"3\" />
+// <involvedEquation equationId=\"15\" />
 // <involvedEquation equationId=\"2\" />
-// <involvedEquation equationId=\"34\" />
-// <involvedEquation equationId=\"22\" />
+// <involvedEquation equationId=\"35\" />
+// <involvedEquation equationId=\"23\" />
 // <involvedEquation equationId=\"6\" />
 // </bltBlock>
 // <bltBlock id=\"24\">
-// <involvedEquation equationId=\"8\" />
+// <involvedEquation equationId=\"7\" />
 // </bltBlock>
 // <bltBlock id=\"25\">
 // <involvedEquation equationId=\"12\" />
@@ -27795,16 +27795,16 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <involvedEquation equationId=\"10\" />
 // </bltBlock>
 // <bltBlock id=\"27\">
-// <involvedEquation equationId=\"7\" />
+// <involvedEquation equationId=\"8\" />
 // </bltBlock>
 // <bltBlock id=\"28\">
-// <involvedEquation equationId=\"19\" />
+// <involvedEquation equationId=\"16\" />
 // </bltBlock>
 // <bltBlock id=\"29\">
-// <involvedEquation equationId=\"20\" />
+// <involvedEquation equationId=\"17\" />
 // </bltBlock>
 // <bltBlock id=\"30\">
-// <involvedEquation equationId=\"21\" />
+// <involvedEquation equationId=\"18\" />
 // </bltBlock>
 // <bltBlock id=\"31\">
 // <involvedEquation equationId=\"9\" />
@@ -27813,13 +27813,13 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <involvedEquation equationId=\"37\" />
 // </bltBlock>
 // <bltBlock id=\"33\">
-// <involvedEquation equationId=\"16\" />
+// <involvedEquation equationId=\"19\" />
 // </bltBlock>
 // <bltBlock id=\"34\">
-// <involvedEquation equationId=\"17\" />
+// <involvedEquation equationId=\"20\" />
 // </bltBlock>
 // <bltBlock id=\"35\">
-// <involvedEquation equationId=\"18\" />
+// <involvedEquation equationId=\"21\" />
 // </bltBlock>
 // </bltRepresentation>
 // </bltRepresentation>

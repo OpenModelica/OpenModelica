@@ -136,8 +136,8 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // number of rows: 6
 // 1:
-// 2: 1 3 4
-// 3: 2 5
+// 2: 4 3 1
+// 3: 5 2
 // 4: 6
 // 5: 6
 // 6:
@@ -161,9 +161,9 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // b1 -> true
 // b2 -> true
-// p3 -> 5
-// p1 -> 5
 // b3 -> false
+// p1 -> 5
+// p3 -> 5
 // p2 -> 5
 //
 // Replacements that will be replaced in the DAE:
@@ -171,9 +171,9 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // b1 -> true
 // b2 -> true
-// p3 -> 5
-// p1 -> 5
 // b3 -> false
+// p1 -> 5
+// p3 -> 5
 // p2 -> 5
 //
 // globalKnownVars (6)
@@ -207,9 +207,9 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // b1 -> true
 // b2 -> true
-// p3 -> 5
-// p1 -> 5
 // b3 -> false
+// p1 -> 5
+// p3 -> 5
 // p2 -> 5
 //
 // Replacements that will be replaced in the DAE:
@@ -217,9 +217,9 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // b1 -> true
 // b2 -> true
-// p3 -> 5
-// p1 -> 5
 // b3 -> false
+// p1 -> 5
+// p3 -> 5
 // p2 -> 5
 //
 // globalKnownVars (6)
@@ -243,9 +243,9 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // b1 -> true
 // b2 -> true
-// p3 -> 5
-// p1 -> 5
 // b3 -> false
+// p1 -> 5
+// p3 -> 5
 // p2 -> 5
 //
 // Replacements that will be replaced in the DAE:
@@ -253,9 +253,9 @@ simulate(parameterTest13); getErrorString();
 // ========================================
 // b1 -> true
 // b2 -> true
-// p3 -> 5
-// p1 -> 5
 // b3 -> false
+// p1 -> 5
+// p3 -> 5
 // p2 -> 5
 //
 // globalKnownVars (6)

@@ -14,7 +14,7 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyS
 // ""
 // {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyState_init.xml"}
 // "Notification: The following equation is consistent and got removed from the initialization problem: $DER.v1 = 0.0
-// Notification: The following equation is consistent and got removed from the initialization problem: $DER.x2 = 0.0
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.x1 = 0.0
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult
