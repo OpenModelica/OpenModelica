@@ -32,9 +32,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "EllipseAnnotation.h"
-#include "Commands.h"
+#include "Modeling/Commands.h"
 
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)

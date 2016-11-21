@@ -33,11 +33,19 @@
  */
 
 #include "AnimationWindow.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
+#include "Plotting/PlotWindowContainer.h"
+#include "Visualizer.h"
+#include "VisualizerMAT.h"
+#include "VisualizerCSV.h"
+#include "VisualizerFMU.h"
 
 /*!
-  \class AnimationWindow
-  \brief A QMainWindow for animation.
-  */
+ * \class AnimationWindow
+ * \brief A QMainWindow for animation.
+ */
 /*!
  * \brief AnimationWindow::AnimationWindow
  * \param pPlotWindowContainer
@@ -73,7 +81,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   QObject::connect(&mRenderFrameTimer, SIGNAL(timeout()), this, SLOT(renderFrame()));
   mRenderFrameTimer.start();
   // actions and widgets for the toolbar
-  int toolbarIconSize = mpPlotWindowContainer->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  int toolbarIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::animationChooseFile, this);
   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
   mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), Helper::animationInitialize, this);
@@ -92,7 +100,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   mpAnimationSlider->setEnabled(false);
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   pDoubleValidator->setBottom(0);
-  mpAnimationTimeLabel = new QLabel();
+  mpAnimationTimeLabel = new Label;
   mpAnimationTimeLabel->setText(tr("Time [s]:"));
   mpTimeTextBox = new QLineEdit("0.0", this);
   mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
@@ -263,9 +271,9 @@ void AnimationWindow::loadVisualization()
   } else if (isCSV(mFileName)) {
     visType = VisType::CSV;
   } else {
-    mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                                           tr("Unknown visualization type."),
-                                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                                           tr("Unknown visualization type."),
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   //init visualizer
   if (visType == VisType::MAT) {
@@ -276,15 +284,15 @@ void AnimationWindow::loadVisualization()
     mpVisualizer = new VisualizerFMU(mFileName, mPathName);
   } else {
     QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
-    mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   //load the XML File, build osgTree, get initial values for the shapes
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
-    mpPlotWindowContainer->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   } else {
     connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualizer->initData();

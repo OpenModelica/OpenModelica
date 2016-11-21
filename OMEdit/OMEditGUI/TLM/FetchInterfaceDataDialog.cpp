@@ -29,6 +29,13 @@
  */
 
 #include "FetchInterfaceDataDialog.h"
+#include "Util/Helper.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Util/Utilities.h"
+#include "FetchInterfaceDataThread.h"
+
+#include <QPushButton>
+#include <QObject>
 
 /*!
  * \class FetchInterfaceDataDialog
@@ -37,10 +44,10 @@
 /*!
  * \brief FetchInterfaceDataDialog::FetchInterfaceDataDialog
  * \param pLibraryTreeItem
- * \param pMainWindow
+ * \param pParent
  */
-FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow)
-  : QDialog(pMainWindow), mpMainWindow(pMainWindow), mpLibraryTreeItem(pLibraryTreeItem)
+FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+  : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Fetch Interface Data")).append(" - ")
                  .append(mpLibraryTreeItem->getName()));

@@ -34,7 +34,10 @@
 #ifndef LOCALSWIDGET_H
 #define LOCALSWIDGET_H
 
-#include "MainWindow.h"
+#include <QVector>
+#include <QSortFilterProxyModel>
+#include <QTreeView>
+#include <QPlainTextEdit>
 
 class LocalsWidget;
 class LocalsTreeModel;
@@ -148,13 +151,11 @@ class LocalsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  LocalsWidget(MainWindow *pMainWindow);
-  MainWindow* getMainWindow() {return mpMainWindow;}
+  LocalsWidget(QWidget *pParent = 0);
   LocalsTreeView* getLocalsTreeView() {return mpLocalsTreeView;}
   LocalsTreeModel* getLocalsTreeModel() {return mpLocalsTreeModel;}
   LocalsTreeProxyModel* getLocalsTreeProxyModel() {return mpLocalsTreeProxyModel;}
 private:
-  MainWindow *mpMainWindow;
   LocalsTreeView *mpLocalsTreeView;
   LocalsTreeModel *mpLocalsTreeModel;
   LocalsTreeProxyModel *mpLocalsTreeProxyModel;

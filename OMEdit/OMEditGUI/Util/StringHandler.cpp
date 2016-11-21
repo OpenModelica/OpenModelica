@@ -38,6 +38,11 @@
 #include "Helper.h"
 #include "Utilities.h"
 
+#include <QtCore/qmath.h>
+#include <QDir>
+#include <QFileDialog>
+#include <QTextCodec>
+
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #define toAscii toLatin1
 #endif

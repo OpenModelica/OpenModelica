@@ -47,8 +47,9 @@
  */
 
 #include "MainWindow.h"
-#include "Helper.h"
-#include "CrashReportDialog.h"
+#include "Util/Helper.h"
+#include "CrashReport/CrashReportDialog.h"
+#include "Modeling/LibraryTreeWidget.h"
 #include "meta/meta_modelica.h"
 
 #ifndef WIN32
@@ -129,7 +130,7 @@ void signalHandler(int signum)
 
 #ifdef QT_NO_DEBUG
 #ifdef WIN32
-#include "backtrace.h"
+#include "CrashReport/backtrace.h"
 static char *g_output = NULL;
 LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 {
@@ -250,9 +251,9 @@ int main(int argc, char *argv[])
   a.installTranslator(&translator);
   // Splash Screen
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
-  QSplashScreen splashScreen(pixmap);
-  //splashScreen.setMessage();
-  splashScreen.show();
+  SplashScreen *pSplashScreen = SplashScreen::instance();
+  pSplashScreen->setPixmap(pixmap);
+  pSplashScreen->show();
   Helper::initHelperVariables();
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
@@ -290,18 +291,19 @@ int main(int argc, char *argv[])
     }
   }
   // MainWindow Initialization
-  MainWindow mainwindow(&splashScreen, debug);
-  if (mainwindow.getExitApplicationStatus()) {        // if there is some issue in running the application.
+  MainWindow *pMainwindow = MainWindow::instance(debug);
+  pMainwindow->setUpMainWindow();
+  if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     a.quit();
     exit(1);
   }
   // open the files passed as command line arguments
   foreach (QString fileName, fileNames) {
-    mainwindow.getLibraryWidget()->openFile(fileName);
+    pMainwindow->getLibraryWidget()->openFile(fileName);
   }
   // finally show the main window
-  mainwindow.show();
+  pMainwindow->show();
   // hide the splash screen
-  splashScreen.finish(&mainwindow);
+  pSplashScreen->finish(pMainwindow);
   return a.exec();
 }

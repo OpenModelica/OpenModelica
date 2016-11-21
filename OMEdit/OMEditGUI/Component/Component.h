@@ -35,17 +35,17 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
-#include "ShapeAnnotation.h"
-#include "CornerItem.h"
-#include "CoOrdinateSystem.h"
-#include "ModelWidgetContainer.h"
-#include "OMCProxy.h"
-#include "LineAnnotation.h"
-#include "PolygonAnnotation.h"
-#include "RectangleAnnotation.h"
-#include "EllipseAnnotation.h"
-#include "TextAnnotation.h"
-#include "BitmapAnnotation.h"
+#include "Annotations/ShapeAnnotation.h"
+#include "Component/CornerItem.h"
+#include "Modeling/CoOrdinateSystem.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "OMC/OMCProxy.h"
+#include "Annotations/LineAnnotation.h"
+#include "Annotations/PolygonAnnotation.h"
+#include "Annotations/RectangleAnnotation.h"
+#include "Annotations/EllipseAnnotation.h"
+#include "Annotations/TextAnnotation.h"
+#include "Annotations/BitmapAnnotation.h"
 
 class OMCProxy;
 class GraphicsScene;

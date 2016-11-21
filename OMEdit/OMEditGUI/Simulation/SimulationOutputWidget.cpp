@@ -31,17 +31,28 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "SimulationOutputWidget.h"
-#include "VariablesWidget.h"
-#include "CEditor.h"
+#include "Simulation/SimulationOutputWidget.h"
+#include "MainWindow.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Options/OptionsDialog.h"
+#include "SimulationOutputHandler.h"
+#include "Editors/CEditor.h"
+#include "SimulationProcessThread.h"
+#include "SimulationDialog.h"
+#include "TransformationalDebugger/TransformationsWidget.h"
+
+#include <QObject>
+#include <QAction>
+#include <QApplication>
 
 /*!
-  \class SimulationOutputTree
-  \brief A tree based structure for simulation output messages.
-  */
+ * \class SimulationOutputTree
+ * \brief A tree based structure for simulation output messages.
+ */
 /*!
-  \param pSimulationOutputWidget - a pointer to SimulationOutputWidget.
-  */
+ * \brief SimulationOutputTree::SimulationOutputTree
+ * \param pSimulationOutputWidget
+ */
 SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOutputWidget)
   : QTreeView(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
 {
@@ -165,17 +176,16 @@ void SimulationOutputTree::keyPressEvent(QKeyEvent *event)
 }
 
 /*!
-  \class SimulationOutputDialog
-  \brief Creates a dialog that shows the current simulation output.
-  */
-
+ * \class SimulationOutputDialog
+ * \brief Creates a dialog that shows the current simulation output.
+ */
 /*!
-  \param modelName - the name of the simulating model.
-  \param pSimulationProcess - the simulation process.
-  \param pParent - pointer to MainWindow.
-  */
-SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptions, MainWindow *pMainWindow)
-  : mSimulationOptions(simulationOptions), mpMainWindow(pMainWindow)
+ * \brief SimulationOutputWidget::SimulationOutputWidget
+ * \param simulationOptions
+ * \param pParent
+ */
+SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent)
+  : mSimulationOptions(simulationOptions)
 {
   setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(Helper::simulationOutput));
   // progress label
@@ -191,7 +201,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpGeneratedFilesTabWidget->setMovable(true);
   mpSimulationOutputHandler = 0;
   // Simulation Output TextBox
-  if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getOutputMode().compare(Helper::structuredOutput) == 0) {
+  if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getOutputMode().compare(Helper::structuredOutput) == 0) {
     mIsOutputStructured = true;
     // simulation output browser
     mpSimulationOutputTextBrowser = 0;
@@ -286,7 +296,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   setLayout(pMainLayout);
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions, this);
-  mpMainWindow->getSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
+  MainWindow::instance()->getSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // create the thread
   mpSimulationProcessThread = new SimulationProcessThread(this);
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationStarted()), SLOT(compilationProcessStarted()));
@@ -317,11 +327,11 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
     file.open(QIODevice::ReadOnly);
     BaseEditor *pEditor;
     if (Utilities::isCFile(fileInfo.suffix())) {
-      pEditor = new CEditor(mpMainWindow);
-      CHighlighter *pCHighlighter = new CHighlighter(mpMainWindow->getOptionsDialog()->getCEditorPage(), pEditor->getPlainTextEdit());
+      pEditor = new CEditor(MainWindow::instance());
+      CHighlighter *pCHighlighter = new CHighlighter(MainWindow::instance()->getOptionsDialog()->getCEditorPage(), pEditor->getPlainTextEdit());
       Q_UNUSED(pCHighlighter);
     } else {
-      pEditor = new TextEditor(mpMainWindow);
+      pEditor = new TextEditor(MainWindow::instance());
     }
     pEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpGeneratedFilesTabWidget->addTab(pEditor, fileInfo.fileName());
@@ -408,11 +418,11 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
   mpProgressBar->setValue(1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+    if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
         mSimulationOptions.getLaunchTransformationalDebugger() || mSimulationOptions.getProfiling() != "none") {
-      mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
+      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
     }
-    mpMainWindow->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
+    MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
   }
   mpArchivedSimulationItem->setStatus(Helper::finished);
 }
@@ -497,7 +507,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   mpProgressLabel->setText(tr("Simulation of <b>%1</b> is finished.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);
-  mpMainWindow->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
+  MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
 }
 
@@ -544,7 +554,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 #endif
   /* open the model_info.json file */
   if (QFileInfo(fileName).exists()) {
-    TransformationsWidget *pTransformationsWidget = mpMainWindow->showTransformationsWidget(fileName);
+    TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     QUrlQuery query(url);
     int equationIndex = query.queryItemValue("index").toInt();

@@ -35,7 +35,8 @@
 #include "MainWindow.h"
 #include "Component.h"
 #include "ComponentProperties.h"
-#include "Commands.h"
+#include "Modeling/Commands.h"
+#include "Modeling/DocumentationWidget.h"
 
 /*!
  * \class ComponentInfo
@@ -932,7 +933,7 @@ void Component::createClassComponents()
   }
   if (!mpLibraryTreeItem->isNonExisting()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
@@ -1034,7 +1035,7 @@ QString Component::getParameterDisplayString(QString parameterName)
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
    * 4. If there is no extends modifier then finally check if value is present in extends classes.
    */
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QString displayString = "";
   QString typeName = "";
@@ -1297,7 +1298,7 @@ void Component::createClassInheritedComponents()
 {
   if (!mpLibraryTreeItem->isNonExisting()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     foreach (LibraryTreeItem *pLibraryTreeItem, mpLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
@@ -1314,7 +1315,7 @@ void Component::createClassShapes()
 {
   if (!mpLibraryTreeItem->isNonExisting()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
@@ -1611,7 +1612,7 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
       pInheritedComponent->getLibraryTreeItem()->getModelWidget()->loadDiagramView();
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+          OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
           if (pComponent->getLibraryTreeItem()) {
             if (displayString.isEmpty())
               displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
@@ -1654,7 +1655,7 @@ bool Component::checkEnumerationDisplayString(QString &displayString, const QStr
 void Component::updateToolTip()
 {
   QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   comment = pOMCProxy->makeDocumentationUriToFileName(comment);
   // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
 #ifdef WIN32
@@ -1682,7 +1683,7 @@ void Component::updatePlacementAnnotation()
                                                         getTransformationOrigin(), getTransformationExtent(),
                                                         QString::number(mTransformation.getRotateAngle()));
   } else {
-    OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getPlacementAnnotation());
   }
@@ -1985,7 +1986,7 @@ void Component::deleteMe()
  */
 void Component::duplicate()
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   QString name;
   if (mpLibraryTreeItem) {
     // get the model defaultComponentName
@@ -2261,7 +2262,7 @@ void Component::moveCtrlRight()
 //! @see showAttributes()
 void Component::showParameters()
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   if (pMainWindow->getOMCProxy()->isBuiltinType(mpComponentInfo->getClassName())) {
     return;
   }
@@ -2284,7 +2285,7 @@ void Component::showParameters()
 //! @see showParameters()
 void Component::showAttributes()
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mpLibraryTreeItem->getNameStructure())
                                            .arg(mpComponentInfo->getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
@@ -2301,16 +2302,14 @@ void Component::showAttributes()
  */
 void Component::openClass()
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getLibraryWidget()->openLibraryTreeItem(mpLibraryTreeItem->getNameStructure());
+  MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(mpLibraryTreeItem->getNameStructure());
 }
 
 //! Slot that opens up the component Modelica class in a documentation view.
 void Component::viewDocumentation()
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem);
-  pMainWindow->getDocumentationDockWidget()->show();
+  MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem);
+  MainWindow::instance()->getDocumentationDockWidget()->show();
 }
 
 /*!
@@ -2319,8 +2318,7 @@ void Component::viewDocumentation()
  */
 void Component::showSubModelAttributes()
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  MetaModelSubModelAttributes *pSubModelAttributes = new MetaModelSubModelAttributes(this, pMainWindow);
+  MetaModelSubModelAttributes *pSubModelAttributes = new MetaModelSubModelAttributes(this, MainWindow::instance());
   pSubModelAttributes->exec();
 }
 

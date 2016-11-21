@@ -35,17 +35,16 @@
 #ifndef MODELWIDGETCONTAINER_H
 #define MODELWIDGETCONTAINER_H
 
-#include "MainWindow.h"
 #include "CoOrdinateSystem.h"
-#include "Component.h"
-#include "StringHandler.h"
-#include "Helper.h"
-#include "BaseEditor.h"
-#include "ModelicaEditor.h"
-#include "MetaModelEditor.h"
-#include "CEditor.h"
-#include "TextEditor.h"
-#include "MetaModelicaEditor.h"
+#include "Component/Component.h"
+#include "Util/StringHandler.h"
+#include "Util/Helper.h"
+#include "Editors/BaseEditor.h"
+#include "Editors/ModelicaEditor.h"
+#include "Editors/MetaModelEditor.h"
+#include "Editors/CEditor.h"
+#include "Editors/TextEditor.h"
+#include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
 
 #include <QGraphicsView>
@@ -55,6 +54,9 @@
 #include <QMdiArea>
 #include <QtWebKit>
 #include <QtXmlPatterns>
+#include <QSplitter>
+#include <QUndoStack>
+#include <QUndoView>
 
 class ModelWidget;
 class ComponentInfo;
@@ -288,12 +290,11 @@ class WelcomePageWidget : public QWidget
 {
   Q_OBJECT
 public:
-  WelcomePageWidget(MainWindow *parent = 0);
+  WelcomePageWidget(QWidget *pParent = 0);
   void addRecentFilesListItems();
   QFrame* getLatestNewsFrame();
   QSplitter* getSplitter();
 private:
-  MainWindow *mpMainWindow;
   QFrame *mpMainFrame;
   QFrame *mpTopFrame;
   Label *mpPixmapLabel;
@@ -443,7 +444,7 @@ class ModelWidgetContainer : public MdiArea
 {
   Q_OBJECT
 public:
-  ModelWidgetContainer(MainWindow *pParent);
+  ModelWidgetContainer(QWidget *pParent = 0);
   void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true);
   ModelWidget* getCurrentModelWidget();
   ModelWidget* getModelWidget(const QString &className);

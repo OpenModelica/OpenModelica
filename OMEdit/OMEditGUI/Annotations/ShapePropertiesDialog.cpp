@@ -34,12 +34,14 @@
 
 #include <limits>
 
-#include "MainWindow.h"
 #include "ShapePropertiesDialog.h"
-#include "Commands.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Options/NotificationsDialog.h"
+#include "Modeling/Commands.h"
 
-ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, QWidget *pParent)
+  : QDialog(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
   mOldAnnotation = "";
@@ -49,7 +51,6 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpEllipseAnnotation = dynamic_cast<EllipseAnnotation*>(mpShapeAnnotation);
   mpTextAnnotation = dynamic_cast<TextAnnotation*>(mpShapeAnnotation);
   mpBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(mpShapeAnnotation);
-  mpMainWindow = pMainWindow;
   QString title = getTitle();
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(title).append(" ").append(Helper::properties));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -695,7 +696,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     bool Ok;
     pTableWidgetItem->text().toFloat(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+      QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
                             .arg("points item ("+  QString::number(i+1) +",0)"), Helper::ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
@@ -704,7 +705,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     pTableWidgetItem = mpPointsTableWidget->item(i, 1); /* point Y value */
     pTableWidgetItem->text().toFloat(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+      QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
                             .arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
@@ -715,14 +716,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
   if (mpBitmapAnnotation) {
     if (mpStoreImageInModelCheckBox->isChecked() && mpShapeAnnotation->getImageSource().isEmpty()) {
       if (mpFileTextBox->text().isEmpty()) {
-        QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+        QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                               GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
         mpFileTextBox->setFocus();
         return false;
       }
     } else if (!mpStoreImageInModelCheckBox->isChecked()) {
       if (mpFileTextBox->text().isEmpty()) {
-        QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+        QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                               GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
         mpFileTextBox->setFocus();
         return false;
@@ -787,7 +788,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
         QUrl fileUrl(mpFileTextBox->text());
         QFileInfo fileInfo(mpFileTextBox->text());
         QFileInfo classFileInfo(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getFileName());
-        MainWindow *pMainWindow = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+        MainWindow *pMainWindow = MainWindow::instance();
         /* if its a modelica:// link then make it absolute path */
         QString fileName;
         if (fileUrl.scheme().toLower().compare("modelica") == 0) {
@@ -807,7 +808,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
     } else {
       /* find the class to create a relative path */
-      MainWindow *pMainWindow = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+      MainWindow *pMainWindow = MainWindow::instance();
       LibraryTreeItem *pLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
       QString nameStructure = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
       pLibraryTreeItem = pMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
@@ -815,8 +816,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
       QFileInfo classFileInfo(pLibraryTreeItem->getFileName());
       QDir classDirectory = classFileInfo.absoluteDir();
       QString relativeImagePath = classDirectory.relativeFilePath(mpFileTextBox->text());
-      mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/")
-                                     .append(relativeImagePath));
+      mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/").append(relativeImagePath));
       mpShapeAnnotation->setImageSource("");
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
     }
@@ -864,7 +864,7 @@ void ShapePropertiesDialog::storeImageInModelToggled(bool checked)
    * If the model is not saved then make the check box checked again.
    */
   if (!checked) {
-    MainWindow *pMainWindow = mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+    MainWindow *pMainWindow = MainWindow::instance();
     if (!mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isFilePathValid()) {
       if (pMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->isChecked()) {
         NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::SaveModelForBitmapInsertion,

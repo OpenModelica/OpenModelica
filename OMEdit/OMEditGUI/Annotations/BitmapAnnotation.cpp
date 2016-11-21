@@ -32,9 +32,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "BitmapAnnotation.h"
-#include "Commands.h"
+#include "Modeling/Commands.h"
 
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -92,7 +91,7 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
   }
   // 5th item is the fileName
-  setFileName(StringHandler::removeFirstLastQuotes(list.at(4)), mpComponent);
+  setFileName(StringHandler::removeFirstLastQuotes(list.at(4)));
   // 6th item is the imageSource
   if (list.size() >= 6) {
     mImageSource = StringHandler::removeFirstLastQuotes(list.at(5));

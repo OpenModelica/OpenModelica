@@ -28,25 +28,31 @@
  *
  */
 /*
- *
- *
+ * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
 #include "BreakpointsWidget.h"
+#include "MainWindow.h"
+#include "Debugger/GDB/GDBAdapter.h"
 #include "BreakpointDialog.h"
-#include "CommandFactory.h"
+#include "Debugger/GDB/CommandFactory.h"
+#include "Util/Helper.h"
+#include "Modeling/ModelWidgetContainer.h"
+
+#include <QGridLayout>
+#include <QMenu>
 
 /*!
-  \class BreakPointsWidget
-  \brief A widget containing BreakpointsTreeView.
-  */
+ * \class BreakPointsWidget
+ * \brief A widget containing BreakpointsTreeView.
+ */
 /*!
-  \param pMainWindow - pointer to MainWindow
-  */
-BreakpointsWidget::BreakpointsWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+ * \brief BreakpointsWidget::BreakpointsWidget
+ * \param pParent
+ */
+BreakpointsWidget::BreakpointsWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
-  mpMainWindow = pMainWindow;
   /* Breakpoints Tree view */
   mpBreakpointsTreeView = new BreakpointsTreeView(this);
   mpBreakpointsTreeModel = new BreakpointsTreeModel(mpBreakpointsTreeView);
@@ -429,7 +435,7 @@ void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker,
   pParentBreakpointTreeItem->insertChild(row, pBreakpointTreeItem);
   endInsertRows();
   // insert the breakpoint in gdb
-  GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getMainWindow()->getGDBAdapter();
+  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
   if (pGDBAdapter->isGDBRunning()) {
     pGDBAdapter->insertBreakpoint(pBreakpointTreeItem);
   }
@@ -462,7 +468,7 @@ void BreakpointsTreeModel::updateBreakpoint(BreakpointTreeItem *pBreakpointTreeI
                                             int ignoreCount, QString condition)
 {
   // enable/disable the breakpoint in gdb.
-  GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getMainWindow()->getGDBAdapter();
+  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
   if (pGDBAdapter->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
     if (pBreakpointTreeItem->isEnabled() != enabled) {
       if (enabled) {
@@ -512,10 +518,9 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointMarker *pBreakpointMarker)
   */
 void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeItem)
 {
-  if (pBreakpointTreeItem)
-  {
+  if (pBreakpointTreeItem) {
     // remove the breakpoint in gdb
-    GDBAdapter *pGDBAdapter = mpBreakpointsTreeView->getBreakpointsWidget()->getMainWindow()->getGDBAdapter();
+    GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
     if (pGDBAdapter->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
       pGDBAdapter->postCommand(CommandFactory::breakDelete(QStringList() << pBreakpointTreeItem->getBreakpointID()),
                                GDBAdapter::NonCriticalResponse);

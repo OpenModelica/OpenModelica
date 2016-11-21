@@ -1,22 +1,58 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+/*
+ * @author Alachew Mengist <alachew.mengist@liu.se>
+ */
+
 #include "ImportFMUModelDescriptionDialog.h"
-
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Util/Helper.h"
+#include "Util/StringHandler.h"
 
 /*!
-  \class ImportFMUModelDescriptionDialog
-  \brief Creates an interface for importing FMU model description.
-  */
-
+ * \class ImportFMUModelDescriptionDialog
+ * \brief Creates an interface for importing FMU model description.
+ */
 /*!
-  \param pParent - pointer to MainWindow
-  */
-ImportFMUModelDescriptionDialog::ImportFMUModelDescriptionDialog(MainWindow *pParent)
+ * \brief ImportFMUModelDescriptionDialog::ImportFMUModelDescriptionDialog
+ * \param pParent
+ */
+ImportFMUModelDescriptionDialog::ImportFMUModelDescriptionDialog(QWidget *pParent)
   : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Import FMU Model Description")));
   setAttribute(Qt::WA_DeleteOnClose);
   setMinimumWidth(550);
-  // set parent widget
-  mpMainWindow = pParent;
   // create FMU File selection controls
   mpFmuModelDescriptionLabel = new Label(tr("FMU Model Description:"));
   mpFmuModelDescriptionTextBox = new QLineEdit;
@@ -71,15 +107,15 @@ void ImportFMUModelDescriptionDialog::setSelectedDirectory()
   */
 void ImportFMUModelDescriptionDialog::importFMUModelDescription()
 {
-  if (mpFmuModelDescriptionTextBox->text().isEmpty())
-  {
+  if (mpFmuModelDescriptionTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU Model Description")), Helper::ok);
     return;
   }
-  QString fmuFileName = mpMainWindow->getOMCProxy()->importFMUModelDescription(mpFmuModelDescriptionTextBox->text(), mpOutputDirectoryTextBox->text(), 1, false, true, true);
+  QString fmuFileName = MainWindow::instance()->getOMCProxy()->importFMUModelDescription(mpFmuModelDescriptionTextBox->text(), mpOutputDirectoryTextBox->text(), 1, false, true, true);
 
-  if (!fmuFileName.isEmpty())
-    mpMainWindow->getLibraryWidget()->openFile(fmuFileName);
+  if (!fmuFileName.isEmpty()) {
+    MainWindow::instance()->getLibraryWidget()->openFile(fmuFileName);
+  }
   accept();
 }

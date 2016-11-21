@@ -42,14 +42,19 @@
 #endif
 
 #include "TLMCoSimulationDialog.h"
-#include "VariablesWidget.h"
-#include "Commands.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
+#include "Plotting/VariablesWidget.h"
+#include "Plotting/PlotWindowContainer.h"
+#include "Modeling/Commands.h"
+#include "TLMCoSimulationOutputWidget.h"
+#include "Animation/AnimationWindow.h"
 
-TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
+  : QDialog(pParent)
 {
   resize(450, 350);
-  mpMainWindow = pMainWindow;
   setIsTLMCoSimulationRunning(false);
   // simulation widget heading
   mpHeadingLabel = Utilities::getHeadingLabel("");
@@ -158,7 +163,7 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
-  mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(mpMainWindow);
+  mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(MainWindow::instance());
   int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
   int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
   mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());
@@ -180,15 +185,15 @@ void TLMCoSimulationDialog::show(LibraryTreeItem *pLibraryTreeItem)
   mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getName()));
   // if user has nothing in TLM plugin path then read from OptionsDialog
   if (mpTLMPluginPathTextBox->text().isEmpty()) {
-    mpTLMPluginPathTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMPluginPathTextBox()->text());
+    mpTLMPluginPathTextBox->setText(MainWindow::instance()->getOptionsDialog()->getTLMPage()->getTLMPluginPathTextBox()->text());
   }
   // if user has nothing in manager process box then read from OptionsDialog
   if (mpManagerProcessTextBox->text().isEmpty()) {
-    mpManagerProcessTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMManagerProcessTextBox()->text());
+    mpManagerProcessTextBox->setText(MainWindow::instance()->getOptionsDialog()->getTLMPage()->getTLMManagerProcessTextBox()->text());
   }
   // if user has nothing in monitor process box then read from OptionsDialog
   if (mpMonitorProcessTextBox->text().isEmpty()) {
-    mpMonitorProcessTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMMonitorProcessTextBox()->text());
+    mpMonitorProcessTextBox->setText(MainWindow::instance()->getOptionsDialog()->getTLMPage()->getTLMMonitorProcessTextBox()->text());
   }
   setVisible(true);
 }
@@ -200,8 +205,8 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
   QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
   QFileInfo resultFileInfo(fileInfo.absoluteDir().absolutePath() + "/" + fileInfo.completeBaseName() + ".csv");
   if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
-    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
@@ -210,16 +215,16 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
       // only show the AnimationWindow if we have a visual xml file.
       QFileInfo visualFileInfo(fileInfo.absoluteDir().absolutePath() + "/" + fileInfo.completeBaseName() + "_visual.xml");
       if (visualFileInfo.exists()) {
-        mpMainWindow->getPlotWindowContainer()->addAnimationWindow(mpMainWindow->getPlotWindowContainer()->subWindowList().isEmpty());
-        AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
+        MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+        AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
         if (pAnimationWindow) {
           pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
         }
       }
 #endif
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-      mpMainWindow->getVariablesDockWidget()->show();
+      MainWindow::instance()->getVariablesDockWidget()->show();
     }
   }
 }
@@ -230,19 +235,19 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
 bool TLMCoSimulationDialog::validate()
 {
   if (mpManagerProcessTextBox->text().isEmpty()) {
-    QMessageBox::critical(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
                           tr("Enter manager process."), Helper::ok);
     mpManagerProcessTextBox->setFocus();
     return false;
   }
   if (mpMonitorProcessTextBox->text().isEmpty()) {
-    QMessageBox::critical(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
                           tr("Enter monitor process."), Helper::ok);
     mpMonitorProcessTextBox->setFocus();
     return false;
   }
   if (mpMonitorPortTextBox->text().isEmpty()) {
-    QMessageBox::critical(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
                           tr("Enter a monitor port."), Helper::ok);
     mpMonitorPortTextBox->setFocus();
     return false;
@@ -310,7 +315,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
       MessageItem messageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
                               tr("Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1")
                               .arg(QString(myname)), Helper::scriptingKind, Helper::errorLevel);
-      mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
+      MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
       tlmCoSimulationOptions.setIsValid(false);
       return tlmCoSimulationOptions;
     }
@@ -394,7 +399,7 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
     if (tlmCoSimulationOptions.isValid()) {
       setIsTLMCoSimulationRunning(true);
       if (!mpLibraryTreeItem->getModelWidget()) {
-        mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
       }
       mpLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
       mpLibraryTreeItem->getModelWidget()->writeVisualXMLFile();
@@ -494,7 +499,7 @@ bool MetaModelSimulationParamsDialog::validateSimulationParams()
     mpStopTimeTextBox->setText("1");
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
-    QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
     return false;
   }

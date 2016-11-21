@@ -36,10 +36,8 @@
 #define BITMAPANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
-class OMCProxy;
-
+class Component;
 class BitmapAnnotation : public ShapeAnnotation
 {
   Q_OBJECT

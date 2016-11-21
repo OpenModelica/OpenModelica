@@ -39,18 +39,16 @@
 #include "Animation/AnimationWindow.h"
 #endif
 
-#include "MainWindow.h"
+#include "Util/Utilities.h"
 #include "OMPlot.h"
-#include "Utilities.h"
 
-class MainWindow;
 class AnimationWindow;
 
 class PlotWindowContainer : public MdiArea
 {
   Q_OBJECT
 public:
-  PlotWindowContainer(MainWindow *pParent);
+  PlotWindowContainer(QWidget *pParent = 0);
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
 #if !defined(WITHOUT_OSG)

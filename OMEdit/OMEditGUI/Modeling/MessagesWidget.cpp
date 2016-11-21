@@ -33,24 +33,26 @@
  */
 
 #include "MessagesWidget.h"
-#include "Helper.h"
+#include "MainWindow.h"
+#include "LibraryTreeWidget.h"
+#include "Util/Helper.h"
+#include "Options/OptionsDialog.h"
 
 /*!
-  \class MessageItem
-  \brief Holds the error message data.
-  */
-
+ * \class MessageItem
+ * \brief Holds the error message data.
+ */
 /*!
-  \param filename - the error filename.
-  \param readOnly - the error file readOnly state.
-  \param lineStart - the index where the error starts.
-  \param columnStart - the indexed column where the error starts.
-  \param lineEnd - the index where the error ends.
-  \param columnEnd - the indexed column where the error ends.
-  \param message - the error message.
-  \param kind - the error kind.
-  \param level - the error level.
-  */
+ * \param filename - the error filename.
+ * \param readOnly - the error file readOnly state.
+ * \param lineStart - the index where the error starts.
+ * \param columnStart - the indexed column where the error starts.
+ * \param lineEnd - the index where the error ends.
+ * \param columnEnd - the indexed column where the error ends.
+ * \param message - the error message.
+ * \param kind - the error kind.
+ * \param level - the error level.
+ */
 MessageItem::MessageItem(MessageItemType type, QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message,
                          QString errorKind, QString errorType)
   : mMessageItemType(type)
@@ -80,17 +82,16 @@ QString MessageItem::getLocation()
 }
 
 /*!
-  \class MessagesWidget
-  \brief Shows warnings, notifications and error messages.
-  */
-
+ * \class MessagesWidget
+ * \brief Shows warnings, notifications and error messages.
+ */
 /*!
-  \param pMainWindow - defines a parent to the new instanced object. pMainWindow is the MainWindow object.
-  */
-MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+ * \brief MessagesWidget::MessagesWidget
+ * \param pParent
+ */
+MessagesWidget::MessagesWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
-  mpMainWindow = pMainWindow;
   mMessageNumber = 1;
   mpMessagesTextBrowser = new QTextBrowser;
   mpMessagesTextBrowser->setOpenLinks(false);
@@ -133,7 +134,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   */
 void MessagesWidget::applyMessagesSettings()
 {
-  MessagesPage *pMessagesPage = mpMainWindow->getOptionsDialog()->getMessagesPage();
+  MessagesPage *pMessagesPage = MainWindow::instance()->getOptionsDialog()->getMessagesPage();
   // set the output size
   mpMessagesTextBrowser->document()->setMaximumBlockCount(pMessagesPage->getOutputSizeSpinBox()->value());
   // set the font
@@ -146,9 +147,9 @@ void MessagesWidget::applyMessagesSettings()
   QString messagesCSS = QString(".notification {color: %1}"
                                 ".warning {color: %2}"
                                 ".error {color: %3}")
-      .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getNotificationColor().name())
-      .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getWarningColor().name())
-      .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getErrorColor().name());
+      .arg(MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getNotificationColor().name())
+      .arg(MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getWarningColor().name())
+      .arg(MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getErrorColor().name());
   mpMessagesTextBrowser->document()->setDefaultStyleSheet(messagesCSS);
   // move the cursor to end.
   QTextCursor textCursor = mpMessagesTextBrowser->textCursor();
@@ -196,7 +197,7 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;
   } else if (messageItem.getMessageItemType()== MessageItem::MetaModel ||
-             mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
+             MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())
@@ -206,8 +207,8 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   } else {
     // Find the class name using the file name and line number.
     LibraryTreeItem *pLibraryTreeItem;
-    pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->getLibraryTreeItemFromFile(messageItem.getFileName(),
-                                                                                                           messageItem.getLineStart().toInt());
+    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getLibraryTreeItemFromFile(messageItem.getFileName(),
+                                                                                                                     messageItem.getLineStart().toInt());
     if (pLibraryTreeItem) {
       errorMessage = linkFormat.arg(pLibraryTreeItem->getNameStructure())
           .arg(messageItem.getLocation())
@@ -263,17 +264,17 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
     className.remove(0, 1);
   }
   // find the class that has the error
-  LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
   /* the error could be in P.M but we get P as error class in this case we see if current class has the same file as P
    * and also contains the line number. If we have correct current class then no need to show root parent class i.e., P.
    */
-  ModelWidget *pModelWidget = mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget();
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
   if ((pModelWidget->getLibraryTreeItem()->getFileName().compare(pLibraryTreeItem->getFileName()) == 0) &&
       pModelWidget->getLibraryTreeItem()->inRange(lineNumber)) {
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
   }
   if (pLibraryTreeItem) {
-    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
       pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
       pLibraryTreeItem->getModelWidget()->getEditor()->goToLineNumber(lineNumber);

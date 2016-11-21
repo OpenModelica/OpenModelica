@@ -35,13 +35,17 @@
 #ifndef TRANSFORMATIONSWIDGET_H
 #define TRANSFORMATIONSWIDGET_H
 
-#include "MainWindow.h"
-#include "OMDumpXML.h"
-#include "TransformationsEditor.h"
+#include <QTreeView>
+#include <QSortFilterProxyModel>
+#include <QTreeWidget>
+#include <QSplitter>
 
-class MainWindow;
+#include "OMDumpXML.h"
+
 class TransformationsWidget;
 class TVariablesTreeView;
+class TreeSearchFilters;
+class Label;
 
 class TVariablesTreeItem
 {
@@ -154,8 +158,7 @@ class TransformationsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  TransformationsWidget(QString infoJSONFullFileName, MainWindow *pMainWindow);
-  MainWindow* getMainWindow() {return mpMainWindow;}
+  TransformationsWidget(QString infoJSONFullFileName, QWidget *pParent = 0);
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
   QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
@@ -180,7 +183,6 @@ public:
   void fetchOperations(OMEquation *equation);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
-  MainWindow *mpMainWindow;
   QString mInfoJSONFullFileName, mProfJSONFullFileName, mProfilingDataRealFileName;
   int profilingNumSteps;
   MyHandler *mpInfoXMLFileHandler;

@@ -29,10 +29,7 @@
  *
  */
 /*
- *
  * @author Martin Sjölund <martin.sjolund@liu.se>
- *
- *
  */
 
 #ifndef OMDUMPXML_H

@@ -32,7 +32,15 @@
  */
 
 #include "BreakpointDialog.h"
+#include "MainWindow.h"
+#include "BreakpointsWidget.h"
+#include "Util/Helper.h"
+#include "Util/Utilities.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ModelicaClassDialog.h"
+
 #include <limits>
+#include <QMessageBox>
 
 /*!
  * \class BreakpointDialog
@@ -126,7 +134,7 @@ BreakpointDialog::BreakpointDialog(BreakpointTreeItem *pBreakpointTreeItem, Brea
   */
 void BreakpointDialog::browseClasses()
 {
-  MainWindow *pMainWindow = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Class"), mpFileNameTextBox, pMainWindow->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
@@ -178,8 +186,7 @@ void BreakpointDialog::addOrEditBreakpoint()
                                                mpIgnoreCountSpinBox->value(), mpConditionTextBox->text());
     }
   } else {  /* if user has selected a class using Browse Classes button */
-    LibraryWidget *pLibraryWidget;
-    pLibraryWidget = mpBreakpointsTreeModel->getBreakpointsTreeView()->getBreakpointsWidget()->getMainWindow()->getLibraryWidget();
+    LibraryWidget *pLibraryWidget = MainWindow::instance()->getLibraryWidget();
     LibraryTreeItem *pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(mpFileNameTextBox->text());
     if (pLibraryTreeItem) {
       if (!pLibraryTreeItem->isSaved()) {

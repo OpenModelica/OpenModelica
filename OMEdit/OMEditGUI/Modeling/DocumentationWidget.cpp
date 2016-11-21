@@ -33,21 +33,28 @@
  */
 
 #include "DocumentationWidget.h"
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Util/Helper.h"
+#include "Util/Utilities.h"
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
 
-//! @class DocumentationWidget
-//! @brief Displays the model documentation.
-
-//! Constructor
-//! @param pParent is the pointer to MainWindow.
-DocumentationWidget::DocumentationWidget(MainWindow *pParent)
+/*!
+ * \class DocumentationWidget
+ * \brief Displays the model documentation.
+ */
+/*!
+ * \brief DocumentationWidget::DocumentationWidget
+ * \param pParent
+ */
+DocumentationWidget::DocumentationWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   setObjectName("DocumentationWidget");
   setMinimumWidth(175);
-  mpMainWindow = pParent;
   mDocumentationFile.setFileName(Utilities::tempDirectory() + "/DocumentationWidget.html");
   // create previous and next buttons for documentation navigation
   // create the previous button
@@ -100,11 +107,6 @@ DocumentationWidget::~DocumentationWidget()
   delete mpDocumentationHistoryList;
 }
 
-MainWindow* DocumentationWidget::getMainWindow()
-{
-  return mpMainWindow;
-}
-
 QToolButton* DocumentationWidget::getPreviousToolButton()
 {
   return mpPreviousToolButton;
@@ -123,7 +125,7 @@ DocumentationViewer* DocumentationWidget::getDocumentationViewer()
 void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
-  QString documentation = mpMainWindow->getOMCProxy()->getDocumentationAnnotation(pLibraryTreeItem);
+  QString documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotation(pLibraryTreeItem);
   mDocumentationFile.open(QIODevice::WriteOnly | QIODevice::Text);
   QTextStream out(&mDocumentationFile);
   out.setCodec(Helper::utf8.toStdString().data());
@@ -221,10 +223,10 @@ void DocumentationViewer::processLinkClick(QUrl url)
     QString resourceLink = url.toString().mid(12);
     /* if the link is a resource e.g .html, .txt or .pdf */
     if (resourceLink.endsWith(".html") || resourceLink.endsWith(".txt") || resourceLink.endsWith(".pdf")) {
-      QString resourceAbsoluteFileName = mpDocumentationWidget->getMainWindow()->getOMCProxy()->uriToFilename("modelica://" + resourceLink);
+      QString resourceAbsoluteFileName = MainWindow::instance()->getOMCProxy()->uriToFilename("modelica://" + resourceLink);
       QDesktopServices::openUrl("file:///" + resourceAbsoluteFileName);
     } else {
-      LibraryTreeItem *pLibraryTreeItem = mpDocumentationWidget->getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(resourceLink);
+      LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(resourceLink);
       // send the new className to DocumentationWidget
       if (pLibraryTreeItem) {
         mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
@@ -260,9 +262,9 @@ void DocumentationViewer::processLinkHover(QString link, QString title, QString 
   Q_UNUSED(title);
   Q_UNUSED(textContent);
   if (link.isEmpty()) {
-    mpDocumentationWidget->getMainWindow()->getStatusBar()->clearMessage();
+    MainWindow::instance()->getStatusBar()->clearMessage();
   } else {
-    mpDocumentationWidget->getMainWindow()->getStatusBar()->showMessage(link);
+    MainWindow::instance()->getStatusBar()->showMessage(link);
   }
 }
 

@@ -36,10 +36,13 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
+#include <QTreeView>
+#include <QSortFilterProxyModel>
+#include <QSpinBox>
+
+class Label;
 class Component;
-
 class LineAnnotation : public ShapeAnnotation
 {
   Q_OBJECT

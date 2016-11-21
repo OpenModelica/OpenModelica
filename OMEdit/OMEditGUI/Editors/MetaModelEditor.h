@@ -32,15 +32,13 @@
 #ifndef METAMODELEDITOR_H
 #define METAMODELEDITOR_H
 
-#include "MainWindow.h"
-#include "Helper.h"
-#include "Utilities.h"
-#include "BaseEditor.h"
+#include "Util/Helper.h"
+#include "Util/Utilities.h"
+#include "Editors/BaseEditor.h"
 
+#include <QDomDocument>
 #include <QSyntaxHighlighter>
 
-class MainWindow;
-class ModelWidget;
 class MetaModelEditor;
 class LineAnnotation;
 
@@ -62,7 +60,7 @@ class MetaModelEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  MetaModelEditor(ModelWidget *pModelWidget);
+  MetaModelEditor(QWidget *pParent);
   QString getLastValidText() {return mLastValidText;}
   bool validateText();
   QString getXmlDocumentContent() {return mXmlDocument.toString();}

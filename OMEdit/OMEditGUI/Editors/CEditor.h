@@ -34,17 +34,16 @@
 #ifndef CEDITOR_H
 #define CEDITOR_H
 
-#include "MainWindow.h"
+#include <QSyntaxHighlighter>
+#include <QPlainTextEdit>
 
-class MainWindow;
-class ModelWidget;
+#include "Editors/BaseEditor.h"
 
 class CEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  CEditor(ModelWidget *pModelWidget);
-  CEditor(MainWindow *pMainWindow);
+  CEditor(QWidget *pParent);
   void setPlainText(const QString &text);
 private:
   bool mForceSetPlainText;

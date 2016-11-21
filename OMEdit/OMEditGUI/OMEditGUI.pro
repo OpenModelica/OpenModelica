@@ -271,31 +271,9 @@ HEADERS += Animation/AnimationWindow.h \
 LIBS += -lqjson
 INCLUDEPATH += ../../qjson/build/include
 
-INCLUDEPATH += . \
-  Annotations \
-  Animation \
-  Component \
-  CrashReport \
-  Debugger \
-  Debugger/Attach \
-  Debugger/Breakpoints \
-  Debugger/GDB \
-  Debugger/Locals \
-  Debugger/Parser \
-  Debugger/StackFrames \
-  Editors \
-  FMI \
-  Modeling \
-  OMC \
-  Options \
-  Plotting \
-  Simulation \
-  TLM \
-  TransformationalDebugger \
-  Util \
-  $$OPENMODELICAHOME/include/omc/scripting-API \
+INCLUDEPATH += $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c/util \
-  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include \
+  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

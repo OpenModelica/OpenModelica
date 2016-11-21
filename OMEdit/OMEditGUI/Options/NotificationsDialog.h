@@ -35,8 +35,11 @@
 #ifndef NOTIFICATIONSDIALOG_H
 #define NOTIFICATIONSDIALOG_H
 
-#include "MainWindow.h"
+#include <QDialog>
+#include <QCheckBox>
+#include <QDialogButtonBox>
 
+class Label;
 class NotificationsDialog : public QDialog
 {
   Q_OBJECT
@@ -49,11 +52,10 @@ public:
     SaveModelForBitmapInsertion
   };
   enum NotificationIcon {NoIcon, QuestionIcon, InformationIcon, WarningIcon, CriticalIcon};
-  NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, MainWindow *pMainWindow);
+  NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, QWidget *pParent = 0);
   void setNotificationLabelString(QString label);
   QCheckBox* getNotificationCheckBox() {return mpNotificationCheckBox;}
 private:
-  MainWindow *mpMainWindow;
   Label *mpNotificationLabel;
   QCheckBox *mpNotificationCheckBox;
   QPushButton *mpOkButton;

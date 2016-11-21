@@ -35,9 +35,8 @@
 #ifndef SHAPEANNOTATION_H
 #define SHAPEANNOTATION_H
 
-#include "Helper.h"
-#include "StringHandler.h"
-#include "Transformation.h"
+#include "Util/StringHandler.h"
+#include "Component/Transformation.h"
 
 #include <QGraphicsItem>
 #include <QSettings>
@@ -171,7 +170,7 @@ public:
   QList<StringHandler::TextStyle> getTextStyles() {return mTextStyles;}
   void setTextHorizontalAlignment(StringHandler::TextAlignment textAlignment) {mHorizontalAlignment = textAlignment;}
   StringHandler::TextAlignment getTextHorizontalAlignment() {return mHorizontalAlignment;}
-  void setFileName(QString fileName, Component *pComponent = 0);
+  void setFileName(QString fileName);
   QString getFileName();
   void setImageSource(QString imageSource);
   QString getImageSource();

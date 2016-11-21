@@ -30,10 +30,15 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
-#include "MetaModelicaEditor.h"
 
-MetaModelicaEditor::MetaModelicaEditor(ModelWidget *pModelWidget)
-  : BaseEditor(pModelWidget)
+#include "MetaModelicaEditor.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "Options/OptionsDialog.h"
+
+#include <QMenu>
+
+MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
+  : BaseEditor(pParent)
 {
   setCanHaveBreakpoints(true);
   /* set the document marker */

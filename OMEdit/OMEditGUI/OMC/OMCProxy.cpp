@@ -53,22 +53,24 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include <stdlib.h>
 #include <iostream>
 
-#include "MainWindow.h"
 #include "OMCProxy.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
 #include "simulation_options.h"
 #include "omc_error.h"
 
 /*!
-  \class OMCProxy
-  \brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
-  */
+ * \class OMCProxy
+ * \brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
+ */
 /*!
-  \param pMainWindow - pointer to MainWindow
-  */
-OMCProxy::OMCProxy(MainWindow *pMainWindow)
-  : QObject(pMainWindow), mHasInitialized(false), mResult(""), mTotalOMCCallsTime(0.0)
+ * \brief OMCProxy::OMCProxy
+ * \param pParent
+ */
+OMCProxy::OMCProxy(QWidget *pParent)
+  : QObject(pParent), mHasInitialized(false), mResult(""), mTotalOMCCallsTime(0.0)
 {
-  mpMainWindow = pMainWindow;
   mCurrentCommandIndex = -1;
   // OMC Commands Logger Widget
   mpOMCLoggerWidget = new QWidget;
@@ -96,7 +98,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   pVerticalalLayout->addWidget(mpOMCLoggerTextBox);
   pVerticalalLayout->addLayout(pHorizontalLayout);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
-  if (mpMainWindow->isDebug()) {
+  if (MainWindow::instance()->isDebug()) {
     // OMC Diff widget
     mpOMCDiffWidget = new QWidget;
     mpOMCDiffWidget->resize(640, 480);
@@ -122,7 +124,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   mDerivedUnitsMap.clear();
   //start the server
   if(!initializeOMC()) {  // if we are unable to start OMC. Exit the application.
-    mpMainWindow->setExitApplicationStatus(true);
+    MainWindow::instance()->setExitApplicationStatus(true);
     return;
   }
 }
@@ -130,7 +132,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
 OMCProxy::~OMCProxy()
 {
   delete mpOMCLoggerWidget;
-  if (mpMainWindow->isDebug()) {
+  if (MainWindow::instance()->isDebug()) {
     delete mpOMCDiffWidget;
   }
 }
@@ -207,7 +209,7 @@ bool OMCProxy::initializeOMC()
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, args);
   st = omc_Main_readSettings(threadData, mmc_mk_nil());
-  threadData->plotClassPointer = mpMainWindow;
+  threadData->plotClassPointer = MainWindow::instance();
   threadData->plotCB = MainWindow::PlotCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData, st);
@@ -255,7 +257,7 @@ void OMCProxy::sendCommand(const QString expression)
   if (!mHasInitialized) {
     // if we are unable to start OMC. Exit the application.
     if(!initializeOMC()) {
-      mpMainWindow->setExitApplicationStatus(true);
+      MainWindow::instance()->setExitApplicationStatus(true);
       return;
     }
   }
@@ -372,7 +374,7 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
 void OMCProxy::showException(QString exception)
 {
   MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, exception, Helper::scriptingKind, Helper::errorLevel);
-  mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
+  MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
   printMessagesStringInternal();
 }
 
@@ -406,7 +408,7 @@ void OMCProxy::sendCustomExpression()
  */
 void OMCProxy::openOMCDiffWidget()
 {
-  if (mpMainWindow->isDebug()) {
+  if (MainWindow::instance()->isDebug()) {
     mpOMCDiffBeforeTextBox->setFocus(Qt::ActiveWindowFocusReason);
     mpOMCDiffWidget->show();
     mpOMCDiffWidget->raise();
@@ -432,7 +434,7 @@ void OMCProxy::removeObjectRefFile()
 void OMCProxy::exitApplication()
 {
   removeObjectRefFile();
-  QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+  QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                         QString(tr("Connection with the OpenModelica Compiler has been lost."))
                         .append("\n\n").append(Helper::applicationName).append(" will close."), Helper::ok);
   exit(EXIT_FAILURE);
@@ -466,7 +468,7 @@ bool OMCProxy::printMessagesStringInternal()
     setCurrentError(i);
     MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
                             getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
-    mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
   }
   return returnValue;
 }
@@ -627,7 +629,7 @@ void OMCProxy::loadSystemLibraries()
     QString version = pSettings->value("libraries/" + lib).toString();
     loadModel(lib, version);
   }
-  mpMainWindow->getOptionsDialog()->readLibrariesSettings();
+  MainWindow::instance()->getOptionsDialog()->readLibrariesSettings();
 }
 
 /*!
@@ -653,7 +655,7 @@ void OMCProxy::loadUserLibraries()
          matching the name of the nonstructured entity."
         */
       if (classesList.size() > 1) {
-        QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+        QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
         pMessageBox->setIcon(QMessageBox::Critical);
         pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -675,7 +677,7 @@ void OMCProxy::loadUserLibraries()
       }
       // if existModel is true, show user an error message
       if (existModel) {
-        QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+        QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
         pMessageBox->setIcon(QMessageBox::Information);
         pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -963,7 +965,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
   } else {
     QString msg = tr("Unable to set the component modifier value using command <b>%1</b>").arg(expression);
     MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
-    mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
     return false;
   }
 }
@@ -1029,7 +1031,7 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
   } else {
     QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
     MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
-    mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
     return false;
   }
 }
@@ -1625,7 +1627,7 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   QString escapedAfter = StringHandler::escapeString(after);
   QString result;
   // only use the diffModelicaFileListings when preserve text indentation settings is true
-  if (mpMainWindow->getOptionsDialog()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
+  if (MainWindow::instance()->getOptionsDialog()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
     sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
     result = StringHandler::unparse(getResult());
     printMessagesStringInternal();
@@ -1635,7 +1637,7 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   } else {
     result = after;
   }
-  if (mpMainWindow->isDebug()) {
+  if (MainWindow::instance()->isDebug()) {
     mpOMCDiffBeforeTextBox->setPlainText(before);
     mpOMCDiffAfterTextBox->setPlainText(after);
     mpOMCDiffMergedTextBox->setPlainText(result);
@@ -1934,7 +1936,7 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
   sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
   bool res = StringHandler::unparseBool(getResult());
   printMessagesStringInternal();
-  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return res;
 }
 
@@ -1978,7 +1980,7 @@ QString OMCProxy::checkModel(QString className)
 {
   QString result = mpOMCInterface->checkModel(className);
   printMessagesStringInternal();
-  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2005,7 +2007,7 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
 {
   QString result = mpOMCInterface->checkAllModelsRecursive(className, false);
   printMessagesStringInternal();
-  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2019,7 +2021,7 @@ QString OMCProxy::instantiateModel(QString className)
 {
   QString result = mpOMCInterface->instantiateModel(className);
   printMessagesStringInternal();
-  mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -2063,7 +2065,7 @@ bool OMCProxy::buildModelFMU(QString className, double version, QString type, QS
   QString res = mpOMCInterface->buildModelFMU(className, QString::number(version), type, fileNamePrefix, platforms);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     result = true;
-    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
   return result;
@@ -2080,7 +2082,7 @@ bool OMCProxy::translateModelXML(QString className)
   sendCommand("translateModelXML(" + className + ")");
   if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to XML") == 0) {
     result = true;
-    mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
   return result;
@@ -2298,8 +2300,8 @@ QString OMCProxy::uriToFilename(QString uri)
   /* the second argument of uriToFilename result is error string. */
   if (results.size() > 1 && !results.at(1).isEmpty()) {
     QString errorString = results.at(1);
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
-                                                                 Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
   if (results.size() > 0) {
     return results.first();

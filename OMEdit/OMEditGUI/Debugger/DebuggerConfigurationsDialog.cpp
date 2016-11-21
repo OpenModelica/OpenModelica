@@ -32,6 +32,13 @@
  */
 
 #include "DebuggerConfigurationsDialog.h"
+#include "MainWindow.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Debugger/GDB/GDBAdapter.h"
+#include "Util/Helper.h"
+#include "Util/StringHandler.h"
+
+#include <QGridLayout>
 
 /*!
  * \class DebuggerConfigurationPage
@@ -226,14 +233,13 @@ void DebuggerConfigurationPage::resetDebugConfiguration()
  */
 /*!
  * \brief DebuggerConfigurationsDialog::DebuggerConfigurationsDialog
- * \param pMainWindow - pointer to MainWindow
+ * \param pParent
  */
-DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(QWidget *pParent)
+  : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::debugConfigurations));
   setAttribute(Qt::WA_DeleteOnClose);
-  mpMainWindow = pMainWindow;
   // create tool buttons
   mpNewToolButton = new QToolButton;
   mpNewToolButton->setIcon( QIcon(":/Resources/icons/new.svg"));
@@ -496,15 +502,15 @@ void DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration()
   if (saveAllConfigurationsHelper()) {
     accept();
     // start the debugger
-    if (mpMainWindow->getGDBAdapter()->isGDBRunning()) {
+    if (MainWindow::instance()->getGDBAdapter()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
       DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
       DebuggerConfiguration debuggerConfiguration = pDebuggerConfigurationPage->getDebuggerConfiguration();
-      mpMainWindow->getGDBAdapter()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
-                                            debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(3);
+      MainWindow::instance()->getGDBAdapter()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
+                                                      debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
+      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(3);
     }
   }
 }

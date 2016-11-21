@@ -33,15 +33,16 @@
 #ifndef METAMODELICAEDITOR_H
 #define METAMODELICAEDITOR_H
 
-#include "MainWindow.h"
+#include "Editors/BaseEditor.h"
 
-class ModelWidget;
+#include <QSyntaxHighlighter>
 
+class MetaModelicaEditorPage;
 class MetaModelicaEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  MetaModelicaEditor(ModelWidget *pModelWidget);
+  MetaModelicaEditor(QWidget *pParent);
   void setPlainText(const QString &text);
 private:
   bool mForceSetPlainText;
@@ -52,7 +53,6 @@ public slots:
   virtual void toggleCommentSelection();
 };
 
-class MetaModelicaEditorPage;
 class MetaModelicaHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT

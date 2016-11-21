@@ -37,12 +37,8 @@
 
 #undef smooth
 
-/* Keep PlotWindowContainer on top to include OSG first */
-#include "Plotting/PlotWindowContainer.h"
-
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#include <QtWidgets>
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QtWebKitWidgets>
@@ -52,9 +48,7 @@
 #include <QDomDocument>
 #else
 #include <QDir>
-#include <QtGui>
 #include <QtWebKit>
-#include <QtCore>
 #include <QDomDocument>
 #endif
 
@@ -62,51 +56,41 @@
 #error "OMEdit requires Qt 4.6.0 or newer"
 #endif
 
-#include "OMCProxy.h"
-#include "OptionsDialog.h"
-#include "ModelicaClassDialog.h"
-#include "StringHandler.h"
-#include "MessagesWidget.h"
-#include "TransformationsWidget.h"
-#include "LibraryTreeWidget.h"
-#include "DocumentationWidget.h"
-#include "SimulationDialog.h"
-#include "TLMCoSimulationDialog.h"
-#include "ModelWidgetContainer.h"
-#include "GDBAdapter.h"
-#include "StackFramesWidget.h"
-#include "LocalsWidget.h"
-#include "ImportFMUDialog.h"
-#include "ImportFMUModelDescriptionDialog.h"
-#include "NotificationsDialog.h"
-
 class OMCProxy;
 class OptionsDialog;
 class MessagesWidget;
 class TransformationsWidget;
 class LibraryWidget;
-class DocumentationWidget;
-class VariablesWidget;
 class GDBAdapter;
 class StackFramesWidget;
 class LocalsWidget;
-class BreakpointsWidget;
 class TargetOutputWidget;
 class GDBLoggerWidget;
+class DocumentationWidget;
+class PlotWindowContainer;
+class VariablesWidget;
+class BreakpointsWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
-class PlotWindowContainer;
 class ModelWidgetContainer;
-class InfoBar;
 class WelcomePageWidget;
+class InfoBar;
 class AboutOMEditWidget;
+class Label;
+class FileDataNotifier;
+class LibraryTreeItem;
 
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
 public:
   enum { MaxRecentFiles = 8 };
-  MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent = 0);
+private:
+  MainWindow(bool debug, QWidget *parent = 0);
+  static MainWindow *mpInstance;
+public:
+  static MainWindow *instance(bool debug = false);
+  void setUpMainWindow();
   bool isDebug() {return mDebug;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
@@ -123,11 +107,11 @@ public:
   GDBLoggerWidget* getGDBLoggerWidget() {return mpGDBLoggerWidget;}
   DocumentationWidget* getDocumentationWidget() {return mpDocumentationWidget;}
   QDockWidget* getDocumentationDockWidget() {return mpDocumentationDockWidget;}
+  PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
-  PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   InfoBar* getInfoBar() {return mpInfoBar;}
@@ -239,11 +223,11 @@ private:
   QDockWidget *mpGDBLoggerDockWidget;
   DocumentationWidget *mpDocumentationWidget;
   QDockWidget *mpDocumentationDockWidget;
+  PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
-  PlotWindowContainer *mpPlotWindowContainer;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   AboutOMEditWidget *mpAboutOMEditDialog;

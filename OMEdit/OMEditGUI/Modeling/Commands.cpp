@@ -32,7 +32,7 @@
  */
 
 #include "Commands.h"
-#include "ComponentProperties.h"
+#include "MainWindow.h"
 
 AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
@@ -334,7 +334,7 @@ void UpdateComponentAttributesCommand::redo()
   QString isOuter = mNewComponentInfo.getOuter() ? "true" : "false";
   QString causality = mNewComponentInfo.getCausality();
 
-  OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // update component attributes
   if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
                                         variability, isInner, isOuter, causality)) {
@@ -367,7 +367,7 @@ void UpdateComponentAttributesCommand::redo()
       }
     }
   } else {
-    QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+    QMessageBox::critical(MainWindow::instance(),
                           QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
     pOMCProxy->printMessagesStringInternal();
   }
@@ -393,7 +393,7 @@ void UpdateComponentAttributesCommand::redo()
         }
       }
     } else {
-      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+      QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
@@ -421,7 +421,7 @@ void UpdateComponentAttributesCommand::redo()
         }
       }
     } else {
-      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+      QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
@@ -431,7 +431,7 @@ void UpdateComponentAttributesCommand::redo()
     if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getArrayIndex())) {
       mpComponent->getComponentInfo()->setArrayIndex(mNewComponentInfo.getArrayIndex());
     } else {
-      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+      QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
@@ -477,7 +477,7 @@ void UpdateComponentAttributesCommand::undo()
   QString isOuter = mOldComponentInfo.getOuter() ? "true" : "false";
   QString causality = mOldComponentInfo.getCausality();
 
-  OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // update component attributes
   if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
                                         variability, isInner, isOuter, causality)) {
@@ -510,7 +510,7 @@ void UpdateComponentAttributesCommand::undo()
       }
     }
   } else {
-    QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+    QMessageBox::critical(MainWindow::instance(),
                           QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
     pOMCProxy->printMessagesStringInternal();
   }
@@ -536,7 +536,7 @@ void UpdateComponentAttributesCommand::undo()
         }
       }
     } else {
-      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+      QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
@@ -564,7 +564,7 @@ void UpdateComponentAttributesCommand::undo()
         }
       }
     } else {
-      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+      QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
@@ -574,7 +574,7 @@ void UpdateComponentAttributesCommand::undo()
     if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getArrayIndex())) {
       mpComponent->getComponentInfo()->setArrayIndex(mOldComponentInfo.getArrayIndex());
     } else {
-      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+      QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
@@ -602,7 +602,7 @@ UpdateComponentParametersCommand::UpdateComponentParametersCommand(Component *pC
  */
 void UpdateComponentParametersCommand::redo()
 {
-  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   if (!mpComponent->getReferenceComponent()) {
     // remove all the modifiers of a component.
@@ -635,7 +635,7 @@ void UpdateComponentParametersCommand::redo()
  */
 void UpdateComponentParametersCommand::undo()
 {
-  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   if (!mpComponent->getReferenceComponent()) {
     // remove all the modifiers of a component.
@@ -1000,7 +1000,7 @@ void UpdateCoOrdinateSystemCommand::redo()
     pGraphicsView->fitInViewInternal();
     pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // only add version and uses annotation to top level class.
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
     // version
@@ -1054,7 +1054,7 @@ void UpdateCoOrdinateSystemCommand::undo()
     pGraphicsView->fitInViewInternal();
     pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // only add version and uses annotation to top level class.
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
     // version
@@ -1070,12 +1070,10 @@ void UpdateCoOrdinateSystemCommand::undo()
   pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), flagsAnnotation);
 }
 
-UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem,
-                                                                               QString oldExperimentAnnotation, QString newExperimentAnnotaiton,
-                                                                               QUndoCommand *pParent)
+UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldExperimentAnnotation,
+                                                                               QString newExperimentAnnotaiton, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
-  mpMainWindow = pMainWindow;
   mpLibraryTreeItem = pLibraryTreeItem;
   mOldExperimentAnnotation = oldExperimentAnnotation;
   mNewExperimentAnnotation = newExperimentAnnotaiton;
@@ -1088,7 +1086,7 @@ UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(M
  */
 void UpdateClassExperimentAnnotationCommand::redo()
 {
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewExperimentAnnotation);
+  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewExperimentAnnotation);
 }
 
 /*!
@@ -1097,16 +1095,14 @@ void UpdateClassExperimentAnnotationCommand::redo()
  */
 void UpdateClassExperimentAnnotationCommand::undo()
 {
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
+  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
 }
 
-UpdateClassSimulationFlagsAnnotationCommand::UpdateClassSimulationFlagsAnnotationCommand(MainWindow *pMainWindow,
-                                                                                         LibraryTreeItem *pLibraryTreeItem,
+UpdateClassSimulationFlagsAnnotationCommand::UpdateClassSimulationFlagsAnnotationCommand(LibraryTreeItem *pLibraryTreeItem,
                                                                                          QString oldSimulationFlags,
                                                                                          QString newSimulationFlags, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
-  mpMainWindow = pMainWindow;
   mpLibraryTreeItem = pLibraryTreeItem;
   mOldSimulationFlags = oldSimulationFlags;
   mNewSimulationFlags = newSimulationFlags;
@@ -1119,7 +1115,7 @@ UpdateClassSimulationFlagsAnnotationCommand::UpdateClassSimulationFlagsAnnotatio
  */
 void UpdateClassSimulationFlagsAnnotationCommand::redo()
 {
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewSimulationFlags);
+  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewSimulationFlags);
 }
 
 /*!
@@ -1128,7 +1124,7 @@ void UpdateClassSimulationFlagsAnnotationCommand::redo()
  */
 void UpdateClassSimulationFlagsAnnotationCommand::undo()
 {
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldSimulationFlags);
+  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldSimulationFlags);
 }
 
 UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,

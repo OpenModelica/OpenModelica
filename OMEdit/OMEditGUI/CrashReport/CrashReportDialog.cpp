@@ -32,7 +32,10 @@
  */
 
 #include "CrashReportDialog.h"
-#include "Helper.h"
+#include "Util/Helper.h"
+
+#include <QGridLayout>
+#include <QMessageBox>
 
 /*!
  * \class CrashReportDialog

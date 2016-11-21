@@ -32,13 +32,31 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "Utilities.h"
+#include "Helper.h"
+#include "Editors/BaseEditor.h"
+#include "Modeling/LibraryTreeWidget.h"
+
+#include <QApplication>
+#include <QGridLayout>
+#include <QStylePainter>
+#include <QPainter>
+#include <QColorDialog>
+#include <QXmlSchema>
+
+SplashScreen *SplashScreen::mpInstance = 0;
+
+SplashScreen *SplashScreen::instance()
+{
+  if (!mpInstance) {
+    mpInstance = new SplashScreen;
+  }
+  return mpInstance;
+}
 
 MdiArea::MdiArea(QWidget *pParent)
   : QMdiArea(pParent)
 {
-  mpMainWindow = qobject_cast<MainWindow*>(pParent);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setActivationOrder(QMdiArea::ActivationHistoryOrder);
@@ -46,11 +64,6 @@ MdiArea::MdiArea(QWidget *pParent)
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
 #endif
-}
-
-MainWindow* MdiArea::getMainWindow()
-{
-  return mpMainWindow;
 }
 
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)

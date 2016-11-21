@@ -36,16 +36,16 @@
 
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#include <QtWidgets>
 #include <QNetworkReply>
 #include <QHttpMultiPart>
 #else
-#include <QtCore>
-#include <QtGui>
 #include <QtNetwork>
 #endif
 
-#include "Utilities.h"
+#include "Util/Utilities.h"
+
+#include <QDialog>
+#include <QDialogButtonBox>
 
 class CrashReportDialog : public QDialog
 {

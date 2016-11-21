@@ -33,27 +33,35 @@
  */
 
 #include "VariablesWidget.h"
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
 #include "util/read_matlab4.h"
+#include "Plotting/PlotWindowContainer.h"
+#include "Simulation/SimulationDialog.h"
+
+#include <QObject>
 
 using namespace OMPlot;
 
 /*!
-  \class VariablesTreeItem
-  \brief Contains the information about the result variable.
-  */
+ * \class VariablesTreeItem
+ * \brief Contains the information about the result variable.
+ */
 /*!
-  \param variableItemData - a list of items.\n
-  0 -> filePath\n
-  1 -> fileName\n
-  2 -> name\n
-  3 -> displayName\n
-  4 -> value\n
-  5 -> unit\n
-  6 -> displayUnit\n
-  7 -> displayUnits (QStringList)\n
-  8 -> description\n
-  9 -> tooltip
-  */
+ * \param variableItemData - a list of items.\n
+ * 0 -> filePath\n
+ * 1 -> fileName\n
+ * 2 -> name\n
+ * 3 -> displayName\n
+ * 4 -> value\n
+ * 5 -> unit\n
+ * 6 -> displayUnit\n
+ * 7 -> displayUnits (QStringList)\n
+ * 8 -> description\n
+ * 9 -> tooltip
+ */
 VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, VariablesTreeItem *pParent, bool isRootItem)
 {
   mpParentVariablesTreeItem = pParent;
@@ -352,7 +360,7 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
   bool result = pVariablesTreeItem->setData(index.column(), value, role);
   if (index.column() == 0 && role == Qt::CheckStateRole) {
     if (!signalsBlocked()) {
-      PlottingPage *pPlottingPage = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOptionsDialog()->getPlottingPage();
+      PlottingPage *pPlottingPage = MainWindow::instance()->getOptionsDialog()->getPlottingPage();
       emit itemChecked(index, pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern());
     }
   } else if (index.column() == 3) { // display unit
@@ -509,7 +517,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       parseInitXml(initXmlReader);
       initFile.close();
     } else {
-      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                  GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                  .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
@@ -522,7 +530,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   if (fileName.endsWith(".mat")) {
     //Read in mat file
     if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader))) {
-      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                  GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
                                                  .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
@@ -605,7 +613,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         if (!variableData[6].toString().isEmpty()) {
           displayUnitOptions << variableData[6].toString();
           /* convert value to displayUnit */
-          OMCInterface::convertUnits_res convertUnit = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOMCProxy()->convertUnits(variableData[5].toString(), variableData[6].toString());
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(variableData[5].toString(), variableData[6].toString());
           if (convertUnit.unitsCompatible) {
             bool ok = true;
             qreal realValue = variableData[4].toDouble(&ok);
@@ -868,11 +876,10 @@ void VariablesTreeView::mouseReleaseEvent(QMouseEvent *event)
   QTreeView::mouseReleaseEvent(event);
 }
 
-VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+VariablesWidget::VariablesWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
   setMinimumWidth(175);
-  mpMainWindow = pMainWindow;
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::findVariables);
@@ -884,7 +891,7 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   mpSimulationTimeLabel = new Label(tr("Simulation Time Unit"));
   mpSimulationTimeComboBox = new QComboBox;
   mpSimulationTimeComboBox->addItem("s");
-  mpSimulationTimeComboBox->addItems(mpMainWindow->getOMCProxy()->getDerivedUnits("s"));
+  mpSimulationTimeComboBox->addItems(MainWindow::instance()->getOMCProxy()->getDerivedUnits("s"));
   connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(timeUnitChanged(QString)));
   // create variables tree widget
   mpVariablesTreeView = new VariablesTreeView(this);
@@ -915,8 +922,8 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int)), SLOT(plotVariables(QModelIndex,qreal,int)));
   connect(mpVariablesTreeModel, SIGNAL(unitChanged(QModelIndex)), SLOT(unitChanged(QModelIndex)));
   connect(mpVariablesTreeView, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  connect(pMainWindow->getPlotWindowContainer(), SIGNAL(subWindowActivated(QMdiSubWindow*)), this, SLOT(updateVariablesTree(QMdiSubWindow*)));
-  connect(mpVariablesTreeModel, SIGNAL(variableTreeItemRemoved(QString)), pMainWindow->getPlotWindowContainer(), SLOT(updatePlotWindows(QString)));
+  connect(MainWindow::instance()->getPlotWindowContainer(), SIGNAL(subWindowActivated(QMdiSubWindow*)), this, SLOT(updateVariablesTree(QMdiSubWindow*)));
+  connect(mpVariablesTreeModel, SIGNAL(variableTreeItemRemoved(QString)), MainWindow::instance()->getPlotWindowContainer(), SLOT(updatePlotWindows(QString)));
 }
 
 /*!
@@ -937,8 +944,8 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* Show results in model diagram if it is present in ModelWidgetContainer
      and if switch to plotting perspective is disabled */
   ModelWidget *pModelWidget = NULL;
-  if (!mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
-    pModelWidget = mpMainWindow->getModelWidgetContainer()->getModelWidget(simulationOptions.getClassName());
+  if (!MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+    pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getModelWidget(simulationOptions.getClassName());
   }
   if (pModelWidget != NULL) {
     if (simulationOptions.isReSimulate() && pModelWidget->getResultFileName().isEmpty()) {
@@ -975,7 +982,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
  */
 void VariablesWidget::variablesUpdated()
 {
-  foreach (QMdiSubWindow *pSubWindow, mpMainWindow->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
+  foreach (QMdiSubWindow *pSubWindow, MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
     if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
@@ -1023,7 +1030,7 @@ void VariablesWidget::variablesUpdated()
       }
     }
   }
-  updateVariablesTreeHelper(mpMainWindow->getPlotWindowContainer()->currentSubWindow());
+  updateVariablesTreeHelper(MainWindow::instance()->getPlotWindowContainer()->currentSubWindow());
 }
 
 void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
@@ -1036,7 +1043,7 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
   mpVariablesTreeModel->unCheckVariables(mpVariablesTreeModel->getRootVariablesTreeItem());
   mpVariablesTreeModel->blockSignals(state);
   // all plotwindows are closed down then simply return
-  if (mpMainWindow->getPlotWindowContainer()->subWindowList().size() == 0) {
+  if (MainWindow::instance()->getPlotWindowContainer()->subWindowList().size() == 0) {
     return;
   }
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
@@ -1090,7 +1097,7 @@ void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTre
       /* Ticket #2250, 4031
        * We need to convert the value to base unit since the values stored in init xml are always in base unit.
        */
-      QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getUnit(), mpMainWindow->getOMCProxy()).toString();
+      QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getUnit(), MainWindow::instance()->getOMCProxy()).toString();
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
       variableToFind.remove(QRegExp(outputFileName + "."));
       QHash<QString, QString> hash;
@@ -1152,9 +1159,9 @@ void VariablesWidget::reSimulate(bool showSetup)
     simulationOptions.setReSimulate(true);
     updateInitXmlFile(simulationOptions);
     if (showSetup) {
-      mpMainWindow->getSimulationDialog()->show(0, true, simulationOptions);
+      MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
     } else {
-      mpMainWindow->getSimulationDialog()->reSimulate(simulationOptions);
+      MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
     }
   } else {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -1180,7 +1187,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
         findVariableAndUpdateValue(initXmlDocument, variables);
       }
     } else {
-      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                  tr("Unable to set the content of QDomDocument from file %1")
                                                  .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
@@ -1193,7 +1200,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
     textStream << initXmlDocument.toString();
     initFile.close();
   } else {
-    MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
     pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
@@ -1213,14 +1220,14 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
   try {
     // if pPlotWindow is 0 then get the current window.
     if (!pPlotWindow) {
-      pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+      pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     }
     // if pPlotWindow is 0 then create a new plot window.
     if (!pPlotWindow) {
-      bool state = mpMainWindow->getPlotWindowContainer()->blockSignals(true);
-      mpMainWindow->getPlotWindowContainer()->addPlotWindow();
-      mpMainWindow->getPlotWindowContainer()->blockSignals(state);
-      pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+      bool state = MainWindow::instance()->getPlotWindowContainer()->blockSignals(true);
+      MainWindow::instance()->getPlotWindowContainer()->addPlotWindow();
+      MainWindow::instance()->getPlotWindowContainer()->blockSignals(state);
+      pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     }
     // if still pPlotWindow is 0 then return.
     if (!pPlotWindow) {
@@ -1249,10 +1256,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
          * Update the value of Variables Browser display unit according to the display unit of already plotted curve.
          */
         pVariablesTreeItem->setData(3, pPlotCurve->getDisplayUnit(), Qt::EditRole);
-        QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getDisplayUnit(), mpMainWindow->getOMCProxy()).toString();
+        QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getDisplayUnit(), MainWindow::instance()->getOMCProxy()).toString();
         pVariablesTreeItem->setData(1, value, Qt::EditRole);
         if (pPlotCurve && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
-          OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(),
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(),
                                                                                                  pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
             for (int i = 0 ; i < pPlotCurve->getYAxisData().size() ; i++) {
@@ -1267,7 +1274,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         }
         // update the time values if time unit is different then s
         if (pPlotWindow->getTimeUnit().compare("s") != 0) {
-          OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits("s", pPlotWindow->getTimeUnit());
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits("s", pPlotWindow->getTimeUnit());
           if (convertUnit.unitsCompatible) {
             for (int i = 0 ; i < pPlotCurve->getXAxisData().size() ; i++) {
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->getXAxisData().at(i), convertUnit.offset, convertUnit.scaleFactor));
@@ -1444,12 +1451,12 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
     return;
   }
   try {
-    OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     // if still pPlotWindow is 0 then return.
     if (!pPlotWindow) {
       return;
     }
-    OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pVariablesTreeItem->getPreviousUnit(),
+    OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getPreviousUnit(),
                                                                                            pVariablesTreeItem->getDisplayUnit());
     if (convertUnit.unitsCompatible) {
       /* update value */
@@ -1489,12 +1496,12 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
 void VariablesWidget::timeUnitChanged(QString unit)
 {
   try {
-    OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     // if still pPlotWindow is 0 then return.
     if (!pPlotWindow) {
       return;
     }
-    OMCInterface::convertUnits_res convertUnit = mpMainWindow->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
+    OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
     if (convertUnit.unitsCompatible) {
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         for (int i = 0 ; i < pPlotCurve->getXAxisData().size() ; i++) {
@@ -1519,7 +1526,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
  */
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
 {
-  if (!pSubWindow && mpMainWindow->getPlotWindowContainer()->subWindowList().size() != 0) {
+  if (!pSubWindow && MainWindow::instance()->getPlotWindowContainer()->subWindowList().size() != 0) {
     return;
   }
   /* if the same sub window is activated again then just return */
@@ -1548,8 +1555,8 @@ void VariablesWidget::showContextMenu(QPoint point)
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
     menu.addSeparator();
-    menu.addAction(mpMainWindow->getReSimulateModelAction());
-    menu.addAction(mpMainWindow->getReSimulateSetupAction());
+    menu.addAction(MainWindow::instance()->getReSimulateModelAction());
+    menu.addAction(MainWindow::instance()->getReSimulateSetupAction());
     point.setY(point.y() + adjust);
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   }

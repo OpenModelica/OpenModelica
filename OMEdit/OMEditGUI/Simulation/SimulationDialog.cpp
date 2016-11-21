@@ -33,9 +33,16 @@
  */
 
 #include "SimulationDialog.h"
-#include "SimulationOutputWidget.h"
-#include "VariablesWidget.h"
-#include "Commands.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
+#include "Debugger/GDB/GDBAdapter.h"
+#include "Simulation/SimulationOutputWidget.h"
+#include "Plotting/VariablesWidget.h"
+#include "Plotting/PlotWindowContainer.h"
+#include "Modeling/Commands.h"
+#include "SimulationProcessThread.h"
+#include "Animation/AnimationWindow.h"
 
 #include <QTcpSocket>
 #include <QTcpServer>
@@ -43,17 +50,16 @@
 #include <limits>
 
 /*!
-  \class SimulationDialog
-  \brief Displays a dialog with simulation options.
-  */
-
+ * \class SimulationDialog
+ * \brief Displays a dialog with simulation options.
+ */
 /*!
-  \param pParent - pointer to MainWindow.
-  */
-SimulationDialog::SimulationDialog(MainWindow *pParent)
+ * \brief SimulationDialog::SimulationDialog
+ * \param pParent
+ */
+SimulationDialog::SimulationDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  mpMainWindow = pParent;
   resize(550, 550);
   setUpForm();
 }
@@ -90,7 +96,7 @@ SimulationDialog::~SimulationDialog()
 void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions)
 {
   /* restore the window geometry. */
-  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(Utilities::getApplicationSettings()->value("SimulationDialog/geometry").toByteArray());
   }
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -176,7 +182,7 @@ void SimulationDialog::setUpForm()
   mpMethodLabel = new Label(tr("Method:"));
   // get the solver methods
   QStringList solverMethods, solverMethodsDesc;
-  mpMainWindow->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
+  MainWindow::instance()->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(solverMethods);
   for (int i = 0 ; i < solverMethodsDesc.size() ; i++) {
@@ -198,9 +204,9 @@ void SimulationDialog::setUpForm()
   mpToleranceTextBox = new QLineEdit("1e-6");
   // jacobian
   mpJacobianLabel = new Label(tr("Jacobian:"));
-  mpJacobianLabel->setToolTip(mpMainWindow->getOMCProxy()->getJacobianFlagDetailedDescription());
+  mpJacobianLabel->setToolTip(MainWindow::instance()->getOMCProxy()->getJacobianFlagDetailedDescription());
   QStringList jacobianMethods, jacobianMethodsDesc;
-  mpMainWindow->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
+  MainWindow::instance()->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
   mpJacobianComboBox = new QComboBox;
   mpJacobianComboBox->addItems(jacobianMethods);
   for (int i = 0 ; i < jacobianMethodsDesc.size() ; i++) {
@@ -259,7 +265,7 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setMinimum(1);
-  mpNumberOfProcessorsSpinBox->setValue(mpMainWindow->getOMCProxy()->numProcessors());
+  mpNumberOfProcessorsSpinBox->setValue(MainWindow::instance()->getOMCProxy()->numProcessors());
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
   // build only
   mpBuildOnlyCheckBox = new QCheckBox(tr("Build Only"));
@@ -359,7 +365,7 @@ void SimulationDialog::setUpForm()
   mpInitializationMethodLabel->setToolTip(tr("Specifies the initialization method."));
   // get the initialization methods
   QStringList initializationMethods, initializationMethodsDesc;
-  mpMainWindow->getOMCProxy()->getInitializationMethods(&initializationMethods, &initializationMethodsDesc);
+  MainWindow::instance()->getOMCProxy()->getInitializationMethods(&initializationMethods, &initializationMethodsDesc);
   initializationMethods.prepend("");
   initializationMethodsDesc.prepend("");
   mpInitializationMethodComboBox = new QComboBox;
@@ -386,7 +392,7 @@ void SimulationDialog::setUpForm()
   mpLinearSolverLabel = new Label(tr("Linear Solver (Optional):"));
   // get the linear solvers
   QStringList linearSolverMethods, linearSolverMethodsDesc;
-  mpMainWindow->getOMCProxy()->getLinearSolvers(&linearSolverMethods, &linearSolverMethodsDesc);
+  MainWindow::instance()->getOMCProxy()->getLinearSolvers(&linearSolverMethods, &linearSolverMethodsDesc);
   linearSolverMethods.prepend("");
   linearSolverMethodsDesc.prepend("");
   mpLinearSolverComboBox = new QComboBox;
@@ -398,7 +404,7 @@ void SimulationDialog::setUpForm()
   mpNonLinearSolverLabel = new Label(tr("Non Linear Solver (Optional):"));
   // get the non-linear solvers
   QStringList nonLinearSolverMethods, nonLinearSolverMethodsDesc;
-  mpMainWindow->getOMCProxy()->getNonLinearSolvers(&nonLinearSolverMethods, &nonLinearSolverMethodsDesc);
+  MainWindow::instance()->getOMCProxy()->getNonLinearSolvers(&nonLinearSolverMethods, &nonLinearSolverMethodsDesc);
   nonLinearSolverMethods.prepend("");
   nonLinearSolverMethodsDesc.prepend("");
   mpNonLinearSolverComboBox = new QComboBox;
@@ -416,7 +422,7 @@ void SimulationDialog::setUpForm()
   // measure simulation time checkbox
   mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
   mpProfilingComboBox = new QComboBox;
-  OMCInterface::getConfigFlagValidOptions_res profiling = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
+  OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
   mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
   mpProfilingComboBox->setToolTip(profiling.mainDescription);
@@ -434,7 +440,7 @@ void SimulationDialog::setUpForm()
   mpLoggingGroupBox = new QGroupBox(tr("Logging (Optional)"));
   // fetch the logging flags information
   QStringList logStreamNames, logSteamDescriptions;
-  mpMainWindow->getOMCProxy()->getLogStreams(&logStreamNames, &logSteamDescriptions);
+  MainWindow::instance()->getOMCProxy()->getLogStreams(&logStreamNames, &logSteamDescriptions);
   // layout for logging group
   mpLoggingGroupLayout = new QGridLayout;
   // create log stream checkboxes
@@ -565,7 +571,7 @@ bool SimulationDialog::validate()
     mpIntervalTextBox->setText("0.002");
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
     return false;
   }
@@ -584,9 +590,9 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulationSetup).append(" - ").append(mClassName));
     mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // if the class has experiment annotation then read it.
-    if (mpMainWindow->getOMCProxy()->isExperiment(mClassName)) {
+    if (MainWindow::instance()->getOMCProxy()->isExperiment(mClassName)) {
       // get the simulation options....
-      OMCInterface::getSimulationOptions_res simulationOptions = mpMainWindow->getOMCProxy()->getSimulationOptions(mClassName);
+      OMCInterface::getSimulationOptions_res simulationOptions = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
       // since we always get simulationOptions so just get the values from array
       mpStartTimeTextBox->setText(QString::number(simulationOptions.startTime));
       mpStopTimeTextBox->setText(QString::number(simulationOptions.stopTime));
@@ -595,11 +601,11 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
     }
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
-    if (!mpMainWindow->getOptionsDialog()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+    if (!MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
       // if the class has __OpenModelica_simulationFlags annotation then use its values.
-      QList<QString> simulationFlags = mpMainWindow->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
+      QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
       foreach (QString simulationFlag, simulationFlags) {
-        QString value = mpMainWindow->getOMCProxy()->getAnnotationModifierValue(mClassName, "__OpenModelica_simulationFlags", simulationFlag);
+        QString value = MainWindow::instance()->getOMCProxy()->getAnnotationModifierValue(mClassName, "__OpenModelica_simulationFlags", simulationFlag);
         if (simulationFlag.compare("clock") == 0) {
           mpClockComboBox->setCurrentIndex(mpClockComboBox->findText(value));
         } else if (simulationFlag.compare("cpu") == 0) {
@@ -795,28 +801,28 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
 bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // check reset messages number before simulation option
-  if (mpMainWindow->getOptionsDialog()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
-    mpMainWindow->getMessagesWidget()->resetMessagesNumber();
+  if (MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+    MainWindow::instance()->getMessagesWidget()->resetMessagesNumber();
   }
   /* save the model before translating */
-  if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
+  if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
       !mpLibraryTreeItem->isSaved() &&
-      !mpMainWindow->getLibraryWidget()->saveLibraryTreeItem(mpLibraryTreeItem)) {
+      !MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(mpLibraryTreeItem)) {
     return false;
   }
   // set the debugging flag before translation
   if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("-d=gendebugsymbols");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=gendebugsymbols");
   }
 #if !defined(WITHOUT_OSG)
   // set the visulation flag before translation
   if (mpLaunchAnimationCheckBox->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("-d=visxml");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=visxml");
   }
 #endif
-  bool result = mpMainWindow->getOMCProxy()->translateModel(mClassName, simulationParameters);
+  bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation setting
-  mpMainWindow->getOptionsDialog()->saveSimulationSettings();
+  MainWindow::instance()->getOptionsDialog()->saveSimulationSettings();
   return result;
 }
 
@@ -989,7 +995,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setSimulationFlags(simulationFlags);
   simulationOptions.setIsValid(true);
   simulationOptions.setReSimulate(mIsReSimulate);
-  simulationOptions.setWorkingDirectory(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getWorkingDirectory());
+  simulationOptions.setWorkingDirectory(MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getWorkingDirectory());
   simulationOptions.setFileName(mFileName);
   return simulationOptions;
 }
@@ -1005,19 +1011,19 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
     Otherwise run the normal resimulation.
     */
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
-    if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+    if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
         simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
-      mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
+      MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
     }
     showAlgorithmicDebugger(simulationOptions);
   } else {
     if (simulationOptions.isReSimulate()) {
-      if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+      if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
           simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
-        mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
+        MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
       }
     }
-    SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, mpMainWindow);
+    SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, MainWindow::instance());
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
@@ -1038,9 +1044,9 @@ void SimulationDialog::saveExperimentAnnotation()
 
   QString oldExperimentAnnotation = "annotate=experiment(";
   // if the class has experiment annotation then read it.
-  if (mpMainWindow->getOMCProxy()->isExperiment(mpLibraryTreeItem->getNameStructure())) {
+  if (MainWindow::instance()->getOMCProxy()->isExperiment(mpLibraryTreeItem->getNameStructure())) {
     // get the simulation options....
-    OMCInterface::getSimulationOptions_res simulationOptions = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeItem->getNameStructure());
+    OMCInterface::getSimulationOptions_res simulationOptions = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mpLibraryTreeItem->getNameStructure());
     // since we always get simulationOptions so just get the values from array
     oldExperimentAnnotation.append("StartTime=").append(QString::number(simulationOptions.startTime)).append(",");
     oldExperimentAnnotation.append("StopTime=").append(QString::number(simulationOptions.stopTime)).append(",");
@@ -1069,14 +1075,14 @@ void SimulationDialog::saveExperimentAnnotation()
   // if we have ModelWidget for class then put the change on undo stack.
   if (mpLibraryTreeItem->getModelWidget()) {
     UpdateClassExperimentAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-    pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
-                                                                                         oldExperimentAnnotation, newExperimentAnnotation);
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation,
+                                                                                         newExperimentAnnotation);
     mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
     mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else {
     // send the simulations options annotation to OMC
-    mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newExperimentAnnotation);
-    LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newExperimentAnnotation);
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   }
 }
@@ -1091,7 +1097,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     return;
   }
   // old simulation flags
-  QString oldSimulationFlags = QString("annotate=%1").arg(mpMainWindow->getOMCProxy()->getSimulationFlagsAnnotation(mpLibraryTreeItem->getNameStructure()));
+  QString oldSimulationFlags = QString("annotate=%1").arg(MainWindow::instance()->getOMCProxy()->getSimulationFlagsAnnotation(mpLibraryTreeItem->getNameStructure()));
   // new simulation flags
   QStringList simulationFlags;
   if (!mpClockComboBox->currentText().isEmpty()) {
@@ -1171,14 +1177,14 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   // if we have ModelWidget for class then put the change on undo stack.
   if (mpLibraryTreeItem->getModelWidget()) {
     UpdateClassSimulationFlagsAnnotationCommand *pUpdateClassSimulationFlagsAnnotationCommand;
-    pUpdateClassSimulationFlagsAnnotationCommand = new UpdateClassSimulationFlagsAnnotationCommand(mpMainWindow, mpLibraryTreeItem,
-                                                                                                   oldSimulationFlags, newSimulationFlags);
+    pUpdateClassSimulationFlagsAnnotationCommand = new UpdateClassSimulationFlagsAnnotationCommand(mpLibraryTreeItem, oldSimulationFlags,
+                                                                                                   newSimulationFlags);
     mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassSimulationFlagsAnnotationCommand);
     mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else {
     // send the simulations flags annotation to OMC
-    mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newSimulationFlags);
-    LibraryTreeModel *pLibraryTreeModel = mpMainWindow->getLibraryWidget()->getLibraryTreeModel();
+    MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), newSimulationFlags);
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   }
 }
@@ -1216,26 +1222,26 @@ void SimulationDialog::performSimulation()
   if (!mpCflagsTextBox->text().isEmpty()) {
     simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
   }
-  mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   simulationOptions = createSimulationOptions();
   // show the progress bar
-  mpMainWindow->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
-  mpMainWindow->getProgressBar()->setRange(0, 0);
-  mpMainWindow->showProgressBar();
+  MainWindow::instance()->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
+  MainWindow::instance()->getProgressBar()->setRange(0, 0);
+  MainWindow::instance()->showProgressBar();
   bool isTranslationSuccessful = mIsReSimulate ? true : translateModel(simulationParameters);
   // hide the progress bar
-  mpMainWindow->hideProgressBar();
-  mpMainWindow->getStatusBar()->clearMessage();
+  MainWindow::instance()->hideProgressBar();
+  MainWindow::instance()->getStatusBar()->clearMessage();
   mIsReSimulate = false;
   if (isTranslationSuccessful) {
     // check if we can compile using the target compiler
-    SimulationPage *pSimulationPage = mpMainWindow->getOptionsDialog()->getSimulationPage();
+    SimulationPage *pSimulationPage = MainWindow::instance()->getOptionsDialog()->getSimulationPage();
     QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
     if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
       QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
           .arg(simulationOptions.getWorkingDirectory());
-      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                                   Helper::notificationLevel));
+      MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                             Helper::notificationLevel));
       return;
     }
     QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
@@ -1245,8 +1251,8 @@ void SimulationDialog::performSimulation()
     } else {
       QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
           .arg(simulationOptions.getWorkingDirectory());
-      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                                   Helper::notificationLevel));
+      MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                             Helper::notificationLevel));
       return;
     }
   }
@@ -1258,7 +1264,7 @@ void SimulationDialog::performSimulation()
 void SimulationDialog::saveDialogGeometry()
 {
   /* save the window geometry. */
-  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     Utilities::getApplicationSettings()->setValue("SimulationDialog/geometry", saveGeometry());
   }
 }
@@ -1281,14 +1287,14 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     fileName = fileName.append(".exe");
 #endif
     // start the debugger
-    if (mpMainWindow->getGDBAdapter()->isGDBRunning()) {
+    if (MainWindow::instance()->getGDBAdapter()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
-      QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-      mpMainWindow->getGDBAdapter()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
-                                            GDBPath, simulationOptions);
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(3);
+      QString GDBPath = MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getGDBPath();
+      MainWindow::instance()->getGDBAdapter()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
+                                                      GDBPath, simulationOptions);
+      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(3);
     }
   }
 }
@@ -1308,33 +1314,33 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
   QRegExp regExp("\\b(mat|plt|csv)\\b");
   if (regExp.indexIn(simulationOptions.getResultFileName()) != -1 &&
       resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
-    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(simulationOptions.getResultFileName());
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
-      if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+      if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
 #if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
         if (mpLaunchAnimationCheckBox->isChecked()) {
           if (simulationOptions.getResultFileName().endsWith(".mat")) {
-            mpMainWindow->getPlotWindowContainer()->addAnimationWindow(mpMainWindow->getPlotWindowContainer()->subWindowList().isEmpty());
-            AnimationWindow *pAnimationWindow = mpMainWindow->getPlotWindowContainer()->getCurrentAnimationWindow();
+            MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+            AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
             if (pAnimationWindow) {
               pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
             }
           } else {
             QString msg = tr("Animation is only supported with mat result files.");
-            mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                         Helper::scriptingKind, Helper::notificationLevel));
+            MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                                   Helper::scriptingKind, Helper::notificationLevel));
           }
         }
 #endif
-        mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+        MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
       } else {
         // stay in current perspective and show variables browser
-        mpMainWindow->getVariablesDockWidget()->show();
+        MainWindow::instance()->getVariablesDockWidget()->show();
       }
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
     }
@@ -1415,8 +1421,8 @@ void SimulationDialog::showIntegrationHelp()
                                   .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                                 Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -1476,8 +1482,8 @@ void SimulationDialog::showSimulationFlagsHelp()
                                   .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                                 Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

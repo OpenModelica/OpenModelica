@@ -34,10 +34,12 @@
 #ifndef SIMULATIONPROCESSTHREAD_H
 #define SIMULATIONPROCESSTHREAD_H
 
-#include "SimulationOutputWidget.h"
+#include "Simulation/SimulationOutputWidget.h"
+#include "Util/StringHandler.h"
+
+#include <QThread>
 
 class SimulationOutputWidget;
-
 class SimulationProcessThread : public QThread
 {
   Q_OBJECT

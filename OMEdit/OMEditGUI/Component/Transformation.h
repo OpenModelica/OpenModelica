@@ -37,7 +37,7 @@
 
 #include <QPointF>
 #include <QTransform>
-#include "StringHandler.h"
+#include "Util/StringHandler.h"
 
 class Component;
 

@@ -48,19 +48,18 @@
 #include <osgViewer/CompositeViewer>
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
-#include "MainWindow.h"
 #include <../../osgQt/OMEdit_GraphicsWindowQt.h>
 
-#include "Utilities.h"
-#include "AnimationUtil.h"
-#include "OMPlot.h"
-#include "Visualizer.h"
-#include "VisualizerMAT.h"
-#include "VisualizerCSV.h"
-#include "VisualizerFMU.h"
+#include <QMainWindow>
+#include <QToolBar>
+#include <QSlider>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QTimer>
 
-class MainWindow;
 class PlotWindowContainer;
+class VisualizerAbstract;
+class Label;
 
 class AnimationWindow : public QMainWindow, public osgViewer::CompositeViewer
 {
@@ -106,7 +105,7 @@ private:
   QTimer mRenderFrameTimer;
   QToolBar* mpAnimationToolBar;
   QSlider* mpAnimationSlider;
-  QLabel *mpAnimationTimeLabel;
+  Label *mpAnimationTimeLabel;
   QLineEdit *mpTimeTextBox;
   Label *mpAnimationSpeedLabel;
   QComboBox *mpSpeedComboBox;

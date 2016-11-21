@@ -34,7 +34,7 @@
 
 #include "MainWindow.h"
 #include "LineAnnotation.h"
-#include "Commands.h"
+#include "Modeling/Commands.h"
 
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
@@ -772,7 +772,7 @@ void LineAnnotation::updateConnectionAnnotation()
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());
     // update the connection
-    OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
                                 mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
   }

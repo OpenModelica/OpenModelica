@@ -33,6 +33,7 @@
 
 #include "MainWindow.h" /* Includes OSG in correct order */
 #include "TransformationsEditor.h"
+#include "Util/Helper.h"
 
 /*!
   \class TransformationsEditor
@@ -43,7 +44,7 @@
   \param pTransformationsWidget - pointer to TransformationsWidget
   */
 TransformationsEditor::TransformationsEditor(TransformationsWidget *pTransformationsWidget)
-  : BaseEditor(pTransformationsWidget->getMainWindow())
+  : BaseEditor(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
 }

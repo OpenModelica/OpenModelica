@@ -34,15 +34,23 @@
 #ifndef SIMULATIONOUTPUTWIDGET_H
 #define SIMULATIONOUTPUTWIDGET_H
 
-#include "MainWindow.h"
-#include "SimulationDialog.h"
-#include "SimulationProcessThread.h"
-#include "SimulationOutputHandler.h"
+#include "SimulationOptions.h"
+#include "Util/StringHandler.h"
 
+#include <QTreeView>
+#include <QPlainTextEdit>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QTextBrowser>
+#include <QProcess>
+#include <QDateTime>
+
+class Label;
 class SimulationProcessThread;
 class SimulationOutputHandler;
 class SimulationOutputWidget;
 class SimulationMessage;
+class ArchivedSimulationItem;
 
 class SimulationOutputTree : public QTreeView
 {
@@ -70,10 +78,9 @@ class SimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  SimulationOutputWidget(SimulationOptions simulationOptions, MainWindow *pMainWindow);
+  SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
-  MainWindow* getMainWindow() {return mpMainWindow;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
   bool isOutputStructured() {return mIsOutputStructured;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
@@ -83,7 +90,6 @@ public:
   void writeSimulationMessage(SimulationMessage *pSimulationMessage);
 private:
   SimulationOptions mSimulationOptions;
-  MainWindow *mpMainWindow;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
