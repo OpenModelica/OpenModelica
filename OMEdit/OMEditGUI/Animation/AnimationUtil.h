@@ -38,6 +38,7 @@
 
 #include <QString>
 #include <QRegExp>
+#include <QFileInfo>
 
 #include <sys/stat.h>
 #include <string>
@@ -88,12 +89,18 @@ inline bool isCSV(const std::string& fileIn){
  * constructs the name of the corresponding xml file
  */
 inline std::string assembleXMLFileName(const std::string& modelFile, const std::string& path){
-  QString fileName(modelFile.c_str());
-  QRegExp fileTypeRegExp("(_res.mat|_res.csv|\\.fmu)");
-  int pos = fileName.lastIndexOf(fileTypeRegExp);
-  fileName = fileName.left(pos);
+  QFileInfo fi(modelFile.c_str());
+  QString suf = fi.suffix();
+  if(!(suf.compare("mat") || suf.compare("csv") || suf.compare("fmu")) )
+  {
+	  std::cout<<"This file extension is not supported."<<std::endl;
+  }
+  QString base = fi.completeBaseName();
+  if (base.endsWith("_res")){
+	  base.remove(base.length()-4,4);
+  }
   // Construct XML file name
-  std::string xmlFileName = path + fileName.toStdString() + "_visual.xml";
+  std::string xmlFileName = path + base.toStdString() + "_visual.xml";
   return xmlFileName;
 }
 
