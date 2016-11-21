@@ -52,8 +52,6 @@ uniontype Binding
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
-    SCode.Final finalPrefix;
-    SCode.Each eachPrefix;
     Component.Scope scope;
     Integer propagatedDims;
     SourceInfo info;
@@ -77,7 +75,6 @@ uniontype Binding
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
-    input SCode.Final finalPrefix;
     input SCode.Each eachPrefix;
     input Integer dimensions;
     input SourceInfo info;
@@ -94,7 +91,7 @@ public
           pd := if SCode.eachBool(eachPrefix) then -1 else dimensions;
           scope := Component.Scope.RELATIVE_COMP(0);
         then
-          RAW_BINDING(exp, finalPrefix, eachPrefix, scope, pd, info);
+          RAW_BINDING(exp, scope, pd, info);
 
       else UNBOUND();
     end match;

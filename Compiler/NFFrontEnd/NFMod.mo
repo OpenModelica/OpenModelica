@@ -120,6 +120,8 @@ end ModifierScope;
 uniontype Modifier
   record MODIFIER
     String name;
+    SCode.Final finalPrefix;
+    SCode.Each eachPrefix;
     Binding binding;
     ModTable.Tree subModifiers;
     SourceInfo info;
@@ -152,12 +154,12 @@ public
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(mod.binding, mod.finalPrefix, mod.eachPrefix, 0, mod.info);
+          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, 0, mod.info);
           submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
-          MODIFIER(name, binding, submod_table, mod.info);
+        MODIFIER(name, mod.finalPrefix, mod.eachPrefix, binding, submod_table, mod.info);
 
       case SCode.REDECL()
         then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element, scope);
@@ -225,13 +227,13 @@ public
       // Two modifiers, merge bindings and submodifiers.
       case (MODIFIER(), MODIFIER())
         algorithm
-          checkFinalOverride(outerMod.name, outerMod.binding,
-            outerMod.info, innerMod.binding, innerMod.info);
+          checkFinalOverride(innerMod.finalPrefix, outerMod.name, outerMod.binding,
+            outerMod.info, innerMod.info);
           binding := if Binding.isBound(outerMod.binding) then
             outerMod.binding else innerMod.binding;
           submods := ModTable.join(innerMod.subModifiers, outerMod.subModifiers, merge);
         then
-          MODIFIER(outerMod.name, binding, submods, outerMod.info);
+          MODIFIER(outerMod.name, outerMod.finalPrefix, outerMod.eachPrefix, binding, submods, outerMod.info);
 
       case (REDECLARE(), _) then outerMod;
       case (_, REDECLARE()) then innerMod;
@@ -401,18 +403,18 @@ protected
   function checkFinalOverride
     "Checks that a modifier is not trying to override a final modifier. In that
      case it prints an error and fails, otherwise it does nothing."
+    input SCode.Final innerFinal;
     input String name;
     input Binding outerBinding;
     input SourceInfo outerInfo;
-    input Binding innerBinding;
     input SourceInfo innerInfo;
   algorithm
-    _ := match (outerBinding, innerBinding)
-      case (Binding.RAW_BINDING(), Binding.RAW_BINDING(finalPrefix = SCode.FINAL()))
+    _ := match innerFinal
+      case SCode.FINAL()
         algorithm
           Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
-            {name, Dump.printExpStr(outerBinding.bindingExp)},
-            {outerInfo, innerInfo});
+          {name, Binding.toString(outerBinding)},
+          {outerInfo, innerInfo});
         then
           fail();
 

@@ -497,7 +497,7 @@ algorithm
             // Modifier is for a component, add it to the component in the array.
             case ClassTree.Entry.COMPONENT()
               algorithm
-                ComponentNode.apply(components[entry.index], Component.setModifier, m);
+                ComponentNode.apply(components[entry.index], Component.mergeModifier, m);
               then
                 ();
 

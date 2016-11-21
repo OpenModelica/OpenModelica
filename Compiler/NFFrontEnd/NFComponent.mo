@@ -122,6 +122,19 @@ uniontype Component
     end match;
   end setModifier;
 
+  function mergeModifier
+    input Modifier modifier;
+    input output Component component;
+  algorithm
+    () := match component
+      case COMPONENT_DEF()
+        algorithm
+          component.modifier := Modifier.merge(modifier, component.modifier);
+        then
+          ();
+    end match;
+  end mergeModifier;
+
   function getType
     input Component component;
     output DAE.Type ty;
