@@ -135,7 +135,7 @@ algorithm
 
         (node, ty) := typeClassNode(c.classInst, component);
         ty := Expression.liftArrayLeftList(ty, ty_dims);
-        component := ComponentNode.setComponent(Component.setType(ty, c), component);
+        component := ComponentNode.updateComponent(Component.setType(ty, c), component);
       then
         ();
 
@@ -145,7 +145,7 @@ algorithm
     case Component.EXTENDS_NODE()
       algorithm
         c.node := typeComponents(c.node, component);
-        component := ComponentNode.setComponent(c, component);
+        component := ComponentNode.updateComponent(c, component);
       then
         ();
 
@@ -246,7 +246,7 @@ algorithm
 
         if not referenceEq(binding, c.binding) then
           c.binding := binding;
-          component := ComponentNode.setComponent(c, component);
+          component := ComponentNode.updateComponent(c, component);
         end if;
       then
         ();
@@ -254,7 +254,7 @@ algorithm
     case Component.EXTENDS_NODE()
       algorithm
         c.node := typeComponentBindings(c.node);
-        component := ComponentNode.setComponent(c, component);
+        component := ComponentNode.updateComponent(c, component);
       then
         ();
 

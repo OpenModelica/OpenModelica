@@ -305,6 +305,8 @@ algorithm
 end join;
 
 function forEach
+  "Traverses the tree in depth-first pre-order and applies the given function to
+   each node, but without constructing a new tree like with map."
   input Tree tree;
   input EachFunc func;
 

@@ -38,6 +38,8 @@ import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFStatement.Statement;
 import SCode.Element;
+import Array;
+import Error;
 
 encapsulated package ClassTree
   uniontype Entry
@@ -74,6 +76,7 @@ encapsulated package ClassTree
   algorithm
     outResult := stringCompare(inKey1, inKey2);
   end keyCompare;
+
   annotation(__OpenModelica_Interface="util");
 end ClassTree;
 
@@ -83,11 +86,13 @@ uniontype Instance
   record PARTIAL_CLASS
     ClassTree.Tree classes;
     list<SCode.Element> elements;
+    Modifier modifier;
   end PARTIAL_CLASS;
 
   record EXPANDED_CLASS
     ClassTree.Tree elements;
     array<ComponentNode> components;
+    Modifier modifier;
     list<Equation> equations;
     list<Equation> initialEquations;
     list<list<Statement>> algorithms;
@@ -123,7 +128,7 @@ uniontype Instance
     input ClassTree.Tree classes;
     output Instance instance;
   algorithm
-    instance := EXPANDED_CLASS(classes, listArray({}), {}, {}, {}, {});
+    instance := EXPANDED_CLASS(classes, listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
   end initExpandedClass;
 
   function components
@@ -183,8 +188,8 @@ uniontype Instance
   algorithm
     instance := match instance
       case EXPANDED_CLASS()
-        then EXPANDED_CLASS(instance.elements, instance.components, equations,
-          initialEquations, algorithms, initialAlgorithms);
+        then EXPANDED_CLASS(instance.elements, instance.components,
+          instance.modifier, equations, initialEquations, algorithms, initialAlgorithms);
 
       case INSTANCED_CLASS()
         then INSTANCED_CLASS(instance.elements, instance.components, equations,
@@ -254,6 +259,93 @@ uniontype Instance
       else false;
     end match;
   end isBuiltin;
+
+  function setModifier
+    input Modifier modifier;
+    input output Instance instance;
+  algorithm
+    _ := match instance
+      case PARTIAL_CLASS()
+        algorithm
+          instance.modifier := modifier;
+        then
+          ();
+
+      case EXPANDED_CLASS()
+        algorithm
+          instance.modifier := modifier;
+        then
+          ();
+
+      case PARTIAL_BUILTIN()
+        algorithm
+          instance.modifier := modifier;
+        then
+          ();
+
+      else
+        algorithm
+          Error.addInternalError("NFInstance.setModifier got unmodifiable instance!\n",
+            Absyn.dummyInfo);
+        then
+          fail();
+
+    end match;
+  end setModifier;
+
+  function getModifier
+    input Instance instance;
+    output Modifier modifier;
+  algorithm
+    modifier := match instance
+      case PARTIAL_CLASS() then instance.modifier;
+      case EXPANDED_CLASS() then instance.modifier;
+      case PARTIAL_BUILTIN() then instance.modifier;
+      else Modifier.NOMOD();
+    end match;
+  end getModifier;
+
+  function clone
+    input output Instance instance;
+  algorithm
+    () := match instance
+      local
+        ClassTree.Tree tree;
+
+      case PARTIAL_CLASS()
+        algorithm
+          instance.classes := ClassTree.map(instance.classes, cloneEntry);
+        then
+          ();
+
+      case EXPANDED_CLASS()
+        algorithm
+          instance.elements := ClassTree.map(instance.elements, cloneEntry);
+          Array.map(instance.components, ComponentNode.clone);
+        then
+          ();
+
+      case INSTANCED_CLASS()
+        algorithm
+          instance.elements := ClassTree.map(instance.elements, cloneEntry);
+          Array.map(instance.components, ComponentNode.clone);
+        then
+          ();
+
+      else ();
+    end match;
+  end clone;
+
+  function cloneEntry
+    input String name;
+    input ClassTree.Entry entry;
+    output ClassTree.Entry clone;
+  algorithm
+    clone := match entry
+      case ClassTree.Entry.CLASS() then ClassTree.Entry.CLASS(InstNode.clone(entry.node));
+      else entry;
+    end match;
+  end cloneEntry;
 end Instance;
 
 annotation(__OpenModelica_Interface="frontend");

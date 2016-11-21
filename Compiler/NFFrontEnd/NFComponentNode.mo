@@ -76,8 +76,7 @@ uniontype ComponentNode
     input Integer nodeIndex;
     input Integer componentIndex;
   algorithm
-    component := clone(component);
-    component := setComponent(Component.COMPONENT_REF(nodeIndex, componentIndex), component);
+    component := replaceComponent(Component.COMPONENT_REF(nodeIndex, componentIndex), component);
   end newReference;
 
   function name
@@ -139,7 +138,7 @@ uniontype ComponentNode
     end match;
   end component;
 
-  function setComponent
+  function updateComponent
     input Component component;
     input output ComponentNode node;
   algorithm
@@ -150,7 +149,20 @@ uniontype ComponentNode
         then
           node;
     end match;
-  end setComponent;
+  end updateComponent;
+
+  function replaceComponent
+    input Component component;
+    input output ComponentNode node;
+  algorithm
+    _ := match node
+      case COMPONENT_NODE()
+        algorithm
+          node.component := arrayCreate(1, component);
+        then
+          ();
+    end match;
+  end replaceComponent;
 
   function definition
     input ComponentNode node;
@@ -183,13 +195,16 @@ uniontype ComponentNode
   end info;
 
   function clone
-    input ComponentNode node;
-    output ComponentNode clone;
+    input output ComponentNode node;
   algorithm
-    clone := match node
+    () := match node
       case COMPONENT_NODE()
-        then COMPONENT_NODE(node.name, node.definition, arrayCopy(node.component), node.parent);
-      else node;
+        algorithm
+          node.component := arrayCopy(node.component);
+        then
+          ();
+
+      else ();
     end match;
   end clone;
 

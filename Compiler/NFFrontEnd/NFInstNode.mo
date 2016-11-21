@@ -223,12 +223,38 @@ uniontype InstNode
     output InstNode clone;
   algorithm
     clone := match node
+      local
+        array<Instance> i;
+
       case INST_NODE()
-        then INST_NODE(node.name, node.definition, arrayCopy(node.instance),
-          node.parentScope, node.nodeType);
+        algorithm
+          //i := arrayCreate(1, Instance.clone(node.instance[1]));
+          i := arrayCopy(node.instance);
+        then
+          INST_NODE(node.name, node.definition, i, node.parentScope, node.nodeType);
+
       else node;
     end match;
   end clone;
+
+  function apply<ArgT>
+    input output InstNode node;
+    input FuncType func;
+    input ArgT arg;
+
+    partial function FuncType
+      input ArgT arg;
+      input output Instance node;
+    end FuncType;
+  algorithm
+    () := match node
+      case INST_NODE()
+        algorithm
+          node.instance[1] := func(arg, node.instance[1]);
+        then
+          ();
+    end match;
+  end apply;
 
   function scopePrefix
     input InstNode node;

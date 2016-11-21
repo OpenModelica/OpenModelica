@@ -67,6 +67,8 @@ import Typing = NFTyping;
 
 public
 function instClassInProgram
+  "Instantiates a class given by its fully qualified path, with the result being
+   a DAE."
   input Absyn.Path classPath;
   input SCode.Program program;
   output DAE.DAElist dae;
@@ -77,19 +79,23 @@ protected
 algorithm
   System.startTimer();
 
+  // Create a root node from the given top-level classes.
   top := makeTopNode(program);
+
+  // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(), cls);
 
+  // Create an anonymous component from the class to instantiate and use it as
+  // the root of the instance tree.
   top_comp := Component.UNTYPED_COMPONENT(cls, listArray({}),
     Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, Absyn.dummyInfo);
   top_comp_node := ComponentNode.COMPONENT_NODE("<top>",
     InstNode.definition(cls), listArray({top_comp}), ComponentNode.EMPTY_NODE());
 
+  // Instantiate, type and flatten the class.
   cls := instantiate(cls, Modifier.NOMOD(), top_comp_node);
-
   cls := Typing.typeClass(cls, top_comp_node);
-
   dae := NFFlatten.flattenClass(cls);
 
   System.stopTimer();
@@ -114,6 +120,7 @@ algorithm
 end expand;
 
 function makeTopNode
+  "Creates an instance node from the given list of top-level classes."
   input list<SCode.Element> topClasses;
   output InstNode topNode;
 protected
@@ -153,6 +160,7 @@ algorithm
 
   for e in elements loop
     () := match e
+      // A class, create a new instance node for it and add it to the tree.
       case SCode.CLASS()
         algorithm
           node := InstNode.new(e.name, e, parentScope);
@@ -160,12 +168,14 @@ algorithm
         then
           ();
 
+      // A component, add it to the list of components and extends.
       case SCode.COMPONENT()
         algorithm
           componentsExtends := e :: componentsExtends;
         then
           ();
 
+      // An extends clause, add it to the list of components and extends.
       case SCode.EXTENDS()
         algorithm
           componentsExtends := e :: componentsExtends;
@@ -275,9 +285,9 @@ algorithm
       algorithm
         (classes, elements) := makeScope(cdef.elementLst, scope);
       then
-        Instance.PARTIAL_CLASS(classes, elements);
+        Instance.PARTIAL_CLASS(classes, elements, Modifier.NOMOD());
 
-    else Instance.PARTIAL_CLASS(ClassTree.new(), {});
+    else Instance.PARTIAL_CLASS(ClassTree.new(), {}, Modifier.NOMOD());
   end match;
 end partialInstClass2;
 
@@ -311,13 +321,15 @@ algorithm
       list<list<Statement>> alg, ialg;
       Option<InstNode> special_ext;
       InstNode n;
+      Modifier mod;
 
     case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
       algorithm
         ext := SCode.EXTENDS(Absyn.typeSpecPath(ty), SCode.PUBLIC(),
           der_mod, NONE(), Absyn.dummyInfo);
         def.classDef := SCode.PARTS({ext}, {}, {}, {}, {}, {}, {}, NONE());
-        i := Instance.PARTIAL_CLASS(ClassTree.new(), {ext});
+        i := Instance.PARTIAL_CLASS(ClassTree.new(), {ext},
+          Instance.getModifier(InstNode.instance(node)));
         node := InstNode.setInstance(i, node);
         node := InstNode.setDefinition(def, node);
       then
@@ -325,7 +337,7 @@ algorithm
 
     case SCode.CLASS(classDef = cdef as SCode.PARTS())
       algorithm
-        Instance.PARTIAL_CLASS(classes = scope, elements = elements) :=
+        Instance.PARTIAL_CLASS(classes = scope, elements = elements, modifier = mod) :=
           InstNode.instance(node);
 
         // Change the instance to an expanded instance, to avoid instantiation loops.
@@ -337,8 +349,11 @@ algorithm
 
         if isSome(special_ext) then
           SOME(n) := special_ext;
-          node := InstNode.setInstance(InstNode.instance(n), node);
-          node := n;
+          i := InstNode.instance(n);
+          mod := Modifier.merge(Instance.getModifier(i), mod);
+          i := Instance.setModifier(mod, i);
+          _ := InstNode.setInstance(i, node);
+          node := InstNode.setInstance(i, n);
         else
           // Add component ID:s to the scope.
           idx := 1;
@@ -357,7 +372,7 @@ algorithm
           alg := instAlgorithmSections(cdef.normalAlgorithmLst, node);
           ialg := instAlgorithmSections(cdef.initialAlgorithmLst, node);
 
-          i := Instance.EXPANDED_CLASS(scope, listArray(components), eq, ieq, alg, ialg);
+          i := Instance.EXPANDED_CLASS(scope, listArray(components), mod, eq, ieq, alg, ialg);
           node := InstNode.setInstance(i, node);
         end if;
       then
@@ -446,6 +461,7 @@ algorithm
 end expandExtends;
 
 function applyModifier
+  "Takes a modifier and applies the submodifiers in it to an instance."
   input Modifier modifier;
   input output Instance instance;
   input ModifierScope modifierScope;
@@ -479,14 +495,17 @@ algorithm
             // Modifier is for a component, add it to the component in the array.
             case ClassTree.Entry.COMPONENT()
               algorithm
-                components[entry.index] :=
-                  ComponentNode.apply(components[entry.index], Component.setModifier, m);
+                ComponentNode.apply(components[entry.index], Component.setModifier, m);
               then
                 ();
 
             case ClassTree.Entry.CLASS()
               algorithm
-                print("IMPLEMENT ME: Class modifier.\n");
+                // If a class is modified it's probably going to be used, so we
+                // might as well partially instantiate it now to simplify the
+                // modifier handling a bit.
+                entry.node := partialInstClass(entry.node);
+                InstNode.apply(entry.node, Instance.setModifier, m);
               then
                 ();
 
@@ -564,14 +583,16 @@ function instClass
   input Modifier modifier;
   input ComponentNode parent;
 protected
-  Instance i = InstNode.instance(node), i_mod;
+  Instance i, i_mod;
   array<ComponentNode> components;
   ClassTree.Tree scope;
-  Modifier type_mod;
+  Modifier type_mod, mod;
   list<Modifier> type_mods, inst_type_mods;
   Binding binding;
   InstNode cur_scope;
 algorithm
+  i := InstNode.instance(node);
+
   () := match i
     // A normal class.
     case Instance.EXPANDED_CLASS(elements = scope)
@@ -580,6 +601,7 @@ algorithm
         node := InstNode.clone(node);
 
         // Apply the modifier to the instance.
+        mod := Modifier.merge(modifier, i.modifier);
         i_mod := applyModifier(modifier, i,
           ModifierScope.CLASS_SCOPE(InstNode.name(node)));
 
@@ -654,7 +676,7 @@ algorithm
     case Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE())
       algorithm
         component := Component.COMPONENT_DEF(comp_mod.element, Modifier.NOMOD());
-        node := ComponentNode.setComponent(component, node);
+        node := ComponentNode.updateComponent(component, node);
         node := instComponent(node, parent, comp_mod.scope);
       then
         ();
@@ -662,6 +684,7 @@ algorithm
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
         name := ComponentNode.name(node);
+        node := ComponentNode.clone(node);
         node := ComponentNode.setParent(parent, node);
 
         // Merge the modifier from the component.
@@ -683,7 +706,7 @@ algorithm
         // Instantiate attributes and create the untyped component.
         attr := instComponentAttributes(comp.attributes, comp.prefixes);
         inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding, attr, comp.info);
-        node := ComponentNode.setComponent(inst_comp, node);
+        node := ComponentNode.updateComponent(inst_comp, node);
       then
         ();
 
@@ -691,7 +714,7 @@ algorithm
       algorithm
         cls := instClass(component.node, Modifier.NOMOD(), parent);
         component.node := cls;
-        node := ComponentNode.setComponent(component, node);
+        node := ComponentNode.updateComponent(component, node);
       then
         ();
 
@@ -741,12 +764,6 @@ algorithm
   end match;
 end instTypeSpec;
 
-function instModifier
-  input output Modifier modifier;
-algorithm
-
-end instModifier;
-
 function instDimension
   input Absyn.Subscript subscript;
   input InstNode scope;
@@ -764,19 +781,7 @@ algorithm
         exp := instExp(exp, scope);
       then
         Dimension.UNTYPED_DIM(exp, false);
-    //case Absyn.SUBSCRIPT(subscript = exp)
-    //  algorithm
-    //    dim := match exp
-    //      // Convert integer and boolean literals directly to the appropriate dimension.
-    //      case Absyn.Exp.INTEGER() then DAE.Dimension.DIM_INTEGER(exp.value);
-    //      else
-    //        algorithm // Any other expression needs to be instantiated.
-    //          (dim_exp, tree) := Inst.instExp(exp, tree);
-    //        then
-    //          DAE.Dimension.DIM_EXP(dim_exp);
-    //    end match;
-    //  then
-    //    new(dim);
+
   end match;
 end instDimension;
 
