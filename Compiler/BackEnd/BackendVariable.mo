@@ -2013,22 +2013,12 @@ end vararrayDelete;
 protected function vararrayList
   "Returns a list of all the variables in the variable array."
   input BackendDAE.VariableArray inArray;
-  output list<BackendDAE.Var> outVars = {};
+  output list<BackendDAE.Var> outVars;
 protected
-  Integer num_elems;
-  array<Option<BackendDAE.Var>> arr;
-  BackendDAE.Var var;
-  Option<BackendDAE.Var> ovar;
+  array<Option<BackendDAE.Var>> varOptArr;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(numberOfElements=num_elems, varOptArr=arr) := inArray;
-
-  for i in num_elems:-1:1 loop
-    ovar := arr[i];
-    if isSome(ovar) then
-      SOME(var) := ovar;
-      outVars := var :: outVars;
-    end if;
-  end for;
+  BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := inArray;
+  outVars := list(Util.getOption(varOptArr[i]) for i guard isSome(varOptArr[i]) in 1:arrayLength(varOptArr));
 end vararrayList;
 
 /* =======================================================
