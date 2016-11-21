@@ -607,7 +607,7 @@ author:Waurich TUD 2015-04"
 algorithm
   (visPath,numOut) := matchcontinue(pathsIn,numIn)
     local
-      String name;
+      String name, shapeIdent;
       Integer num;
       Boolean b;
       Absyn.Path path;
@@ -620,6 +620,8 @@ algorithm
     then (name,num);
   case(Absyn.QUALIFIED(name="Modelica",path=Absyn.QUALIFIED(name="Mechanics",path=Absyn.QUALIFIED(name="MultiBody",path=Absyn.QUALIFIED(name="Visualizers",path=Absyn.QUALIFIED(name="Advanced",path=Absyn.IDENT(name=name))))))::_,_)
     algorithm
+      shapeIdent := stringAppendList(List.firstN(stringListStringChar(name),6));
+      true := stringEqual(shapeIdent,"Shape$");
     then (name,numIn);
   case(_::rest,_)
     algorithm
