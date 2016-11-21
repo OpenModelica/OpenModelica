@@ -3,7 +3,10 @@ TEST=../../../rtest -v
 TESTFILES=\
 arrfunc.mo \
 bindings1.mo \
+bindings2.mo \
+bindings3.mo \
 bindings5.mo \
+bindings7.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
 ComponentAsTypeError.mo \
@@ -25,6 +28,7 @@ mod4.mo \
 mod5.mo \
 mod6.mo \
 mod8.mo \
+mod9.mo \
 ParameterBug.mos \
 redeclare13.mo \
 redeclare2.mo \
@@ -36,10 +40,7 @@ loop2.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-bindings2.mo \
-bindings3.mo \
 bindings4.mo \
-bindings7.mo \
 builtinmod.mo \
 ClassAsComponentError.mo \
 compfunc.mo \
@@ -135,7 +136,6 @@ mod11.mo \
 mod12.mo \
 mod13.mo \
 mod7.mo \
-mod9.mo \
 MultiInheritanceRedeclare2.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
