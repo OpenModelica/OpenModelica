@@ -604,6 +604,24 @@ algorithm
   end matchcontinue;
 end evaluateConstantFunctionCallExp;
 
+protected function hasUnknownType" true if one of the crefs in the exp is of unknown type.
+author: vwaurich 2016-11"
+  input DAE.Exp eIn;
+  output Boolean bOut;
+algorithm
+  bOut := match(eIn)
+    local
+      DAE.Type ty;
+      list<DAE.Exp> eLst;
+  case(DAE.TUPLE(PR = eLst))
+    algorithm
+      then List.fold(List.map(eLst,hasUnknownType),boolOr,false);
+  case(DAE.CREF(ty=DAE.T_UNKNOWN(_)))
+    then true;
+  else
+    then false;
+  end match;
+end hasUnknownType;
 
 public function evaluateConstantFunction "Analyses if the rhsExp is a function call. the constant inputs are inserted and it will be checked if the outputs can be evaluated to a constant.
 If the function can be completely evaluated, the function call will be removed.
@@ -618,7 +636,7 @@ author: Waurich TUD 2014-04"
 algorithm
   outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx,callSignLstIn)
     local
-      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort, changed;
+      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort, changed, isUnknownType;
       Integer idx;
       list<Boolean> bList;
       list<Integer> constIdcs;
@@ -655,8 +673,9 @@ algorithm
         //------------------------------------------------
           //print(stringDelimitList(List.map(callSignLst,callSignatureStr),"\n"));
         continueEval = checkCallSignatureForExp(rhsExpIn,callSignLst);
+        isUnknownType = hasUnknownType(lhsExpIn);
         if not continueEval and Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("THIS FUNCTION CALL WITH THIS SPECIFIC SIGNATURE CANNOT BE EVALUTED\n"); end if;
-        if not continueEval then fail(); end if;
+        if not continueEval or isUnknownType then fail(); end if;
 
         //------------------------------------------------
         //Collect all I/O Information for the function call
