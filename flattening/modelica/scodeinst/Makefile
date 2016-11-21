@@ -25,6 +25,7 @@ ImportNamed2.mo \
 ImportNested1.mo \
 ImportQualified1.mo \
 mod10.mo \
+mod11.mo \
 mod1.mo \
 mod4.mo \
 mod5.mo \
@@ -132,7 +133,6 @@ InvalidVariability2.mo \
 loop3.mo \
 loop4.mo \
 MissingRedeclare1.mo \
-mod11.mo \
 mod12.mo \
 mod13.mo \
 mod7.mo \
