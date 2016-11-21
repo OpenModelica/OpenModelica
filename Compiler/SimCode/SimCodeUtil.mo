@@ -3976,11 +3976,10 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps), stateSets=stateSets),
          (equations, uniqueEqIndex, tempvars, numStateSets))
       equation
-        (vars, equations, uniqueEqIndex, tempvars, numStateSets) =
-            createStateSetsSets(stateSets, vars, eqns, inShared, comps, equations, uniqueEqIndex, tempvars, numStateSets);
-        syst.orderedVars = vars;
+        (equations, uniqueEqIndex, tempvars, numStateSets) =
+            createStateSetsSets(stateSets, vars, eqns, comps, equations, uniqueEqIndex, tempvars, numStateSets);
       then
-        (syst, (equations, uniqueEqIndex, tempvars, numStateSets));
+        (syst,(equations, uniqueEqIndex, tempvars, numStateSets));
   end match;
 end createStateSetsSystem;
 
@@ -3988,20 +3987,18 @@ protected function createStateSetsSets
   input BackendDAE.StateSets iStateSets;
   input BackendDAE.Variables iVars;
   input BackendDAE.EquationArray iEqns;
-  input BackendDAE.Shared shared;
   input BackendDAE.StrongComponents comps;
   input list<SimCode.StateSet> iEquations;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
   input Integer iNumStateSets;
-  output BackendDAE.Variables oVars;
   output list<SimCode.StateSet> oEquations;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
   output Integer oNumStateSets;
 algorithm
-  (oVars, oEquations, ouniqueEqIndex, otempvars, oNumStateSets) :=
-  matchcontinue(iStateSets, iVars, iEqns, shared, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
+  (oEquations, ouniqueEqIndex, otempvars, oNumStateSets) :=
+  matchcontinue(iStateSets, iVars, iEqns, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
     local
       DAE.FunctionTree functree;
       BackendDAE.StateSets sets;
@@ -4014,7 +4011,7 @@ algorithm
       list<DAE.ComponentRef> crstates;
       SimCode.JacobianMatrix jacobianMatrix;
       list<SimCode.StateSet> simequations;
-      list<SimCodeVar.SimVar> tempvars;
+      list<SimCodeVar.SimVar> tempvars, simCodeAVars;
       Integer uniqueEqIndex;
       HashSet.HashSet hs;
       array<Boolean> marked;
@@ -4022,16 +4019,16 @@ algorithm
       BackendDAE.Jacobian jacobian;
       String errorMessage;
 
-    case({}, _, _, _, _, _, _, _, _) then (iVars, iEquations, iuniqueEqIndex, itempvars, iNumStateSets);
+    case({}, _, _, _, _, _, _, _) then (iEquations, iuniqueEqIndex, itempvars, iNumStateSets);
 
     case(BackendDAE.STATESET(rang=rang, state=crset, crA=crA, varA=aVars, statescandidates=statevars,   jacobian=jacobian)::sets, _, _,
-         _, _, _, _, _, _)
+         _, _, _, _, _)
       equation
         // get state names
         crstates = List.map(statevars, BackendVariable.varCref);
 
-        // add vars for A
-        vars = BackendVariable.addVars(aVars, iVars);
+        // create vars for A
+        simCodeAVars = List.map2(aVars, dlowvarToSimvar, NONE(), iVars);
 
         // get first a element for varinfo
         crA = ComponentReference.subscriptCrefWithInt(crA, 1);
@@ -4041,12 +4038,12 @@ algorithm
         nCandidates = listLength(statevars);
 
         // create symbolic jacobian for simulation
-        (SOME(jacobianMatrix), uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, iuniqueEqIndex, itempvars);
+        (SOME(jacobianMatrix), uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, iuniqueEqIndex, listAppend(itempvars,simCodeAVars));
 
         // next set
-        (vars, simequations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(sets, vars, iEqns, shared, comps, SimCode.SES_STATESET(iuniqueEqIndex, nCandidates, rang, crset, crstates, crA, jacobianMatrix)::iEquations, uniqueEqIndex, tempvars, iNumStateSets+1);
+        (simequations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(sets, iVars, iEqns, comps, SimCode.SES_STATESET(iuniqueEqIndex, nCandidates, rang, crset, crstates, crA, jacobianMatrix)::iEquations, uniqueEqIndex, tempvars, iNumStateSets+1);
       then
-        (vars, simequations, uniqueEqIndex, tempvars, numStateSets);
+        (simequations, uniqueEqIndex, tempvars, numStateSets);
     else
       equation
         errorMessage = "function createStateSetsSets failed.";
