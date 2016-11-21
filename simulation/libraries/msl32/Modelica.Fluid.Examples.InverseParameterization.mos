@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.InverseParameterization);
 compareVars :=
 {
@@ -32,16 +32,23 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.InverseParameterization
 // {"source.ports[1].m_flow","source.ports[1].p","source.ports[1].h_outflow","sink.ports[1].m_flow","sink.ports[1].p","sink.ports[1].h_outflow","sink1.ports[1].m_flow","sink1.ports[1].p","sink1.ports[1].h_outflow","sink2.ports[1].m_flow","sink2.ports[1].p","sink2.ports[1].h_outflow"}
-// Compilation succeeded
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.InverseParameterization', options = '', outputFormat = 'mat', variableFilter = 'time|source.ports.1..m_flow|source.ports.1..p|source.ports.1..h_outflow|sink.ports.1..m_flow|sink.ports.1..p|sink.ports.1..h_outflow|sink1.ports.1..m_flow|sink1.ports.1..p|sink1.ports.1..h_outflow|sink2.ports.1..m_flow|sink2.ports.1..p|sink2.ports.1..h_outflow', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.InverseParameterization_res.mat
+// Messages: assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | pump.delta_head_init >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= pump.delta_head_init, has value: -2.45172
+//
+// Files Equal!
 // [Modelica 3.2.1/Fluid/Interfaces.mo:734:9-739:39:writable] Notification: From here:
 // [Modelica 3.2.1/Fluid/Interfaces.mo:327:3-329:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
 // 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer) "mass flow rates between states"
 // 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start) "Mass flow rate in design flow direction"
 // Continue ....
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
 // "true
 // "
 // ""
