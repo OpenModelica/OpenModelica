@@ -193,6 +193,7 @@ public
   algorithm
     info := match modifier
       case MODIFIER() then modifier.info;
+      case REDECLARE() then SCode.elementInfo(modifier.element);
       else Absyn.dummyInfo;
     end match;
   end info;
@@ -448,12 +449,13 @@ protected
         then
           mod2;
 
-      // Both modifiers have bindings, give duplicate modification error.
-      case (MODIFIER(), MODIFIER())
+      // Both modifiers modify the same element, give duplicate modification error.
+      else
         algorithm
-          comp_name := stringDelimitList(listReverse(mod1.name :: prefix), ".");
+          comp_name := stringDelimitList(listReverse(Modifier.name(mod1) :: prefix), ".");
           Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
-            {comp_name, ModifierScope.toString(scope)}, {mod1.info, mod2.info});
+            {comp_name, ModifierScope.toString(scope)},
+            {Modifier.info(mod1), Modifier.info(mod2)});
         then
           fail();
 

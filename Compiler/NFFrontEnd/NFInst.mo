@@ -360,6 +360,8 @@ algorithm
           for c in components loop
             if Component.isNamedComponent(ComponentNode.component(c)) then
               // TODO: Handle components with the same name.
+              // TODO: If duplicate components should be handled here, also
+              //       remove them from the list of components.
               scope := ClassTree.add(scope, ComponentNode.name(c),
                 ClassTree.Entry.COMPONENT(idx), ClassTree.addConflictReplace);
             end if;
