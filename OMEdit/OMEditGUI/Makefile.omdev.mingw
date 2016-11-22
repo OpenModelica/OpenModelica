@@ -9,6 +9,11 @@ builddir_share=$(OMBUILDDIR)/share/
 resourcedir=./Resources/nls/
 SHREXT=.dll
 GIT_SHA = $(shell git describe --match "v*.*" --always)
+ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+PLATFORM_ARCH = (32-bit)
+else # mingw64
+PLATFORM_ARCH = (64-bit)
+endif
 
 NAME=OMEdit
 EXE=.exe
@@ -51,11 +56,11 @@ ifeq ($(GIT_SHA),)
 else # version is not empty, update it if it changed
 	@if test -f version.h; \
 	then \
-		echo "#define GIT_SHA \"OMEdit $(GIT_SHA)\"" > version.h.tmp; diff version.h version.h.tmp > /dev/null; \
+		echo "#define GIT_SHA \"OMEdit $(GIT_SHA) $(PLATFORM_ARCH)\"" > version.h.tmp; diff version.h version.h.tmp > /dev/null; \
 		if [ $$? -eq 0 ]; then echo No change in version; rm version.h.tmp; \
 		else echo version has changed. updating version.h; \mv version.h.tmp version.h; \
 		fi; \
 	else \
-		echo "#define GIT_SHA \"OMEdit $(GIT_SHA)\"" > version.h; echo Retrieved version number. version.h was created; \
+		echo "#define GIT_SHA \"OMEdit $(GIT_SHA) $(PLATFORM_ARCH)\"" > version.h; echo Retrieved version number. version.h was created; \
 	fi;
 endif
