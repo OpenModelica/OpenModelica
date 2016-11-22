@@ -345,8 +345,14 @@ function typeEquation
 algorithm
   eq := match eq
     local
-      DAE.Exp e1, e2;
+      Absyn.Exp cond;
+      DAE.ComponentRef cr1, cr2;
+      Option<DAE.Exp> ope1;
+      DAE.Exp e1, e2, e3;
+      Option<DAE.Type> opty1;
       DAE.Type ty1, ty2;
+      list<Equation> eqs1, body;
+      list<tuple<DAE.Exp, list<Equation>>> tybrs;
 
     case Equation.UNTYPED_EQUALITY()
       algorithm
@@ -354,6 +360,78 @@ algorithm
         (e2, ty2) := typeExp(eq.rhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
       then
         Equation.EQUALITY(e1, e2, ty1, eq.info);
+
+    case Equation.UNTYPED_CONNECT()
+      algorithm
+        (cr1, ty1) := typeCref(eq.lhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (cr2, ty2) := typeCref(eq.rhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
+      then
+        Equation.CONNECT(cr1, ty1, cr2, ty2, eq.info);
+
+    /*
+    case Equation.UNTYPED_FOR()
+      algorithm
+        (Ope1, opty1) := typeExpOption(eq.range, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        eqs1 := list(typeEquation(eq, component) for eq in eq.body);
+
+        if isSome(Ope1) then
+        end if;
+      then
+        Equation.FOR(eq.name, 1, ty1, ty2, eq.info);
+        */
+
+    case Equation.UNTYPED_IF()
+      algorithm
+        tybrs := list(
+          match br case(cond, body)
+            algorithm
+              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, eq.info);
+              eqs1 := list(typeEquation(beq, component) for beq in body);
+            then (e1, eqs1);
+          end match
+        for br in eq.branches);
+      then
+        Equation.IF(tybrs, eq.info);
+
+    case Equation.UNTYPED_WHEN()
+      algorithm
+        tybrs := list(
+          match br case(cond, body)
+            algorithm
+              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, eq.info);
+              eqs1 := list(typeEquation(beq, component) for beq in body);
+            then (e1, eqs1);
+          end match
+        for br in eq.branches);
+      then
+        Equation.WHEN(tybrs, eq.info);
+
+    case Equation.UNTYPED_ASSERT()
+      algorithm
+        (e1) := typeExp(eq.condition, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e2) := typeExp(eq.message, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e3) := typeExp(eq.level, NFComponent.DEFAULT_SCOPE, component, eq.info);
+      then
+        Equation.ASSERT(e1, e2, e3, eq.info);
+
+    case Equation.UNTYPED_TERMINATE()
+      algorithm
+        (e1) := typeExp(eq.message, NFComponent.DEFAULT_SCOPE, component, eq.info);
+      then
+        Equation.TERMINATE(e1, eq.info);
+
+    case Equation.UNTYPED_REINIT()
+      algorithm
+        (cr1, ty1) := typeCref(eq.cref, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e1) := typeExp(eq.reinitExp, NFComponent.DEFAULT_SCOPE, component, eq.info);
+      then
+        Equation.REINIT(cr1, e1, eq.info);
+
+    case Equation.UNTYPED_NORETCALL()
+      algorithm
+        (e1) := typeExp(eq.exp, NFComponent.DEFAULT_SCOPE, component, eq.info);
+      then
+        Equation.NORETCALL(e1, eq.info);
 
     else eq;
   end match;
@@ -374,10 +452,96 @@ algorithm
 end typeAlgorithm;
 
 function typeStatement
-  input output Statement statement;
+  input output Statement st;
   input ComponentNode component;
 algorithm
+  st := match st
+    local
+      Absyn.Exp cond;
+      DAE.ComponentRef cr1, cr2;
+      Option<DAE.Exp> ope1;
+      DAE.Exp e1, e2, e3;
+      Option<DAE.Type> opty1;
+      DAE.Type ty1, ty2, ty3;
+      list<Statement> sts1, body;
+      list<tuple<DAE.Exp, list<Statement>>> tybrs;
 
+    case Statement.UNTYPED_ASSIGNMENT()
+      algorithm
+        (e1, ty1) := typeExp(st.lhs, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e2, ty2) := typeExp(st.rhs, NFComponent.DEFAULT_SCOPE, component, st.info);
+      then
+        Statement.ASSIGNMENT(e1, e2, st.info);
+
+    case Statement.UNTYPED_IF()
+      algorithm
+        tybrs := list(
+          match br case(cond, body)
+            algorithm
+              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, st.info);
+              sts1 := list(typeStatement(bst, component) for bst in body);
+            then (e1, sts1);
+          end match
+        for br in st.branches);
+      then
+        Statement.IF(tybrs, st.info);
+
+    case Statement.UNTYPED_WHEN()
+      algorithm
+        tybrs := list(
+          match br case(cond, body)
+            algorithm
+              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, st.info);
+              sts1 := list(typeStatement(bst, component) for bst in body);
+            then (e1, sts1);
+          end match
+        for br in st.branches);
+      then
+        Statement.WHEN(tybrs, st.info);
+
+    case Statement.UNTYPED_ASSERT()
+      algorithm
+        (e1) := typeExp(st.condition, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e2) := typeExp(st.message, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e3) := typeExp(st.level, NFComponent.DEFAULT_SCOPE, component, st.info);
+      then
+        Statement.ASSERT(e1, e2, e3, st.info);
+
+    case Statement.UNTYPED_TERMINATE()
+      algorithm
+        (e1) := typeExp(st.message, NFComponent.DEFAULT_SCOPE, component, st.info);
+      then
+        Statement.TERMINATE(e1, st.info);
+
+    case Statement.UNTYPED_REINIT()
+      algorithm
+        (cr1, ty1) := typeCref(st.cref, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e1) := typeExp(st.reinitExp, NFComponent.DEFAULT_SCOPE, component, st.info);
+      then
+        Statement.REINIT(cr1, e1, st.info);
+
+    case Statement.UNTYPED_NORETCALL()
+      algorithm
+        (e1) := typeExp(st.exp, NFComponent.DEFAULT_SCOPE, component, st.info);
+      then
+        Statement.NORETCALL(e1, st.info);
+
+    case Statement.UNTYPED_WHILE()
+      algorithm
+        (e1) := typeExp(st.condition, NFComponent.DEFAULT_SCOPE, component, st.info);
+        sts1 := list(typeStatement(bst, component) for bst in st.body);
+      then
+        Statement.WHILE(e1, sts1, st.info);
+
+    case Statement.FAILURE()
+      algorithm
+        sts1 := list(typeStatement(bst, component) for bst in st.body);
+      then
+        Statement.FAILURE(sts1, st.info);
+
+
+    else st;
+  end match;
 end typeStatement;
 
 function makeComplexType

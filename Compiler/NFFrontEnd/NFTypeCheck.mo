@@ -609,7 +609,231 @@ algorithm
   end try;
 end checkBinaryOperation;
 
+
 public function checkBinaryOperationArrays
+  "mahge:
+  Type checks binary operations involving arrays. This involves more checks than
+  scalar types. All normal operations as well as element wise operations involving
+  arrays are handled here."
+  input DAE.Exp inExp1;
+  input DAE.Type inType1;
+  input DAE.Operator inOp;
+  input DAE.Exp inExp2;
+  input DAE.Type inType2;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+protected
+  Boolean isArray1,isArray2, bothArrays;
+  Integer nrDims1, nrDims2;
+algorithm
+
+  nrDims1 := getNrDims(inType1);
+  nrDims2 := getNrDims(inType2);
+  isArray1 := nrDims1 > 0;
+  isArray2 := nrDims2 > 0;
+  bothArrays := isArray1 and isArray2;
+
+  (outExp, outType) := match inOp
+    local
+      DAE.Exp exp1,exp2;
+      DAE.Type ty1,ty2, arrtp, ty;
+      DAE.Dimensions dims;
+      DAE.Dimension M,N1,N2,K;
+      DAE.Operator newop;
+      DAE.TypeSource typsrc;
+
+    case DAE.ADD()
+      algorithm
+        if (bothArrays) then
+          (exp1,exp2,outType) := matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+          outExp := DAE.BINARY(exp1, DAE.ADD(outType), exp2);
+        else
+          binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Addition operations involving an array and a scalar are " +
+            "not valid in Modelica. Try using elementwise operator '.+'");
+          fail();
+        end if;
+      then
+        (outExp, outType);
+
+    case DAE.SUB()
+      algorithm
+        if (bothArrays) then
+          (exp1,exp2,outType) := matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+          outExp := DAE.BINARY(exp1, DAE.SUB(outType), exp2);
+        else
+          binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Subtraction operations involving an array and a scalar are " +
+            "not valid in Modelica. Try using elementwise operator '.+'");
+          fail();
+        end if;
+      then
+        (outExp, outType);
+
+    case DAE.DIV()
+      algorithm
+        if (isArray1 and not isArray2) then
+          dims := getArrayTypeDims(inType1);
+          arrtp := promoteLeft(inType2,dims);
+
+          (exp1,exp2,ty1) := matchTypeBothWays(inExp1,inType1,inExp2,arrtp);
+
+          // Create a scalar Real Type and lift it to array.
+          // Necessary because even if both operands are of Integer type the result
+          // should be Real type with dimensions of the input array operand.
+          typsrc := Types.getTypeSource(ty1);
+          ty := DAE.T_REAL({},typsrc);
+
+          outType := promoteLeft(ty,dims);
+          outExp := DAE.BINARY(exp1, DAE.DIV_ARRAY_SCALAR(outType), exp2);
+        else
+          binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Dividing a sclar by array or array by array is not a valid " +
+            "operation in Modelica. Try using elementwise operator './'");
+          fail();
+        end if;
+      then
+        (outExp, outType);
+
+    case DAE.POW()
+      algorithm
+        if (nrDims1 == 2 and not isArray2) then
+          M := Types.getDimensionNth(inType1, 1);
+          K := Types.getDimensionNth(inType1, 2);
+          // Check if dims are equal. i.e Square Matrix
+          if not(isValidMatrixMultiplyDims(M, K)) then
+            binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+              "\n: Exponentiation involving arrays is only valid for square " +
+              "matrices with integer exponents. Try using elementwise operator '.^'");
+            fail();
+          end if;
+
+          try
+            DAE.T_INTEGER(_,_) := inType2;
+          else
+            binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+              "\n: Exponentiation involving arrays is only valid for square " +
+              "matrices with integer exponents. Try using elementwise operator '.^'");
+            fail();
+          end try;
+
+          outType := inType1;
+          outExp := DAE.BINARY(inExp1, DAE.POW_ARRAY_SCALAR(inType1), inExp2);
+        else
+          binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Exponentiation involving arrays is only valid for square " +
+            "matrices with integer exponents. Try using elementwise operator '.^'");
+          fail();
+        end if;
+      then
+        (outExp, outType);
+
+
+    case DAE.MUL()
+      algorithm
+        if (not isArray1 or not isArray2) then
+
+          arrtp := if isArray1 then inType1 else inType2;
+          dims := getArrayTypeDims(arrtp);
+          //match their scalar types. For now.
+          ty1 := underlyingType(inType1);
+          ty2 := underlyingType(inType2);
+          // TODO: one of the exps is array but its type is now simple.
+          (exp1,exp2,ty) := matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+
+          outType := promoteLeft(ty,dims);
+          outExp := DAE.BINARY(exp1, DAE.MUL_ARRAY_SCALAR(outType), exp2);
+
+        elseif (nrDims1 == 1 and nrDims2 == 1) then
+          {N1} := getArrayTypeDims(inType1);
+          {N2} := getArrayTypeDims(inType2);
+          if (not isValidMatrixMultiplyDims(N1,N2)) then
+            binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Dimensions not equal for scalar product.");
+            fail();
+          else
+            (exp1,exp2,ty) := matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+            outType := underlyingType(ty);
+            outExp := DAE.BINARY(exp1, DAE.MUL_SCALAR_PRODUCT(outType), exp2);
+          end if;
+
+        elseif (nrDims1 == 2 and nrDims2 == 1) then
+          {M,N1} := getArrayTypeDims(inType1);
+          {N2} := getArrayTypeDims(inType2);
+          if (not isValidMatrixMultiplyDims(N1,N2)) then
+            binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Dimensions error in Matrix Vector multiplication.");
+            fail();
+          else
+            ty1 := underlyingType(inType1);
+            ty2 := underlyingType(inType2);
+            // TODO: the exps are arrays but the types are now simple.
+            (exp1,exp2,ty) := matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+            outType := promoteLeft(ty, {M});
+            outExp := DAE.BINARY(exp1, DAE.MUL_MATRIX_PRODUCT(outType), exp2);
+          end if;
+
+        elseif (nrDims1 == 1 and nrDims2 == 2) then
+
+          {N1} := getArrayTypeDims(inType1);
+          {N2,M} := getArrayTypeDims(inType2);
+          if (not isValidMatrixMultiplyDims(N1,N2)) then
+            binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Dimensions error in Vecto Matrix multiplication.");
+            fail();
+          else
+            ty1 := underlyingType(inType1);
+            ty2 := underlyingType(inType2);
+            // TODO: the exps are arrays but the types are now simple.
+            (exp1,exp2,ty) := matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+            outType := promoteLeft(ty, {M});
+            outExp := DAE.BINARY(exp1, DAE.MUL_MATRIX_PRODUCT(outType), exp2);
+          end if;
+
+        elseif (nrDims1 == 2 and nrDims2 == 2) then
+
+          {M,N1} := getArrayTypeDims(inType1);
+          {N2,K} := getArrayTypeDims(inType2);
+          if (not isValidMatrixMultiplyDims(N1,N2)) then
+            binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
+            "\n: Dimensions error in Matrix Matrix multiplication.");
+            fail();
+          else
+            ty1 := underlyingType(inType1);
+            ty2 := underlyingType(inType2);
+            // TODO: the exps are arrays but the types are now simple.
+            (exp1,exp2,ty) := matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+            outType := promoteLeft(ty, {M,K});
+            outExp := DAE.BINARY(exp1, DAE.MUL_MATRIX_PRODUCT(outType), exp2);
+          end if;
+
+        else
+          binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,"");
+          fail();
+        end if;
+
+      then
+        (outExp, outType);
+
+    case _ guard isOpBinaryElemWise(inOp)
+      algorithm
+        (exp1,exp2,outType) := matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+        newop := Expression.setOpType(inOp, outType);
+        outExp := DAE.BINARY(exp1, newop, exp2);
+      then
+        (outExp, outType);
+
+    else
+      algorithm
+        Error.addInternalError("TypeCheck.checkBinaryOperationArrays: got a binary operation that is not handled yet", Absyn.dummyInfo);
+      then
+        fail();
+  end match;
+
+end checkBinaryOperationArrays;
+
+
+protected function checkBinaryOperationArrays_old
   "mahge:
   Type checks binary operations involving arrays. This involves more checks than
   scalar types. All normal operations as well as element wise operations involving
@@ -984,110 +1208,8 @@ algorithm
         fail();
 
   end matchcontinue;
-end checkBinaryOperationArrays;
+end checkBinaryOperationArrays_old;
 
-protected function matchTypeBothWays
-  "mahge:
-  Tries to match to types. First by converting the 2nd one to the 1st.
-  if not possible then tries to convert the 1st to the 2nd."
-  input output DAE.Exp exp1;
-  input DAE.Type type1;
-  input output DAE.Exp exp2;
-  input DAE.Type type2;
-        output DAE.Type matchedType;
-algorithm
-  try
-    (exp2, matchedType) := Types.matchType(exp2, type2, type1, true);
-  else
-    (exp1, matchedType) := Types.matchType(exp1, type1, type2, true);
-  end try;
-end matchTypeBothWays;
-
-protected function checkValidNumericTypesForOp
-"@mahge:
-  Helper function for Check*Operator functions.
-  Checks if both operands are Numeric types for all operators except Addition.
-  Which can also work on Strings and maybe Booleans??.
-  Written separatly because it needs to print an error."
-  input DAE.Type type1;
-  input DAE.Type type2;
-  input DAE.Operator operator;
-  input Boolean printError;
-  output Boolean isValid;
-algorithm
-  isValid := match operator
-    local
-      String ty1_str, ty2_str, op_str;
-
-    case DAE.ADD() then true;
-
-    case _ guard Types.isNumericType(type1) and Types.isNumericType(type2) then true;
-
-    else
-      algorithm
-        if printError then
-          ty1_str := Types.unparseTypeNoAttr(type1);
-          ty2_str := Types.unparseTypeNoAttr(type2);
-          op_str := DAEDump.dumpOperatorString(operator);
-          Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES,
-            {op_str, ty1_str, ty2_str}, Absyn.dummyInfo);
-        end if;
-      then
-        false;
-  end match;
-end checkValidNumericTypesForOp;
-
-public function getArrayNumberOfDimensions
-  input DAE.Type inType;
-  output Integer outDim;
-algorithm
-  outDim := match (inType)
-    local
-      Integer ns;
-      DAE.Type t;
-      DAE.Dimensions dims;
-    case (DAE.T_ARRAY(ty = t, dims = dims))
-      equation
-        ns = getArrayNumberOfDimensions(t) + listLength(dims);
-      then
-        ns;
-    else 0;
-  end match;
-end getArrayNumberOfDimensions;
-
-protected function isValidMatrixMultiplyDims
-"@mahge:
-  Checks if two dimensions are equal, which is a prerequisite for Matrix/Vector
-  multiplication."
-  input DAE.Dimension dim1;
-  input DAE.Dimension dim2;
-  output Boolean res;
-algorithm
-  res := matchcontinue(dim1, dim2)
-    local
-      String msg;
-    // The dimensions are both known and equal.
-    case (_, _)
-      equation
-        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
-      then
-        true;
-    // If checkModel is used we might get unknown dimensions. So use
-    // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
-    case (_, _)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = Expression.dimensionsEqual(dim1, dim2);
-      then
-        true;
-    case (_, _)
-      equation
-        msg = "Dimension mismatch in Vector/Matrix multiplication operation: " +
-              ExpressionDump.dimensionString(dim1) + "x" + ExpressionDump.dimensionString(dim2);
-        Error.addSourceMessage(Error.COMPILER_ERROR, {msg}, Absyn.dummyInfo);
-      then false;
-  end matchcontinue;
-end isValidMatrixMultiplyDims;
 
 // ************************************************************** //
 //   END: Operator typing helper functions
@@ -1594,6 +1716,200 @@ end isValidMatrixMultiplyDims;
 //   END: TypeCall helper functions
 // ************************************************************** //
 
+protected function matchTypeBothWays
+  "mahge:
+  Tries to match to types. First by converting the 2nd one to the 1st.
+  if not possible then tries to convert the 1st to the 2nd."
+  input output DAE.Exp exp1;
+  input DAE.Type type1;
+  input output DAE.Exp exp2;
+  input DAE.Type type2;
+        output DAE.Type matchedType;
+algorithm
+  try
+    (exp2, matchedType) := Types.matchType(exp2, type2, type1, true);
+  else
+    (exp1, matchedType) := Types.matchType(exp1, type1, type2, true);
+  end try;
+end matchTypeBothWays;
+
+protected function getArrayTypeDims
+"This will fail if type is not array type.
+Use in places where only arrays are expected"
+  input DAE.Type inType;
+  output DAE.Dimensions outDims;
+algorithm
+  outDims := match (inType)
+    case DAE.T_ARRAY() then inType.dims;
+    else fail();
+  end match;
+end getArrayTypeDims;
+
+protected function getTypeDims
+"This will NOT fail if type is not array type."
+  input DAE.Type inType;
+  output DAE.Dimensions outDims;
+algorithm
+  outDims := match (inType)
+    case DAE.T_ARRAY() then inType.dims;
+    else {};
+  end match;
+end getTypeDims;
+
+protected function getNrDims
+  input DAE.Type inType;
+  output Integer outNrDims;
+algorithm
+  outNrDims := match (inType)
+    case DAE.T_ARRAY() then listLength(inType.dims);
+    else 0;
+  end match;
+end getNrDims;
+
+protected function underlyingType
+  input DAE.Type inType;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType)
+    case DAE.T_ARRAY() then inType.ty;
+    else inType;
+  end match;
+end underlyingType;
+
+protected function promoteLeft
+  input DAE.Type inType;
+  input DAE.Dimensions inDims;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType)
+    case DAE.T_ARRAY() then DAE.T_ARRAY(inType.ty, listAppend(inType.dims,inDims), inType.source);
+    else DAE.T_ARRAY(inType, inDims, Types.getTypeSource(inType));
+  end match;
+end promoteLeft;
+
+protected function isOpBinaryElemWise
+  input DAE.Operator inOperator;
+  output Boolean is;
+algorithm
+  is := match(inOperator)
+    case DAE.ADD_ARR() then true;
+    case DAE.SUB_ARR() then true;
+    case DAE.MUL_ARR() then true;
+    case DAE.DIV_ARR() then true;
+    case DAE.POW_ARR2() then true;
+    else false;
+  end match;
+end isOpBinaryElemWise;
+
+protected function checkValidNumericTypesForOp
+"  TODO: update me.
+  @mahge:
+  Helper function for Check*Operator functions.
+  Checks if both operands are Numeric types for all operators except Addition.
+  Which can also work on Strings and maybe Booleans??.
+  Written separatly because it needs to print an error."
+  input DAE.Type type1;
+  input DAE.Type type2;
+  input DAE.Operator operator;
+  input Boolean printError;
+  output Boolean isValid;
+algorithm
+  isValid := match operator
+    local
+      String ty1_str, ty2_str, op_str;
+
+    case DAE.ADD() then true;
+
+    case _ guard Types.isNumericType(type1) and Types.isNumericType(type2) then true;
+
+    else
+      algorithm
+        if printError then
+          ty1_str := Types.unparseTypeNoAttr(type1);
+          ty2_str := Types.unparseTypeNoAttr(type2);
+          op_str := DAEDump.dumpOperatorString(operator);
+          Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES,
+            {op_str, ty1_str, ty2_str}, Absyn.dummyInfo);
+        end if;
+      then
+        false;
+  end match;
+end checkValidNumericTypesForOp;
+
+protected function getArrayNumberOfDimensions
+"TODO: remove me. Use getNrDims"
+  input DAE.Type inType;
+  output Integer outDim;
+algorithm
+  outDim := match (inType)
+    local
+      Integer ns;
+      DAE.Type t;
+      DAE.Dimensions dims;
+    case (DAE.T_ARRAY(ty = t, dims = dims))
+      equation
+        // TODO: we shouldn't allow T_ARRAY(T_ARRAY(),_,_) structures anymore
+        // Make sure it gets caught.
+        ns = getArrayNumberOfDimensions(t) + listLength(dims);
+      then
+        ns;
+    else 0;
+  end match;
+end getArrayNumberOfDimensions;
+
+protected function isValidMatrixMultiplyDims
+" TODO: update me.
+  @mahge:
+  Checks if two dimensions are equal, which is a prerequisite for Matrix/Vector
+  multiplication."
+  input DAE.Dimension dim1;
+  input DAE.Dimension dim2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(dim1, dim2)
+    local
+      String msg;
+    // The dimensions are both known and equal.
+    case (_, _)
+      equation
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
+      then
+        true;
+    // If checkModel is used we might get unknown dimensions. So use
+    // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
+    case (_, _)
+      equation
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
+        true = Expression.dimensionsEqual(dim1, dim2);
+      then
+        true;
+    case (_, _)
+      equation
+        msg = "Dimension mismatch in Vector/Matrix multiplication operation: " +
+              ExpressionDump.dimensionString(dim1) + "x" + ExpressionDump.dimensionString(dim2);
+        Error.addSourceMessage(Error.COMPILER_ERROR, {msg}, Absyn.dummyInfo);
+      then false;
+  end matchcontinue;
+end isValidMatrixMultiplyDims;
+
+protected function binaryArrayOpError
+  input DAE.Exp inExp1;
+  input DAE.Type inType1;
+  input DAE.Exp inExp2;
+  input DAE.Type inType2;
+  input DAE.Operator inOp;
+  input String suggestion;
+protected
+  String e1Str, t1Str, e2Str, t2Str, s1, s2, sugg;
+algorithm
+  e1Str := ExpressionDump.printExpStr(inExp1);
+  t1Str := Types.unparseType(inType1);
+  e2Str := ExpressionDump.printExpStr(inExp2);
+  t2Str := Types.unparseType(inType2);
+  s1 := "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+  s2 := "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
+  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,suggestion}, Absyn.dummyInfo);
+end binaryArrayOpError;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

@@ -1005,7 +1005,7 @@ algorithm
         // Instantiate each branch and pair it up with a condition.
         branches := {};
         for branch in scodeEq.thenBranch loop
-          eql := instEEquations(scodeEq.elseBranch, scope);
+          eql := instEEquations(branch, scope);
           exp1 :: expl := expl;
           branches := (exp1, eql) :: branches;
         end for;
