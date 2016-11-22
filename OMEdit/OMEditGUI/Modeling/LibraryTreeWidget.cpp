@@ -894,14 +894,12 @@ void LibraryTreeItem::handleConnectionAdded(LineAnnotation *pConnectionLineAnnot
  */
 void LibraryTreeItem::handleIconUpdated()
 {
-  if (mpModelWidget) {
-    MainWindow *pMainWindow = MainWindow::instance();
-    // load new icon for the class.
-    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
-    // update the icon in the libraries browser view.
-    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
-    emit iconUpdated();
-  }
+  MainWindow *pMainWindow = MainWindow::instance();
+  // load new icon for the class.
+  pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
+  // update the icon in the libraries browser view.
+  pMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(this);
+  emit iconUpdated();
 }
 
 void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)

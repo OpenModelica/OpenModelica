@@ -359,6 +359,7 @@ public:
   ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
+  void loadComponents();
   void loadDiagramView();
   void loadConnections();
   void createModelWidgetComponents();
@@ -398,6 +399,7 @@ private:
   QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   QStatusBar *mpModelStatusBar;
+  bool mComponentsLoaded;
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
   bool mCreateModelWidgetComponents;

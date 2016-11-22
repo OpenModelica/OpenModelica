@@ -2385,7 +2385,8 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
 
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
-    mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false), mExtendsModifiersLoaded(false)
+    mComponentsLoaded(false), mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false),
+    mExtendsModifiersLoaded(false)
 {
   mExtendsModifiersMap.clear();
   // create widgets based on library type
@@ -2410,9 +2411,15 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     getModelInheritedClasses();
     drawModelInheritedClassShapes(this, StringHandler::Icon);
     getModelIconDiagramShapes(StringHandler::Icon);
-    drawModelInheritedClassComponents(this, StringHandler::Icon);
-    getModelComponents();
-    drawModelIconComponents();
+    /* Ticket:2960
+     * Just a workaround to make browsing faster.
+     * We don't get the components here i.e items are shown without connectors in the Libraries Browser.
+     * Fetch the components when we really need to draw them.
+     */
+    /*! @todo Unable the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
+//    drawModelInheritedClassComponents(this, StringHandler::Icon);
+//    getModelComponents();
+//    drawModelIconComponents();
     mpEditor = 0;
   } else {
     // icon graphics framework
@@ -2490,8 +2497,10 @@ void ModelWidget::reDrawModelWidgetInheritedClasses()
   removeInheritedClassShapes(StringHandler::Icon);
   drawModelInheritedClassShapes(this, StringHandler::Icon);
   mpIconGraphicsView->reOrderShapes();
-  removeInheritedClassComponents(StringHandler::Icon);
-  drawModelInheritedClassComponents(this, StringHandler::Icon);
+  if (mComponentsLoaded) {
+    removeInheritedClassComponents(StringHandler::Icon);
+    drawModelInheritedClassComponents(this, StringHandler::Icon);
+  }
   if (mDiagramViewLoaded) {
     removeInheritedClassShapes(StringHandler::Diagram);
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
@@ -2645,11 +2654,26 @@ LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnecti
 }
 
 /*!
+ * \brief ModelWidget::loadComponents
+ * Loads the model components if they are not loaded before.
+ */
+void ModelWidget::loadComponents()
+{
+  if (!mComponentsLoaded) {
+    drawModelInheritedClassComponents(this, StringHandler::Icon);
+    getModelComponents();
+    drawModelIconComponents();
+    mComponentsLoaded = true;
+  }
+}
+
+/*!
  * \brief ModelWidget::loadDiagramView
  * Loads the diagram view components if they are not loaded before.
  */
 void ModelWidget::loadDiagramView()
 {
+  loadComponents();
   if (!mDiagramViewLoaded) {
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
     getModelIconDiagramShapes(StringHandler::Diagram);
@@ -2966,29 +2990,18 @@ void ModelWidget::reDrawModelWidget()
     // clear the components and their annotations
     mComponentsList.clear();
     mComponentsAnnotationsList.clear();
+    mComponentsLoaded = false;
     // get the model components
-    getModelComponents();
-    // Draw Icon components and inherited components
-    drawModelInheritedClassComponents(this, StringHandler::Icon);
-    drawModelIconComponents();
+    loadComponents();
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
     // Draw diagram view
     if (mDiagramViewLoaded) {
       // reset flags
       mDiagramViewLoaded = false;
+      loadDiagramView();
       mConnectionsLoaded = false;
-      // Draw Diagram shapes and inherited shapes
-      drawModelInheritedClassShapes(this, StringHandler::Diagram);
-      getModelIconDiagramShapes(StringHandler::Diagram);
-      // Draw Diagram components and inherited components
-      drawModelInheritedClassComponents(this, StringHandler::Diagram);
-      drawModelDiagramComponents();
-      // Draw Diagram connections and inherited connections
-      drawModelInheritedClassConnections(this);
-      getModelConnections();
-      mDiagramViewLoaded = true;
-      mConnectionsLoaded = true;
+      loadConnections();
     }
     // if documentation view is visible then update it
     if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
@@ -3765,6 +3778,7 @@ void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, S
       drawModelInheritedClassComponents(pLibraryTreeItem->getModelWidget(), viewType);
       GraphicsView *pInheritedGraphicsView, *pGraphicsView;
       if (viewType == StringHandler::Icon) {
+        pLibraryTreeItem->getModelWidget()->loadComponents();
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
         pGraphicsView = mpIconGraphicsView;
       } else {

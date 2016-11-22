@@ -936,6 +936,7 @@ void Component::createClassComponents()
       MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
+    mpLibraryTreeItem->getModelWidget()->loadComponents();
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
       mComponentsList.append(new Component(pComponent, this, getRootParentComponent()));
     }
