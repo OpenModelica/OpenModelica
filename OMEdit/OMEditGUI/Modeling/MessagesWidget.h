@@ -35,12 +35,9 @@
 #ifndef MESSAGESWIDGET_H
 #define MESSAGESWIDGET_H
 
-#include "MainWindow.h"
+#include "Util/StringHandler.h"
 
-class MainWindow;
-class StringHandler;
-
-class MessagesWidget;
+#include <QTextBrowser>
 
 class MessageItem
 {
@@ -79,14 +76,13 @@ class MessagesWidget : public QWidget
 {
   Q_OBJECT
 private:
-  MainWindow *mpMainWindow;
   int mMessageNumber;
   QTextBrowser *mpMessagesTextBrowser;
   QAction *mpSelectAllAction;
   QAction *mpCopyAction;
   QAction *mpClearAllAction;
 public:
-  MessagesWidget(MainWindow *pMainWindow);
+  MessagesWidget(QWidget *pParent = 0);
   void resetMessagesNumber() {mMessageNumber = 1;}
   QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
   void applyMessagesSettings();

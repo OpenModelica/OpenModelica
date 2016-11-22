@@ -32,15 +32,13 @@
  */
 
 #include "CEditor.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "Options/OptionsDialog.h"
 
-CEditor::CEditor(ModelWidget *pModelWidget)
-  : BaseEditor(pModelWidget)
-{
+#include <QMenu>
 
-}
-
-CEditor::CEditor(MainWindow *pMainWindow)
-  : BaseEditor(pMainWindow)
+CEditor::CEditor(QWidget *pParent)
+  : BaseEditor(pParent)
 {
 
 }

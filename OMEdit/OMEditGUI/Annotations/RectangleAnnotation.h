@@ -36,10 +36,8 @@
 #define RECTANGLEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
 class Component;
-
 class RectangleAnnotation : public ShapeAnnotation
 {
   Q_OBJECT

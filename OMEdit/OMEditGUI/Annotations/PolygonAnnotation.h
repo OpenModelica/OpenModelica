@@ -36,10 +36,8 @@
 #define POLYGONANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
 class Component;
-
 class PolygonAnnotation : public ShapeAnnotation
 {
   Q_OBJECT

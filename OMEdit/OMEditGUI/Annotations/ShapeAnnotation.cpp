@@ -32,14 +32,16 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "ShapeAnnotation.h"
-#include "ModelWidgetContainer.h"
+#include "Util/Helper.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "ShapePropertiesDialog.h"
-#include "Commands.h"
-#include "ComponentProperties.h"
-#include "FetchInterfaceDataDialog.h"
-#include "VariablesWidget.h"
+#include "Modeling/Commands.h"
+#include "Component/ComponentProperties.h"
+#include "TLM/FetchInterfaceDataDialog.h"
+#include "Plotting/VariablesWidget.h"
 
 /*!
  * \brief GraphicItem::setDefaults
@@ -395,10 +397,9 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   */
 void ShapeAnnotation::setUserDefaults()
 {
-  OptionsDialog *pOptionsDialog = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
   /* Set user Line Style settings */
-  if (pOptionsDialog->getLineStylePage()->getLineColor().isValid())
-  {
+  if (pOptionsDialog->getLineStylePage()->getLineColor().isValid()) {
     mLineColor = pOptionsDialog->getLineStylePage()->getLineColor();
   }
   mLinePattern = StringHandler::getLinePatternType(pOptionsDialog->getLineStylePage()->getLinePattern());
@@ -406,17 +407,13 @@ void ShapeAnnotation::setUserDefaults()
   mArrow.replace(0, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineStartArrow()));
   mArrow.replace(1, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineEndArrow()));
   mArrowSize = pOptionsDialog->getLineStylePage()->getLineArrowSize();
-  if (pOptionsDialog->getLineStylePage()->getLineSmooth())
-  {
+  if (pOptionsDialog->getLineStylePage()->getLineSmooth()) {
     mSmooth = StringHandler::SmoothBezier;
-  }
-  else
-  {
+  } else {
     mSmooth = StringHandler::SmoothNone;
   }
   /* Set user Fill Style settings */
-  if (pOptionsDialog->getFillStylePage()->getFillColor().isValid())
-  {
+  if (pOptionsDialog->getFillStylePage()->getFillColor().isValid()) {
     mFillColor = pOptionsDialog->getFillStylePage()->getFillColor();
   }
   mFillPattern = StringHandler::getFillPatternType(pOptionsDialog->getFillStylePage()->getFillPattern());
@@ -701,9 +698,8 @@ void ShapeAnnotation::setTextString(QString textString)
  * \brief ShapeAnnotation::setFileName
  * Sets the file name.
  * \param fileName
- * \param pComponent
  */
-void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
+void ShapeAnnotation::setFileName(QString fileName)
 {
   if (fileName.isEmpty()) {
     mOriginalFileName = fileName;
@@ -711,18 +707,11 @@ void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
     return;
   }
 
-  OMCProxy *pOMCProxy = 0;
-  if (pComponent) {
-    pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  } else {
-    pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  }
-
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   mOriginalFileName = fileName;
   QUrl fileUrl(mOriginalFileName);
   QFileInfo fileInfo(mOriginalFileName);
   QFileInfo classFileInfo(mClassFileName);
-
   /* if its a modelica:// link then make it absolute path */
   if (fileUrl.scheme().toLower().compare("modelica") == 0) {
     mFileName = pOMCProxy->uriToFilename(mOriginalFileName);
@@ -790,7 +779,7 @@ QVariant ShapeAnnotation::getDynamicValue(QString name)
     ModelWidget *pModelWidget = mpParentComponent->getGraphicsView()->getModelWidget();
     if (!pModelWidget->getResultFileName().isEmpty()) {
       QString fullName = pModelWidget->getResultFileName() + "." + mpParentComponent->getComponentInfo()->getName() + "." + name;
-      MainWindow *pMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
+      MainWindow *pMainWindow = MainWindow::instance();
       VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
       VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(fullName, pVariablesTreeModel->getRootVariablesTreeItem());
       if (pVariablesTreeItem != NULL) {
@@ -1542,7 +1531,7 @@ void ShapeAnnotation::showShapeProperties()
   if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     return;
   }
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
   pShapePropertiesDialog->exec();
 }
@@ -1556,10 +1545,9 @@ void ShapeAnnotation::showShapeAttributes()
   if (!mpGraphicsView) {
     return;
   }
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
   MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
-  pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, pMainWindow, true);
+  pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, true, MainWindow::instance());
   pMetaModelConnectionAttributes->exec();
 }
 

@@ -35,12 +35,23 @@
 #ifndef MODELICACLASSDIALOG_H
 #define MODELICACLASSDIALOG_H
 
-#include "MainWindow.h"
+#include <QDialog>
+#include <QLineEdit>
+#include <QTreeView>
+#include <QPushButton>
+#include <QDialogButtonBox>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QGroupBox>
+#include <QTableWidget>
+#include <QPlainTextEdit>
+#include <QListWidget>
 
-class MainWindow;
 class Label;
 class LibraryWidget;
 class LibraryTreeProxyModel;
+class TreeSearchFilters;
+class DoubleSpinBox;
 
 class LibraryBrowseDialog : public QDialog
 {
@@ -65,11 +76,9 @@ class ModelicaClassDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ModelicaClassDialog(MainWindow *pParent);
-  MainWindow* getMainWindow();
-  QLineEdit* getParentClassTextBox();
+  ModelicaClassDialog(QWidget *pParent = 0);
+  QLineEdit* getParentClassTextBox() {return mpParentClassTextBox;}
 private:
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpSpecializationLabel;
@@ -97,9 +106,8 @@ class OpenModelicaFile : public QDialog
 {
   Q_OBJECT
 public:
-  OpenModelicaFile(MainWindow *pParent);
+  OpenModelicaFile(QWidget *pParent = 0);
 private:
-  MainWindow *mpMainWindow;
   QStringList mFileNames;
   Label *mpFileLabel;
   QLineEdit *mpFileTextBox;
@@ -124,11 +132,10 @@ class SaveAsClassDialog : public QDialog
 {
   Q_OBJECT
 public:
-  SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pParent);
-  QComboBox* getParentClassComboBox();
+  SaveAsClassDialog(ModelWidget *pModelWidget, QWidget *pParent = 0);
+  QComboBox* getParentClassComboBox() {return mpParentClassComboBox;}
 private:
   ModelWidget *mpModelWidget;
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpParentPackageLabel;
@@ -147,11 +154,10 @@ class DuplicateClassDialog : public QDialog
 {
   Q_OBJECT
 public:
-  DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
+  DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
 private:
   bool mSaveAs;
   LibraryTreeItem *mpLibraryTreeItem;
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpPathLabel;
@@ -169,9 +175,7 @@ class RenameClassDialog : public QDialog
 {
   Q_OBJECT
 public:
-  RenameClassDialog(QString name, QString nameStructure, MainWindow *parent);
-
-  MainWindow *mpMainWindow;
+  RenameClassDialog(QString name, QString nameStructure, QWidget *pParent = 0);
 private:
   QString mName;
   QString mNameStructure;
@@ -186,10 +190,8 @@ public slots:
 
 class InformationDialog : public QWidget
 {
-private:
-  MainWindow *mpMainWindow;
 public:
-  InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter = false, MainWindow *pMainWindow = 0);
+  InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter = false, QWidget *pParent = 0);
   void closeEvent(QCloseEvent *event);
 };
 
@@ -249,10 +251,9 @@ class SaveChangesDialog : public QDialog
 {
   Q_OBJECT
 public:
-  SaveChangesDialog(MainWindow *pMainWindow);
+  SaveChangesDialog(QWidget *pParent = 0);
   void listUnSavedClasses();
 private:
-  MainWindow *mpMainWindow;
   Label *mpSaveChangesLabel;
   QListWidget *mpUnsavedClassesListWidget;
   QPushButton *mpYesButton;
@@ -271,9 +272,8 @@ class ExportFigaroDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem);
+  ExportFigaroDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
 private:
-  MainWindow *mpMainWindow;
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpFigaroModeLabel;
   QComboBox *mpFigaroModeComboBox;
@@ -292,11 +292,10 @@ class CreateNewItemDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CreateNewItemDialog(QString path, bool isCreateFile, MainWindow *pMainWindow);
+  CreateNewItemDialog(QString path, bool isCreateFile, QWidget *pParent = 0);
 private:
   QString mPath;
   bool mIsCreateFile;
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpPathLabel;
@@ -314,10 +313,9 @@ class RenameItemDialog : public QDialog
 {
   Q_OBJECT
 public:
-  RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
+  RenameItemDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
 private:
   LibraryTreeItem *mpLibraryTreeItem;
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   QPushButton *mpOkButton;
@@ -333,11 +331,10 @@ class ComponentNameDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentNameDialog(QString name, GraphicsView *pGraphicsView, MainWindow *pMainWindow);
+  ComponentNameDialog(QString name, GraphicsView *pGraphicsView, QWidget *pParent = 0);
   QString getComponentName() {return mpNameTextBox->text();}
 private:
   GraphicsView *mpGraphicsView;
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   QCheckBox *mpDontShowThisMessageAgainCheckBox;

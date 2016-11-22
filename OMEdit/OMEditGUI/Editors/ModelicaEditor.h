@@ -35,14 +35,12 @@
 #ifndef MODELICAEDITOR_H
 #define MODELICAEDITOR_H
 
-#include "MainWindow.h"
-#include "Helper.h"
-#include "Utilities.h"
-#include "BaseEditor.h"
+#include "Util/Helper.h"
+#include "Util/Utilities.h"
+#include "Editors/BaseEditor.h"
 
 #include <QSyntaxHighlighter>
 
-class MainWindow;
 class ModelWidget;
 class LibraryTreeItem;
 
@@ -50,7 +48,7 @@ class ModelicaEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  ModelicaEditor(ModelWidget *pParent);
+  ModelicaEditor(QWidget *pParent);
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);

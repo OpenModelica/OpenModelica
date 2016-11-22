@@ -33,23 +33,38 @@
  */
 
 #include "MainWindow.h"
-
-#include <QtSvg/QSvgGenerator>
-
-#include "VariablesWidget.h"
-#include "Helper.h"
-#include "SimulationOutputWidget.h"
-#include "FetchInterfaceDataDialog.h"
-#include "TLMCoSimulationOutputWidget.h"
-#include "DebuggerConfigurationsDialog.h"
-#include "AttachToProcessDialog.h"
+/* Keep PlotWindowContainer on top to include OSG first */
+#include "Plotting/PlotWindowContainer.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ModelicaClassDialog.h"
+#include "Debugger/GDB/GDBAdapter.h"
+#include "Debugger/StackFrames/StackFramesWidget.h"
+#include "Debugger/Locals/LocalsWidget.h"
+#include "Modeling/DocumentationWidget.h"
+#include "Plotting/VariablesWidget.h"
+#include "Util/Helper.h"
+#include "Simulation/SimulationOutputWidget.h"
+#include "TLM/FetchInterfaceDataDialog.h"
+#include "TLM/TLMCoSimulationOutputWidget.h"
+#include "Debugger/DebuggerConfigurationsDialog.h"
+#include "Debugger/Attach/AttachToProcessDialog.h"
+#include "TransformationalDebugger/TransformationsWidget.h"
+#include "Options/NotificationsDialog.h"
+#include "Simulation/SimulationDialog.h"
+#include "TLM/TLMCoSimulationDialog.h"
+#include "FMI/ImportFMUDialog.h"
+#include "FMI/ImportFMUModelDescriptionDialog.h"
 #ifdef WIN32
 #include "version.h"
 #else
 #include "omc_config.h"
 #endif
 
-MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent)
+#include <QtSvg/QSvgGenerator>
+
+MainWindow::MainWindow(bool debug, QWidget *parent)
   : QMainWindow(parent), mDebug(debug), mExitApplicationStatus(false)
 {
   // This is a very convoluted way of asking for the default system font in Qt
@@ -75,14 +90,28 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   setMinimumSize(400, 300);
   resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
+}
+
+MainWindow *MainWindow::mpInstance = 0;
+
+MainWindow *MainWindow::instance(bool debug)
+{
+  if (!mpInstance) {
+    mpInstance = new MainWindow(debug);
+  }
+  return mpInstance;
+}
+
+void MainWindow::setUpMainWindow()
+{
   // Create the OMCProxy object.
   mpOMCProxy = new OMCProxy(this);
   if (getExitApplicationStatus()) {
     return;
   }
-  pSplashScreen->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
+  SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
   mpOptionsDialog = new OptionsDialog(this);
-  pSplashScreen->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
+  SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
   mpMessagesWidget = new MessagesWidget(this);
   // Create MessagesDockWidget dock
@@ -233,7 +262,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
   //Create Actions, Toolbar and Menus
-  pSplashScreen->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
+  SplashScreen::instance()->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
   setAcceptDrops(true);
   createActions();
   createToolbars();
@@ -270,7 +299,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, bool debug, QWidget *parent
   //Set the centralwidget
   setCentralWidget(pCentralwidget);
   // Load and add user defined Modelica libraries into the Library Widget.
-  mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries(pSplashScreen);
+  mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   // set the matching algorithm.
   mpOMCProxy->setMatchingAlgorithm(mpOptionsDialog->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
   // set the index reduction methods.
@@ -767,7 +796,7 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
-  ExportFigaroDialog *pExportFigaroDialog = new ExportFigaroDialog(this, pLibraryTreeItem);
+  ExportFigaroDialog *pExportFigaroDialog = new ExportFigaroDialog(pLibraryTreeItem, this);
   pExportFigaroDialog->exec();
 }
 

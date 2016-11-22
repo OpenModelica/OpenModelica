@@ -34,7 +34,15 @@
 #ifndef BREAKPOINTDIALOG_H
 #define BREAKPOINTDIALOG_H
 
-#include "BreakpointsWidget.h"
+#include <QDialog>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QDialogButtonBox>
+
+class BreakpointTreeItem;
+class BreakpointsTreeModel;
+class Label;
 
 class BreakpointDialog : public QDialog
 {

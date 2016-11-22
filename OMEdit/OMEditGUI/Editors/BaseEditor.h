@@ -34,19 +34,17 @@
 #ifndef BASEEDITOR_H
 #define BASEEDITOR_H
 
-#include "BreakpointMarker.h"
-#include "Utilities.h"
+#include "Debugger/Breakpoints/BreakpointMarker.h"
 
-#include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#include <QtWidgets>
-#else
-#include <QtGui>
-#endif
+#include <QDialog>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QCheckBox>
 
 class ModelWidget;
 class LineNumberArea;
 class FindReplaceWidget;
+class Label;
 
 class TabSettings
 {
@@ -238,10 +236,8 @@ private:
     void paintEvent(QPaintEvent *e);
   };
 public:
-  BaseEditor(MainWindow *pMainWindow);
-  BaseEditor(ModelWidget *pModelWidget);
+  BaseEditor(QWidget *pParent);
   ModelWidget *getModelWidget() {return mpModelWidget;}
-  MainWindow* getMainWindow() {return mpMainWindow;}
   PlainTextEdit *getPlainTextEdit() {return mpPlainTextEdit;}
   FindReplaceWidget* getFindReplaceWidget() {return mpFindReplaceWidget;}
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
@@ -256,7 +252,6 @@ private:
   void foldOrUnfold(bool unFold);
 protected:
   ModelWidget *mpModelWidget;
-  MainWindow *mpMainWindow;
   PlainTextEdit *mpPlainTextEdit;
   FindReplaceWidget *mpFindReplaceWidget;
   bool mCanHaveBreakpoints;

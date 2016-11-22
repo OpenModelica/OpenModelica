@@ -32,24 +32,27 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "PlotWindowContainer.h"
-#include "VariablesWidget.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/MessagesWidget.h"
+#include "Plotting/VariablesWidget.h"
 
 using namespace OMPlot;
 
 /*!
-  \class PlotWindowContainer
-  \brief A MDI area for plot windows.
-  */
+ * \class PlotWindowContainer
+ * \brief A MDI area for plot windows.
+ */
 /*!
  * \brief PlotWindowContainer::PlotWindowContainer
  * \param pParent
  */
-PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
+PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
   : MdiArea(pParent)
 {
-  if (mpMainWindow->getOptionsDialog()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
+  if (MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {
     setViewMode(QMdiArea::TabbedView);
@@ -152,8 +155,8 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setWindowTitle(getUniqueName("Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
-    pPlotWindow->setAutoScale(mpMainWindow->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
-    pPlotWindow->setTimeUnit(mpMainWindow->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
+    pPlotWindow->setAutoScale(MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time [%1]").arg(pPlotWindow->getTimeUnit()));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
@@ -164,7 +167,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     }
   }
   catch (PlotException &e) {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -180,14 +183,14 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setWindowTitle(getUniqueName("Parametric Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
-    pPlotWindow->setAutoScale(mpMainWindow->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setAutoScale(MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
   }
   catch (PlotException &e) {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -232,7 +235,7 @@ void PlotWindowContainer::clearPlotWindow()
     i = 0;   //Restart iteration
   }
   pPlotWindow->fitInView();
-  mpMainWindow->getVariablesWidget()->updateVariablesTreeHelper(subWindowList(QMdiArea::ActivationHistoryOrder).last());
+  MainWindow::instance()->getVariablesWidget()->updateVariablesTreeHelper(subWindowList(QMdiArea::ActivationHistoryOrder).last());
 }
 
 /*!
@@ -279,8 +282,8 @@ void PlotWindowContainer::exportVariables()
     contents.append(data.join(",")).append("\n");
   }
   // create a file
-  if (mpMainWindow->getLibraryWidget()->saveFile(fileName, contents)) {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
+  if (MainWindow::instance()->getLibraryWidget()->saveFile(fileName, contents)) {
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
                                                                  .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
   }
 }

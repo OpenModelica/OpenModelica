@@ -34,9 +34,16 @@
 #ifndef DEBUGGERCONFIGURATIONSDIALOG_H
 #define DEBUGGERCONFIGURATIONSDIALOG_H
 
-#include "MainWindow.h"
+#include "Util/Utilities.h"
+
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QStatusBar>
+#include <QStackedWidget>
+#include <QSplitter>
 
 class DebuggerConfigurationsDialog;
+class Label;
 
 class DebuggerConfigurationPage : public QWidget
 {
@@ -79,11 +86,10 @@ class DebuggerConfigurationsDialog : public QDialog
   Q_OBJECT
 public:
   enum { MaxDebugConfigurations = 10 };
-  DebuggerConfigurationsDialog(MainWindow *pMainWindow);
+  DebuggerConfigurationsDialog(QWidget *pParent = 0);
   QString getUniqueName(QString name = QString("New_configuration"), int number = 1);
   void readConfigurations();
 private:
-  MainWindow *mpMainWindow;
   QAction *mpNewConfigurationAction;
   QAction *mpRemoveConfigurationAction;
   QToolButton *mpNewToolButton;

@@ -33,19 +33,26 @@
  */
 
 #include "OptionsDialog.h"
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
+#include "Modeling/MessagesWidget.h"
+#include "Plotting/PlotWindowContainer.h"
+#include "Debugger/StackFrames/StackFramesWidget.h"
 #include <limits>
 
-//! @class OptionsDialog
-//! @brief Creates an interface with options like Modelica Text, Pen Styles, Libraries etc.
-
-//! Constructor
-//! @param pMainWindow is the pointer to MainWindow
-OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow), mpSettings(Utilities::getApplicationSettings())
+/*!
+ * \class OptionsDialog
+ * \brief Creates an interface with options like Modelica Text, Pen Styles, Libraries etc.
+ */
+/*!
+ * \brief OptionsDialog::OptionsDialog
+ * \param pParent
+ */
+OptionsDialog::OptionsDialog(QWidget *pParent)
+  : QDialog(pParent), mpSettings(Utilities::getApplicationSettings())
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
   setModal(true);
-  mpMainWindow = pMainWindow;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpTextEditorPage = new TextEditorPage(this);
@@ -118,9 +125,9 @@ void OptionsDialog::readGeneralSettings()
   }
   // read the working directory
   if (mpSettings->contains("workingDirectory")) {
-    mpMainWindow->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
+    MainWindow::instance()->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
   }
-  mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
   // read toolbar icon size
   if (mpSettings->contains("toolbarIconSize")) {
     mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->setValue(mpSettings->value("toolbarIconSize").toInt());
@@ -712,8 +719,8 @@ void OptionsDialog::saveGeneralSettings()
   }
   mpSettings->setValue("language", language);
   // save working directory
-  mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
-  mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  MainWindow::instance()->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
+  mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
   mpSettings->setValue("workingDirectory", mpGeneralSettingsPage->getWorkingDirectory());
   // save toolbar icon size
   mpSettings->setValue("toolbarIconSize", mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->value());
@@ -730,42 +737,42 @@ void OptionsDialog::saveGeneralSettings()
   // save show protected classes
   mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // show/hide the protected classes
-  getMainWindow()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
   // save modeling view mode
   mpSettings->setValue("modeling/viewmode", mpGeneralSettingsPage->getModelingViewMode());
   if (mpGeneralSettingsPage->getModelingViewMode().compare(Helper::subWindow) == 0) {
-    mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
-    ModelWidget *pModelWidget = mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget();
+    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
+    ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
     if (pModelWidget) {
       pModelWidget->show();
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
   } else {
-    mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
+    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
   }
   // save default view
   mpSettings->setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
-  mpMainWindow->toggleAutoSave();
+  MainWindow::instance()->toggleAutoSave();
   // save welcome page
   switch (mpGeneralSettingsPage->getWelcomePageView()) {
     case 2:
-      mpMainWindow->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Vertical);
+      MainWindow::instance()->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Vertical);
       break;
     case 1:
     default:
-      mpMainWindow->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Horizontal);
+      MainWindow::instance()->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Horizontal);
       break;
   }
   mpSettings->setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
   bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
-  if (mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) {
-    mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->show();
-    mpMainWindow->getWelcomePageWidget()->addLatestNewsListItems();
+  if (MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) {
+    MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->show();
+    MainWindow::instance()->getWelcomePageWidget()->addLatestNewsListItems();
   } else if (!showLatestNews) {
-    mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->hide();
+    MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->hide();
   }
   mpSettings->setValue("welcomePage/showLatestNews", showLatestNews);
 }
@@ -903,20 +910,20 @@ void OptionsDialog::saveSimulationSettings()
 {
   // save matching algorithm
   mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
-  mpMainWindow->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
+  MainWindow::instance()->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   // save index reduction
   mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
-  mpMainWindow->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
+  MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   // clear command line options before saving new ones
-  mpMainWindow->getOMCProxy()->clearCommandLineOptions();
+  MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
   // save +simCodeTarget
   mpSettings->setValue("simulation/targetLanguage", mpSimulationPage->getTargetLanguageComboBox()->currentText());
-  mpMainWindow->getOMCProxy()->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
   // save +target
   mpSettings->setValue("simulation/targetCompiler", mpSimulationPage->getTargetCompilerComboBox()->currentText());
-  mpMainWindow->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(mpSimulationPage->getTargetCompilerComboBox()->currentText()));
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(mpSimulationPage->getTargetCompilerComboBox()->currentText()));
   // save command line options ste manually by user. This will override above options.
-  if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text())) {
+  if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text())) {
     mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
   } else {
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
@@ -924,16 +931,16 @@ void OptionsDialog::saveSimulationSettings()
   // save ignore command line options
   mpSettings->setValue("simulation/ignoreCommandLineOptionsAnnotation", mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked());
   if (mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
   } else {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=false");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=false");
   }
   // save ignore simulation flags
   mpSettings->setValue("simulation/ignoreSimulationFlagsAnnotation", mpSimulationPage->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked());
   if (mpSimulationPage->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
   } else {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=false");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=false");
   }
   // save class before simulation.
   mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
@@ -958,7 +965,7 @@ void OptionsDialog::saveMessagesSettings()
   // save error color
   mpSettings->setValue("messages/errorColor", mpMessagesPage->getErrorColor().rgba());
   // apply the above settings to Messages
-  mpMainWindow->getMessagesWidget()->applyMessagesSettings();
+  MainWindow::instance()->getMessagesWidget()->applyMessagesSettings();
 }
 
 //! Saves the Notifications section settings to omedit.ini
@@ -999,14 +1006,14 @@ void OptionsDialog::savePlottingSettings()
   // save plotting view mode
   mpSettings->setValue("plotting/viewmode", mpPlottingPage->getPlottingViewMode());
   if (mpPlottingPage->getPlottingViewMode().compare(Helper::subWindow) == 0) {
-    mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
-    OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    MainWindow::instance()->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
+    OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow) {
       pPlotWindow->show();
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
   } else {
-    mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
+    MainWindow::instance()->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
   }
 
   mpSettings->setValue("curvestyle/pattern", mpPlottingPage->getCurvePattern());
@@ -1032,7 +1039,7 @@ void OptionsDialog::saveDebuggerSettings()
   mpSettings->setValue("GDBOutputLimit", mpDebuggerPage->getGDBOutputLimitSpinBox()->value());
   mpSettings->setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
   mpSettings->setValue("displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
-  mpMainWindow->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+  MainWindow::instance()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
   mpSettings->setValue("clearOutputOnNewRun", mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked());
   mpSettings->setValue("clearLogOnNewRun", mpDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked());
   mpSettings->endGroup();
@@ -1040,7 +1047,7 @@ void OptionsDialog::saveDebuggerSettings()
   mpSettings->setValue("alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
   mpSettings->setValue("generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
   if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked()) {
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
   }
   mpSettings->endGroup();
 }
@@ -1362,7 +1369,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   }
   // Working Directory
   mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
-  mpWorkingDirectoryTextBox = new QLineEdit(mpOptionsDialog->getMainWindow()->getOMCProxy()->changeDirectory());
+  mpWorkingDirectoryTextBox = new QLineEdit(MainWindow::instance()->getOMCProxy()->changeDirectory());
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   mpWorkingDirectoryBrowseButton->setAutoDefault(false);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
@@ -1863,7 +1870,7 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
   mpLibrariesPage = pLibrariesPage;
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
-  foreach (const QString &key, mpLibrariesPage->mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableLibraries()) {
+  foreach (const QString &key, MainWindow::instance()->getOMCProxy()->getAvailableLibraries()) {
     mpNameComboBox->addItem(key,key);
   }
 
@@ -2966,7 +2973,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpSimulationGroupBox = new QGroupBox(Helper::simulation);
   mpMatchingAlgorithmLabel = new Label(tr("Matching Algorithm:"));
   OMCInterface::getAvailableMatchingAlgorithms_res matchingAlgorithms;
-  matchingAlgorithms = mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableMatchingAlgorithms();
+  matchingAlgorithms = MainWindow::instance()->getOMCProxy()->getAvailableMatchingAlgorithms();
   mpMatchingAlgorithmComboBox = new QComboBox;
   int i = 0;
   foreach (QString matchingAlgorithmChoice, matchingAlgorithms.allChoices) {
@@ -2975,11 +2982,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     i++;
   }
   connect(mpMatchingAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMatchingAlgorithmToolTip(int)));
-  mpMatchingAlgorithmComboBox->setCurrentIndex(mpMatchingAlgorithmComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getMatchingAlgorithm()));
+  mpMatchingAlgorithmComboBox->setCurrentIndex(mpMatchingAlgorithmComboBox->findText(MainWindow::instance()->getOMCProxy()->getMatchingAlgorithm()));
   // Index Reduction Method
   mpIndexReductionMethodLabel = new Label(tr("Index Reduction Method:"));
   OMCInterface::getAvailableIndexReductionMethods_res indexReductionMethods;
-  indexReductionMethods = mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableIndexReductionMethods();
+  indexReductionMethods = MainWindow::instance()->getOMCProxy()->getAvailableIndexReductionMethods();
   mpIndexReductionMethodComboBox = new QComboBox;
   i = 0;
   foreach (QString indexReductionChoice, indexReductionMethods.allChoices) {
@@ -2988,10 +2995,10 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     i++;
   }
   connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
-  mpIndexReductionMethodComboBox->setCurrentIndex(mpIndexReductionMethodComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getIndexReductionMethod()));
+  mpIndexReductionMethodComboBox->setCurrentIndex(mpIndexReductionMethodComboBox->findText(MainWindow::instance()->getOMCProxy()->getIndexReductionMethod()));
   // Target Language
   mpTargetLanguageLabel = new Label(tr("Target Language:"));
-  OMCInterface::getConfigFlagValidOptions_res simCodeTarget = mpOptionsDialog->getMainWindow()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
+  OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new QComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
   mpTargetLanguageComboBox->setToolTip(simCodeTarget.mainDescription);
@@ -3003,7 +3010,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
   // Compiler
   mpCompilerLabel = new Label(tr("Target Compiler:"));
-  OMCInterface::getConfigFlagValidOptions_res target = mpOptionsDialog->getMainWindow()->getOMCProxy()->getConfigFlagValidOptions("target");
+  OMCInterface::getConfigFlagValidOptions_res target = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("target");
   mpTargetCompilerComboBox = new QComboBox;
   mpTargetCompilerComboBox->addItems(target.validOptions);
   mpTargetCompilerComboBox->setToolTip(target.mainDescription);
@@ -3127,8 +3134,8 @@ void SimulationPage::showOMCFlagsHelp()
                         .append("/share/doc/omc/OpenModelicaUsersGuide/omchelptext.html"));
   if (!QDesktopServices::openUrl(omcHelpTextPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(omcHelpTextPath.toString());
-    mpOptionsDialog->getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                                                     Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

@@ -36,10 +36,8 @@
 #define TEXTANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
 class Component;
-
 class TextAnnotation : public ShapeAnnotation
 {
   Q_OBJECT

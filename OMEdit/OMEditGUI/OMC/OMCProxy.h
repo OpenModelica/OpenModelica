@@ -36,12 +36,11 @@
 #define OMCPROXY_H
 
 #include "OpenModelicaScriptingAPIQt.h"
-#include "MainWindow.h"
-#include "Component.h"
-#include "StringHandler.h"
-#include "Utilities.h"
+#include "Component/Component.h"
+#include "Util/StringHandler.h"
+#include "Util/Utilities.h"
+#include "Util/Helper.h"
 
-class MainWindow;
 class CustomExpressionBox;
 class ComponentInfo;
 class StringHandler;
@@ -58,7 +57,6 @@ class OMCProxy : public QObject
 {
   Q_OBJECT
 private:
-  MainWindow *mpMainWindow;
   bool mHasInitialized;
   QString mResult;
   QWidget *mpOMCLoggerWidget;
@@ -85,7 +83,7 @@ private:
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
 public:
-  OMCProxy(MainWindow *pMainWindow);
+  OMCProxy(QWidget *pParent = 0);
   ~OMCProxy();
   void getPreviousCommand();
   void getNextCommand();

@@ -35,8 +35,11 @@
 #ifndef LIBRARYTREEWIDGET_H
 #define LIBRARYTREEWIDGET_H
 
-#include "MainWindow.h"
-#include "StringHandler.h"
+#include "OMC/OMCProxy.h"
+#include "Util/StringHandler.h"
+
+#include <QItemDelegate>
+#include <QTreeView>
 
 class ItemDelegate : public QItemDelegate
 {
@@ -229,7 +232,7 @@ public:
                                                Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
-  void addModelicaLibraries(QSplashScreen *pSplashScreen);
+  void addModelicaLibraries();
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false, int row = -1);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
@@ -373,13 +376,11 @@ protected:
   virtual void keyPressEvent(QKeyEvent *event);
 };
 
-class MainWindow;
 class LibraryWidget : public QWidget
 {
   Q_OBJECT
 public:
-  LibraryWidget(MainWindow *pMainWindow);
-  MainWindow* getMainWindow() {return mpMainWindow;}
+  LibraryWidget(QWidget *pParent = 0);
   TreeSearchFilters* getTreeSearchFilters() {return mpTreeSearchFilters;}
   LibraryTreeModel* getLibraryTreeModel() {return mpLibraryTreeModel;}
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
@@ -396,7 +397,6 @@ public:
   bool saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
 private:
-  MainWindow *mpMainWindow;
   TreeSearchFilters *mpTreeSearchFilters;
   LibraryTreeModel *mpLibraryTreeModel;
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;

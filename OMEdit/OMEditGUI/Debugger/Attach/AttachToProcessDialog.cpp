@@ -32,21 +32,24 @@
  */
 
 #include "AttachToProcessDialog.h"
+#include "MainWindow.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Options/OptionsDialog.h"
+#include "Debugger/GDB/GDBAdapter.h"
 
 /*!
-  \class AttachToProcessDialog
-  \brief Provides interface for attaching a debugger to a running process.
-  */
+ * \class AttachToProcessDialog
+ * \brief Provides interface for attaching a debugger to a running process.
+ */
 /*!
-  \param pMainWindow - pointer to MainWindow
-  */
-AttachToProcessDialog::AttachToProcessDialog(MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+ * \param pParent
+ */
+AttachToProcessDialog::AttachToProcessDialog(QWidget *pParent)
+  : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::attachToRunningProcess));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(500, 400);
-  mpMainWindow = pMainWindow;
   // attach to process id
   mpAttachToProcessIDLabel = new Label(tr("Attach to Process ID:"));
   mpAttachToProcessIDTextBox = new QLineEdit;
@@ -108,12 +111,12 @@ AttachToProcessDialog::AttachToProcessDialog(MainWindow *pMainWindow)
   */
 void AttachToProcessDialog::attachProcess()
 {
-  GDBAdapter *pGDBAdapter = mpMainWindow->getGDBAdapter();
+  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
   if (pGDBAdapter->isGDBRunning()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                              GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
   } else {
-    QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
+    QString GDBPath = MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getGDBPath();
     pGDBAdapter->launch(mpAttachToProcessIDTextBox->text(), GDBPath);
   }
   accept();

@@ -32,9 +32,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "TextAnnotation.h"
-#include "Commands.h"
+#include "Modeling/Commands.h"
 
 /*!
  * \class TextAnnotation

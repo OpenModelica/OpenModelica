@@ -32,26 +32,20 @@
  */
 
 #include "TextEditor.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/ModelWidgetContainer.h"
 
-TextEditor::TextEditor(ModelWidget *pModelWidget)
-  : BaseEditor(pModelWidget)
-{
-  MainWindow *pMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
-  QFont font;
-  font.setFamily(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(pMainWindow->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
-}
+#include <QMenu>
 
-TextEditor::TextEditor(MainWindow *pMainWindow)
-  : BaseEditor(pMainWindow)
+TextEditor::TextEditor(QWidget *pParent)
+  : BaseEditor(pParent)
 {
   QFont font;
-  font.setFamily(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(pMainWindow->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  font.setFamily(MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(pMainWindow->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
 }
 
 /*!

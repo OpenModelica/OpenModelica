@@ -33,8 +33,11 @@
  */
 
 #include "ModelicaEditor.h"
-#include "BreakpointMarker.h"
-#include "Helper.h"
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
+#include "Options/OptionsDialog.h"
+#include "Debugger/Breakpoints/BreakpointMarker.h"
+#include "Util/Helper.h"
 
 /*!
  * \class ModelicaEditor
@@ -44,7 +47,7 @@
  * \brief ModelicaEditor::ModelicaEditor
  * \param pParent
  */
-ModelicaEditor::ModelicaEditor(ModelWidget *pParent)
+ModelicaEditor::ModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
   setCanHaveBreakpoints(true);
@@ -61,7 +64,7 @@ ModelicaEditor::ModelicaEditor(ModelWidget *pParent)
  */
 QStringList ModelicaEditor::getClassNames(QString *errorString)
 {
-  OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QStringList classNames;
   LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
   if (mpPlainTextEdit->toPlainText().isEmpty()) {
@@ -99,7 +102,7 @@ QStringList ModelicaEditor::getClassNames(QString *errorString)
   // check if the class already exists
   foreach(QString className, classNames) {
     if (pLibraryTreeItem->getNameStructure().compare(className) != 0) {
-      if (mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className)) {
+      if (MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className)) {
         existingmodelsList.append(className);
         existModel = true;
       }
@@ -125,7 +128,7 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
   if (isTextChanged()) {
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!mpModelWidget->modelicaEditorTextChanged(pLibraryTreeItem)) {
-      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -294,16 +297,16 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
     }
     /* if user is changing the system library class. */
     if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() && !mForceSetPlainText) {
-      mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
+      MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
     } else if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
-      mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
+      MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
     } else {
       /* if user is changing, the normal class. */
       if (!mForceSetPlainText) {
         mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
         mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
-        mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
         setTextChanged(true);
       }
       /* Keep the line numbers and the block information for the line breakpoints updated */

@@ -33,6 +33,11 @@
  */
 
 #include "NotificationsDialog.h"
+#include "MainWindow.h"
+#include "OptionsDialog.h"
+
+#include <QHBoxLayout>
+#include <QGridLayout>
 
 /*!
  * \class NotificationsDialog
@@ -46,12 +51,11 @@
  * \brief NotificationsDialog::NotificationsDialog
  * \param notificationType - specifies what type of notification dialog should be created.
  * \param notificationIcon - specifies which icon should be used.
- * \param pMainWindow - pointer to MainWindow.
+ * \param pParent
  */
-NotificationsDialog::NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+NotificationsDialog::NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, QWidget *pParent)
+  : QDialog(pParent)
 {
-  mpMainWindow = pMainWindow;
   mNotificationType = notificationType;
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(getNotificationTitleString()));
@@ -216,7 +220,7 @@ void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/itemDroppedOnItself", false);
-  mpMainWindow->getOptionsDialog()->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->setChecked(false);
+  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->setChecked(false);
 }
 
 /*!
@@ -228,7 +232,7 @@ void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/replaceableIfPartial", false);
-  mpMainWindow->getOptionsDialog()->getNotificationsPage()->getReplaceableIfPartialCheckBox()->setChecked(false);
+  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getReplaceableIfPartialCheckBox()->setChecked(false);
 }
 
 /*!
@@ -240,7 +244,7 @@ void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/innerModelNameChanged", false);
-  mpMainWindow->getOptionsDialog()->getNotificationsPage()->getInnerModelNameChangedCheckBox()->setChecked(false);
+  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getInnerModelNameChangedCheckBox()->setChecked(false);
 }
 
 /*!
@@ -252,7 +256,7 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/saveModelForBitmapInsertion", false);
-  mpMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->setChecked(false);
+  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->setChecked(false);
 }
 
 /*!

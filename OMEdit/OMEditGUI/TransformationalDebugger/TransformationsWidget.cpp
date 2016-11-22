@@ -33,7 +33,18 @@
  */
 
 #include "TransformationsWidget.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Util/StringHandler.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Editors/TransformationsEditor.h"
+#include "Editors/ModelicaEditor.h"
 #include <qjson/parser.h>
+
+#include <QStatusBar>
+#include <QGridLayout>
+#include <QVBoxLayout>
+#include <QMessageBox>
 
 /*!
   \class TVariablesTreeItem
@@ -433,8 +444,8 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
 }
 
-TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainWindow *pMainWindow)
-  : mpMainWindow(pMainWindow), mInfoJSONFullFileName(infoJSONFullFileName)
+TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidget *pParent)
+  : QWidget(pParent), mInfoJSONFullFileName(infoJSONFullFileName)
 {
   if (!mInfoJSONFullFileName.endsWith("_info.json")) {
     mProfJSONFullFileName = "";
@@ -603,9 +614,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   mpTSourceEditorInfoBar->hide();
   mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaHighlighter(mpMainWindow->getOptionsDialog()->getModelicaEditorPage(),
+  pModelicaTextHighlighter = new ModelicaHighlighter(MainWindow::instance()->getOptionsDialog()->getModelicaEditorPage(),
                                                      mpTransformationsEditor->getPlainTextEdit());
-  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(MainWindow::instance()->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
   pTSourceEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);
@@ -712,7 +723,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, MainW
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     pSettings->beginGroup("transformationalDebugger");
     restoreGeometry(pSettings->value("geometry").toByteArray());

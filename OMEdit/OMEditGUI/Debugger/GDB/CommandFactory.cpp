@@ -32,7 +32,7 @@
  */
 
 #include <QStringList>
-#include "CommandFactory.h"
+#include "Debugger/GDB/CommandFactory.h"
 
 /*!
  * \brief CommandFactory::GDBSet

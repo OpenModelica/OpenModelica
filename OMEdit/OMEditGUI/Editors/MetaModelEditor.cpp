@@ -29,8 +29,14 @@
  */
 
 #include "MetaModelEditor.h"
-#include "ComponentProperties.h"
-#include "Commands.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/MessagesWidget.h"
+#include "Component/ComponentProperties.h"
+#include "Modeling/Commands.h"
+
+#include <QMessageBox>
+#include <QMenu>
 
 XMLDocument::XMLDocument()
   : QDomDocument()
@@ -46,13 +52,13 @@ XMLDocument::XMLDocument(MetaModelEditor *pMetaModelEditor)
 
 QString XMLDocument::toString() const
 {
-  TabSettings tabSettings = mpMetaModelEditor->getMainWindow()->getOptionsDialog()->getTabSettings();
+  TabSettings tabSettings = MainWindow::instance()->getOptionsDialog()->getTabSettings();
   return QDomDocument::toString(tabSettings.getIndentSize());
 }
 
 
-MetaModelEditor::MetaModelEditor(ModelWidget *pModelWidget)
-  : BaseEditor(pModelWidget), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
+MetaModelEditor::MetaModelEditor(QWidget *pParent)
+  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
   mXmlDocument = XMLDocument(this);
 }
@@ -67,7 +73,7 @@ bool MetaModelEditor::validateText()
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!mpModelWidget->metaModelEditorTextChanged()) {
-      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -782,7 +788,7 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGen
   //Make sure that all vector strings are found in XML
   if (cg_x_phi_cg_str.isEmpty() || cg_x_r_cg_str.isEmpty() || x_c_r_x_str.isEmpty() || x_c_phi_x_str.isEmpty()) {
     QString msg = tr("Interface coordinates does not exist in xml");
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                                  Helper::errorLevel));
     return false;
   }
@@ -873,7 +879,7 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   // Give error message if alignment failed
   if (!interfacesAligned(fromInterface, toInterface)) {
     if (showError) {
-      mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+      MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
                                                                    tr("Alignment operation failed."), Helper::scriptingKind,
                                                                    Helper::errorLevel));
     }
@@ -941,13 +947,13 @@ void MetaModelEditor::contentsHasChanged(int position, int charsRemoved, int cha
     /* if user is changing the read only file. */
     if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
-      mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
+      MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
     } else {
       /* if user is changing, the normal file. */
       if (!mForceSetPlainText) {
         mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
         mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
-        mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
         mTextChanged = true;
       }
     }

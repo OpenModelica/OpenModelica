@@ -36,10 +36,8 @@
 #define ELLIPSEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
 class Component;
-
 class EllipseAnnotation : public ShapeAnnotation
 {
   Q_OBJECT

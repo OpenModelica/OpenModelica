@@ -35,11 +35,17 @@
 #ifndef OPTIONSDIALOG_H
 #define OPTIONSDIALOG_H
 
-#include "MainWindow.h"
-#include "Helper.h"
-#include "Utilities.h"
+#include "Util/Helper.h"
+#include "Util/Utilities.h"
 
-class MainWindow;
+#include <QFontComboBox>
+#include <QStackedWidget>
+#include <QDialogButtonBox>
+#include <QRadioButton>
+#include <QTreeWidget>
+#include <QDialog>
+#include <QLineEdit>
+
 class GeneralSettingsPage;
 class LibrariesPage;
 class TextEditorPage;
@@ -65,7 +71,7 @@ class OptionsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  OptionsDialog(MainWindow *pMainWindow);
+  OptionsDialog(QWidget *pParent = 0);
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
@@ -106,7 +112,6 @@ public:
   void setUpDialog();
   void addListItems();
   void createPages();
-  MainWindow* getMainWindow() {return mpMainWindow;}
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
   LibrariesPage* getLibrariesPage() {return mpLibrariesPage;}
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
@@ -139,7 +144,6 @@ public slots:
   void reject();
   void saveSettings();
 private:
-  MainWindow *mpMainWindow;
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
   TextEditorPage *mpTextEditorPage;

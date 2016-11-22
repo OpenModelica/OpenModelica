@@ -35,6 +35,7 @@
 #define TLMCOSIMULATIONOPTIONS_H
 
 #include <QString>
+#include <QStringList>
 
 class TLMCoSimulationOptions
 {

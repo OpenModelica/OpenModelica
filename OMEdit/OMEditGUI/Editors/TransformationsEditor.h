@@ -34,8 +34,8 @@
 #ifndef TRANSFORMATIONSEDITOR_H
 #define TRANSFORMATIONSEDITOR_H
 
-#include "BaseEditor.h"
-#include "TransformationsWidget.h"
+#include "Editors/BaseEditor.h"
+#include "TransformationalDebugger/TransformationsWidget.h"
 
 class TransformationsWidget;
 class TransformationsEditor : public BaseEditor

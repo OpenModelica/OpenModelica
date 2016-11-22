@@ -32,6 +32,15 @@
  */
 
 #include "TLMCoSimulationThread.h"
+#include "MainWindow.h"
+#include "Modeling/MessagesWidget.h"
+#include "Util/Utilities.h"
+#include "Util/Helper.h"
+
+#include <QFileInfo>
+#include <QObject>
+#include <QTimer>
+#include <QDir>
 
 TLMCoSimulationThread::TLMCoSimulationThread(TLMCoSimulationOutputWidget *pTLMCoSimulationOutputWidget)
   : QThread(pTLMCoSimulationOutputWidget), mpTLMCoSimulationOutputWidget(pTLMCoSimulationOutputWidget)
@@ -268,7 +277,7 @@ void TLMCoSimulationThread::progressFileChanged()
     }
     mProgressFile.close();
   } else {
-    MessagesWidget *pMessagesWidget = mpTLMCoSimulationOutputWidget->getMainWindow()->getMessagesWidget();
+    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
     pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(mProgressFile.fileName()),
                                                Helper::scriptingKind, Helper::errorLevel));

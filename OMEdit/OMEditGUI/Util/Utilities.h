@@ -32,7 +32,9 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include <QSplashScreen>
 #include <QMdiArea>
+#include <QLineEdit>
 #include <QThread>
 #include <QToolButton>
 #include <QComboBox>
@@ -64,15 +66,22 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-class MainWindow;
+class SplashScreen : public QSplashScreen
+{
+  Q_OBJECT
+private:
+  SplashScreen() : QSplashScreen() {}
+
+  static SplashScreen *mpInstance;
+public:
+  static SplashScreen *instance();
+};
+
 class MdiArea : public QMdiArea
 {
   Q_OBJECT
 public:
   MdiArea(QWidget *pParent = 0);
-  MainWindow* getMainWindow();
-protected:
-  MainWindow *mpMainWindow;
 };
 
 //! @brief Used to create platform independent sleep for the application.

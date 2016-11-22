@@ -35,10 +35,26 @@
 #ifndef SIMULATIONDIALOG_H
 #define SIMULATIONDIALOG_H
 
-#include "MainWindow.h"
+#include "Util/Helper.h"
 #include "SimulationOptions.h"
 
+#include <QDialog>
+#include <QTreeWidget>
+#include <QScrollArea>
+#include <QGroupBox>
+#include <QRadioButton>
+#include <QSpinBox>
+#include <QComboBox>
+#include <QToolButton>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QDialogButtonBox>
+#include <QGridLayout>
+#include <QDateTime>
+
+class Label;
 class SimulationOutputWidget;
+class LibraryTreeItem;
 
 class ArchivedSimulationItem : public QTreeWidgetItem
 {
@@ -65,19 +81,17 @@ private:
   SimulationOutputWidget *mpSimulationOutputWidget;
 };
 
-class MainWindow;
 class SimulationDialog : public QDialog
 {
   Q_OBJECT
 public:
-  SimulationDialog(MainWindow *pParent = 0);
+  SimulationDialog(QWidget *pParent = 0);
   ~SimulationDialog();
   QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
   void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger,
                       bool launchAnimation);
 private:
-  MainWindow *mpMainWindow;
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
   QTabWidget *mpSimulationTabWidget;

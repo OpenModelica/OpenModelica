@@ -35,11 +35,15 @@
 #ifndef VARIABLESWIDGET_H
 #define VARIABLESWIDGET_H
 
-#include "MainWindow.h"
-#include "SimulationDialog.h"
+#include <QDomDocument>
+
+#include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 
-class MainWindow;
+class OMCProxy;
+class TreeSearchFilters;
+class Label;
+
 class VariablesTreeItem
 {
 public:
@@ -161,8 +165,7 @@ class VariablesWidget : public QWidget
 {
   Q_OBJECT
 public:
-  VariablesWidget(MainWindow *pMainWindow);
-  MainWindow* getMainWindow() {return mpMainWindow;}
+  VariablesWidget(QWidget *pParent = 0);
   QComboBox* getSimulationTimeComboBox() {return mpSimulationTimeComboBox;}
   VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
   VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}
@@ -176,7 +179,6 @@ public:
   void reSimulate(bool showSetup);
   void updateInitXmlFile(SimulationOptions simulationOptions);
 private:
-  MainWindow *mpMainWindow;
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
   QComboBox *mpSimulationTimeComboBox;

@@ -32,9 +32,10 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "MainWindow.h"
 #include "ComponentProperties.h"
-#include "Commands.h"
+#include "MainWindow.h"
+#include "Modeling/MessagesWidget.h"
+#include "Modeling/Commands.h"
 
 /*!
  * \class Parameter
@@ -58,7 +59,7 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
   setFixedState("false", true);
   // set the value type based on component type.
-  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   if (mpComponent->getComponentInfo()->getClassName().compare("Boolean") == 0) {
     mValueType = Parameter::Boolean;
   } else if (pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
@@ -140,7 +141,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
     bool ok = true;
     qreal realValue = value.toDouble(&ok);
     if (ok) {
-      OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
       OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
       if (convertUnit.unitsCompatible) {
         realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
@@ -260,7 +261,7 @@ QString Parameter::getFixedState()
  */
 QString Parameter::getModifierValueFromDerivedClass(Component *pComponent, QString modifierName)
 {
-  MainWindow *pMainWindow = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
   QString modifierValue = "";
   if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
@@ -309,7 +310,7 @@ void Parameter::setEnabled(bool enable)
 void Parameter::createValueWidget()
 {
   int i;
-  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getComponentInfo()->getClassName();
   QStringList enumerationLiterals;
   switch (mValueType) {
@@ -534,17 +535,16 @@ QVBoxLayout *ParametersScrollArea::getLayout()
 /*!
  * \brief ComponentParameters::ComponentParameters
  * \param pComponent - pointer to Component
- * \param pMainWindow - pointer to MainWindow
+ * \param pParent
  */
-ComponentParameters::ComponentParameters(Component *pComponent, MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+ComponentParameters::ComponentParameters(Component *pComponent, QWidget *pParent)
+  : QDialog(pParent)
 {
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Parameters")).arg(pComponent->getName())
                  .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
-  mpMainWindow = pMainWindow;
   setUpDialog();
 }
 
@@ -707,7 +707,7 @@ void ComponentParameters::createTabsGroupBoxesAndParameters(LibraryTreeItem *pLi
  */
 void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert)
 {
-  OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   foreach (LibraryTreeItem *pInheritedLibraryTreeItem, pLibraryTreeItem->getInheritedClasses()) {
     QMap<QString, QString> extendsModifiers = pLibraryTreeItem->getModelWidget()->getExtendsModifiersMap(pInheritedLibraryTreeItem->getNameStructure());
     QMap<QString, QString>::iterator extendsModifiersIterator;
@@ -772,7 +772,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter) {
-      OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
       QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
       QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, pComponent);
       QMap<QString, QString>::iterator modifiersIterator;
@@ -806,7 +806,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       // get the group image
       groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
       if (!groupImage.isEmpty()) {
-        groupImage = mpMainWindow->getOMCProxy()->uriToFilename(groupImage);
+        groupImage = MainWindow::instance()->getOMCProxy()->uriToFilename(groupImage);
       }
     }
     // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
@@ -862,7 +862,7 @@ void ComponentParameters::fetchComponentModifiers()
   if (mpComponent->getReferenceComponent()) {
     pComponent = mpComponent->getReferenceComponent();
   }
-  OMCProxy *pOMCProxy = pComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QMap<QString, QString> modifiers = pComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
   QMap<QString, QString>::iterator modifiersIterator;
@@ -917,7 +917,7 @@ void ComponentParameters::fetchComponentModifiers()
 void ComponentParameters::fetchExtendsModifiers()
 {
   if (mpComponent->getReferenceComponent()) {
-    OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QMap<QString, QString> extendsModifiersMap = mpComponent->getGraphicsView()->getModelWidget()->getExtendsModifiersMap(inheritedClassName);
@@ -1019,9 +1019,9 @@ void ComponentParameters::commentLinkClicked(QString link)
   QUrl linkUrl(link);
   if (linkUrl.scheme().compare("modelica") == 0) {
     link = link.remove("modelica://");
-    LibraryTreeItem *pLibraryTreeItem = mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(link);
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(link);
     if (pLibraryTreeItem) {
-      mpMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     }
   } else {
     QDesktopServices::openUrl(link);
@@ -1035,7 +1035,7 @@ void ComponentParameters::commentLinkClicked(QString link)
  */
 void ComponentParameters::updateComponentParameters()
 {
-  OMCProxy *pOMCProxy = mpComponent->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   bool valueChanged = false;
   // save the Component modifiers
@@ -1113,7 +1113,7 @@ void ComponentParameters::updateComponentParameters()
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
-        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+        MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                                      GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
                                                                      Helper::scriptingKind, Helper::errorLevel));
       }
@@ -1148,17 +1148,16 @@ void ComponentParameters::updateComponentParameters()
 /*!
  * \brief ComponentAttributes::ComponentAttributes
  * \param pComponent
- * \param pMainWindow
+ * \param pParent
  */
-ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+ComponentAttributes::ComponentAttributes(Component *pComponent, QWidget *pParent)
+  : QDialog(pParent)
 {
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Attributes")).arg(pComponent->getName())
                  .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
-  mpMainWindow = pMainWindow;
   setUpDialog();
   initializeDialog();
 }
@@ -1326,8 +1325,7 @@ void ComponentAttributes::updateComponentAttributes()
   /* Check the same component name problem before setting any attributes. */
   if (mpComponent->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
     if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text())) {
-      QMessageBox::information(pModelWidget->getModelWidgetContainer()->getMainWindow(),
-                               QString(Helper::applicationName).append(" - ").append(Helper::information),
+      QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
       return;
     }
@@ -1385,15 +1383,14 @@ void ComponentAttributes::updateComponentAttributes()
 /*!
  * \brief MetaModelSubModelAttributes::MetaModelSubModelAttributes
  * \param pComponent - pointer to Component
- * \param pMainWindow - pointer to MainWindow
+ * \param pParent
  */
-MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, MainWindow *pMainWindow)
-  : QDialog(pMainWindow)
+MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, QWidget *pParent)
+  : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
-  mpMainWindow = pMainWindow;
   setUpDialog();
   initializeDialog();
 }
@@ -1555,9 +1552,8 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
   \param pMainWindow - pointer to MainWindow
   */
 MetaModelConnectionAttributes::MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation,
-                                                             MainWindow *pMainWindow, bool edit)
-  : QDialog(pMainWindow), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation),
-    mpMainWindow(pMainWindow), mEdit(edit)
+                                                             bool edit, QWidget *pParent)
+  : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mEdit(edit)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::connectionAttributes));
   setAttribute(Qt::WA_DeleteOnClose);

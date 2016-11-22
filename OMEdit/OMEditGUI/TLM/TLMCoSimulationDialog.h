@@ -34,25 +34,29 @@
 #ifndef TLMCOSIMULATIONDIALOG_H
 #define TLMCOSIMULATIONDIALOG_H
 
-#include "MainWindow.h"
-#include "TLMCoSimulationOutputWidget.h"
 #include "TLMCoSimulationOptions.h"
 
-class MainWindow;
-class TLMCoSimulationOutputWidget;
+#include <QDialog>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QDialogButtonBox>
 
+class LibraryTreeItem;
+class Label;
+class TLMCoSimulationOutputWidget;
 class TLMCoSimulationDialog : public QDialog
 {
   Q_OBJECT
 public:
-  TLMCoSimulationDialog(MainWindow *pMainWindow);
+  TLMCoSimulationDialog(QWidget *pParent = 0);
   ~TLMCoSimulationDialog();
   void show(LibraryTreeItem *pLibraryTreeItem);
   void simulationProcessFinished(TLMCoSimulationOptions tlmCoSimulationOptions, QDateTime resultFileLastModifiedDateTime);
   bool isTLMCoSimulationRunning() {return mIsTLMCoSimulationRunning;}
   void setIsTLMCoSimulationRunning(bool isTLMCoSimulationRunning) {mIsTLMCoSimulationRunning = isTLMCoSimulationRunning;}
 private:
-  MainWindow *mpMainWindow;
   LibraryTreeItem *mpLibraryTreeItem;
   bool mIsTLMCoSimulationRunning;
   Label *mpHeadingLabel;
@@ -94,6 +98,7 @@ private slots:
   void runTLMCoSimulation();
 };
 
+class GraphicsView;
 class MetaModelSimulationParamsDialog : public QDialog
 {
   Q_OBJECT

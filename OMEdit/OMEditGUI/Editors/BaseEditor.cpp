@@ -32,9 +32,11 @@
  */
 
 #include "MainWindow.h"
-#include "BaseEditor.h"
-#include "ModelWidgetContainer.h"
-#include "Helper.h"
+#include "Editors/BaseEditor.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "Util/Helper.h"
+#include "Debugger/Breakpoints/BreakpointsWidget.h"
 
 /*!
  * \class TabSettings
@@ -674,7 +676,7 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateHighlights()));
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
   connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
-  OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(textSettingsChanged()), mpBaseEditor, SLOT(textSettingsChanged()));
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
@@ -700,7 +702,7 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
   } else {
     space += 4;
   }
-  TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     space += foldBoxWidth(fm);
   } else {
@@ -728,7 +730,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   int fmLineSpacing = fm.lineSpacing();
 
   int collapseColumnWidth = 4;
-  TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     collapseColumnWidth = foldBoxWidth(fm);
   }
@@ -786,7 +788,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       painter.drawText(0, top, lineNumbersWidth, fm.height(), Qt::AlignRight, number);
     }
     // paint folding markers
-    TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+    TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
     if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
       painter.save();
       painter.setRenderHint(QPainter::Antialiasing, false);
@@ -857,7 +859,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
                (event->pos().x() <= breakPointWidth)) {
       /* Do not allow breakpoints if file is not saved. */
       if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
-        mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
+        MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
         return;
       }
       QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getFileName();
@@ -873,7 +875,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
     }
   }
   // check mouse click for folding markers
-  TextEditorPage *pTextEditorPage = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     int boxWidth = foldBoxWidth(fm);
     if (event->button() == Qt::LeftButton && event->pos().x() > mpLineNumberArea->width() - boxWidth) {
@@ -976,7 +978,7 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
  */
 void BaseEditor::PlainTextEdit::setLineWrapping()
 {
-  OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
   if (pOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
   } else {
@@ -992,7 +994,7 @@ void BaseEditor::PlainTextEdit::setLineWrapping()
  */
 void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
-  BreakpointsTreeModel *pBreakpointsTreeModel = mpBaseEditor->getMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
+  BreakpointsTreeModel *pBreakpointsTreeModel = MainWindow::instance()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
   if (!pBreakpointMarker) {
     /* create a breakpoint marker */
@@ -1015,7 +1017,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
  */
 void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
-  TabSettings tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTabSettings();
+  TabSettings tabSettings = MainWindow::instance()->getOptionsDialog()->getTabSettings();
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   // Indent or unindent the selected lines
@@ -1223,7 +1225,7 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
    */
   /*! @todo We should add formatter classes to handle this based on editor language i.e Modelica or C/C++. */
   if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return) {
-    TabSettings tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTabSettings();
+    TabSettings tabSettings = MainWindow::instance()->getOptionsDialog()->getTabSettings();
     QTextCursor cursor = textCursor();
     const QTextBlock previousBlock = cursor.block().previous();
     QString indentText = previousBlock.text();
@@ -1315,7 +1317,7 @@ QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
  */
 void BaseEditor::PlainTextEdit::focusInEvent(QFocusEvent *event)
 {
-  mpBaseEditor->getMainWindow()->getAutoSaveTimer()->stop();
+  MainWindow::instance()->getAutoSaveTimer()->stop();
   QPlainTextEdit::focusInEvent(event);
 }
 
@@ -1329,9 +1331,9 @@ void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
   /* The user might start editing the document and then minimize the OMEdit window.
    * We should only start the autosavetimer when MainWindow is the active window and focusOutEvent is called.
    */
-  if (mpBaseEditor->getMainWindow()->isActiveWindow()) {
-    if (mpBaseEditor->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
-      mpBaseEditor->getMainWindow()->getAutoSaveTimer()->start();
+  if (MainWindow::instance()->isActiveWindow()) {
+    if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+      MainWindow::instance()->getAutoSaveTimer()->start();
     }
   }
   QPlainTextEdit::focusOutEvent(event);
@@ -1434,18 +1436,16 @@ void BaseEditor::PlainTextEdit::paintEvent(QPaintEvent *e)
  */
 /*!
  * \brief BaseEditor::BaseEditor
- * \param pMainWindow
+ * \param pParent
  */
-BaseEditor::BaseEditor(MainWindow *pMainWindow)
-  : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)
+BaseEditor::BaseEditor(QWidget *pParent)
+  : QWidget(pParent), mCanHaveBreakpoints(false)
 {
-  initialize();
-}
-
-BaseEditor::BaseEditor(ModelWidget *pModelWidget)
-  : QWidget(pModelWidget), mpModelWidget(pModelWidget), mCanHaveBreakpoints(false)
-{
-  mpMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
+  if (qobject_cast<ModelWidget*>(pParent)) {
+    mpModelWidget = qobject_cast<ModelWidget*>(pParent);
+  } else {
+    mpModelWidget = 0;
+  }
   initialize();
 }
 
@@ -1538,7 +1538,7 @@ void BaseEditor::createActions()
   // folding actions
   bool enable = true;
   // if user disables the code folding then unfold all the text editors.
-  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     enable = false;
   }
@@ -1604,7 +1604,7 @@ void BaseEditor::textSettingsChanged()
   // update code foldings
   bool enable = true;
   // if user disables the code folding then unfold all the text editors.
-  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     foldOrUnfold(true);
     enable = false;
@@ -1898,7 +1898,7 @@ void BaseEditor::toggleCommentSelection()
  */
 void BaseEditor::foldAll()
 {
-  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     foldOrUnfold(false);
   }
@@ -1910,7 +1910,7 @@ void BaseEditor::foldAll()
  */
 void BaseEditor::unFoldAll()
 {
-  TextEditorPage *pTextEditorPage = mpMainWindow->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     foldOrUnfold(true);
   }

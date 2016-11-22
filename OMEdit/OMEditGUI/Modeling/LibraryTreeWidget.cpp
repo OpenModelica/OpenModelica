@@ -33,8 +33,13 @@
  */
 
 #include "LibraryTreeWidget.h"
-#include "VariablesWidget.h"
-#include "SimulationOutputWidget.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+#include "MessagesWidget.h"
+#include "DocumentationWidget.h"
+#include "Plotting/VariablesWidget.h"
+#include "Simulation/SimulationOutputWidget.h"
+#include "ModelicaClassDialog.h"
 
 ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
   : QItemDelegate(pParent)
@@ -802,7 +807,7 @@ void LibraryTreeItem::emitComponentAdded(Component *pComponent)
 void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
 {
   if (mpModelWidget) {
-    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    MainWindow *pMainWindow = MainWindow::instance();
     // if the base class need to be loaded then load it first.
     if (!pLibraryTreeItem->getModelWidget()) {
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
@@ -824,7 +829,7 @@ void LibraryTreeItem::handleUnloaded()
 {
   if (mpModelWidget) {
     mpModelWidget->reDrawModelWidgetInheritedClasses();
-    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    MainWindow *pMainWindow = MainWindow::instance();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
     // update the icon in the libraries browser view.
@@ -890,7 +895,7 @@ void LibraryTreeItem::handleConnectionAdded(LineAnnotation *pConnectionLineAnnot
 void LibraryTreeItem::handleIconUpdated()
 {
   if (mpModelWidget) {
-    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    MainWindow *pMainWindow = MainWindow::instance();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
     // update the icon in the libraries browser view.
@@ -956,7 +961,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     }
     // check current index itself
     if (pLibraryTreeItem) {
-      if (pLibraryTreeItem->isProtected() && !mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getShowProtectedClasses()) {
+      if (pLibraryTreeItem->isProtected() && !MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getShowProtectedClasses()) {
         return false;
       } else {
         return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
@@ -1217,19 +1222,18 @@ QModelIndex LibraryTreeModel::libraryTreeItemIndex(const LibraryTreeItem *pLibra
  * \brief LibraryTreeModel::addModelicaLibraries
  * Loads the user defined Modelica Libraries.
  * Automatically loads the OpenModelica as system library.
- * \param pSplashScreen
  */
-void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
+void LibraryTreeModel::addModelicaLibraries()
 {
   // load Modelica System Libraries.
-  OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-  if (mpLibraryWidget->getMainWindow()->getOptionsDialog()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
+  if (MainWindow::instance()->getOptionsDialog()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
     systemLibs.prepend("OpenModelica");
   }
   foreach (QString lib, systemLibs) {
-    pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
+    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, true, true);
     checkIfAnyNonExistingClassLoaded();
   }
@@ -1240,7 +1244,7 @@ void LibraryTreeModel::addModelicaLibraries(QSplashScreen *pSplashScreen)
     if (systemLibs.contains(lib)) {
       continue;
     }
-    pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
+    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, false, true);
     checkIfAnyNonExistingClassLoaded();
   }
@@ -1406,7 +1410,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
     // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
     pParentLibraryTreeItem->setIsSaved(false);
     updateLibraryTreeItem(pParentLibraryTreeItem);
-    OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QString before = pParentLibraryTreeItem->getClassText(this);
     QString after = pOMCProxy->listFile(pParentLibraryTreeItem->getNameStructure());
     QString contents = pOMCProxy->diffModelicaFileListings(before, after);
@@ -1443,7 +1447,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
   // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
   pParentLibraryTreeItem->setIsSaved(false);
   updateLibraryTreeItem(pParentLibraryTreeItem);
-  OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pParentLibraryTreeItem->setClassText(contents);
   if (pParentLibraryTreeItem->getModelWidget()) {
     pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
@@ -1473,7 +1477,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
       updateLibraryTreeItemClassText(pLibraryTreeItem);
     } else {
       if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-        pLibraryTreeItem->setClassText(mpLibraryWidget->getMainWindow()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
+        pLibraryTreeItem->setClassText(MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
       }
     }
   } else {
@@ -1537,7 +1541,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     rectangle.setY(rectangle.y() - adjust);
     rectangle.setWidth(rectangle.width() + adjust);
     rectangle.setHeight(rectangle.height() + adjust);
-    int libraryIconSize = mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+    int libraryIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
     QPixmap libraryPixmap(QSize(libraryIconSize, libraryIconSize));
     libraryPixmap.fill(QColor(Qt::transparent));
     QPainter libraryPainter(&libraryPixmap);
@@ -1579,10 +1583,10 @@ void LibraryTreeModel::loadDependentLibraries(QStringList libraries)
   foreach (QString library, libraries) {
     LibraryTreeItem* pLoadedLibraryTreeItem = findLibraryTreeItem(library);
     if (!pLoadedLibraryTreeItem) {
-      mpLibraryWidget->getMainWindow()->getStatusBar()->showMessage(QString("%1: %2").arg(Helper::loading).arg(library));
+      MainWindow::instance()->getStatusBar()->showMessage(QString("%1: %2").arg(Helper::loading).arg(library));
       createLibraryTreeItem(library, mpRootLibraryTreeItem, true, true, true);
       checkIfAnyNonExistingClassLoaded();
-      mpLibraryWidget->getMainWindow()->getStatusBar()->clearMessage();
+      MainWindow::instance()->getStatusBar()->clearMessage();
     }
   }
 }
@@ -1610,11 +1614,11 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   // only switch to modeling perspective if show is true and we are not in a debugging perspective.
-  if (show && mpLibraryWidget->getMainWindow()->getPerspectiveTabBar()->currentIndex() != 3) {
-    mpLibraryWidget->getMainWindow()->getPerspectiveTabBar()->setCurrentIndex(1);
+  if (show && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 3) {
+    MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(1);
   }
   if (!pLibraryTreeItem->getModelWidget()) {
-    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, mpLibraryWidget->getMainWindow()->getModelWidgetContainer());
+    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
     pLibraryTreeItem->setModelWidget(pModelWidget);
   }
   /* Ticket #3797
@@ -1622,7 +1626,7 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
    */
   pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
   if (show) {
-    mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
+    MainWindow::instance()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
   } else {
     pLibraryTreeItem->getModelWidget()->hide();
   }
@@ -1650,7 +1654,7 @@ void LibraryTreeModel::showHideProtectedClasses()
 bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
   if (askQuestion) {
-    QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -1677,7 +1681,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
   /* Delete the class in OMC.
    * If deleteClass is successful remove the class from Library Browser and delete the corresponding ModelWidget.
    */
-  if (mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+  if (MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
      * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
@@ -1702,7 +1706,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
       mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
     }
     /* Update the model switcher toolbar button. */
-    mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+    MainWindow::instance()->updateModelSwitcherMenu(0);
     if (!pLibraryTreeItem->isTopLevel()) {
       LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
       // if we unload in a package saved in one file strucutre then we should update its containing file item text.
@@ -1716,8 +1720,8 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
     }
     return true;
   } else {
-    QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpLibraryWidget->getMainWindow()->getOMCProxy()->getResult())
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(MainWindow::instance()->getOMCProxy()->getResult())
                           .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
     return false;
   }
@@ -1733,7 +1737,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
 bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
   if (askQuestion) {
-    QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -1777,7 +1781,7 @@ bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeIt
     mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
   }
   /* Update the model switcher toolbar button. */
-  mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+  MainWindow::instance()->updateModelSwitcherMenu(0);
   return true;
 }
 
@@ -1793,7 +1797,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
   /* Delete the class in OMC.
    * If deleteClass is successful remove the class from Library Browser.
    */
-  if (!doDeleteClass || mpLibraryWidget->getMainWindow()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
+  if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
      * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
@@ -1832,11 +1836,11 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
       mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
     }
     /* Update the model switcher toolbar button. */
-    mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+    MainWindow::instance()->updateModelSwitcherMenu(0);
     return true;
   } else {
-    QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpLibraryWidget->getMainWindow()->getOMCProxy()->getResult())
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(MainWindow::instance()->getOMCProxy()->getResult())
                           .append(tr(" while deleting ") + pLibraryTreeItem->getNameStructure()), Helper::ok);
     return false;
   }
@@ -1870,7 +1874,7 @@ bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
   }
   /* Update the model switcher toolbar button. */
-  mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+  MainWindow::instance()->updateModelSwitcherMenu(0);
   return true;
 }
 
@@ -1884,7 +1888,7 @@ bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
   if (askQuestion) {
-    QMessageBox *pMessageBox = new QMessageBox(mpLibraryWidget->getMainWindow());
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -1928,7 +1932,7 @@ bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
     mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
   }
   /* Update the model switcher toolbar button. */
-  mpLibraryWidget->getMainWindow()->updateModelSwitcherMenu(0);
+  MainWindow::instance()->updateModelSwitcherMenu(0);
   return true;
 }
 
@@ -1945,7 +1949,7 @@ void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool u
   int row = pLibraryTreeItem->row();
   bool update = false;
   if (up && row > 0) {
-    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClass(pLibraryTreeItem->getNameStructure(), -1)) {
+    if (MainWindow::instance()->getOMCProxy()->moveClass(pLibraryTreeItem->getNameStructure(), -1)) {
       if (beginMoveRows(parentIndex, row, row, parentIndex, row - 1)) {
         pParentLibraryTreeItem->moveChild(row, row - 1);
         endMoveRows();
@@ -1953,7 +1957,7 @@ void LibraryTreeModel::moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool u
       }
     }
   } else if (!up && row < pParentLibraryTreeItem->childrenSize() - 1) {
-    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClass(pLibraryTreeItem->getNameStructure(), 1)) {
+    if (MainWindow::instance()->getOMCProxy()->moveClass(pLibraryTreeItem->getNameStructure(), 1)) {
       if (beginMoveRows(parentIndex, row, row, parentIndex, row + 2)) {
         pParentLibraryTreeItem->moveChild(row, row + 1);
         endMoveRows();
@@ -1994,7 +1998,7 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
   int row = pLibraryTreeItem->row();
   bool update = false;
   if (top && row > 0) {
-    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClassToTop(pLibraryTreeItem->getNameStructure())) {
+    if (MainWindow::instance()->getOMCProxy()->moveClassToTop(pLibraryTreeItem->getNameStructure())) {
       if (beginMoveRows(parentIndex, row, row, parentIndex, 0)) {
         pParentLibraryTreeItem->moveChild(row, 0);
         endMoveRows();
@@ -2002,7 +2006,7 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
       }
     }
   } else if (!top && row < pParentLibraryTreeItem->childrenSize() - 1) {
-    if (mpLibraryWidget->getMainWindow()->getOMCProxy()->moveClassToBottom(pLibraryTreeItem->getNameStructure())) {
+    if (MainWindow::instance()->getOMCProxy()->moveClassToBottom(pLibraryTreeItem->getNameStructure())) {
       if (beginMoveRows(parentIndex, row, row, parentIndex, pParentLibraryTreeItem->childrenSize())) {
         pParentLibraryTreeItem->moveChild(row, pParentLibraryTreeItem->childrenSize() - 1);
         endMoveRows();
@@ -2037,7 +2041,7 @@ void LibraryTreeModel::moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, boo
  */
 void LibraryTreeModel::updateBindings(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (mpLibraryWidget->getMainWindow()->getOMCProxy()->inferBindings(pLibraryTreeItem->getNameStructure())) {
+  if (MainWindow::instance()->getOMCProxy()->inferBindings(pLibraryTreeItem->getNameStructure())) {
     if (pLibraryTreeItem->getModelWidget()) {
       pLibraryTreeItem->getModelWidget()->updateModelText();
     } else {
@@ -2129,7 +2133,7 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
   for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
-      pChildLibraryTreeItem->setClassInformation(mpLibraryWidget->getMainWindow()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
+      pChildLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
       readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
       if (pChildLibraryTreeItem->getModelWidget()) {
         ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
@@ -2184,7 +2188,7 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
   QString contents = "";
   QFile file(pLibraryTreeItem->getFileName());
   if (!file.open(QIODevice::ReadOnly)) {
-    QMessageBox::critical(mpLibraryWidget->getMainWindow(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
                           .arg(file.errorString()), Helper::ok);
   } else {
@@ -2201,7 +2205,7 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
  */
 void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
 {
-  OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QStringList libs = pOMCProxy->getClassNames(pLibraryTreeItem->getNameStructure(), true, true);
   if (!libs.isEmpty()) {
     libs.removeFirst();
@@ -2251,7 +2255,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
     }
     updateLibraryTreeItem(pLibraryTreeItem);
   } else {
-    OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
@@ -2280,7 +2284,7 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
                                                         bool isSaved, int row)
 {
   pLibraryTreeItem->setParent(pParentLibraryTreeItem);
-  OMCProxy *pOMCProxy = mpLibraryWidget->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pLibraryTreeItem->setFileName("");
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
@@ -2348,7 +2352,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
  */
 void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
-  MainWindow *pMainWindow = mpLibraryWidget->getMainWindow();
+  MainWindow *pMainWindow = MainWindow::instance();
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     QMdiSubWindow *pMdiSubWindow = pMainWindow->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
@@ -2396,7 +2400,7 @@ void LibraryTreeModel::unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
 {
    // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
   if (pLibraryTreeItem->getModelWidget()) {
-    QMdiSubWindow *pMdiSubWindow = mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
+    QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
       pMdiSubWindow->close();
       pMdiSubWindow->deleteLater();
@@ -2432,7 +2436,7 @@ void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
 {
    // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
   if (pLibraryTreeItem->getModelWidget()) {
-    QMdiSubWindow *pMdiSubWindow = mpLibraryWidget->getMainWindow()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
+    QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
       pMdiSubWindow->close();
       pMdiSubWindow->deleteLater();
@@ -2449,7 +2453,7 @@ void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
     fail = !QFile::remove(fileInfo.absoluteFilePath());
   }
   if (fail) {
-    MessagesWidget *pMessagesWidget = mpLibraryWidget->getMainWindow()->getMessagesWidget();
+    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
     pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unable to delete <b>%1</b>.")
                                                .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
   }
@@ -2491,7 +2495,7 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
   setDragEnabled(true);
-  int libraryIconSize = mpLibraryWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+  int libraryIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
   setIconSize(QSize(libraryIconSize, libraryIconSize));
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
@@ -2680,17 +2684,17 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
   if (!pLibraryTreeItem->isExpanded()) {
     // set the range for progress bar.
     int progressValue = 0;
-    mpLibraryWidget->getMainWindow()->getProgressBar()->setRange(0, pLibraryTreeItem->childrenSize());
-    mpLibraryWidget->getMainWindow()->showProgressBar();
+    MainWindow::instance()->getProgressBar()->setRange(0, pLibraryTreeItem->childrenSize());
+    MainWindow::instance()->showProgressBar();
     pLibraryTreeItem->setExpanded(true);
     for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
       LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-      mpLibraryWidget->getMainWindow()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(pChildLibraryTreeItem->getNameStructure()));
+      MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(pChildLibraryTreeItem->getNameStructure()));
       mpLibraryWidget->getLibraryTreeModel()->loadLibraryTreeItemPixmap(pChildLibraryTreeItem);
-      mpLibraryWidget->getMainWindow()->getStatusBar()->clearMessage();
-      mpLibraryWidget->getMainWindow()->getProgressBar()->setValue(++progressValue);
+      MainWindow::instance()->getStatusBar()->clearMessage();
+      MainWindow::instance()->getProgressBar()->setValue(++progressValue);
     }
-    mpLibraryWidget->getMainWindow()->hideProgressBar();
+    MainWindow::instance()->hideProgressBar();
   }
 }
 
@@ -2834,8 +2838,8 @@ void LibraryTreeView::viewDocumentation()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
-    mpLibraryWidget->getMainWindow()->getDocumentationDockWidget()->show();
+    MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
+    MainWindow::instance()->getDocumentationDockWidget()->show();
   }
 }
 
@@ -2847,7 +2851,7 @@ void LibraryTreeView::createNewModelicaClass()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(mpLibraryWidget->getMainWindow());
+    ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(MainWindow::instance());
     pModelicaClassDialog->getParentClassTextBox()->setText(pLibraryTreeItem->getNameStructure());
     pModelicaClassDialog->exec();
   }
@@ -2945,7 +2949,7 @@ void LibraryTreeView::instantiateModel()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->instantiateModel(pLibraryTreeItem);
+    MainWindow::instance()->instantiateModel(pLibraryTreeItem);
   }
 }
 
@@ -2957,7 +2961,7 @@ void LibraryTreeView::checkModel()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->checkModel(pLibraryTreeItem);
+    MainWindow::instance()->checkModel(pLibraryTreeItem);
   }
 }
 
@@ -2969,7 +2973,7 @@ void LibraryTreeView::checkAllModels()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->checkAllModels(pLibraryTreeItem);
+    MainWindow::instance()->checkAllModels(pLibraryTreeItem);
   }
 }
 
@@ -2981,7 +2985,7 @@ void LibraryTreeView::simulate()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulate(pLibraryTreeItem);
+    MainWindow::instance()->simulate(pLibraryTreeItem);
   }
 }
 
@@ -2993,7 +2997,7 @@ void LibraryTreeView::simulateWithTransformationalDebugger()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulateWithTransformationalDebugger(pLibraryTreeItem);
+    MainWindow::instance()->simulateWithTransformationalDebugger(pLibraryTreeItem);
   }
 }
 
@@ -3005,7 +3009,7 @@ void LibraryTreeView::simulateWithAlgorithmicDebugger()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulateWithAlgorithmicDebugger(pLibraryTreeItem);
+    MainWindow::instance()->simulateWithAlgorithmicDebugger(pLibraryTreeItem);
   }
 }
 
@@ -3018,7 +3022,7 @@ void LibraryTreeView::simulateWithAnimation()
 #if !defined(WITHOUT_OSG)
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulateWithAnimation(pLibraryTreeItem);
+    MainWindow::instance()->simulateWithAnimation(pLibraryTreeItem);
   }
 #else
   assert(0);
@@ -3033,7 +3037,7 @@ void LibraryTreeView::simulationSetup()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->simulationSetup(pLibraryTreeItem);
+    MainWindow::instance()->simulationSetup(pLibraryTreeItem);
   }
 }
 
@@ -3045,7 +3049,7 @@ void LibraryTreeView::duplicateClass()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    DuplicateClassDialog *pCopyClassDialog = new DuplicateClassDialog(false, pLibraryTreeItem, mpLibraryWidget->getMainWindow());
+    DuplicateClassDialog *pCopyClassDialog = new DuplicateClassDialog(false, pLibraryTreeItem, MainWindow::instance());
     pCopyClassDialog->exec();
   }
 }
@@ -3084,7 +3088,7 @@ void LibraryTreeView::createNewFile()
   if (!pLibraryTreeItem) {
     return;
   }
-  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), true, mpLibraryWidget->getMainWindow());
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), true, MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 
@@ -3098,7 +3102,7 @@ void LibraryTreeView::createNewFolder()
   if (!pLibraryTreeItem) {
     return;
   }
-  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), false, mpLibraryWidget->getMainWindow());
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), false, MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 
@@ -3112,7 +3116,7 @@ void LibraryTreeView::renameLibraryTreeItem()
   if (!pLibraryTreeItem) {
     return;
   }
-  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem, mpLibraryWidget->getMainWindow());
+  RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem, MainWindow::instance());
   pRenameItemDialog->exec();
 }
 
@@ -3136,7 +3140,7 @@ void LibraryTreeView::exportModelFMU()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->exportModelFMU(pLibraryTreeItem);
+    MainWindow::instance()->exportModelFMU(pLibraryTreeItem);
   }
 }
 
@@ -3148,7 +3152,7 @@ void LibraryTreeView::exportModelXML()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->exportModelXML(pLibraryTreeItem);
+    MainWindow::instance()->exportModelXML(pLibraryTreeItem);
   }
 }
 
@@ -3160,7 +3164,7 @@ void LibraryTreeView::exportModelFigaro()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->exportModelFigaro(pLibraryTreeItem);
+    MainWindow::instance()->exportModelFigaro(pLibraryTreeItem);
   }
 }
 
@@ -3185,7 +3189,7 @@ void LibraryTreeView::fetchInterfaceData()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->fetchInterfaceData(pLibraryTreeItem);
+    MainWindow::instance()->fetchInterfaceData(pLibraryTreeItem);
   }
 }
 
@@ -3197,7 +3201,7 @@ void LibraryTreeView::TLMSimulate()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getMainWindow()->TLMSimulate(pLibraryTreeItem);
+    MainWindow::instance()->TLMSimulate(pLibraryTreeItem);
   }
 }
 
@@ -3303,10 +3307,10 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
  */
 /*!
  * \brief LibraryWidget::LibraryWidget
- * \param pMainWindow
+ * \param pParent
  */
-LibraryWidget::LibraryWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow), mpMainWindow(pMainWindow)
+LibraryWidget::LibraryWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
   setMinimumWidth(175);
   // tree search filters
@@ -3350,7 +3354,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   QFileInfo fileInfo(fileName);
   if (checkFileExists) {
     if (!fileInfo.exists()) {
-      QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+      QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
       QSettings *pSettings = Utilities::getApplicationSettings();
       QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
@@ -3362,7 +3366,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
         }
       }
       pSettings->setValue("recentFilesList/files", files);
-      mpMainWindow->updateRecentFileActions();
+      MainWindow::instance()->updateRecentFileActions();
       return;
     }
   }
@@ -3387,9 +3391,9 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
   // get the class names now to check if they are already loaded or not
   QStringList existingmodelsList;
   if (showProgress) {
-    mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
-  QStringList classesList = mpMainWindow->getOMCProxy()->parseFile(fileName, encoding);
+  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding);
   if (!classesList.isEmpty()) {
     /*
       Only allow loading of files that has just one nonstructured entity.
@@ -3398,7 +3402,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
        matching the name of the nonstructured entity."
       */
     if (classesList.size() > 1) {
-      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -3408,7 +3412,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
       if (showProgress) {
-        mpMainWindow->getStatusBar()->clearMessage();
+        MainWindow::instance()->getStatusBar()->clearMessage();
       }
       return;
     }
@@ -3422,7 +3426,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
     }
     // if existModel is true, show user an error message
     if (existModel) {
-      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -3434,30 +3438,30 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
       pMessageBox->exec();
     } else { // if no conflicting model found then just load the file simply
       // load the file in OMC
-      if (mpMainWindow->getOMCProxy()->loadFile(fileName, encoding)) {
+      if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
         // create library tree nodes for loaded models
         int progressvalue = 0;
         if (showProgress) {
-          mpMainWindow->getProgressBar()->setRange(0, classesList.size());
-          mpMainWindow->showProgressBar();
+          MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
+          MainWindow::instance()->showProgressBar();
         }
         foreach (QString model, classesList) {
           mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
-            mpMainWindow->getProgressBar()->setValue(++progressvalue);
+            MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
           }
         }
-        mpMainWindow->addRecentFile(fileName, encoding);
-        mpLibraryTreeModel->loadDependentLibraries(mpMainWindow->getOMCProxy()->getClassNames());
+        MainWindow::instance()->addRecentFile(fileName, encoding);
+        mpLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
         if (showProgress) {
-          mpMainWindow->hideProgressBar();
+          MainWindow::instance()->hideProgressBar();
         }
       }
     }
   }
   if (showProgress) {
-    mpMainWindow->getStatusBar()->clearMessage();
+    MainWindow::instance()->getStatusBar()->clearMessage();
   }
 }
 
@@ -3470,13 +3474,13 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
 void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) {
-    mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
   // check if the file is already loaded.
   for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
     LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
     if (pLibraryTreeItem && pLibraryTreeItem->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
-      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -3487,7 +3491,7 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
       if (showProgress) {
-        mpMainWindow->getStatusBar()->clearMessage();
+        MainWindow::instance()->getStatusBar()->clearMessage();
       }
       return;
     }
@@ -3508,10 +3512,10 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
   }
   if (pLibraryTreeItem) {
     mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-    mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
   if (showProgress) {
-    mpMainWindow->getStatusBar()->clearMessage();
+    MainWindow::instance()->getStatusBar()->clearMessage();
   }
 }
 
@@ -3524,13 +3528,13 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
 void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) {
-    mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
   // check if the file is already loaded.
   for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
     LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
     if (pLibraryTreeItem && pLibraryTreeItem->getName().compare(fileInfo.fileName()) == 0) {
-      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -3541,16 +3545,16 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
       if (showProgress) {
-        mpMainWindow->getStatusBar()->clearMessage();
+        MainWindow::instance()->getStatusBar()->clearMessage();
       }
       return;
     }
   }
   // create a LibraryTreeItem for new loaded file.
   mpLibraryTreeModel->createLibraryTreeItems(fileInfo, mpLibraryTreeModel->getRootLibraryTreeItem());
-  mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   if (showProgress) {
-    mpMainWindow->getStatusBar()->clearMessage();
+    MainWindow::instance()->getStatusBar()->clearMessage();
   }
 }
 
@@ -3565,7 +3569,7 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelNa
   QString contents = "";
   QFile file(fileInfo.absoluteFilePath());
   if (!file.open(QIODevice::ReadOnly)) {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileInfo.absoluteFilePath()).arg(file.errorString()),
                           Helper::ok);
     return false;
@@ -3578,7 +3582,7 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelNa
     if (pMessageHandler->isFailed()) {
       QTextDocument document;
       document.setHtml(pMessageHandler->statusMessage());
-      MessagesWidget *pMessagesWidget = mpMainWindow->getMessagesWidget();
+      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, fileInfo.absoluteFilePath(), false, pMessageHandler->line(),
                                                  pMessageHandler->column(), 0, 0, document.toPlainText(), Helper::scriptingKind,
                                                  Helper::errorLevel));
@@ -3611,13 +3615,13 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelNa
  */
 void LibraryWidget::parseAndLoadModelicaText(QString modelText)
 {
-  QStringList classNames = mpMainWindow->getOMCProxy()->parseString(modelText, "");
+  QStringList classNames = MainWindow::instance()->getOMCProxy()->parseString(modelText, "");
   if (classNames.size() == 0) {
     return;
   }
   // if user is defining multiple top level classes.
   if (classNames.size() > 1) {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
                           QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg("").arg(classNames.join(",")),
                           Helper::ok);
     return;
@@ -3626,7 +3630,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
   bool existModel = mpLibraryTreeModel->findLibraryTreeItemOneLevel(className);
   // check if existModel is true
   if (existModel) {
-    QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
     pMessageBox->setIcon(QMessageBox::Information);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
@@ -3638,7 +3642,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
     pMessageBox->exec();
   } else {  // if no conflicting model found then just load the file simply
     // load the model text in OMC
-    if (mpMainWindow->getOMCProxy()->loadString(modelText, className)) {
+    if (MainWindow::instance()->getOMCProxy()->loadString(modelText, className)) {
       QString modelName = StringHandler::getLastWordAfterDot(className);
       QString parentName = StringHandler::removeLastWordAfterDot(className);
       LibraryTreeItem *pParentLibraryTreeItem = 0;
@@ -3663,7 +3667,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
 bool LibraryWidget::saveFile(QString fileName, QString contents)
 {
   // set the BOM settings
-  QComboBox *pBOMComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getBOMComboBox();
+  QComboBox *pBOMComboBox = MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getBOMComboBox();
   Utilities::BomMode bomMode = (Utilities::BomMode)pBOMComboBox->itemData(pBOMComboBox->currentIndex()).toInt();
   bool bom = false;
   switch (bomMode) {
@@ -3680,7 +3684,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   }
   // set the line ending format
   QString newContents;
-  QComboBox *pLineEndingComboBox = mpMainWindow->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
+  QComboBox *pLineEndingComboBox = MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
   Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
   QTextStream crlfTextStream(&contents);
   switch (lineEndingMode) {
@@ -3709,8 +3713,8 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
         .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
              .arg(fileName).arg(file.errorString()));
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                 Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
+                                                                           Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }
@@ -3724,8 +3728,8 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
 bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   bool result = false;
-  mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
-  mpMainWindow->showProgressBar();
+  MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
+  MainWindow::instance()->showProgressBar();
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
     if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -3741,8 +3745,8 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
     result = false;
   }
-  mpMainWindow->getStatusBar()->clearMessage();
-  mpMainWindow->hideProgressBar();
+  MainWindow::instance()->getStatusBar()->clearMessage();
+  MainWindow::instance()->hideProgressBar();
   return result;
 }
 
@@ -3759,7 +3763,7 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     return;
   }
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-      DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, mpMainWindow);
+      DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, MainWindow::instance());
       pDuplicateClassDialog->exec();
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
       saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
@@ -3777,11 +3781,11 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 bool LibraryWidget::saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
-  mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
-  mpMainWindow->showProgressBar();
+  MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
+  MainWindow::instance()->showProgressBar();
   bool result = saveTotalLibraryTreeItemHelper(pLibraryTreeItem);
-  mpMainWindow->getStatusBar()->clearMessage();
-  mpMainWindow->hideProgressBar();
+  MainWindow::instance()->getStatusBar()->clearMessage();
+  MainWindow::instance()->hideProgressBar();
   return result;
 }
 
@@ -3867,7 +3871,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
   if (pLibraryTreeItem->isSaved()) {
     return true;
   }
-  mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
+  MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   QString fileName;
   if (pLibraryTreeItem->isTopLevel() && !pLibraryTreeItem->isFilePathValid()) {
     QString name = pLibraryTreeItem->getName();
@@ -3899,7 +3903,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
     pLibraryTreeItem->mClassInformation.fileName = fileName;
-    mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
+    MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
@@ -3935,7 +3939,7 @@ void LibraryWidget::saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLib
   pLibraryTreeItem->setIsSaved(true);
   pLibraryTreeItem->setFileName(pLibraryTreeItem->parent()->getFileName());
   pLibraryTreeItem->mClassInformation.fileName = pLibraryTreeItem->parent()->getFileName();
-  mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->parent()->getFileName());
+  MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->parent()->getFileName());
   if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
     pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
     pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(pLibraryTreeItem->parent()->getFileName());
@@ -3952,7 +3956,7 @@ void LibraryWidget::saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLib
 bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!pLibraryTreeItem->isSaved()) {
-    mpMainWindow->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
+    MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
     QString directoryName;
     QString fileName;
     if (pLibraryTreeItem->isTopLevel() && !pLibraryTreeItem->isFilePathValid()) {
@@ -3994,7 +3998,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
       pLibraryTreeItem->setIsSaved(true);
       pLibraryTreeItem->setFileName(fileName);
       pLibraryTreeItem->mClassInformation.fileName = fileName;
-      mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
+      MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), fileName);
       if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
         pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
         pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
@@ -4194,7 +4198,7 @@ bool LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
     return false;
   }
   // save the model through OMC
-  result = mpMainWindow->getOMCProxy()->saveTotalModel(fileName, pLibraryTreeItem->getNameStructure());
+  result = MainWindow::instance()->getOMCProxy()->saveTotalModel(fileName, pLibraryTreeItem->getNameStructure());
   return result;
 }
 

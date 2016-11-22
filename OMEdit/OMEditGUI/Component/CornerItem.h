@@ -35,7 +35,7 @@
 #ifndef CORNERITEM_H
 #define CORNERITEM_H
 
-#include "ShapeAnnotation.h"
+#include "Annotations/ShapeAnnotation.h"
 #include <QObject>
 #include <QGraphicsItem>
 #include <QPen>

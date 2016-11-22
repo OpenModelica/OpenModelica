@@ -34,13 +34,18 @@
 #ifndef STACKFRAMESWIDGET_H
 #define STACKFRAMESWIDGET_H
 
-#include "MainWindow.h"
-#include "GDBMIParser.h"
+#include <QTreeWidget>
+#include <QWidget>
+#include <QComboBox>
+#include <QToolButton>
+#include <QStatusBar>
+
+#include "Debugger/Parser/GDBMIParser.h"
 
 using namespace GDBMIParser;
-class MainWindow;
 class StackFramesWidget;
 class StackFramesTreeWidget;
+class Label;
 
 class StackFrameItem : public QTreeWidgetItem
 {
@@ -90,8 +95,7 @@ class StackFramesWidget : public QWidget
 {
   Q_OBJECT
 public:
-  StackFramesWidget(MainWindow *pMainWindow);
-  MainWindow *getMainWindow() {return mpMainWindow;}
+  StackFramesWidget(QWidget *pParent = 0);
   QComboBox* getThreadsComboBox() {return mpThreadsComboBox;}
   StackFramesTreeWidget* getStackFramesTreeWidget() {return mpStackFramesTreeWidget;}
   void setSelectedThread(int thread) {mSelectedThread = thread;}
@@ -100,7 +104,6 @@ public:
   int getSelectedFrame() {return mSelectedFrame;}
   void setStatusMessage(QString statusMessage);
 private:
-  MainWindow *mpMainWindow;
   QToolButton *mpResumeToolButton;
   QToolButton *mpInterruptToolButton;
   QToolButton *mpExitToolButton;

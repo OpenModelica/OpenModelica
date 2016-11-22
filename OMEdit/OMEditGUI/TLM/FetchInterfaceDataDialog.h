@@ -31,20 +31,27 @@
 #ifndef FETCHINTERFACEDATADIALOG_H
 #define FETCHINTERFACEDATADIALOG_H
 
-#include "MainWindow.h"
-#include "FetchInterfaceDataThread.h"
+#include "Util/StringHandler.h"
 
+#include <QDialog>
+#include <QProgressBar>
+#include <QPlainTextEdit>
+#include <QListWidget>
+#include <QDialogButtonBox>
+
+class LibraryTreeItem;
+class Label;
 class FetchInterfaceDataThread;
+class ModelWidget;
+class LineAnnotation;
 
 class FetchInterfaceDataDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, MainWindow *pMainWindow);
-  MainWindow* getMainWindow() {return mpMainWindow;}
+  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
 private:
-  MainWindow *mpMainWindow;
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;

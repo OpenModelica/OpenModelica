@@ -37,6 +37,8 @@
 
 #include "Component.h"
 
+#include <QRadioButton>
+
 class Parameter : public QObject
 {
   Q_OBJECT
@@ -133,11 +135,10 @@ class ComponentParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentParameters(Component *pComponent, MainWindow *pMainWindow);
+  ComponentParameters(Component *pComponent, QWidget *pParent = 0);
   ~ComponentParameters();
 private:
   Component *mpComponent;
-  MainWindow *mpMainWindow;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
   QTabWidget *mpParametersTabWidget;
@@ -175,12 +176,11 @@ class ComponentAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentAttributes(Component *pComponent, MainWindow *pMainWindow);
+  ComponentAttributes(Component *pComponent, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
   Component *mpComponent;
-  MainWindow *mpMainWindow;
   Label *mpAttributesHeading;
   QFrame *mHorizontalLine;
   QGroupBox *mpTypeGroupBox;
@@ -222,12 +222,11 @@ class MetaModelSubModelAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  MetaModelSubModelAttributes(Component *pComponent, MainWindow *pMainWindow);
+  MetaModelSubModelAttributes(Component *pComponent, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
   Component *mpComponent;
-  MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpSimulationToolLabel;
@@ -256,11 +255,10 @@ class MetaModelConnectionAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow, bool edit);
+  MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool edit, QWidget *pParent = 0);
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
-  MainWindow *mpMainWindow;
   bool mEdit;
   Label *mpHeading;
   QFrame *mpHorizontalLine;

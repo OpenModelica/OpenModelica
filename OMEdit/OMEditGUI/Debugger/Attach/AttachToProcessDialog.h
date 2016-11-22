@@ -34,16 +34,20 @@
 #ifndef ATTACHTOPROCESSDIALOG_H
 #define ATTACHTOPROCESSDIALOG_H
 
-#include "MainWindow.h"
+#include <QDialog>
+#include <QLineEdit>
+#include <QTreeView>
+#include <QDialogButtonBox>
+
 #include "ProcessListModel.h"
 
+class Label;
 class AttachToProcessDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AttachToProcessDialog(MainWindow *pMainWindow);
+  AttachToProcessDialog(QWidget *pParent = 0);
 private:
-  MainWindow *mpMainWindow;
   Label *mpAttachToProcessIDLabel;
   QLineEdit *mpAttachToProcessIDTextBox;
   QLineEdit *mpFilterProcessesTextBox;
@@ -61,7 +65,6 @@ public slots:
   void setFilterString(const QString &filter);
   void processSelected(const QModelIndex &index);
   void processClicked(const QModelIndex &index);
-
 };
 
 #endif // ATTACHTOPROCESSDIALOG_H

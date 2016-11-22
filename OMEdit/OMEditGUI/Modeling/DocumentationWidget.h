@@ -35,8 +35,12 @@
 #ifndef DOCUMENTATIONWIDGET_H
 #define DOCUMENTATIONWIDGET_H
 
-#include "MainWindow.h"
+#include <QWidget>
+#include <QToolButton>
+#include <QFile>
+#include <QWebView>
 
+class LibraryTreeItem;
 class DocumentationHistory
 {
 public:
@@ -44,21 +48,18 @@ public:
   DocumentationHistory(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
 };
 
-class ModelWidget;
 class DocumentationViewer;
 class DocumentationWidget : public QWidget
 {
   Q_OBJECT
 public:
-  DocumentationWidget(MainWindow *pParent);
+  DocumentationWidget(QWidget *pParent = 0);
   ~DocumentationWidget();
-  MainWindow* getMainWindow();
   QToolButton* getPreviousToolButton();
   QToolButton* getNextToolButton();
   DocumentationViewer* getDocumentationViewer();
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
 private:
-  MainWindow *mpMainWindow;
   QFile mDocumentationFile;
   QToolButton *mpPreviousToolButton;
   QToolButton *mpNextToolButton;

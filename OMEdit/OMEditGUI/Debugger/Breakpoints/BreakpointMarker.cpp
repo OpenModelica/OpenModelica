@@ -28,12 +28,12 @@
  *
  */
 /*
- *
- *
+ * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "BreakpointsWidget.h"
 #include "BreakpointMarker.h"
+#include "BreakpointsWidget.h"
+#include "Editors/BaseEditor.h"
 
 BreakpointMarker::BreakpointMarker(const QString &fileName, int lineNumber, BreakpointsTreeModel *pBreakpointsTreeModel)
     : ITextMark()

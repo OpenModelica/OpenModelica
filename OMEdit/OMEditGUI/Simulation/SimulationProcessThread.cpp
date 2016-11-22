@@ -32,8 +32,12 @@
  */
 
 #include "SimulationProcessThread.h"
+#include "MainWindow.h"
+#include "Options/OptionsDialog.h"
+
 #include <QTcpSocket>
 #include <QTcpServer>
+#include <QDir>
 
 SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget)
   : QThread(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
@@ -70,7 +74,7 @@ void SimulationProcessThread::compileModel()
   } else {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
   }
-  SimulationPage *pSimulationPage = mpSimulationOutputWidget->getMainWindow()->getOptionsDialog()->getSimulationPage();
+  SimulationPage *pSimulationPage = MainWindow::instance()->getOptionsDialog()->getSimulationPage();
   QStringList args;
 #ifdef WIN32
 #if defined(__MINGW32__) && defined(__MINGW64__) /* on 64 bit */

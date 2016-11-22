@@ -31,9 +31,13 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "StackFramesWidget.h"
-#include "GDBAdapter.h"
-#include "CommandFactory.h"
+#include "Debugger/StackFrames/StackFramesWidget.h"
+#include "Options/OptionsDialog.h"
+#include "MainWindow.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Debugger/GDB/GDBAdapter.h"
+#include "Debugger/GDB/CommandFactory.h"
+#include "Debugger/Locals/LocalsWidget.h"
 
 StackFrameItem::StackFrameItem(QString level, QString address, QString function, QString line, QString file, QString fullName, StackFramesTreeWidget *pStackFramesTreeWidget)
   : QTreeWidgetItem(pStackFramesTreeWidget)
@@ -61,7 +65,7 @@ QString StackFrameItem::getFileName()
 
 void StackFrameItem::filterStackFrame()
 {
-  OptionsDialog *pOptionsDialog = mpStackFramesTreeWidget->getStackFramesWidget()->getMainWindow()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
   /* If file is not readable then disable the frame. */
   QFileInfo fileInfo(getFileName());
   if (Utilities::isCFile(fileInfo.suffix()) || !fileInfo.isReadable()) {
@@ -163,7 +167,7 @@ StackFramesTreeWidget::StackFramesTreeWidget(StackFramesWidget *pStackFramesWidg
   setExpandsOnDoubleClick(false);
   setContextMenuPolicy(Qt::CustomContextMenu);
   createActions();
-  connect(mpStackFramesWidget->getMainWindow()->getGDBAdapter(), SIGNAL(stackListFrames(GDBMIValue*)), SLOT(createStackFrames(GDBMIValue*)));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(stackListFrames(GDBMIValue*)), SLOT(createStackFrames(GDBMIValue*)));
   connect(this, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), mpStackFramesWidget, SLOT(stackCurrentItemChanged(QTreeWidgetItem*)));
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 }
@@ -246,7 +250,7 @@ void StackFramesTreeWidget::createStackFrames(GDBMIValue *pGDBMIValue)
       if (pGDBMIResult->variable.compare("frame") == 0) {
         QString level, address, function, line, file, fullName;
         if (pGDBMIResult->miValue->type == GDBMIValue::TupleValue) {
-          GDBAdapter *pGDBAdapter = mpStackFramesWidget->getMainWindow()->getGDBAdapter();
+          GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
           GDBMIResultList resultsList = pGDBMIResult->miValue->miTuple->miResultsList;
           level = pGDBAdapter->getGDBMIConstantValue(pGDBAdapter->getGDBMIResult("level", resultsList));
           address = pGDBAdapter->getGDBMIConstantValue(pGDBAdapter->getGDBMIResult("addr", resultsList));
@@ -269,9 +273,9 @@ void StackFramesTreeWidget::createStackFrames(GDBMIValue *pGDBMIValue)
   }
   // if there are no stack frames or no enabled stack frames then we need to clear locals browser.
   QList<QVector<QVariant> > locals;
-  mpStackFramesWidget->getMainWindow()->getLocalsWidget()->getLocalsTreeModel()->insertLocalsList(locals);
+  MainWindow::instance()->getLocalsWidget()->getLocalsTreeModel()->insertLocalsList(locals);
   /* if we reach here we should suspend the debugger. Otherwise the debugger is suspended in GDBAdapter::stackListVariablesCB */
-  mpStackFramesWidget->getMainWindow()->getGDBAdapter()->suspendDebugger();
+  MainWindow::instance()->getGDBAdapter()->suspendDebugger();
 }
 
 void StackFramesTreeWidget::showContextMenu(QPoint point)
@@ -289,21 +293,20 @@ void StackFramesTreeWidget::showContextMenu(QPoint point)
 void StackFramesTreeWidget::createFullBacktrace()
 {
   QByteArray cmd = CommandFactory::createFullBacktrace();
-  GDBAdapter *pGDBAdapter = mpStackFramesWidget->getMainWindow()->getGDBAdapter();
-  pGDBAdapter->postCommand(cmd, GDBAdapter::ConsoleCommand, &GDBAdapter::createFullBacktraceCB);
+  MainWindow::instance()->getGDBAdapter()->postCommand(cmd, GDBAdapter::ConsoleCommand, &GDBAdapter::createFullBacktraceCB);
 }
 
 /*!
-  \class StackFramesWidget
-  \brief A widget containing debugger manipulation buttons and StackFramesTreeWidget.
-  */
+ * \class StackFramesWidget
+ * \brief A widget containing debugger manipulation buttons and StackFramesTreeWidget.
+ */
 /*!
-  \param pMainWindow - pointer to MainWindow
-  */
-StackFramesWidget::StackFramesWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+ * \brief StackFramesWidget::StackFramesWidget
+ * \param pParent
+ */
+StackFramesWidget::StackFramesWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
-  mpMainWindow = pMainWindow;
   /* continue tool button */
   mpResumeToolButton = new QToolButton;
   mpResumeToolButton->setEnabled(false);
@@ -382,7 +385,7 @@ StackFramesWidget::StackFramesWidget(MainWindow *pMainWindow)
   mpThreadsComboBox = new QComboBox;
   mpThreadsComboBox->setEnabled(false);
   connect(mpThreadsComboBox, SIGNAL(currentIndexChanged(int)), SLOT(threadChanged(int)));
-  connect(mpMainWindow->getGDBAdapter(), SIGNAL(threadInfo(GDBMIValue*,QString)), SLOT(fillThreadComboBox(GDBMIValue*,QString)));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(threadInfo(GDBMIValue*,QString)), SLOT(fillThreadComboBox(GDBMIValue*,QString)));
   /* Thread frame */
   QFrame *pThreadFrame = new QFrame;
   QHBoxLayout *pThreadHorizontalLayout = new QHBoxLayout;
@@ -416,10 +419,10 @@ StackFramesWidget::StackFramesWidget(MainWindow *pMainWindow)
   pMainLayout->addWidget(mpStackFramesTreeWidget, 1, 0);
   setLayout(pMainLayout);
   /* Make connections to control the enable/disable of tool buttons */
-  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
-  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
-  connect(mpMainWindow->getGDBAdapter(), SIGNAL(inferiorSuspended()), SLOT(handleInferiorSuspended()));
-  connect(mpMainWindow->getGDBAdapter(), SIGNAL(inferiorResumed()), SLOT(handleInferiorResumed()));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(inferiorSuspended()), SLOT(handleInferiorSuspended()));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(inferiorResumed()), SLOT(handleInferiorResumed()));
 }
 
 void StackFramesWidget::setStatusMessage(QString statusMessage)
@@ -433,7 +436,7 @@ void StackFramesWidget::setStatusMessage(QString statusMessage)
   */
 void StackFramesWidget::resumeButtonClicked()
 {
-  mpMainWindow->getGDBAdapter()->postCommand(CommandFactory::execContinue());
+  MainWindow::instance()->getGDBAdapter()->postCommand(CommandFactory::execContinue());
 }
 
 /*!
@@ -451,9 +454,9 @@ void StackFramesWidget::interruptButtonClicked()
   */
 void StackFramesWidget::exitButtonClicked()
 {
-  mpMainWindow->getGDBAdapter()->deleteCatchOMCBreakpoint();
-  mpMainWindow->getGDBAdapter()->postCommand(CommandFactory::GDBExit());
-  mpMainWindow->getGDBAdapter()->setGDBKilled(true);
+  MainWindow::instance()->getGDBAdapter()->deleteCatchOMCBreakpoint();
+  MainWindow::instance()->getGDBAdapter()->postCommand(CommandFactory::GDBExit());
+  MainWindow::instance()->getGDBAdapter()->setGDBKilled(true);
 }
 
 /*!
@@ -468,8 +471,8 @@ void StackFramesWidget::stepOverButtonClicked()
   mpStepIntoToolButton->setEnabled(false);
   mpStepReturnToolButton->setEnabled(false);
   mpThreadsComboBox->setEnabled(false);
-  mpMainWindow->getGDBAdapter()->enableCatchOMCBreakpoint();
-  mpMainWindow->getGDBAdapter()->postCommand(CommandFactory::execNext());
+  MainWindow::instance()->getGDBAdapter()->enableCatchOMCBreakpoint();
+  MainWindow::instance()->getGDBAdapter()->postCommand(CommandFactory::execNext());
 }
 
 /*!
@@ -484,8 +487,8 @@ void StackFramesWidget::stepIntoButtonClicked()
   mpStepIntoToolButton->setEnabled(false);
   mpStepReturnToolButton->setEnabled(false);
   mpThreadsComboBox->setEnabled(false);
-  mpMainWindow->getGDBAdapter()->enableCatchOMCBreakpoint();
-  mpMainWindow->getGDBAdapter()->postCommand(CommandFactory::execStep());
+  MainWindow::instance()->getGDBAdapter()->enableCatchOMCBreakpoint();
+  MainWindow::instance()->getGDBAdapter()->postCommand(CommandFactory::execStep());
 }
 
 /*!
@@ -500,7 +503,7 @@ void StackFramesWidget::stepReturnButtonClicked()
   mpStepIntoToolButton->setEnabled(false);
   mpStepReturnToolButton->setEnabled(false);
   mpThreadsComboBox->setEnabled(false);
-  mpMainWindow->getGDBAdapter()->postCommand(CommandFactory::execFinish());
+  MainWindow::instance()->getGDBAdapter()->postCommand(CommandFactory::execFinish());
 }
 
 /*!
@@ -571,9 +574,9 @@ void StackFramesWidget::threadChanged(int threadIndex)
   if (threadIndex < 0) {
     return;
   }
-  mpMainWindow->getGDBAdapter()->resumeDebugger();
+  MainWindow::instance()->getGDBAdapter()->resumeDebugger();
   setSelectedThread(mpThreadsComboBox->currentText().toInt());
-  mpMainWindow->getGDBAdapter()->postCommand(CommandFactory::stackListFrames(getSelectedThread()), &GDBAdapter::stackListFramesCB);
+  MainWindow::instance()->getGDBAdapter()->postCommand(CommandFactory::stackListFrames(getSelectedThread()), &GDBAdapter::stackListFramesCB);
 }
 
 /*!
@@ -609,7 +612,7 @@ void StackFramesWidget::fillThreadComboBox(GDBMIValue *pThreadsGDBMIValue, QStri
       QString threadId;
       if (pGDBMIValue->type == GDBMIValue::TupleValue) {
         GDBMIResultList resultsList = pGDBMIValue->miTuple->miResultsList;
-        threadId = mpMainWindow->getGDBAdapter()->getGDBMIConstantValue(mpMainWindow->getGDBAdapter()->getGDBMIResult("id", resultsList));
+        threadId = MainWindow::instance()->getGDBAdapter()->getGDBMIConstantValue(MainWindow::instance()->getGDBAdapter()->getGDBMIResult("id", resultsList));
         if (!threadId.isEmpty()) {
           mpThreadsComboBox->addItem(threadId);
         }
@@ -638,8 +641,8 @@ void StackFramesWidget::stackCurrentItemChanged(QTreeWidgetItem *pTreeWidgetItem
   if (pStackFrameItem && !pStackFrameItem->isDisabled()) {
     mpStackFramesTreeWidget->setCurrentStackFrame(pStackFrameItem);
     QByteArray cmd = CommandFactory::stackListVariables(getSelectedThread(), getSelectedFrame(), "--simple-values");
-    mpMainWindow->getGDBAdapter()->postCommand(cmd, &GDBAdapter::stackListVariablesCB);
+    MainWindow::instance()->getGDBAdapter()->postCommand(cmd, &GDBAdapter::stackListVariablesCB);
     /* Get the stack frame location and mark the line highlighted. */
-    mpMainWindow->findFileAndGoToLine(pStackFrameItem->getFile(), pStackFrameItem->getLine());
+    MainWindow::instance()->findFileAndGoToLine(pStackFrameItem->getFile(), pStackFrameItem->getLine());
   }
 }

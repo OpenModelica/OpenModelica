@@ -28,30 +28,29 @@
  *
  */
 /*
- *
- *
+ * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
 #ifndef BREAKPOINTSWIDGET_H
 #define BREAKPOINTSWIDGET_H
 
-#include "MainWindow.h"
+#include <QTreeView>
+#include <QAction>
 
-class MainWindow;
 class BreakpointsTreeView;
 class BreakpointsTreeModel;
+class BreakpointMarker;
 class BreakpointTreeItem;
+class LibraryTreeItem;
 
 class BreakpointsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  BreakpointsWidget(MainWindow *pMainWindow);
+  BreakpointsWidget(QWidget *pParent = 0);
   BreakpointsTreeView* getBreakpointsTreeView() {return mpBreakpointsTreeView;}
   BreakpointsTreeModel* getBreakpointsTreeModel() {return mpBreakpointsTreeModel;}
-  MainWindow* getMainWindow() {return mpMainWindow;}
 private:
-  MainWindow *mpMainWindow;
   BreakpointsTreeView *mpBreakpointsTreeView;
   BreakpointsTreeModel *mpBreakpointsTreeModel;
 };

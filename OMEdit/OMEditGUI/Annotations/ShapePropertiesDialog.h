@@ -35,13 +35,32 @@
 #ifndef SHAPEPROPERTIESDIALOG_H
 #define SHAPEPROPERTIESDIALOG_H
 
-#include "Component.h"
+#include <QDialog>
+#include <QFrame>
+#include <QGroupBox>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QFontComboBox>
+#include <QCheckBox>
+#include <QScrollArea>
+#include <QTableWidget>
+#include <QDialogButtonBox>
+
+class ShapeAnnotation;
+class LineAnnotation;
+class PolygonAnnotation;
+class RectangleAnnotation;
+class EllipseAnnotation;
+class TextAnnotation;
+class BitmapAnnotation;
+class Label;
+class DoubleSpinBox;
 
 class ShapePropertiesDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, MainWindow *pMainWindow);
+  ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, QWidget *pParent = 0);
   QString getTitle();
   void setLineColor(QColor color);
   QColor getLineColor();
@@ -58,7 +77,6 @@ private:
   EllipseAnnotation *mpEllipseAnnotation;
   TextAnnotation *mpTextAnnotation;
   BitmapAnnotation *mpBitmapAnnotation;
-  MainWindow *mpMainWindow;
   Label *mpShapePropertiesHeading;
   QFrame *mHorizontalLine;
   QGroupBox *mpTransformationGroupBox;

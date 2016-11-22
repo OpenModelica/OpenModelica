@@ -34,7 +34,9 @@
 #ifndef SIMULATIONOUTPUTHANDLER_H
 #define SIMULATIONOUTPUTHANDLER_H
 
-#include "SimulationOutputWidget.h"
+#include "Simulation/SimulationOutputWidget.h"
+
+#include <QXmlDefaultHandler>
 
 class SimulationMessage
 {

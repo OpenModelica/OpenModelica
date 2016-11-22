@@ -34,25 +34,30 @@
 #ifndef TLMCOSIMULATIONOUTPUTWIDGET_H
 #define TLMCOSIMULATIONOUTPUTWIDGET_H
 
-#include "MainWindow.h"
-#include "TLMCoSimulationThread.h"
-#include "TLMCoSimulationOptions.h"
+#include <QWidget>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QPlainTextEdit>
+#include <QDateTime>
+#include <QProcess>
 
+#include "TLMCoSimulationOptions.h"
+#include "Util/StringHandler.h"
+
+class Label;
 class TLMCoSimulationThread;
 
 class TLMCoSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  TLMCoSimulationOutputWidget(MainWindow *pMainWindow);
+  TLMCoSimulationOutputWidget(QWidget *pParent = 0);
   ~TLMCoSimulationOutputWidget();
   TLMCoSimulationOptions getTLMCoSimulationOptions() {return mTLMCoSimulationOptions;}
-  MainWindow* getMainWindow() {return mpMainWindow;}
   void showTLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions);
   void clear();
 private:
   TLMCoSimulationOptions mTLMCoSimulationOptions;
-  MainWindow *mpMainWindow;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   Label *mpManagerOutputLabel;

@@ -32,6 +32,17 @@
  */
 
 #include "TLMCoSimulationOutputWidget.h"
+#include "MainWindow.h"
+#include "Util/Utilities.h"
+#include "Util/Helper.h"
+#include "TLMCoSimulationThread.h"
+#include "TLMCoSimulationDialog.h"
+
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QObject>
+#include <QDir>
+#include <QDesktopServices>
 
 /*!
  * \class TLMCoSimulationOutputWidget
@@ -39,10 +50,10 @@
  */
 /*!
  * \brief TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget
- * \param pMainWindow - pointer to MainWindow.
+ * \param pParent
  */
-TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(MainWindow *pMainWindow)
-  : mpMainWindow(pMainWindow)
+TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
   // progress label
   mpProgressLabel = new Label;
@@ -144,7 +155,7 @@ void TLMCoSimulationOutputWidget::clear()
   stopManager();
   mpTLMCoSimulationProcessThread->exit();
   mpTLMCoSimulationProcessThread->wait();
-  mpMainWindow->getTLMCoSimulationDialog()->setIsTLMCoSimulationRunning(false);
+  MainWindow::instance()->getTLMCoSimulationDialog()->setIsTLMCoSimulationRunning(false);
 }
 
 /*!
@@ -247,7 +258,7 @@ void TLMCoSimulationOutputWidget::managerProcessFinished(int exitCode, QProcess:
   mpProgressLabel->setText(tr("Co-simulation using the <b>%1</b> meta model is finished.").arg(mTLMCoSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpStopManagerButton->setEnabled(false);
-  mpMainWindow->getTLMCoSimulationDialog()->simulationProcessFinished(mTLMCoSimulationOptions, mResultFileLastModifiedDateTime);
+  MainWindow::instance()->getTLMCoSimulationDialog()->simulationProcessFinished(mTLMCoSimulationOptions, mResultFileLastModifiedDateTime);
 }
 
 /*!

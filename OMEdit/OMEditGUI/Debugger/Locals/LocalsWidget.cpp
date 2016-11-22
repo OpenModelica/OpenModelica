@@ -31,9 +31,14 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "LocalsWidget.h"
-#include "ModelicaValue.h"
-#include "CommandFactory.h"
+#include "Debugger/Locals/LocalsWidget.h"
+#include "MainWindow.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Debugger/GDB/GDBAdapter.h"
+#include "Debugger/StackFrames/StackFramesWidget.h"
+#include "Debugger/Locals/ModelicaValue.h"
+#include "Debugger/GDB/CommandFactory.h"
+#include "Util/Helper.h"
 
 /*!
  * \class LocalsTreeItem
@@ -217,8 +222,8 @@ void LocalsTreeItem::retrieveModelicaMetaType()
 {
   if (getDisplayType().isEmpty() || (getDisplayType().compare(Helper::VALUE_OPTIMIZED_OUT) == 0)
       || (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0)) {
-    GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getGDBAdapter();
-    StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getStackFramesWidget();
+    GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
+    StackFramesWidget *pStackFramesWidget = MainWindow::instance()->getStackFramesWidget();
     if (parent() && parent()->getModelicaValue() && qobject_cast<ModelicaRecordValue*>(parent()->getModelicaValue())) {
       pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
                                                             getName(), true),
@@ -239,8 +244,8 @@ void LocalsTreeItem::retrieveModelicaMetaType()
  */
 void LocalsTreeItem::retrieveValue()
 {
-  GDBAdapter *pGDBAdapter = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getGDBAdapter();
-  StackFramesWidget *pStackFramesWidget = mpLocalsTreeModel->getLocalsWidget()->getMainWindow()->getStackFramesWidget();
+  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
+  StackFramesWidget *pStackFramesWidget = MainWindow::instance()->getStackFramesWidget();
   if (isCoreTypeExceptString()) {
     pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(pStackFramesWidget->getSelectedThread(),
                                                                     pStackFramesWidget->getSelectedFrame(), getName()),
@@ -601,10 +606,17 @@ LocalsTreeView::LocalsTreeView(LocalsWidget *pLocalsWidget)
   setUniformRowHeights(true);
 }
 
-LocalsWidget::LocalsWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+/*!
+ * \class LocalsWidget
+ * \brief A widget containing local variables with type and values while debugging.
+ */
+/*!
+ * \brief LocalsWidget::LocalsWidget
+ * \param pParent
+ */
+LocalsWidget::LocalsWidget(QWidget *pParent)
+  : QWidget(pParent)
 {
-  mpMainWindow = pMainWindow;
   /* Locals Tree View */
   mpLocalsTreeView = new LocalsTreeView(this);
   mpLocalsTreeModel = new LocalsTreeModel(this);
@@ -630,7 +642,7 @@ LocalsWidget::LocalsWidget(MainWindow *pMainWindow)
   pMainLayout->setContentsMargins(0, 0, 1, 0);
   pMainLayout->addWidget(pLocalsSplitter, 0, 0);
   setLayout(pMainLayout);
-  connect(mpMainWindow->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
 }
 
 void LocalsWidget::localsTreeItemExpanded(QModelIndex index)

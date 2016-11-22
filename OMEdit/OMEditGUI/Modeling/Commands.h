@@ -34,7 +34,7 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-#include "ModelWidgetContainer.h"
+#include "Modeling/ModelWidgetContainer.h"
 
 class AddShapeCommand : public QUndoCommand
 {
@@ -218,12 +218,11 @@ private:
 class UpdateClassExperimentAnnotationCommand : public QUndoCommand
 {
 public:
-  UpdateClassExperimentAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem, QString oldExperimentAnnotation,
-                                         QString newExperimentAnnotaiton, QUndoCommand *pParent = 0);
+  UpdateClassExperimentAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldExperimentAnnotation, QString newExperimentAnnotaiton,
+                                         QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
-  MainWindow *mpMainWindow;
   LibraryTreeItem *mpLibraryTreeItem;
   QString mOldExperimentAnnotation;
   QString mNewExperimentAnnotation;
@@ -232,12 +231,11 @@ private:
 class UpdateClassSimulationFlagsAnnotationCommand : public QUndoCommand
 {
 public:
-  UpdateClassSimulationFlagsAnnotationCommand(MainWindow *pMainWindow, LibraryTreeItem *pLibraryTreeItem, QString oldSimulationFlags,
-                                              QString newSimulationFlags, QUndoCommand *pParent = 0);
+  UpdateClassSimulationFlagsAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldSimulationFlags, QString newSimulationFlags,
+                                              QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
-  MainWindow *mpMainWindow;
   LibraryTreeItem *mpLibraryTreeItem;
   QString mOldSimulationFlags;
   QString mNewSimulationFlags;
