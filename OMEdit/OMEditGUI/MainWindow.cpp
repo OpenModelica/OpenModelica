@@ -1431,12 +1431,12 @@ void MainWindow::redo()
 }
 
 /*!
- * \brief MainWindow::focusSearchClasses
- * Sets the focus on search classes text box in Libraries Browser.
+ * \brief MainWindow::focusFilterClasses
+ * Sets the focus on filter classes text box in Libraries Browser.
  */
-void MainWindow::focusSearchClasses()
+void MainWindow::focusFilterClasses()
 {
-  mpLibraryWidget->getTreeSearchFilters()->getSearchTextBox()->setFocus(Qt::ActiveWindowFocusReason);
+  mpLibraryWidget->getTreeSearchFilters()->getFilterTextBox()->setFocus(Qt::ActiveWindowFocusReason);
 }
 
 void MainWindow::setShowGridLines(bool showLines)
@@ -2449,10 +2449,10 @@ void MainWindow::createActions()
   mpRedoAction->setShortcut(QKeySequence::Redo);
   mpRedoAction->setEnabled(false);
   connect(mpRedoAction, SIGNAL(triggered()), SLOT(redo()));
-  // search classes action
-  mpSearchClassesAction = new QAction(Helper::searchClasses, this);
-  mpSearchClassesAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
-  connect(mpSearchClassesAction, SIGNAL(triggered()), SLOT(focusSearchClasses()));
+  // filter classes action
+  mpFilterClassesAction = new QAction(Helper::filterClasses, this);
+  mpFilterClassesAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
+  connect(mpFilterClassesAction, SIGNAL(triggered()), SLOT(focusFilterClasses()));
   // cut action
   mpCutAction = new QAction(QIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
   mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
@@ -2831,7 +2831,7 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpUndoAction);
   pEditMenu->addAction(mpRedoAction);
   pEditMenu->addSeparator();
-  pEditMenu->addAction(mpSearchClassesAction);
+  pEditMenu->addAction(mpFilterClassesAction);
   //  pEditMenu->addAction(mpCutAction);
   //  pEditMenu->addAction(mpCopyAction);
   //  pEditMenu->addAction(mpPasteAction);

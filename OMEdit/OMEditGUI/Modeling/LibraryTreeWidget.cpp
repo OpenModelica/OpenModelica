@@ -3313,9 +3313,9 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   setMinimumWidth(175);
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
-  mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::searchClasses);
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
+  mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   mpTreeSearchFilters->getExpandAllButton()->hide();
@@ -4206,7 +4206,7 @@ bool LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
  */
 void LibraryWidget::searchClasses()
 {
-  QString searchText = mpTreeSearchFilters->getSearchTextBox()->text();
+  QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(searchText, caseSensitivity, syntax);

@@ -51,9 +51,9 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLineEdit = pLineEdit;
   mpLibraryWidget = pLibraryWidget;
   mpTreeSearchFilters = new TreeSearchFilters(this);
-  mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::searchClasses);
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
+  mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(searchClasses()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   // create the tree
@@ -74,7 +74,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
   // try to automatically select of user has something in the text box.
-  mpTreeSearchFilters->getSearchTextBox()->setText(mpLineEdit->text());
+  mpTreeSearchFilters->getFilterTextBox()->setText(mpLineEdit->text());
   searchClasses();
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -103,7 +103,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
 void LibraryBrowseDialog::searchClasses()
 {
   mpLibraryTreeView->selectionModel()->clearSelection();
-  QString searchText = mpTreeSearchFilters->getSearchTextBox()->text();
+  QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(searchText, caseSensitivity, syntax);

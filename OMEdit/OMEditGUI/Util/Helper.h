@@ -257,14 +257,14 @@ public:
   static QString diagramView;
   static QString textView;
   static QString documentationView;
-  static QString searchClasses;
+  static QString filterClasses;
   static QString findReplaceModelicaText;
   static QString left;
   static QString center;
   static QString right;
   static QString createConnection;
   static QString connectionAttributes;
-  static QString findVariables;
+  static QString filterVariables;
   static QString openClass;
   static QString openClassTip;
   static QString viewDocumentation;

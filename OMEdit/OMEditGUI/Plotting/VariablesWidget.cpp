@@ -882,9 +882,9 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   setMinimumWidth(175);
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
-  mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::findVariables);
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
+  mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findVariables()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
   // simulation time label and combobox
@@ -1568,7 +1568,7 @@ void VariablesWidget::showContextMenu(QPoint point)
  */
 void VariablesWidget::findVariables()
 {
-  QString findText = mpTreeSearchFilters->getSearchTextBox()->text();
+  QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(findText, caseSensitivity, syntax);

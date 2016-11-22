@@ -475,9 +475,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
   pVariablesBrowserLabel->setObjectName("LabelWithBorder");
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
-  mpTreeSearchFilters->getSearchTextBox()->setPlaceholderText(Helper::findVariables);
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getSearchTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
+  mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findVariables()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
   /* variables tree view */
@@ -1169,9 +1169,9 @@ void TransformationsWidget::reloadTransformations()
   /* Clear the variable operations tree. */
   clearTreeWidgetItems(mpVariableOperationsTreeWidget);
   /* clear the variable tree filters. */
-  bool signalsState = mpTreeSearchFilters->getSearchTextBox()->blockSignals(true);
-  mpTreeSearchFilters->getSearchTextBox()->clear();
-  mpTreeSearchFilters->getSearchTextBox()->blockSignals(signalsState);
+  bool signalsState = mpTreeSearchFilters->getFilterTextBox()->blockSignals(true);
+  mpTreeSearchFilters->getFilterTextBox()->clear();
+  mpTreeSearchFilters->getFilterTextBox()->blockSignals(signalsState);
   signalsState = mpTreeSearchFilters->getSyntaxComboBox()->blockSignals(true);
   mpTreeSearchFilters->getSyntaxComboBox()->setCurrentIndex(0);
   mpTreeSearchFilters->getSyntaxComboBox()->blockSignals(signalsState);
@@ -1204,7 +1204,7 @@ void TransformationsWidget::reloadTransformations()
  */
 void TransformationsWidget::findVariables()
 {
-  QString findText = mpTreeSearchFilters->getSearchTextBox()->text();
+  QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(findText, caseSensitivity, syntax);

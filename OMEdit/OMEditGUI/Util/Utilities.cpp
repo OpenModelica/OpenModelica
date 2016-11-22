@@ -69,9 +69,9 @@ MdiArea::MdiArea(QWidget *pParent)
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
 {
-  // create the search text box
-  mpSearchTextBox = new QLineEdit;
-  mpSearchTextBox->installEventFilter(this);
+  // create the filter text box
+  mpFilterTextBox = new QLineEdit;
+  mpFilterTextBox->installEventFilter(this);
   // show hide button
   mpShowHideButton = new QToolButton;
   QString text = tr("Show/hide filters");
@@ -113,7 +113,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->addWidget(mpSearchTextBox, 0, 0);
+  pMainLayout->addWidget(mpFilterTextBox, 0, 0);
   pMainLayout->addWidget(mpShowHideButton, 0, 1);
   pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 2);
   setLayout(pMainLayout);
