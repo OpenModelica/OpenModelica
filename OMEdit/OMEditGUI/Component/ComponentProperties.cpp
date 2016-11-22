@@ -37,6 +37,13 @@
 #include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
 
+#include <QApplication>
+#include <QMenu>
+#include <QWidgetAction>
+#include <QButtonGroup>
+#include <QMessageBox>
+#include <QDesktopWidget>
+
 /*!
  * \class Parameter
  * \brief Defines one parameter. Creates name, value, unit and comment GUI controls.
@@ -1113,9 +1120,9 @@ void ComponentParameters::updateComponentParameters()
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
-        MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                     GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
-                                                                     Helper::scriptingKind, Helper::errorLevel));
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                              GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
+                                                              Helper::scriptingKind, Helper::errorLevel));
       }
     }
   }

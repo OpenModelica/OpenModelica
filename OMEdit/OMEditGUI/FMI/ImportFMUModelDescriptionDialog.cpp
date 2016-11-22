@@ -39,6 +39,8 @@
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"
 
+#include <QMessageBox>
+
 /*!
  * \class ImportFMUModelDescriptionDialog
  * \brief Creates an interface for importing FMU model description.

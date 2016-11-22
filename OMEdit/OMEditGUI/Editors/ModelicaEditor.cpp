@@ -39,6 +39,9 @@
 #include "Debugger/Breakpoints/BreakpointMarker.h"
 #include "Util/Helper.h"
 
+#include <QMenu>
+#include <QMessageBox>
+
 /*!
  * \class ModelicaEditor
  * \brief An editor for Modelica Text.

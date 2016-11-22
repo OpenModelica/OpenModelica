@@ -517,10 +517,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       parseInitXml(initXmlReader);
       initFile.close();
     } else {
-      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                 .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
   }
   /* open the .mat file */
@@ -530,10 +529,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   if (fileName.endsWith(".mat")) {
     //Read in mat file
     if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader))) {
-      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
-                                                 .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
+                                                            .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
     }
   }
   // remove time from variables list
@@ -1187,10 +1185,9 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
         findVariableAndUpdateValue(initXmlDocument, variables);
       }
     } else {
-      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                 tr("Unable to set the content of QDomDocument from file %1")
-                                                 .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            tr("Unable to set the content of QDomDocument from file %1")
+                                                            .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
     }
     initFile.close();
     initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
@@ -1200,10 +1197,9 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
     textStream << initXmlDocument.toString();
     initFile.close();
   } else {
-    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                               GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                               .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                          .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

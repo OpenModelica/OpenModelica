@@ -39,6 +39,7 @@
 #include "Util/StringHandler.h"
 
 #include <QGridLayout>
+#include <QMessageBox>
 
 /*!
  * \class DebuggerConfigurationPage

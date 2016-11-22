@@ -38,6 +38,10 @@
 #include "Util/Helper.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 
+#include <QMenu>
+#include <QCompleter>
+#include <QMessageBox>
+
 /*!
  * \class TabSettings
  * \brief Defines the tabs and indentation settings for the editor.

@@ -54,18 +54,6 @@ SplashScreen *SplashScreen::instance()
   return mpInstance;
 }
 
-MdiArea::MdiArea(QWidget *pParent)
-  : QMdiArea(pParent)
-{
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  setActivationOrder(QMdiArea::ActivationHistoryOrder);
-  setDocumentMode(true);
-#if QT_VERSION >= 0x040800
-  setTabsClosable(true);
-#endif
-}
-
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
 {

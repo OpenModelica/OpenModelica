@@ -44,7 +44,7 @@
 
 class AnimationWindow;
 
-class PlotWindowContainer : public MdiArea
+class PlotWindowContainer : public QMdiArea
 {
   Q_OBJECT
 public:

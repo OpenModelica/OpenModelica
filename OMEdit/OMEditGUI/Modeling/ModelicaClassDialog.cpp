@@ -42,6 +42,11 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Commands.h"
 
+#include <QApplication>
+#include <QMessageBox>
+#include <QCompleter>
+#include <QHeaderView>
+
 LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, LibraryWidget *pLibraryWidget)
   : QDialog(0)
 {
@@ -1488,9 +1493,9 @@ void ExportFigaroDialog::exportModelFigaro()
   QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
   QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
   if (MainWindow::instance()->getOMCProxy()->exportToFigaro(mpLibraryTreeItem->getNameStructure(), directory, library, mode, options, processor)) {
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                 GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
-                                                                 Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
   MainWindow::instance()->hideProgressBar();

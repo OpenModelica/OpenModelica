@@ -965,7 +965,7 @@ void OptionsDialog::saveMessagesSettings()
   // save error color
   mpSettings->setValue("messages/errorColor", mpMessagesPage->getErrorColor().rgba());
   // apply the above settings to Messages
-  MainWindow::instance()->getMessagesWidget()->applyMessagesSettings();
+  MessagesWidget::instance()->applyMessagesSettings();
 }
 
 //! Saves the Notifications section settings to omedit.ini
@@ -3134,8 +3134,8 @@ void SimulationPage::showOMCFlagsHelp()
                         .append("/share/doc/omc/OpenModelicaUsersGuide/omchelptext.html"));
   if (!QDesktopServices::openUrl(omcHelpTextPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(omcHelpTextPath.toString());
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage, Helper::scriptingKind,
+                                                          Helper::errorLevel));
   }
 }
 

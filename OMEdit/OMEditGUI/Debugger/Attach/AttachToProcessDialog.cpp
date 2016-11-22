@@ -37,6 +37,9 @@
 #include "Options/OptionsDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 
+#include <QHeaderView>
+#include <QMessageBox>
+
 /*!
  * \class AttachToProcessDialog
  * \brief Provides interface for attaching a debugger to a running process.

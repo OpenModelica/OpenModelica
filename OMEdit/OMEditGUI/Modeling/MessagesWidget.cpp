@@ -38,6 +38,8 @@
 #include "Util/Helper.h"
 #include "Options/OptionsDialog.h"
 
+#include <QMenu>
+
 /*!
  * \class MessageItem
  * \brief Holds the error message data.
@@ -85,6 +87,28 @@ QString MessageItem::getLocation()
  * \class MessagesWidget
  * \brief Shows warnings, notifications and error messages.
  */
+
+MessagesWidget *MessagesWidget::mpInstance = 0;
+
+/*!
+ * \brief MessagesWidget::create
+ */
+void MessagesWidget::create()
+{
+  if (!mpInstance) {
+    mpInstance = new MessagesWidget;
+  }
+}
+
+/*!
+ * \brief MessagesWidget::destroy
+ */
+void MessagesWidget::destroy()
+{
+  delete mpInstance;
+  mpInstance = 0;
+}
+
 /*!
  * \brief MessagesWidget::MessagesWidget
  * \param pParent
@@ -127,6 +151,11 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   pMainLayout->setSpacing(1);
   pMainLayout->addWidget(pMessagesTextBrowserFrame);
   setLayout(pMainLayout);
+}
+
+MessagesWidget* MessagesWidget::instance()
+{
+  return mpInstance;
 }
 
 /*!

@@ -34,6 +34,7 @@
 
 #include "AnimationWindow.h"
 #include "MainWindow.h"
+#include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
@@ -271,9 +272,8 @@ void AnimationWindow::loadVisualization()
   } else if (isCSV(mFileName)) {
     visType = VisType::CSV;
   } else {
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                           tr("Unknown visualization type."),
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unknown visualization type."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   //init visualizer
   if (visType == VisType::MAT) {
@@ -284,15 +284,15 @@ void AnimationWindow::loadVisualization()
     mpVisualizer = new VisualizerFMU(mFileName, mPathName);
   } else {
     QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                          Helper::errorLevel));
   }
   //load the XML File, build osgTree, get initial values for the shapes
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                          Helper::errorLevel));
   } else {
     connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualizer->initData();

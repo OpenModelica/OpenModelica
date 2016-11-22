@@ -42,6 +42,9 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "Simulation/SimulationDialog.h"
 
+#include <QDockWidget>
+#include <QMessageBox>
+
 /*!
  * \class GDBLoggerWidget
  * \brief Console for viewing GDB response & sending user commands to GDB.

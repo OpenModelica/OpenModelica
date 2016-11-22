@@ -60,6 +60,8 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include "simulation_options.h"
 #include "omc_error.h"
 
+#include <QMessageBox>
+
 /*!
  * \class OMCProxy
  * \brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
@@ -374,7 +376,7 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
 void OMCProxy::showException(QString exception)
 {
   MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, exception, Helper::scriptingKind, Helper::errorLevel);
-  MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
+  MessagesWidget::instance()->addGUIMessage(messageItem);
   printMessagesStringInternal();
 }
 
@@ -468,7 +470,7 @@ bool OMCProxy::printMessagesStringInternal()
     setCurrentError(i);
     MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
                             getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
   }
   return returnValue;
 }
@@ -965,7 +967,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
   } else {
     QString msg = tr("Unable to set the component modifier value using command <b>%1</b>").arg(expression);
     MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
     return false;
   }
 }
@@ -1031,7 +1033,7 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
   } else {
     QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
     MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(messageItem);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
     return false;
   }
 }
@@ -2300,8 +2302,8 @@ QString OMCProxy::uriToFilename(QString uri)
   /* the second argument of uriToFilename result is error string. */
   if (results.size() > 1 && !results.at(1).isEmpty()) {
     QString errorString = results.at(1);
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   if (results.size() > 0) {
     return results.first();

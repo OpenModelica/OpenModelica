@@ -34,6 +34,8 @@
 #include "Commands.h"
 #include "MainWindow.h"
 
+#include <QMessageBox>
+
 AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {

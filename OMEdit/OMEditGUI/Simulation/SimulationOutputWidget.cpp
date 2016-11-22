@@ -41,9 +41,12 @@
 #include "SimulationDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 
-#include <QObject>
-#include <QAction>
 #include <QApplication>
+#include <QObject>
+#include <QHeaderView>
+#include <QAction>
+#include <QMenu>
+#include <QDesktopWidget>
 
 /*!
  * \class SimulationOutputTree

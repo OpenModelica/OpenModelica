@@ -76,13 +76,21 @@ class MessagesWidget : public QWidget
 {
   Q_OBJECT
 private:
+  // the only class that is allowed to create and destroy
+  friend class MainWindow;
+
+  static void create();
+  static void destroy();
+  MessagesWidget(QWidget *pParent = 0);
+
+  static MessagesWidget *mpInstance;
   int mMessageNumber;
   QTextBrowser *mpMessagesTextBrowser;
   QAction *mpSelectAllAction;
   QAction *mpCopyAction;
   QAction *mpClearAllAction;
 public:
-  MessagesWidget(QWidget *pParent = 0);
+  static MessagesWidget *instance();
   void resetMessagesNumber() {mMessageNumber = 1;}
   QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
   void applyMessagesSettings();

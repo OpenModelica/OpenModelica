@@ -2451,9 +2451,8 @@ void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
     fail = !QFile::remove(fileInfo.absoluteFilePath());
   }
   if (fail) {
-    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unable to delete <b>%1</b>.")
-                                               .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unable to delete <b>%1</b>.")
+                                                          .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
   }
   pLibraryTreeItem->deleteLater();
 }
@@ -3580,10 +3579,9 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelNa
     if (pMessageHandler->isFailed()) {
       QTextDocument document;
       document.setHtml(pMessageHandler->statusMessage());
-      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, fileInfo.absoluteFilePath(), false, pMessageHandler->line(),
-                                                 pMessageHandler->column(), 0, 0, document.toPlainText(), Helper::scriptingKind,
-                                                 Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, fileInfo.absoluteFilePath(), false, pMessageHandler->line(),
+                                                            pMessageHandler->column(), 0, 0, document.toPlainText(), Helper::scriptingKind,
+                                                            Helper::errorLevel));
       delete pMessageHandler;
       return false;
     } else {
@@ -3711,8 +3709,8 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
         .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
              .arg(fileName).arg(file.errorString()));
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                          Helper::errorLevel));
     return false;
   }
 }

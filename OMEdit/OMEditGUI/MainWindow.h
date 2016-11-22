@@ -38,23 +38,19 @@
 #undef smooth
 
 #include <QtGlobal>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#include <QPrinter>
-#include <QPrintDialog>
-#include <QtWebKitWidgets>
-#include <QTextCodec>
-#include <QUrlQuery>
-#include <QItemDelegate>
-#include <QDomDocument>
-#else
-#include <QDir>
-#include <QtWebKit>
-#include <QDomDocument>
-#endif
-
 #if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
 #error "OMEdit requires Qt 4.6.0 or newer"
 #endif
+
+#include <QMainWindow>
+#include <QWidget>
+#include <QProgressBar>
+#include <QDomDocument>
+#include <QStackedWidget>
+#include <QActionGroup>
+#include <QToolButton>
+#include <QMdiSubWindow>
+#include <QMdiArea>
 
 class OMCProxy;
 class OptionsDialog;
@@ -96,7 +92,6 @@ public:
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
-  MessagesWidget* getMessagesWidget() {return mpMessagesWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
   GDBAdapter* getGDBAdapter() {return mpGDBAdapter;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
@@ -204,7 +199,6 @@ private:
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   OptionsDialog *mpOptionsDialog;
-  MessagesWidget *mpMessagesWidget;
   QDockWidget *mpMessagesDockWidget;
   FileDataNotifier *mpOutputFileDataNotifier;
   FileDataNotifier *mpErrorFileDataNotifier;

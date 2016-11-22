@@ -35,6 +35,8 @@
 #include "TransformationsEditor.h"
 #include "Util/Helper.h"
 
+#include <QMenu>
+
 /*!
   \class TransformationsEditor
   \class TSourceEditor

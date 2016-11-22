@@ -41,6 +41,7 @@
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QMenu>
 
 /*!
  * \class DocumentationWidget

@@ -1375,9 +1375,9 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
-    pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
-                                                                Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -3068,8 +3068,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       }
     }
     if (!errorString.isEmpty()) {
-      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind,
+                                                            Helper::errorLevel));
     }
     return false;
   }
@@ -3559,10 +3559,10 @@ void ModelWidget::writeVisualXMLFile()
     visualFile << "</visualization>\n";
     file.close();
   } else {
-    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
                                                                            .arg(fileName).arg(file.errorString()));
-    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                          Helper::errorLevel));
   }
 }
 
@@ -4003,10 +4003,10 @@ void ModelWidget::getModelConnections()
     }
     // show error message if start component is not found.
     if (!pStartConnectorComponent) {
-      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
-                                                                  .arg(connectionList.at(0)).arg(connectionString),
-                                                                  Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
+                                                            .arg(connectionList.at(0)).arg(connectionString),
+                                                            Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
     // get end component
@@ -4040,10 +4040,10 @@ void ModelWidget::getModelConnections()
     }
     // show error message if end component is not found.
     if (!pEndConnectorComponent) {
-      pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
-                                                                  .arg(connectionList.at(1)).arg(connectionString),
-                                                                  Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT)
+                                                            .arg(connectionList.at(1)).arg(connectionString),
+                                                            Helper::scriptingKind, Helper::errorLevel));
       continue;
     }
     // get the connector annotations from OMC
@@ -4072,7 +4072,6 @@ void ModelWidget::getModelConnections()
  */
 void ModelWidget::detectMultipleDeclarations()
 {
-  MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
   for (int i = 0 ; i < mComponentsList.size() ; i++) {
     for (int j = 0 ; j < mComponentsList.size() ; j++) {
       if (i == j) {
@@ -4080,10 +4079,10 @@ void ModelWidget::detectMultipleDeclarations()
         continue;
       }
       if (mComponentsList[i]->getName().compare(mComponentsList[j]->getName()) == 0) {
-        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                   GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT)
-                                                   .arg(mComponentsList[i]->getName()),
-                                                   Helper::scriptingKind, Helper::errorLevel));
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                              GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT)
+                                                              .arg(mComponentsList[i]->getName()),
+                                                              Helper::scriptingKind, Helper::errorLevel));
         return;
       }
     }
@@ -4148,8 +4147,8 @@ void ModelWidget::getMetaModelSubModels()
     if (!QFile::exists(absoluteModelFilePath)) {
       QString msg = tr("Unable to find ModelFile <b>%1</b> for SubModel <b>%2</b>. The file location should be <b>%3</b>.")
           .arg(subModel.attribute("ModelFile")).arg(subModel.attribute("Name")).arg(absoluteModelFilePath);
-      MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                            Helper::errorLevel));
     }
     // Geometry File
     if (!subModel.attribute("GeometryFile").isEmpty()) {
@@ -4160,8 +4159,8 @@ void ModelWidget::getMetaModelSubModels()
       if (!QFile::exists(absoluteGeometryFilePath)) {
         QString msg = tr("Unable to find GeometryFile <b>%1</b> for SubModel <b>%2</b>. The file location should be <b>%3</b>.")
             .arg(subModel.attribute("GeometryFile")).arg(subModel.attribute("Name")).arg(absoluteGeometryFilePath);
-        MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                              Helper::errorLevel));
       }
     }
     // add submodel as component to view.
@@ -4176,7 +4175,7 @@ void ModelWidget::getMetaModelSubModels()
  */
 void ModelWidget::getMetaModelConnections()
 {
-  MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
+  MessagesWidget *pMessagesWidget = MessagesWidget::instance();
   MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
   QDomNodeList connections = pMetaModelEditor->getConnections();
   for (int i = 0; i < connections.size(); i++) {
@@ -4417,10 +4416,9 @@ bool ModelWidget::metaModelEditorTextChanged()
   MessageHandler *pMessageHandler = new MessageHandler;
   Utilities::parseMetaModelText(pMessageHandler, mpEditor->getPlainTextEdit()->toPlainText());
   if (pMessageHandler->isFailed()) {
-    MessagesWidget *pMessagesWidget = MainWindow::instance()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::MetaModel, getLibraryTreeItem()->getName(), false, pMessageHandler->line(),
-                                               pMessageHandler->column(), 0, 0, pMessageHandler->statusMessage(), Helper::syntaxKind,
-                                               Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, getLibraryTreeItem()->getName(), false,
+                                                          pMessageHandler->line(), pMessageHandler->column(), 0, 0,
+                                                          pMessageHandler->statusMessage(), Helper::syntaxKind, Helper::errorLevel));
     delete pMessageHandler;
     return false;
   }
@@ -4462,8 +4460,15 @@ void ModelWidget::closeEvent(QCloseEvent *event)
 }
 
 ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
-  : MdiArea(pParent), mPreviousViewType(StringHandler::NoView), mShowGridLines(true)
+  : QMdiArea(pParent), mPreviousViewType(StringHandler::NoView), mShowGridLines(true)
 {
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setActivationOrder(QMdiArea::ActivationHistoryOrder);
+  setDocumentMode(true);
+#if QT_VERSION >= 0x040800
+  setTabsClosable(true);
+#endif
   if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {

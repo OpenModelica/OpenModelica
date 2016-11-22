@@ -802,7 +802,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // check reset messages number before simulation option
   if (MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
-    MainWindow::instance()->getMessagesWidget()->resetMessagesNumber();
+    MessagesWidget::instance()->resetMessagesNumber();
   }
   /* save the model before translating */
   if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
@@ -1240,8 +1240,8 @@ void SimulationDialog::performSimulation()
     if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
       QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
           .arg(simulationOptions.getWorkingDirectory());
-      MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                                             Helper::notificationLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                            Helper::notificationLevel));
       return;
     }
     QString targetLanguage = pSimulationPage->getTargetLanguageComboBox()->currentText();
@@ -1251,8 +1251,8 @@ void SimulationDialog::performSimulation()
     } else {
       QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
           .arg(simulationOptions.getWorkingDirectory());
-      MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                                             Helper::notificationLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                            Helper::notificationLevel));
       return;
     }
   }
@@ -1332,8 +1332,8 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
             }
           } else {
             QString msg = tr("Animation is only supported with mat result files.");
-            MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg,
-                                                                                   Helper::scriptingKind, Helper::notificationLevel));
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                  Helper::notificationLevel));
           }
         }
 #endif
@@ -1421,8 +1421,8 @@ void SimulationDialog::showIntegrationHelp()
                                   .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -1482,8 +1482,8 @@ void SimulationDialog::showSimulationFlagsHelp()
                                   .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                                           Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

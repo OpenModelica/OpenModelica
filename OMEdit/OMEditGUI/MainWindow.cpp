@@ -113,15 +113,15 @@ void MainWindow::setUpMainWindow()
   mpOptionsDialog = new OptionsDialog(this);
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
-  mpMessagesWidget = new MessagesWidget(this);
+  MessagesWidget::create();
   // Create MessagesDockWidget dock
   mpMessagesDockWidget = new QDockWidget(tr("Messages Browser"), this);
   mpMessagesDockWidget->setObjectName("Messages");
   mpMessagesDockWidget->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-  mpMessagesDockWidget->setWidget(mpMessagesWidget);
+  mpMessagesDockWidget->setWidget(MessagesWidget::instance());
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
-  connect(mpMessagesWidget, SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
+  connect(MessagesWidget::instance(), SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
   // Reopen the standard output stream.
   QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
@@ -324,7 +324,7 @@ void MainWindow::setUpMainWindow()
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
-    bool restoreMessagesWidget = !mpMessagesWidget->getMessagesTextBrowser()->toPlainText().isEmpty();
+    bool restoreMessagesWidget = !MessagesWidget::instance()->getMessagesTextBrowser()->toPlainText().isEmpty();
     restoreState(pSettings->value("application/windowState").toByteArray());
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */
@@ -522,6 +522,8 @@ void MainWindow::beforeClosingMainWindow()
   // save the grid lines
   pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
   delete pSettings;
+  // delete the MessagesWidget object
+  MessagesWidget::destroy();
 }
 
 /*!
@@ -658,11 +660,11 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   showProgressBar();
   // check reset messages number before instantiating
   if (mpOptionsDialog->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
-    mpMessagesWidget->resetMessagesNumber();
+    MessagesWidget::instance()->resetMessagesNumber();
   }
   QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeItem->getNameStructure());
   if (!instantiateModelResult.isEmpty()) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 tr("Instantiation of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
     QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
@@ -690,11 +692,11 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   showProgressBar();
   // check reset messages number before checking
   if (mpOptionsDialog->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
-    mpMessagesWidget->resetMessagesNumber();
+    MessagesWidget::instance()->resetMessagesNumber();
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 tr("Check of %1 completed successfully.").arg(pLibraryTreeItem->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
     QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeItem->getNameStructure());
@@ -722,7 +724,7 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
   showProgressBar();
   QString checkAllModelsResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeItem->getNameStructure());
   if (!checkAllModelsResult.isEmpty()) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, checkAllModelsResult, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, checkAllModelsResult, Helper::scriptingKind,
                                                 Helper::notificationLevel));
   }
   // hide progress bar
@@ -753,7 +755,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   if (index > -1)
     platforms.removeAt(index);
   if (mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms)) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
                                                 .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()), Helper::scriptingKind,
                                                 Helper::notificationLevel));
@@ -778,7 +780,7 @@ void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   if (mpOMCProxy->translateModelXML(pLibraryTreeItem->getNameStructure())) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
                                                 .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()).arg(pLibraryTreeItem->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
   }
@@ -1043,7 +1045,7 @@ void MainWindow::findFileAndGoToLine(QString fileName, QString lineNumber)
     }
   } else {
     QString msg = tr("Unable to find the file <b>%1</b> with line number <b>%2</b>").arg(fileName).arg(lineNumber);
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -1364,7 +1366,7 @@ void MainWindow::loadSystemLibrary()
 void MainWindow::readOutputFile(qint64 bytes)
 {
   QString data = mpOutputFileDataNotifier->read(bytes);
-  mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 /*!
@@ -1375,7 +1377,7 @@ void MainWindow::readOutputFile(qint64 bytes)
 void MainWindow::readErrorFile(qint64 bytes)
 {
   QString data = mpErrorFileDataNotifier->read(bytes);
-  mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 //! Opens the recent file.
@@ -1603,7 +1605,7 @@ void MainWindow::instantiateModel()
   if (pModelWidget) {
     instantiateModel(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1614,7 +1616,7 @@ void MainWindow::checkModel()
   if (pModelWidget) {
     checkModel(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1625,7 +1627,7 @@ void MainWindow::checkAllModels()
   if (pModelWidget) {
     checkAllModels(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1698,7 +1700,7 @@ void MainWindow::exportModelFMU()
   if (pModelWidget) {
     exportModelFMU(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1710,7 +1712,7 @@ void MainWindow::exportModelXML()
   if (pModelWidget) {
     exportModelXML(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1722,7 +1724,7 @@ void MainWindow::exportModelFigaro()
   if (pModelWidget) {
     exportModelFigaro(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1739,7 +1741,7 @@ void MainWindow::showOpenModelicaCommandPrompt()
   args << "/K" << promptBatch;
   if (!QProcess::startDetached(commandPrompt, args, mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory())) {
     QString errorString = tr("Unable to run command <b>%1</b> with arguments <b>%2</b>.").arg(commandPrompt).arg(args.join(" "));
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
                                                 Helper::errorLevel));
   }
 }
@@ -1767,7 +1769,7 @@ void MainWindow::exportModelToOMNotebook()
   if (pModelWidget) {
     exportModelToOMNotebook(pModelWidget->getLibraryTreeItem());
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1914,7 +1916,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     mpStatusBar->clearMessage();
     hideProgressBar();
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1962,7 +1964,7 @@ void MainWindow::openWorkingDirectory()
 {
   QUrl workingDirectory (QString("file:///%1").arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()));
   if (!QDesktopServices::openUrl(workingDirectory)) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(workingDirectory.toString()),
                                                 Helper::scriptingKind, Helper::errorLevel));
   }
@@ -1982,7 +1984,7 @@ void MainWindow::openTerminal()
 #else
     message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPath);
 #endif
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, message, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, message, Helper::scriptingKind,
                                                 Helper::errorLevel));
     return;
   }
@@ -1990,7 +1992,7 @@ void MainWindow::openTerminal()
   QStringList args = arguments.split(" ");
   if (!QProcess::startDetached(terminalCommand, args, mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory())) {
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>.").arg(terminalCommand).arg(arguments);
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
                                                 Helper::errorLevel));
   }
 }
@@ -2015,7 +2017,7 @@ void MainWindow::openUsersGuide()
   QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                        .append("/share/doc/omc/OpenModelicaUsersGuide/index.html"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                 Helper::scriptingKind, Helper::errorLevel));
   }
@@ -2031,7 +2033,7 @@ void MainWindow::openUsersGuidePdf()
   QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                        .append("/share/doc/omc/OpenModelicaUsersGuide-latest.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                 Helper::scriptingKind, Helper::errorLevel));
   }
@@ -2047,7 +2049,7 @@ void MainWindow::openUsersGuideOldPdf()
   QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                        .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                 Helper::scriptingKind, Helper::errorLevel));
   }
@@ -2063,7 +2065,7 @@ void MainWindow::openSystemDocumentation()
   QUrl systemDocumentationPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                                 .append("/share/doc/omc/SystemDocumentation/OpenModelicaSystem.pdf"));
   if (!QDesktopServices::openUrl(systemDocumentationPath)) {
-    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
                                                 Helper::scriptingKind, Helper::errorLevel));
   }

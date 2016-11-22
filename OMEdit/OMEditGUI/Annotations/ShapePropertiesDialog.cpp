@@ -40,6 +40,10 @@
 #include "Options/NotificationsDialog.h"
 #include "Modeling/Commands.h"
 
+#include <QHeaderView>
+#include <QColorDialog>
+#include <QMessageBox>
+
 ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, QWidget *pParent)
   : QDialog(pParent)
 {

@@ -38,6 +38,10 @@
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 
+#include <QMessageBox>
+#include <QMenu>
+#include <QDockWidget>
+
 /*!
  * \class ComponentInfo
  * \brief A class containing the information about the component like visibility, stream, casuality etc.

@@ -441,8 +441,7 @@ protected:
   virtual void closeEvent(QCloseEvent *event);
 };
 
-class MdiArea;
-class ModelWidgetContainer : public MdiArea
+class ModelWidgetContainer : public QMdiArea
 {
   Q_OBJECT
 public:

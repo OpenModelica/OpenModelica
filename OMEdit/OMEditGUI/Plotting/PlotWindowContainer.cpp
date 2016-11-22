@@ -50,8 +50,15 @@ using namespace OMPlot;
  * \param pParent
  */
 PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
-  : MdiArea(pParent)
+  : QMdiArea(pParent)
 {
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setActivationOrder(QMdiArea::ActivationHistoryOrder);
+  setDocumentMode(true);
+#if QT_VERSION >= 0x040800
+  setTabsClosable(true);
+#endif
   if (MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {
@@ -167,7 +174,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     }
   }
   catch (PlotException &e) {
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -190,7 +197,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->show();
   }
   catch (PlotException &e) {
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -283,7 +290,7 @@ void PlotWindowContainer::exportVariables()
   }
   // create a file
   if (MainWindow::instance()->getLibraryWidget()->saveFile(fileName, contents)) {
-    MainWindow::instance()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
                                                                  .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
   }
 }

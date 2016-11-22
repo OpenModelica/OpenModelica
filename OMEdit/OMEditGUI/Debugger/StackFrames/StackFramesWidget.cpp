@@ -39,6 +39,9 @@
 #include "Debugger/GDB/CommandFactory.h"
 #include "Debugger/Locals/LocalsWidget.h"
 
+#include <QMenu>
+#include <QMessageBox>
+
 StackFrameItem::StackFrameItem(QString level, QString address, QString function, QString line, QString file, QString fullName, StackFramesTreeWidget *pStackFramesTreeWidget)
   : QTreeWidgetItem(pStackFramesTreeWidget)
 {

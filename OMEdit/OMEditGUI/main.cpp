@@ -56,6 +56,9 @@
 #include "omc_config.h"
 #endif
 
+#include <QApplication>
+#include <QMessageBox>
+
 #ifdef QT_NO_DEBUG
 #ifndef WIN32
 #include <signal.h>

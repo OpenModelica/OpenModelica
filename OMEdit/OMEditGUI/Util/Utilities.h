@@ -77,13 +77,6 @@ public:
   static SplashScreen *instance();
 };
 
-class MdiArea : public QMdiArea
-{
-  Q_OBJECT
-public:
-  MdiArea(QWidget *pParent = 0);
-};
-
 //! @brief Used to create platform independent sleep for the application.
 class Sleep : public QThread
 {

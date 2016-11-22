@@ -40,6 +40,8 @@
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
 
+#include <QMessageBox>
+
 /*!
  * \class ImportFMUDialog
  * \brief Creates an interface for importing FMU package.
