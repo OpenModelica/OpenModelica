@@ -1,19 +1,21 @@
-// name: usertype2.mo
+// name: usertype3.mo
 // keywords:
 // status: correct
 // cflags: -d=newInst
 //
 
-type MyReal = Real(start = 1.0);
+type MyReal = Real;
 
 model M
   MyReal x;
-  Real y(start = 1.0);
+  MyReal y(start = 1.0);
+  MyReal z(start = 2.0);
 end M;
 
 // Result:
 // class M
-//   Real x(start = 1.0);
+//   Real x;
 //   Real y(start = 1.0);
+//   Real z(start = 2.0);
 // end M;
 // endResult

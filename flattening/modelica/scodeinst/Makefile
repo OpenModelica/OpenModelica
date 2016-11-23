@@ -20,10 +20,12 @@ DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
 eq1.mo \
+extends3.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNested1.mo \
 ImportQualified1.mo \
+loop2.mo \
 mod10.mo \
 mod11.mo \
 mod1.mo \
@@ -32,13 +34,19 @@ mod5.mo \
 mod6.mo \
 mod8.mo \
 mod9.mo \
+NonexistentRedeclareModifier1.mo \
+NonexistentRedeclareModifier2.mo \
 ParameterBug.mos \
 redeclare13.mo \
 redeclare2.mo \
 redeclare6.mo \
+type2.mo \
 usertype1.mo \
 usertype2.mo \
-loop2.mo \
+usertype3.mo \
+usertype4.mo \
+usertype5.mo \
+usertype6.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -137,8 +145,6 @@ mod12.mo \
 mod13.mo \
 mod7.mo \
 MultiInheritanceRedeclare2.mo \
-NonexistentRedeclareModifier1.mo \
-NonexistentRedeclareModifier2.mo \
 PartialInst.mo \
 RecursiveExtends1.mo \
 RecursiveExtends2.mo \
@@ -147,7 +153,6 @@ redeclare5.mo \
 redeclare11.mo \
 redeclare12.mo \
 type1.mo \
-type2.mo \
 type3.mo \
 type4.mo \
 type5.mo \
@@ -190,7 +195,6 @@ expconn5.mo \
 expconn6.mo \
 extends1.mo \
 extends2.mo \
-extends3.mo \
 for1.mo \
 for2.mo \
 func2.mo \
