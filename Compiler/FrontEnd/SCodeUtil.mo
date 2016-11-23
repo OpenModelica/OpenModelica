@@ -566,13 +566,12 @@ algorithm
   outMod := match (part,inMod)
     local
       Absyn.Annotation aann;
-      SCode.Annotation ann1;
       Option<SCode.Annotation> ann;
       list<Absyn.ElementItem> rest;
     case (Absyn.EXTERNAL(_,SOME(aann)),_)
       equation
-        ann1 = translateAnnotation(aann);
-        ann = mergeSCodeOptAnn(SOME(ann1), inMod);
+        ann = translateAnnotation(aann);
+        ann = mergeSCodeOptAnn(ann, inMod);
       then ann;
     case (Absyn.PUBLIC(_::rest),_)
       then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),inMod);
@@ -951,7 +950,7 @@ algorithm
     case (Absyn.EXTERNAL(externalDecl =
         Absyn.EXTERNALDECL(fn_name, lang, output_, args, aann)) :: _)
       equation
-        sann = Util.applyOption(aann, translateAnnotation);
+        sann = translateAnnotationOpt(aann);
       then SOME(SCode.EXTERNALDECL(fn_name, lang, output_, args, sann));
     case ((_ :: rest))
       equation
@@ -996,21 +995,36 @@ end translateEitemlist;
 public function translateAnnotation
 "translates an Absyn.Annotation into an SCode.Annotation"
   input Absyn.Annotation inAnnotation;
-  output SCode.Annotation outAnnotation;
+  output Option<SCode.Annotation> outAnnotation;
 algorithm
   outAnnotation := match (inAnnotation)
     local
       list<Absyn.ElementArg> args;
-      SCode.Annotation res;
       SCode.Mod m;
-    case(Absyn.ANNOTATION(args))
+
+    case Absyn.ANNOTATION(elementArgs = {}) then NONE();
+
+    case Absyn.ANNOTATION(elementArgs = args)
       equation
         m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
-        res = SCode.ANNOTATION(m);
       then
-        res;
+        SOME(SCode.ANNOTATION(m));
+
   end match;
 end translateAnnotation;
+
+public function translateAnnotationOpt
+  input Option<Absyn.Annotation> absynAnnotation;
+  output Option<SCode.Annotation> scodeAnnotation;
+algorithm
+  scodeAnnotation := match absynAnnotation
+    local
+      Absyn.Annotation ann;
+
+    case SOME(ann) then translateAnnotation(ann);
+    else NONE();
+  end match;
+end translateAnnotationOpt;
 
 public function translateElement
 "This function converts an Absyn.Element to a list of SCode.Element.
@@ -1128,8 +1142,7 @@ algorithm
       Option<Absyn.Exp> cond;
       Absyn.Path path;
       Absyn.Annotation absann;
-      SCode.Annotation ann;
-      Option<SCode.Annotation> sann;
+      Option<SCode.Annotation> ann;
       Absyn.Variability variability;
       Absyn.Parallelism parallelism;
       SourceInfo i,info;
@@ -1195,7 +1208,7 @@ algorithm
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         ann = translateAnnotation(absann);
       then
-        {SCode.EXTENDS(path,vis,mod,SOME(ann),info)};
+        {SCode.EXTENDS(path,vis,mod,ann,info)};
 
     case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),_) then {};
 
@@ -1515,7 +1528,7 @@ algorithm
     case(NONE()) then SCode.noComment;
     case(SOME(Absyn.COMMENT(absann,ostr)))
       equation
-        ann = Util.applyOption(absann,translateAnnotation);
+        ann = translateAnnotationOpt(absann);
         ostr = Util.applyOption(ostr,System.unescapedString);
       then SCode.COMMENT(ann,ostr);
   end match;
@@ -1531,7 +1544,7 @@ algorithm
     local
       Absyn.Annotation absann;
       list<Absyn.Annotation> anns;
-      SCode.Annotation ann;
+      Option<SCode.Annotation> ann;
       Option<String> ostr;
 
     case ({},_) then SCode.COMMENT(NONE(),inString);
@@ -1539,13 +1552,13 @@ algorithm
       equation
         ann = translateAnnotation(absann);
         ostr = Util.applyOption(inString,System.unescapedString);
-      then SCode.COMMENT(SOME(ann),ostr);
+      then SCode.COMMENT(ann,ostr);
     case (absann::anns,_)
       equation
         absann = List.fold(anns, Absyn.mergeAnnotations, absann);
         ann = translateAnnotation(absann);
         ostr = Util.applyOption(inString,System.unescapedString);
-      then SCode.COMMENT(SOME(ann),ostr);
+      then SCode.COMMENT(ann,ostr);
   end match;
 end translateCommentList;
 
@@ -1557,7 +1570,7 @@ protected function translateCommentSeparate
 algorithm
   (outAnn,outStr) := match (inComment)
     local Absyn.Annotation absann;
-      SCode.Annotation ann;
+      Option<SCode.Annotation> ann;
       String str;
 
     case(NONE()) then (NONE(),NONE());
@@ -1567,12 +1580,12 @@ algorithm
       equation
         ann = translateAnnotation(absann);
       then
-        (SOME(ann),NONE());
+        (ann,NONE());
     case(SOME(Absyn.COMMENT(SOME(absann),SOME(str))))
       equation
         ann = translateAnnotation(absann);
       then
-        (SOME(ann),SOME(str));
+        (ann,SOME(str));
   end match;
 end translateCommentSeparate;
 
@@ -1735,41 +1748,71 @@ end translateElementAddinfo;
 /* Modification management */
 public function translateMod
 "Builds an SCode.Mod from an Absyn.Modification."
-  input Option<Absyn.Modification> inAbsynModificationOption;
-  input SCode.Final inFinalPrefix;
-  input SCode.Each inEachPrefix;
-  input SourceInfo inInfo;
+  input Option<Absyn.Modification> inMod;
+  input SCode.Final finalPrefix;
+  input SCode.Each eachPrefix;
+  input SourceInfo info;
   output SCode.Mod outMod;
+protected
+  list<Absyn.ElementArg> args;
+  Absyn.EqMod eqmod;
+  list<SCode.SubMod> subs;
+  Option<Absyn.Exp> binding;
 algorithm
-  outMod := match (inAbsynModificationOption,inFinalPrefix,inEachPrefix,inInfo)
-    local
-      Absyn.Exp e;
-      SCode.Final finalPrefix;
-      SCode.Each eachPrefix;
-      list<SCode.SubMod> subs;
-      list<Absyn.ElementArg> l;
+  (args, eqmod) := match inMod
+    case SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqmod)) then (args, eqmod);
+    else ({}, Absyn.NOMOD());
+  end match;
 
-    case (NONE(), SCode.FINAL(), _, _)
-      then SCode.MOD(inFinalPrefix, inEachPrefix, {}, NONE(), inInfo);
-    case (NONE(),_,_,_) then SCode.NOMOD();
-    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_)
-      then SCode.MOD(finalPrefix,eachPrefix,{},SOME(e), inInfo);
-    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_)
-      then SCode.MOD(finalPrefix,eachPrefix,{},NONE(), inInfo);
-    case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,eachPrefix,_)
-      equation
-        subs = translateArgs(l);
-      then
-        SCode.MOD(finalPrefix, eachPrefix, subs, SOME(e), inInfo);
+  subs := if listEmpty(args) then {} else translateArgs(args);
 
-    case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,eachPrefix,_)
-      equation
-        subs = translateArgs(l);
-      then
-        SCode.MOD(finalPrefix, eachPrefix, subs, NONE(), inInfo);
+  binding := match eqmod
+    case Absyn.EQMOD() then SOME(eqmod.exp);
+    else NONE();
+  end match;
+
+  outMod := match (subs, binding, finalPrefix, eachPrefix)
+    case ({}, NONE(), SCode.NOT_FINAL(), SCode.NOT_EACH()) then SCode.NOMOD();
+    else SCode.MOD(finalPrefix, eachPrefix, subs, binding, info);
   end match;
 end translateMod;
 
+//public function translateMod
+//"Builds an SCode.Mod from an Absyn.Modification."
+//  input Option<Absyn.Modification> inAbsynModificationOption;
+//  input SCode.Final inFinalPrefix;
+//  input SCode.Each inEachPrefix;
+//  input SourceInfo inInfo;
+//  output SCode.Mod outMod;
+//algorithm
+//  outMod := match (inAbsynModificationOption,inFinalPrefix,inEachPrefix,inInfo)
+//    local
+//      Absyn.Exp e;
+//      SCode.Final finalPrefix;
+//      SCode.Each eachPrefix;
+//      list<SCode.SubMod> subs;
+//      list<Absyn.ElementArg> l;
+//
+//    case (NONE(), SCode.FINAL(), _, _)
+//      then SCode.MOD(inFinalPrefix, inEachPrefix, {}, NONE(), inInfo);
+//    case (NONE(),_,_,_) then SCode.NOMOD();
+//    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_)
+//      then SCode.MOD(finalPrefix,eachPrefix,{},SOME(e), inInfo);
+//    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_)
+//      then SCode.MOD(finalPrefix,eachPrefix,{},NONE(), inInfo);
+//    case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,eachPrefix,_)
+//      equation
+//        subs = translateArgs(l);
+//      then
+//        SCode.MOD(finalPrefix, eachPrefix, subs, SOME(e), inInfo);
+//
+//    case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,eachPrefix,_)
+//      equation
+//        subs = translateArgs(l);
+//      then
+//        SCode.MOD(finalPrefix, eachPrefix, subs, NONE(), inInfo);
+//  end match;
+//end translateMod;
 protected function translateArgs
   input list<Absyn.ElementArg> inArgs;
   output list<SCode.SubMod> outSubMods;
@@ -2254,7 +2297,7 @@ algorithm
       SourceInfo info;
 
     // inner is NOMOD
-    case (SCode.REDECL(), SCode.NOMOD()) then inModOuter;
+    case (_, SCode.NOMOD()) then inModOuter;
 
     // both are redeclarations
     //case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
