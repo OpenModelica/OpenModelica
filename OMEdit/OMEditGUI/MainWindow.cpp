@@ -533,6 +533,8 @@ void MainWindow::beforeClosingMainWindow()
   OptionsDialog::destroy();
   // delete the MessagesWidget object
   MessagesWidget::destroy();
+  // delete the GDBAdapter object
+  GDBAdapter::destroy();
 }
 
 /*!

@@ -40,6 +40,7 @@
 #include <QComboBox>
 #include <QLineEdit>
 #include <QCheckBox>
+#include <QToolButton>
 
 class ModelWidget;
 class InfoBar;
