@@ -42,6 +42,7 @@
 #include <QCheckBox>
 
 class ModelWidget;
+class InfoBar;
 class LineNumberArea;
 class FindReplaceWidget;
 class Label;
@@ -238,6 +239,7 @@ private:
 public:
   BaseEditor(QWidget *pParent);
   ModelWidget *getModelWidget() {return mpModelWidget;}
+  InfoBar* getInfoBar() {return mpInfoBar;}
   PlainTextEdit *getPlainTextEdit() {return mpPlainTextEdit;}
   FindReplaceWidget* getFindReplaceWidget() {return mpFindReplaceWidget;}
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
@@ -252,6 +254,7 @@ private:
   void foldOrUnfold(bool unFold);
 protected:
   ModelWidget *mpModelWidget;
+  InfoBar *mpInfoBar;
   PlainTextEdit *mpPlainTextEdit;
   FindReplaceWidget *mpFindReplaceWidget;
   bool mCanHaveBreakpoints;
@@ -288,8 +291,8 @@ public slots:
 class LineNumberArea : public QWidget
 {
 public:
-  LineNumberArea(BaseEditor *pBaseEditor)
-    : QWidget(pBaseEditor)
+  LineNumberArea(BaseEditor *pBaseEditor, QWidget *pParent)
+    : QWidget(pParent)
   {
     mpBaseEditor = pBaseEditor;
   }
@@ -367,6 +370,16 @@ public slots:
   int exec();
 private slots:
   void goToLineNumber();
+};
+
+class InfoBar : public QFrame
+{
+public:
+  InfoBar(QWidget *pParent);
+  void showMessage(QString message);
+private:
+  Label *mpInfoLabel;
+  QToolButton *mpCloseButton;
 };
 
 #endif // BASEEDITOR_H

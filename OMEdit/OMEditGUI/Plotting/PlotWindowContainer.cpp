@@ -59,7 +59,7 @@ PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
 #endif
-  if (MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
+  if (OptionsDialog::instance()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {
     setViewMode(QMdiArea::TabbedView);
@@ -162,7 +162,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setWindowTitle(getUniqueName("Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
-    pPlotWindow->setAutoScale(MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time [%1]").arg(pPlotWindow->getTimeUnit()));
     pPlotWindow->installEventFilter(this);
@@ -190,7 +190,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setWindowTitle(getUniqueName("Parametric Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
-    pPlotWindow->setAutoScale(MainWindow::instance()->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));

@@ -33,7 +33,6 @@
  */
 
 #include "AnimationWindow.h"
-#include "MainWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
@@ -82,7 +81,7 @@ AnimationWindow::AnimationWindow(PlotWindowContainer *pPlotWindowContainer)
   QObject::connect(&mRenderFrameTimer, SIGNAL(timeout()), this, SLOT(renderFrame()));
   mRenderFrameTimer.start();
   // actions and widgets for the toolbar
-  int toolbarIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::animationChooseFile, this);
   mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
   mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), Helper::animationInitialize, this);

@@ -32,7 +32,6 @@
  */
 
 #include "BreakpointsWidget.h"
-#include "MainWindow.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "BreakpointDialog.h"
 #include "Debugger/GDB/CommandFactory.h"
@@ -435,9 +434,8 @@ void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker,
   pParentBreakpointTreeItem->insertChild(row, pBreakpointTreeItem);
   endInsertRows();
   // insert the breakpoint in gdb
-  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
-  if (pGDBAdapter->isGDBRunning()) {
-    pGDBAdapter->insertBreakpoint(pBreakpointTreeItem);
+  if (GDBAdapter::instance()->isGDBRunning()) {
+    GDBAdapter::instance()->insertBreakpoint(pBreakpointTreeItem);
   }
 }
 
@@ -468,26 +466,25 @@ void BreakpointsTreeModel::updateBreakpoint(BreakpointTreeItem *pBreakpointTreeI
                                             int ignoreCount, QString condition)
 {
   // enable/disable the breakpoint in gdb.
-  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
-  if (pGDBAdapter->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
+  if (GDBAdapter::instance()->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
     if (pBreakpointTreeItem->isEnabled() != enabled) {
       if (enabled) {
-        pGDBAdapter->postCommand(CommandFactory::breakEnable(QStringList() << pBreakpointTreeItem->getBreakpointID()),
-                                 GDBAdapter::NonCriticalResponse);
+        GDBAdapter::instance()->postCommand(CommandFactory::breakEnable(QStringList() << pBreakpointTreeItem->getBreakpointID()),
+                                            GDBAdapter::NonCriticalResponse);
       } else {
-        pGDBAdapter->postCommand(CommandFactory::breakDisable(QStringList() << pBreakpointTreeItem->getBreakpointID()),
-                                 GDBAdapter::NonCriticalResponse);
+        GDBAdapter::instance()->postCommand(CommandFactory::breakDisable(QStringList() << pBreakpointTreeItem->getBreakpointID()),
+                                            GDBAdapter::NonCriticalResponse);
       }
     }
     // add the ignore count in gdb
     if (pBreakpointTreeItem->getIgnoreCount() != ignoreCount) {
-      pGDBAdapter->postCommand(CommandFactory::breakAfter(pBreakpointTreeItem->getBreakpointID(), ignoreCount),
-                               GDBAdapter::NonCriticalResponse);
+      GDBAdapter::instance()->postCommand(CommandFactory::breakAfter(pBreakpointTreeItem->getBreakpointID(), ignoreCount),
+                                          GDBAdapter::NonCriticalResponse);
     }
     // add the condition in gdb
     if (pBreakpointTreeItem->getCondition().compare(condition) != 0) {
-      pGDBAdapter->postCommand(CommandFactory::breakCondition(pBreakpointTreeItem->getBreakpointID(), condition),
-                               GDBAdapter::NonCriticalResponse);
+      GDBAdapter::instance()->postCommand(CommandFactory::breakCondition(pBreakpointTreeItem->getBreakpointID(), condition),
+                                          GDBAdapter::NonCriticalResponse);
     }
   }
   // update the breakpoint in the tree.
@@ -520,10 +517,9 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeI
 {
   if (pBreakpointTreeItem) {
     // remove the breakpoint in gdb
-    GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
-    if (pGDBAdapter->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
-      pGDBAdapter->postCommand(CommandFactory::breakDelete(QStringList() << pBreakpointTreeItem->getBreakpointID()),
-                               GDBAdapter::NonCriticalResponse);
+    if (GDBAdapter::instance()->isGDBRunning() && !pBreakpointTreeItem->getBreakpointID().isEmpty()) {
+      GDBAdapter::instance()->postCommand(CommandFactory::breakDelete(QStringList() << pBreakpointTreeItem->getBreakpointID()),
+                                          GDBAdapter::NonCriticalResponse);
     }
     // remove the breakpoint from the tree.
     int row = pBreakpointTreeItem->row();

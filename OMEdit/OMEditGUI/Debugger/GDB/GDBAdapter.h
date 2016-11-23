@@ -90,6 +90,15 @@ public slots:
 class GDBAdapter : public QObject
 {
   Q_OBJECT
+private:
+  // the only class that is allowed to create and destroy
+  friend class MainWindow;
+
+  static void create();
+  static void destroy();
+  GDBAdapter(QWidget *pParent = 0);
+
+  static GDBAdapter *mpInstance;
 public:
   typedef void (GDBAdapter::*GDBCommandCallback)(GDBMIResultRecord*);
   enum GDBCommandFlag {
@@ -105,7 +114,7 @@ public:
     ExecStep
   };
 
-  GDBAdapter(QWidget *pParent = 0);
+  static GDBAdapter* instance() {return mpInstance;}
   void setExecuteCommand(ExecuteCommand command) {mExecuteCommand = command;}
   ExecuteCommand getExecuteCommand() {return mExecuteCommand;}
   QProcess* getGDBProcess() {return mpGDBProcess;}

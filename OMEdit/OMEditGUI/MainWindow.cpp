@@ -94,6 +94,12 @@ MainWindow::MainWindow(bool debug, QWidget *parent)
 
 MainWindow *MainWindow::mpInstance = 0;
 
+/*!
+ * \brief MainWindow::instance
+ * Creates an instance of MainWindow. If we already have an instance then just return it.
+ * \param debug
+ * \return
+ */
 MainWindow *MainWindow::instance(bool debug)
 {
   if (!mpInstance) {
@@ -102,6 +108,10 @@ MainWindow *MainWindow::instance(bool debug)
   return mpInstance;
 }
 
+/*!
+ * \brief MainWindow::setUpMainWindow
+ * Creates all the GUI widgets.
+ */
 void MainWindow::setUpMainWindow()
 {
   // Create the OMCProxy object.
@@ -110,7 +120,8 @@ void MainWindow::setUpMainWindow()
     return;
   }
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
-  mpOptionsDialog = new OptionsDialog(this);
+  // Create an object of OptionsDialog
+  OptionsDialog::create();
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
   MessagesWidget::create();
@@ -196,7 +207,7 @@ void MainWindow::setUpMainWindow()
   addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
   // create the GDB adapter instance
-  mpGDBAdapter = new GDBAdapter(this);
+  GDBAdapter::create();
   // create stack frames widget
   mpStackFramesWidget = new StackFramesWidget(this);
   // Create stack frames dock widget
@@ -280,9 +291,6 @@ void MainWindow::setUpMainWindow()
   updateRecentFileActions();
   // create the OMEdit About widget when needed
   mpAboutOMEditDialog = 0;
-  // create an instance of InfoBar
-  mpInfoBar = new InfoBar(this);
-  mpInfoBar->hide();
   //Create a centralwidget for the main window
   QWidget *pCentralwidget = new QWidget;
   mpCentralStackedWidget = new QStackedWidget;
@@ -293,35 +301,34 @@ void MainWindow::setUpMainWindow()
   QGridLayout *pCentralgrid = new QGridLayout;
   pCentralgrid->setVerticalSpacing(4);
   pCentralgrid->setContentsMargins(0, 1, 0, 0);
-  pCentralgrid->addWidget(mpInfoBar, 0, 0);
-  pCentralgrid->addWidget(mpCentralStackedWidget, 1, 0);
+  pCentralgrid->addWidget(mpCentralStackedWidget, 0, 0);
   pCentralwidget->setLayout(pCentralgrid);
   //Set the centralwidget
   setCentralWidget(pCentralwidget);
   // Load and add user defined Modelica libraries into the Library Widget.
   mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   // set the matching algorithm.
-  mpOMCProxy->setMatchingAlgorithm(mpOptionsDialog->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
+  mpOMCProxy->setMatchingAlgorithm(OptionsDialog::instance()->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
   // set the index reduction methods.
-  mpOMCProxy->setIndexReductionMethod(mpOptionsDialog->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
+  mpOMCProxy->setIndexReductionMethod(OptionsDialog::instance()->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
   // set the OMC Flags.
-  if (!mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty()) {
-    mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
+  if (!OptionsDialog::instance()->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty()) {
+    mpOMCProxy->setCommandLineOptions(OptionsDialog::instance()->getSimulationPage()->getOMCFlagsTextBox()->text());
   }
-  if (mpOptionsDialog->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
   }
-  mpOMCProxy->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpOptionsDialog->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
-  mpOMCProxy->setCommandLineOptions(QString("+target=%1").arg(mpOptionsDialog->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
-  if (mpOptionsDialog->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
+  mpOMCProxy->setCommandLineOptions(QString("+simCodeTarget=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
+  mpOMCProxy->setCommandLineOptions(QString("+target=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
+  if (OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
   }
-  if (mpOptionsDialog->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
   }
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getMessagesTextBrowser()->toPlainText().isEmpty();
@@ -350,10 +357,10 @@ void MainWindow::setUpMainWindow()
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   mpAutoSaveTimer->setTimerType(Qt::PreciseTimer);
 #endif
-  mpAutoSaveTimer->setInterval(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
+  mpAutoSaveTimer->setInterval(OptionsDialog::instance()->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value() * 1000);
   connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
   // read auto save settings
-  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
   }
 }
@@ -441,7 +448,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
  */
 int MainWindow::askForExit()
 {
-  if (!mpOptionsDialog->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked()) {
+  if (!OptionsDialog::instance()->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked()) {
     NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::QuitApplication,
                                                                         NotificationsDialog::QuestionIcon, this);
     return pNotificationsDialog->exec();
@@ -522,6 +529,8 @@ void MainWindow::beforeClosingMainWindow()
   // save the grid lines
   pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
   delete pSettings;
+  // delete the OptionsDialog object
+  OptionsDialog::destroy();
   // delete the MessagesWidget object
   MessagesWidget::destroy();
 }
@@ -659,7 +668,7 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   // check reset messages number before instantiating
-  if (mpOptionsDialog->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
   QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeItem->getNameStructure());
@@ -691,7 +700,7 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   // check reset messages number before checking
-  if (mpOptionsDialog->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
@@ -746,9 +755,9 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  double version = mpOptionsDialog->getFMIPage()->getFMIExportVersion();
-  QString type = mpOptionsDialog->getFMIPage()->getFMIExportType();
-  QString FMUName = mpOptionsDialog->getFMIPage()->getFMUNameTextBox()->text();
+  double version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
+  QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
+  QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms = pSettings->value("FMIExport/Platforms").toStringList();
   int index = platforms.indexOf("none");
@@ -757,7 +766,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   if (mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
-                                                .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()), Helper::scriptingKind,
+                                                .arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()), Helper::scriptingKind,
                                                 Helper::notificationLevel));
   }
   // hide progress bar
@@ -781,7 +790,7 @@ void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
   showProgressBar();
   if (mpOMCProxy->translateModelXML(pLibraryTreeItem->getNameStructure())) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
-                                                .arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()).arg(pLibraryTreeItem->getNameStructure()),
+                                                .arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()).arg(pLibraryTreeItem->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
@@ -815,7 +824,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
-  if (mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
+  if (OptionsDialog::instance()->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
     QString message;
 #ifdef Q_OS_MAC
     message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPathMAC);
@@ -1747,7 +1756,7 @@ void MainWindow::showOpenModelicaCommandPrompt()
   QString promptBatch = QString("%1/share/omc/scripts/Prompt.bat").arg(Helper::OpenModelicaHome);
   QStringList args;
   args << "/K" << promptBatch;
-  if (!QProcess::startDetached(commandPrompt, args, mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory())) {
+  if (!QProcess::startDetached(commandPrompt, args, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory())) {
     QString errorString = tr("Unable to run command <b>%1</b> with arguments <b>%2</b>.").arg(commandPrompt).arg(args.join(" "));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
                                                 Helper::errorLevel));
@@ -1970,7 +1979,7 @@ void MainWindow::TLMSimulate()
  */
 void MainWindow::openWorkingDirectory()
 {
-  QUrl workingDirectory (QString("file:///%1").arg(mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory()));
+  QUrl workingDirectory (QString("file:///%1").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()));
   if (!QDesktopServices::openUrl(workingDirectory)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                 GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(workingDirectory.toString()),
@@ -1984,7 +1993,7 @@ void MainWindow::openWorkingDirectory()
  */
 void MainWindow::openTerminal()
 {
-  QString terminalCommand = mpOptionsDialog->getGeneralSettingsPage()->getTerminalCommand();
+  QString terminalCommand = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommand();
   if (terminalCommand.isEmpty()) {
     QString message;
 #ifdef Q_OS_MAC
@@ -1996,9 +2005,9 @@ void MainWindow::openTerminal()
                                                 Helper::errorLevel));
     return;
   }
-  QString arguments = mpOptionsDialog->getGeneralSettingsPage()->getTerminalCommandArguments();
+  QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
   QStringList args = arguments.split(" ");
-  if (!QProcess::startDetached(terminalCommand, args, mpOptionsDialog->getGeneralSettingsPage()->getWorkingDirectory())) {
+  if (!QProcess::startDetached(terminalCommand, args, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory())) {
     QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>.").arg(terminalCommand).arg(arguments);
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
                                                 Helper::errorLevel));
@@ -2012,7 +2021,7 @@ void MainWindow::openTerminal()
  */
 void MainWindow::openConfigurationOptions()
 {
-  mpOptionsDialog->show();
+  OptionsDialog::instance()->show();
 }
 
 /*!
@@ -2209,7 +2218,7 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
  */
 void MainWindow::toggleAutoSave()
 {
-  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
   } else {
     mpAutoSaveTimer->stop();
@@ -2350,6 +2359,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 void MainWindow::showConfigureDialog()
 {
   DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
+  connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   pDebuggerConfigurationsDialog->exec();
 }
 
@@ -3018,7 +3028,7 @@ void MainWindow::switchToWelcomePerspective()
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
-  if (mpOptionsDialog->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
   mpStackFramesDockWidget->hide();
@@ -3037,7 +3047,7 @@ void MainWindow::switchToModelingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  if (mpOptionsDialog->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
   mpPlotToolBar->setEnabled(false);
@@ -3100,7 +3110,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  if (mpOptionsDialog->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
   mpPlotToolBar->setEnabled(false);
@@ -3189,7 +3199,7 @@ void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem)
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
-  int toolbarIconSize = mpOptionsDialog->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // File Toolbar
   mpFileToolBar = addToolBar(tr("File Toolbar"));
@@ -3353,37 +3363,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
   }
   QMainWindow::resizeEvent(event);
-}
-
-InfoBar::InfoBar(QWidget *pParent)
-  : QFrame(pParent)
-{
-  QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor(255, 255, 225));
-  pal.setColor(QPalette::WindowText, Qt::black);
-  setPalette(pal);
-  setFrameStyle(QFrame::StyledPanel);
-  setAutoFillBackground(true);
-  mpInfoLabel = new Label;
-  mpInfoLabel->setWordWrap(true);
-  mpCloseButton = new QToolButton;
-  mpCloseButton->setAutoRaise(true);
-  mpCloseButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
-  mpCloseButton->setToolTip(Helper::close);
-  connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
-  // set the layout
-  QHBoxLayout *pMainLayout = new QHBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setMargin(2);
-  pMainLayout->addWidget(mpInfoLabel);
-  pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignTop);
-  setLayout(pMainLayout);
-}
-
-void InfoBar::showMessage(QString message)
-{
-  mpInfoLabel->setText(message);
-  show();
 }
 
 /*!

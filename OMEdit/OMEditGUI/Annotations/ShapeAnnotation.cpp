@@ -397,7 +397,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   */
 void ShapeAnnotation::setUserDefaults()
 {
-  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = OptionsDialog::instance();
   /* Set user Line Style settings */
   if (pOptionsDialog->getLineStylePage()->getLineColor().isValid()) {
     mLineColor = pOptionsDialog->getLineStylePage()->getLineColor();

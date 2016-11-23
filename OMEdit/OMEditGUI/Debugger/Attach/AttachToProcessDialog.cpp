@@ -32,7 +32,6 @@
  */
 
 #include "AttachToProcessDialog.h"
-#include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
@@ -114,13 +113,12 @@ AttachToProcessDialog::AttachToProcessDialog(QWidget *pParent)
   */
 void AttachToProcessDialog::attachProcess()
 {
-  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
-  if (pGDBAdapter->isGDBRunning()) {
+  if (GDBAdapter::instance()->isGDBRunning()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                              GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
   } else {
-    QString GDBPath = MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-    pGDBAdapter->launch(mpAttachToProcessIDTextBox->text(), GDBPath);
+    QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
+    GDBAdapter::instance()->launch(mpAttachToProcessIDTextBox->text(), GDBPath);
   }
   accept();
 }

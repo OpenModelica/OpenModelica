@@ -90,8 +90,8 @@ GDBLoggerWidget::GDBLoggerWidget(QWidget *pParent)
   pGridLayout->addWidget(mpCommandTextBox, 1, 0);
   pGridLayout->addWidget(mpSendCommandButton, 1, 1);
   setLayout(pGridLayout);
-  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
-  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(GDBAdapter::instance(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
+  connect(GDBAdapter::instance(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
 }
 
 /*!
@@ -147,7 +147,7 @@ void GDBLoggerWidget::postCommand()
   if (mpCommandTextBox->text().isEmpty()) {
     return;
   }
-  MainWindow::instance()->getGDBAdapter()->postCommand(QByteArray(mpCommandTextBox->text().toStdString().c_str()));
+  GDBAdapter::instance()->postCommand(QByteArray(mpCommandTextBox->text().toStdString().c_str()));
 }
 
 /*!
@@ -158,7 +158,7 @@ void GDBLoggerWidget::postCommand()
 void GDBLoggerWidget::handleGDBProcessStarted()
 {
   /* if clear log on new run option is set then clear the log windows. */
-  DebuggerPage *pDebuggerPage = MainWindow::instance()->getOptionsDialog()->getDebuggerPage();
+  DebuggerPage *pDebuggerPage = OptionsDialog::instance()->getDebuggerPage();
   if (pDebuggerPage->getClearLogOnNewRunCheckBox()->isChecked()) {
     mpCommandsTextBox->clear();
     mpResponseTextBox->clear();
@@ -190,7 +190,7 @@ TargetOutputWidget::TargetOutputWidget(QWidget *pParent)
   : QPlainTextEdit(pParent)
 {
   setFont(QFont(Helper::monospacedFontInfo.family()));
-  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
+  connect(GDBAdapter::instance(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
 }
 
 /*!
@@ -241,7 +241,7 @@ void TargetOutputWidget::logDebuggerOutput(QString output, QColor color)
 void TargetOutputWidget::handleGDBProcessStarted()
 {
   /* if clear output on new run option is set then clear the log windows. */
-  DebuggerPage *pDebuggerPage = MainWindow::instance()->getOptionsDialog()->getDebuggerPage();
+  DebuggerPage *pDebuggerPage = OptionsDialog::instance()->getDebuggerPage();
   if (pDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked()) {
     clear();
   }
@@ -251,6 +251,28 @@ void TargetOutputWidget::handleGDBProcessStarted()
  * \class GDBAdapter
  * \brief Interface for communication with GDB.
  */
+
+GDBAdapter *GDBAdapter::mpInstance = 0;
+
+/*!
+ * \brief MessagesWidget::create
+ */
+void GDBAdapter::create()
+{
+  if (!mpInstance) {
+    mpInstance = new GDBAdapter;
+  }
+}
+
+/*!
+ * \brief GDBAdapter::destroy
+ */
+void GDBAdapter::destroy()
+{
+  delete mpInstance;
+  mpInstance = 0;
+}
+
 /*!
  * \brief GDBAdapter::GDBAdapter
  * \param pParent
@@ -455,7 +477,7 @@ void GDBAdapter::postCommand(QByteArray command, GDBCommandFlags flags, QObject 
  */
 int GDBAdapter::commandTimeoutTime() const
 {
-  int timeout = MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getGDBCommandTimeoutSpinBox()->value();
+  int timeout = OptionsDialog::instance()->getDebuggerPage()->getGDBCommandTimeoutSpinBox()->value();
   return 1000 * qMax(40, timeout);
 }
 
@@ -883,7 +905,7 @@ void GDBAdapter::handleGDBProcessStartedHelper()
    * This limit also applies to the display of strings. When GDB starts, this limit is set to 200.\n
    * Setting number-of-elements to zero means that the printing is unlimited.
    */
-  int numberOfElements = MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getGDBOutputLimitSpinBox()->value();
+  int numberOfElements = OptionsDialog::instance()->getDebuggerPage()->getGDBOutputLimitSpinBox()->value();
   postCommand(CommandFactory::GDBSet(QString("print elements %1").arg(QString::number(numberOfElements))), GDBAdapter::NonCriticalResponse);
   /* set the inferior arguments
    * GDB change the program arguments if we pass them through --args e.g -override=variableFilter=.*

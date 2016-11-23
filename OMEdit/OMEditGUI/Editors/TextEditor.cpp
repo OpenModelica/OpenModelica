@@ -32,7 +32,6 @@
  */
 
 #include "TextEditor.h"
-#include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
 
@@ -42,10 +41,10 @@ TextEditor::TextEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
   QFont font;
-  font.setFamily(MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  font.setFamily(OptionsDialog::instance()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(OptionsDialog::instance()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
 }
 
 /*!

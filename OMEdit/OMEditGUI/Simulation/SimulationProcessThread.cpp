@@ -32,7 +32,6 @@
  */
 
 #include "SimulationProcessThread.h"
-#include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 
 #include <QTcpSocket>
@@ -74,7 +73,7 @@ void SimulationProcessThread::compileModel()
   } else {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
   }
-  SimulationPage *pSimulationPage = MainWindow::instance()->getOptionsDialog()->getSimulationPage();
+  SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   QStringList args;
 #ifdef WIN32
 #if defined(__MINGW32__) && defined(__MINGW64__) /* on 64 bit */

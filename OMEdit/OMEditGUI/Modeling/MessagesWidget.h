@@ -90,7 +90,7 @@ private:
   QAction *mpCopyAction;
   QAction *mpClearAllAction;
 public:
-  static MessagesWidget *instance();
+  static MessagesWidget* instance() {return mpInstance;}
   void resetMessagesNumber() {mMessageNumber = 1;}
   QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
   void applyMessagesSettings();

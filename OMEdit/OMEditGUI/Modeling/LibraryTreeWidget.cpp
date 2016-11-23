@@ -959,7 +959,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     }
     // check current index itself
     if (pLibraryTreeItem) {
-      if (pLibraryTreeItem->isProtected() && !MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getShowProtectedClasses()) {
+      if (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses()) {
         return false;
       } else {
         return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
@@ -1227,7 +1227,7 @@ void LibraryTreeModel::addModelicaLibraries()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->loadSystemLibraries();
   QStringList systemLibs = pOMCProxy->getClassNames();
-  if (MainWindow::instance()->getOptionsDialog()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getLibrariesPage()->getLoadOpenModelicaLibraryCheckBox()->isChecked()) {
     systemLibs.prepend("OpenModelica");
   }
   foreach (QString lib, systemLibs) {
@@ -1539,7 +1539,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     rectangle.setY(rectangle.y() - adjust);
     rectangle.setWidth(rectangle.width() + adjust);
     rectangle.setHeight(rectangle.height() + adjust);
-    int libraryIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+    int libraryIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
     QPixmap libraryPixmap(QSize(libraryIconSize, libraryIconSize));
     libraryPixmap.fill(QColor(Qt::transparent));
     QPainter libraryPainter(&libraryPixmap);
@@ -2492,7 +2492,7 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   setTextElideMode(Qt::ElideMiddle);
   setIndentation(Helper::treeIndentation);
   setDragEnabled(true);
-  int libraryIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+  int libraryIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
   setIconSize(QSize(libraryIconSize, libraryIconSize));
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
@@ -3663,7 +3663,7 @@ void LibraryWidget::parseAndLoadModelicaText(QString modelText)
 bool LibraryWidget::saveFile(QString fileName, QString contents)
 {
   // set the BOM settings
-  QComboBox *pBOMComboBox = MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getBOMComboBox();
+  QComboBox *pBOMComboBox = OptionsDialog::instance()->getTextEditorPage()->getBOMComboBox();
   Utilities::BomMode bomMode = (Utilities::BomMode)pBOMComboBox->itemData(pBOMComboBox->currentIndex()).toInt();
   bool bom = false;
   switch (bomMode) {
@@ -3680,7 +3680,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   }
   // set the line ending format
   QString newContents;
-  QComboBox *pLineEndingComboBox = MainWindow::instance()->getOptionsDialog()->getTextEditorPage()->getLineEndingComboBox();
+  QComboBox *pLineEndingComboBox = OptionsDialog::instance()->getTextEditorPage()->getLineEndingComboBox();
   Utilities::LineEndingMode lineEndingMode = (Utilities::LineEndingMode)pLineEndingComboBox->itemData(pLineEndingComboBox->currentIndex()).toInt();
   QTextStream crlfTextStream(&contents);
   switch (lineEndingMode) {

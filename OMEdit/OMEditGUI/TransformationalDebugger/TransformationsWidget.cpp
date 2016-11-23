@@ -33,7 +33,6 @@
  */
 
 #include "TransformationsWidget.h"
-#include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Util/StringHandler.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -614,9 +613,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
   mpTSourceEditorInfoBar->hide();
   mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaHighlighter *pModelicaTextHighlighter;
-  pModelicaTextHighlighter = new ModelicaHighlighter(MainWindow::instance()->getOptionsDialog()->getModelicaEditorPage(),
+  pModelicaTextHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(),
                                                      mpTransformationsEditor->getPlainTextEdit());
-  connect(MainWindow::instance()->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(OptionsDialog::instance(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
   pTSourceEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);
@@ -723,7 +722,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     pSettings->beginGroup("transformationalDebugger");
     restoreGeometry(pSettings->value("geometry").toByteArray());

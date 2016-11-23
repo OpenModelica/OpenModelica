@@ -70,7 +70,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   mpLibraryTreeView->setTextElideMode(Qt::ElideMiddle);
   mpLibraryTreeView->setIndentation(Helper::treeIndentation);
   mpLibraryTreeView->setDragEnabled(true);
-  int libraryIconSize = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
+  int libraryIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
   mpLibraryTreeView->setIconSize(QSize(libraryIconSize, libraryIconSize));
   mpLibraryTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
   mpLibraryTreeView->setExpandsOnDoubleClick(false);
@@ -909,7 +909,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   TextEditor *pTextEditor = new TextEditor(pParent);
   pTextEditor->setPlainText(informationText);
   if (modelicaTextHighlighter) {
-    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(MainWindow::instance()->getOptionsDialog()->getModelicaEditorPage(),
+    ModelicaHighlighter *pModelicaHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(),
                                                                         pTextEditor->getPlainTextEdit());
     Q_UNUSED(pModelicaHighlighter);
   }
@@ -926,7 +926,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   setLayout(mainLayout);
   pOkButton->setFocus();
   /* restore the window geometry. */
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     QSettings *pSettings = Utilities::getApplicationSettings();
     restoreGeometry(pSettings->value("InformationDialog/geometry").toByteArray());
@@ -936,7 +936,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
 void InformationDialog::closeEvent(QCloseEvent *event)
 {
   /* save the window geometry. */
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->setValue("InformationDialog/geometry", saveGeometry());
@@ -1486,7 +1486,7 @@ void ExportFigaroDialog::exportModelFigaro()
   // show the progress bar
   MainWindow::instance()->getProgressBar()->setRange(0, 0);
   MainWindow::instance()->showProgressBar();
-  FigaroPage *pFigaroPage = MainWindow::instance()->getOptionsDialog()->getFigaroPage();
+  FigaroPage *pFigaroPage = OptionsDialog::instance()->getFigaroPage();
   QString directory = mpWorkingDirectoryTextBox->text();
   QString library = pFigaroPage->getFigaroDatabaseFileTextBox()->text();
   QString mode = mpFigaroModeComboBox->currentText();
@@ -1819,7 +1819,7 @@ void ComponentNameDialog::updateComponentName()
   if (mpDontShowThisMessageAgainCheckBox->isChecked()) {
     QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->setValue("notifications/alwaysAskForDraggedComponentName", false);
-    MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->setChecked(false);
+    OptionsDialog::instance()->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->setChecked(false);
   }
   accept();
 }

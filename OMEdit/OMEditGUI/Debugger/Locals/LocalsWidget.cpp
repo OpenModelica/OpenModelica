@@ -222,7 +222,7 @@ void LocalsTreeItem::retrieveModelicaMetaType()
 {
   if (getDisplayType().isEmpty() || (getDisplayType().compare(Helper::VALUE_OPTIMIZED_OUT) == 0)
       || (getDisplayType().compare(Helper::REPLACEABLE_TYPE_ANY) == 0)) {
-    GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
+    GDBAdapter *pGDBAdapter = GDBAdapter::instance();
     StackFramesWidget *pStackFramesWidget = MainWindow::instance()->getStackFramesWidget();
     if (parent() && parent()->getModelicaValue() && qobject_cast<ModelicaRecordValue*>(parent()->getModelicaValue())) {
       pGDBAdapter->postCommand(CommandFactory::getTypeOfAny(pStackFramesWidget->getSelectedThread(), pStackFramesWidget->getSelectedFrame(),
@@ -244,7 +244,7 @@ void LocalsTreeItem::retrieveModelicaMetaType()
  */
 void LocalsTreeItem::retrieveValue()
 {
-  GDBAdapter *pGDBAdapter = MainWindow::instance()->getGDBAdapter();
+  GDBAdapter *pGDBAdapter = GDBAdapter::instance();
   StackFramesWidget *pStackFramesWidget = MainWindow::instance()->getStackFramesWidget();
   if (isCoreTypeExceptString()) {
     pGDBAdapter->postCommand(CommandFactory::dataEvaluateExpression(pStackFramesWidget->getSelectedThread(),
@@ -642,7 +642,7 @@ LocalsWidget::LocalsWidget(QWidget *pParent)
   pMainLayout->setContentsMargins(0, 0, 1, 0);
   pMainLayout->addWidget(pLocalsSplitter, 0, 0);
   setLayout(pMainLayout);
-  connect(MainWindow::instance()->getGDBAdapter(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
+  connect(GDBAdapter::instance(), SIGNAL(GDBProcessFinished()), SLOT(handleGDBProcessFinished()));
 }
 
 void LocalsWidget::localsTreeItemExpanded(QModelIndex index)

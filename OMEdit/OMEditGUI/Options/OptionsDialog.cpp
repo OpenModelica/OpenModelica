@@ -44,6 +44,28 @@
  * \class OptionsDialog
  * \brief Creates an interface with options like Modelica Text, Pen Styles, Libraries etc.
  */
+
+OptionsDialog *OptionsDialog::mpInstance = 0;
+
+/*!
+ * \brief OptionsDialog::create
+ */
+void OptionsDialog::create()
+{
+  if (!mpInstance) {
+    mpInstance = new OptionsDialog;
+  }
+}
+
+/*!
+ * \brief OptionsDialog::destroy
+ */
+void OptionsDialog::destroy()
+{
+  delete mpInstance;
+  mpInstance = 0;
+}
+
 /*!
  * \brief OptionsDialog::OptionsDialog
  * \param pParent

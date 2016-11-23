@@ -667,7 +667,7 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
   setDocument(pTextDocument);
   // line numbers widget
-  mpLineNumberArea = new LineNumberArea(mpBaseEditor);
+  mpLineNumberArea = new LineNumberArea(mpBaseEditor, this);
   // parentheses matcher
   mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
   mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
@@ -681,7 +681,7 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateHighlights()));
   connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
   connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
-  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = OptionsDialog::instance();
   connect(pOptionsDialog, SIGNAL(textSettingsChanged()), mpBaseEditor, SLOT(textSettingsChanged()));
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
@@ -707,7 +707,7 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
   } else {
     space += 4;
   }
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     space += foldBoxWidth(fm);
   } else {
@@ -735,7 +735,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   int fmLineSpacing = fm.lineSpacing();
 
   int collapseColumnWidth = 4;
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     collapseColumnWidth = foldBoxWidth(fm);
   }
@@ -793,7 +793,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       painter.drawText(0, top, lineNumbersWidth, fm.height(), Qt::AlignRight, number);
     }
     // paint folding markers
-    TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+    TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
     if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
       painter.save();
       painter.setRenderHint(QPainter::Antialiasing, false);
@@ -864,7 +864,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
                (event->pos().x() <= breakPointWidth)) {
       /* Do not allow breakpoints if file is not saved. */
       if (!mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSaved()) {
-        MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
+        mpBaseEditor->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
         return;
       }
       QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getFileName();
@@ -880,7 +880,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
     }
   }
   // check mouse click for folding markers
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     int boxWidth = foldBoxWidth(fm);
     if (event->button() == Qt::LeftButton && event->pos().x() > mpLineNumberArea->width() - boxWidth) {
@@ -983,7 +983,7 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
  */
 void BaseEditor::PlainTextEdit::setLineWrapping()
 {
-  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = OptionsDialog::instance();
   if (pOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
   } else {
@@ -1022,7 +1022,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
  */
 void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
-  TabSettings tabSettings = MainWindow::instance()->getOptionsDialog()->getTabSettings();
+  TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   // Indent or unindent the selected lines
@@ -1230,7 +1230,7 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
    */
   /*! @todo We should add formatter classes to handle this based on editor language i.e Modelica or C/C++. */
   if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return) {
-    TabSettings tabSettings = MainWindow::instance()->getOptionsDialog()->getTabSettings();
+    TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
     QTextCursor cursor = textCursor();
     const QTextBlock previousBlock = cursor.block().previous();
     QString indentText = previousBlock.text();
@@ -1337,7 +1337,7 @@ void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
    * We should only start the autosavetimer when MainWindow is the active window and focusOutEvent is called.
    */
   if (MainWindow::instance()->isActiveWindow()) {
-    if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
+    if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
       MainWindow::instance()->getAutoSaveTimer()->start();
     }
   }
@@ -1495,6 +1495,8 @@ void BaseEditor::toggleBlockVisible(const QTextBlock &block)
  */
 void BaseEditor::initialize()
 {
+  mpInfoBar = new InfoBar(this);
+  mpInfoBar->hide();
   mpPlainTextEdit = new PlainTextEdit(this);
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
@@ -1503,6 +1505,7 @@ void BaseEditor::initialize()
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpInfoBar, 0, Qt::AlignTop);
   pMainLayout->addWidget(mpPlainTextEdit, 1);
   pMainLayout->addWidget(mpFindReplaceWidget, 0, Qt::AlignBottom);
   setLayout(pMainLayout);
@@ -1543,7 +1546,7 @@ void BaseEditor::createActions()
   // folding actions
   bool enable = true;
   // if user disables the code folding then unfold all the text editors.
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     enable = false;
   }
@@ -1609,7 +1612,7 @@ void BaseEditor::textSettingsChanged()
   // update code foldings
   bool enable = true;
   // if user disables the code folding then unfold all the text editors.
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     foldOrUnfold(true);
     enable = false;
@@ -1903,7 +1906,7 @@ void BaseEditor::toggleCommentSelection()
  */
 void BaseEditor::foldAll()
 {
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     foldOrUnfold(false);
   }
@@ -1915,7 +1918,7 @@ void BaseEditor::foldAll()
  */
 void BaseEditor::unFoldAll()
 {
-  TextEditorPage *pTextEditorPage = MainWindow::instance()->getOptionsDialog()->getTextEditorPage();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
     foldOrUnfold(true);
   }
@@ -2277,4 +2280,47 @@ void GotoLineDialog::goToLineNumber()
 {
   mpBaseEditor->goToLineNumber(mpLineNumberTextBox->text().toInt());
   accept();
+}
+
+/*!
+ * \class InfoBar
+ * \brief Used for displaying information messages above the BaseEditor.
+ */
+/*!
+ * \brief InfoBar::InfoBar
+ * \param pParent
+ */
+InfoBar::InfoBar(QWidget *pParent)
+  : QFrame(pParent)
+{
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor(255, 255, 225));
+  pal.setColor(QPalette::WindowText, Qt::black);
+  setPalette(pal);
+  setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
+  mpInfoLabel = new Label;
+  mpInfoLabel->setWordWrap(true);
+  mpCloseButton = new QToolButton;
+  mpCloseButton->setAutoRaise(true);
+  mpCloseButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpCloseButton->setToolTip(Helper::close);
+  connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
+  // set the layout
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpInfoLabel);
+  pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignTop);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief InfoBar::showMessage
+ * Shows the message in the InfoBar.
+ * \param message
+ */
+void InfoBar::showMessage(QString message)
+{
+  mpInfoLabel->setText(message);
+  show();
 }

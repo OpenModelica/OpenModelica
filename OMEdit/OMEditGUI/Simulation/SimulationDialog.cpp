@@ -96,7 +96,7 @@ SimulationDialog::~SimulationDialog()
 void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions)
 {
   /* restore the window geometry. */
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(Utilities::getApplicationSettings()->value("SimulationDialog/geometry").toByteArray());
   }
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -601,7 +601,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
     }
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
-    if (!MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+    if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
       // if the class has __OpenModelica_simulationFlags annotation then use its values.
       QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
       foreach (QString simulationFlag, simulationFlags) {
@@ -801,11 +801,11 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
 bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // check reset messages number before simulation option
-  if (MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
   /* save the model before translating */
-  if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
+  if (OptionsDialog::instance()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
       !mpLibraryTreeItem->isSaved() &&
       !MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(mpLibraryTreeItem)) {
     return false;
@@ -822,7 +822,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
 #endif
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation setting
-  MainWindow::instance()->getOptionsDialog()->saveSimulationSettings();
+  OptionsDialog::instance()->saveSimulationSettings();
   return result;
 }
 
@@ -995,7 +995,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setSimulationFlags(simulationFlags);
   simulationOptions.setIsValid(true);
   simulationOptions.setReSimulate(mIsReSimulate);
-  simulationOptions.setWorkingDirectory(MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getWorkingDirectory());
+  simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   simulationOptions.setFileName(mFileName);
   return simulationOptions;
 }
@@ -1225,7 +1225,7 @@ void SimulationDialog::performSimulation()
   mIsReSimulate = false;
   if (isTranslationSuccessful) {
     // check if we can compile using the target compiler
-    SimulationPage *pSimulationPage = MainWindow::instance()->getOptionsDialog()->getSimulationPage();
+    SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
     QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
     if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
       QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
@@ -1254,7 +1254,7 @@ void SimulationDialog::performSimulation()
 void SimulationDialog::saveDialogGeometry()
 {
   /* save the window geometry. */
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     Utilities::getApplicationSettings()->setValue("SimulationDialog/geometry", saveGeometry());
   }
 }
@@ -1277,13 +1277,13 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     fileName = fileName.append(".exe");
 #endif
     // start the debugger
-    if (MainWindow::instance()->getGDBAdapter()->isGDBRunning()) {
+    if (GDBAdapter::instance()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
-      QString GDBPath = MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-      MainWindow::instance()->getGDBAdapter()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
-                                                      GDBPath, simulationOptions);
+      QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
+      GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
+                                     GDBPath, simulationOptions);
       MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(3);
     }
   }
@@ -1310,7 +1310,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
-      if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+      if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
 #if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
         if (mpLaunchAnimationCheckBox->isChecked()) {
@@ -1335,7 +1335,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
     }
   }
-  if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+  if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
       simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
     MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
   }

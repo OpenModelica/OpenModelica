@@ -631,7 +631,7 @@ void OMCProxy::loadSystemLibraries()
     QString version = pSettings->value("libraries/" + lib).toString();
     loadModel(lib, version);
   }
-  MainWindow::instance()->getOptionsDialog()->readLibrariesSettings();
+  OptionsDialog::instance()->readLibrariesSettings();
 }
 
 /*!
@@ -1629,7 +1629,7 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   QString escapedAfter = StringHandler::escapeString(after);
   QString result;
   // only use the diffModelicaFileListings when preserve text indentation settings is true
-  if (MainWindow::instance()->getOptionsDialog()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
+  if (OptionsDialog::instance()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
     sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
     result = StringHandler::unparse(getResult());
     printMessagesStringInternal();

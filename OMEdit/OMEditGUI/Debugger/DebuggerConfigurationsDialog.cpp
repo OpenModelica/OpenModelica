@@ -32,7 +32,6 @@
  */
 
 #include "DebuggerConfigurationsDialog.h"
-#include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Util/Helper.h"
@@ -503,15 +502,15 @@ void DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration()
   if (saveAllConfigurationsHelper()) {
     accept();
     // start the debugger
-    if (MainWindow::instance()->getGDBAdapter()->isGDBRunning()) {
+    if (GDBAdapter::instance()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
     } else {
       DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
       DebuggerConfiguration debuggerConfiguration = pDebuggerConfigurationPage->getDebuggerConfiguration();
-      MainWindow::instance()->getGDBAdapter()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
+      GDBAdapter::instance()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
                                                       debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
-      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(3);
+      emit debuggerLaunched();
     }
   }
 }

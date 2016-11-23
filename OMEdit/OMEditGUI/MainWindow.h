@@ -53,8 +53,6 @@
 #include <QMdiArea>
 
 class OMCProxy;
-class OptionsDialog;
-class MessagesWidget;
 class TransformationsWidget;
 class LibraryWidget;
 class GDBAdapter;
@@ -91,9 +89,7 @@ public:
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
-  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
-  GDBAdapter* getGDBAdapter() {return mpGDBAdapter;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
   LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
@@ -109,7 +105,6 @@ public:
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
-  InfoBar* getInfoBar() {return mpInfoBar;}
   QStatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -198,7 +193,6 @@ private:
   bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
-  OptionsDialog *mpOptionsDialog;
   QDockWidget *mpMessagesDockWidget;
   FileDataNotifier *mpOutputFileDataNotifier;
   FileDataNotifier *mpErrorFileDataNotifier;
@@ -225,7 +219,6 @@ private:
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   AboutOMEditWidget *mpAboutOMEditDialog;
-  InfoBar *mpInfoBar;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
@@ -452,16 +445,6 @@ protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
   virtual void resizeEvent(QResizeEvent *event);
-};
-
-class InfoBar : public QFrame
-{
-public:
-  InfoBar(QWidget *pParent);
-  void showMessage(QString message);
-private:
-  Label *mpInfoLabel;
-  QToolButton *mpCloseButton;
 };
 
 class AboutOMEditWidget : public QWidget

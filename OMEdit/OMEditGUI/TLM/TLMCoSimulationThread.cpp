@@ -32,7 +32,6 @@
  */
 
 #include "TLMCoSimulationThread.h"
-#include "MainWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"

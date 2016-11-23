@@ -82,7 +82,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   // set the coOrdinate System
   mCoOrdinateSystem = CoOrdinateSystem();
   GraphicalViewsPage *pGraphicalViewsPage;
-  pGraphicalViewsPage = MainWindow::instance()->getOptionsDialog()->getGraphicalViewsPage();
+  pGraphicalViewsPage = OptionsDialog::instance()->getGraphicalViewsPage();
   QList<QPointF> extent;
   qreal left = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
   qreal bottom = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
@@ -269,7 +269,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     }
   } else {
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
-    OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
+    OptionsDialog *pOptionsDialog = OptionsDialog::instance();
     // item not to be dropped on itself; if dropping an item on itself
     if (isClassDroppedOnItself(pLibraryTreeItem)) {
       return false;
@@ -1093,7 +1093,7 @@ void GraphicsView::createActions()
  */
 bool GraphicsView::isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem)
 {
-  OptionsDialog *pOptionsDialog = MainWindow::instance()->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = OptionsDialog::instance();
   if (mpModelWidget->getLibraryTreeItem()->getNameStructure().compare(pLibraryTreeItem->getNameStructure()) == 0) {
     if (pOptionsDialog->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->isChecked()) {
       NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ItemDroppedOnItself,
@@ -2189,7 +2189,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
   mpLatestNewsFrame->setStyleSheet("QFrame{background-color: white;}");
   /* Read the show latest news settings */
-  if (!MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
+  if (!OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
     mpLatestNewsFrame->setVisible(false);
   // latest news
   mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News"));
@@ -2228,7 +2228,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // splitter
   mpSplitter = new QSplitter;
   /* Read the welcome page view settings */
-  switch (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getWelcomePageView())
+  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView())
   {
     case 2:
       mpSplitter->setOrientation(Qt::Vertical);
@@ -2309,7 +2309,7 @@ void WelcomePageWidget::addLatestNewsListItems()
 {
   mpLatestNewsListWidget->clear();
   /* if show latest news settings is not set then don't fetch the latest news items. */
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
   {
     QUrl newsUrl("https://openmodelica.org/index.php?option=com_content&view=category&id=23&format=feed&amp;type=rss");
     QNetworkReply *pNetworkReply = mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
@@ -2790,12 +2790,12 @@ void ModelWidget::createModelWidgetComponents()
       mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
       // modelica text editor
       mpEditor = new ModelicaEditor(this);
-      ModelicaHighlighter *pModelicaTextHighlighter = new ModelicaHighlighter(pMainWindow->getOptionsDialog()->getModelicaEditorPage(),
+      ModelicaHighlighter *pModelicaTextHighlighter = new ModelicaHighlighter(OptionsDialog::instance()->getModelicaEditorPage(),
                                                                               mpEditor->getPlainTextEdit());
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor);
       pModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+      connect(OptionsDialog::instance(), SIGNAL(modelicaEditorSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
@@ -2815,20 +2815,20 @@ void ModelWidget::createModelWidgetComponents()
       QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
       if (Utilities::isCFile(fileInfo.suffix())) {
         mpEditor = new CEditor(this);
-        CHighlighter *pCHighlighter = new CHighlighter(pMainWindow->getOptionsDialog()->getCEditorPage(), mpEditor->getPlainTextEdit());
+        CHighlighter *pCHighlighter = new CHighlighter(OptionsDialog::instance()->getCEditorPage(), mpEditor->getPlainTextEdit());
         CEditor *pCEditor = dynamic_cast<CEditor*>(mpEditor);
         pCEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
-        connect(pMainWindow->getOptionsDialog(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
       } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
         mpEditor = new MetaModelicaEditor(this);
         MetaModelicaHighlighter *pMetaModelicaHighlighter;
-        pMetaModelicaHighlighter = new MetaModelicaHighlighter(pMainWindow->getOptionsDialog()->getMetaModelicaEditorPage(),
+        pMetaModelicaHighlighter = new MetaModelicaHighlighter(OptionsDialog::instance()->getMetaModelicaEditorPage(),
                                                                mpEditor->getPlainTextEdit());
         MetaModelicaEditor *pMetaModelicaEditor = dynamic_cast<MetaModelicaEditor*>(mpEditor);
         pMetaModelicaEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
-        connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelicaEditorSettingsChanged()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
+        connect(OptionsDialog::instance(), SIGNAL(metaModelicaEditorSettingsChanged()), pMetaModelicaHighlighter, SLOT(settingsChanged()));
       } else {
         mpEditor = new TextEditor(this);
         TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
@@ -2882,10 +2882,10 @@ void ModelWidget::createModelWidgetComponents()
       } else {
         pMetaModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       }
-      MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(pMainWindow->getOptionsDialog()->getMetaModelEditorPage(),
+      MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(OptionsDialog::instance()->getMetaModelEditorPage(),
                                                                              mpEditor->getPlainTextEdit());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(pMainWindow->getOptionsDialog(), SIGNAL(metaModelEditorSettingsChanged()), pMetaModelHighlighter, SLOT(settingsChanged()));
+      connect(OptionsDialog::instance(), SIGNAL(metaModelEditorSettingsChanged()), pMetaModelHighlighter, SLOT(settingsChanged()));
       // only get the TLM submodels and connectors if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
         getMetaModelSubModels();
@@ -4469,7 +4469,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
 #endif
-  if (MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {
     setViewMode(QMdiArea::TabbedView);
@@ -4565,7 +4565,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
     loadPreviousViewType(pModelWidget);
   } else {
-    QString defaultView = MainWindow::instance()->getOptionsDialog()->getGeneralSettingsPage()->getDefaultView();
+    QString defaultView = OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView();
     if (defaultView.compare(Helper::iconView) == 0) {
       pModelWidget->getIconViewToolButton()->setChecked(true);
     } else if (defaultView.compare(Helper::textView) == 0) {

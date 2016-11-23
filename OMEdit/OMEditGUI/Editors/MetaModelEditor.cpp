@@ -52,7 +52,7 @@ XMLDocument::XMLDocument(MetaModelEditor *pMetaModelEditor)
 
 QString XMLDocument::toString() const
 {
-  TabSettings tabSettings = MainWindow::instance()->getOptionsDialog()->getTabSettings();
+  TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
   return QDomDocument::toString(tabSettings.getIndentSize());
 }
 
@@ -946,7 +946,7 @@ void MetaModelEditor::contentsHasChanged(int position, int charsRemoved, int cha
     /* if user is changing the read only file. */
     if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
-      MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
+      mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
     } else {
       /* if user is changing, the normal file. */
       if (!mForceSetPlainText) {

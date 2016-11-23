@@ -33,7 +33,6 @@
  */
 
 #include "NotificationsDialog.h"
-#include "MainWindow.h"
 #include "OptionsDialog.h"
 
 #include <QHBoxLayout>
@@ -220,7 +219,7 @@ void NotificationsDialog::saveItemDroppedOnItselfNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/itemDroppedOnItself", false);
-  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->setChecked(false);
+  OptionsDialog::instance()->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->setChecked(false);
 }
 
 /*!
@@ -232,7 +231,7 @@ void NotificationsDialog::saveReplaceableIfPartialNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/replaceableIfPartial", false);
-  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getReplaceableIfPartialCheckBox()->setChecked(false);
+  OptionsDialog::instance()->getNotificationsPage()->getReplaceableIfPartialCheckBox()->setChecked(false);
 }
 
 /*!
@@ -244,7 +243,7 @@ void NotificationsDialog::saveInnerModelNameChangedNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/innerModelNameChanged", false);
-  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getInnerModelNameChangedCheckBox()->setChecked(false);
+  OptionsDialog::instance()->getNotificationsPage()->getInnerModelNameChangedCheckBox()->setChecked(false);
 }
 
 /*!
@@ -256,7 +255,7 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->setValue("notifications/saveModelForBitmapInsertion", false);
-  MainWindow::instance()->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->setChecked(false);
+  OptionsDialog::instance()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->setChecked(false);
 }
 
 /*!

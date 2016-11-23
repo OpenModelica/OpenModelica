@@ -205,7 +205,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpGeneratedFilesTabWidget->setMovable(true);
   mpSimulationOutputHandler = 0;
   // Simulation Output TextBox
-  if (MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getOutputMode().compare(Helper::structuredOutput) == 0) {
+  if (OptionsDialog::instance()->getSimulationPage()->getOutputMode().compare(Helper::structuredOutput) == 0) {
     mIsOutputStructured = true;
     // simulation output browser
     mpSimulationOutputTextBrowser = 0;
@@ -332,7 +332,7 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
     BaseEditor *pEditor;
     if (Utilities::isCFile(fileInfo.suffix())) {
       pEditor = new CEditor(MainWindow::instance());
-      CHighlighter *pCHighlighter = new CHighlighter(MainWindow::instance()->getOptionsDialog()->getCEditorPage(), pEditor->getPlainTextEdit());
+      CHighlighter *pCHighlighter = new CHighlighter(OptionsDialog::instance()->getCEditorPage(), pEditor->getPlainTextEdit());
       Q_UNUSED(pCHighlighter);
     } else {
       pEditor = new TextEditor(MainWindow::instance());
@@ -423,7 +423,7 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     if (mSimulationOptions.getBuildOnly() &&
-        (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+        (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
          mSimulationOptions.getLaunchTransformationalDebugger() || mSimulationOptions.getProfiling() != "none")) {
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
     }

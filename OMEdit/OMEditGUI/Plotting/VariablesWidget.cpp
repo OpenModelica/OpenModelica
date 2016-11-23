@@ -360,7 +360,7 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
   bool result = pVariablesTreeItem->setData(index.column(), value, role);
   if (index.column() == 0 && role == Qt::CheckStateRole) {
     if (!signalsBlocked()) {
-      PlottingPage *pPlottingPage = MainWindow::instance()->getOptionsDialog()->getPlottingPage();
+      PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
       emit itemChecked(index, pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern());
     }
   } else if (index.column() == 3) { // display unit
@@ -942,7 +942,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* Show results in model diagram if it is present in ModelWidgetContainer
      and if switch to plotting perspective is disabled */
   ModelWidget *pModelWidget = NULL;
-  if (!MainWindow::instance()->getOptionsDialog()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+  if (!OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
     pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getModelWidget(simulationOptions.getClassName());
   }
   if (pModelWidget != NULL) {

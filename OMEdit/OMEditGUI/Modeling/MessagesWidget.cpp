@@ -153,17 +153,12 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   setLayout(pMainLayout);
 }
 
-MessagesWidget* MessagesWidget::instance()
-{
-  return mpInstance;
-}
-
 /*!
   Applies the Messages settings e.g size, font, color.
   */
 void MessagesWidget::applyMessagesSettings()
 {
-  MessagesPage *pMessagesPage = MainWindow::instance()->getOptionsDialog()->getMessagesPage();
+  MessagesPage *pMessagesPage = OptionsDialog::instance()->getMessagesPage();
   // set the output size
   mpMessagesTextBrowser->document()->setMaximumBlockCount(pMessagesPage->getOutputSizeSpinBox()->value());
   // set the font
@@ -176,9 +171,9 @@ void MessagesWidget::applyMessagesSettings()
   QString messagesCSS = QString(".notification {color: %1}"
                                 ".warning {color: %2}"
                                 ".error {color: %3}")
-      .arg(MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getNotificationColor().name())
-      .arg(MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getWarningColor().name())
-      .arg(MainWindow::instance()->getOptionsDialog()->getMessagesPage()->getErrorColor().name());
+      .arg(OptionsDialog::instance()->getMessagesPage()->getNotificationColor().name())
+      .arg(OptionsDialog::instance()->getMessagesPage()->getWarningColor().name())
+      .arg(OptionsDialog::instance()->getMessagesPage()->getErrorColor().name());
   mpMessagesTextBrowser->document()->setDefaultStyleSheet(messagesCSS);
   // move the cursor to end.
   QTextCursor textCursor = mpMessagesTextBrowser->textCursor();

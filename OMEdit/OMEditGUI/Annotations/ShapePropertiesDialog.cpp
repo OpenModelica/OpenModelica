@@ -870,7 +870,7 @@ void ShapePropertiesDialog::storeImageInModelToggled(bool checked)
   if (!checked) {
     MainWindow *pMainWindow = MainWindow::instance();
     if (!mpBitmapAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isFilePathValid()) {
-      if (pMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->isChecked()) {
+      if (OptionsDialog::instance()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->isChecked()) {
         NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::SaveModelForBitmapInsertion,
                                                                             NotificationsDialog::InformationIcon,
                                                                             pMainWindow);

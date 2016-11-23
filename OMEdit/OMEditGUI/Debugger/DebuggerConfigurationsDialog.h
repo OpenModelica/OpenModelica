@@ -104,6 +104,8 @@ private:
   QDialogButtonBox *mpConfigurationsButtonBox;
 
   bool saveAllConfigurationsHelper();
+signals:
+  void debuggerLaunched();
 public slots:
   void newConfiguration();
   void removeConfiguration();

@@ -29,7 +29,6 @@
  */
 
 #include "FetchInterfaceDataThread.h"
-#include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Options/OptionsDialog.h"
 
@@ -60,7 +59,7 @@ void FetchInterfaceDataThread::run()
   connect(mpManagerProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
   QStringList args;
   args << "-r" << fileInfo.absoluteFilePath();
-  TLMPage *pTLMPage = MainWindow::instance()->getOptionsDialog()->getTLMPage();
+  TLMPage *pTLMPage = OptionsDialog::instance()->getTLMPage();
   QProcessEnvironment environment;
 #ifdef WIN32
   environment = StringHandler::simulationProcessEnvironment();

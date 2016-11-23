@@ -70,8 +70,17 @@ class StackFramesWidget;
 class OptionsDialog : public QDialog
 {
   Q_OBJECT
-public:
+private:
+  // the only class that is allowed to create and destroy
+  friend class MainWindow;
+
+  static void create();
+  static void destroy();
   OptionsDialog(QWidget *pParent = 0);
+
+  static OptionsDialog *mpInstance;
+public:
+  static OptionsDialog* instance() {return mpInstance;}
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();

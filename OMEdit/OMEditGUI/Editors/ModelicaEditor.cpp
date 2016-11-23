@@ -300,10 +300,10 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
     }
     /* if user is changing the system library class. */
     if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() && !mForceSetPlainText) {
-      MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
+      mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
     } else if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
-      MainWindow::instance()->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
+      mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
     } else {
       /* if user is changing, the normal class. */
       if (!mForceSetPlainText) {
