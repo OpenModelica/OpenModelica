@@ -71,14 +71,6 @@ uniontype ComponentNode
     node := COMPONENT_NODE("", definition, c, EMPTY_NODE());
   end newExtends;
 
-  function newReference
-    input output ComponentNode component;
-    input Integer nodeIndex;
-    input Integer componentIndex;
-  algorithm
-    component := replaceComponent(Component.COMPONENT_REF(nodeIndex, componentIndex), component);
-  end newReference;
-
   function name
     input ComponentNode node;
     output String name;
@@ -128,6 +120,23 @@ uniontype ComponentNode
           ();
     end match;
   end setParent;
+
+  function setOrphanParent
+    "Sets the parent of a component node if the node lacks a parent, otherwise
+     does nothing."
+    input ComponentNode parent;
+    input output ComponentNode node;
+  algorithm
+    () := match node
+      case COMPONENT_NODE(parent = EMPTY_NODE())
+        algorithm
+          node.parent := parent;
+        then
+          ();
+
+      else ();
+    end match;
+  end setOrphanParent;
 
   function component
     input ComponentNode node;

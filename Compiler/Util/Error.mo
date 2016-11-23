@@ -710,6 +710,8 @@ public constant Message RHS_TUPLE_EXPRESSION = MESSAGE(291, TRANSLATION(), ERROR
   Util.gettext("Tuple expressions may only occur on the left side of an assignment or equation with a single function call on the right side. Got the following expression: %s."));
 public constant Message EACH_ON_NON_ARRAY = MESSAGE(292, TRANSLATION(), ERROR(),
   Util.gettext("'each' used when modifying non-array element %s."));
+public constant Message BUILTIN_EXTENDS_INVALID_ELEMENTS = MESSAGE(293, TRANSLATION(), ERROR(),
+  Util.gettext("A class extending from builtin type %s may not have other elements."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

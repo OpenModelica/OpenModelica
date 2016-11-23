@@ -99,7 +99,7 @@ algorithm
         makeComplexType(cls);
 
     case Instance.INSTANCED_BUILTIN()
-      then makeBuiltinType(cls, InstNode.name(classNode), component);
+      then makeBuiltinType(cls, component);
 
     else
       algorithm
@@ -553,16 +553,16 @@ end makeComplexType;
 
 function makeBuiltinType
   input Instance classInst;
-  input String name;
   input ComponentNode component;
   output DAE.Type ty;
 algorithm
   ty := match classInst
     local
+      String name;
       list<Modifier> type_mods;
       list<DAE.Var> type_attr;
 
-    case Instance.INSTANCED_BUILTIN(attributes = type_mods)
+    case Instance.INSTANCED_BUILTIN(name = name, attributes = type_mods)
       algorithm
         type_attr := list(makeTypeAttribute(tm, component) for tm in type_mods);
       then

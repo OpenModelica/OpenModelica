@@ -142,7 +142,12 @@ algorithm
       then
         ();
 
-    case Component.COMPONENT_REF() then ();
+    else
+      algorithm
+        assert(true, "flattenComponent got unknown component");
+      then
+        fail();
+
   end match;
 end flattenComponent;
 

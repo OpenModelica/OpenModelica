@@ -84,11 +84,6 @@ uniontype Component
     InstNode node;
   end EXTENDS_NODE;
 
-  record COMPONENT_REF
-    Integer node;
-    Integer index;
-  end COMPONENT_REF;
-
   function isNamedComponent
     input Component component;
     output Boolean isNamed;
@@ -106,6 +101,7 @@ uniontype Component
     classInst := match component
       case UNTYPED_COMPONENT() then component.classInst;
       case TYPED_COMPONENT() then component.classInst;
+      case EXTENDS_NODE() then component.node;
     end match;
   end classInstance;
 

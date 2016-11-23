@@ -91,6 +91,7 @@ uniontype Instance
 
   record EXPANDED_CLASS
     ClassTree.Tree elements;
+    list<ComponentNode> extendsNodes;
     array<ComponentNode> components;
     Modifier modifier;
     list<Equation> equations;
@@ -109,10 +110,12 @@ uniontype Instance
   end INSTANCED_CLASS;
 
   record PARTIAL_BUILTIN
+    String name;
     Modifier modifier;
   end PARTIAL_BUILTIN;
 
   record INSTANCED_BUILTIN
+    String name;
     list<Modifier> attributes;
   end INSTANCED_BUILTIN;
 
@@ -128,7 +131,7 @@ uniontype Instance
     input ClassTree.Tree classes;
     output Instance instance;
   algorithm
-    instance := EXPANDED_CLASS(classes, listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
+    instance := EXPANDED_CLASS(classes, {}, listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
   end initExpandedClass;
 
   function components
@@ -188,7 +191,7 @@ uniontype Instance
   algorithm
     instance := match instance
       case EXPANDED_CLASS()
-        then EXPANDED_CLASS(instance.elements, instance.components,
+        then EXPANDED_CLASS(instance.elements, instance.extendsNodes, instance.components,
           instance.modifier, equations, initialEquations, algorithms, initialAlgorithms);
 
       case INSTANCED_CLASS()
