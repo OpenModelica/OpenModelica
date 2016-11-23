@@ -41,6 +41,7 @@
 #include <QMenu>
 #include <QCompleter>
 #include <QMessageBox>
+#include <QTextDocumentFragment>
 
 /*!
  * \class TabSettings

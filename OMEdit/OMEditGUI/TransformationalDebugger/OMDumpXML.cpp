@@ -32,10 +32,12 @@
  * @author Martin Sjölund <martin.sjolund@liu.se>
  */
 
-#include <QDebug>
-#include <QXmlStreamReader>
 #include "OMDumpXML.h"
 #include "diff_match_patch.h"
+
+#include <QDebug>
+#include <QXmlStreamReader>
+#include <QTextDocument>
 
 QString OMOperation::toString()
 {

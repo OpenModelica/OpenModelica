@@ -36,6 +36,7 @@
 
 #include <QString>
 #include <QVariant>
+#include <QStringList>
 
 class SimulationOptions
 {

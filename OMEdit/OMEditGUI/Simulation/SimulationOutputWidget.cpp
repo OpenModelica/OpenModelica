@@ -47,6 +47,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QDesktopWidget>
+#include <QClipboard>
 
 /*!
  * \class SimulationOutputTree

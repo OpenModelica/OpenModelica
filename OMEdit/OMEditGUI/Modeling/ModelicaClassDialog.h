@@ -46,6 +46,7 @@
 #include <QTableWidget>
 #include <QPlainTextEdit>
 #include <QListWidget>
+#include <QToolButton>
 
 class Label;
 class LibraryWidget;

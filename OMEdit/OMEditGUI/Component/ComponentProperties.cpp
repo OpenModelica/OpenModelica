@@ -42,6 +42,7 @@
 #include <QWidgetAction>
 #include <QButtonGroup>
 #include <QMessageBox>
+#include <QDesktopServices>
 #include <QDesktopWidget>
 
 /*!

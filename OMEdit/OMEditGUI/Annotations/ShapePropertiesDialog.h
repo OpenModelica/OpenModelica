@@ -45,6 +45,7 @@
 #include <QScrollArea>
 #include <QTableWidget>
 #include <QDialogButtonBox>
+#include <QToolButton>
 
 class ShapeAnnotation;
 class LineAnnotation;

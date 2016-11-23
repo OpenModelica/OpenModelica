@@ -40,6 +40,7 @@
 
 #include <QItemDelegate>
 #include <QTreeView>
+#include <QSortFilterProxyModel>
 
 class ItemDelegate : public QItemDelegate
 {
