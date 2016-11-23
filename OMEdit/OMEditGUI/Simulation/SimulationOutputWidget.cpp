@@ -422,8 +422,9 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
   mpProgressBar->setValue(1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-        mSimulationOptions.getLaunchTransformationalDebugger() || mSimulationOptions.getProfiling() != "none") {
+    if (mSimulationOptions.getBuildOnly() &&
+        (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+         mSimulationOptions.getLaunchTransformationalDebugger() || mSimulationOptions.getProfiling() != "none")) {
       MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
     }
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);

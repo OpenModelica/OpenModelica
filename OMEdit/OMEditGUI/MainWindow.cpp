@@ -1009,16 +1009,19 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
   textCellElement.appendChild(outputElement);
 }
 
+/*!
+ * \brief MainWindow::showTransformationsWidget
+ * Creates a TransformationsWidget and show it to the user.
+ * \param fileName
+ * \return
+ */
 TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
 {
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
-  if (!pTransformationsWidget)
-  {
-    pTransformationsWidget = new TransformationsWidget(fileName, this);
+  if (!pTransformationsWidget) {
+    pTransformationsWidget = new TransformationsWidget(fileName);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
-  }
-  else
-  {
+  } else {
     pTransformationsWidget->reloadTransformations();
   }
   pTransformationsWidget->show();
@@ -1205,13 +1208,18 @@ void MainWindow::showOpenResultFileDialog()
   openResultFiles(fileNames);
 }
 
+/*!
+ * \brief MainWindow::showOpenTransformationFileDialog
+ * Slot activated when mpOpenTransformationFileAction triggered signal is raised.\n
+ * Shows a TransformationsWidget.
+ */
 void MainWindow::showOpenTransformationFileDialog()
 {
   QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                     NULL, Helper::infoXmlFileTypes, NULL);
-  if (fileName.isEmpty())
+  if (fileName.isEmpty()) {
     return;
-
+  }
   showTransformationsWidget(fileName);
 }
 

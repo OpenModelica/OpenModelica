@@ -1001,28 +1001,18 @@ SimulationOptions SimulationDialog::createSimulationOptions()
 }
 
 /*!
-  Creates the SimulationOutputWidget.
-  */
+ * \brief SimulationDialog::createAndShowSimulationOutputWidget
+ * Creates the SimulationOutputWidget.
+ * \param simulationOptions
+ */
 void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions simulationOptions)
 {
-  /*
-    If resimulation and show algorithmic debugger is checked then show algorithmic debugger.
-    If show transformational debugger is checked then show transformational debugger.
-    Otherwise run the normal resimulation.
-    */
+  /* If resimulation and show algorithmic debugger is checked then show algorithmic debugger.
+   * Otherwise run the normal resimulation.
+   */
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
-    if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-        simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
-      MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
-    }
     showAlgorithmicDebugger(simulationOptions);
   } else {
-    if (simulationOptions.isReSimulate()) {
-      if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-          simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
-        MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
-      }
-    }
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, MainWindow::instance());
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
@@ -1344,6 +1334,10 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       }
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
     }
+  }
+  if (MainWindow::instance()->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+      simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
+    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
   }
 }
 
