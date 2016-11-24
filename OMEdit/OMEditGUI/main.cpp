@@ -46,6 +46,8 @@
  * - Abhinn Kothari
  */
 
+#include <locale.h>
+
 #include "MainWindow.h"
 #include "Util/Helper.h"
 #include "CrashReport/CrashReportDialog.h"
