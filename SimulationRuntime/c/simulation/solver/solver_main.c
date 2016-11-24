@@ -480,7 +480,9 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   /* try */
   {
     int success = 0;
+#if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
     if(initialization(data, threadData, init_initMethod, init_file, init_time, lambda_steps))
     {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
@@ -489,7 +491,10 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     }
 
     success = 1;
+#if !defined(OMC_EMCC)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
     if (!success)
     {
       retValue =  -1;
@@ -705,6 +710,10 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
   omc_alloc_interface.collect_a_little();
 
+#if !defined(OMC_EMCC)
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
   if(0 == retVal) {
     retVal = initializeSolverData(data, threadData, &solverInfo);
     initSolverInfo = 1;
@@ -778,6 +787,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   embedded_server_deinit(data->embeddedServerState);
   embedded_server_unload_functions(dllHandle);
 #endif
+
+#if !defined(OMC_EMCC)
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
   /*  free external input data */
   externalInputFree(data);
 
