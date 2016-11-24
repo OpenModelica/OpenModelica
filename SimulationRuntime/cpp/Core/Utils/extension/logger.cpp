@@ -112,8 +112,9 @@ std::string Logger::getLevel(LogLevel lvl) const
   }
 }
 
-LoggerXML::LoggerXML(LogSettings settings, bool enabled)
+LoggerXML::LoggerXML(LogSettings settings, bool enabled, std::ostream &stream)
   : Logger(settings, enabled)
+  , _stream(stream)
 {
 }
 
@@ -125,15 +126,15 @@ void LoggerXML::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
                               LogStructure ls)
 {
   if (ls != LS_END) {
-    std::cout << "<message stream=\"" << getCategory(cat) << "\" "
-              << "type=\"" << getLevel(lvl) << "\" "
-              << "text=\"" << msg << "\"";
+    _stream << "<message stream=\"" << getCategory(cat) << "\" "
+            << "type=\"" << getLevel(lvl) << "\" "
+            << "text=\"" << msg << "\"";
     if (ls == LS_BEGIN)
-      std::cout << " >" << std::endl;
+      _stream << " >" << std::endl;
     else
-      std::cout << " />" << std::endl;
+      _stream << " />" << std::endl;
   }
   else {
-    std::cout << "</message>" << std::endl;
+    _stream << "</message>" << std::endl;
   }
 }

@@ -20,7 +20,48 @@
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
+/**
+ * Logger for XML messages through TCP port
+ */
+#include <boost/asio.hpp>
 
+class LoggerXMLTCP: public LoggerXML
+{
+ public:
+  LoggerXMLTCP(std::string host, int port, LogSettings &logSettings):
+    LoggerXML(logSettings, true, _sstream),
+    _endpoint(boost::asio::ip::address::from_string(host), port),
+    _socket(_ios)
+  {
+    _socket.connect(_endpoint);
+    if (instance != NULL)
+      delete instance;
+    instance = this;
+  }
+
+  virtual ~LoggerXMLTCP()
+  {
+    _socket.close();
+  }
+
+ protected:
+  boost::asio::io_service _ios;
+  boost::asio::ip::tcp::endpoint _endpoint;
+  boost::asio::ip::tcp::socket _socket;
+  stringstream _sstream;
+
+  virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
+                             LogStructure ls)
+  {
+    _sstream.str("");
+    LoggerXML::writeInternal(msg, cat, lvl, ls);
+    _socket.send(boost::asio::buffer(_sstream.str()));
+  }
+};
+
+/**
+ * Implementation of OMCFactory
+ */
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     : _library_path(library_path)
     , _modelicasystem_path(modelicasystem_path)
@@ -81,7 +122,8 @@ static LogSettings initializeLogger(const po::variables_map& vm)
     "error", LL_ERROR MAP_LIST_SEP "warning", LL_WARNING MAP_LIST_SEP
     "info", LL_INFO MAP_LIST_SEP "debug", LL_DEBUG MAP_LIST_END;
   map<string, LogFormat> logFormatMap = MAP_LIST_OF
-    "txt", LF_TXT MAP_LIST_SEP "xml", LF_XML MAP_LIST_END;
+    "txt", LF_TXT MAP_LIST_SEP "xml", LF_XML MAP_LIST_SEP
+    "xmltcp", LF_XML MAP_LIST_END;
   map<string, LogOMEdit> logOMEditMap = MAP_LIST_OF
     "LOG_EVENTS", LOG_EVENTS MAP_LIST_SEP "LOG_INIT", LOG_INIT MAP_LIST_SEP
     "LOG_LS", LOG_LS  MAP_LIST_SEP "LOG_NLS", LOG_NLS  MAP_LIST_SEP
@@ -156,8 +198,9 @@ static LogSettings initializeLogger(const po::variables_map& vm)
         logSettings.modes[i] = LL_WARNING;
   }
 
+  string logFormat_str;
   if (vm.count("log-format")) {
-    string logFormat_str = vm["log-format"].as<string>();
+    logFormat_str = vm["log-format"].as<string>();
     if (logFormatMap.find(logFormat_str) != logFormatMap.end())
       logSettings.format = logFormatMap[logFormat_str];
     else
@@ -170,8 +213,19 @@ static LogSettings initializeLogger(const po::variables_map& vm)
     logSettings.modes[LC_OTHER] = LL_INFO;
 
   // initialize logger if it has been enabled
-  if (Logger::isEnabled())
-    Logger::initialize(logSettings);
+  if (Logger::isEnabled()) {
+    int port = vm["log-port"].as<int>();
+    if (port > 0 && logFormat_str == "xmltcp") {
+      try {
+        new LoggerXMLTCP("127.0.0.1", port, logSettings);
+      }
+      catch (std::exception &ex) {
+        std::cerr << "Failed to start xmltcp logger: " << ex.what() << std::endl;
+      }
+    }
+    else
+      Logger::initialize(logSettings);
+  }
 
   if (logOMEditWarning.size() > 0) {
     LOGGER_WRITE("Warning: unrecognized logging " + logOMEditWarning,
@@ -225,7 +279,8 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
           ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
           ("log-settings,V", po::value< vector<string> >(), "log information: init, nls, ls, solver, output, events, model, other")
-          ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml")
+          ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml, xmltcp")
+          ("log-port", po::value< int >()->default_value(0), "tcp port for log messages (default 0 meaning stdout/stderr)")
           ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
@@ -495,6 +550,7 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace.insert(pair<string,string>("-lv", "--log-settings"));
   _argumentsToReplace.insert(pair<string,string>("-w", "--warn-all"));
   _argumentsToReplace.insert(pair<string,string>("-logFormat", "--log-format"));
+  _argumentsToReplace.insert(pair<string,string>("-port", "--log-port"));
   _argumentsToReplace.insert(pair<string,string>("-alarm", "--alarm"));
   _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
 }

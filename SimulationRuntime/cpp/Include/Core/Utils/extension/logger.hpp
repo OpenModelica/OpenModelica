@@ -144,7 +144,7 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     bool _isEnabled;
 };
 
-class BOOST_EXTENSION_LOGGER_DECL LoggerXML: Logger
+class BOOST_EXTENSION_LOGGER_DECL LoggerXML: public Logger
 {
   friend class Logger;
 
@@ -152,10 +152,11 @@ class BOOST_EXTENSION_LOGGER_DECL LoggerXML: Logger
     virtual ~LoggerXML();
 
   protected:
-    LoggerXML(LogSettings settings, bool enabled);
+    LoggerXML(LogSettings settings, bool enabled, std::ostream &stream = std::cout);
 
     virtual void writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
                                LogStructure ls);
+    std::ostream &_stream;
 };
 
 #endif /* LOGGER_HPP_ */
