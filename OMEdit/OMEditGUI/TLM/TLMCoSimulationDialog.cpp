@@ -49,7 +49,9 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/Commands.h"
 #include "TLMCoSimulationOutputWidget.h"
+#if !defined(WITHOUT_OSG)
 #include "Animation/AnimationWindow.h"
+#endif
 
 TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
   : QDialog(pParent)

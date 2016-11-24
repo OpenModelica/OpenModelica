@@ -42,7 +42,9 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/Commands.h"
 #include "SimulationProcessThread.h"
+#if !defined(WITHOUT_OSG)
 #include "Animation/AnimationWindow.h"
+#endif
 
 #include <QTcpSocket>
 #include <QTcpServer>

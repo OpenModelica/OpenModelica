@@ -285,7 +285,9 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 # Please read the warnings. They are like vegetables; good for you even if you hate them.
 CONFIG += warn_on
 # Only disable the unused variable/function/parameter warning
-QMAKE_CXXFLAGS += -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter
+win32 {
+  QMAKE_CXXFLAGS += -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter
+}
 
 RESOURCES += resource_omedit.qrc
 
