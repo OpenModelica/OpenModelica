@@ -391,7 +391,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
 
   /* selects the calculation method of the jacobian */
-/* in daeMode sparse pattern is already initialized in DAEMODE_DATA */
+  /* in daeMode sparse pattern is already initialized in DAEMODE_DATA */
   if(!idaData->daeMode && (idaData->jacobianMethod == COLOREDNUMJAC ||
       idaData->jacobianMethod == COLOREDSYMJAC ||
       idaData->jacobianMethod == KLUSPARSE ||
@@ -401,6 +401,12 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     {
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       idaData->jacobianMethod = INTERNALNUMJAC;
+      if (idaData->linearSolverMethod == IDA_LS_KLU)
+      {
+        idaData->linearSolverMethod = IDA_LS_DENSE;
+        flag = IDADense(idaData->ida_mem, idaData->N);
+        warningStreamPrint(LOG_STDOUT, 0, "IDA linear solver method also switched back to %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
+      }
     }
   }
 
