@@ -94,6 +94,7 @@ using namespace std;
 #ifndef NO_INTERACTIVE_DEPENDENCY
   Socket sim_communication_port;
   static int sim_communication_port_open = 0;
+  static int isXMLTCP=0;
 #endif
 
 extern "C" {
@@ -861,11 +862,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
   sim_noemit = omc_flag[FLAG_NOEMIT];
 
-  // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
-
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  if(omc_flag[FLAG_PORT])
-  {
+  if(omc_flag[FLAG_PORT]) {
     std::istringstream stream(omc_flagValue[FLAG_PORT]);
     int port;
     stream >> port;
@@ -873,12 +871,16 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     sim_communication_port_open &= sim_communication_port.create();
     sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
 
-    if(0 != strcmp("ia", data->simulationInfo->outputFormat))
-    {
-      communicateStatus("Starting", 0.0);
+    if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
+      communicateStatus("Starting", 0.0, data->simulationInfo->startTime, 0);
     }
   }
 #endif
+  if (isXMLTCP && !sim_communication_port_open) {
+    errorStreamPrint(LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
+    EXIT(1);
+  }
+  // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 
   return 0;
 }
@@ -897,20 +899,6 @@ void SimulationRuntime_printStatus(int sig)
   printf("<currentTime>%g</currentTime>\n", data->localData[0]->timeValue);
   printf("<diffCurrentTime>%g</diffCurrentTime>\n", data->localData[0]->timeValue-data->localData[1]->timeValue);
   printf("</status>\n");
-}
-
-void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/)
-{
-#ifndef NO_INTERACTIVE_DEPENDENCY
-  if(sim_communication_port_open)
-  {
-    std::stringstream s;
-    s << (int)(completionPercent*10000) << " " << phase << endl;
-    std::string str(s.str());
-    sim_communication_port.send(str);
-    // cout << str;
-  }
-#endif
 }
 
 void communicateMsg(char id, unsigned int size, const char *data)
@@ -991,5 +979,155 @@ const char* prettyPrintNanoSec(int64_t ns, int *v)
   }
 }
 #endif
+
+#ifndef NO_INTERACTIVE_DEPENDENCY
+static std::stringstream xmlTcpStream;
+static int numOpenTags=0;
+
+static void printEscapedXMLTCP(std::stringstream *s, const char *msg)
+{
+  while (*msg) {
+    if (*msg == '&') {
+      *s << "&amp;";
+    } else if (*msg == '<') {
+      *s << "&lt;";
+    } else if (*msg == '>') {
+      *s << "&gt;";
+    } else if (*msg == '"') {
+      *s << "&quot;";
+    } else {
+      *s << *msg;
+    }
+    msg++;
+  }
+}
+
+static inline void sendXMLTCPIfClosed()
+{
+  if (numOpenTags==0) {
+    sim_communication_port.send(xmlTcpStream.str());
+    xmlTcpStream.clear();
+  }
+}
+
+static void messageXMLTCP(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
+{
+  xmlTcpStream << "<message stream=\"" << LOG_STREAM_NAME[stream] << "\" type=\"" << LOG_TYPE_DESC[type] << "\" text=\"";
+  printEscapedXMLTCP(&xmlTcpStream, msg);
+  if (indexes) {
+    int i;
+    xmlTcpStream << "\">\n";
+    for (i=1; i<=*indexes; i++) {
+      xmlTcpStream << "<used index=\"" << indexes[i] << "%d\" />\n";
+    }
+    if (!indentNext) {
+      xmlTcpStream << "</message>\n";
+    }
+  } else {
+    xmlTcpStream << (indentNext ? "\">\n" : "\" />\n");
+  }
+  sendXMLTCPIfClosed();
+}
+
+static void messageCloseXMLTCP(int stream)
+{
+  if (ACTIVE_STREAM(stream)) {
+    numOpenTags--;
+    xmlTcpStream << "</message>\n";
+    sendXMLTCPIfClosed();
+  }
+}
+
+static void messageCloseXMLTCPWarning(int stream)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    numOpenTags--;
+    xmlTcpStream << "</message>\n";
+    sendXMLTCPIfClosed();
+  }
+}
+#endif
+
+static void printEscapedXML(const char *msg)
+{
+  while (*msg) {
+    if (*msg == '&') fputs("&amp;", stdout);
+    else if (*msg == '<') fputs("&lt;", stdout);
+    else if (*msg == '>') fputs("&gt;", stdout);
+    else if (*msg == '"') fputs("&quot;", stdout);
+    else fputc(*msg, stdout);
+    msg++;
+  }
+}
+
+static void messageXML(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
+{
+  printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
+  printEscapedXML(msg);
+  if (indexes) {
+    int i;
+    printf("\">\n");
+    for (i=1; i<=*indexes; i++) {
+      printf("<used index=\"%d\" />\n", indexes[i]);
+    }
+    if (!indentNext) {
+      fputs("</message>\n",stdout);
+    }
+  } else {
+    fputs(indentNext ? "\">\n" : "\" />\n", stdout);
+  }
+  fflush(stdout);
+}
+
+static void messageCloseXML(int stream)
+{
+  if (ACTIVE_STREAM(stream)) {
+    fputs("</message>\n", stdout);
+    fflush(stdout);
+  }
+}
+
+static void messageCloseXMLWarning(int stream)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    fputs("</message>\n", stdout);
+    fflush(stdout);
+  }
+}
+
+void setStreamPrintXML(int isXML)
+{
+  if (isXML==1) {
+    messageFunction = messageXML;
+    messageClose = messageCloseXML;
+    messageCloseWarning = messageCloseXMLWarning;
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  } else if (isXML==2) {
+    messageFunction = messageXMLTCP;
+    messageClose = messageCloseXMLTCP;
+    messageCloseWarning = messageCloseXMLTCPWarning;
+    isXMLTCP = 1;
+#endif
+  } else {
+    /* Already set... */
+  }
+}
+
+void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/, double currentTime, double currentStepSize)
+{
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  if (sim_communication_port_open && isXMLTCP) {
+    std::stringstream s;
+    s << "<status phase=\"" << phase << "\" currentStepSize=\"" << currentStepSize << "\" time=\"" << currentTime << "\" progress=\"" << (int)(completionPercent*10000) << "\" />" << std::endl;
+    std::string str(s.str());
+    sim_communication_port.send(str);
+  } else if (sim_communication_port_open) {
+    std::stringstream s;
+    s << (int)(completionPercent*10000) << " " << phase << endl;
+    std::string str(s.str());
+    sim_communication_port.send(str);
+  }
+#endif
+}
 
 } // extern "C"
