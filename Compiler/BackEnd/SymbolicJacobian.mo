@@ -185,14 +185,14 @@ public function generateSymbolicJacobianPast
 protected
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
-  BackendDAE.SymbolicJacobian symJacA;
+  Option<BackendDAE.SymbolicJacobian> symJacA;
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
   DAE.FunctionTree funcs, functionTree;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  (symJacA , sparsePattern, sparseColoring, funcs) := createSymbolicJacobianforStates(inBackendDAE);
+  (symJacA, funcs, sparsePattern, sparseColoring) := createSymbolicJacobianforStates(inBackendDAE);
   shared := addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);
   functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
@@ -204,10 +204,10 @@ end generateSymbolicJacobianPast;
 protected function createSymbolicJacobianforStates "author: wbraun
   all functionODE equation are differentiated with respect to the states."
   input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.SymbolicJacobian outJacobian;
+  output Option<BackendDAE.SymbolicJacobian> outJacobian;
+  output DAE.FunctionTree outFunctionTree;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outSparseColoring;
-  output DAE.FunctionTree outFunctionTree;
 protected
   BackendDAE.BackendDAE backendDAE2;
   list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
@@ -216,7 +216,6 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     print("analytical Jacobians -> start generate system for matrix A time : " + realString(clock()) + "\n");
   end if;
-
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
@@ -235,7 +234,7 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
   end if;
-  (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) := createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A");
+  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring) := generateGenericJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A",false);
 end createSymbolicJacobianforStates;
 
 // =============================================================================
@@ -251,14 +250,14 @@ public function generateSymbolicSensitivities
 protected
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
-  BackendDAE.SymbolicJacobian symJacS;
+  Option<BackendDAE.SymbolicJacobian> symJacS;
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
   DAE.FunctionTree funcs, functionTree;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  (symJacS , sparsePattern, sparseColoring, funcs) := createSymbolicJacobianforParameters(inBackendDAE);
+  (symJacS, funcs, sparsePattern, sparseColoring) := createSymbolicJacobianforParameters(inBackendDAE);
   shared := addBackendDAESharedJacobian(symJacS, sparsePattern, sparseColoring, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);
   functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
@@ -271,10 +270,10 @@ protected function createSymbolicJacobianforParameters
 "author: wbraun
   all functionODE equation are differentiated with respect to the parameters."
   input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.SymbolicJacobian outJacobian;
+  output Option<BackendDAE.SymbolicJacobian> outJacobian;
+  output DAE.FunctionTree outFunctionTree;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outSparseColoring;
-  output DAE.FunctionTree outFunctionTree;
 protected
   BackendDAE.BackendDAE backendDAE2;
   list<BackendDAE.Var>  varlst, knvarlst, states, inputvars, paramvars;
@@ -302,7 +301,7 @@ algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
     BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
   end if;
-  (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) := createJacobian(backendDAE2,paramvars,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(states),BackendVariable.listVar1(states),varlst,"S");
+  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring) := generateGenericJacobian(backendDAE2,paramvars,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(states),BackendVariable.listVar1(states),varlst,"S",false);
 end createSymbolicJacobianforParameters;
 
 // =============================================================================
@@ -1598,7 +1597,7 @@ algorithm
       BackendDAE.EquationArray e;
 
       BackendDAE.SymbolicJacobians linearModelMatrices;
-      BackendDAE.SymbolicJacobian linearModelMatrix;
+      Option<BackendDAE.SymbolicJacobian> linearModelMatrix;
 
       BackendDAE.SparsePattern sparsePattern;
       BackendDAE.SparseColoring sparseColoring;
@@ -1617,7 +1616,6 @@ algorithm
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
         BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars, functionTree = functionTree, cache=cache, graph=graph, info=ei)) = backendDAE2;
 
-
         emptyBDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
@@ -1627,11 +1625,6 @@ algorithm
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
-
-        _ = BackendVariable.listVar1(states);
-        _ = BackendVariable.listVar1(inputvars);
-        _ = BackendVariable.listVar1(paramvars);
-        _ = BackendVariable.listVar1(outputvars);
 
         // Generate sparse pattern for matrices A
         (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, states);
@@ -1673,35 +1666,35 @@ algorithm
         outputvarsarr = BackendVariable.listVar1(outputvars);
 
         // Differentiate the System w.r.t states for matrices A
-        (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
+        (linearModelMatrix, functionTree, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A",false);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
+        linearModelMatrices = {(linearModelMatrix,sparsePattern,sparseColoring)};
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices B
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
+        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t states for matrices C
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C");
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
+        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices D
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D");
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
+        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
@@ -1745,10 +1738,10 @@ algorithm
         //object = BackendVariable.listVar1(object);
 
         // Differentiate the System w.r.t states for matrices A
-        (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
+        (linearModelMatrix, functionTree, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A",false);
 
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
+        linearModelMatrices = {(linearModelMatrix,sparsePattern,sparseColoring)};
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
         end if;
@@ -1759,10 +1752,10 @@ algorithm
         object = DynamicOptimization.checkObjectIsSet(outputvarsarr, BackendDAE.optimizationLagrangeTermName);
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B");
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
+        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
@@ -1771,10 +1764,10 @@ algorithm
         object = DynamicOptimization.checkObjectIsSet(outputvarsarr, BackendDAE.optimizationMayerTermName);
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C");
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
+        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
@@ -1783,9 +1776,9 @@ algorithm
         optimizer_vars = BackendVariable.emptyVars();
         optimizer_vars = BackendVariable.listVar1(fconVarsList);
 
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2, states_inputs, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D");
+        (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2, states_inputs, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D", false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
+        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
@@ -1800,6 +1793,39 @@ algorithm
   end match;
 end createLinearModelMatrixes;
 
+protected function generateGenericJacobian "author: wbraun"
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<BackendDAE.Var> inDiffVars;
+  input BackendDAE.Variables inStateVars;
+  input BackendDAE.Variables inInputVars;
+  input BackendDAE.Variables inParameterVars;
+  input BackendDAE.Variables inDifferentiatedVars;
+  input list<BackendDAE.Var> inVars;
+  input String inName;
+  input Boolean onlySparsePattern;
+  output Option<BackendDAE.SymbolicJacobian> outJacobian;
+  output DAE.FunctionTree outFunctionTree;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring;
+protected
+  BackendDAE.SymbolicJacobian symbolicJacobian;
+  BackendDAE.Shared shared = inBackendDAE.shared;
+algorithm
+  try
+    outFunctionTree := shared.functionTree;
+    if not onlySparsePattern then
+      (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE,inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName);
+      outJacobian := SOME(symbolicJacobian);
+    else
+      outJacobian := NONE();
+    end if;
+    // generate sparse pattern
+    (outSparsePattern,outSparseColoring) := generateSparsePattern(inBackendDAE, inDiffVars, BackendVariable.varList(inDifferentiatedVars));
+  else
+    fail();
+  end try;
+end generateGenericJacobian;
+
 protected function createJacobian "author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
   input list<BackendDAE.Var> inDiffVars;
@@ -1810,11 +1836,9 @@ protected function createJacobian "author: wbraun"
   input list<BackendDAE.Var> inVars;
   input String inName;
   output BackendDAE.SymbolicJacobian outJacobian;
-  output BackendDAE.SparsePattern outSparsePattern;
-  output BackendDAE.SparseColoring outSparseColoring;
   output DAE.FunctionTree outFunctionTree;
 algorithm
-  (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) :=
+  (outJacobian, outFunctionTree) :=
   matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inName)
     local
       BackendDAE.BackendDAE backendDAE, reduceDAE;
@@ -1825,14 +1849,10 @@ algorithm
       BackendDAE.Variables  globalKnownVars, knvars1;
       list<BackendDAE.Var> diffedVars, diffVarsTmp, seedlst, knvarsTmp;
 
-      BackendDAE.SparsePattern sparsepattern;
-      BackendDAE.SparseColoring colsColors;
-
       DAE.FunctionTree funcs;
 
     case (_,_,_,_,_,_,_,_)
       equation
-
         diffedVars = BackendVariable.varList(inDifferentiatedVars);
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
@@ -1873,10 +1893,8 @@ algorithm
           print("analytical Jacobians -> generated optimized jacobians: " + realString(clock()) + "\n");
         end if;
 
-        // generate sparse pattern
-        (sparsepattern,colsColors) = generateSparsePattern(reduceDAE, inDiffVars, diffedVars);
      then
-        ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors, funcs);
+        ((backendDAE, inName, inDiffVars, diffedVars, inVars), funcs);
     else
       equation
         Error.addInternalError("function createJacobian failed", sourceInfo());
@@ -2387,6 +2405,56 @@ algorithm
   end if;
 end checkForSymbolicJacobian;
 
+protected function calculateTearingSetJacobian
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.TearingSet inTearingSet;
+  input BackendDAE.Shared inShared;
+  input Boolean isLinear;
+  output BackendDAE.Jacobian outJacobian;
+  output BackendDAE.Shared outShared;
+protected
+  String name, prename;
+  Boolean debug = false;
+
+  BackendDAE.Variables diffVars, oVars, resVars;
+  BackendDAE.EquationArray resEqns, oEqns;
+algorithm
+	try
+	  // check non-linear flag
+	  if not isLinear and not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) then
+	   fail();
+	  end if;
+	  // generate jacobian name
+	  if isLinear then
+	    prename := "LS";
+	  else
+	    prename := "NLS";
+	  end if;
+	  name := prename + "Jac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+	  if debug then
+	    print("*** "+ prename + "-JAC *** start creating Jacobian for a torn system " + name + " of size " + intString(listLength(inTearingSet.tearingvars)) + " time: " + realString(clock()) + "\n");
+	  end if;
+
+	  (diffVars, resVars, oVars, resEqns, oEqns) := prepareTornStrongComponentData(inVars, inEqns, inTearingSet.tearingvars, inTearingSet.residualequations, inTearingSet.innerEquations);
+
+	  if debug then
+	    print("*** "+ prename + "-JAC *** prepared all data for differentiation at time: " + realString(clock()) + "\n");
+	  end if;
+
+    //check if we are able to calc symbolic jacobian
+    if not (isLinear or checkForSymbolicJacobian(BackendEquation.equationList(resEqns), BackendEquation.equationList(oEqns), name)) then
+      fail();
+    end if;
+
+	  // generate generic jacobian backend dae
+    (outJacobian, outShared) := getSymbolicJacobian(diffVars, resEqns, resVars, oEqns, oVars, inShared, inVars, name);
+	else
+	  fail();
+	end try;
+end calculateTearingSetJacobian;
+
 protected function calculateJacobianComponent
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.Variables inVars;
@@ -2413,137 +2481,30 @@ algorithm
       list<BackendDAE.Equation> reqns, otherEqnsLst;
       BackendDAE.EquationArray eqns, oeqns;
 
-      BackendDAE.Jacobian jacobian,jacobian2;
+      BackendDAE.Jacobian jacobian,jacobianCausal;
 
       String name;
-      Boolean mixedSystem, b1, b2;
+      Boolean mixedSystem, linear;
 
-      // linear
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, innerEquations=innerEquations), NONE(), linear=true, mixedSystem=mixedSystem), _, _, _)
+      Boolean debug = false;
+      BackendDAE.TearingSet strictTearingset, causalTearingSet;
+      Option<BackendDAE.TearingSet> optCausalTearingSet;
+
+      // generate symbolic jacobian for a torn system
+      case (BackendDAE.TORNSYSTEM(strictTearingset, optCausalTearingSet, linear=linear, mixedSystem=mixedSystem), _, _, _)
         equation
-          // generate jacobian name
-          name = "LSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** LS-JAC *** start creating Jacobian for a torn linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
-          end if;
-
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, innerEquations);
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** LS-JAC *** prepare all data for differentiation at time: " + realString(clock()) + "\n");
-          end if;
-
           // generate generic jacobian backend dae
-          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+          (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);
+          strictTearingset.jac = jacobian;
 
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, innerEquations, jacobian), NONE(), true, mixedSystem), shared);
-
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, innerEquations=innerEquations), NONE(), linear=false, mixedSystem=mixedSystem), _, _, _)
-        equation
-          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
-
-          // generate jacobian name
-          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** NLS-JAC *** start creating Jacobian for a torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
+          if isSome(optCausalTearingSet) then
+            causalTearingSet = Util.getOption(optCausalTearingSet);
+            (jacobianCausal, shared) = calculateTearingSetJacobian(inVars, inEqns, causalTearingSet, shared, linear);
+            causalTearingSet.jac = jacobianCausal;
+            optCausalTearingSet = SOME(causalTearingSet);
           end if;
 
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, innerEquations);
-
-          //check if we are able to calc symbolic jacobian
-          otherEqnsLst = BackendEquation.equationList(oeqns);
-          reqns = BackendEquation.equationList(eqns);
-          true = checkForSymbolicJacobian(reqns, otherEqnsLst, name);
-
-          // generate generic jacobian backend dae
-          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
-
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, innerEquations, jacobian), NONE(), false, mixedSystem), shared);
-
-      // dynamic linear tearing
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, innerEquations=innerEquations), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, innerEquations=innerEquations2)), linear=true, mixedSystem=mixedSystem), _, _, _)
-        equation
-          // generate jacobian name
-          name = "LSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** LS-JAC *** start creating Jacobian for a strict torn linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
-          end if;
-
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, innerEquations);
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** LS-JAC *** prepare all data for differentiation at time: " + realString(clock()) + "\n");
-          end if;
-
-          // generate generic jacobian backend dae
-          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
-
-          // Get Jacobian for casual tearing set
-          // generate jacobian name
-          name = "LSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** LS-JAC *** start creating Jacobian for a causual torn linear system " + name + " of size " + intString(listLength(iterationvarsInts2)) + " time: " + realString(clock()) + "\n");
-          end if;
-
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts2, residualequations2, innerEquations2);
-
-          //check if we are able to calc symbolic jacobian
-          otherEqnsLst = BackendEquation.equationList(oeqns);
-          reqns = BackendEquation.equationList(eqns);
-          true = checkForSymbolicJacobian(reqns, otherEqnsLst, name);
-
-          // generate generic jacobian backend dae
-          (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, shared, inVars, name);
-
-
-      //then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, innerEquations, jacobian), NONE(), false, mixedSystem), shared);
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, innerEquations, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, innerEquations2, jacobian2)), true, mixedSystem), shared);
-
-      // dynamic non-linear tearing
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, innerEquations=innerEquations), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, innerEquations=innerEquations2)), linear=false, mixedSystem=mixedSystem), _, _, _)
-        equation
-          true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
-
-          // generate jacobian name
-          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** NLS-JAC *** start creating Jacobian for a strict torn non-linear system " + name + " of size " + intString(listLength(iterationvarsInts)) + " time: " + realString(clock()) + "\n");
-          end if;
-
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts, residualequations, innerEquations);
-
-          //check if we are able to calc symbolic jacobian
-          otherEqnsLst = BackendEquation.equationList(oeqns);
-          reqns = BackendEquation.equationList(eqns);
-          true = checkForSymbolicJacobian(reqns, otherEqnsLst, name);
-
-          // generate generic jacobian backend dae
-          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
-
-          // Get Jacobian for casual tearing set
-          // generate jacobian name
-          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
-          if Flags.isSet(Flags.DEBUG_ALGLOOP_JACOBIAN) then
-            print("*** NLS-JAC *** start creating Jacobian for a causual torn linear system " + name + " of size " + intString(listLength(iterationvarsInts2)) + " time: " + realString(clock()) + "\n");
-          end if;
-
-          (diffVars, resVars, ovars, eqns, oeqns) = prepareTornStrongComponentData(inVars, inEqns, iterationvarsInts2, residualequations2, innerEquations2);
-
-          //check if we are able to calc symbolic jacobian
-          otherEqnsLst = BackendEquation.equationList(oeqns);
-          reqns = BackendEquation.equationList(eqns);
-          true = checkForSymbolicJacobian(reqns, otherEqnsLst, name);
-
-          // generate generic jacobian backend dae
-          (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, shared, inVars, name);
-
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, innerEquations, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, innerEquations2, jacobian2)), false, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(strictTearingset, optCausalTearingSet, linear, mixedSystem), shared);
 
       // do not touch linear and constant systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
@@ -2689,7 +2650,7 @@ algorithm
       list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
 
       DAE.ComponentRef x;
-      BackendDAE.SymbolicJacobian symJacBDAE;
+      Option<BackendDAE.SymbolicJacobian> symJacBDAE;
       BackendDAE.SparsePattern sparsePattern;
       BackendDAE.SparseColoring sparseColoring;
 
@@ -2753,13 +2714,16 @@ algorithm
 
         // prepare vars and equations for BackendDAE
         emptyVars =  BackendVariable.emptyVars();
-        _ = BackendEquation.listEquation({});
         cache = FCore.emptyCache();
         graph = FGraph.empty();
         shared = BackendDAEUtil.createEmptyShared(BackendDAE.ALGEQSYSTEM(), einfo, cache, graph);
         shared = BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
         shared = BackendDAEUtil.setSharedFunctionTree(shared, funcs);
         backendDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(dependentVars, eqns)}, shared);
+
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          BackendDump.bltdump("System",backendDAE);
+        end if;
 
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
         BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) = backendDAE;
@@ -2768,14 +2732,15 @@ algorithm
         // create dependent variables
         dependentVarsLst = BackendVariable.varList(dependentVars);
 
-        (symJacBDAE, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE,
+        (symJacBDAE, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE,
           independentVarsLst,
           emptyVars,
           emptyVars,
           globalKnownVars,
           inResVars,
           dependentVarsLst,
-          inName);
+          inName,
+          false);
 
         shared = BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
 
@@ -3277,7 +3242,7 @@ algorithm
 end calculateJacobianRow2;
 
 protected function addBackendDAESharedJacobian
-  input BackendDAE.SymbolicJacobian inSymJac;
+  input Option<BackendDAE.SymbolicJacobian> inSymJac;
   input BackendDAE.SparsePattern inSparsePattern;
   input BackendDAE.SparseColoring inSparseColoring;
   input BackendDAE.Shared inShared;
@@ -3296,7 +3261,7 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  symjacs := { (SOME(inSymJac), inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {}), -1), {}),
+  symjacs := { (inSymJac, inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {}), -1), {}),
                (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}) };
   outShared := BackendDAEUtil.setSharedSymJacs(inShared, symjacs);
 end addBackendDAESharedJacobian;

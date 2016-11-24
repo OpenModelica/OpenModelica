@@ -728,7 +728,7 @@ uniontype Jacobian
   end FULL_JACOBIAN;
 
   record GENERIC_JACOBIAN
-    SymbolicJacobian jacobian;
+    Option<SymbolicJacobian> jacobian;
     SparsePattern sparsePattern;
     SparseColoring coloring;
   end GENERIC_JACOBIAN;
@@ -753,6 +753,9 @@ type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRe
                            tuple<list< .DAE.ComponentRef>,                            // diff vars
                                  list< .DAE.ComponentRef>>,                           // diffed vars
                            Integer>;                                                  // nonZeroElements
+
+public
+constant SparsePattern emptySparsePattern = ({},{},({},{}),0);
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring

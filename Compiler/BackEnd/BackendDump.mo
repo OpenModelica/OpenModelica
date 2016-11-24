@@ -2241,12 +2241,19 @@ algorithm
       s = "FULL JACOBIAN:\n";
       s = s + dumpJacobianStr(fJac);
     then s;
-  case(BackendDAE.GENERIC_JACOBIAN(jacobian=sJac))
+  case(BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(sJac),sparsePattern=sparsePattern))
     equation
       ((dae,_,_,_,_)) = sJac;
       s = "GENERIC JACOBIAN:\n";
       dumpBackendDAE(dae,"Directional Derivatives System");
+      dumpSparsityPattern(sparsePattern,"Sparse Pattern");
     then s;
+  case(BackendDAE.GENERIC_JACOBIAN(jacobian=NONE(),sparsePattern=sparsePattern))
+    equation
+      s = "GENERIC JACOBIAN:\n";
+      dumpSparsityPattern(sparsePattern,"Sparse Pattern");
+    then s;
+
   case(BackendDAE.EMPTY_JACOBIAN())
     equation
       s = "EMPTY JACOBIAN:\n";

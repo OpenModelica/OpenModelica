@@ -5943,9 +5943,9 @@ algorithm
         BackendDAE.BackendDAE bdae;
       case BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN(SOME(jac)))
         then traverseBackendDAEExpsJacobianEqn(jac, inFunc, arg);
-      case BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))
+      case BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((bdae,_,_,_,_))))
         then traverseBackendDAEExps(bdae, inFunc, arg);
-      case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_))))
+      case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((bdae,_,_,_,_)))))
         then traverseBackendDAEExps(bdae, inFunc, arg);
       else arg;
     end match;
@@ -6001,7 +6001,7 @@ algorithm
       BackendDAE.BackendDAE bdae;
       Type_a arg;
     case ({}, _, _) then inTypeA;
-    case (BackendDAE.STATESET(jacobian = BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))::rest, _, _)
+    case (BackendDAE.STATESET(jacobian = BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((bdae,_,_,_,_))))::rest, _, _)
       equation
         arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
       then
