@@ -89,6 +89,12 @@ else
   LIBOSG="-losg -losgViewer -losgDB -losgGA -lOpenThreads"
 fi
 
+for flag in -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter; do
+  OLD_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS $flag -Werror"
+  AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+done
+
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
