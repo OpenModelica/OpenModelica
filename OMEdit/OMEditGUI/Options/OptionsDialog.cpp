@@ -38,6 +38,7 @@
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
+#include "Editors/HTMLEditor.h"
 #include <limits>
 
 /*!
@@ -62,8 +63,7 @@ void OptionsDialog::create()
  */
 void OptionsDialog::destroy()
 {
-  delete mpInstance;
-  mpInstance = 0;
+  mpInstance->deleteLater();
 }
 
 /*!
@@ -84,6 +84,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpMetaModelicaEditorPage = new MetaModelicaEditorPage(this);
   mpMetaModelEditorPage = new MetaModelEditorPage(this);
   mpCEditorPage = new CEditorPage(this);
+  mpHTMLEditorPage = new HTMLEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
   mpMessagesPage = new MessagesPage(this);
@@ -120,6 +121,9 @@ void OptionsDialog::readSettings()
   readCEditorSettings();
   emit cEditorSettingsChanged();
   mpCEditorPage->emitUpdatePreview();
+  readHTMLEditorSettings();
+  emit HTMLEditorSettingsChanged();
+  mpHTMLEditorPage->emitUpdatePreview();
   readGraphicalViewsSettings();
   readSimulationSettings();
   readMessagesSettings();
@@ -407,6 +411,26 @@ void OptionsDialog::readCEditorSettings()
   }
   if (mpSettings->contains("cEditor/numberRuleColor")) {
     mpCEditorPage->setColor("Number", QColor(mpSettings->value("cEditor/numberRuleColor").toUInt()));
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readHTMLEditorSettings
+ * Reads the HTMLEditor settings from omedit.ini
+ */
+void OptionsDialog::readHTMLEditorSettings()
+{
+  if (mpSettings->contains("HTMLEditor/textRuleColor")) {
+    mpHTMLEditorPage->setColor("Text", QColor(mpSettings->value("HTMLEditor/textRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("HTMLEditor/commentRuleColor")) {
+    mpHTMLEditorPage->setColor("Comment", QColor(mpSettings->value("HTMLEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("HTMLEditor/tagRuleColor")) {
+    mpHTMLEditorPage->setColor("Tag", QColor(mpSettings->value("HTMLEditor/tagRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("HTMLEditor/quotesRuleColor")) {
+    mpHTMLEditorPage->setColor("Quotes", QColor(mpSettings->value("HTMLEditor/quotesRuleColor").toUInt()));
   }
 }
 
@@ -906,6 +930,18 @@ void OptionsDialog::saveCEditorSettings()
   mpSettings->setValue("cEditor/numberRuleColor", mpCEditorPage->getColor("Number").rgba());
 }
 
+/*!
+ * \brief OptionsDialog::saveHTMLEditorSettings
+ * Saves the HTMLEditor settings to omedit.ini
+ */
+void OptionsDialog::saveHTMLEditorSettings()
+{
+  mpSettings->setValue("HTMLEditor/textRuleColor", mpHTMLEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("HTMLEditor/commentRuleColor", mpHTMLEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("HTMLEditor/tagRuleColor", mpHTMLEditorPage->getColor("Tag").rgba());
+  mpSettings->setValue("HTMLEditor/quotesRuleColor", mpHTMLEditorPage->getColor("Quotes").rgba());
+}
+
 //! Saves the GraphicsViews section settings to omedit.ini
 void OptionsDialog::saveGraphicalViewsSettings()
 {
@@ -1193,6 +1229,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pCEditorItem = new QListWidgetItem(mpOptionsList);
   pCEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pCEditorItem->setText(tr("C/C++ Editor"));
+  // HTML Editor Item
+  QListWidgetItem *pHTMLEditorItem = new QListWidgetItem(mpOptionsList);
+  pHTMLEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pHTMLEditorItem->setText(tr("HTML Editor"));
   // Graphical Views Item
   QListWidgetItem *pGraphicalViewsItem = new QListWidgetItem(mpOptionsList);
   pGraphicalViewsItem->setIcon(QIcon(":/Resources/icons/modeling.png"));
@@ -1251,6 +1291,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpMetaModelicaEditorPage);
   mpPagesWidget->addWidget(mpMetaModelEditorPage);
   mpPagesWidget->addWidget(mpCEditorPage);
+  mpPagesWidget->addWidget(mpHTMLEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
   mpPagesWidget->addWidget(mpSimulationPage);
   mpPagesWidget->addWidget(mpMessagesPage);
@@ -1339,6 +1380,8 @@ void OptionsDialog::saveSettings()
   emit metaModelEditorSettingsChanged();
   saveCEditorSettings();
   emit cEditorSettingsChanged();
+  saveHTMLEditorSettings();
+  emit HTMLEditorSettingsChanged();
   saveGraphicalViewsSettings();
   saveSimulationSettings();
   saveMessagesSettings();
@@ -2631,6 +2674,105 @@ QColor CEditorPage::getColor(QString item)
  * Sets the mpPreviewPlainTextBox line wrapping mode.
  */
 void CEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+/*!
+ * \class HTMLEditorPage
+ * \brief Creates an interface for HTML Text settings.
+ */
+/*!
+ * \brief HTMLEditorPage::HTMLEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+HTMLEditorPage::HTMLEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  // Add items to list
+  // tag (blue)
+  new ListWidgetItem("Tag", QColor(0, 0, 255), mpCodeColorsWidget->getItemsListWidget());
+  // quotes (dark red)
+  new ListWidgetItem("Quotes", QColor(139, 0, 0), mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", QColor(0, 150, 0), mpCodeColorsWidget->getItemsListWidget());
+  // preview textbox
+  QString previewText;
+  previewText.append("<!-- This is a comment. -->\n"
+                     "<html>\n"
+                     "\t<body>\n"
+                     "\t\t<h1>OPENMODELICA</h1>\n"
+                     "\t\t<p>OpenModelica is an open-source Modelica-based modeling and simulation environment"
+                     " intended for industrial and academic usage. Its long-term development is supported by a"
+                     " non-profit organization – the <a href=\"http://www.openmodelica.org\">Open Source Modelica Consortium (OSMC)</a></p>\n"
+                     "\t</body>\n"
+                     "</html>\n");
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
+  // highlight preview textbox
+  HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pHTMLHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
+          pHTMLHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pHTMLHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpCodeColorsWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief HTMLEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
+ * \param color
+ */
+void HTMLEditorPage::setColor(QString item, QColor color)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
+  }
+}
+
+/*!
+ * \brief HTMLEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor HTMLEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
+  }
+  return QColor(0, 0, 0);
+}
+
+/*!
+ * \brief HTMLEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void HTMLEditorPage::setLineWrapping(bool enabled)
 {
   if (enabled) {
     mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);

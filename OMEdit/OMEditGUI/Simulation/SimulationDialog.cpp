@@ -1064,9 +1064,9 @@ void SimulationDialog::saveExperimentAnnotation()
   newExperimentAnnotation.append(")");
   // if we have ModelWidget for class then put the change on undo stack.
   if (mpLibraryTreeItem->getModelWidget()) {
-    UpdateClassExperimentAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-    pUpdateClassExperimentAnnotationCommand = new UpdateClassExperimentAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation,
-                                                                                         newExperimentAnnotation);
+    UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(mpLibraryTreeItem, oldExperimentAnnotation,
+                                                                               newExperimentAnnotation);
     mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
     mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else {

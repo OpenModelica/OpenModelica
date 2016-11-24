@@ -1072,32 +1072,43 @@ void UpdateCoOrdinateSystemCommand::undo()
   pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), flagsAnnotation);
 }
 
-UpdateClassExperimentAnnotationCommand::UpdateClassExperimentAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldExperimentAnnotation,
-                                                                               QString newExperimentAnnotaiton, QUndoCommand *pParent)
+/*!
+ * \class UpdateClassAnnotationCommand
+ * \brief A class for updating the class annotation e.g. experiment, documentation etc.
+ */
+/*!
+ * \brief UpdateClassAnnotationCommand::UpdateClassAnnotationCommand
+ * \param pLibraryTreeItem
+ * \param oldAnnotation
+ * \param newAnnotaiton
+ * \param pParent
+ */
+UpdateClassAnnotationCommand::UpdateClassAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldAnnotation,
+                                                           QString newAnnotaiton, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
-  mOldExperimentAnnotation = oldExperimentAnnotation;
-  mNewExperimentAnnotation = newExperimentAnnotaiton;
-  setText(QString("Update %1 experiment annotation").arg(mpLibraryTreeItem->getNameStructure()));
+  mOldAnnotation = oldAnnotation;
+  mNewAnnotation = newAnnotaiton;
+  setText(QString("Update %1 annotation").arg(mpLibraryTreeItem->getNameStructure()));
 }
 
 /*!
- * \brief UpdateClassExperimentAnnotationCommand::redo
- * Redo the UpdateClassExperimentAnnotationCommand.
+ * \brief UpdateClassAnnotationCommand::redo
+ * Redo the UpdateClassAnnotationCommand.
  */
-void UpdateClassExperimentAnnotationCommand::redo()
+void UpdateClassAnnotationCommand::redo()
 {
-  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewExperimentAnnotation);
+  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewAnnotation);
 }
 
 /*!
- * \brief UpdateClassExperimentAnnotationCommand::undo
- * Undo the UpdateClassExperimentAnnotationCommand.
+ * \brief UpdateClassAnnotationCommand::undo
+ * Undo the UpdateClassAnnotationCommand.
  */
-void UpdateClassExperimentAnnotationCommand::undo()
+void UpdateClassAnnotationCommand::undo()
 {
-  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldExperimentAnnotation);
+  MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldAnnotation);
 }
 
 UpdateClassSimulationFlagsAnnotationCommand::UpdateClassSimulationFlagsAnnotationCommand(LibraryTreeItem *pLibraryTreeItem,

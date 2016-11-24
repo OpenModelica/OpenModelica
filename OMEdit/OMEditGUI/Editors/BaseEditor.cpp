@@ -1977,6 +1977,7 @@ FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   // set main layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setMargin(2);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpFindLabel, 0, 0);
   pMainLayout->addWidget(mpFindComboBox, 0, 1);
@@ -2309,6 +2310,7 @@ InfoBar::InfoBar(QWidget *pParent)
   // set the layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setMargin(2);
   pMainLayout->addWidget(mpInfoLabel);
   pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignTop);
   setLayout(pMainLayout);

@@ -53,6 +53,7 @@ class ModelicaEditorPage;
 class MetaModelicaEditorPage;
 class MetaModelEditorPage;
 class CEditorPage;
+class HTMLEditorPage;
 class GraphicalViewsPage;
 class SimulationPage;
 class MessagesPage;
@@ -89,6 +90,7 @@ public:
   void readMetaModelicaEditorSettings();
   void readMetaModelEditorSettings();
   void readCEditorSettings();
+  void readHTMLEditorSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
   void readMessagesSettings();
@@ -107,6 +109,7 @@ public:
   void saveMetaModelicaEditorSettings();
   void saveMetaModelEditorSettings();
   void saveCEditorSettings();
+  void saveHTMLEditorSettings();
   void saveTLMSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
@@ -128,6 +131,7 @@ public:
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
   MetaModelEditorPage* getMetaModelEditorPage() {return mpMetaModelEditorPage;}
   CEditorPage* getCEditorPage() {return mpCEditorPage;}
+  HTMLEditorPage* getHTMLEditorPage() {return mpHTMLEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
   SimulationPage* getSimulationPage() {return mpSimulationPage;}
   MessagesPage* getMessagesPage() {return mpMessagesPage;}
@@ -148,6 +152,7 @@ signals:
   void metaModelicaEditorSettingsChanged();
   void metaModelEditorSettingsChanged();
   void cEditorSettingsChanged();
+  void HTMLEditorSettingsChanged();
 public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
   void reject();
@@ -160,6 +165,7 @@ private:
   MetaModelicaEditorPage *mpMetaModelicaEditorPage;
   MetaModelEditorPage *mpMetaModelEditorPage;
   CEditorPage *mpCEditorPage;
+  HTMLEditorPage *mpHTMLEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
   MessagesPage *mpMessagesPage;
@@ -428,6 +434,24 @@ class CEditorPage : public QWidget
   Q_OBJECT
 public:
   CEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping(bool enabled);
+};
+
+class HTMLEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  HTMLEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void setColor(QString item, QColor color);
   QColor getColor(QString item);

@@ -105,8 +105,7 @@ void MessagesWidget::create()
  */
 void MessagesWidget::destroy()
 {
-  delete mpInstance;
-  mpInstance = 0;
+  mpInstance->deleteLater();
 }
 
 /*!

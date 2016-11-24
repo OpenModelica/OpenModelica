@@ -1241,7 +1241,7 @@ QString OMCProxy::getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibrary
 
 /*!
  * \brief OMCProxy::getDocumentationAnnotation
- * Returns the documentation annotation of a model.\n
+ * Returns the documentation annotation of a model. Recursivly looks into the parent classes for __OpenModelica_infoHeader sections.\n
  * The documenation is not standardized, so for any non-standard html documentation add <pre></pre> tags.
  * \param pLibraryTreeItem
  * \return the documentation
@@ -1325,6 +1325,17 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
     * \see DocumentationViewer::processLinkClick
     */
   return documentation.replace("modelica://", "modelica:///");
+}
+
+/*!
+ * \brief OMCProxy::getDocumentationAnnotationInClass
+ * Returns the documentation annotation of a model.
+ * \param pLibraryTreeItem
+ * \return
+ */
+QList<QString> OMCProxy::getDocumentationAnnotationInClass(LibraryTreeItem *pLibraryTreeItem)
+{
+  return mpOMCInterface->getDocumentationAnnotation(pLibraryTreeItem->getNameStructure());
 }
 
 /*!

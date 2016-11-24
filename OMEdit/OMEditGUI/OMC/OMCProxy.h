@@ -145,6 +145,7 @@ public:
   QStringList getComponentAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);
   QString getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem);
+  QList<QString> getDocumentationAnnotationInClass(LibraryTreeItem *pLibraryTreeItem);
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString(""));
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = false, QString languageStandard = QString(""),

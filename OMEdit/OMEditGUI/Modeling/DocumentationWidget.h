@@ -49,26 +49,44 @@ public:
 };
 
 class DocumentationViewer;
+class HTMLEditor;
 class DocumentationWidget : public QWidget
 {
   Q_OBJECT
 public:
+  enum EditType {
+    None,
+    Info,
+    Revisions
+  };
   DocumentationWidget(QWidget *pParent = 0);
   ~DocumentationWidget();
-  QToolButton* getPreviousToolButton();
-  QToolButton* getNextToolButton();
-  DocumentationViewer* getDocumentationViewer();
+  QToolButton* getPreviousToolButton() {return mpPreviousToolButton;}
+  QToolButton* getNextToolButton() {return mpNextToolButton;}
+  DocumentationViewer* getDocumentationViewer() {return mpDocumentationViewer;}
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
 private:
   QFile mDocumentationFile;
   QToolButton *mpPreviousToolButton;
   QToolButton *mpNextToolButton;
+  QToolButton *mpEditInfoToolButton;
+  QToolButton *mpEditRevisionsToolButton;
+  QToolButton *mpSaveToolButton;
+  QToolButton *mpCancelToolButton;
   DocumentationViewer *mpDocumentationViewer;
+  HTMLEditor *mpHTMLEditor;
+  EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
   int mDocumentationHistoryPos;
+
+  void updatePreviousNextButtons();
 public slots:
   void previousDocumentation();
   void nextDocumentation();
+  void editInfoDocumentation();
+  void editRevisionsDocumentation();
+  void saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem = 0);
+  void cancelDocumentation();
 };
 
 class DocumentationViewer : public QWebView

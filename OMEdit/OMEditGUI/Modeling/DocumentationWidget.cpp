@@ -38,6 +38,9 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
+#include "Editors/HTMLEditor.h"
+#include "Options/OptionsDialog.h"
+#include "Modeling/Commands.h"
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -62,21 +65,59 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // create the previous button
   mpPreviousToolButton = new QToolButton;
   mpPreviousToolButton->setText(Helper::previous);
-  mpPreviousToolButton->setToolTip(tr("click to go on previous (backspace)"));
+  mpPreviousToolButton->setToolTip(tr("Previous (backspace)"));
   mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.svg"));
-  mpPreviousToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  mpPreviousToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
   mpPreviousToolButton->setDisabled(true);
   connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousDocumentation()));
   // create the next button
   mpNextToolButton = new QToolButton;
   mpNextToolButton->setText(Helper::next);
-  mpNextToolButton->setToolTip(tr("click to go on next (shift+backspace)"));
+  mpNextToolButton->setToolTip(tr("Next (shift+backspace)"));
   mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.svg"));
-  mpNextToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  mpNextToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
   mpNextToolButton->setDisabled(true);
   connect(mpNextToolButton, SIGNAL(clicked()), SLOT(nextDocumentation()));
+  // create the edit info button
+  mpEditInfoToolButton = new QToolButton;
+  mpEditInfoToolButton->setText(tr("Edit Info"));
+  mpEditInfoToolButton->setToolTip(tr("Edit Info Documentation"));
+  mpEditInfoToolButton->setIcon(QIcon(":/Resources/icons/edit-info.svg"));
+  mpEditInfoToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpEditInfoToolButton->setDisabled(true);
+  connect(mpEditInfoToolButton, SIGNAL(clicked()), SLOT(editInfoDocumentation()));
+  // create the edit info button
+  mpEditRevisionsToolButton = new QToolButton;
+  mpEditRevisionsToolButton->setText(tr("Edit Revisions"));
+  mpEditRevisionsToolButton->setToolTip(tr("Edit Revisions Documentation"));
+  mpEditRevisionsToolButton->setIcon(QIcon(":/Resources/icons/edit-revisions.svg"));
+  mpEditRevisionsToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpEditRevisionsToolButton->setDisabled(true);
+  connect(mpEditRevisionsToolButton, SIGNAL(clicked()), SLOT(editRevisionsDocumentation()));
+  // create the save button
+  mpSaveToolButton = new QToolButton;
+  mpSaveToolButton->setText(Helper::save);
+  mpSaveToolButton->setToolTip(tr("Save Documentation"));
+  mpSaveToolButton->setIcon(QIcon(":/Resources/icons/save.svg"));
+  mpSaveToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpSaveToolButton->setDisabled(true);
+  connect(mpSaveToolButton, SIGNAL(clicked()), SLOT(saveDocumentation()));
+  // create the cancel button
+  mpCancelToolButton = new QToolButton;
+  mpCancelToolButton->setText(Helper::cancel);
+  mpCancelToolButton->setToolTip(tr("Cancel Documentation"));
+  mpCancelToolButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpCancelToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpCancelToolButton->setDisabled(true);
+  connect(mpCancelToolButton, SIGNAL(clicked()), SLOT(cancelDocumentation()));
   // create the documentation viewer
   mpDocumentationViewer = new DocumentationViewer(this);
+  // create the HTMLEditor
+  mpHTMLEditor = new HTMLEditor(this);
+  mpHTMLEditor->hide();
+  HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(OptionsDialog::instance()->getHTMLEditorPage(), mpHTMLEditor->getPlainTextEdit());
+  connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
+  mEditType = EditType::None;
   // navigation history list
   mpDocumentationHistoryList = new QList<DocumentationHistory>();
   mDocumentationHistoryPos = -1;
@@ -86,46 +127,47 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pNavigationButtonsLayout->setAlignment(Qt::AlignLeft);
   pNavigationButtonsLayout->addWidget(mpPreviousToolButton);
   pNavigationButtonsLayout->addWidget(mpNextToolButton);
+  pNavigationButtonsLayout->addWidget(mpEditInfoToolButton);
+  pNavigationButtonsLayout->addWidget(mpEditRevisionsToolButton);
+  pNavigationButtonsLayout->addWidget(mpSaveToolButton);
+  pNavigationButtonsLayout->addWidget(mpCancelToolButton);
   // Documentation viewer layout
   QGridLayout *pGridLayout = new QGridLayout;
   pGridLayout->setContentsMargins(0, 0, 0, 0);
   pGridLayout->addWidget(mpDocumentationViewer);
+  pGridLayout->addWidget(mpHTMLEditor);
   // add the documentation viewer to the frame for boxed rectangle around it.
-  QFrame *layoutFrame = new QFrame;
-  layoutFrame->setFrameStyle(QFrame::StyledPanel);
-  layoutFrame->setLayout(pGridLayout);
+  QFrame *pLayoutFrame = new QFrame;
+  pLayoutFrame->setFrameStyle(QFrame::StyledPanel);
+  pLayoutFrame->setLayout(pGridLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   //pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addLayout(pNavigationButtonsLayout);
-  pMainLayout->addWidget(layoutFrame);
+  pMainLayout->addWidget(pLayoutFrame);
   setLayout(pMainLayout);
 }
 
-//! Destructor
+/*!
+ * \brief DocumentationWidget::~DocumentationWidget
+ */
 DocumentationWidget::~DocumentationWidget()
 {
   mDocumentationFile.remove();
   delete mpDocumentationHistoryList;
 }
 
-QToolButton* DocumentationWidget::getPreviousToolButton()
-{
-  return mpPreviousToolButton;
-}
-
-QToolButton* DocumentationWidget::getNextToolButton()
-{
-  return mpNextToolButton;
-}
-
-DocumentationViewer* DocumentationWidget::getDocumentationViewer()
-{
-  return mpDocumentationViewer;
-}
-
+/*!
+ * \brief DocumentationWidget::showDocumentation
+ * Shows the documentaiton annotation. If we are editing a documentation then it is saved before showing the annotation.
+ * \param pLibraryTreeItem
+ */
 void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
+  if (mEditType != EditType::None) {
+    saveDocumentation(pLibraryTreeItem);
+    return;
+  }
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
   QString documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotation(pLibraryTreeItem);
   mDocumentationFile.open(QIODevice::WriteOnly | QIODevice::Text);
@@ -148,12 +190,28 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
     mDocumentationHistoryPos++;
   }
 
+  updatePreviousNextButtons();
+  mpEditInfoToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
+  mpEditRevisionsToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
+  mpSaveToolButton->setDisabled(true);
+  mpCancelToolButton->setDisabled(true);
+  mpDocumentationViewer->show();
+  mpHTMLEditor->hide();
+}
+
+/*!
+ * \brief DocumentationWidget::updatePreviousNextButtons
+ * Updates the previous and next button.
+ */
+void DocumentationWidget::updatePreviousNextButtons()
+{
+  // update previous button
   if (mDocumentationHistoryPos > 0) {
     mpPreviousToolButton->setDisabled(false);
   } else {
     mpPreviousToolButton->setDisabled(true);
   }
-
+  // update next button
   if (mpDocumentationHistoryList->count() == (mDocumentationHistoryPos + 1)) {
     mpNextToolButton->setDisabled(true);
   } else {
@@ -161,6 +219,11 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   }
 }
 
+/*!
+ * \brief DocumentationWidget::previousDocumentation
+ * Moves to the previous documentation.\n
+ * Slot activated when clicked signal of mpPreviousToolButton is raised.
+ */
 void DocumentationWidget::previousDocumentation()
 {
   if (mDocumentationHistoryPos > 0) {
@@ -169,6 +232,11 @@ void DocumentationWidget::previousDocumentation()
   }
 }
 
+/*!
+ * \brief DocumentationWidget::nextDocumentation
+ * Moves to the next documentation.\n
+ * Slot activated when clicked signal of mpNextToolButton is raised.
+ */
 void DocumentationWidget::nextDocumentation()
 {
   if ((mDocumentationHistoryPos + 1) < mpDocumentationHistoryList->count()) {
@@ -177,11 +245,131 @@ void DocumentationWidget::nextDocumentation()
   }
 }
 
-//! @class DocumentationViewer
-//! @brief A webview for displaying the html documentation.
+/*!
+ * \brief DocumentationWidget::editInfoDocumentation
+ * Starts editing the info section of documentation annotation.\n
+ * Slot activated when clicked signal of mpEditInfoToolButton is raised.
+ */
+void DocumentationWidget::editInfoDocumentation()
+{
+  // get the revision documentation annotation
+  if (mDocumentationHistoryPos >= 0) {
+    LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
+    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+      QList<QString> info = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
+      mpHTMLEditor->getPlainTextEdit()->setPlainText(info.at(0));
+      mpHTMLEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->show();
+      mEditType = EditType::Info;
+      // update the buttons
+      mpPreviousToolButton->setDisabled(true);
+      mpNextToolButton->setDisabled(true);
+      mpEditInfoToolButton->setDisabled(true);
+      mpEditRevisionsToolButton->setDisabled(true);
+      mpSaveToolButton->setDisabled(false);
+      mpCancelToolButton->setDisabled(false);
+      mpDocumentationViewer->hide();
+    }
+  }
+}
 
-//! Constructor
-//! @param pParent is the pointer to DocumentationWidget.
+/*!
+ * \brief DocumentationWidget::editRevisionsDocumentation
+ * Starts editing the revisions section of the documentation annotation.\n
+ * Slot activated when clicked signal of mpEditRevisionsToolButton is raised.
+ */
+void DocumentationWidget::editRevisionsDocumentation()
+{
+  // get the revision documentation annotation
+  if (mDocumentationHistoryPos >= 0) {
+    LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
+    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+      QList<QString> revisions = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
+      mpHTMLEditor->getPlainTextEdit()->setPlainText(revisions.at(1));
+      mpHTMLEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->show();
+      mEditType = EditType::Revisions;
+      // update the buttons
+      mpPreviousToolButton->setDisabled(true);
+      mpNextToolButton->setDisabled(true);
+      mpEditInfoToolButton->setDisabled(true);
+      mpEditRevisionsToolButton->setDisabled(true);
+      mpSaveToolButton->setDisabled(false);
+      mpCancelToolButton->setDisabled(false);
+      mpDocumentationViewer->hide();
+    }
+  }
+}
+
+/*!
+ * \brief DocumentationWidget::saveDocumentation
+ * Saves the documentaiton annotation. If pLibraryTreeItem is 0 then the documentation of the editing class is shown after save.\n
+ * Otherwise the documentation of pLibraryTreeItem is shown.
+ * Slot activated when clicked signal of mpSaveToolButton is raised.
+ * \param pNextLibraryTreeItem
+ */
+void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem)
+{
+  if (mDocumentationHistoryPos >= 0) {
+    LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
+    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+      QString newDocAnnotationString = "annotate=Documentation(info=\"%1\", revisions=\"%3\", __OpenModelica_infoHeader=\"%6\")";
+      QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
+      QString oldDocAnnotationString = QString("annotate=Documentation(info=\"%1\", revisions=\"%3\", __OpenModelica_infoHeader=\"%6\")")
+          .arg(documentation.at(0)).arg(documentation.at(1)).arg(documentation.at(2));
+      if (mEditType == EditType::Info) {
+        newDocAnnotationString = newDocAnnotationString.arg(mpHTMLEditor->getPlainTextEdit()->toPlainText())
+            .arg(documentation.at(1))
+            .arg(documentation.at(2));
+      } else if (mEditType == EditType::Revisions) {
+        newDocAnnotationString = newDocAnnotationString.arg(documentation.at(0))
+            .arg(mpHTMLEditor->getPlainTextEdit()->toPlainText())
+            .arg(documentation.at(2));
+      }
+      // if we have ModelWidget for class then put the change on undo stack.
+      if (pLibraryTreeItem->getModelWidget()) {
+        UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
+        pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldDocAnnotationString,
+                                                                                   newDocAnnotationString);
+        pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
+        pLibraryTreeItem->getModelWidget()->updateModelText();
+      } else {
+        // send the documentation annotation to OMC
+        MainWindow::instance()->getOMCProxy()->addClassAnnotation(pLibraryTreeItem->getNameStructure(), newDocAnnotationString);
+        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+        pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
+      }
+      mEditType = EditType::None;
+      showDocumentation(pNextLibraryTreeItem ? pNextLibraryTreeItem : pLibraryTreeItem);
+    }
+  }
+}
+
+/*!
+ * \brief DocumentationWidget::cancelDocumentation
+ * Cancels the editing of documentation annotation.
+ * Slot activated when clicked signal of mpCancelToolButton is raised.
+ */
+void DocumentationWidget::cancelDocumentation()
+{
+  updatePreviousNextButtons();
+  mpEditInfoToolButton->setDisabled(false);
+  mpEditRevisionsToolButton->setDisabled(false);
+  mpSaveToolButton->setDisabled(true);
+  mpCancelToolButton->setDisabled(true);
+  mpDocumentationViewer->show();
+  mpHTMLEditor->hide();
+  mEditType = EditType::None;
+}
+
+/*!
+ * \class DocumentationViewer
+ * \brief A webview for displaying the html documentation.
+ */
+/*!
+ * \brief DocumentationViewer::DocumentationViewer
+ * \param pParent
+ */
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   : QWebView(pParent)
 {
@@ -202,6 +390,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   createActions();
 }
 
+/*!
+ * \brief DocumentationViewer::createActions
+ */
 void DocumentationViewer::createActions()
 {
   page()->action(QWebPage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
@@ -242,8 +433,11 @@ void DocumentationViewer::processLinkClick(QUrl url)
   }
 }
 
-//! Slot activated when QNetworkReply finished signal is raised.
-//! Handles the link redirected to https.
+/*!
+ * \brief DocumentationViewer::requestFinished
+ * Slot activated when QNetworkReply finished signal is raised.\n
+ * Handles the link redirected to https.
+ */
 void DocumentationViewer::requestFinished()
 {
   QNetworkReply *reply = qobject_cast<QNetworkReply*>(const_cast<QObject*>(sender()));
@@ -257,8 +451,14 @@ void DocumentationViewer::requestFinished()
   reply->deleteLater();
 }
 
-//! Slot activated when linkHovered signal of web view is raised.
-//! Writes the url to the status bar.
+/*!
+ * \brief DocumentationViewer::processLinkHover
+ * Slot activated when linkHovered signal of web view is raised.\n
+ * Writes the url to the status bar.
+ * \param link
+ * \param title
+ * \param textContent
+ */
 void DocumentationViewer::processLinkHover(QString link, QString title, QString textContent)
 {
   Q_UNUSED(title);
@@ -270,8 +470,12 @@ void DocumentationViewer::processLinkHover(QString link, QString title, QString 
   }
 }
 
-//! Shows a context menu when user right click on the Messages tree.
-//! Slot activated when DocumentationViewer::customContextMenuRequested() signal is raised.
+/*!
+ * \brief DocumentationViewer::showContextMenu
+ * Shows a context menu when user right click on the Messages tree.\n
+ * Slot activated when DocumentationViewer::customContextMenuRequested() signal is raised.
+ * \param point
+ */
 void DocumentationViewer::showContextMenu(QPoint point)
 {
   QMenu menu(this);
@@ -281,6 +485,11 @@ void DocumentationViewer::showContextMenu(QPoint point)
   menu.exec(mapToGlobal(point));
 }
 
+/*!
+ * \brief DocumentationViewer::createWindow
+ * \param type
+ * \return
+ */
 QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
 {
   Q_UNUSED(type);

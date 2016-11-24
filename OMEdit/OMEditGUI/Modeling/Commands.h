@@ -215,17 +215,16 @@ private:
   QString mNewOMCFlags;
 };
 
-class UpdateClassExperimentAnnotationCommand : public QUndoCommand
+class UpdateClassAnnotationCommand : public QUndoCommand
 {
 public:
-  UpdateClassExperimentAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldExperimentAnnotation, QString newExperimentAnnotaiton,
-                                         QUndoCommand *pParent = 0);
+  UpdateClassAnnotationCommand(LibraryTreeItem *pLibraryTreeItem, QString oldAnnotation, QString newAnnotaiton, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   LibraryTreeItem *mpLibraryTreeItem;
-  QString mOldExperimentAnnotation;
-  QString mNewExperimentAnnotation;
+  QString mOldAnnotation;
+  QString mNewAnnotation;
 };
 
 class UpdateClassSimulationFlagsAnnotationCommand : public QUndoCommand
