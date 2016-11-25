@@ -40,8 +40,8 @@ if test -n "$QMAKE"; then
     echo 'if test -z "$MAKEFILE"; then MAKEFILE=Makefile; fi' >> ./qmake.sh
     # echo 'echo $MAKEFILE' >> ./qmake.sh
     echo 'cat $MAKEFILE | \
-      sed "s/-arch i386//g" | \
-      sed "s/-arch x86_64//g" | \
+      sed "s/-arch@<:@\\@:>@* i386//g" | \
+      sed "s/-arch@<:@\\@:>@* x86_64//g" | \
       sed "s/-arch//g" | \
       sed "s/-Xarch@<:@^ @:>@*//g" > $MAKEFILE.fixed && \
       mv $MAKEFILE.fixed $MAKEFILE' >> qmake.sh
