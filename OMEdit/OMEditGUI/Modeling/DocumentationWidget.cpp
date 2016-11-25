@@ -86,7 +86,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditInfoToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
   mpEditInfoToolButton->setDisabled(true);
   connect(mpEditInfoToolButton, SIGNAL(clicked()), SLOT(editInfoDocumentation()));
-  // create the edit info button
+  // create the edit revisions button
   mpEditRevisionsToolButton = new QToolButton;
   mpEditRevisionsToolButton->setText(tr("Edit Revisions"));
   mpEditRevisionsToolButton->setToolTip(tr("Edit Revisions Documentation"));
@@ -94,6 +94,14 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditRevisionsToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
   mpEditRevisionsToolButton->setDisabled(true);
   connect(mpEditRevisionsToolButton, SIGNAL(clicked()), SLOT(editRevisionsDocumentation()));
+  // create the edit infoHeader button
+  mpEditInfoHeaderToolButton = new QToolButton;
+  mpEditInfoHeaderToolButton->setText(tr("Edit __OpenModelica_infoHeader"));
+  mpEditInfoHeaderToolButton->setToolTip(tr("Edit __OpenModelica_infoHeader Documentation"));
+  mpEditInfoHeaderToolButton->setIcon(QIcon(":/Resources/icons/edit-info-header.svg"));
+  mpEditInfoHeaderToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpEditInfoHeaderToolButton->setDisabled(true);
+  connect(mpEditInfoHeaderToolButton, SIGNAL(clicked()), SLOT(editInfoHeaderDocumentation()));
   // create the save button
   mpSaveToolButton = new QToolButton;
   mpSaveToolButton->setText(Helper::save);
@@ -129,6 +137,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pNavigationButtonsLayout->addWidget(mpNextToolButton);
   pNavigationButtonsLayout->addWidget(mpEditInfoToolButton);
   pNavigationButtonsLayout->addWidget(mpEditRevisionsToolButton);
+  pNavigationButtonsLayout->addWidget(mpEditInfoHeaderToolButton);
   pNavigationButtonsLayout->addWidget(mpSaveToolButton);
   pNavigationButtonsLayout->addWidget(mpCancelToolButton);
   // Documentation viewer layout
@@ -193,6 +202,7 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   updatePreviousNextButtons();
   mpEditInfoToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
   mpEditRevisionsToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
+  mpEditInfoHeaderToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
   mpSaveToolButton->setDisabled(true);
   mpCancelToolButton->setDisabled(true);
   mpDocumentationViewer->show();
@@ -266,6 +276,7 @@ void DocumentationWidget::editInfoDocumentation()
       mpNextToolButton->setDisabled(true);
       mpEditInfoToolButton->setDisabled(true);
       mpEditRevisionsToolButton->setDisabled(true);
+      mpEditInfoHeaderToolButton->setDisabled(true);
       mpSaveToolButton->setDisabled(false);
       mpCancelToolButton->setDisabled(false);
       mpDocumentationViewer->hide();
@@ -294,6 +305,36 @@ void DocumentationWidget::editRevisionsDocumentation()
       mpNextToolButton->setDisabled(true);
       mpEditInfoToolButton->setDisabled(true);
       mpEditRevisionsToolButton->setDisabled(true);
+      mpEditInfoHeaderToolButton->setDisabled(true);
+      mpSaveToolButton->setDisabled(false);
+      mpCancelToolButton->setDisabled(false);
+      mpDocumentationViewer->hide();
+    }
+  }
+}
+
+/*!
+ * \brief DocumentationWidget::editInfoHeaderDocumentation
+ * Starts editing the __OpenModelica_infoHeader section of the documentation annotation.\n
+ * Slot activated when clicked signal of mpEditInfoHeaderToolButton is raised.
+ */
+void DocumentationWidget::editInfoHeaderDocumentation()
+{
+  // get the __OpenModelica_infoHeader documentation annotation
+  if (mDocumentationHistoryPos >= 0) {
+    LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
+    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+      QList<QString> infoHeader = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
+      mpHTMLEditor->getPlainTextEdit()->setPlainText(infoHeader.at(2));
+      mpHTMLEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->show();
+      mEditType = EditType::InfoHeader;
+      // update the buttons
+      mpPreviousToolButton->setDisabled(true);
+      mpNextToolButton->setDisabled(true);
+      mpEditInfoToolButton->setDisabled(true);
+      mpEditRevisionsToolButton->setDisabled(true);
+      mpEditInfoHeaderToolButton->setDisabled(true);
       mpSaveToolButton->setDisabled(false);
       mpCancelToolButton->setDisabled(false);
       mpDocumentationViewer->hide();
@@ -313,19 +354,53 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
     if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
-      QString newDocAnnotationString = "annotate=Documentation(info=\"%1\", revisions=\"%3\", __OpenModelica_infoHeader=\"%6\")";
       QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
-      QString oldDocAnnotationString = QString("annotate=Documentation(info=\"%1\", revisions=\"%3\", __OpenModelica_infoHeader=\"%6\")")
-          .arg(documentation.at(0)).arg(documentation.at(1)).arg(documentation.at(2));
-      if (mEditType == EditType::Info) {
-        newDocAnnotationString = newDocAnnotationString.arg(mpHTMLEditor->getPlainTextEdit()->toPlainText())
-            .arg(documentation.at(1))
-            .arg(documentation.at(2));
-      } else if (mEditType == EditType::Revisions) {
-        newDocAnnotationString = newDocAnnotationString.arg(documentation.at(0))
-            .arg(mpHTMLEditor->getPlainTextEdit()->toPlainText())
-            .arg(documentation.at(2));
+      // old documentation annotation
+      QString oldDocAnnotationString = "annotate=Documentation(";
+      if (!documentation.at(0).isEmpty()) {
+        oldDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(documentation.at(0))).append("\"");
       }
+      if (!documentation.at(1).isEmpty()) {
+        oldDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(documentation.at(1))).append("\"");
+      }
+      if (!documentation.at(2).isEmpty()) {
+        oldDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(documentation.at(2))).append("\"");
+      }
+      oldDocAnnotationString.append(")");
+      // new documentation annotation
+      QString newDocAnnotationString = "annotate=Documentation(";
+      if (mEditType == EditType::Info) { // if editing the info section
+        if (!mpHTMLEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
+          newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(mpHTMLEditor->getPlainTextEdit()->toPlainText())).append("\"");
+        }
+        if (!documentation.at(1).isEmpty()) {
+          newDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(documentation.at(1))).append("\"");
+        }
+        if (!documentation.at(2).isEmpty()) {
+          newDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(documentation.at(2))).append("\"");
+        }
+      } else if (mEditType == EditType::Revisions) { // if editing the revisions section
+        if (!documentation.at(0).isEmpty()) {
+          newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(documentation.at(0))).append("\"");
+        }
+        if (!mpHTMLEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
+          newDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(mpHTMLEditor->getPlainTextEdit()->toPlainText())).append("\"");
+        }
+        if (!documentation.at(2).isEmpty()) {
+          newDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(documentation.at(2))).append("\"");
+        }
+      } else if (mEditType == EditType::InfoHeader) { // if editing the __OpenModelica_infoHeader section
+        if (!documentation.at(0).isEmpty()) {
+          newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(documentation.at(0))).append("\"");
+        }
+        if (!documentation.at(1).isEmpty()) {
+          newDocAnnotationString.append(", revisions=\"").append(StringHandler::escapeStringQuotes(documentation.at(1))).append("\"");
+        }
+        if (!mpHTMLEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
+          newDocAnnotationString.append(", __OpenModelica_infoHeader=\"").append(StringHandler::escapeStringQuotes(mpHTMLEditor->getPlainTextEdit()->toPlainText())).append("\"");
+        }
+      }
+      newDocAnnotationString.append(")");
       // if we have ModelWidget for class then put the change on undo stack.
       if (pLibraryTreeItem->getModelWidget()) {
         UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
@@ -355,6 +430,7 @@ void DocumentationWidget::cancelDocumentation()
   updatePreviousNextButtons();
   mpEditInfoToolButton->setDisabled(false);
   mpEditRevisionsToolButton->setDisabled(false);
+  mpEditInfoHeaderToolButton->setDisabled(false);
   mpSaveToolButton->setDisabled(true);
   mpCancelToolButton->setDisabled(true);
   mpDocumentationViewer->show();

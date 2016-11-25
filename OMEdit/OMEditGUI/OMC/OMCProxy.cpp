@@ -1671,6 +1671,8 @@ bool OMCProxy::addClassAnnotation(QString className, QString annotation)
   if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, getResult(),
+                                                          Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }

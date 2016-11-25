@@ -57,7 +57,8 @@ public:
   enum EditType {
     None,
     Info,
-    Revisions
+    Revisions,
+    InfoHeader
   };
   DocumentationWidget(QWidget *pParent = 0);
   ~DocumentationWidget();
@@ -71,6 +72,7 @@ private:
   QToolButton *mpNextToolButton;
   QToolButton *mpEditInfoToolButton;
   QToolButton *mpEditRevisionsToolButton;
+  QToolButton *mpEditInfoHeaderToolButton;
   QToolButton *mpSaveToolButton;
   QToolButton *mpCancelToolButton;
   DocumentationViewer *mpDocumentationViewer;
@@ -85,6 +87,7 @@ public slots:
   void nextDocumentation();
   void editInfoDocumentation();
   void editRevisionsDocumentation();
+  void editInfoHeaderDocumentation();
   void saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem = 0);
   void cancelDocumentation();
 };

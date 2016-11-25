@@ -113,6 +113,7 @@ public:
   static QString getFirstWordBeforeDot(QString value);
   static QString removeFirstWordAfterDot(QString value);
   static QString escapeString(QString value);
+  static QString escapeStringQuotes(QString value);
   // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
   static QString unparse(QString value);
   // Returns empty list if the string is not a standard Modelica string-array. Else it unparses it into normal form.

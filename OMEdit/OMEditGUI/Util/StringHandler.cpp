@@ -942,6 +942,20 @@ QString StringHandler::escapeString(QString value)
   return res;
 }
 
+QString StringHandler::escapeStringQuotes(QString value)
+{
+  QString res;
+  value = value.trimmed();
+  for (int i = 0; i < value.length(); i++) {
+    switch (value[i].toAscii())
+    {
+      case '"':  res.append("\\\"");   break;
+      default:   res.append(value[i]); break;
+    }
+  }
+  return res;
+}
+
 #define CONSUME_CHAR(value,res,i) \
   if (value.at(i) == '\\') { \
   i++; \
