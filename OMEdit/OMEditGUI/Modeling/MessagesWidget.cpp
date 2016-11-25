@@ -292,7 +292,7 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
    * and also contains the line number. If we have correct current class then no need to show root parent class i.e., P.
    */
   ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
-  if ((pModelWidget->getLibraryTreeItem()->getFileName().compare(pLibraryTreeItem->getFileName()) == 0) &&
+  if (pModelWidget /* Might be NULL */ && (pModelWidget->getLibraryTreeItem()->getFileName().compare(pLibraryTreeItem->getFileName()) == 0) &&
       pModelWidget->getLibraryTreeItem()->inRange(lineNumber)) {
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
   }
