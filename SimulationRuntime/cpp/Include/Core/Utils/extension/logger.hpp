@@ -20,6 +20,10 @@
   #define LOGGER_WRITE_END(cat, lvl) Logger::writeEnd(cat, lvl)
   #define LOGGER_WRITE_VECTOR(name, vec, dim, lc, ll) \
     Logger::writeVector(name, vec, dim, lc, ll)
+  #define LOGGER_STATUS_STARTING(startTime, endTime) \
+    Logger::statusStarting(startTime, endTime)
+  #define LOGGER_STATUS(phase, currentTime, currentStepSize) \
+    Logger::status(phase, currentTime, currentStepSize)
 #else
   #define LOGGER_IS_SET(cat, lvl) false
   #define LOGGER_WRITE(msg, cat, lvl)
@@ -27,6 +31,8 @@
   #define LOGGER_WRITE_BEGIN(msg, cat, lvl)
   #define LOGGER_WRITE_END(cat, lvl)
   #define LOGGER_WRITE_VECTOR(name, vec, dim, lc, ll)
+  #define LOGGER_STATUS_STARTING(startTime, endTime)
+  #define LOGGER_STATUS(phase, currentTime, currentStepSize)
 #endif //USE_LOGGER
 
 class BOOST_EXTENSION_LOGGER_DECL Logger
@@ -85,6 +91,21 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
       }
     }
 
+    static inline void statusStarting(double startTime, double endTime)
+    {
+      if (_instance) {
+        _instance->_startTime = startTime;
+        _instance->_endTime = endTime;
+        _instance->statusInternal("Starting", startTime, 0.0);
+      }
+    }
+
+    static inline void status(const char *phase, double currentTime, double currentStepSize)
+    {
+      if (_instance)
+        _instance->statusInternal(phase, currentTime, currentStepSize);
+    }
+
     static void setEnabled(bool enabled)
     {
       getInstance()->setEnabledInternal(enabled);
@@ -128,6 +149,9 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     virtual void writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
                                LogStructure ls);
 
+    virtual void statusInternal(const char *phase, double currentTime,
+                                double currentStepSize);
+
     virtual void setEnabledInternal(bool enabled);
     virtual bool isEnabledInternal();
 
@@ -136,6 +160,8 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     std::string getLevel(LogLevel lvl) const;
 
     static Logger* _instance;
+    double _startTime;
+    double _endTime;
     LogSettings _logSettings;
     bool _isEnabled;
 };

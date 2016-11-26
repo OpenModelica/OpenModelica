@@ -62,6 +62,27 @@ class LoggerXMLTCP: public LoggerXML
       std::cout << _sstream.str();
   }
 
+  virtual void statusInternal(const char *phase, double currentTime, double currentStepSize)
+  {
+    int completion = _endTime <= _startTime? 0:
+      (int)((currentTime - _startTime) / (_endTime - _startTime) * 10000);
+    if (_logSettings.format == LF_XMLTCP) {
+      _sstream.str("");
+      _sstream << "<status phase=\"" << phase
+               << "\" time=\"" << currentTime
+               << "\" currentStepSize=\"" << currentStepSize
+               << "\" progress=\"" << completion
+               << "\" />" << std::endl;
+      _socket.send(boost::asio::buffer(_sstream.str()));
+    }
+    else {
+      // send status in old format for backwards compatibility
+      _sstream.str("");
+      _sstream << completion << " " << phase << std::endl;
+      _socket.send(boost::asio::buffer(_sstream.str()));
+    }
+  }
+
   boost::asio::io_service _ios;
   boost::asio::ip::tcp::endpoint _endpoint;
   boost::asio::ip::tcp::socket _socket;

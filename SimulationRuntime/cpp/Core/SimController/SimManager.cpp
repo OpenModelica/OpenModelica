@@ -112,7 +112,11 @@ void SimManager::initialize()
     	throw ModelicaSimulationError(SIMMANAGER,"Could not get step-event system.");
     }
 
+    _tStart = _config->getGlobalSettings()->getStartTime();
+    _tEnd = _config->getGlobalSettings()->getEndTime();
+
     LOGGER_WRITE("SimManager: Start initialization",LC_INIT,LL_DEBUG);
+    LOGGER_STATUS_STARTING(_tStart, _tEnd);
 
     // Reset debug ID
     _dbgId = 0;
@@ -150,8 +154,6 @@ void SimManager::initialize()
     else
         _dimtimeevent = 0;
 
-    _tStart = _config->getGlobalSettings()->getStartTime();
-    _tEnd = _config->getGlobalSettings()->getEndTime();
     // Set flag for endless simulation (if solver returns)
     _continueSimulation = _tEnd > _tStart;
 
@@ -594,10 +596,10 @@ void SimManager::runSingleProcess()
         _timeevent_system->handleTimeEvent(_timeEventCounter);
     }
 
-	 _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
+    _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
     _solver->setStartTime(_tStart);
     _solver->setEndTime(_tEnd);
-	_solver->solve(_solverTask);
+    _solver->solve(_solverTask);
     _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
 
 
@@ -607,7 +609,7 @@ void SimManager::runSingleProcess()
      // Startzeit messen
      _tClockStart = Time::Time().getSeconds();
      */
-    startTime = _tStart;
+    startTime = endTime = _tStart;
     bool user_stop = false;
 
     while (_continueSimulation)
@@ -721,6 +723,8 @@ void SimManager::runSingleProcess()
     }  // end while continue
     _step_event_system->setTerminal(true);
     _cont_system->evaluateAll(IContinuous::CONTINUOUS); //Is this really necessary? The solver should have already calculated the "final time point"
+
+    LOGGER_STATUS("Finished", endTime, 0.0);
 
     if (zeroVal_new)
         delete[] zeroVal_new;

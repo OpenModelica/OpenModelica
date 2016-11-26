@@ -9,6 +9,8 @@
 #include <Core/Solver/SolverSettings.h>
 #include <Core/SimulationSettings/IGlobalSettings.h>
 #include <Core/Math/Constants.h>
+#include <Core/System/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 
 SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings)
     : SimulationMonitor()
@@ -197,6 +199,8 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
       MEASURETIME_START(writeFunctionStartValues, solverWriteOutputHandler, "solverWriteOutput");
   }
   #endif
+
+  LOGGER_STATUS("Running", t, h);
 
   if(_settings->getGlobalSettings()->getOutputPointType()!= OPT_NONE)
   {
