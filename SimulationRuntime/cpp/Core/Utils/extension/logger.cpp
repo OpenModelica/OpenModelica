@@ -18,6 +18,7 @@ Logger::Logger(LogSettings settings, bool enabled)
   if (_instance != NULL)
     delete _instance;
   _instance = NULL;
+  _startTime = _endTime = 0.0;
 }
 
 Logger::~Logger()
@@ -44,6 +45,10 @@ void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
     stream << getPrefix(cat, lvl) << catStr.append(6 - catStr.length(), ' ')
            << ": " << msg << std::endl;
   }
+}
+
+void Logger::statusInternal(const char *, double, double)
+{
 }
 
 void Logger::setEnabledInternal(bool enabled)
