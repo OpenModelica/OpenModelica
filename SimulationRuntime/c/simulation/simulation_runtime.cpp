@@ -1006,12 +1006,13 @@ static inline void sendXMLTCPIfClosed()
 {
   if (numOpenTags==0) {
     sim_communication_port.send(xmlTcpStream.str());
-    xmlTcpStream.clear();
+    xmlTcpStream.str("");
   }
 }
 
 static void messageXMLTCP(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
 {
+  numOpenTags++;
   xmlTcpStream << "<message stream=\"" << LOG_STREAM_NAME[stream] << "\" type=\"" << LOG_TYPE_DESC[type] << "\" text=\"";
   printEscapedXMLTCP(&xmlTcpStream, msg);
   if (indexes) {
@@ -1021,10 +1022,16 @@ static void messageXMLTCP(int type, int stream, int indentNext, char *msg, int s
       xmlTcpStream << "<used index=\"" << indexes[i] << "%d\" />\n";
     }
     if (!indentNext) {
+      numOpenTags--;
       xmlTcpStream << "</message>\n";
     }
   } else {
-    xmlTcpStream << (indentNext ? "\">\n" : "\" />\n");
+    if (indentNext) {
+      xmlTcpStream << "\">\n";
+    } else {
+      numOpenTags--;
+      xmlTcpStream << "\" />\n";
+    }
   }
   sendXMLTCPIfClosed();
 }
