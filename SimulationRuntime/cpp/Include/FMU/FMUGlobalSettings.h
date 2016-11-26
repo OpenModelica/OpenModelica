@@ -33,7 +33,7 @@ public:
     virtual bool getInfoOutput() { return false; }
     virtual void setInfoOutput(bool) {}
     virtual string    getOutputPath() { return "./"; }
-    virtual LogSettings getLogSettings() {return LogSettings();}
+    virtual LogSettings getLogSettings() {return LogSettings(LF_FMI);}
     virtual void setLogSettings(LogSettings) {}
     virtual OutputPointType getOutputPointType() { return OPT_ALL; };
     virtual void setOutputPointType(OutputPointType) {};

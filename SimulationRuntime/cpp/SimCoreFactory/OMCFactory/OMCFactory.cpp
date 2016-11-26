@@ -28,35 +28,44 @@ namespace po = boost::program_options;
 class LoggerXMLTCP: public LoggerXML
 {
  public:
-  LoggerXMLTCP(std::string host, int port, LogSettings &logSettings):
-    LoggerXML(logSettings, true, _sstream),
-    _endpoint(boost::asio::ip::address::from_string(host), port),
-    _socket(_ios)
-  {
-    _socket.connect(_endpoint);
-    if (instance != NULL)
-      delete instance;
-    instance = this;
-  }
-
   virtual ~LoggerXMLTCP()
   {
     _socket.close();
   }
 
+  static void initialize(std::string host, int port, LogSettings &logSettings)
+  {
+    _instance = new LoggerXMLTCP(host, port, logSettings);
+  }
+
  protected:
-  boost::asio::io_service _ios;
-  boost::asio::ip::tcp::endpoint _endpoint;
-  boost::asio::ip::tcp::socket _socket;
-  stringstream _sstream;
+  LoggerXMLTCP(std::string host, int port, LogSettings &logSettings)
+    : LoggerXML(logSettings, true, _sstream)
+    , _endpoint(boost::asio::ip::address::from_string(host), port)
+    , _socket(_ios)
+  {
+    if (logSettings.format != LF_XML && logSettings.format != LF_XMLTCP) {
+      throw ModelicaSimulationError(MODEL_FACTORY,
+        "xmltcp logger requires log-format xml");
+    }
+    _socket.connect(_endpoint);
+  }
 
   virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
                              LogStructure ls)
   {
     _sstream.str("");
     LoggerXML::writeInternal(msg, cat, lvl, ls);
-    _socket.send(boost::asio::buffer(_sstream.str()));
+    if (_logSettings.format == LF_XMLTCP)
+      _socket.send(boost::asio::buffer(_sstream.str()));
+    else
+      std::cout << _sstream.str();
   }
+
+  boost::asio::io_service _ios;
+  boost::asio::ip::tcp::endpoint _endpoint;
+  boost::asio::ip::tcp::socket _socket;
+  std::stringstream _sstream;
 };
 
 /**
@@ -123,7 +132,7 @@ static LogSettings initializeLogger(const po::variables_map& vm)
     "info", LL_INFO MAP_LIST_SEP "debug", LL_DEBUG MAP_LIST_END;
   map<string, LogFormat> logFormatMap = MAP_LIST_OF
     "txt", LF_TXT MAP_LIST_SEP "xml", LF_XML MAP_LIST_SEP
-    "xmltcp", LF_XML MAP_LIST_END;
+    "xmltcp", LF_XMLTCP MAP_LIST_END;
   map<string, LogOMEdit> logOMEditMap = MAP_LIST_OF
     "LOG_EVENTS", LOG_EVENTS MAP_LIST_SEP "LOG_INIT", LOG_INIT MAP_LIST_SEP
     "LOG_LS", LOG_LS  MAP_LIST_SEP "LOG_NLS", LOG_NLS  MAP_LIST_SEP
@@ -198,9 +207,8 @@ static LogSettings initializeLogger(const po::variables_map& vm)
         logSettings.modes[i] = LL_WARNING;
   }
 
-  string logFormat_str;
   if (vm.count("log-format")) {
-    logFormat_str = vm["log-format"].as<string>();
+    string logFormat_str = vm["log-format"].as<string>();
     if (logFormatMap.find(logFormat_str) != logFormatMap.end())
       logSettings.format = logFormatMap[logFormat_str];
     else
@@ -215,12 +223,14 @@ static LogSettings initializeLogger(const po::variables_map& vm)
   // initialize logger if it has been enabled
   if (Logger::isEnabled()) {
     int port = vm["log-port"].as<int>();
-    if (port > 0 && logFormat_str == "xmltcp") {
+    if (port > 0) {
       try {
-        new LoggerXMLTCP("127.0.0.1", port, logSettings);
+        LoggerXMLTCP::initialize("127.0.0.1", port, logSettings);
       }
       catch (std::exception &ex) {
-        std::cerr << "Failed to start xmltcp logger: " << ex.what() << std::endl;
+        throw ModelicaSimulationError(MODEL_FACTORY,
+          "Failed to start logger with port " + to_string(port) + ": "
+          + ex.what() + '\n');
       }
     }
     else

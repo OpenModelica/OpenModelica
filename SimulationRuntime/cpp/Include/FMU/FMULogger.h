@@ -21,10 +21,7 @@ class BOOST_EXTENSION_EXPORT_DECL FMULogger : Logger
 
     static void initialize(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName)
     {
-      if(instance != NULL)
-        delete instance;
-
-      instance = new FMULogger(callbackLogger, component, instanceName);
+      _instance = new FMULogger(callbackLogger, component, instanceName);
     }
 
   protected:

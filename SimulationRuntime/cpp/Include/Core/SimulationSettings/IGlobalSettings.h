@@ -27,7 +27,7 @@ using std::string;
 
 enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLVER = 3, LC_OUTPUT = 4, LC_EVENTS = 5, LC_OTHER = 6, LC_MODEL = 7};
 enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
-enum LogFormat {LF_TXT = 0, LF_XML = 1};
+enum LogFormat {LF_TXT = 0, LF_FMI = 1, LF_FMI2 = 2, LF_XML = 3, LF_XMLTCP = 4};
 enum LogOMEdit {LOG_EVENTS = 0, LOG_INIT, LOG_LS, LOG_NLS, LOG_SOLVER, LOG_STATS};
 enum OutputPointType {OPT_ALL, OPT_STEP, OPT_NONE};
 enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
@@ -38,10 +38,10 @@ struct LogSettings
   std::vector<LogLevel> modes;
   LogFormat format;
 
-  LogSettings()
+  LogSettings(LogFormat fmt = LF_TXT)
   {
     modes = std::vector<LogLevel>(8, LL_ERROR);
-    format = LF_TXT;
+    format = fmt;
   }
 
   void setAll(LogLevel l)
