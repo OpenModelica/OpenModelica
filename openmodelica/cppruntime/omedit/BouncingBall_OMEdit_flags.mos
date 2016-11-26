@@ -9,7 +9,7 @@
 
 loadFile("../BouncingBall.mo");
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat",simflags="-port=41442 -logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS");
+simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat",simflags="-logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS");
 res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
   "../ReferenceFiles/BouncingBall.mat",
   "BouncingBall_diff.csv",0.01,0.0001,
@@ -22,7 +22,7 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
 // ""
 // record SimulationResult
 //     resultFile = "BouncingBall_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-port=41442 -logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS'",
 //     messages = "<message stream=\"other\" type=\"warning\" text=\"Warning: unrecognized command line options -dasslJacobian=coloredNumerical \" />
 // <message stream=\"solver\" type=\"info\" text=\"SimManager: Start simulation at t = 0.000000\" />
 // <message stream=\"solver\" type=\"info\" text=\"SimManager: Simulation stop time: 1.000000\" />
