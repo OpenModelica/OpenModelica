@@ -36,10 +36,10 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     static Logger* getInstance()
     {
-      if (instance == NULL)
+      if (_instance == NULL)
         initialize(LogSettings());
 
-      return instance;
+      return _instance;
     }
 
     static void initialize(LogSettings settings);
@@ -51,20 +51,20 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     static inline void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
-      if (instance && instance->isSet(cat, lvl))
-        instance->writeInternal(msg, cat, lvl, LS_NONE);
+      if (_instance && _instance->isSet(cat, lvl))
+        _instance->writeInternal(msg, cat, lvl, LS_NONE);
     }
 
     static inline void writeBegin(std::string msg, LogCategory cat, LogLevel lvl)
     {
-      if (instance && instance->isSet(cat, lvl))
-        instance->writeInternal(msg, cat, lvl, LS_BEGIN);
+      if (_instance && _instance->isSet(cat, lvl))
+        _instance->writeInternal(msg, cat, lvl, LS_BEGIN);
     }
 
     static inline void writeEnd(LogCategory cat, LogLevel lvl)
     {
-      if (instance && instance->isSet(cat, lvl))
-        instance->writeInternal("", cat, lvl, LS_END);
+      if (_instance && _instance->isSet(cat, lvl))
+        _instance->writeInternal("", cat, lvl, LS_END);
     }
 
     static inline void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
@@ -92,7 +92,7 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     static bool isEnabled()
     {
-      return instance != NULL && instance->isEnabledInternal();
+      return _instance != NULL && _instance->isEnabledInternal();
     }
 
     static std::pair<LogCategory,LogLevel> getLogMode(LogCategory cat, LogLevel lvl)
@@ -102,17 +102,17 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
     void setAll(LogLevel lvl)
     {
-      _settings.setAll(lvl);
+      _logSettings.setAll(lvl);
     }
 
     void set(LogCategory cat, LogLevel lvl)
     {
-      _settings.modes[cat] = lvl;
+      _logSettings.modes[cat] = lvl;
     }
 
     bool isSet(LogCategory cat, LogLevel lvl) const
     {
-      return _isEnabled && _settings.modes[cat] >= lvl;
+      return _isEnabled && _logSettings.modes[cat] >= lvl;
     }
 
     bool isSet(std::pair<LogCategory,LogLevel> mode) const
@@ -122,8 +122,6 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
 
   protected:
     Logger(LogSettings settings, bool enabled);
-
-    Logger(bool enabled);
 
     enum LogStructure {LS_NONE, LS_BEGIN, LS_END};
 
@@ -137,10 +135,8 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     std::string getCategory(LogCategory cat) const;
     std::string getLevel(LogLevel lvl) const;
 
-    static Logger* instance;
-
-  private:
-    LogSettings _settings;
+    static Logger* _instance;
+    LogSettings _logSettings;
     bool _isEnabled;
 };
 

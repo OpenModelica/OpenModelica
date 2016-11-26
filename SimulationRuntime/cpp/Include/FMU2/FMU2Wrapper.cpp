@@ -58,9 +58,11 @@ FMU2Logger::FMU2Logger(FMU2Wrapper *wrapper,
   Logger(logSettings, enabled),
   _wrapper(wrapper)
 {
-  if (instance != NULL)
-    delete instance;
-  instance = this;
+}
+
+void FMU2Logger::initialize(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled)
+{
+  _instance = new FMU2Logger(wrapper, logSettings, enabled);
 }
 
 void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
@@ -115,7 +117,8 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _logCategories = loggingOn? 0xFFFF: 0x0000;
   LogSettings logSettings = _global_settings.getLogSettings();
   logSettings.setAll(loggingOn? LL_DEBUG: LL_ERROR);
-  _logger = new FMU2Logger(this, logSettings, loggingOn);
+  FMU2Logger::initialize(this, logSettings, loggingOn);
+  _logger = Logger::getInstance();
 
   // setup model
   _model = createSystemFMU(&_global_settings);
@@ -131,7 +134,6 @@ FMU2Wrapper::~FMU2Wrapper()
 {
   delete [] _clock_buffer;
   delete _model;
-  delete _logger;
 }
 
 fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,

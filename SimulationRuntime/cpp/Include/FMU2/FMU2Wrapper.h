@@ -70,9 +70,11 @@ class FMU2Wrapper;
 class FMU2Logger: public Logger
 {
  public:
-  FMU2Logger(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled);
+  static void initialize(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled);
 
  protected:
+  FMU2Logger(FMU2Wrapper *wrapper, LogSettings &logSettings, bool enabled);
+
   virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
                              LogStructure ls);
   FMU2Wrapper *_wrapper;
@@ -161,7 +163,7 @@ class FMU2Wrapper
 
  private:
   FMU2GlobalSettings _global_settings;
-  FMU2Logger *_logger;
+  Logger *_logger;
   MODEL_CLASS *_model;
   std::vector<string> _string_buffer;
   bool *_clock_buffer;

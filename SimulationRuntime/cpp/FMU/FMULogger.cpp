@@ -11,10 +11,10 @@
 #include <FMU/FMULogger.h>
 /*
 #if defined(_MSC_VER) && !defined(RUNTIME_STATIC_LINKING)
-	Logger* Logger::instance = 0;
+	Logger* Logger::_instance = 0;
 #endif
 */
-FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) : Logger(false),
+FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) : Logger(LogSettings(LF_FMI), false),
   callbackLogger(callbackLogger), component(component), instanceName(instanceName)
 {
 }
