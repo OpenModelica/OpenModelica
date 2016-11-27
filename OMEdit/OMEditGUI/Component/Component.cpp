@@ -1550,7 +1550,7 @@ void Component::setOriginAndExtents()
  */
 void Component::updateConnections()
 {
-  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+  if ((!mpGraphicsView) || mpGraphicsView->getViewType() == StringHandler::Icon) {
     return;
   }
   foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
