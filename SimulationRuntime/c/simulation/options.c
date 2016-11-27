@@ -48,6 +48,7 @@ int helpFlagSet(int argc, char** argv)
   return flagSet("?", argc, argv) || flagSet("help", argc, argv);
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 int setLogFormat(int argc, char** argv)
 {
   const char* value = getOption(FLAG_NAME[FLAG_LOG_FORMAT], argc, argv);
@@ -69,6 +70,7 @@ int setLogFormat(int argc, char** argv)
   }
   return 0;
 }
+#endif
 
 int checkCommandLineArguments(int argc, char **argv)
 {
