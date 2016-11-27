@@ -1491,8 +1491,8 @@ QColor StringHandler::getSimulationMessageTypeColor(StringHandler::SimulationMes
     case StringHandler::SMWarning:
     case StringHandler::Error:
     case StringHandler::Assert:
-    case StringHandler::Debug:
       return Qt::red;
+    case StringHandler::Debug:
     case StringHandler::Info:
     case StringHandler::Unknown:
     default:
