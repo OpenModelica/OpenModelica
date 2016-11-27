@@ -30,6 +30,7 @@
 
 #include "options.h"
 #include "util/omc_error.h"
+#include "simulation_runtime.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -47,30 +48,29 @@ int helpFlagSet(int argc, char** argv)
   return flagSet("?", argc, argv) || flagSet("help", argc, argv);
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 int setLogFormat(int argc, char** argv)
 {
   const char* value = getOption(FLAG_NAME[FLAG_LOG_FORMAT], argc, argv);
-  if(NULL == value)
+  if (NULL == value) {
     value = getFlagValue(FLAG_NAME[FLAG_LOG_FORMAT], argc, argv);
+  }
 
-  if (NULL != value)
-  {
-    if (0 == strcmp(value, "xml"))
-    {
+  if (NULL != value) {
+    if (0 == strcmp(value, "xml")) {
       setStreamPrintXML(1);
-    }
-    else if (0 == strcmp(value, "text"))
-    {
+    } else if (0 == strcmp(value, "xmltcp")) {
+      setStreamPrintXML(2);
+    } else if (0 == strcmp(value, "text")) {
       setStreamPrintXML(0);
-    }
-    else
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text or xml", value);
+    } else {
+      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text, xml, or xmltcp", value);
       return 1;
     }
   }
   return 0;
 }
+#endif
 
 int checkCommandLineArguments(int argc, char **argv)
 {

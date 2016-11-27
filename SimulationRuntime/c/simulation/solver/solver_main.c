@@ -548,7 +548,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   }
 
   if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
-    communicateStatus("Finished", 1);
+    communicateStatus("Finished", 1, solverInfo->currentTime, solverInfo->currentStepSize);
   }
 
   /* we have output variables in the command line -output a,b,c */

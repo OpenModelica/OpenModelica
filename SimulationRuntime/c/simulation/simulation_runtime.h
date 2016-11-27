@@ -74,7 +74,7 @@ extern const char* getNameString(const char** ptr);
 extern double getSimulationStepSize();
 extern void printSimulationStepSize(double in_stepSize, double time);
 
-extern void communicateStatus(const char *phase, double completionPercent);
+extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
 extern void communicateMsg(char id, unsigned int size, const char *data);
 
 /* the main function of the simulation runtime!
@@ -85,6 +85,8 @@ extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_
 #if !defined(OMC_MINIMAL_RUNTIME)
 const char* prettyPrintNanoSec(int64_t ns, int *v);
 #endif
+
+void setStreamPrintXML(int isXML);
 
 #ifdef __cplusplus
 }

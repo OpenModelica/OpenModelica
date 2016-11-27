@@ -149,7 +149,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_JACOBIAN */              "selects the type of the jacobians that is used for the integrator.\n  jacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */       "emit data recovery matrices with model linearization",
-  /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",
+  /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
   /* FLAG_LS */                    "value specifies the linear solver method (default: lapack, totalpivot (fallback))",
   /* FLAG_LS_IPOPT */              "value specifies the linear solver method for ipopt",
   /* FLAG_LSS */                   "value specifies the linear sparse solver method (default: umfpack)",
@@ -286,7 +286,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_LOG_FORMAT */
   "  Value specifies the log format of the executable:\n\n"
   "  * text (default)\n"
-  "  * xml",
+  "  * xml\n"
+  "  * xmltcp (required -port flag)",
   /* FLAG_LS */
   "  Value specifies the linear solver method",
   /* FLAG_LS_IPOPT */

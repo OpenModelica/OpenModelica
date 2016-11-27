@@ -141,9 +141,8 @@ static int simulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
 {
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
-  if(0 != strcmp("ia", data->simulationInfo->outputFormat))
-  {
-    communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime));
+  if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
+    communicateStatus("Running", (solverInfo->currentTime - simInfo->startTime)/(simInfo->stopTime - simInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
   }
   return solver_main_step(data, threadData, solverInfo);
 }

@@ -211,7 +211,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   while(solverInfo->currentTime < simInfo->stopTime)
   {
     modelica_integer success = 0;
-	uinteger k = 0, j = 0;
+  uinteger k = 0, j = 0;
 
     threadData->currentErrorStage = ERROR_SIMULATION;
     omc_alloc_interface.collect_a_little();
@@ -280,9 +280,8 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     tqp[ind] = tq[ind] + dTnextQ;
     nQh[ind] = nextQ;
 
-    if (0 != strcmp("ia", data->simulationInfo->outputFormat))
-    {
-      communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
+    if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
+      communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime), solverInfo->currentTime, 0.0);
     }
 
     /* get the derivatives depending on state[ind] */

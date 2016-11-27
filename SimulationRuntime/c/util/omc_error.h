@@ -120,11 +120,6 @@ enum LOG_STREAM
   SIM_LOG_MAX
 };
 
-extern const int firstOMCErrorStream;
-extern const char *LOG_STREAM_NAME[SIM_LOG_MAX];
-extern const char *LOG_STREAM_DESC[SIM_LOG_MAX];
-extern const char *LOG_STREAM_DETAILED_DESC[SIM_LOG_MAX];
-
 enum LOG_TYPE
 {
   LOG_TYPE_UNKNOWN = 0,
@@ -136,14 +131,18 @@ enum LOG_TYPE
   LOG_TYPE_MAX
 };
 
+extern const int firstOMCErrorStream;
+extern const char *LOG_STREAM_NAME[SIM_LOG_MAX];
+extern const char *LOG_STREAM_DESC[SIM_LOG_MAX];
+extern const char *LOG_STREAM_DETAILED_DESC[SIM_LOG_MAX];
+extern const char *LOG_TYPE_DESC[LOG_TYPE_MAX];
+
 extern int useStream[SIM_LOG_MAX];
 extern int level[SIM_LOG_MAX];
 extern int lastType[SIM_LOG_MAX];
 extern int lastStream;
 extern int showAllWarnings;
 extern char logBuffer[2048];
-
-void setStreamPrintXML(int isXML);
 
 #define ACTIVE_STREAM(stream)    (useStream[stream])
 #define ACTIVE_WARNING_STREAM(stream)    (showAllWarnings || useStream[stream])
@@ -164,6 +163,7 @@ void setStreamPrintXML(int isXML);
   #define TRACE_POP
 #endif
 
+extern void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes);
 extern void (*messageClose)(int stream);
 extern void (*messageCloseWarning)(int stream);
 

@@ -124,7 +124,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "additional information about the zerocrossings"       /* LOG_ZEROCROSSINGS */
 };
 
-static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
+const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
   "unknown",
   "info",
   "warning",
@@ -215,18 +215,6 @@ void omc_terminate_function(FILE_INFO info, const char *msg, ...)
   MMC_THROW();
 }
 
-static void printEscapedXML(const char *msg)
-{
-  while (*msg) {
-    if (*msg == '&') fputs("&amp;", stdout);
-    else if (*msg == '<') fputs("&lt;", stdout);
-    else if (*msg == '>') fputs("&gt;", stdout);
-    else if (*msg == '"') fputs("&quot;", stdout);
-    else fputc(*msg, stdout);
-    msg++;
-  }
-}
-
 void messageText(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
 {
   int i;
@@ -263,71 +251,22 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
   if (indentNext) level[stream]++;
 }
 
-void messageXML(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
-{
-  printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
-  printEscapedXML(msg);
-  if (indexes) {
-    int i;
-    printf("\">\n");
-    for (i=1; i<=*indexes; i++) {
-      printf("<used index=\"%d\" />\n", indexes[i]);
-    }
-    if (!indentNext) {
-      fputs("</message>\n",stdout);
-    }
-  } else {
-    fputs(indentNext ? "\">\n" : "\" />\n", stdout);
-  }
-  fflush(stdout);
-}
-
 static void messageCloseText(int stream)
 {
   if(ACTIVE_STREAM(stream))
     level[stream]--;
 }
 
-static void messageCloseXML(int stream)
-{
-  if(ACTIVE_STREAM(stream))
-  {
-    fputs("</message>\n", stdout);
-    fflush(stdout);
-  }
-}
-
 static void messageCloseTextWarning(int stream)
 {
-  if(ACTIVE_WARNING_STREAM(stream))
+  if (ACTIVE_WARNING_STREAM(stream)) {
     level[stream]--;
-}
-
-static void messageCloseXMLWarning(int stream)
-{
-  if(ACTIVE_WARNING_STREAM(stream))
-  {
-    fputs("</message>\n", stdout);
-    fflush(stdout);
   }
 }
 
-static void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes) = messageText;
+void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes) = messageText;
 void (*messageClose)(int stream) = messageCloseText;
 void (*messageCloseWarning)(int stream) = messageCloseTextWarning;
-
-void setStreamPrintXML(int isXML)
-{
-  if (isXML) {
-    messageFunction = messageXML;
-    messageClose = messageCloseXML;
-    messageCloseWarning = messageCloseXMLWarning;
-  } else {
-    messageFunction = messageText;
-    messageClose = messageCloseText;
-    messageCloseWarning = messageCloseTextWarning;
-  }
-}
 
 #define SIZE_LOG_BUFFER 2048
 
