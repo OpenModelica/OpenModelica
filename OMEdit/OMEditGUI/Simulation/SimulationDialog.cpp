@@ -46,8 +46,6 @@
 #include "Animation/AnimationWindow.h"
 #endif
 
-#include <QTcpSocket>
-#include <QTcpServer>
 #include <QDebug>
 #include <limits>
 

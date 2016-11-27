@@ -81,6 +81,7 @@ public:
   SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
+  QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
   bool isOutputStructured() {return mIsOutputStructured;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}

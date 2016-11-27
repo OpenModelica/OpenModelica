@@ -349,6 +349,9 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
     if (mpSimulationMessage) {
       mpSimulationMessage->mIndex = atts.value("index");
     }
+  } else if (qName == "status") {
+    int progress = atts.value("progress").toInt();
+    mpSimulationOutputWidget->getProgressBar()->setValue(progress/100);
   }
   return true;
 }

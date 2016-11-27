@@ -45,6 +45,8 @@ SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimula
   mIsCompilationProcessRunning = false;
   mpSimulationProcess = 0;
   mIsSimulationProcessRunning = false;
+  mSimulationProcessExitCode = 0;
+  mSimulationProcessExitStatus = QProcess::NormalExit;
 }
 
 void SimulationProcessThread::run()
@@ -110,7 +112,7 @@ void SimulationProcessThread::runSimulationExecutable()
   pTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(pTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
   QStringList args(QString("-port=").append(QString::number(pTcpServer->serverPort())));
-  args << "-logFormat=xml" << simulationOptions.getSimulationFlags();
+  args << "-logFormat=xmltcp" << simulationOptions.getSimulationFlags();
   // start the executable
   QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName());
   fileName = fileName.replace("//", "/");
@@ -162,16 +164,6 @@ void SimulationProcessThread::readCompilationStandardError()
 void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
-  // Read the log file
-//  SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
-//  QString fileName = QString("%1/%2.log").arg(simulationOptions.getWorkingDirectory()).arg(simulationOptions.getOutputFileName());
-//  QFile logFile(fileName);
-//  if (logFile.open(QIODevice::ReadOnly)) {
-//    emit sendCompilationOutput(QString(logFile.readAll()), Qt::black);
-//    logFile.close();
-//  } else {
-//    emit sendCompilationOutput(QString("Error reading the file %1. %2").arg(fileName).arg(logFile.errorString()), Qt::red);
-//  }
   QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(exitCode);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendCompilationOutput(tr("Compilation process finished successfully."), Qt::blue);
@@ -206,7 +198,7 @@ void SimulationProcessThread::simulationProcessStarted()
   */
 void SimulationProcessThread::readSimulationStandardOutput()
 {
-  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown, false);
+  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown, true);
 }
 
 /*!
@@ -225,47 +217,65 @@ void SimulationProcessThread::readSimulationStandardError()
 void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsSimulationProcessRunning = false;
-  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
-  } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
-    emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
-  } else {
-    emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
-  }
+  mSimulationProcessExitCode = exitCode;
+  mSimulationProcessExitStatus = exitStatus;
   emit sendSimulationFinished(exitCode, exitStatus);
 }
 
+/*!
+ * \brief SimulationProcessThread::createSimulationProgressSocket
+ * Slot activated when QTcpServer newConnection SIGNAL is raised.\n
+ * Accepts the incoming connection and connects to readyRead SIGNAL of QTcpSocket.
+ */
 void SimulationProcessThread::createSimulationProgressSocket()
 {
   if (sender()) {
     QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
     if (pTcpServer && pTcpServer->hasPendingConnections()) {
       QTcpSocket *pTcpSocket = pTcpServer->nextPendingConnection();
+      QString output = QString(pTcpSocket->readAll());
+      if (!output.isEmpty()) {
+        emit sendSimulationOutput(output, StringHandler::Unknown, false);
+      }
       connect(pTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
+      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(readSimulationProgress()));
+      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(socketDisconnected()));
       disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
     }
   }
 }
 
+/*!
+ * \brief SimulationProcessThread::readSimulationProgress
+ * Slot activated when QTcpSocket readyRead or disconnected SIGNAL is raised.\n
+ * Sends the recieved data to xml parser.
+ */
 void SimulationProcessThread::readSimulationProgress()
 {
   if (sender()) {
     QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
     if (pTcpSocket) {
-      const int SOCKMAXLEN = 4096;
-      char buf[SOCKMAXLEN];
-      if (pTcpSocket->readLine(buf,SOCKMAXLEN) > 0) {
-        char *msg = 0;
-        double d = strtod(buf, &msg);
-        if (msg == buf || *msg != ' ') {
-          // do we really need to take care of this communication error?????
-          //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", buf);
-        } else {
-          emit sendSimulationProgress(d/100.0);
-          //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
-        }
+      QString output = QString(pTcpSocket->readAll());
+      if (!output.isEmpty()) {
+        emit sendSimulationOutput(output, StringHandler::Unknown, false);
       }
     }
+  }
+}
+
+/*!
+ * \brief SimulationProcessThread::socketDisconnected
+ * Slot activated when QTcpSocket disconnected SIGNAL is raised.\n
+ * Writes the exit status and exit code of the simulation process.
+ */
+void SimulationProcessThread::socketDisconnected()
+{
+  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(mSimulationProcessExitCode));
+  if (mSimulationProcessExitStatus == QProcess::NormalExit && mSimulationProcessExitCode == 0) {
+    emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
+  } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
+    emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
+  } else {
+    emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
   }
 }

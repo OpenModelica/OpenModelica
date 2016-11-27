@@ -312,7 +312,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
           SLOT(writeSimulationOutput(QString,StringHandler::SimulationMessageType,bool)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)),
           SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-  connect(mpSimulationProcessThread, SIGNAL(sendSimulationProgress(int)), mpProgressBar, SLOT(setValue(int)));
   mpSimulationProcessThread->start();
 }
 
@@ -452,9 +451,13 @@ void SimulationOutputWidget::simulationProcessStarted()
 }
 
 /*!
-  Slot activated when SimulationProcessThread sendSimulationOutput signal is raised.\n
-  Writes the simulation standard output to the simulation output text box.
-  */
+ * \brief SimulationOutputWidget::writeSimulationOutput
+ * Slot activated when SimulationProcessThread sendSimulationOutput signal is raised.\n
+ * Writes the simulation standard output to the simulation output text box.
+ * \param output
+ * \param type
+ * \param textFormat
+ */
 void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
