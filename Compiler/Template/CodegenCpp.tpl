@@ -3099,8 +3099,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
-  #LDSYSTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%>
+  #LDSYSTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib OMCppMath.lib OMCppOMCFactory.lib
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
   #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   # /MDd link with MSVCRTD.LIB debug lib
@@ -3178,11 +3178,11 @@ case "gcc" then
             CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
             CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING -DENABLE_SUNDIALS_STATIC
 
-			MINGW_EXTRA_LIBS=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lz -lhdf5' else ''%>
+			MINGW_EXTRA_LIBS=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lz -lhdf5 ' else ''%>
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES) $(MINGW_EXTRA_LIBS)
 
             LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
-            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lwsock32 -lws2_32 ' else ''%>
 
             ifeq ($(USE_PAPI),ON)
             $(eval LDMAINFLAGS_COMMON=$(LDMAINFLAGS_COMMON) <%papiLibs%>)
