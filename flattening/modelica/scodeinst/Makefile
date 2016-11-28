@@ -20,6 +20,7 @@ DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
 eq1.mo \
+eq10.mo \
 extends3.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
