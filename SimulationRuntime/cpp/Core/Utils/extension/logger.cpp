@@ -108,10 +108,11 @@ std::string Logger::getLevel(LogLevel lvl) const
   case(LL_WARNING):
     return "warning";
   case(LL_DEBUG):
-    //return "debug"; // avoid red color in OMEdit
+    return "debug";
   case(LL_INFO):
-  default:
     return "info";
+  default:
+    return "unknown";
   }
 }
 
