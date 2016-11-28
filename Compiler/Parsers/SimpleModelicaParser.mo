@@ -351,11 +351,16 @@ algorithm
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
   end if;
 
-  (tokens, tree, b) := LA1(tokens, tree, First._annotation);
-  if b then
-    (tokens, tree) := _annotation(tokens, tree);
-    (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
-  end if;
+  b := true;
+  while b loop
+    // OMEdit can sometimes insert multiple annotation-sections...
+    (tokens, tree, b) := LA1(tokens, tree, First._annotation);
+    if b then
+      (tokens, tree) := _annotation(tokens, tree);
+      (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
+    end if;
+  end while;
+
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end composition;
 
@@ -2744,7 +2749,7 @@ protected
   SourceInfo info;
 algorithm
   info := topTokenSourceInfo(tokens);
-  res := ("Failed to scan top of input: " + topTokenStr(tokens) + "\n  Expected one of: " + (if listEmpty(expected) then "<EOF>" else stringDelimitList(list(tokenIdStr(id) for id in expected), ", ")) + "\n")::{};
+  res := ("Failed to scan top of input: " + (if debug then debugTokenStr(tokens) else topTokenStr(tokens)) + "\n  Expected one of: " + (if listEmpty(expected) then "<EOF>" else stringDelimitList(list(tokenIdStr(id) for id in expected), ", ")) + "\n")::{};
   res := ("  Current parse tree is:\n" + parseTreeStr(listReverse(tree)) + "\n  The parser stack is:\n")::res;
   StackOverflow.setStacktraceMessages(0, 100);
   for s in StackOverflow.readableStacktraceMessages() loop
@@ -2864,6 +2869,13 @@ protected
 algorithm
   str := (match tokens case (t as LexerModelicaDiff.TOKEN(id=id))::_ then String(id)+" ("+tokenContent(t)+")"; else "EOF"; end match);
 end topTokenStr;
+
+function debugTokenStr
+  input list<Token> tokens;
+  output String str;
+algorithm
+  str := stringDelimitList(list(String(t.id)+" ("+tokenContent(t)+")" for t in tokens), "\n");
+end debugTokenStr;
 
 function topTokenSourceInfo
   input list<Token> tokens;
