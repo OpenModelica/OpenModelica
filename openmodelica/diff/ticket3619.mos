@@ -1,9 +1,9 @@
 // status: correct
-// depends: Ticket3619.mo
-// depends: Ticket3619.expected
+// depends: ticket3619.mo
+// depends: ticket3619.expected
 
 echo(false);
-s1 := readFile("Ticket3619.mo");
+s1 := readFile("ticket3619.mo");
 
 loadString(s1);
 
@@ -11,7 +11,7 @@ deleteClass(withFolder.OLD);
 
 s2 := list();
 
-answer := readFile("Ticket3619.expected");
+answer := readFile("ticket3619.expected");
 
 res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
 if answer<>res then
