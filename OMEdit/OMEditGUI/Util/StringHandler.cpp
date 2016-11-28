@@ -1525,6 +1525,10 @@ QString StringHandler::makeClassNameRelative(QString draggedClassName, QString d
  */
 QString StringHandler::toCamelCase(QString str)
 {
+  // if the name is all caps then convert it to lower and return it.
+  if (str.toUpper().compare(str, Qt::CaseSensitive) == 0) {
+    return str.toLower();
+  }
   QString s = str;
   s[0] = s[0].toLower();
   return s;
