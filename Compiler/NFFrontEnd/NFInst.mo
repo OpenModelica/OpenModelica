@@ -95,6 +95,11 @@ algorithm
 
   // Instantiate, type and flatten the class.
   cls := instantiate(cls, Modifier.NOMOD(), top_comp_node);
+
+  // Update the instantiated class inside the top component.
+  top_comp := Component.setClassInstance(cls, top_comp);
+  top_comp_node := ComponentNode.replaceComponent(top_comp, top_comp_node);
+
   cls := Typing.typeClass(cls, top_comp_node);
   dae := NFFlatten.flattenClass(cls);
 

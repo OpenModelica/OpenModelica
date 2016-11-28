@@ -105,6 +105,32 @@ uniontype Component
     end match;
   end classInstance;
 
+  function setClassInstance
+    input InstNode classInst;
+    input output Component component;
+  algorithm
+    () := match component
+      case UNTYPED_COMPONENT()
+        algorithm
+          component.classInst := classInst;
+        then
+          ();
+
+      case TYPED_COMPONENT()
+        algorithm
+          component.classInst := classInst;
+        then
+          ();
+
+      case EXTENDS_NODE()
+        algorithm
+          component.node := classInst;
+        then
+          ();
+
+    end match;
+  end setClassInstance;
+
   function setModifier
     input Modifier modifier;
     input output Component component;
