@@ -1193,7 +1193,7 @@ void OptionsDialog::setUpDialog()
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
   mainLayout->addWidget(mpChangesEffectLabel, 1, 0);
-  mainLayout->addWidget(mpButtonBox, 1, 1);
+  mainLayout->addWidget(mpButtonBox, 1, 1, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
