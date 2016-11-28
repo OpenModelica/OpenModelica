@@ -103,6 +103,7 @@ else
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
+	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
@@ -117,6 +118,7 @@ ifeq ($(VSVERSION),2012)
 else
 ifeq ($(VSVERSION),2013)
 	$(eval VSCOMNTOOLS=$(VS120COMNTOOLS))
+	$(eval BOOST_PATH_MSVC=$(OMDEVMSYS)/lib/3rdParty/boost-1_59/)
 else
 ifeq ($(VSVERSION),2015)
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
