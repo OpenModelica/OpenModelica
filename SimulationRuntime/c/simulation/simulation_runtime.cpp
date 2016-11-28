@@ -875,11 +875,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
       communicateStatus("Starting", 0.0, data->simulationInfo->startTime, 0);
     }
   }
-#endif
+
   if (isXMLTCP && !sim_communication_port_open) {
     errorStreamPrint(LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
     EXIT(1);
   }
+#endif
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 
   return 0;
