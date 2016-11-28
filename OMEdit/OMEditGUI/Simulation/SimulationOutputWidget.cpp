@@ -191,6 +191,7 @@ void SimulationOutputTree::keyPressEvent(QKeyEvent *event)
 SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent)
   : mSimulationOptions(simulationOptions)
 {
+  Q_UNUSED(pParent);
   setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(Helper::simulationOutput));
   // progress label
   mpProgressLabel = new Label;

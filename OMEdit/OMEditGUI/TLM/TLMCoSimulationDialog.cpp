@@ -165,7 +165,7 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(QWidget *pParent)
   pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
-  mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(MainWindow::instance());
+  mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget;
   int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
   int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
   mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());

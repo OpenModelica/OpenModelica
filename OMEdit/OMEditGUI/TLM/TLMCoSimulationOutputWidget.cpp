@@ -53,8 +53,8 @@
  * \param pParent
  */
 TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(QWidget *pParent)
-  : QWidget(pParent)
 {
+  Q_UNUSED(pParent);
   // progress label
   mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);

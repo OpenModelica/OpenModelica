@@ -1013,7 +1013,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
     showAlgorithmicDebugger(simulationOptions);
   } else {
-    SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, MainWindow::instance());
+    SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
