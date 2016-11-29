@@ -372,7 +372,7 @@ int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
     osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
 
     //cad node
-    if ((shape._type.compare("dxf") == 0) or (shape._type.compare("stl") == 0))
+    if (shape._type.compare("stl") == 0)
     {
       //std::cout<<"Its a CAD and the filename is "<<shape._fileName<<std::endl;
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
@@ -381,6 +381,13 @@ int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
       ss->setAttribute(material.get());
       node->setStateSet(ss);
       transf->addChild(node.get());
+    }
+    else if ((shape._type.compare("dxf") == 0)) {
+      std::string name = shape._fileName;
+      DXFile* shape = new DXFile(name);
+      geode = new osg::Geode();
+      geode->addDrawable(shape);
+      transf->addChild(geode);
     }
     //geode with shape drawable
     else

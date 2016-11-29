@@ -35,12 +35,16 @@
 #ifndef EXTRASHAPES_H
 #define EXTRASHAPES_H
 
+#include "Visualizer.h"
+
 #include <osg/Node>
 #include <osg/Group>
 #include <osg/Geode>
 #include <osg/Geometry>
 #include <osg/Shape>
 
+#include <qTextStream>
+#include <qFile>
 
 class Pipecylinder : public osg::Geometry
 {
@@ -67,5 +71,39 @@ private:
   osg::Vec3Array* mpOuterVertices;
   osg::Vec3Array* mpSplineVertices;
 };
+
+class DXF3dFace
+{
+public:
+  DXF3dFace();
+  ~DXF3dFace();
+  QString fill3dFace(QTextStream* stream);
+  void dumpDXF3DFace();
+  osg::Vec3f calcNormals();
+
+public:
+  osg::Vec3 vec1;
+  osg::Vec3 vec2;
+  osg::Vec3 vec3;
+  osg::Vec3 vec4;
+  std::string layer;
+  int colorCode;
+  osg::Vec4f color;
+};
+
+class DXFile : public osg::Geometry
+{
+ public:
+    /*-----------------------------------------
+     * CONSTRUCTORS
+     *---------------------------------------*/
+   DXFile(std::string filename);
+     ~DXFile() = default;
+
+  //members
+public:
+    std::string fileName;
+};
+
 
 #endif //end EXTRASHAPES_H
