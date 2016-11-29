@@ -60,7 +60,7 @@ bootstrap-from-tarball: $(PATCHES)
 	tar xJf bootstrap-sources.tar.xz
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
-	# cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | $(SED) 's/\([.][0-9]*\)\?[.]patch/.c/'`" || exit 1; done
+	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | $(SED) 's/\([.][0-9]*\)\?[.]patch/.c/'`" || exit 1; done
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
