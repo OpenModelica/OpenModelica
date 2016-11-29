@@ -36,6 +36,7 @@
 
 #include "util/omc_error.h"
 #include "omc_math.h"
+#include "simulation/simulation_info_json.h"
 
 /*! \fn _omc_vector* _omc_allocateVectorData(_omc_size size)
  *
@@ -701,6 +702,31 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
   }
 
   return mat1;
+}
+
+/*! \fn void _omc_printVector(_omc_vector* vec, char* name, int logLevel)
+ *
+ *  outputs the _omc_vector
+ *
+ *  \param [in]  [vec]      !TODO: DESCRIBE ME!
+ *  \param [in]  [name]     !TODO: DESCRIBE ME!
+ *  \param [in]  [logLevel] !TODO: DESCRIBE ME!
+ */
+void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const int logLevel, EQUATION_INFO eqnInfo)
+{
+  _omc_size i;
+
+  if (!ACTIVE_STREAM(logLevel))
+    return;
+
+  assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
+
+  infoStreamPrint(logLevel, 1, "%s", name);
+  for (i = 0; i < vec->size; ++i)
+  {
+    infoStreamPrint(logLevel, 0, "[%3d] %-40s = %20.12g",   (int)i, eqnInfo.vars[i], vec->data[i]);
+  }
+  messageClose(logLevel);
 }
 
 /*! \fn void _omc_printVector(_omc_vector* vec, char* name, int logLevel)

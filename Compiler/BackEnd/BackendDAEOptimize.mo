@@ -1917,6 +1917,8 @@ algorithm
       case BackendDAE.EMPTY_JACOBIAN()
         then -1;
       /* TODO: implement/check for GENERIC_JACOBIAN */
+      case BackendDAE.GENERIC_JACOBIAN(jacobian=NONE())
+        then -1;
       case BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((_,_,vars1,vars2,_)))
         guard
           listLength(vars1) == listLength(vars2)

@@ -31,6 +31,8 @@
 #ifndef OMCMATH_H_
 #define OMCMATH_H_
 
+#include "simulation/simulation_info_json.h"
+
 typedef double _omc_scalar;
 
 #if defined(__alpha__) || defined(__sparc64__) || defined(__x86_64__) || defined(__ia64__)
@@ -107,6 +109,7 @@ _omc_matrix* _omc_subtractMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2);
 _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2);
 
 /* print functions */
+void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const int logLevel, EQUATION_INFO eqnInfo);
 void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel);
 void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel);
 

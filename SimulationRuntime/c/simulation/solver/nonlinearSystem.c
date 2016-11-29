@@ -337,7 +337,7 @@ int print_csvLineIterStats(void* voidCsvData, int size, int num,
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
-  int i;
+  int i,j;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataNewtonAndHybrid *mixedSolverData;
@@ -377,7 +377,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].nominal = (double*) malloc(size*sizeof(double));
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
-
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -403,7 +402,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       allocateHybrdData(size, &nonlinsys[i].solverData);
       break;
     case NLS_KINSOL:
-      nls_kinsol_allocate(data, threadData, &nonlinsys[i]);
+      nlsKinsolAllocate(size, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
       break;
     case NLS_NEWTON:
       allocateNewtonData(size, &nonlinsys[i].solverData);
@@ -501,12 +500,14 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
       freeHybrdData(&nonlinsys[i].solverData);
+      free(nonlinsys[i].solverData);
       break;
     case NLS_KINSOL:
-      nls_kinsol_free(&nonlinsys[i]);
+      nlsKinsolFree(&nonlinsys[i].solverData);
       break;
     case NLS_NEWTON:
       freeNewtonData(&nonlinsys[i].solverData);
+      free(nonlinsys[i].solverData);
       break;
 #endif
     case NLS_HOMOTOPY:
@@ -516,12 +517,12 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     case NLS_MIXED:
       freeHomotopyData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
       freeHybrdData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->hybridData);
+      free(nonlinsys[i].solverData);
       break;
 #endif
     default:
       throwStreamPrint(threadData, "unrecognized nonlinear solver");
     }
-    free(nonlinsys[i].solverData);
   }
 
   messageClose(LOG_NLS);
@@ -691,7 +692,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
   /* grab the initial guess */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %d at time at %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %ld at time at %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
   /* if last solving is too long ago use just old values  */
   if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize)
   {
@@ -726,7 +727,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     success = solveHybrd(data, threadData, sysNumber);
     break;
   case NLS_KINSOL:
-    success = nonlinearSolve_kinsol(data, threadData, sysNumber);
+    success = nlsKinsolSolve(data, threadData, sysNumber);
     break;
   case NLS_NEWTON:
     success = solveNewton(data, threadData, sysNumber);

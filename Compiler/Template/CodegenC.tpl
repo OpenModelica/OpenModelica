@@ -2488,20 +2488,24 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
         alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
-      let bodyStaticData = generateStaticInitialDataWithSparse(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA',sparsePattern,colorList,maxColor)
+      let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       <<
       <%residualFunction%>
+      <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       >>
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__),alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
+      let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       <<
       <%residualFunction%>
+      <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       >>
@@ -2514,20 +2518,24 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
-      let bodyStaticData = generateStaticInitialDataWithSparse(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA',sparsePattern,colorList,maxColor)
+      let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
       let indexName = 'NLS<%at.index%>'
-      let bodyStaticDataStrict = generateStaticInitialDataWithSparse(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA',sparsePattern2,colorList2,maxColor2)
+      let sparseDataStrict = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
+      let bodyStaticDataStrict = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsStrict = getIterationVars(nls.crefs, indexName)
       <<
       /* start dynamic tearing sets */
       /* causal tearing set */
       <%residualFunction%>
+      <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       /* strict tearing set */
       <%residualFunctionStrict%>
+      <%sparseDataStrict%>
       <%bodyStaticDataStrict%>
       <%updateIterationVarsStrict%>
       /* end dynamic tearing sets */
@@ -2538,20 +2546,24 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
       let indexName = 'NLS<%nls.index%>'
+      let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
       let indexName = 'NLS<%at.index%>'
+      let sparseDataStrict = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticDataStrict = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsStrict = getIterationVars(nls.crefs, indexName)
       <<
       /* start dynamic tearing sets */
       /* causal tearing set */
       <%residualFunction%>
+      <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
       /* strict tearing set */
       <%residualFunctionStrict%>
+      <%sparseDataStrict%>
       <%bodyStaticDataStrict%>
       <%updateIterationVarsStrict%>
       /* end dynamic tearing sets */
@@ -2633,87 +2645,67 @@ match system
     >>
 end generateNonLinearResidualFunction;
 
-template generateStaticSparsePattern(list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, Text &defintions)
-"template generateStaticSparsePattern
+template generateStaticEmptySparseData(String indexName, String systemType)
+"template generateStaticEmptySparseData
+  This template generates source code for functions that initialize the sparse-pattern."
+::=
+  <<
+  void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+  {
+    /* no sparsity pattern available */
+    inSysData->isPatternAvailable = 0;
+  }
+  >>
+end generateStaticEmptySparseData;
+
+template generateStaticSparseData(String indexName, String systemType, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor)
+"template generateStaticSparseData
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
   match sparsepattern
-  case {} then <<>>
+  case {} then
+      <<
+      void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+      {
+        /* no sparsity pattern available */
+        inSysData->isPatternAvailable = 0;
+      }
+      >>
   case _ then
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let leadindex = (sparsepattern |> (i, indexes) =>
+      let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
+      let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
+      let colorString = genSPColors(colorList, "inSysData->sparsePattern.colorCols")
       <<
-      <%listLength(indexes)%>
-      >>
-      ;separator=",")
-      let indexElems = ( sparsepattern |> (i, indexes) hasindex index0 =>
-        ( indexes |> indexrow =>
-        <<
-        <%indexrow%>
-        >>
-        ;separator=",")
-      ;separator=",")
-      let colorArray = (colorList |> (indexes) hasindex index0 =>
-        let colorCol = ( indexes |> i_index =>
-         <<sysData->sparsePattern.colorCols[<%i_index%>] = <%intAdd(index0,1)%>;>>
-        ;separator="\n")
-      '<%colorCol%>'
-      ;separator="\n")
-      let &defintions += (
-      <<
-      const int tmp[<%sizeleadindex%>] = {<%leadindex%>};
-      const int tmpElem[<%sp_size_index%>] = {<%indexElems%>};
-      >>)
-      <<
-      sysData->sparsePattern.leadindex = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
-      sysData->sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
-      sysData->sparsePattern.numberOfNoneZeros = <%sp_size_index%>;
-      sysData->sparsePattern.colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
-      sysData->sparsePattern.maxColors = <%maxColor%>;
+      void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
+      {
+        int i=0;
+        <%colPtr%>
+        <%rowIndex%>
+        /* sparsity pattern available */
+        inSysData->isPatternAvailable = 'T';
+        inSysData->sparsePattern.leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
+        inSysData->sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        inSysData->sparsePattern.numberOfNoneZeros = <%sp_size_index%>;
+        inSysData->sparsePattern.colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
+        inSysData->sparsePattern.maxColors = <%maxColor%>;
 
-      /* write lead index of compressed sparse column */
-      memcpy(sysData->sparsePattern.leadindex, tmp, <%sizeleadindex%>*sizeof(int));
+        /* write lead index of compressed sparse column */
+        memcpy(  inSysData->sparsePattern.leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
 
-      for(i=1;i<<%sizeleadindex%>;++i)
-        sysData->sparsePattern.leadindex[i] += sysData->sparsePattern.leadindex[i-1];
+        for(i=1;i<<%sizeleadindex%>+1;++i)
+          inSysData->sparsePattern.leadindex[i] += inSysData->sparsePattern.leadindex[i-1];
 
-      /* call sparse index */
-      memcpy(sysData->sparsePattern.index, tmpElem, <%sp_size_index%>*sizeof(int));
+        /* call sparse index */
+        memcpy(inSysData->sparsePattern.index, rowIndex, <%sp_size_index%>*sizeof(int));
 
-      /* write color array */
-      <%colorArray%>
+        /* write color array */
+        <%colorString%>
+      }
       >>
    end match
-end generateStaticSparsePattern;
-
-template generateStaticInitialDataWithSparse(list<ComponentRef> crefs, String indexName, String systemType, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor)
-  "Generates initial function for nonlinear loops."
-::=
-  let bodyStaticData = (crefs |> cr hasindex i0 =>
-    <<
-    /* static nls data for <%crefStrNoUnderscore(cr)%> */
-    sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
-    sysData->min[i]     = <%crefAttributes(cr)%>.min;
-    sysData->max[i++]   = <%crefAttributes(cr)%>.max;
-    >>
-  ;separator="\n")
-  let defintions = ""
-  let sparseBody = generateStaticSparsePattern(sparsepattern, colorList, maxColor, &defintions)
-  <<
-
-  void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
-  {
-    DATA* data = (DATA*) inData;
-    <%systemType%>* sysData = (<%systemType%>*) inSystemData;
-    <%defintions%>
-    int i=0;
-    <%bodyStaticData%>
-    i=0;
-    <%sparseBody%>
-  }
-  >>
-end generateStaticInitialDataWithSparse;
+end generateStaticSparseData;
 
 template generateStaticInitialData(list<ComponentRef> crefs, String indexName, String systemType)
   "Generates initial function for nonlinear loops."
@@ -2733,6 +2725,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
     <%systemType%>* sysData = (<%systemType%>*) inSystemData;
     int i=0;
     <%bodyStaticData%>
+    /* initial sparse pattern */
+    initializeSparsePattern<%indexName%>(sysData);
   }
   >>
 end generateStaticInitialData;

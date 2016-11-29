@@ -698,6 +698,7 @@ const char *NLS_LS_METHOD[NLS_LS_MAX+1] = {
 
   "totalpivot",
   "lapack",
+  "klu",
 
   "NLS_LS_MAX"
 };
@@ -707,6 +708,7 @@ const char *NLS_LS_METHOD_DESC[NLS_LS_MAX+1] = {
 
   "internal total pivot implementation. Solve in some case even under-determined systems.",
   "use external lapack implementation.",
+  "use klu direct sparse solver.",
 
   "NLS_LS_MAX"
 };

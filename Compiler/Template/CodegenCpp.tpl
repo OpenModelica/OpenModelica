@@ -6213,6 +6213,23 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelName = lastIdentOfPath(modelInfo.name)
 
   match eq
+  /* in case only sparsity pattern is available handle for now as empty */
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME(({},_,_,_,_,_,_)))) then
+  <<
+
+  const matrix_t& <%modelName%>Algloop<%nls.index%>::getSystemMatrix()
+  {
+    // return empty matrix to indicate that no symbolic Jacobian is available
+    static matrix_t empty(0, 0);
+    return empty;
+  }
+
+  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  {
+    throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
+  }
+  >>
+
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME((_,_,_,_,_,_,index)))) then
   <<
 

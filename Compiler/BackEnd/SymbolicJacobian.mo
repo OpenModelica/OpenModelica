@@ -2390,9 +2390,9 @@ protected
   Boolean b1, b2;
 algorithm
   if not Flags.isSet(Flags.FORCE_NLS_ANALYTIC_JACOBIAN) then
-    try // might fail because of algorithms TODO: fix it! 
+    try // this might fail because of algorithms TODO: fix it!
       (b1, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inResidualEqns, traverserhasEqnNonDiffParts, ({}, true, false));
-      (b2, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inOtherEqns, traverserhasEqnNonDiffParts, ({}, true, false)); 
+      (b2, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inOtherEqns, traverserhasEqnNonDiffParts, ({}, true, false));
 	    if not (b1 and b2) then
 	      if Flags.isSet(Flags.FAILTRACE) then
 	        Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
