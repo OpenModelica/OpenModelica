@@ -111,7 +111,7 @@ public:
   void loadSystemLibraries();
   void loadUserLibraries();
   QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = false,
-                            bool sort = false, bool builtin = false, bool showProtected = true);
+                            bool sort = false, bool builtin = false, bool showProtected = true, bool includeConstants = false);
   QStringList searchClassNames(QString searchText, bool findInText = false);
   OMCInterface::getClassInformation_res getClassInformation(QString className);
   bool isPackage(QString className);
