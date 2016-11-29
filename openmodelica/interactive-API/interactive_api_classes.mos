@@ -84,6 +84,12 @@ loadString("model M
   annotation(Documentation(info=\"html info\", __OpenModelica_infoHeader=\"html header info\"));
 end M;");
 getDocumentationAnnotation(M);
+loadString("model B
+  constant Integer constant1=0;
+  constant Boolean constant2=true;
+  constant Real constant3,constant4;
+end B;");
+getClassNames(B, includeConstants=true);
 
 
 // Result:
@@ -244,4 +250,12 @@ getDocumentationAnnotation(M);
 // true
 // Evaluating: getDocumentationAnnotation(M)
 // {"html info","","html header info"}
+// Evaluating: loadString("model B
+//   constant Integer constant1=0;
+//   constant Boolean constant2=true;
+//   constant Real constant3,constant4;
+// end B;")
+// true
+// Evaluating: getClassNames(B, includeConstants = true)
+// {constant1,constant2,constant3,constant4}
 // endResult
