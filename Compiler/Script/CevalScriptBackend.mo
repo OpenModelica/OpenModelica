@@ -1916,7 +1916,7 @@ algorithm
 
     case (cache,_,"searchClassNames",{Values.STRING(str), Values.BOOL(b)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,false,{});
+        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,false,false,{});
         paths = listReverse(paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
         vals = searchClassNames(vals, str, b, p);
@@ -5204,7 +5204,7 @@ algorithm
       Boolean b;
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b)
       equation
-        strlist = Interactive.getClassnamesInParts(parts,b);
+        strlist = Interactive.getClassnamesInParts(parts,b,false);
       then
         strlist;
 
@@ -5223,7 +5223,7 @@ algorithm
 
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)),b)
       equation
-        strlist = Interactive.getClassnamesInParts(parts,b);
+        strlist = Interactive.getClassnamesInParts(parts,b,false);
       then strlist;
 
     case (_,_,Absyn.CLASS(body = Absyn.PDER(_,_,_)),_)

@@ -2576,6 +2576,7 @@ function getClassNames "Returns the list of class names defined in the class."
   input Boolean sort = false;
   input Boolean builtin = false "List also builtin classes if true";
   input Boolean showProtected = false "List also protected classes if true";
+  input Boolean includeConstants = false "List also constants in the class if true";
   output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");

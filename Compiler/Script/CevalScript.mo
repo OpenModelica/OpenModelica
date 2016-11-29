@@ -571,7 +571,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, mergeAST;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, includeConstants, inputConnectors, outputConnectors, mergeAST;
       FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.ComponentRef  crefCName;
@@ -1394,7 +1394,7 @@ algorithm
         i = System.alarm(i);
       then (cache,Values.INTEGER(i),st);
 
-    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(_)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(_),_},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
@@ -1404,33 +1404,33 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected),Values.BOOL(includeConstants)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
-        paths = Interactive.getClassnamesInPath(path, p, showProtected);
+        paths = Interactive.getClassnamesInPath(path, p, showProtected, includeConstants);
         paths = if b then List.map1r(paths,Absyn.joinPaths,path) else paths;
         paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected),Values.BOOL(includeConstants)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
-        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,{});
+        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,includeConstants,{});
         paths = listReverse(paths);
         paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected),Values.BOOL(includeConstants)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
-        (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,{});
+        (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,includeConstants,{});
         paths = listReverse(paths);
         paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
