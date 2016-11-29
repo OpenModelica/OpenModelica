@@ -157,7 +157,7 @@
 #ifdef CONFIG_REVISION
 #define CONFIG_VERSION CONFIG_REVISION
 #else
-#define CONFIG_VERSION "1.9.5-dev"
+#define CONFIG_VERSION "unknown"
 #endif
 
 
