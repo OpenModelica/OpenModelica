@@ -43,8 +43,8 @@
 #include <osg/Geometry>
 #include <osg/Shape>
 
-#include <qTextStream>
-#include <qFile>
+#include <QTextStream>
+#include <QFile>
 
 class Pipecylinder : public osg::Geometry
 {
