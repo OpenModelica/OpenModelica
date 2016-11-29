@@ -4032,8 +4032,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
   }
   // create a package.order file
   QString contents = "";
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    contents.append(pLibraryTreeItem->child(i)->getName()).append("\n");
+  /* Ticket #4152. package.order should contain constants and classes.*/
+  QStringList childClasses = MainWindow::instance()->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure(), false,
+                                                                                  false, false, false, true, true);
+  for (int i = 0; i < childClasses.size(); i++) {
+    contents.append(childClasses.at(i)).append("\n");
   }
   // create a new package.order file
   saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents);

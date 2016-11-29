@@ -707,9 +707,10 @@ void OMCProxy::loadUserLibraries()
  * \param showProtected - returns the protected classes as well.
  * \return
  */
-QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected)
+QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected,
+                                    bool includeConstants)
 {
-  return mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected);
+  return mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected, includeConstants);
 }
 
 /*!
