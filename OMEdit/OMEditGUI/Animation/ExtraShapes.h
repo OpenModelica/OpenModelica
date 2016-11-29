@@ -35,6 +35,8 @@
 #ifndef EXTRASHAPES_H
 #define EXTRASHAPES_H
 
+#include "Visualizer.h"
+
 #include <osg/Node>
 #include <osg/Group>
 #include <osg/Geode>
@@ -77,6 +79,8 @@ public:
   ~DXF3dFace();
   QString fill3dFace(QTextStream* stream);
   void dumpDXF3DFace();
+  osg::Vec3f calcNormals();
+
 public:
   osg::Vec3 vec1;
   osg::Vec3 vec2;
