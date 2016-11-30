@@ -289,8 +289,6 @@ void MainWindow::setUpMainWindow()
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
-  // create the OMEdit About widget when needed
-  mpAboutOMEditDialog = 0;
   //Create a centralwidget for the main window
   QWidget *pCentralwidget = new QWidget;
   mpCentralStackedWidget = new QStackedWidget;
@@ -482,9 +480,6 @@ void MainWindow::beforeClosingMainWindow()
   }
   if (mpTLMCoSimulationDialog) {
     delete mpTLMCoSimulationDialog;
-  }
-  if (mpAboutOMEditDialog) {
-    delete mpAboutOMEditDialog;
   }
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
@@ -2124,13 +2119,8 @@ void MainWindow::openModelicaWebReference()
 
 void MainWindow::openAboutOMEdit()
 {
-  if (!mpAboutOMEditDialog) {
-    mpAboutOMEditDialog = new AboutOMEditWidget(this);
-  }
-  mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
-  mpAboutOMEditDialog->setFocus(Qt::ActiveWindowFocusReason);
-  mpAboutOMEditDialog->raise();
-  mpAboutOMEditDialog->show();
+  AboutOMEditDialog *pAboutOMEditDialog = new AboutOMEditDialog(this);
+  pAboutOMEditDialog->exec();
 }
 
 void MainWindow::toggleShapesButton()
@@ -3354,141 +3344,61 @@ void MainWindow::dropEvent(QDropEvent *event)
 }
 
 /*!
- * \brief MainWindow::resizeEvent
- * Reimplementation of resizeEvent.\n
- * Resizes the AboutOMEditWidget whenever the MainWindow is resized.
- * \param event
- */
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
-  if (mpAboutOMEditDialog && mpAboutOMEditDialog->isVisible()) {
-    mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262, 235), rect().center() + QPoint(262, 235)));
-  }
-  QMainWindow::resizeEvent(event);
-}
-
-/*!
- * \class AboutOMEditWidget
- * \brief Creates a widget that shows the about text of OMEdit.
+ * \class AboutOMEditDialog
+ * \brief Creates a dialog that shows the about text of OMEdit.
  * Information about OpenModelica Connection Editor. Shows the list of OMEdit contributors.
  */
 /*!
- * \brief AboutOMEditWidget::AboutOMEditWidget
+ * \brief AboutOMEditWidget::AboutOMEditDialog
  * \param pParent - pointer to MainWindow
  */
-AboutOMEditWidget::AboutOMEditWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
+  : QDialog(pMainWindow)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
-  setMinimumSize(525, 470);
-  setMaximumSize(525, 470);
-  mBackgroundPixmap.load(":/Resources/icons/about-us.png");
-#ifdef Q_OS_MAC
-  int MAC_FONT_FACTOR = 5;  /* the system font size in MAC is too small. */
-#else
-  int MAC_FONT_FACTOR = 0;
-#endif
-  // OMEdit intro text
-  Label *pIntroLabel = new Label(Helper::applicationIntroText);
-  pIntroLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() + 3 + MAC_FONT_FACTOR));
-  Label *pOMEditVersionLabel = new Label(GIT_SHA);
-  pOMEditVersionLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 3 + MAC_FONT_FACTOR));
-  // OpenModelica compiler info
-  Label *pConnectedLabel = new Label(QString("Connected to ").append(Helper::OpenModelicaVersion));
-  pConnectedLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 3 + MAC_FONT_FACTOR));
-  // about text
-  QString aboutText = QString("Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />")
-      .append("Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />")
-      .append("Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis.")
+  setWindowTitle(tr("About %1").arg(Helper::applicationName));
+  setAttribute(Qt::WA_DeleteOnClose);
+
+  const QString aboutText = tr(
+     "<h2>%1 - %2</h2>"
+     "<b>%3</b><br />"
+     "<b>Connected to %4</b><br /><br />"
+     "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
+     "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
+     "Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis."
 #if defined(WITHOUT_OSG)
-      .append("<br><em>Compiled without 3D animation support</em>.")
+     "<br /><em>Compiled without 3D animation support</em>."
 #endif
-      ;
-  Label *pAboutTextLabel = new Label;
-  pAboutTextLabel->setTextFormat(Qt::RichText);
-  pAboutTextLabel->setTextInteractionFlags(pAboutTextLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  pAboutTextLabel->setOpenExternalLinks(true);
-  pAboutTextLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 4 + MAC_FONT_FACTOR));
+     "<br /><br /><b>Contributors:</b>"
+     "<ul>"
+     "<li>Adeel Asghar - <u><a href=\"mailto:adeel.asghar@liu.se\">adeel.asghar@liu.se</a></u></li>"
+     "<li>Sonia Tariq</li>"
+     "<li>Martin Sjölund - <u><a href=\"mailto:martin.sjolund@liu.se\">martin.sjolund@liu.se</a></u></li>"
+     "<li>Haris Kapidzic</li>"
+     "<li>Abhinn Kothari</li>"
+     "<li>Dr. Henning Kiel</li>"
+     "<li>Alachew Shitahun</li>"
+     "</ul>")
+     .arg(Helper::applicationName,
+          Helper::applicationIntroText,
+          GIT_SHA,
+          Helper::OpenModelicaVersion);
+  // about text label
+  Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);
-  pAboutTextLabel->setText(aboutText);
-  QVBoxLayout *pAboutLayout = new QVBoxLayout;
-  pAboutLayout->setContentsMargins(0, 0, 0, 0);
-  pAboutLayout->addWidget(pAboutTextLabel);
-  // contributors heading
-  QString contributorsHeading = QString("<b>Contributors:</b>");
-  Label *pContributorsHeading = new Label;
-  pContributorsHeading->setTextFormat(Qt::RichText);
-  pContributorsHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 4 + MAC_FONT_FACTOR));
-  pContributorsHeading->setText(contributorsHeading);
-  // contributors text
-  QString contributorsText = QString("<ul style=\"margin: 0px 0px 0px -32px; padding: 2px;\">")
-      .append("<li>Adeel Asghar - <u><a href=\"mailto:adeel.asghar@liu.se\">adeel.asghar@liu.se</a></u></li>")
-      .append("<li>Sonia Tariq</li>")
-      .append("<li>Martin Sjölund - <u><a href=\"mailto:martin.sjolund@liu.se\">martin.sjolund@liu.se</a></u></li>")
-      .append("<li>Haris Kapidzic</li>")
-      .append("<li>Abhinn Kothari</li>")
-      .append("<li>Dr. Henning Kiel</li>")
-      .append("<li>Alachew Shitahun</li>")
-      .append("</ul>");
-  Label *pContributorsLabel = new Label;
-  pContributorsLabel->setTextFormat(Qt::RichText);
-  pContributorsLabel->setTextInteractionFlags(pContributorsLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  pContributorsLabel->setOpenExternalLinks(true);
-  pContributorsLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::systemFontInfo.pointSize() - 4 + MAC_FONT_FACTOR));
-  pContributorsLabel->setText(contributorsText);
-  // widget for all labels
-  QWidget *pWidget = new QWidget;
-  QGridLayout *pWidgetLayout = new QGridLayout;
-  pWidgetLayout->setContentsMargins(0, 0, 0, 0);
-  pWidgetLayout->addWidget(pIntroLabel, 0, 0, 1, 1, Qt::AlignHCenter);
-  pWidgetLayout->addWidget(pOMEditVersionLabel, 1, 0, 1, 1, Qt::AlignHCenter);
-  pWidgetLayout->addWidget(pConnectedLabel, 2, 0, 1, 1, Qt::AlignHCenter);
-  pWidgetLayout->addLayout(pAboutLayout, 3, 0);
-  pWidgetLayout->addWidget(pContributorsHeading, 4, 0);
-  pWidgetLayout->addWidget(pContributorsLabel, 5, 0);
-  pWidget->setLayout(pWidgetLayout);
-  // QScrollArea
-  QScrollArea *pScrollArea = new QScrollArea;
-  pScrollArea->setFrameShape(QFrame::NoFrame);
-  pScrollArea->setBackgroundRole(QPalette::Base);
-  pScrollArea->setWidgetResizable(true);
-  pScrollArea->setWidget(pWidget);
+  pAboutTextLabel->setOpenExternalLinks(true);
+  pAboutTextLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  pAboutTextLabel->setToolTip("");
   // close button
   QPushButton *pCloseButton = new QPushButton(Helper::close);
-  connect(pCloseButton, SIGNAL(clicked()), SLOT(hide()));
-  // set the layout
+  connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
+  // logo label
+  Label *pLogoLabel = new Label;
+  QPixmap pixmap(":/Resources/icons/omedit.png");
+  pLogoLabel->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  // main layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(25, 200, 25, 20);
-  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(pScrollArea, 0, 0);
-  pMainLayout->addWidget(pCloseButton, 1, 0, 1, 1, Qt::AlignRight);
+  pMainLayout->addWidget(pLogoLabel, 0, 0, Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(pAboutTextLabel, 0, 1, Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(pCloseButton, 1, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
-}
-
-/*!
- * \brief AboutOMEditWidget::paintEvent
- * Reimplementation of paintEvent.\n
- * Draws the background image.
- * \param event - pointer to QPaintEvent
- */
-void AboutOMEditWidget::paintEvent(QPaintEvent *pEvent)
-{
-  QWidget::paintEvent(pEvent);
-  QPainter painter(this);
-  painter.drawPixmap((size().width() - mBackgroundPixmap.size().width())/2,
-                     (size().height() - mBackgroundPixmap.size().height())/2, mBackgroundPixmap);
-}
-
-/*!
- * \brief AboutOMEditWidget::keyPressEvent
- * Reimplementation of keyPressEvent.\n
- * Hides the widget when ESC key is pressed.
- * \param pEvent
- */
-void AboutOMEditWidget::keyPressEvent(QKeyEvent *pEvent)
-{
-  if (pEvent->key() == Qt::Key_Escape) {
-    hide();
-  }
-  QWidget::keyPressEvent(pEvent);
 }

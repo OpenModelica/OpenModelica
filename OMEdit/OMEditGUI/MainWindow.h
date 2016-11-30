@@ -43,7 +43,7 @@
 #endif
 
 #include <QMainWindow>
-#include <QWidget>
+#include <QDialog>
 #include <QProgressBar>
 #include <QDomDocument>
 #include <QStackedWidget>
@@ -69,7 +69,7 @@ class TLMCoSimulationDialog;
 class ModelWidgetContainer;
 class WelcomePageWidget;
 class InfoBar;
-class AboutOMEditWidget;
+class AboutOMEditDialog;
 class Label;
 class FileDataNotifier;
 class LibraryTreeItem;
@@ -218,7 +218,6 @@ private:
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
-  AboutOMEditWidget *mpAboutOMEditDialog;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
@@ -444,19 +443,13 @@ protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
-  virtual void resizeEvent(QResizeEvent *event);
 };
 
-class AboutOMEditWidget : public QWidget
+class AboutOMEditDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AboutOMEditWidget(MainWindow *pMainWindow);
-  void paintEvent(QPaintEvent *pEvent);
-private:
-  QPixmap mBackgroundPixmap;
-protected:
-  virtual void keyPressEvent(QKeyEvent *pEvent);
+  AboutOMEditDialog(MainWindow *pMainWindow);
 };
 
 #endif // MAINWINDOW_H

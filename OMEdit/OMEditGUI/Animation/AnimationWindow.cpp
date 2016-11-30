@@ -571,7 +571,7 @@ void AnimationWindow::openFMUSettingsDialog()
   //create dialog
   mpFMUSettingsDialog = new QDialog(this);
   mpFMUSettingsDialog->setWindowTitle("FMU settings");
-  mpFMUSettingsDialog->setWindowIcon(QIcon(":/Resources/icons/animation.png"));
+  mpFMUSettingsDialog->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   //the layouts
   QVBoxLayout *mainLayout = new QVBoxLayout;
   QHBoxLayout *simulationLayout = new QHBoxLayout;
