@@ -1110,6 +1110,19 @@ algorithm
         print("failed inferBindings\n");
       then (cache, Values.BOOL(false), st);
 
+     case (cache,_, "generateVerificationScenarios", {Values.CODE(Absyn.C_TYPENAME(classpath))},
+       (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM())),_)
+       equation
+        pnew = Binding.generateVerificationScenarios(classpath, p);
+        newst = GlobalScriptUtil.setSymbolTableAST(st, pnew);
+      then
+         (cache,Values.BOOL(true), newst);
+
+    case (cache, _, "generateVerificationScenarios", _, st, _)
+      equation
+        print("failed to generateVerificationScenarios\n");
+      then (cache, Values.BOOL(false), st);
+
     case (_,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
        (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM())),_)
       equation
