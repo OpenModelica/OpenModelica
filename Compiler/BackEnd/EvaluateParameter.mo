@@ -293,6 +293,7 @@ algorithm
       DAE.Exp e;
       DAE.ComponentRef cref;
       Option<DAE.VariableAttributes> attr;
+      AvlSetInt.Tree tree;
       list<Integer> ilst,selectedParameters;
       Integer index;
       BackendDAE.IncidenceMatrix m;
@@ -303,7 +304,8 @@ algorithm
 
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
       equation
-        (_,(_,ilst)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,{}));
+        (_,(_,tree)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY()));
+        ilst = AvlSetInt.listKeys(tree);
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
         selectedParameters = List.consOnTrue(select, index, selectedParameters);
@@ -314,7 +316,8 @@ algorithm
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
       equation
         e = DAEUtil.getStartAttrFail(attr);
-        (_,(_,ilst)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,{}));
+        (_,(_,tree)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY()));
+        ilst = AvlSetInt.listKeys(tree);
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
         selectedParameters = List.consOnTrue(select, index, selectedParameters);
@@ -707,13 +710,13 @@ protected function evaluateFixedAttribute1
 protected
   DAE.Exp e1;
   Boolean b;
-  list<Integer> ilst;
+  AvlSetInt.Tree ilst;
   Option<DAE.VariableAttributes> attr1;
 algorithm
    // apply replacements
   (e1,_) := BackendVarTransform.replaceExp(e, repl, NONE());
-  (_,(_,ilst)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,{}));
-  (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(ilst,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+  (_,(_,ilst)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY()));
+  (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(AvlSetInt.listKeys(ilst),globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
   (e1,_) := BackendVarTransform.replaceExp(e1, repl, NONE());
   (e1,_) := ExpressionSimplify.simplify(e1);
    b := Expression.isConst(e1);

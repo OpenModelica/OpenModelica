@@ -45,17 +45,17 @@ encapsulated package BackendDAEUtil
   It also includes the tarjan algorithm to detect strong components
   in the BLT sorting."
 
-public import Absyn;
-public import BackendDAE;
-public import BackendDAEFunc;
-public import DAE;
-public import FCore;
-public import Util;
+import Absyn;
+import AvlSetInt;
+import BackendDAE;
+import BackendDAEFunc;
+import DAE;
+import FCore;
+import Util;
 
 protected
 import Algorithm;
 import Array;
-import AvlSetInt;
 import BackendDAEOptimize;
 import BackendDAETransform;
 import BackendDump;
@@ -2188,17 +2188,22 @@ algorithm
   end try;
 end incidenceMatrixScalar;
 
-public function applyIndexType
+protected function applyIndexType
 "@author: adrpo
   Applies absolute value to all entries in the given list."
-  input list<Integer> inLst;
+  input AvlSetInt.Tree inLst;
   input BackendDAE.IndexType inIndexType;
-  output list<Integer> outLst;
+  output AvlSetInt.Tree outLst;
 algorithm
   outLst := match(inLst, inIndexType)
     // transform to absolute indexes
     case (_, BackendDAE.ABSOLUTE())
-    then List.map(inLst, intAbs);
+      algorithm
+        outLst := AvlSetInt.EMPTY();
+        for key in AvlSetInt.listKeys(inLst) loop
+          outLst := AvlSetInt.add(outLst, intAbs(key));
+        end for;
+    then outLst;
 
     // leave as it is
     else inLst;
@@ -2218,6 +2223,7 @@ protected
   Integer num_eqs, num_vars;
   BackendDAE.Equation eq;
   list<Integer> row;
+  AvlSetInt.Tree rowTree;
 algorithm
   num_eqs := equationArraySize(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
@@ -2228,7 +2234,8 @@ algorithm
     // Get the equation.
     eq := BackendEquation.equationNth1(inEqns, idx);
     // Compute the row.
-    row := incidenceRow(eq, inVars, inIndexType, functionTree, {});
+    rowTree := incidenceRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY());
+    row := AvlSetInt.listKeys(rowTree);
     // Put it in the arrays.
     arrayUpdate(outIncidenceArray, idx, row);
     outIncidenceArrayT := fillincidenceMatrixT(row, {idx}, outIncidenceArrayT);
@@ -2247,6 +2254,7 @@ protected
   Integer num_eqs, num_vars;
   BackendDAE.Equation eq;
   list<Integer> row;
+  AvlSetInt.Tree rowTree;
 algorithm
   num_eqs := equationArraySize(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
@@ -2258,7 +2266,8 @@ algorithm
       // Get the equation.
       eq := BackendEquation.equationNth1(inEqns, idx);
       // Compute the row.
-      row := incidenceRow(eq, inVars, inIndexType, functionTree, {});
+      rowTree := incidenceRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY());
+      row := AvlSetInt.listKeys(rowTree);
       // Put it in the arrays.
       arrayUpdate(outIncidenceArray, idx, row);
       outIncidenceArrayT := fillincidenceMatrixT(row, {idx}, outIncidenceArrayT);
@@ -2280,6 +2289,7 @@ protected function incidenceMatrixDispatchScalar
 protected
   Integer num_eqs, num_vars, size, num_rows = 0;
   BackendDAE.Equation eq;
+  AvlSetInt.Tree rowTree;
   list<Integer> row, row_indices, imap = {};
   list<BackendDAE.IncidenceMatrixElement> iarr = {};
 algorithm
@@ -2293,7 +2303,8 @@ algorithm
     eq := BackendEquation.equationNth1(inEqns, idx);
 
     // Compute the row.
-    (row, size) := incidenceRow(eq, inVars, inIndexType, functionTree, {});
+    (rowTree, size) := incidenceRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY());
+    row := AvlSetInt.listKeys(rowTree);
     row_indices := List.intRange2(num_rows + 1, num_rows + size);
     num_rows := num_rows + size;
     arrayUpdate(omapEqnIncRow, idx, row_indices);
@@ -2341,8 +2352,8 @@ public function incidenceRow
   input BackendDAE.Variables vars;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
-  input list<Integer> iRow;
-  output list<Integer> outIntegerLst;
+  input AvlSetInt.Tree iRow;
+  output AvlSetInt.Tree outIntegerLst;
   output Integer rowSize;
 protected
   list<Integer> whenIntegerLst;
@@ -2371,7 +2382,8 @@ algorithm
   end matchcontinue;
   (outIntegerLst,rowSize) := matchcontinue (inEquation)
     local
-      list<Integer> lst1,lst2,res,dimsize;
+      AvlSetInt.Tree lst1,lst2,res;
+      list<Integer> dimsize;
       DAE.Exp e1,e2,e,expCref,cond;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
@@ -2460,7 +2472,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-  outIntegerLst := listAppend(whenIntegerLst, outIntegerLst);
+  outIntegerLst := AvlSetInt.addList(outIntegerLst, whenIntegerLst);
 end incidenceRow;
 
 protected function incidenceRowLst
@@ -2471,8 +2483,8 @@ protected function incidenceRowLst
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
-  input list<Integer> inIntegerLst;
-  output list<Integer> outIntegerLst = inIntegerLst;
+  input AvlSetInt.Tree inIntegerLst;
+  output AvlSetInt.Tree outIntegerLst = inIntegerLst;
   output Integer rowSize = 0;
 protected
   Integer size;
@@ -2492,8 +2504,8 @@ protected function incidenceRowLstLst
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
-  input list<Integer> inIntegerLst;
-  output list<Integer> outIntegerLst = inIntegerLst;
+  input AvlSetInt.Tree inIntegerLst;
+  output AvlSetInt.Tree outIntegerLst = inIntegerLst;
   output Integer rowSize = 0;
 protected
   Integer size;
@@ -2512,8 +2524,8 @@ protected function incidenceRowWhen
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
-  input list<Integer> inRow;
-  output list<Integer> outRow;
+  input AvlSetInt.Tree inRow;
+  output AvlSetInt.Tree outRow;
 algorithm
   outRow := match (inEquation)
     local
@@ -2544,8 +2556,8 @@ protected function incidenceRowWhenOps
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
-  input list<Integer> inRow;
-  output list<Integer> outRow;
+  input AvlSetInt.Tree inRow;
+  output AvlSetInt.Tree outRow;
 algorithm
   outRow := match (inWhenOps)
     local
@@ -2596,7 +2608,7 @@ end incidenceRowWhenOps;
 
 protected function incidenceRowAlgorithm
   input DAE.Exp exp;
-  input output list<Integer> row;
+  input output AvlSetInt.Tree row;
   input BackendDAE.Variables inVariables;
   input Option<DAE.FunctionTree> functionTree;
   input BackendDAE.IndexType inIndexType;
@@ -2649,14 +2661,14 @@ public function incidenceRowExp "author: PA
   returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  input list<Integer> inIntegerLst;
+  input AvlSetInt.Tree inIntegerLst;
   input Option<DAE.FunctionTree> functionTree;
   input BackendDAE.IndexType inIndexType;
-  output list<Integer> outIntegerLst;
+  output AvlSetInt.Tree outIntegerLst;
 algorithm
   outIntegerLst := match (inExp, inVariables, inIntegerLst, functionTree, inIndexType)
     local
-      list<Integer> vallst;
+      AvlSetInt.Tree vallst;
 
     case (_, _, _, _, BackendDAE.SPARSE()) equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables, inIntegerLst));
@@ -2685,14 +2697,15 @@ end incidenceRowExp;
 
 public function traversingincidenceRowExpSolvableFinder "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> inTpl;
+  input tuple<BackendDAE.Variables, AvlSetInt.Tree, Option<DAE.FunctionTree>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> outTpl;
+  output tuple<BackendDAE.Variables, AvlSetInt.Tree, Option<DAE.FunctionTree>> outTpl;
 algorithm
   (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
-      list<Integer> p, pa, ilst;
+      list<Integer> p, ilst;
+      AvlSetInt.Tree pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e1, e2, startvalue, stopvalue, stepvalue;
@@ -2704,7 +2717,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       Option<DAE.FunctionTree> ofunctionTree;
       DAE.FunctionTree functionTree;
-      tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> tpl;
+      tuple<BackendDAE.Variables, AvlSetInt.Tree, Option<DAE.FunctionTree>> tpl;
       Integer diffindx;
       list<DAE.Subscript> subs;
 
@@ -2792,14 +2805,15 @@ end traversingincidenceRowExpSolvableFinder;
 public function traversingIncidenceRowExpFinderBaseClock "author: lochel
   This is used for base-clock partitioning."
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, list<Integer>> inTpl;
+  input tuple<BackendDAE.Variables, AvlSetInt.Tree> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, list<Integer>> outTpl;
+  output tuple<BackendDAE.Variables, AvlSetInt.Tree> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
-      list<Integer> p, pa;
+      list<Integer> p;
+      AvlSetInt.Tree pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
@@ -2807,12 +2821,12 @@ algorithm
     case (DAE.CREF(componentRef=cr), (vars, pa))
       equation
         (_, p) = BackendVariable.getVar(cr, vars);
-      then (inExp, true, (vars, List.union(p, pa)));
+      then (inExp, true, (vars, AvlSetInt.addList(pa, p)));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, e}), (vars, pa))
+    case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, e}), _)
       equation
-        (_, (_, p)) = Expression.traverseExpTopDown(e, traversingIncidenceRowExpFinderBaseClock, (vars, pa));
-      then (inExp, false, (vars, p));
+        (_, outTpl) = Expression.traverseExpTopDown(e, traversingIncidenceRowExpFinderBaseClock, inTpl);
+      then (inExp, false, outTpl);
 
     case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK()), _)
       then (inExp, false, inTpl);
@@ -2828,21 +2842,22 @@ public function traversingIncidenceRowExpFinderSubClock "author: lochel
   This is used for sub-clock partitioning.
   TODO: avoid code duplicates, cf. function traversingIncidenceRowExpFinderBaseClock"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, list<Integer>> inTpl;
+  input tuple<BackendDAE.Variables, AvlSetInt.Tree> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, list<Integer>> outTpl;
+  output tuple<BackendDAE.Variables, AvlSetInt.Tree> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
-      list<Integer> p, pa, res;
+      list<Integer> p;
+      AvlSetInt.Tree pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
 
     case (DAE.CREF(componentRef=cr), (vars, pa))
       equation
         (_, p) = BackendVariable.getVar(cr, vars);
-        res = List.union(p, pa);
+        res = AvlSetInt.addList(pa, p);
       then (inExp, true, (vars, res));
 
     case (DAE.CALL(path=Absyn.IDENT(name="subSample")), _)
@@ -2868,14 +2883,15 @@ public function traversingincidenceRowExpFinder "
   author: Frenkel TUD 2010-11
   Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,list<Integer>> inTpl;
+  input tuple<BackendDAE.Variables,AvlSetInt.Tree> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,list<Integer>> outTpl;
+  output tuple<BackendDAE.Variables,AvlSetInt.Tree> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
   local
-      list<Integer> p,pa,res;
+      list<Integer> p;
+      AvlSetInt.Tree pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2;
@@ -2946,14 +2962,15 @@ end traversingincidenceRowExpFinder;
 protected function incidenceRowExp1
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
-  input list<Integer> inVarIndxLst;
+  input AvlSetInt.Tree inVarIndxLst;
   input Integer diffindex;
-  output list<Integer> outVarIndxLst;
+  output AvlSetInt.Tree outVarIndxLst;
 algorithm
   outVarIndxLst := match (inVarLst,inIntegerLst,inVarIndxLst,diffindex)
     local
        list<BackendDAE.Var> rest;
-       list<Integer> irest,vars;
+       list<Integer> irest;
+       AvlSetInt.Tree vars;
        Integer i,i1,diffidx;
        Boolean b;
     case ({},{},vars,_) then vars;
@@ -2963,33 +2980,31 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))::rest,i::irest,_,_)
       equation
         i1 = if intGe(diffindex,1) then i else -i;
-        b = List.isMemberOnTrue(i1, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i1, inVarIndxLst);
+        vars = AvlSetInt.add(inVarIndxLst, i1);
       then incidenceRowExp1(rest,irest,vars,diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))::rest,i::irest,_,_)
       equation
         i1 = if intGe(diffindex,diffidx) then i else -i;
-        b = List.isMemberOnTrue(i1, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i1, inVarIndxLst);
+        vars = AvlSetInt.add(inVarIndxLst, i1);
       then incidenceRowExp1(rest,irest,vars,diffindex);
     case (_::rest,i::irest,_,_)
       equation
-        b = List.isMemberOnTrue(i, inVarIndxLst, intEq);
-        vars = List.consOnTrue(not b, i, inVarIndxLst);
+        vars = AvlSetInt.add(inVarIndxLst, i);
       then incidenceRowExp1(rest,irest,vars,diffindex);
   end match;
 end incidenceRowExp1;
 
 public function traversingincidenceRowExpFinderwithInput "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,list<Integer>> inTpl;
+  input tuple<BackendDAE.Variables,AvlSetInt.Tree> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,list<Integer>> outTpl;
+  output tuple<BackendDAE.Variables,AvlSetInt.Tree> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
   local
-      list<Integer> p,pa,res;
+      list<Integer> p;
+      AvlSetInt.Tree pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
@@ -3033,56 +3048,46 @@ end traversingincidenceRowExpFinderwithInput;
 protected function incidenceRowExp1withInput
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
-  input list<Integer> vars;
+  input AvlSetInt.Tree vars;
   input Integer diffindex;
-  output list<Integer> outIntegerLst;
+  output AvlSetInt.Tree outIntegerLst;
 algorithm
-  outIntegerLst := matchcontinue (inVarLst,inIntegerLst,vars,diffindex)
+  outIntegerLst := match (inVarLst,inIntegerLst,vars,diffindex)
     local
        list<BackendDAE.Var> rest;
        list<Integer> irest;
        Integer i;
     case ({},{},_,_) then vars;
     case (BackendDAE.VAR(varKind = BackendDAE.JAC_DIFF_VAR())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE())::rest,i::irest,_,_)
-      equation
-        false = intEq(diffindex,0);
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not (diffindex==0 or AvlSetInt.hasKey(vars, i))
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-       then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (_ :: _,_::_,_,_)
       then vars;
-  end matchcontinue;
+  end match;
 end incidenceRowExp1withInput;
 
 
@@ -3213,7 +3218,8 @@ algorithm
       BackendDAE.IncidenceMatrixT mt_1,mt_2,mt_3;
       Integer e,abse;
       BackendDAE.Equation eqn;
-      list<Integer> row,invars,outvars,eqns,oldvars;
+      AvlSetInt.Tree row,invars,outvars;
+      list<Integer> eqns,oldvars;
 
     case (_,_,_,_,_,_,{}) then (m,mt);
 
@@ -3221,12 +3227,12 @@ algorithm
       equation
         abse = intAbs(e);
         eqn = BackendEquation.equationNth1(daeeqns, abse);
-        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
+        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,AvlSetInt.EMPTY());
         oldvars = getOldVars(m,abse);
-        m_1 = Array.replaceAtWithFill(abse,row,{},m);
-        (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
-        mt_1 = removeValuefromMatrix(abse,outvars,mt);
-        mt_2 = addValuetoMatrix(abse,invars,mt_1);
+        m_1 = Array.replaceAtWithFill(abse,AvlSetInt.listKeys(row),{},m);
+        (_,outvars,invars) = AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.EMPTY(), oldvars),row);
+        mt_1 = removeValuefromMatrix(abse,AvlSetInt.listKeys(outvars),mt);
+        mt_2 = addValuetoMatrix(abse,AvlSetInt.listKeys(invars),mt_1);
         (m_2,mt_3) = updateIncidenceMatrix1(vars,daeeqns,inIndxType,functionTree,m_1,mt_2,eqns);
       then (m_2,mt_3);
 
@@ -3326,7 +3332,8 @@ algorithm
       BackendDAE.IncidenceMatrixT mt_1,mt_2,mt_3;
       Integer e,abse,size;
       BackendDAE.Equation eqn;
-      list<Integer> row,invars,outvars,eqns,oldvars,scalarindxs;
+      AvlSetInt.Tree row,invarsTree,outvarsTree;
+      list<Integer> invars,outvars,eqns,oldvars,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
 
@@ -3336,13 +3343,14 @@ algorithm
       equation
         abse = intAbs(e);
         eqn = BackendEquation.equationNth1(daeeqns, abse);
-        _ = BackendEquation.equationSize(eqn);
-        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
+        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,AvlSetInt.Tree.EMPTY());
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listHead(scalarindxs));
-        (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
+        (_,outvarsTree,invarsTree) = AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
+        outvars = AvlSetInt.listKeys(outvarsTree);
+        invars = AvlSetInt.listKeys(invarsTree);
         // do the same for each scalar indxs
-        m_1 = List.fold1r(scalarindxs,arrayUpdate,row,m);
+        m_1 = List.fold1r(scalarindxs,arrayUpdate,AvlSetInt.listKeys(row),m);
         mt_1 = List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
         mt_2 = List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
         (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree);
@@ -3376,7 +3384,8 @@ algorithm
       BackendDAE.IncidenceMatrixT mt1;
       Integer abse,rowsize,new_size;
       BackendDAE.Equation eqn;
-      list<Integer> row,scalarindxs;
+      AvlSetInt.Tree row;
+      list<Integer> scalarindxs, row_lst;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
 
@@ -3387,13 +3396,14 @@ algorithm
         abse = intAbs(index);
         eqn = BackendEquation.equationNth1(daeeqns, abse);
         rowsize = BackendEquation.equationSize(eqn);
-        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
+        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,AvlSetInt.EMPTY());
         new_size = size+rowsize;
         scalarindxs = List.intRange2(size+1,new_size);
         mapEqnIncRow = arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
         mapIncRowEqn = List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
-        m1= List.fold1r(scalarindxs,arrayUpdate,row,m);
-        mt1 = fillincidenceMatrixT(row,scalarindxs,mt);
+        row_lst = AvlSetInt.listKeys(row);
+        m1= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
+        mt1 = fillincidenceMatrixT(row_lst,scalarindxs,mt);
         (m1,mt1,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
       then
         (m1,mt1,mapEqnIncRow,mapIncRowEqn);

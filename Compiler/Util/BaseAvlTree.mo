@@ -334,6 +334,11 @@ algorithm
   end match;
 end forEach;
 
+redeclare function intersection
+algorithm
+  fail();
+end intersection;
+
 function map
   "Traverses the tree in depth-first pre-order and applies the given function to
    each node, constructing a new tree with the resulting nodes."

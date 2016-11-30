@@ -2344,6 +2344,7 @@ algorithm
     match (iEqns, vars, index, sindex, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree)
     local
       list<BackendDAE.Equation> rest;
+      AvlSetInt.Tree rowTree;
       list<Integer> row,rowindxs,negrow;
       BackendDAE.Equation e;
       Integer i1,rowSize,size;
@@ -2354,7 +2355,8 @@ algorithm
     case (e::rest, _, _, _, _, _, _, _, _, _, _)
       equation
         // compute the row
-        (row,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), {});
+        (rowTree,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY());
+        row = AvlSetInt.listKeys(rowTree);
         rowSize = sindex + size;
         i1 = index+1;
         rowindxs = List.intRange2(sindex+1, rowSize);

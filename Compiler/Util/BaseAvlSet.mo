@@ -243,6 +243,59 @@ algorithm
   end match;
 end setTreeLeftRight;
 
+function intersection
+  "Takes two sets and returns the intersection as well as the remainder
+  of both sets after removing the duplicates in both sets."
+  input Tree tree1, tree2;
+  output Tree intersect=Tree.EMPTY(), rest1=Tree.EMPTY(), rest2=Tree.EMPTY();
+protected
+  function intersectionWork
+    input Tree tree1, tree2;
+    input Boolean buildTree;
+    input output Tree intersection=Tree.EMPTY(), rest=Tree.EMPTY();
+  protected
+    Boolean b;
+  algorithm
+    (intersection,rest) := match tree1
+      case EMPTY() then (intersection, rest);
+      case LEAF()
+        algorithm
+          b := hasKey(tree2, tree1.key);
+        then (if b then add(intersection, tree1.key) else intersection, if b or not buildTree then rest else add(rest, tree1.key));
+      case NODE()
+        algorithm
+          (intersection,rest) := intersectionWork(tree1.left, tree2, buildTree, intersection, rest);
+          (intersection,rest) := intersectionWork(tree1.right, tree2, buildTree, intersection, rest);
+          b := hasKey(tree2, tree1.key);
+        then (if b then add(intersection, tree1.key) else intersection, if b or not buildTree then rest else add(rest, tree1.key));
+    end match;
+  end intersectionWork;
+algorithm
+  if isEmpty(tree1) then
+    rest2 := tree2;
+    return;
+  end if;
+  if isEmpty(tree2) then
+    rest1 := tree1;
+    return;
+  end if;
+
+  (intersect, rest1) := intersectionWork(tree1, tree2, isPresent(rest1));
+
+  if isPresent(rest2) then
+    if isEmpty(intersect) then
+      rest2 := tree2;
+    else
+      // TODO: Make a faster version of this?
+      for key in listKeys(tree2) loop
+        if not hasKey(intersect, key) then
+          rest2 := add(rest2, key);
+        end if;
+      end for;
+    end if;
+  end if;
+end intersection;
+
 protected
 
 function referenceEqOrEmpty
