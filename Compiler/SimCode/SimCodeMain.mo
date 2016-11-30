@@ -60,6 +60,7 @@ import Builtin;
 import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
+import CodegenEmbeddedC;
 import CodegenFMU;
 import CodegenFMUCpp;
 import CodegenFMUCppHpcom;
@@ -711,6 +712,35 @@ algorithm
         end for;
         // write the makefile last!
         Tpl.closeFile(Tpl.tplCallWithFailError3(CodegenC.simulationMakefile,Config.simulationCodeTarget(),simCode,strs,txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".makefile")));
+      then ();
+
+    case "ExperimentalEmbeddedC"
+      algorithm
+        guid := System.getUUIDStr();
+
+        System.realtimeTick(ClockIndexes.RT_PROFILER0);
+        codegenFuncs := {};
+        for f in {
+          (CodegenEmbeddedC.mainFile, "_main.c")
+        } loop
+          (func,str) := f;
+          codegenFuncs := (function runTplWriteFile(func=function func(a_simCode=simCode), file=simCode.fileNamePrefix + str)) :: codegenFuncs;
+        end for;
+
+        // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
+        numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
+        if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
+          res := list(func() for func in codegenFuncs);
+        else
+          res := System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc);
+        end if;
+        strs := {};
+        for tpl in res loop
+          (true,tmp) := tpl;
+          strs := List.append_reverse(tmp, strs);
+        end for;
+        strs := listReverse(strs);
+        // write the makefile last!
       then ();
 
     case "JavaScript" equation

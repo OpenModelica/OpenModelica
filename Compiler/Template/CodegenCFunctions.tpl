@@ -5493,7 +5493,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    '<%var2%>'
+    var2
 
   case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2}) then
@@ -5995,7 +5995,7 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
       case PARALLEL_FUNCTION_CONTEXT(__) then res
       else
         if boolAnd(profileFunctions(),boolNot(attr.builtin)) then
-          let funName = '<%underscorePath(exp.path)%>'
+          let funName = underscorePath(exp.path)
           let tvar = match attr.ty
             case T_NORETCALL(__) then
               ""
@@ -6918,8 +6918,8 @@ template crefShortType(ComponentRef cr) "template crefType
   Like cref but with cast if type is integer."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%expTypeShort(identType)%>'
-  case CREF_QUAL(__)  then '<%crefShortType(componentRef)%>'
+  case CREF_IDENT(__) then expTypeShort(identType)
+  case CREF_QUAL(__)  then crefShortType(componentRef)
   else "crefType:ERROR"
   end match
 end crefShortType;

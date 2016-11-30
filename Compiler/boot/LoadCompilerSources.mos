@@ -309,6 +309,7 @@ if true then /* Suppress output */
 
     "../Template/CodegenAdevs.mo",
     "../Template/CodegenC.mo",
+    "../Template/CodegenEmbeddedC.mo",
     "../Template/CodegenCppCommon.mo",
     "../Template/CodegenCpp.mo",
     "../Template/CodegenCppHpcom.mo",

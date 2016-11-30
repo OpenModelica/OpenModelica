@@ -3258,6 +3258,11 @@ package ExpressionDump
     input DAE.Operator inOperator;
     output String outString;
   end binopSymbol;
+
+  function printExpStr
+    input DAE.Exp exp;
+    output String outString;
+  end printExpStr;
 end ExpressionDump;
 
 package Config

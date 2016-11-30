@@ -285,7 +285,7 @@ template initValXml(Exp initialValue)
   case SCONST(__) then '&quot;<%Util.escapeModelicaStringToXmlString(string)%>&quot;'
   case BCONST(__) then (if bool then "1" else "0")
   case ENUM_LITERAL(__) then '<%index%>'
-  case CREF(__) then '<%crefStrXml(componentRef)%>'
+  case CREF(__) then crefStrXml(componentRef)
   else "*ERROR* initial value of unknown type"
 end initValXml;
 
