@@ -65,7 +65,6 @@ QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
-QSize Helper::buttonIconSize = QSize(16, 16);
 int Helper::tabWidth = 20;
 QString Helper::modelicaComponentFormat = "image/modelica-component";
 QString Helper::modelicaFileFormat = "text/uri-list";

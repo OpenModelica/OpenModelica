@@ -71,7 +71,6 @@ public:
   static QString visualizationFileTypes;
   static int treeIndentation;
   static QSize iconSize;
-  static QSize buttonIconSize;
   static int tabWidth;
   static QString modelicaComponentFormat;
   static QString modelicaFileFormat;

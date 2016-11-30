@@ -315,7 +315,6 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpResumeToolButton->setEnabled(false);
   mpResumeToolButton->setText(Helper::resume);
   mpResumeToolButton->setIcon(QIcon(":/Resources/icons/resume.svg"));
-  mpResumeToolButton->setIconSize(Helper::buttonIconSize);
   mpResumeToolButton->setToolTip(Helper::resume);
   mpResumeToolButton->setAutoRaise(true);
   connect(mpResumeToolButton, SIGNAL(clicked()), SLOT(resumeButtonClicked()));
@@ -324,7 +323,6 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpInterruptToolButton->setEnabled(false);
   mpInterruptToolButton->setText(Helper::interrupt);
   mpInterruptToolButton->setIcon(QIcon(":/Resources/icons/interrupt.svg"));
-  mpInterruptToolButton->setIconSize(Helper::buttonIconSize);
   mpInterruptToolButton->setToolTip(Helper::interrupt);
   mpInterruptToolButton->setAutoRaise(true);
   connect(mpInterruptToolButton, SIGNAL(clicked()), SLOT(interruptButtonClicked()));
@@ -333,7 +331,6 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpExitToolButton->setEnabled(false);
   mpExitToolButton->setText(Helper::exit);
   mpExitToolButton->setIcon(QIcon(":/Resources/icons/exit.svg"));
-  mpExitToolButton->setIconSize(Helper::buttonIconSize);
   mpExitToolButton->setToolTip(Helper::exit);
   mpExitToolButton->setAutoRaise(true);
   connect(mpExitToolButton, SIGNAL(clicked()), SLOT(exitButtonClicked()));
@@ -351,7 +348,6 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpStepIntoToolButton->setEnabled(false);
   mpStepIntoToolButton->setText(Helper::stepInto);
   mpStepIntoToolButton->setIcon(QIcon(":/Resources/icons/step-into.svg"));
-  mpStepIntoToolButton->setIconSize(Helper::buttonIconSize);
   mpStepIntoToolButton->setToolTip(Helper::stepInto);
   mpStepIntoToolButton->setAutoRaise(true);
   connect(mpStepIntoToolButton, SIGNAL(clicked()), SLOT(stepIntoButtonClicked()));
@@ -360,7 +356,6 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpStepOverToolButton->setEnabled(false);
   mpStepOverToolButton->setText(Helper::stepOver);
   mpStepOverToolButton->setIcon(QIcon(":/Resources/icons/step-over.svg"));
-  mpStepOverToolButton->setIconSize(Helper::buttonIconSize);
   mpStepOverToolButton->setToolTip(Helper::stepOver);
   mpStepOverToolButton->setAutoRaise(true);
   connect(mpStepOverToolButton, SIGNAL(clicked()), SLOT(stepOverButtonClicked()));
@@ -369,7 +364,6 @@ StackFramesWidget::StackFramesWidget(QWidget *pParent)
   mpStepReturnToolButton->setEnabled(false);
   mpStepReturnToolButton->setText(Helper::stepReturn);
   mpStepReturnToolButton->setIcon(QIcon(":/Resources/icons/step-return.svg"));
-  mpStepReturnToolButton->setIconSize(Helper::buttonIconSize);
   mpStepReturnToolButton->setToolTip(Helper::stepReturn);
   mpStepReturnToolButton->setAutoRaise(true);
   connect(mpStepReturnToolButton, SIGNAL(clicked()), SLOT(stepReturnButtonClicked()));

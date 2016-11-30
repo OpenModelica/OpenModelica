@@ -2707,7 +2707,6 @@ void ModelWidget::createModelWidgetComponents()
     mpIconViewToolButton = new QToolButton;
     mpIconViewToolButton->setText(Helper::iconView);
     mpIconViewToolButton->setIcon(QIcon(":/Resources/icons/model.svg"));
-    mpIconViewToolButton->setIconSize(Helper::buttonIconSize);
     mpIconViewToolButton->setToolTip(Helper::iconView);
     mpIconViewToolButton->setAutoRaise(true);
     mpIconViewToolButton->setCheckable(true);
@@ -2715,7 +2714,6 @@ void ModelWidget::createModelWidgetComponents()
     mpDiagramViewToolButton = new QToolButton;
     mpDiagramViewToolButton->setText(Helper::diagramView);
     mpDiagramViewToolButton->setIcon(QIcon(":/Resources/icons/modeling.png"));
-    mpDiagramViewToolButton->setIconSize(Helper::buttonIconSize);
     mpDiagramViewToolButton->setToolTip(Helper::diagramView);
     mpDiagramViewToolButton->setAutoRaise(true);
     mpDiagramViewToolButton->setCheckable(true);
@@ -2723,7 +2721,6 @@ void ModelWidget::createModelWidgetComponents()
     mpTextViewToolButton = new QToolButton;
     mpTextViewToolButton->setText(Helper::textView);
     mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-    mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
     mpTextViewToolButton->setToolTip(Helper::textView);
     mpTextViewToolButton->setAutoRaise(true);
     mpTextViewToolButton->setCheckable(true);
@@ -2731,7 +2728,6 @@ void ModelWidget::createModelWidgetComponents()
     mpDocumentationViewToolButton = new QToolButton;
     mpDocumentationViewToolButton->setText(Helper::documentationView);
     mpDocumentationViewToolButton->setIcon(QIcon(":/Resources/icons/info-icon.svg"));
-    mpDocumentationViewToolButton->setIconSize(Helper::buttonIconSize);
     mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
     mpDocumentationViewToolButton->setAutoRaise(true);
     // view buttons box
@@ -2757,7 +2753,6 @@ void ModelWidget::createModelWidgetComponents()
     mpCursorPositionLabel = new Label;
     // documentation view tool button
     mpFileLockToolButton = new QToolButton;
-    mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
     mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeItem->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
     mpFileLockToolButton->setText(mpLibraryTreeItem->isReadOnly() ? tr("Make writable") : tr("File is writable"));
     mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());

@@ -243,13 +243,11 @@ DebuggerConfigurationsDialog::DebuggerConfigurationsDialog(QWidget *pParent)
   // create tool buttons
   mpNewToolButton = new QToolButton;
   mpNewToolButton->setIcon( QIcon(":/Resources/icons/new.svg"));
-  mpNewToolButton->setIconSize(Helper::buttonIconSize);
   mpNewToolButton->setToolTip(tr("New Configuration"));
   mpNewToolButton->setAutoRaise(true);
   connect(mpNewToolButton, SIGNAL(clicked()), SLOT(newConfiguration()));
   mpDeleteToolButton = new QToolButton;
   mpDeleteToolButton->setIcon( QIcon(":/Resources/icons/delete.svg"));
-  mpDeleteToolButton->setIconSize(Helper::buttonIconSize);
   mpDeleteToolButton->setToolTip(tr("Delete Configuration"));
   mpDeleteToolButton->setAutoRaise(true);
   connect(mpDeleteToolButton, SIGNAL(clicked()), SLOT(removeConfiguration()));
