@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Fluid.Examples.Tanks.TanksWithOverflow);
 compareVars :=
 {
@@ -24,11 +24,10 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// OpenModelicaModelTesting.Kind.Compilation
 // Modelica.Fluid.Examples.Tanks.TanksWithOverflow
 // {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
-// Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = 'time|upperTank.level|upperTank.medium.h|lowerTank.level|lowerTank.medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
-// Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
+// Compilation succeeded
 // "true
 // "
 // ""

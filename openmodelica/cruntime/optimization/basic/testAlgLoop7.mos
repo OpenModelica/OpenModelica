@@ -57,8 +57,8 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 1.86591e-05 for the constraint $EqCon$x2(time = 0.17)
 // LOG_IPOPT_ERROR   | info    | max violation is 5.33147e-06 for the constraint $EqCon$x1(time = 0.435)
 // LOG_IPOPT_ERROR   | info    | max violation is 4.28799e-08 for the constraint $EqCon$x1(time = 0.435)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.87081e-11 for the constraint $EqCon$x1(time = 0.445)
-// LOG_IPOPT_ERROR   | info    | max violation is 5.55112e-16 for the constraint $EqCon$x1(time = 0.16)
+// LOG_IPOPT_ERROR | info    | max violation is 1.87085e-11 for the constraint $EqCon$x1(time = 0.445)
+// LOG_IPOPT_ERROR | info    | max violation is 4.44089e-16 for the constraint $EqCon$x1(time = 0.28)
 // "
 // end SimulationResult;
 // ""

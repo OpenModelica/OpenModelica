@@ -5,7 +5,7 @@
 loadFile("Algorithm2.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
-setCommandLineOptions("--preOptModules-=comSubExp --setTearingVars=2,5,3,6,7,5,2 --setResidualEqns=2,3,6,2,5"); getErrorString();
+setCommandLineOptions("--preOptModules-=comSubExp --setTearingVars=2,5,7,1,4,5,8 --setResidualEqns=2,3,5,3,2"); getErrorString();
 simulate(Algorithm2); getErrorString();
 
 val(x0,0.5); getErrorString();

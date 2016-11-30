@@ -56,6 +56,6 @@ res := readSimulationResult("initializationTests.forest_res.mat", {time, foxes, 
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// {{0.0,0.0},{52.88214113216586,52.88214113216586},{255.6399025145935,255.6399025145935}}
+// {{0.0,0.0},{6.051192201167479,6.051192201167479},{841.0267641520732,841.0267641520732}}
 // ""
 // endResult

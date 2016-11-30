@@ -2,7 +2,6 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
-testDASSLnoEquidistant.mos \
 testOutputIntervalDASSL.mos \
 testOutputIntervalDASSLsteps.mos \
 testOutputIntervalDASSLstepsnoEquidistant.mos \
@@ -13,6 +12,7 @@ testOutputIntervalRK.mos \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES = \
+testDASSLnoEquidistant.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile

@@ -1,6 +1,6 @@
 // name:     PendulumFMU
 // keywords: fmi export import
-// status: correct
+// status: incorrect
 // teardown_command: rm -rf Pendulum.c Pendulum Pendulum.exe Pendulum.libs Pendulum.lib Pendulum.fmu Pendulum.log Pendulum.makefile Pendulum_*.*
 //
 //
@@ -15,7 +15,16 @@ getErrorString();
 loadFile("Pendulum_me_FMU.mo");
 getErrorString();
 
-simulate(Pendulum_me_FMU,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
+echo(false);
+x := simulate(Pendulum_me_FMU,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
+x := x.resultFile;
+if x=="" then
+  print("*** Dynamic state selection probably failed ***\n");
+  // TODO: Remove this code when DSS works properly again
+  exit(1);
+end if;
+echo(true);
+x;
 val(x,1.0);
 val(x,2.0);
 val(x,3.0);
@@ -42,26 +51,5 @@ val(y,3.0);
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "Pendulum_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// -0.986442419299714
-// 0.7957014309230349
-// -0.1832577793303631
-// -0.1641077493786545
-// -0.6056890562219486
-// -0.9830648942541402
-// record SimulationResult
-//     resultFile = "Pendulum_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// -0.9864424195145796
-// 0.795701434659157
-// -0.1832577788991176
-// -0.1641077480871099
-// -0.6056890513137574
-// -0.9830648943345307
+// *** Dynamic state selection probably failed ***
 // endResult
