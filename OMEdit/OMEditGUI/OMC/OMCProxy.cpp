@@ -2709,6 +2709,19 @@ bool OMCProxy::inferBindings(QString className)
 }
 
 /*!
+ * \brief OMCProxy::generateVerificationScenarios
+ * Generates the verification scenarios.
+ * \param className
+ * \return
+ */
+bool OMCProxy::generateVerificationScenarios(QString className)
+{
+  bool result = mpOMCInterface->generateVerificationScenarios(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::getUses
  * Returns the uses annotation.
  * \param className
