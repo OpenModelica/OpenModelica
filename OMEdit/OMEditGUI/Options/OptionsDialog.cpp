@@ -2181,6 +2181,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // set format groupbox layout
   QGridLayout *pFormatGroupBoxLayout = new QGridLayout;
   pFormatGroupBoxLayout->addWidget(mpLineEndingLabel, 0, 0);
+  pFormatGroupBoxLayout->setColumnStretch(1, 1);
   pFormatGroupBoxLayout->addWidget(mpLineEndingComboBox, 0, 1);
   pFormatGroupBoxLayout->addWidget(mpBOMLabel, 1, 0);
   pFormatGroupBoxLayout->addWidget(mpBOMComboBox, 1, 1);
@@ -2205,6 +2206,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // set tabs & indentation groupbox layout
   QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
+  pTabsAndIndentationGroupBoxLayout->setColumnStretch(1, 1);
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyComboBox, 0, 1);
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeLabel, 1, 0);
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeSpinBox, 1, 1);
@@ -2259,7 +2261,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpFormatGroupBox);
   pMainLayout->addWidget(mpTabsAndIndentation);
   pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
