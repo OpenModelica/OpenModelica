@@ -46,6 +46,8 @@
 #include <QNetworkReply>
 #include <QMenu>
 #include <QDesktopServices>
+#include <QApplication>
+#include <QDesktopWidget>
 
 /*!
  * \class DocumentationWidget
@@ -452,8 +454,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   mpDocumentationWidget = pParent;
-  mZoomFactor = 1.;
-  setZoomFactor(mZoomFactor);
+  resetZoom();
   // set DocumentationViewer settings
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
@@ -473,6 +474,17 @@ void DocumentationViewer::createActions()
 {
   page()->action(QWebPage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebPage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
+}
+
+/*!
+ * \brief DocumentationViewer::resetZoom
+ * Resets the zoom. \n
+ * QWebView seems to be using fixed 96 dpi so set a proper base zoomfactor for high resolution screens.
+ */
+void DocumentationViewer::resetZoom()
+{
+  QWidget *pScreenWidget = QApplication::desktop()->screen();
+  setZoomFactor(pScreenWidget->logicalDpiX() / 96);
 }
 
 /*!
@@ -611,10 +623,11 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
   if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
-      mZoomFactor+=event->delta()/120.;
-      if (mZoomFactor > 5.) mZoomFactor = 5.;
-      if (mZoomFactor < .1) mZoomFactor = .1;
-      setZoomFactor(mZoomFactor);
+    qreal zf = zoomFactor();
+    zf += event->delta()/120.;
+    if (zf > 5.) zf = 5.;
+    if (zf < .1) zf = .1;
+    setZoomFactor(zf);
   } else {
     QWebView::wheelEvent(event);
   }
@@ -629,8 +642,7 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
 void DocumentationViewer::mouseDoubleClickEvent(QMouseEvent *event)
 {
   if (event->modifiers().testFlag(Qt::ControlModifier)) {
-    mZoomFactor=1.;
-    setZoomFactor(mZoomFactor);
+    resetZoom();
   } else {
     QWebView::mouseDoubleClickEvent(event);
   }
