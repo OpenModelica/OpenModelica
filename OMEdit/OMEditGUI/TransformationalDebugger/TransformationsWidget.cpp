@@ -933,12 +933,7 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
       mpVariableOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
   } else {
-    QString message;
-#ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPathMAC).arg(Helper::toolsOptionsPathMAC);
-#else
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
-#endif
+    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
     QStringList values;
     values << message;
     QString toolTip = message;
@@ -1130,12 +1125,7 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
       mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
   } else {
-    QString message;
-#ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPathMAC).arg(Helper::toolsOptionsPathMAC);
-#else
-    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
-#endif
+    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
     QStringList values;
     values << message;
     QString toolTip = message;

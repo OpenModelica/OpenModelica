@@ -95,7 +95,6 @@ public:
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
   static QString toolsOptionsPath;
-  static QString toolsOptionsPathMAC;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;

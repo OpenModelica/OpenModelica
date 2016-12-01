@@ -88,8 +88,11 @@ QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
+#ifdef Q_OS_MAC
+QString Helper::toolsOptionsPath = "OMEdit->Preferences";
+#else
 QString Helper::toolsOptionsPath = "Tools->Options";
-QString Helper::toolsOptionsPathMAC = "OMEdit->Preferences";
+#endif
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");

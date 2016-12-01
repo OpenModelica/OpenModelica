@@ -36,6 +36,7 @@
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"
+#include "Options/OptionsDialog.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -75,6 +76,7 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
   mpGDBPathTextBox = new QLineEdit(mDebuggerConfiguration.GDBPath);
+  mpGDBPathTextBox->setPlaceholderText(OptionsDialog::instance()->getDebuggerPage()->getGDBPath());
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
   connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
   // Arguments
@@ -105,9 +107,12 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
   pContainerFrameGridLayout->addWidget(mpGDBPathLabel, 4, 0);
   pContainerFrameGridLayout->addWidget(mpGDBPathTextBox, 4, 1);
   pContainerFrameGridLayout->addWidget(mpGDBPathBrowseButton, 4, 2);
-  pContainerFrameGridLayout->addWidget(mpArgumentsLabel, 5, 0, 1, 3);
-  pContainerFrameGridLayout->addWidget(mpArgumentsTextBox, 6, 0, 1, 3);
-  pContainerFrameGridLayout->addWidget(mpButtonBox, 7, 0, 1, 3, Qt::AlignRight);
+  pContainerFrameGridLayout->addItem(new QSpacerItem(1, 1), 5, 0);
+  pContainerFrameGridLayout->addWidget(new Label(tr("GDB path defined in %1->Debugger is used if above field is empty.")
+                                                 .arg(Helper::toolsOptionsPath)), 5, 1, 1, 2);
+  pContainerFrameGridLayout->addWidget(mpArgumentsLabel, 6, 0, 1, 3);
+  pContainerFrameGridLayout->addWidget(mpArgumentsTextBox, 7, 0, 1, 3);
+  pContainerFrameGridLayout->addWidget(mpButtonBox, 8, 0, 1, 3, Qt::AlignRight);
   pContainerFrame->setLayout(pContainerFrameGridLayout);
   // main layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -393,7 +398,7 @@ void DebuggerConfigurationsDialog::newConfiguration()
   // create a new DebuggerConfigurationPage
   DebuggerConfiguration debuggerConfiguration;
   debuggerConfiguration.name = getUniqueName();
-  debuggerConfiguration.GDBPath = pSettings->value("algorithmicDebugger/GDBPath").toString();
+  debuggerConfiguration.GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPathForSettings();
   // create a new list item
   QListWidgetItem *pListWidgetItem = new QListWidgetItem(mpConfigurationsListWidget);
   pListWidgetItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));
@@ -506,8 +511,14 @@ void DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration()
     } else {
       DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
       DebuggerConfiguration debuggerConfiguration = pDebuggerConfigurationPage->getDebuggerConfiguration();
+      QString gdbPath = "";
+      if (debuggerConfiguration.GDBPath.isEmpty()) {
+        gdbPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
+      } else {
+        gdbPath = debuggerConfiguration.GDBPath;
+      }
       GDBAdapter::instance()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
-                                                      debuggerConfiguration.arguments.split(" "), debuggerConfiguration.GDBPath);
+                                                      debuggerConfiguration.arguments.split(" "), gdbPath);
       emit debuggerLaunched();
     }
   }

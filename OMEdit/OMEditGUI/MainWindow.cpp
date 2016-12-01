@@ -822,12 +822,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   if (OptionsDialog::instance()->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
-    QString message;
-#ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPathMAC);
-#else
-    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPath);
-#endif
+    QString message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPath);
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), message, Helper::ok);
   } else {
     if (pLibraryTreeItem->isSaved()) {
@@ -1992,12 +1987,7 @@ void MainWindow::openTerminal()
 {
   QString terminalCommand = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommand();
   if (terminalCommand.isEmpty()) {
-    QString message;
-#ifdef Q_OS_MAC
-    message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPathMAC);
-#else
-    message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPath);
-#endif
+    QString message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPath);
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, message, Helper::scriptingKind,
                                                 Helper::errorLevel));
     return;
