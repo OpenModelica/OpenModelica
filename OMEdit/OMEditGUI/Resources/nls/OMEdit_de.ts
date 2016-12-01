@@ -40,12 +40,12 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1111"/>
         <source>Shows the Find/Replace window</source>
-        <translation type="unfinished">Zeigt das Suchen/Ersetzen Fenster</translation>
+        <translation>Zeigt das Suchen/Ersetzen Fenster</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1115"/>
         <source>Clear Find/Replace Texts</source>
-        <translation type="unfinished"></translation>
+        <translation>Suchen/Ersetzen Texte löschen</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1116"/>
@@ -55,22 +55,22 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1119"/>
         <source>Go to Line</source>
-        <translation type="unfinished">Gehe zu Zeile</translation>
+        <translation>Gehe zu Zeile</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1120"/>
         <source>Shows the Go to Line Number window</source>
-        <translation type="unfinished">Zeugt das Gehe-zu-Zeile Fenster</translation>
+        <translation>Zeigt das Gehe-zu-Zeile Fenster</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1124"/>
         <source>Show Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Tabulatoren und Leerzeichen anzeigen</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1125"/>
         <source>Shows the Tabs and Spaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Tabulatoren und Leerzeichen</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1129"/>
@@ -244,12 +244,12 @@
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="972"/>
         <source>Dimensions:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensionen:</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="974"/>
         <source>Array of dimensions e.g {1, 5, 2}</source>
-        <translation type="unfinished"></translation>
+        <translation>Array der Dimensionen, z.B. {1, 5, 2}</translation>
     </message>
 </context>
 <context>
@@ -308,17 +308,17 @@
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="146"/>
         <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wir können Sie nicht mit einer möglichen Lösung kontaktieren, wenn Sie nicht eine gültige Email Adresse angeben.</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="147"/>
         <source>Send without e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohne Email senden</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="148"/>
         <source>Let me enter e-mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Lassen Sie mich eine Email Adresse angeben</translation>
     </message>
 </context>
 <context>
@@ -430,7 +430,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3351"/>
         <source>GDB Path:</source>
-        <translation type="unfinished">Pfad zu GDB:</translation>
+        <translation>Pfad zu GDB:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3367"/>
@@ -440,7 +440,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3369"/>
         <source> seconds</source>
-        <translation type="unfinished"> Sekunden</translation>
+        <translation> Sekunden</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3374"/>
@@ -522,7 +522,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3460"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Export</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3474"/>
@@ -609,37 +609,37 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1269"/>
         <source>Find:</source>
-        <translation type="unfinished">Suchen nach:</translation>
+        <translation>Suchen nach:</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1292"/>
         <source>Replace With:</source>
-        <translation type="unfinished">Ersetze mit:</translation>
+        <translation>Ersetze mit:</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1296"/>
         <source>Case Sensitive</source>
-        <translation type="unfinished">Groß-/Kleinschreibung</translation>
+        <translation>Groß-/Kleinschreibung</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1297"/>
         <source>Whole Words</source>
-        <translation type="unfinished">Ganze Wörter</translation>
+        <translation>Ganze Wörter</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1298"/>
         <source>Regular Expressions</source>
-        <translation type="unfinished">Regulärer Ausdruck</translation>
+        <translation>Regulärer Ausdruck</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1300"/>
         <source>Replace</source>
-        <translation type="unfinished">Ersetzen</translation>
+        <translation>Ersetzen</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1302"/>
         <source>Replace All</source>
-        <translation type="unfinished">Alle ersetzen</translation>
+        <translation>Alle ersetzen</translation>
     </message>
 </context>
 <context>
@@ -664,7 +664,6 @@
         <source>The gdb process has not responded to a command within %n second(s). This could mean it is stuck in an endless loop or taking longer than expected to perform the operation.
 You can choose between waiting longer or abort debugging.</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -762,7 +761,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="538"/>
         <source>Error opening the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler beim Öffnen der Datei &lt;b&gt;%1&lt;/b&gt;. %2</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="544"/>
@@ -772,7 +771,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="562"/>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists. The name is changed from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;This is probably wrong because the component is declared as &lt;b&gt;inner&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eine Komponente mit dem Namen &lt;b&gt;%1&lt;/b&gt; existiert bereits. Der Name wurde von &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt; geändert.&lt;br /&gt;&lt;br /&gt;Dies ist vermutlich falsch, da die Kompenente als &lt;b&gt;inner&lt;/b&gt; deklariert wurde.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="564"/>
@@ -797,7 +796,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="596"/>
         <source>Metamodel &lt;b&gt;%1&lt;/b&gt; has unsaved changes. Do you want to save?</source>
-        <translation type="unfinished"></translation>
+        <translation>Metamodell &lt;b&gt;%1&lt;/b&gt; hat ungespeicherte Änderungen. Wollen Sie diese speichern?</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="598"/>
@@ -807,19 +806,20 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="528"/>
         <source>Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)</source>
-        <translation>Bitte stellen Sie sicher keine OpenModelica Schlüsselworte (wie  model, package, record, class, etc.) zu nutzen</translation>
+        <translation>Bitte stellen Sie sicher, keine OpenModelica Schlüsselworte (wie model, package, record, class, etc.) zu nutzen</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="522"/>
         <source>Following error has occurred. 
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Der folgende Fehler ist aufgetreten
+%1</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="526"/>
         <source>&lt;br /&gt;&lt;br /&gt;If you cannot find the source of the error, you can always &lt;b&gt;revert to the last correct version&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br /&gt;&lt;br /&gt;Wenn Sie die Fehlerursache nicht finden, können Sie stets zur &lt;b&gt;letzen korrekten Version zurückkehren&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="530"/>
@@ -829,12 +829,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="532"/>
         <source>Unable to open file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte Datei &lt;b&gt;%1&lt;/b&gt; nicht öffnen.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="534"/>
         <source>Unable to save the file &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte Datei &lt;b&gt;%1&lt;/b&gt; nicht speichern.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="536"/>
@@ -854,27 +854,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="548"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; or &lt;b&gt;block&lt;/b&gt; is allowed on the diagram layer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie können &lt;b&gt;%1&lt;/b&gt; nicht einfügen, es ist ein(e) &lt;b&gt;%2&lt;/b&gt;. Nur &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; oder &lt;b&gt;block&lt;/b&gt; sind im Diagramm Layer erlaubt.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="550"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;connector&lt;/b&gt; is allowed on the icon layer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie können &lt;b&gt;%1&lt;/b&gt; nicht einfügen, es ist ein(e) &lt;b&gt;%2&lt;/b&gt;. Nur &lt;b&gt;connector&lt;/b&gt; ist im Icon Layer erlaubt.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="554"/>
         <source>The file &lt;b&gt;%1&lt;/b&gt; is not a valid Modelica file. The file format is not supported. You can only open &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Dateil &lt;b&gt;%1&lt;/b&gt; ist keine gültige Modelica Datei. Das Dateiformat wird nicht unterstützt. Sie können nur &lt;b&gt;%2&lt;/b&gt; öffnen.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="556"/>
         <source>Enter a valid number value for &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geben Sie eine gültige Zahl für &lt;b&gt;%1&lt;/b&gt; an.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="560"/>
         <source>The &lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; is defined as &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;The component will be added as a &lt;b&gt;replaceable&lt;/b&gt; component.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die &lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; ist als &lt;b&gt;partial&lt;/b&gt; definiert.&lt;br /&gt;Die Komponente wird als &lt;b&gt;replaceable&lt;/b&gt; hinzugefügt.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="566"/>
@@ -884,7 +884,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="572"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sind Sie sich sicher &lt;b&gt;%1&lt;/b&gt; lösche zu wollen? Alles innerhalb dieser Klasse wird ebenfalls gelöscht werden. </translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="576"/>
@@ -924,22 +924,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="586"/>
         <source>A debugging session is already running. Only one debugging session is allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eine Debugger-Sitzung ist bereits aktiv. Nur eine Debugger-Sitzung ist erlaubt.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="588"/>
         <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konnte Klasse &lt;b&gt;%1&lt;/b&gt; nicht finden.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="590"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. Breakpoints are only allowed on saved classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Klasse &lt;b&gt;%1&lt;/b&gt; ist nicht gespeichert. Breakpoints sind nur in gespeicherten Klassen erlaubt.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="592"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not a modelica class. Breakpoints are only allowed on modelica classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Klasse &lt;b&gt;%1&lt;/b&gt; ist keine Modelica Klasse. Breakpoints sind nur in Modelica Klassen erlaubt.</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="540"/>
@@ -1019,7 +1019,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1173"/>
         <source>Toolbar Icon Size: *</source>
-        <translation type="unfinished"></translation>
+        <translation>Toolbar Icon Größe: *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1178"/>
@@ -1064,12 +1064,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1271"/>
         <source>Enable Auto Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-Save aktivieren</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1275"/>
         <source>Auto Save Interval:</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-Save Intervall:</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1277"/>
@@ -1089,7 +1089,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1298"/>
         <source>Welcome Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Startseite</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1299"/>
@@ -1330,17 +1330,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="306"/>
         <source>Create New Modelica Class</source>
-        <translation>Erstelle neu Modelica Klasse</translation>
+        <translation>Erstelle neue Modelica Klasse</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="305"/>
         <source>New Modelica Class</source>
-        <translation>Neu Modelica Klasse</translation>
+        <translation>Neue Modelica Klasse</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="310"/>
         <source>Clear Recent Files</source>
-        <translation>Lösche Zuletzt benutzte Dateien</translation>
+        <translation>Lösche zuletzt benutzte Dateien</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="311"/>
@@ -1390,17 +1390,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="325"/>
         <source>Save a file</source>
-        <translation type="unfinished">Speichert Datei</translation>
+        <translation>Speichert Datei</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="326"/>
         <source>Save As</source>
-        <translation type="unfinished">Speichern unter</translation>
+        <translation>Speichern unter</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="327"/>
         <source>Save a copy of the class in a new file</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichere Kopie der Klasse in neuer Datei</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="328"/>
@@ -1581,12 +1581,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="307"/>
         <source>Open Model/Library File(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell/Library Dateien öffnen</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="308"/>
         <source>Open/Convert Modelica File(s) With Encoding</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell/Library Dateien mit Encoding öffnen/konvertieren</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="322"/>
@@ -1926,12 +1926,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="459"/>
         <source>Index</source>
-        <translation type="unfinished"></translation>
+        <translation>Index</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="460"/>
         <source>Equation</source>
-        <translation type="unfinished"></translation>
+        <translation>Gleichung</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="461"/>
@@ -2031,22 +2031,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="480"/>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Version</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="481"/>
         <source>unlimited</source>
-        <translation type="unfinished"></translation>
+        <translation>unbegrenzt</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="482"/>
         <source>Simulation Output</source>
-        <translation type="unfinished">Simulationsausgabe</translation>
+        <translation>Simulationsausgabe</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="483"/>
         <source>Cancel Simulation</source>
-        <translation type="unfinished">Simulation abbrechen</translation>
+        <translation>Simulation abbrechen</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="484"/>
@@ -2081,7 +2081,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="490"/>
         <source>Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>Beendet</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="394"/>
@@ -2299,12 +2299,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1501"/>
         <source>System Libraries *</source>
-        <translation type="unfinished"></translation>
+        <translation>Systembibliotheken *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1503"/>
         <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Systembibliotheken werden aus dem MODELICAPATH geladen und sind schreibgeschützt.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1515"/>
@@ -2314,7 +2314,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1542"/>
         <source>Force loading of Modelica Standard Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Laden der Modelica Standard Bibliothek erzwingen</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1543"/>
@@ -2324,7 +2324,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1546"/>
         <source>User Libraries *</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzerbibliotheken *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1554"/>
@@ -2353,7 +2353,7 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1627"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1735"/>
         <source>while deleting </source>
-        <translation type="unfinished">beim Löschen von </translation>
+        <translation>beim Löschen von </translation>
     </message>
 </context>
 <context>
@@ -2662,7 +2662,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="193"/>
         <source>Creating Widgets</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeuge Widgets</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="145"/>
@@ -2869,27 +2869,27 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2445"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Rückgängig</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2450"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Wiederholen</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2512"/>
         <source>Cascade Windows</source>
-        <translation type="unfinished"></translation>
+        <translation>Fenster kaskadieren</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2513"/>
         <source>Arranges all the child windows in a cascade pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Unterfenster kaskadieren</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2584"/>
         <source>Shows OpenModelica Compiler CLI</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet das OpenModelica CLI</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2588"/>
@@ -2969,22 +2969,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="2637"/>
         <source>Modelica Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica Dokumentation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2638"/>
         <source>Opens the Modelica Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet die Modelica Dokumentation</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2641"/>
         <source>Modelica By Example</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica by Example</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2642"/>
         <source>Opens the Modelica By Example online book</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet das Online-Buch Modelica By Example</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2645"/>
@@ -3687,7 +3687,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="441"/>
         <source>Path</source>
-        <translation type="unfinished">Pfad</translation>
+        <translation>Pfad</translation>
     </message>
 </context>
 <context>
@@ -3713,17 +3713,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="572"/>
         <source>Save As Modelica Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Als Modelica Klasse speichern</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="581"/>
         <source>Insert in class (optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>In Klasse einfügen (optional):</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="594"/>
         <source>Save contents in one file</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicher Inhalt in eine Datei</translation>
     </message>
 </context>
 <context>
@@ -3782,7 +3782,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="193"/>
         <source>Font &amp;&amp; Text Style</source>
-        <translation type="unfinished"></translation>
+        <translation>Schrift- &amp;&amp; Textstil</translation>
     </message>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="208"/>
@@ -3890,12 +3890,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="172"/>
         <source>DASSL Options</source>
-        <translation type="unfinished"></translation>
+        <translation>DASSL Optionen</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="174"/>
         <source>Jacobian:</source>
-        <translation type="unfinished"></translation>
+        <translation>Jacobi-Matrix:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="176"/>
@@ -3915,12 +3915,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="182"/>
         <source>Symbolical</source>
-        <translation type="unfinished"></translation>
+        <translation>symbolisch</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="184"/>
         <source>Numerical</source>
-        <translation type="unfinished"></translation>
+        <translation>numerisch</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="187"/>
@@ -3965,7 +3965,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="232"/>
         <source>Number of Processors:</source>
-        <translation type="unfinished"></translation>
+        <translation>Anzahl der Prozessoren:</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="238"/>
@@ -4088,7 +4088,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="405"/>
         <source>Enable All Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Warnungen aktivieren</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="408"/>
@@ -4213,7 +4213,7 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="236"/>
         <source>Use 1 processor if you encounter problems during compilation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzen Sie 1 Prozessor, wenn Sie Probleme bei der Kompilierung haben.</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="241"/>
@@ -4338,12 +4338,12 @@ If you want to change the output path then update the working directory in Optio
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="403"/>
         <source>CPU Time</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU-Zeit</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="422"/>
         <source>Jacobian Matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Jacobi-Matrix</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="428"/>
@@ -5106,7 +5106,7 @@ Variable: %3</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1984"/>
         <source>Clear Recent Files</source>
-        <translation>Lösche Zuletzt benutzte Dateien</translation>
+        <translation>Lösche zuletzt benutzte Dateien</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2004"/>
@@ -5121,7 +5121,7 @@ Variable: %3</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2135"/>
         <source>Sorry, no internet no news items.</source>
-        <translation>Entschuldigung, keine Internet keine Nachrichten.</translation>
+        <translation>Entschuldigung, kein Internet keine Nachrichten.</translation>
     </message>
 </context>
 </TS>
