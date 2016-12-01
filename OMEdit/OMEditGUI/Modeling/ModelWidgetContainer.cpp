@@ -2136,7 +2136,6 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpMainFrame->setStyleSheet("QFrame{color:gray;}");
   // top frame
   mpTopFrame = new QFrame;
-  mpTopFrame->setMaximumHeight(95);
   mpTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // top frame pixmap
   mpPixmapLabel = new Label;
@@ -2189,8 +2188,9 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
   mpLatestNewsFrame->setStyleSheet("QFrame{background-color: white;}");
   /* Read the show latest news settings */
-  if (!OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
+  if (!OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
     mpLatestNewsFrame->setVisible(false);
+  }
   // latest news
   mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News"));
   mpNoLatestNewsLabel = new Label;
@@ -2228,8 +2228,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // splitter
   mpSplitter = new QSplitter;
   /* Read the welcome page view settings */
-  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView())
-  {
+  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView()){
     case 2:
       mpSplitter->setOrientation(Qt::Vertical);
       break;
@@ -2245,7 +2244,6 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpSplitter->addWidget(mpLatestNewsFrame);
   // bottom frame
   mpBottomFrame = new QFrame;
-  mpBottomFrame->setMaximumHeight(50);
   mpBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // bottom frame create and open buttons buttons
   mpCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
@@ -2263,9 +2261,9 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   QVBoxLayout *verticalLayout = new QVBoxLayout;
   verticalLayout->setSpacing(4);
   verticalLayout->setContentsMargins(0, 0, 0, 0);
-  verticalLayout->addWidget(mpTopFrame);
-  verticalLayout->addWidget(mpSplitter);
-  verticalLayout->addWidget(mpBottomFrame);
+  verticalLayout->addWidget(mpTopFrame, 0, Qt::AlignTop);
+  verticalLayout->addWidget(mpSplitter, 1);
+  verticalLayout->addWidget(mpBottomFrame, 0, Qt::AlignBottom);
   // main frame layout
   mpMainFrame->setLayout(verticalLayout);
   QHBoxLayout *layout = new QHBoxLayout;
