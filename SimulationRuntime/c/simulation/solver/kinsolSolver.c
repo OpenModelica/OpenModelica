@@ -754,13 +754,13 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
 
 #else
 
-int nlsKinsolAllocate(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
+int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolverMethod)
 {
-  throwStreamPrint(threadData,"no sundials/kinsol support activated");
+  throwStreamPrint(NULL,"no sundials/kinsol support activated");
   return 0;
 }
 
-int nlsKinsolFree(NONLINEAR_SYSTEM_DATA *nlsData)
+int nlsKinsolFree(void** solverData)
 {
   throwStreamPrint(NULL,"no sundials/kinsol support activated");
   return 0;
