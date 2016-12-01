@@ -1158,9 +1158,15 @@ void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
  */
 void GDBAdapter::handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
-  QString LogData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
-  mPendingLogStreamOutput += LogData;
-  MainWindow::instance()->getTargetOutputWidget()->logDebuggerErrorOutput(LogData);
+  QString logData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
+  mPendingLogStreamOutput += logData;
+  /*! \note Skip the log messages we get as a result of pending breakpoint.
+   * e.g., No source file named Catch.omc.
+   */
+  if (logData.startsWith("No source file named")) {
+    return;
+  }
+  MainWindow::instance()->getTargetOutputWidget()->logDebuggerErrorOutput(logData);
 }
 
 /*!
