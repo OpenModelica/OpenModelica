@@ -47,7 +47,7 @@
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
-#define omc_dummyRealAttribute {NULL,NULL,DBL_MAX,-DBL_MAX,0,0,1.0,0,0.0}
+#define omc_dummyRealAttribute {NULL,NULL,DBL_MAX,-DBL_MAX,0,0,1.0,0.0}
 
 #if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
