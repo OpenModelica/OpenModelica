@@ -21,6 +21,7 @@ EnumConnectArray.mo \
 EnumDimSum.mo \
 EnumFor.mo \
 EnumFor2.mo \
+EnumFuncIf.mo \
 EnumInnerOuterDim.mo \
 EnumInvalidLiteral.mo \
 EnumMatrixProduct.mo \
