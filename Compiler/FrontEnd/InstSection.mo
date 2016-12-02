@@ -1110,6 +1110,7 @@ algorithm
       Absyn.Exp e1,e2;
 
     case(cache,env,e1,e2,_,_,prop,prop2,_,pre,_) equation
+      true = Flags.getConfigBool(Flags.CONDENSE_ARRAYS);
       b3 = Types.isPropTupleArray(prop);
       b4 = Types.isPropTupleArray(prop2);
       true = boolOr(b3,b4);

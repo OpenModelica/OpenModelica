@@ -1327,6 +1327,9 @@ constant ConfigFlag EVALUATE_PROTECTED_PARAMS = CONFIG_FLAG(108, "evaluateProtec
 constant ConfigFlag REPLACE_EVALUATED_PARAMS = CONFIG_FLAG(109, "replaceEvaluatedParameters",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Replaces all the evaluated parameters in the DAE."));
+constant ConfigFlag CONDENSE_ARRAYS = CONFIG_FLAG(110, "condenseArrays",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Util.gettext("Sets whether array expressions containing function calls are condensed or not."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1441,7 +1444,8 @@ constant list<ConfigFlag> allConfigFlags = {
   EQUATIONS_PER_FILE,
   EVALUATE_FINAL_PARAMS,
   EVALUATE_PROTECTED_PARAMS,
-  REPLACE_EVALUATED_PARAMS
+  REPLACE_EVALUATED_PARAMS,
+  CONDENSE_ARRAYS
 };
 
 public function new
