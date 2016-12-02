@@ -4645,7 +4645,18 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
    */
   if (event->type() == QEvent::FileOpen && qobject_cast<QApplication*>(object)) {
     QFileOpenEvent *pFileOpenEvent = static_cast<QFileOpenEvent *>(event);
-    MainWindow::instance()->getLibraryWidget()->openFile(pFileOpenEvent->file());
+    if (!pFileOpenEvent->file().isEmpty()) {
+      // if path is relative make it absolute
+      QFileInfo fileInfo (pFileOpenEvent->file());
+      QString fileName = pFileOpenEvent->file();
+      if (fileInfo.isRelative()) {
+        fileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
+      }
+      fileName = fileName.replace("\\", "/");
+      if (QFile::exists(fileName)) {
+        MainWindow::instance()->getLibraryWidget()->openFile(fileName);
+      }
+    }
   }
   /* If focus is set to LibraryTreeView, DocumentationViewer, QMenuBar etc. then try to validate the text because user might have
    * updated the text manually.
