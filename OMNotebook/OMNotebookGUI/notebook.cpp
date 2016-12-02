@@ -288,6 +288,7 @@ NotebookWindow::~NotebookWindow()
   delete saveAsAction;
   delete saveAction;
   delete printAction;
+  delete pdfAction;
   delete closeFileAction;
   delete quitWindowAction;
 
@@ -573,6 +574,12 @@ void NotebookWindow::createFileMenu()
            this, SLOT( pureText() ));
 
   exportMenu->addAction( exportPureText );
+
+  // PDF
+  pdfAction = new QAction( tr("P&DF"), this );
+  pdfAction->setStatusTip( tr("Export the document to PDF") );
+  connect(pdfAction, SIGNAL(triggered()), this, SLOT(pdf()));
+  exportMenu->addAction(pdfAction);
 }
 
 /*!
@@ -2300,7 +2307,7 @@ void NotebookWindow::updateWindowMenu()
   */
 void NotebookWindow::updateWindowTitle()
 {
-  // QT functionality to stripp the filepath and only keep
+  // QT functionality to strip the filepath and only keep
   // the filename.
   QString title = QFileInfo( subject_->getFilename() ).fileName();
   title.remove( "\n" );
@@ -2656,7 +2663,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   if( filename.isEmpty() )
     filename = "(untitled)";
 
-  // if the document have been changed, ask if the
+  // if the document has been changed, ask if the
   // user wants to save the document
   while( subject_->hasChanged() )
   {
@@ -2829,7 +2836,7 @@ void NotebookWindow::saveas()
   */
 void NotebookWindow::save()
 {
-  // Added a check to see if the document have been saved before,
+  // Added a check to see if the document has been saved before,
   // if the document havn't been saved before - call saveas() insted.
   if( !subject_->isSaved() )
   {
@@ -2898,12 +2905,77 @@ void NotebookWindow::print()
       title = "(untitled)";
 
     QString msg = QString( "The document " ) + title +
-        QString( " have been printed on " ) +
+        QString( " has been printed on " ) +
         printer.printerName() + QString( "." );
     QMessageBox::information( 0, "Document printed", msg, "OK" );
   }
 
   delete dlg;
+}
+
+/*!
+  * \author Henning Kiel
+  * \date 2016-12-01
+  *
+  * \brief Export the document as PDF
+  *
+  * 2016-12-01 HK
+  */
+void NotebookWindow::pdf()
+{
+  QPrinter printer( QPrinter::HighResolution );
+  printer.setOutputFormat(QPrinter::PdfFormat);
+
+  QString filename;
+  if( !subject_->getFilename().isEmpty() )
+  {
+    QFileInfo fi(subject_->getFilename());
+    QFileInfo fi2(fi.absoluteDir(), fi.completeBaseName());
+    // open save as dialog
+    filename = QFileDialog::getSaveFileName(
+        this,
+        "Choose a filename to save PDF under",
+        fi2.filePath(),
+        "PDF (*.pdf)");
+  }
+  else
+  {
+  // open save as dialog
+  filename = QFileDialog::getSaveFileName(
+        this,
+        "Choose a filename to save PDF under",
+        saveDir_,
+        "PDF (*.pdf)");
+  }
+
+  if(!filename.isEmpty())
+  {
+    if( !filename.endsWith( ".pdf", Qt::CaseInsensitive ) )
+    {
+      qDebug( ".pdf not found" );
+      filename.append( ".pdf" );
+    }
+
+  printer.setOutputFileName(filename);
+  printer.setFullPage( true );
+
+    // make sure that chapter numbers are updated
+    updateChapterCounters();
+
+    application()->commandCenter()->executeCommand(
+          new PrintDocumentCommand(subject_, &printer));
+
+    //currentEditor->document()->print(&printer);
+
+    QString title = QFileInfo( subject_->getFilename() ).fileName();
+    title.remove( "\n" );
+    if( title.isEmpty() )
+      title = "(untitled)";
+    QString msg = QString( "The document " ) + title +
+        QString( " has been exported as PDF to " ) +
+        filename + QString( "." );
+    QMessageBox::information( 0, "Document exported", msg, "OK" );
+  }
 }
 
 /*!
@@ -3757,7 +3829,7 @@ void NotebookWindow::pureText()
       title = "(untitled)";
 
     QString msg = QString( "The document " ) + title +
-        QString( " have been exported as pure text to " ) +
+        QString( " has been exported as pure text to " ) +
         filename + QString( "." );
     QMessageBox::information( 0, "Document exported", msg, "OK" );
   }

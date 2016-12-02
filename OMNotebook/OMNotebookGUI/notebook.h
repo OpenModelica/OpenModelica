@@ -122,6 +122,7 @@ private slots:
   void save();
   void quitOMNotebook();              // Added 2006-01-18 AF
   void print();                  // Added 2005-12-19 AF
+  void pdf();                  // Added 2016-12-01 HK
   void selectFont();                // Added 2005-11-07 AF
   void changeStyle(QAction *action);
   void changeStyle();
@@ -239,6 +240,7 @@ private:
   QAction *saveAsAction;
   QAction *saveAction;
   QAction *printAction;        // Added 2005-12-19 AF
+  QAction *pdfAction;
   QAction *closeFileAction;
   QAction *quitWindowAction;
   QAction *indentAction;
