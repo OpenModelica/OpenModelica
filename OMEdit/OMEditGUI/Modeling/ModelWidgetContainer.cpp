@@ -4639,6 +4639,14 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
   if (!object || isHidden() || qApp->activeWindow() != MainWindow::instance()) {
     return QMdiArea::eventFilter(object, event);
   }
+  /* Ticket:4164
+   * Open the file passed as an argument to OSX.
+   * QFileOpenEvent is only available in OSX.
+   */
+  if (event->type() == QEvent::FileOpen && qobject_cast<QApplication*>(object)) {
+    QFileOpenEvent *pFileOpenEvent = static_cast<QFileOpenEvent *>(event);
+    MainWindow::instance()->getLibraryWidget()->openFile(pFileOpenEvent->file());
+  }
   /* If focus is set to LibraryTreeView, DocumentationViewer, QMenuBar etc. then try to validate the text because user might have
    * updated the text manually.
    */
