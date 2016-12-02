@@ -509,6 +509,9 @@ constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(167, "partitionInitiali
   Util.gettext("This flag controls if partitioning is applied to the initialization system."));
 constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(168, "evalParameterDump", false,
   Util.gettext("Dumps information for evaluating parameters."));
+constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(169, "frontEndUnitCheck", false,
+  Util.gettext("Checks the consistency of units in equation."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -683,7 +686,8 @@ constant list<DebugFlag> allDebugFlags = {
   BLT_MATRIX_DUMP,
   LIST_REVERSE_WRONG_ORDER,
   PARTITION_INITIALIZATION,
-  EVAL_PARAM_DUMP
+  EVAL_PARAM_DUMP,
+  NF_UNITCHECK
 };
 
 public

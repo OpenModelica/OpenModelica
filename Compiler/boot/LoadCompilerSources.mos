@@ -113,6 +113,11 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFStatement.mo",
     "../NFFrontEnd/NFTypeCheck.mo",
     "../NFFrontEnd/NFTyping.mo",
+    "../NFFrontEnd/NFUnitCheck.mo",
+    "../NFFrontEnd/NFHashTableStringToUnit.mo",
+    "../NFFrontEnd/NFHashTableUnitToString.mo",
+    "../NFFrontEnd/NFHashTableCrToUnit.mo",
+    "../NFFrontEnd/NFUnit.mo",
 
   // "BackEnd";
     "../BackEnd/BackendDAE.mo",

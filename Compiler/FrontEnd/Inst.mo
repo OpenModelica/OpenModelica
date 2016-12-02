@@ -162,6 +162,7 @@ import UnitAbsynBuilder;
 import NFSCodeFlattenRedeclare;
 import InstStateMachineUtil;
 import HashTableSM1;
+import NFUnitCheck;
 
 import DAEDump; // BTH
 
@@ -329,6 +330,9 @@ algorithm
     case (cache,ih,cdecls as _::_,path)
       equation
         (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
+        if Flags.isSet(Flags.NF_UNITCHECK) then
+            NFUnitCheck.unitChecking(outDAElist,outCache);
+        end if;
       then
         (outCache,outEnv,outIH,outDAElist);
 
