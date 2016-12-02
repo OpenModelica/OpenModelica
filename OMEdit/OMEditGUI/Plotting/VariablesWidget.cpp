@@ -176,10 +176,11 @@ QVariant VariablesTreeItem::data(int column, int role) const
         case Qt::ToolTipRole:
           return mToolTip;
         case Qt::CheckStateRole:
-          if (mChildren.size() > 0)
-            return QVariant();
-          else
+          if (mChildren.size() == 0 && parent()->parent()) {  // do not show checkbox for top level items without children.
             return isChecked() ? Qt::Checked : Qt::Unchecked;
+           } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }
@@ -227,11 +228,6 @@ int VariablesTreeItem::row() const
     return mpParentVariablesTreeItem->mChildren.indexOf(const_cast<VariablesTreeItem*>(this));
 
   return 0;
-}
-
-VariablesTreeItem* VariablesTreeItem::parent()
-{
-  return mpParentVariablesTreeItem;
 }
 
 VariablesTreeItem* VariablesTreeItem::rootParent()
@@ -389,7 +385,7 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
 
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-  if (index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0) {
+  if (index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0 && pVariablesTreeItem->parent() != mpRootVariablesTreeItem) {
     flags |= Qt::ItemIsUserCheckable;
   } else if (index.column() == 1 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0 && pVariablesTreeItem->isEditable()) {
     flags |= Qt::ItemIsEditable;
@@ -662,6 +658,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
    * The following line selects the result tree top level item.
    */
   mpVariablesTreeView->setCurrentIndex(idx);
+  MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 }
 
 /*!
@@ -680,6 +677,7 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
     pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
     delete pVariablesTreeItem;
     endRemoveRows();
+    mpVariablesTreeView->getVariablesWidget()->findVariables();
     return true;
   }
   return false;
@@ -940,7 +938,8 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
   mpVariablesTreeView->collapseAll();
   /* Show results in model diagram if it is present in ModelWidgetContainer
-     and if switch to plotting perspective is disabled */
+   * and if switch to plotting perspective is disabled
+   */
   ModelWidget *pModelWidget = NULL;
   if (!OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
     pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getModelWidget(simulationOptions.getClassName());
@@ -1573,6 +1572,13 @@ void VariablesWidget::findVariables()
   if (!findText.isEmpty()) {
     mpVariablesTreeView->expandAll();
   }
+  if (mpVariablesTreeView->selectionModel()->selectedIndexes().isEmpty()) {
+    QModelIndex proxyIndex = mpVariableTreeProxyModel->index(0, 0);
+    if (proxyIndex.isValid()) {
+      mpVariablesTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+    }
+  }
+  MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 }
 
 void VariablesWidget::directReSimulate()

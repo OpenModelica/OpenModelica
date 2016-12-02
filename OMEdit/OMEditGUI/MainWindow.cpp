@@ -279,7 +279,7 @@ void MainWindow::setUpMainWindow()
   createToolbars();
   createMenus();
   // enable/disable re-simulation toolbar based on variables browser visibiltiy.
-  connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), mpReSimulationToolBar, SLOT(setEnabled(bool)));
+  connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), this, SLOT(enableReSimulationToolbar(bool)));
   // Create simulation dialog when needed
   mpSimulationDialog = 0;
   // Create TLM co-simulation dialog when needed
@@ -2240,6 +2240,20 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief MainWindow::enableReSimulationToolbar
+ * * Handles the VisibilityChanged signal of Variables Dock Widget.
+ * \param visible
+ */
+void MainWindow::enableReSimulationToolbar(bool visible)
+{
+  if (visible) {
+    mpReSimulationToolBar->setEnabled(!mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+  } else {
+    mpReSimulationToolBar->setEnabled(false);
+  }
+}
+
+/*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
  * \param tabIndex
@@ -3267,6 +3281,7 @@ void MainWindow::createToolbars()
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
   mpReSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  mpReSimulationToolBar->setEnabled(false);
   // add actions to Re-simulation Toolbar
   mpReSimulationToolBar->addAction(mpReSimulateModelAction);
   mpReSimulationToolBar->addAction(mpReSimulateSetupAction);

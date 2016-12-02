@@ -112,7 +112,6 @@ public:
   Label* getPointerXPositionLabel() {return mpPointerXPositionLabel;}
   Label* getPointerYPositionLabel() {return mpPointerYPositionLabel;}
   QTabBar* getPerspectiveTabBar() {return mpPerspectiveTabbar;}
-  QToolBar* getPlotToolBar() {return mpPlotToolBar;}
   QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
   QAction* getSaveAction() {return mpSaveAction;}
   QAction* getSaveAsAction() {return mpSaveAsAction;}
@@ -417,6 +416,7 @@ public slots:
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
+  void enableReSimulationToolbar(bool visible);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);

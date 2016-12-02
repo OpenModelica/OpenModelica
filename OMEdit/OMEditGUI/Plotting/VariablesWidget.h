@@ -75,7 +75,8 @@ public:
   bool setData(int column, const QVariant &value, int role = Qt::EditRole);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
-  VariablesTreeItem* parent();
+  VariablesTreeItem* parent() {return mpParentVariablesTreeItem;}
+  VariablesTreeItem* parent() const {return mpParentVariablesTreeItem;}
   VariablesTreeItem* rootParent();
   QVariant getValue(QString unit, OMCProxy *pOMCProxy);
 private:
