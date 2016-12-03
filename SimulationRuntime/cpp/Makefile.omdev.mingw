@@ -134,7 +134,7 @@ runtimeCpp:
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 	   cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
-	   make);)
+	   $(MAKE));)
 
 runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
@@ -197,7 +197,7 @@ endif
 
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); make install);)
+	  (cd Build_$(PLATFORM); $(MAKE) install);)
 	cp -p $(OMDEVMSYS)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cd Build; cp -p $(OMDEVMSYS)/tools/msys/mingw32/bin/libboost*.dll $(builddir_bin)/.)
