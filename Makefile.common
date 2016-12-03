@@ -80,7 +80,7 @@ interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(S
 opc: .testvariables mkbuilddirs boehm-gc
 	$(MAKE) -C SimulationRuntime/opc/ua -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
-docs:
+docs: mkbuilddirs
 	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
