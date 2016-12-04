@@ -9,11 +9,13 @@ bindings5.mo \
 bindings7.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
+ClassAsComponentError.mo \
 ComponentAsTypeError.mo \
 cond4.mo \
 conn1.mo \
 conn2.mo \
 const3.mo \
+const13.mo \
 DuplicateMod1.mo \
 DuplicateMod2.mo \
 DuplicateMod3.mo \
@@ -26,6 +28,12 @@ ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNested1.mo \
 ImportQualified1.mo \
+inst4.mo \
+inst5.mo \
+lookup1.mo \
+lookup2.mo \
+lookup3.mo \
+lookup4.mo \
 loop2.mo \
 mod10.mo \
 mod11.mo \
@@ -54,7 +62,6 @@ usertype6.mo \
 FAILINGTESTFILES=\
 bindings4.mo \
 builtinmod.mo \
-ClassAsComponentError.mo \
 compfunc.mo \
 conn3.mo \
 conn4.mo \
@@ -66,9 +73,7 @@ const4.mo \
 const5.mo \
 const7.mo \
 const8.mo \
-const9.mo \
 const10.mo \
-const13.mo \
 const14.mo \
 const15.mo \
 const16.mo \
@@ -97,7 +102,6 @@ eq6.mo \
 eq7.mo \
 eq8.mo \
 eq9.mo \
-eq10.mo \
 expconn4.mo \
 expconn7.mo \
 ExtendSections.mo \
@@ -119,7 +123,6 @@ ImportQualifiedInvalid2.mo \
 ImportShadowing1.mo \
 ImportUnqualified1.mo \
 inst3.mo \
-inst5.mo \
 inst6.mo \
 inst8.mo \
 InvalidComplexConnectorType1.mo \
@@ -205,7 +208,6 @@ function1.mo \
 FunctionRecordArg1.mo \
 ImportUnqualified2.mo \
 inst7.mo \
-inst4.mo \
 loop1.mo \
 MultiInheritanceRedeclare1.mo \
 noretcall1.mo \

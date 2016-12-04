@@ -3,7 +3,6 @@
 // status: incorrect
 // cflags:   -d=newInst
 //
-// FAILREASON: Invalid mix of extensions not checked.
 //
 
 
@@ -21,26 +20,11 @@ model A
 end A;
 
 // Result:
+// Error processing file: inst4.mo
+// [flattening/modelica/scodeinst/inst4.mo:14:3-14:15:writable] Error: A class extending from builtin type Real may not have other elements.
 //
-// EXPANDED FORM:
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
 //
-// class A
-//   Real r;
-// end A;
-//
-//
-// Found 1 components and 0 parameters.
-// class A
-//   final parameter String r.unit = "";
-//   final parameter String r.quantity = "";
-//   final parameter String r.displayUnit = "";
-//   final parameter Real r.min = 0.0;
-//   final parameter Real r.max = 0.0;
-//   final parameter Real r.start = 0.0;
-//   final parameter Boolean r.fixed = false;
-//   final parameter Real r.nominal;
-//   final parameter enumeration(never, avoid, default, prefer, always) r.stateSelect = StateSelect.default;
-//   final parameter enumeration(given, sought, refine) r.uncertain = Uncertainty.given;
-//   Real r.x;
-// end A;
+// Execution failed!
 // endResult

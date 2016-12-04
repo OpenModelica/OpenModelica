@@ -13,7 +13,7 @@ end ComponentAsTypeError;
 
 // Result:
 // Error processing file: ComponentAsTypeError.mo
-// [flattening/modelica/scodeinst/ComponentAsTypeError.mo:11:3-11:6:writable] Error: Class x not found in scope <unknown>.
+// [flattening/modelica/scodeinst/ComponentAsTypeError.mo:11:3-11:6:writable] Error: Expected x to be a class, but found component instead.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
