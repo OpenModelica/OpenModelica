@@ -98,7 +98,10 @@ algorithm
 
   // Update the instantiated class inside the top component.
   top_comp := Component.setClassInstance(cls, top_comp);
-  top_comp_node := ComponentNode.replaceComponent(top_comp, top_comp_node);
+  // Then update the component inside the top component node, which makes sure
+  // that this change is propagated to any component which uses this node as
+  // their parent (since the component in the node is inside an array).
+  top_comp_node := ComponentNode.updateComponent(top_comp, top_comp_node);
 
   cls := Typing.typeClass(cls, top_comp_node);
   dae := NFFlatten.flattenClass(cls);
@@ -362,9 +365,9 @@ algorithm
           // Add component ID:s to the scope.
           idx := 1;
           for c in components loop
-            //  // TODO: Handle components with the same name.
-            //  // TODO: If duplicate components should be handled here, also
-            //  //       remove them from the list of components.
+            // TODO: Handle components with the same name.
+            // TODO: If duplicate components should be handled here, also
+            //       remove them from the list of components.
             scope := ClassTree.add(scope, ComponentNode.name(c),
               ClassTree.Entry.COMPONENT(idx), ClassTree.addConflictReplace);
 
@@ -384,7 +387,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("NFInst.expandClass2 got unknown class.", Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got unknown class");
       then
         fail();
 
@@ -464,7 +467,7 @@ algorithm
 
       else
         algorithm
-          Error.addInternalError("NFInst.expandExtends got unknown element!", Absyn.dummyInfo);
+          assert(false, getInstanceName() + " got unknown element");
         then
           fail();
 
@@ -585,6 +588,8 @@ algorithm
 
           end match;
         end for;
+
+        instance.elements := elements;
       then
         ();
 
@@ -618,8 +623,7 @@ algorithm
             // Any other component shouldn't show up here.
             else
               algorithm
-                Error.addInternalError("NFInst.addInheritedComponentRefs got unknown component.",
-                  ComponentNode.info(cn));
+                assert(false, getInstanceName() + " got unknown component.");
               then
                 fail();
           end match;
@@ -659,32 +663,30 @@ function instClass
   input Modifier modifier;
   input ComponentNode parent;
 protected
-  Instance i, i_mod;
+  Instance i;
   array<ComponentNode> components;
-  ClassTree.Tree scope;
   Modifier type_mod, mod;
   list<Modifier> type_mods, inst_type_mods;
   Binding binding;
   InstNode n, cur_scope;
   list<ComponentNode> ext_nodes;
-  Component c;
+  String name;
 algorithm
-  i := InstNode.instance(node);
-
-  () := match i
+  () := match InstNode.instance(node)
     // A normal class.
-    case Instance.EXPANDED_CLASS(elements = scope)
+    case Instance.EXPANDED_CLASS()
       algorithm
         // Clone the instance node, since each component needs a unique instance.
         node := InstNode.clone(node);
+        i := InstNode.instance(node);
+        Instance.EXPANDED_CLASS(modifier = mod, extendsNodes = ext_nodes) := i;
 
         // Apply the modifier to the instance.
-        mod := Modifier.merge(modifier, i.modifier);
-        i_mod := applyModifier(modifier, i,
+        mod := Modifier.merge(modifier, mod);
+        i := applyModifier(modifier, i,
           ModifierScope.CLASS_SCOPE(InstNode.name(node)));
 
         // Instantiate all the extends nodes first.
-        Instance.EXPANDED_CLASS(extendsNodes = ext_nodes) := i_mod;
         for ext in ext_nodes loop
           Component.EXTENDS_NODE(node = n) := ComponentNode.component(ext);
           // No modifier, the modifier on the extends clause has already been
@@ -694,25 +696,28 @@ algorithm
 
         // Instantiate all local components. This will skip inherited
         // components, since those have already been instantiated.
-        components := Array.map(Instance.components(i_mod),
+        components := Array.map(Instance.components(i),
           function instComponent(parent = parent, scope = node));
 
         // Update the instance node with the new instance.
-        i_mod := Instance.INSTANCED_CLASS(scope, components,
-          i.equations, i.initialEquations, i.algorithms, i.initialAlgorithms);
-        node := InstNode.setInstance(i_mod, node);
+        i := Instance.instExpandedClass(components, i);
+        node := InstNode.setInstance(i, node);
       then
         ();
 
     // A builtin type.
     case Instance.PARTIAL_BUILTIN()
       algorithm
+        // Clone the instance node, since each component needs a unique instance.
         node := InstNode.clone(node);
-        inst_type_mods := {};
+        i := InstNode.instance(node);
+        Instance.PARTIAL_BUILTIN(name = name, modifier = mod) := i;
+
         // Merge any outer modifiers on the class with the class' own modifier.
-        type_mod := Modifier.merge(modifier, i.modifier);
+        type_mod := Modifier.merge(modifier, mod);
 
         // If the modifier isn't empty, instantiate it.
+        inst_type_mods := {};
         if not Modifier.isEmpty(type_mod) then
           type_mods := Modifier.toList(type_mod);
           cur_scope := InstNode.parentScope(node);
@@ -734,8 +739,8 @@ algorithm
           end for;
         end if;
 
-        i_mod := Instance.INSTANCED_BUILTIN(i.name, inst_type_mods);
-        node := InstNode.setInstance(i_mod, node);
+        i := Instance.INSTANCED_BUILTIN(name, inst_type_mods);
+        node := InstNode.setInstance(i, node);
       then
         ();
 
@@ -772,7 +777,6 @@ algorithm
     case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
       algorithm
         name := ComponentNode.name(node);
-        node := ComponentNode.clone(node);
         node := ComponentNode.setOrphanParent(parent, node);
 
         // Merge the modifier from the component.
@@ -1140,8 +1144,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("NFInst.instEEquation: Unknown equation",
-          SCode.getEEquationInfo(scodeEq));
+        assert(false, getInstanceName() + " got unknown equation");
       then
         fail();
 
@@ -1269,8 +1272,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("NFInst.instStatement: Unknown statement",
-          SCode.getStatementInfo(scodeStmt));
+        assert(false, getInstanceName() + " got unknown statement");
       then
         fail();
 

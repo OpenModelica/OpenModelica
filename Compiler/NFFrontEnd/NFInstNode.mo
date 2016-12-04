@@ -228,8 +228,8 @@ uniontype InstNode
 
       case INST_NODE()
         algorithm
-          //i := arrayCreate(1, Instance.clone(node.instance[1]));
-          i := arrayCopy(node.instance);
+          i := arrayCreate(1, Instance.clone(node.instance[1]));
+          //i := arrayCopy(node.instance);
         then
           INST_NODE(node.name, node.definition, i, node.parentScope, node.nodeType);
 

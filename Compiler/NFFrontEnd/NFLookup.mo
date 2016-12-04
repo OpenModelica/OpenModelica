@@ -45,6 +45,7 @@ import NFComponent.Component;
 import NFInstance.ClassTree;
 import NFInstance.Instance;
 import NFInstNode.InstNode;
+import NFLookupState.LookupState;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 
@@ -75,40 +76,106 @@ constant NFComponentNode.ComponentNode BUILTIN_TIME =
         NFComponent.INPUT_ATTR)}),
     NFComponentNode.EMPTY_NODE());
 
+uniontype LookupResult
+  record CLASS
+    InstNode node;
+  end CLASS;
+
+  record COMPONENT
+    ComponentNode node;
+  end COMPONENT;
+
+  function getDefinition
+    input LookupResult result;
+    output SCode.Element def;
+  algorithm
+    def := match result
+      case CLASS() then InstNode.definition(result.node);
+      case COMPONENT() then ComponentNode.definition(result.node);
+    end match;
+  end getDefinition;
+
+  function fromElement
+    input Instance.Element element;
+    input Instance instance;
+    output LookupResult result;
+  algorithm
+    result := match element
+      case Instance.Element.CLASS() then LookupResult.CLASS(element.node);
+      case Instance.Element.COMPONENT()
+        then LookupResult.COMPONENT(Instance.lookupComponentByIndex(element.index, instance));
+     end match;
+  end fromElement;
+
+  function state
+    input LookupResult result;
+    output LookupState state;
+  algorithm
+    state := match result
+      case CLASS() then LookupState.elementState(InstNode.definition(result.node));
+      case COMPONENT() then LookupState.elementState(ComponentNode.definition(result.node));
+    end match;
+  end state;
+end LookupResult;
+
 function lookupClassName
   input Absyn.Path name;
   input InstNode scope;
   input SourceInfo info;
-  output InstNode instance;
+  output InstNode node;
+protected
+  LookupResult res;
+  LookupState state;
 algorithm
-  instance := lookupNameWithError(name, scope, info, Error.LOOKUP_ERROR);
+  (res, state) := lookupNameWithError(name, scope, info, Error.LOOKUP_ERROR);
+  LookupState.assertClass(state, res, name, info);
+  LookupResult.CLASS(node = node) := res;
 end lookupClassName;
 
 function lookupBaseClassName
   input Absyn.Path name;
   input InstNode scope;
   input SourceInfo info;
-  output InstNode instance;
+  output InstNode node;
+protected
+  LookupResult res;
+  LookupState state;
 algorithm
-  instance := lookupNameWithError(name, scope, info, Error.LOOKUP_BASECLASS_ERROR);
+  (res, state) := lookupNameWithError(name, scope, info, Error.LOOKUP_BASECLASS_ERROR);
+  LookupState.assertClass(state, res, name, info);
+  LookupResult.CLASS(node = node) := res;
 end lookupBaseClassName;
 
-function lookupVariableName
-  input Absyn.Path name;
-  input InstNode scope;
+function lookupComponent
+  input Absyn.ComponentRef cref;
+  input Component.Scope scope;
+  input ComponentNode component "The component to look in.";
   input SourceInfo info;
-  output InstNode instance;
+  output ComponentNode foundComponent "The component the cref resolves to.";
+  output Prefix prefix;
+protected
+  LookupResult res;
+  LookupState state;
 algorithm
-  instance := lookupNameWithError(name, scope, info, Error.LOOKUP_VARIABLE_ERROR);
-end lookupVariableName;
+  (res, prefix, state) := lookupCref(cref, scope, component, info);
+  LookupState.assertComponent(state, res, cref, info);
+  LookupResult.COMPONENT(node = foundComponent) := res;
+end lookupComponent;
 
 function lookupFunctionName
-  input Absyn.Path name;
-  input InstNode scope;
+  input Absyn.ComponentRef cref;
+  input Component.Scope scope;
+  input ComponentNode component "THe component to look in.";
   input SourceInfo info;
-  output InstNode instance;
+  output InstNode func;
+  output Prefix prefix;
+protected
+  LookupResult res;
+  LookupState state;
 algorithm
-  instance := lookupNameWithError(name, scope, info, Error.LOOKUP_FUNCTION_ERROR);
+  (res, prefix, state) := lookupCref(cref, scope, component, info);
+  LookupState.assertFunction(state, res, cref, info);
+  LookupResult.CLASS(node = func) := res;
 end lookupFunctionName;
 
 function lookupCref
@@ -116,33 +183,34 @@ function lookupCref
   input Component.Scope scope;
   input ComponentNode component "The component to look in.";
   input SourceInfo info;
-  output ComponentNode foundComponent "The component the cref resolves to.";
+  output LookupResult result;
   output Prefix prefix;
+  output LookupState state;
 algorithm
-  (foundComponent, prefix) := matchcontinue cref
+  (result, prefix, state) := matchcontinue cref
     local
       Instance.Element element;
       InstNode found_scope;
 
     case Absyn.ComponentRef.CREF_IDENT(name = "time")
-      then (BUILTIN_TIME, Prefix.NO_PREFIX());
+      then (LookupResult.COMPONENT(BUILTIN_TIME), Prefix.NO_PREFIX(),
+            LookupState.STATE_PREDEF_COMP());
 
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        (element, found_scope, prefix) := lookupSimpleCref(cref.name, scope, component);
-        // TODO: Give an error if the found element is not a component (or function?).
-        foundComponent := Instance.lookupComponentByElement(element, InstNode.instance(found_scope));
+        (result, found_scope, prefix) := lookupSimpleCref(cref.name, scope, component);
+        state := LookupResult.state(result);
       then
-        (foundComponent, prefix);
+        (result, prefix, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (element, found_scope, prefix) := lookupSimpleCref(cref.name, scope, component);
-        (element, found_scope) := lookupCrefInElement(cref.componentRef, element, found_scope);
-        // TODO: Give an error if the found element is not a component (or function?).
-        foundComponent := Instance.lookupComponentByElement(element, InstNode.instance(found_scope));
+        (result, found_scope, prefix) := lookupSimpleCref(cref.name, scope, component);
+        state := LookupResult.state(result);
+        (result, found_scope, state) :=
+          lookupCrefInElement(cref.componentRef, result, found_scope, state);
       then
-        (foundComponent, prefix);
+        (result, prefix, state);
 
     case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
       then lookupCref(cref.componentRef, Component.Scope.RELATIVE_COMP(0),
@@ -158,33 +226,47 @@ algorithm
   end matchcontinue;
 end lookupCref;
 
-function lookupElement
+protected
+
+function lookupLocalSimpleName
+  "Looks up a name in the given scope, without continuing the search in any
+   enclosing scopes if the name isn't found."
   input String name;
   input InstNode scope;
-  output Instance.Element element;
+  output LookupResult result;
 protected
-  InstNode cur_scope = scope;
+  Instance i;
+  Instance.Element e;
 algorithm
-  // Look for the name in each enclosing scope, until it's either found or we
-  // run out of scopes.
-  while true loop
-    try
-      element := Instance.lookupElement(name, InstNode.instance(cur_scope));
-      return;
-    else
-      cur_scope := InstNode.parentScope(cur_scope);
-    end try;
-  end while;
-end lookupElement;
-
-protected
+  i := InstNode.instance(scope);
+  e := Instance.lookupElement(name, i);
+  result := LookupResult.fromElement(e, i);
+end lookupLocalSimpleName;
 
 function lookupSimpleName
   input String name;
   input InstNode scope;
-  output InstNode instance;
+  output LookupResult result;
+protected
+  InstNode cur_scope = scope;
+  Instance i;
+  Instance.Element e;
 algorithm
-  Instance.Element.CLASS(node = instance) := lookupElement(name, scope);
+  // Look for the name in each enclosing scope, until it's either found or we
+  // run out of scopes.
+  for i in 1:Global.recursionDepthLimit loop
+    try
+      result := lookupLocalSimpleName(name, cur_scope);
+      return;
+    else
+      // TODO: Handle encapsulated scopes.
+      cur_scope := InstNode.parentScope(cur_scope);
+    end try;
+  end for;
+
+  Error.addMessage(Error.RECURSION_DEPTH_REACHED,
+    {String(Global.recursionDepthLimit), InstNode.name(scope)});
+  fail();
 end lookupSimpleName;
 
 function lookupNameWithError
@@ -192,10 +274,11 @@ function lookupNameWithError
   input InstNode scope;
   input SourceInfo info;
   input Error.Message errorType;
-  output InstNode instance;
+  output LookupResult result;
+  output LookupState state;
 algorithm
   try
-    instance := lookupName(name, scope);
+    (result, state) := lookupName(name, scope);
   else
     Error.addSourceMessage(errorType, {Absyn.pathString(name), "<unknown>"}, info);
     fail();
@@ -205,27 +288,24 @@ end lookupNameWithError;
 function lookupName
   input Absyn.Path name;
   input InstNode scope;
-  output InstNode instance;
+  output LookupResult result;
+  output LookupState state;
 algorithm
-  instance := match name
-    case Absyn.Path.IDENT()
-      algorithm
-        try
-          instance := lookupSimpleBuiltinName(name.name);
-        else
-          instance := lookupSimpleName(name.name, scope);
-        end try;
-      then
-        instance;
+  (result, state) := match name
+    local
+      InstNode node;
 
-    // Qualified name, look up first part, expand it, and look up the rest of
-    // the name in the expanded instance.
+    // Simple name, look it up in the given scope.
+    case Absyn.Path.IDENT()
+      then lookupFirstIdent(name.name, scope);
+
+    // Qualified name, look up first part in the given scope and look up the
+    // rest of the name in the found element.
     case Absyn.Path.QUALIFIED()
       algorithm
-        instance := lookupSimpleName(name.name, scope);
-        instance := Inst.expand(instance);
+        (result, state) := lookupFirstIdent(name.name, scope);
       then
-        lookupLocalName(name.path, instance);
+        lookupLocalName(name.path, result, state);
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -234,29 +314,78 @@ algorithm
   end match;
 end lookupName;
 
-function lookupLocalSimpleName
+function lookupFirstIdent
+  "Looks up the first part of a name."
   input String name;
   input InstNode scope;
-  output InstNode instance;
+  output LookupResult result;
+  output LookupState state;
+protected
+  InstNode node;
 algorithm
-  instance := Instance.lookupClass(name, InstNode.instance(scope));
-end lookupLocalSimpleName;
+  try
+    // Check if the name refers to a reserved builtin name.
+    node := lookupSimpleBuiltinName(name);
+    result := LookupResult.CLASS(node);
+    state := LookupState.STATE_PREDEF_CLASS();
+  else
+    // Otherwise, check each scope until the name is found.
+    result := lookupSimpleName(name, scope);
+    state := LookupState.elementState(LookupResult.getDefinition(result));
+  end try;
+end lookupFirstIdent;
 
 function lookupLocalName
+  "Looks up a path in the given scope, without continuing the search in any
+   enclosing scopes if the path isn't found."
   input Absyn.Path name;
-  input InstNode scope;
-  output InstNode instance;
+  input output LookupResult result;
+  input output LookupState state;
+protected
+  InstNode scope;
 algorithm
-  instance := match name
-    case Absyn.Path.IDENT() then lookupLocalSimpleName(name.name, scope);
+  // We're looking for a class, which is not legal to look up inside of a
+  // component.
+  () := match result
+    case LookupResult.CLASS()
+      algorithm
+        scope := result.node;
+      then
+        ();
+
+    else
+      algorithm
+        state := LookupState.STATE_COMP_CLASS();
+        return;
+      then
+        ();
+  end match;
+
+  // Make sure the scope is expanded so that we can do lookup in it.
+  scope := Inst.expand(scope);
+
+  // Look up the path in the scope.
+  () := match name
+    case Absyn.Path.IDENT()
+      algorithm
+        result := lookupLocalSimpleName(name.name, scope);
+        state := LookupState.next(result, state);
+      then
+        ();
 
     case Absyn.Path.QUALIFIED()
       algorithm
-        instance := lookupLocalSimpleName(name.name, scope);
-        instance := Inst.expand(instance);
+        result := lookupLocalSimpleName(name.name, scope);
+        state := LookupState.next(result, state);
+        (result, state) := lookupLocalName(name.path, result, state);
       then
-        lookupLocalName(name.path, instance);
+        ();
 
+    else
+      algorithm
+        assert(false, getInstanceName() + " was called with an invalid path.");
+      then
+        fail();
   end match;
 end lookupLocalName;
 
@@ -277,11 +406,13 @@ function lookupSimpleCref
   input String name;
   input Component.Scope scope;
   input ComponentNode component;
-  output Instance.Element element;
+  output LookupResult result;
   output InstNode foundScope;
   output Prefix prefix;
 protected
   ComponentNode parent = component;
+  Instance inst;
+  Instance.Element e;
 algorithm
   // Figure out which scope to start looking for the cref in.
   foundScope := match scope
@@ -305,7 +436,8 @@ algorithm
   for i in 1:Global.recursionDepthLimit loop
     try
       // Check if the cref can be found in the current scope.
-      element := Instance.lookupElement(name, InstNode.instance(foundScope));
+      inst := InstNode.instance(foundScope);
+      e := Instance.lookupElement(name, inst);
 
       // We found it, build the prefix for the found cref.
       if i == 1 then
@@ -315,6 +447,7 @@ algorithm
       end if;
 
       // We're done here.
+      result := LookupResult.fromElement(e, inst);
       return;
     else
       // Look in the next enclosing scope.
@@ -329,54 +462,60 @@ end lookupSimpleCref;
 
 function lookupCrefInElement
   input Absyn.ComponentRef cref;
-  input output Instance.Element element;
+  input output LookupResult result;
   input output InstNode scope;
+  input output LookupState state;
 algorithm
-  (element, scope) := match element
-    local
-      ComponentNode c;
+  if LookupState.isError(state) then
+    return;
+  end if;
 
-    case Instance.Element.COMPONENT()
-      algorithm
-        c := Instance.lookupComponentByIndex(element.index, InstNode.instance(scope));
-      then
-        lookupCrefInComponent(cref, c);
-
-    case Instance.Element.CLASS()
-      then lookupCrefInClass(cref, element.node);
+  (result, scope, state) := match result
+    case LookupResult.COMPONENT() then lookupCrefInComponent(cref, result.node, state);
+    case LookupResult.CLASS() then lookupCrefInClass(cref, result.node, state);
   end match;
 end lookupCrefInElement;
 
 function lookupCrefInComponent
   input Absyn.ComponentRef cref;
   input ComponentNode component;
-  output Instance.Element element;
-  output InstNode scope;
+        output LookupResult result;
+        output InstNode scope;
+  input output LookupState state;
 algorithm
-  (element, scope) := lookupCrefInClass(cref,
-    Component.classInstance(ComponentNode.component(component)));
+  (result, scope, state) := lookupCrefInClass(cref,
+    Component.classInstance(ComponentNode.component(component)), state);
 end lookupCrefInComponent;
 
 function lookupCrefInClass
   input Absyn.ComponentRef cref;
   input InstNode node;
-  output Instance.Element element;
-  output InstNode scope;
+        output LookupResult result;
+        output InstNode scope;
+  input output LookupState state;
 protected
   Instance i;
+  Instance.Element e;
 algorithm
   scope := Inst.expand(node);
   i := InstNode.instance(node);
 
-  (element, scope) := match cref
+  (result, scope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
-      then (Instance.lookupElement(cref.name, i), scope);
+      algorithm
+        e := Instance.lookupElement(cref.name, i);
+        result := LookupResult.fromElement(e, i);
+        state := LookupState.next(result, state);
+      then
+        (result, scope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        element := Instance.lookupElement(cref.name, i);
+        e := Instance.lookupElement(cref.name, i);
+        result := LookupResult.fromElement(e, i);
+        state := LookupState.next(result, state);
       then
-        lookupCrefInElement(cref.componentRef, element, scope);
+        lookupCrefInElement(cref.componentRef, result, scope, state);
   end match;
 end lookupCrefInClass;
 

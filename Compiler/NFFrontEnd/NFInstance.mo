@@ -134,6 +134,19 @@ uniontype Instance
     instance := EXPANDED_CLASS(classes, {}, listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
   end initExpandedClass;
 
+  function instExpandedClass
+    input array<ComponentNode> components;
+    input Instance expandedClass;
+    output Instance instancedClass;
+  algorithm
+    instancedClass := match expandedClass
+      case EXPANDED_CLASS()
+        then INSTANCED_CLASS(expandedClass.elements, components,
+          expandedClass.equations, expandedClass.initialEquations,
+          expandedClass.algorithms, expandedClass.initialAlgorithms);
+    end match;
+  end instExpandedClass;
+
   function components
     input Instance instance;
     output array<ComponentNode> components;
@@ -288,8 +301,7 @@ uniontype Instance
 
       else
         algorithm
-          Error.addInternalError("NFInstance.setModifier got unmodifiable instance!\n",
-            Absyn.dummyInfo);
+          assert(false, getInstanceName() + " got unmodifiable instance");
         then
           fail();
 
@@ -315,23 +327,23 @@ uniontype Instance
       local
         ClassTree.Tree tree;
 
-      case PARTIAL_CLASS()
-        algorithm
-          instance.classes := ClassTree.map(instance.classes, cloneEntry);
-        then
-          ();
+      //case PARTIAL_CLASS()
+      //  algorithm
+      //    instance.classes := ClassTree.map(instance.classes, cloneEntry);
+      //  then
+      //    ();
 
       case EXPANDED_CLASS()
         algorithm
-          instance.elements := ClassTree.map(instance.elements, cloneEntry);
-          Array.map(instance.components, ComponentNode.clone);
+          //instance.elements := ClassTree.map(instance.elements, cloneEntry);
+          instance.components := Array.map(instance.components, ComponentNode.clone);
         then
           ();
 
       case INSTANCED_CLASS()
         algorithm
-          instance.elements := ClassTree.map(instance.elements, cloneEntry);
-          Array.map(instance.components, ComponentNode.clone);
+          //instance.elements := ClassTree.map(instance.elements, cloneEntry);
+          instance.components := Array.map(instance.components, ComponentNode.clone);
         then
           ();
 

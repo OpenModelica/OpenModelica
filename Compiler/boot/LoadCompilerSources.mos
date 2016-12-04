@@ -108,6 +108,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFInstNode.mo",
     "../NFFrontEnd/NFInstUtil.mo",
     "../NFFrontEnd/NFLookup.mo",
+    "../NFFrontEnd/NFLookupState.mo",
     "../NFFrontEnd/NFMod.mo",
     "../NFFrontEnd/NFPrefix.mo",
     "../NFFrontEnd/NFStatement.mo",

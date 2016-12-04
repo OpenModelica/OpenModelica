@@ -110,15 +110,15 @@ algorithm
   end match;
 end typeComponents;
 
-protected
 function typeComponent
   input output ComponentNode component;
 protected
   Component c = ComponentNode.component(component);
+  ComponentNode parent = ComponentNode.parent(component);
   array<Dimension> dims;
   list<DAE.Dimension> ty_dims;
   SourceInfo info;
-  InstNode scope, node;
+  InstNode node;
   DAE.Type ty;
 algorithm
   () := match c
@@ -126,10 +126,9 @@ algorithm
     case Component.UNTYPED_COMPONENT(dimensions = dims, info = info)
       algorithm
         ty_dims := {};
-        scope := InstNode.parentScope(c.classInst);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := typeDimension(dims[i], component, info);
+          dims[i] := typeDimension(dims[i], parent, info);
           ty_dims := Dimension.dimension(dims[i]) :: ty_dims;
         end for;
 
@@ -766,7 +765,7 @@ algorithm
   typedCref := translateCref(untypedCref);
 
   // Look up the whole cref, and type the found component.
-  (node, prefix) := Lookup.lookupCref(untypedCref, scope, component, info);
+  (node, prefix) := Lookup.lookupComponent(untypedCref, scope, component, info);
   typedCref := Prefix.prefixCref(typedCref, prefix);
   node := typeComponent(node);
   Component.TYPED_COMPONENT(ty = ty) := ComponentNode.component(node);

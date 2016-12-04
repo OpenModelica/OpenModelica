@@ -144,7 +144,7 @@ algorithm
 
     else
       algorithm
-        assert(true, "flattenComponent got unknown component");
+        assert(false, "flattenComponent got unknown component");
       then
         fail();
 

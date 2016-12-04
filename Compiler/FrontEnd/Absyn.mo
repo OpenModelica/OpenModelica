@@ -4318,6 +4318,16 @@ algorithm
   end match;
 end crefFirstIdent;
 
+public function crefSecondIdent
+  input ComponentRef cref;
+  output Ident ident;
+algorithm
+  ident := match cref
+    case CREF_QUAL() then crefFirstIdent(cref.componentRef);
+    case CREF_FULLYQUALIFIED() then crefSecondIdent(cref.componentRef);
+  end match;
+end crefSecondIdent;
+
 public function crefFirstCref
   "Returns the first part of a cref."
   input ComponentRef inCref;

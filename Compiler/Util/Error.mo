@@ -319,7 +319,7 @@ public constant Message NON_CLASS_IN_COMP_FUNC_NAME = MESSAGE(94, TRANSLATION(),
 public constant Message DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN = MESSAGE(95, SYMBOLIC(), ERROR(),
   Util.gettext("The same variables must me solved in elsewhen clause as in the when clause."));
 public constant Message CLASS_IN_COMPOSITE_COMP_NAME = MESSAGE(96, TRANSLATION(), ERROR(),
-  Util.gettext("Found class %s during lookup of composite component name, expected component."));
+  Util.gettext("Found class %s during lookup of composite component name '%s', expected component."));
 public constant Message MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR = MESSAGE(97, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in modifier of component %s, declared type %s, got modifier %s of type %s."));
 public constant Message ASSERT_CONSTANT_FALSE_ERROR = MESSAGE(98, SYMBOLIC(), ERROR(),
@@ -329,7 +329,7 @@ public constant Message ARRAY_INDEX_OUT_OF_BOUNDS = MESSAGE(99, TRANSLATION(), E
 public constant Message COMPONENT_CONDITION_VARIABILITY = MESSAGE(100, TRANSLATION(), ERROR(),
   Util.gettext("Component condition must be parameter or constant expression (in %s)."));
 public constant Message FOUND_CLASS_NAME_VIA_COMPONENT = MESSAGE(101, TRANSLATION(), ERROR(),
-  Util.gettext("Found class %s by name lookup via component (only component and function call names may be looked up via a component)."));
+  Util.gettext("Class name '%s' was found via a component (only component and function call names may be accessed in this way)."));
 public constant Message FOUND_FUNC_NAME_VIA_COMP_NONCALL = MESSAGE(102, TRANSLATION(), ERROR(),
   Util.gettext("Found function %s by name lookup via component, but this is only valid when the name is used as a function call."));
 public constant Message DUPLICATE_MODIFICATIONS = MESSAGE(103, TRANSLATION(), ERROR(),
@@ -349,9 +349,9 @@ public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
   Util.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant Message LOOKUP_VIA_COMP_NON_FUNCALL = MESSAGE(111, TRANSLATION(), ERROR(),
-Util.gettext("Lookup of element %s is not allowed via component %s when looking for %s (only function calls may be looked up via a component)."));
+  Util.gettext("Illegal access of class '%s' in component '%s' when looking for non-function call name '%s'."));
 public constant Message LOOKUP_CLASS_VIA_COMP_COMP = MESSAGE(112, TRANSLATION(), ERROR(),
-  Util.gettext("Lookup of class %s is not allowed in composite component name %s (only components may be looked up in this way)."));
+  Util.gettext("Illegal access of class '%s' via component '%s' when looking for '%s'."));
 public constant Message SUBSCRIPTED_FUNCTION_CALL = MESSAGE(113, TRANSLATION(), ERROR(),
   Util.gettext("Function call %s contains subscripts."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
