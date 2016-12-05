@@ -2948,7 +2948,6 @@ algorithm
         algorithm
           if Expression.expHasInitial(exp) then
             Error.addSourceMessage(Error.INITIAL_CALL_WARNING,{Dump.printExpStr(aexp)},info);
-            fail();
           end if;
         then ();
     end match;
