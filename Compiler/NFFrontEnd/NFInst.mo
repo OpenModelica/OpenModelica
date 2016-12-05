@@ -811,16 +811,20 @@ function instComponentAttributes
   input SCode.Prefixes compPrefs;
   output Component.Attributes attributes;
 protected
+  DAE.ConnectorType connectorType;
+  DAE.VarParallelism parallelism;
   DAE.VarKind variability;
   DAE.VarDirection direction;
+  DAE.VarInnerOuter innerOuter;
   DAE.VarVisibility visiblity;
-  DAE.ConnectorType connectorType;
 algorithm
+  connectorType := InstUtil.translateConnectorType(compAttr.connectorType);
+  parallelism := InstUtil.translateParallelism(compAttr.parallelism);
   variability := InstUtil.translateVariability(compAttr.variability);
   direction := InstUtil.translateDirection(compAttr.direction);
+  innerOuter := InstUtil.translateInnerOuter(compPrefs.innerOuter);
   visiblity := InstUtil.translateVisibility(compPrefs.visibility);
-  connectorType := InstUtil.translateConnectorType(compAttr.connectorType);
-  attributes := Component.Attributes.ATTRIBUTES(variability, direction, visiblity, connectorType);
+  attributes := Component.Attributes.ATTRIBUTES(connectorType, parallelism, variability, direction, innerOuter, visiblity);
 end instComponentAttributes;
 
 function instTypeSpec

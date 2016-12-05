@@ -57,6 +57,9 @@ import Inst = NFInst;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Types;
+import ClassInf;
+import InstUtil;
+import Static;
 
 public
 function typeClass
@@ -96,7 +99,7 @@ algorithm
           components[i] := typeComponent(components[i]);
         end for;
       then
-        makeComplexType(cls);
+        makeComplexType(classNode, cls, component);
 
     case Instance.INSTANCED_BUILTIN()
       then makeBuiltinType(cls, component);
@@ -544,10 +547,42 @@ algorithm
 end typeStatement;
 
 function makeComplexType
+  input InstNode classNode;
   input Instance classInst;
+  input ComponentNode component;
   output DAE.Type ty;
+protected
+  array<ComponentNode> components;
+  ClassInf.State s;
+  SCode.Element el;
+  SCode.Restriction r;
+  Absyn.Path p;
+  list<DAE.Var> varLst = {};
+  ComponentNode cn;
+  Component c;
+  DAE.Type t;
+  DAE.Binding binding;
 algorithm
-  ty := DAE.T_COMPLEX_DEFAULT;
+  Instance.INSTANCED_CLASS(components = components) := classInst;
+
+  for i in arrayLength(components):-1:1 loop
+     cn := components[i];
+     c := ComponentNode.component(cn);
+     t := Component.getType(c);
+
+     varLst := DAE.TYPES_VAR(
+                 ComponentNode.name(cn),
+                 Component.attr2DaeAttr(Component.getAttributes(c)),
+                 t,
+                 DAE.UNBOUND(),
+                 NONE())::varLst;
+  end for;
+
+  el := InstNode.definition(classNode);
+  r := SCode.getClassRestriction(el);
+  p := InstNode.path(classNode);
+  s := ClassInf.start(r, p);
+  ty := DAE.T_COMPLEX(s, varLst, NONE(), {p});
 end makeComplexType;
 
 function makeBuiltinType
@@ -680,9 +715,9 @@ algorithm
 
     case Absyn.Exp.CALL()
       algorithm
-        _ := typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, info);
+        (typedExp, ty, variability) := typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, scope, component, info);
       then
-        fail();
+        (typedExp, ty, variability);
 
     else
       algorithm
@@ -750,6 +785,26 @@ algorithm
   arrayExp := DAE.ARRAY(arrayType, not Types.isArray(elem_ty), listReverse(expl));
 end typeArray;
 
+function typeExps
+  input list<Absyn.Exp> expressions;
+  input Component.Scope scope;
+  input ComponentNode component;
+  input SourceInfo info;
+  output list<DAE.Exp> daeExps = {};
+  output DAE.Const variability = DAE.C_CONST();
+protected
+  DAE.Exp dexp;
+  DAE.Const var;
+  DAE.Type elem_ty;
+algorithm
+  for e in expressions loop
+    (dexp, elem_ty, var) := typeExp(e, scope, component, info);
+    variability := Types.constAnd(var, variability);
+    daeExps := dexp :: daeExps;
+  end for;
+  daeExps := listReverse(daeExps);
+end typeExps;
+
 function typeCref
   input Absyn.ComponentRef untypedCref;
   input Component.Scope scope;
@@ -805,16 +860,85 @@ end translateCref;
 function typeFunctionCall
   input Absyn.ComponentRef functionName;
   input Absyn.FunctionArgs functionArgs;
+  input Component.Scope scope;
+  input ComponentNode component;
   input SourceInfo info;
+  output DAE.Exp typedExp;
+  output DAE.Type ty;
+  output DAE.Const variability;
 protected
   String fn_name;
+  Absyn.Path fn, fn_1;
+  ComponentNode fakeComponent;
+  InstNode classNode;
+  list<DAE.Exp> arguments;
+  DAE.CallAttributes ca;
+  DAE.Type classType, resultType;
+  list<DAE.FuncArg> funcArg;
+  DAE.FunctionAttributes functionAttributes;
+  DAE.TypeSource source;
+  Prefix prefix;
+  SCode.Element cls;
+  list<DAE.Var> vars;
+  list<Absyn.Exp> args;
+  DAE.Const argVariability;
+  DAE.FunctionBuiltin isBuiltin;
+  Boolean builtin;
+  DAE.InlineType inlineType;
 algorithm
   try
-    _ := Absyn.crefToPath(functionName);
+    // make sure the component is a path (no subscripts)
+    fn := Absyn.crefToPath(functionName);
   else
     fn_name := Dump.printComponentRefStr(functionName);
     Error.addSourceMessageAndFail(Error.SUBSCRIPTED_FUNCTION_CALL, {fn_name}, info);
+    fail();
   end try;
+
+  (classNode, prefix) := Lookup.lookupFunctionName(functionName, scope, component, info);
+  classNode := Inst.instantiate(classNode, Modifier.NOMOD(), component);
+  fn_name :=  InstNode.name(classNode);
+  cls := InstNode.definition(classNode);
+  // create a component that has the name of the function and the scope of the function as its type
+  fakeComponent := ComponentNode.new(fn_name,
+     SCode.COMPONENT(
+       fn_name,
+       SCode.defaultPrefixes,
+       SCode.defaultVarAttr,
+       Absyn.TPATH(fn, NONE()),
+       SCode.NOMOD(),
+       SCode.COMMENT(NONE(), NONE()),
+       NONE(),
+       info), component);
+
+  fakeComponent := Inst.instComponent(fakeComponent, component, InstNode.parentScope(classNode));
+  fakeComponent := typeComponent(fakeComponent);
+  (classNode, classType) := typeClass(classNode, fakeComponent);
+
+  DAE.T_COMPLEX(varLst = vars) := classType;
+  functionAttributes := InstUtil.getFunctionAttributes(cls, vars);
+  ty := Types.makeFunctionType(fn, vars, functionAttributes);
+
+  DAE.T_FUNCTION(funcResultType = resultType) := ty;
+
+  Absyn.FUNCTIONARGS(args = args) := functionArgs;
+  (arguments, argVariability) := typeExps(args, scope, component, info);
+
+  (isBuiltin,builtin,fn_1) := Static.isBuiltinFunc(fn, ty);
+  inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
+
+  ca := DAE.CALL_ATTR(
+          resultType,
+          Types.isTuple(resultType),
+          builtin,
+          functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
+          functionAttributes.isFunctionPointer,
+          inlineType,DAE.NO_TAIL());
+
+  typedExp := DAE.CALL(fn_1, arguments, ca);
+
+  variability := argVariability;
+
 end typeFunctionCall;
 
 annotation(__OpenModelica_Interface="frontend");

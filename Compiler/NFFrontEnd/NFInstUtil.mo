@@ -237,51 +237,75 @@ public import SCode;
 //  end match;
 //end daePrefixesToDaeAttr;
 //
-//public function daeToSCodeVisibility
-//  input DAE.VarVisibility inVisibility;
-//  output SCode.Visibility outVisibility;
-//algorithm
-//  outVisibility := match(inVisibility)
-//    case DAE.PUBLIC() then SCode.PUBLIC();
-//    case DAE.PROTECTED() then SCode.PROTECTED();
-//  end match;
-//end daeToSCodeVisibility;
-//
-//public function daeToSCodeVariability
-//  input DAE.VarKind inVariability;
-//  output SCode.Variability outVariability;
-//algorithm
-//  outVariability := match(inVariability)
-//    case DAE.VARIABLE() then SCode.VAR();
-//    case DAE.DISCRETE() then SCode.DISCRETE();
-//    case DAE.PARAM() then SCode.PARAM();
-//    case DAE.CONST() then SCode.CONST();
-//  end match;
-//end daeToSCodeVariability;
-//
-//public function daeToAbsynDirection
-//  input DAE.VarDirection inDirection;
-//  output Absyn.Direction outDirection;
-//algorithm
-//  outDirection := match(inDirection)
-//    case DAE.BIDIR() then Absyn.BIDIR();
-//    case DAE.INPUT() then Absyn.INPUT();
-//    case DAE.OUTPUT() then Absyn.OUTPUT();
-//  end match;
-//end daeToAbsynDirection;
-//
-//protected function daeToSCodeConnectorType
-//  input DAE.ConnectorType inConnectorType;
-//  output SCode.ConnectorType outConnectorType;
-//algorithm
-//  outConnectorType := match(inConnectorType)
-//    case DAE.NON_CONNECTOR() then SCode.POTENTIAL();
-//    case DAE.POTENTIAL() then SCode.POTENTIAL();
-//    case DAE.FLOW() then SCode.FLOW();
-//    case DAE.STREAM() then SCode.STREAM();
-//  end match;
-//end daeToSCodeConnectorType;
-//
+
+public function daeToSCodeConnectorType
+  input DAE.ConnectorType inConnectorType;
+  output SCode.ConnectorType outConnectorType;
+algorithm
+  outConnectorType := match(inConnectorType)
+    case DAE.NON_CONNECTOR() then SCode.POTENTIAL();
+    case DAE.POTENTIAL() then SCode.POTENTIAL();
+    case DAE.FLOW() then SCode.FLOW();
+    case DAE.STREAM() then SCode.STREAM();
+  end match;
+end daeToSCodeConnectorType;
+
+public function daeToSCodeParallelism
+  input DAE.VarParallelism inParallelism;
+  output SCode.Parallelism outParallelism;
+algorithm
+  outParallelism := match(inParallelism)
+    case DAE.PARGLOBAL() then SCode.PARGLOBAL();
+    case DAE.PARLOCAL() then SCode.PARLOCAL();
+    case DAE.NON_PARALLEL() then SCode.NON_PARALLEL();
+  end match;
+end daeToSCodeParallelism;
+
+public function daeToSCodeVariability
+  input DAE.VarKind inVariability;
+  output SCode.Variability outVariability;
+algorithm
+  outVariability := match(inVariability)
+    case DAE.VARIABLE() then SCode.VAR();
+    case DAE.DISCRETE() then SCode.DISCRETE();
+    case DAE.PARAM() then SCode.PARAM();
+    case DAE.CONST() then SCode.CONST();
+  end match;
+end daeToSCodeVariability;
+
+public function daeToAbsynDirection
+  input DAE.VarDirection inDirection;
+  output Absyn.Direction outDirection;
+algorithm
+  outDirection := match(inDirection)
+    case DAE.BIDIR() then Absyn.BIDIR();
+    case DAE.INPUT() then Absyn.INPUT();
+    case DAE.OUTPUT() then Absyn.OUTPUT();
+  end match;
+end daeToAbsynDirection;
+
+public function daeToAbsynInnerOuter
+  input DAE.VarInnerOuter inInnerOuter;
+  output Absyn.InnerOuter outInnerOuter;
+algorithm
+  outInnerOuter := match(inInnerOuter)
+    case DAE.INNER() then Absyn.INNER();
+    case DAE.INNER_OUTER() then Absyn.INNER_OUTER();
+    case DAE.OUTER() then Absyn.OUTER();
+    case DAE.NOT_INNER_OUTER() then Absyn.NOT_INNER_OUTER();
+  end match;
+end daeToAbsynInnerOuter;
+
+public function daeToSCodeVisibility
+  input DAE.VarVisibility inVisibility;
+  output SCode.Visibility outVisibility;
+algorithm
+  outVisibility := match(inVisibility)
+    case DAE.PUBLIC() then SCode.PUBLIC();
+    case DAE.PROTECTED() then SCode.PROTECTED();
+  end match;
+end daeToSCodeVisibility;
+
 //public function makeDerivedClassType
 //  input DAE.Type inType;
 //  input ClassInf.State inState;
@@ -1596,15 +1620,27 @@ public import SCode;
 //  end match;
 //end translatePrefixes;
 
-public function translateVisibility
-  input SCode.Visibility inVisibility;
-  output DAE.VarVisibility outVisibility;
+public function translateConnectorType
+  input SCode.ConnectorType inConnectorType;
+  output DAE.ConnectorType outConnectorType;
 algorithm
-  outVisibility := match(inVisibility)
-    case SCode.PUBLIC() then DAE.PUBLIC();
-    else DAE.PROTECTED();
+  outConnectorType := match(inConnectorType)
+    case SCode.FLOW() then DAE.FLOW();
+    case SCode.STREAM() then DAE.STREAM();
+    else DAE.NON_CONNECTOR();
   end match;
-end translateVisibility;
+end translateConnectorType;
+
+public function translateParallelism
+  input SCode.Parallelism inParallelism;
+  output DAE.VarParallelism outParallelism;
+algorithm
+  outParallelism := match(inParallelism)
+    case SCode.PARGLOBAL() then DAE.PARGLOBAL();
+    case SCode.PARLOCAL() then DAE.PARLOCAL();
+    case SCode.NON_PARALLEL() then DAE.NON_PARALLEL();
+  end match;
+end translateParallelism;
 
 public function translateVariability
   input SCode.Variability inVariability;
@@ -1629,16 +1665,27 @@ algorithm
   end match;
 end translateDirection;
 
-public function translateConnectorType
-  input SCode.ConnectorType inConnectorType;
-  output DAE.ConnectorType outConnectorType;
+public function translateInnerOuter
+  input Absyn.InnerOuter inInnerOuter;
+  output DAE.VarInnerOuter outInnerOuter;
 algorithm
-  outConnectorType := match(inConnectorType)
-    case SCode.FLOW() then DAE.FLOW();
-    case SCode.STREAM() then DAE.STREAM();
-    else DAE.NON_CONNECTOR();
+  outInnerOuter := match(inInnerOuter)
+    case Absyn.INNER() then DAE.INNER();
+    case Absyn.INNER_OUTER() then DAE.INNER_OUTER();
+    case Absyn.OUTER() then DAE.OUTER();
+    case Absyn.NOT_INNER_OUTER() then DAE.NOT_INNER_OUTER();
   end match;
-end translateConnectorType;
+end translateInnerOuter;
+
+public function translateVisibility
+  input SCode.Visibility inVisibility;
+  output DAE.VarVisibility outVisibility;
+algorithm
+  outVisibility := match(inVisibility)
+    case SCode.PUBLIC() then DAE.PUBLIC();
+    else DAE.PROTECTED();
+  end match;
+end translateVisibility;
 
 //public function conditionTrue
 //  input Condition inCondition;

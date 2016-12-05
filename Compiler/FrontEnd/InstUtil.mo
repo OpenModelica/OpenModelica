@@ -7269,7 +7269,7 @@ algorithm
   end match;
 end makeNonExpSubscript;
 
-protected function getFunctionAttributes
+public function getFunctionAttributes
 "Looks at the annotations of an SCode.Element to create the function attributes,
 i.e. Inline and Purity"
   input SCode.Element cl;

@@ -37,20 +37,51 @@ import NFDimension.Dimension;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import SCode.Element;
+import SCode;
 
+protected
+import NFInstUtil;
+
+public
 constant Component.Attributes DEFAULT_ATTR =
-  Component.Attributes.ATTRIBUTES(DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR());
+  Component.Attributes.ATTRIBUTES(
+     DAE.NON_CONNECTOR(),
+     DAE.NON_PARALLEL(),
+     DAE.VARIABLE(),
+     DAE.BIDIR(),
+     DAE.NOT_INNER_OUTER(),
+     DAE.PUBLIC());
+
 constant Component.Attributes INPUT_ATTR =
-  Component.Attributes.ATTRIBUTES(DAE.VARIABLE(), DAE.INPUT(), DAE.PUBLIC(), DAE.NON_CONNECTOR());
+  Component.Attributes.ATTRIBUTES(
+     DAE.NON_CONNECTOR(),
+     DAE.NON_PARALLEL(),
+     DAE.VARIABLE(),
+     DAE.INPUT(),
+     DAE.NOT_INNER_OUTER(),
+     DAE.PUBLIC());
+
+constant Component.Attributes OUTPUT_ATTR =
+  Component.Attributes.ATTRIBUTES(
+     DAE.NON_CONNECTOR(),
+     DAE.NON_PARALLEL(),
+     DAE.VARIABLE(),
+     DAE.OUTPUT(),
+     DAE.NOT_INNER_OUTER(),
+     DAE.PUBLIC());
+
 constant Component.Scope DEFAULT_SCOPE = Component.Scope.RELATIVE_COMP(0);
 
 uniontype Component
   uniontype Attributes
     record ATTRIBUTES
+      // adrpo: keep the order in DAE.ATTR
+      DAE.ConnectorType connectorType;
+      DAE.VarParallelism parallelism;
       DAE.VarKind variability;
       DAE.VarDirection direction;
+      DAE.VarInnerOuter innerOuter;
       DAE.VarVisibility visibility;
-      DAE.ConnectorType connectorType;
     end ATTRIBUTES;
   end Attributes;
 
@@ -198,6 +229,33 @@ uniontype Component
       else ();
     end match;
   end unliftType;
+
+  function getAttributes
+    input Component component;
+    output Component.Attributes attr;
+  algorithm
+    attr := match component
+      case UNTYPED_COMPONENT() then component.attributes;
+      case TYPED_COMPONENT() then component.attributes;
+    end match;
+  end getAttributes;
+
+  function attr2DaeAttr
+    input Attributes attr;
+    output DAE.Attributes daeAttr;
+  algorithm
+    daeAttr := match(attr)
+      case ATTRIBUTES()
+        then DAE.ATTR(
+               NFInstUtil.daeToSCodeConnectorType(attr.connectorType),
+               NFInstUtil.daeToSCodeParallelism(attr.parallelism),
+               NFInstUtil.daeToSCodeVariability(attr.variability),
+               NFInstUtil.daeToAbsynDirection(attr.direction),
+               NFInstUtil.daeToAbsynInnerOuter(attr.innerOuter),
+               NFInstUtil.daeToSCodeVisibility(attr.visibility));
+    end match;
+  end attr2DaeAttr;
+
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

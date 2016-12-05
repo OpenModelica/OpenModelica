@@ -165,7 +165,7 @@ end lookupComponent;
 function lookupFunctionName
   input Absyn.ComponentRef cref;
   input Component.Scope scope;
-  input ComponentNode component "THe component to look in.";
+  input ComponentNode component "The component to look in.";
   input SourceInfo info;
   output InstNode func;
   output Prefix prefix;

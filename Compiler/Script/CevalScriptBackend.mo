@@ -2831,7 +2831,8 @@ algorithm
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
 
-       // (_,scode_builtin) = Builtin.getInitialFunctions();
+       (_,scode_builtin) = Builtin.getInitialFunctions();
+       scodeP = listAppend(scode_builtin, scodeP);
 
        // nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
        // (dae, funcs) = NFInst.instClass(className, nfenv);

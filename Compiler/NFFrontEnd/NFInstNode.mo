@@ -35,6 +35,7 @@ import NFComponent.Component;
 import NFInst.Instance;
 import NFPrefix.Prefix;
 import SCode;
+import Absyn;
 
 uniontype InstParent
   record CLASS
@@ -258,7 +259,8 @@ uniontype InstNode
 
   function scopePrefix
     input InstNode node;
-    input output Prefix prefix = Prefix.NO_PREFIX();
+    input output Prefix
+    prefix = Prefix.NO_PREFIX();
   algorithm
     prefix := match node
       local
@@ -284,6 +286,24 @@ uniontype InstNode
       else prefix;
     end match;
   end scopePrefix;
+
+
+  function path
+    input InstNode node;
+    output Absyn.Path p;
+  protected
+    String n;
+    InstNode parent;
+  algorithm
+    n := InstNode.name(node);
+    parent := InstNode.parentScope(node);
+    p := Absyn.IDENT(n);
+    p := match(InstNode.nodeType(parent))
+      case InstNodeType.ROOT_CLASS() then p;
+      case InstNodeType.TOP_SCOPE() then p;
+      else Absyn.joinPaths(path(parent), p);
+    end match;
+  end path;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
