@@ -50,6 +50,7 @@ WatchDog2EquationWhen.mo \
 WaveEquationSample.mo \
 WhenEquation.mo \
 WhenNestedEquation.mo \
+WhenNotInitial.mo \
 WhenNotValid.mo \
 WhenValidResult.mo \
 WhenSemantics1.mo \

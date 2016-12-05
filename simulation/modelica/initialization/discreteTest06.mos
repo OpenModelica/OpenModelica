@@ -17,9 +17,10 @@ package initializationTests
   initial equation
     pre(y) = 0;
 
-  equation 
+  equation
     der(x) = y;
 
+    // Disallowed in MLS 3.2r1
     when initial() or time > 0.5 then
       y = pre(y) + 1.0;
     end when;
@@ -27,11 +28,14 @@ package initializationTests
 end initializationTests;
 "); getErrorString();
 
+OpenModelica.Scripting.setCommandLineOptions("--std=3.1"); getErrorString();
 OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
 simulate(initializationTests.discreteTest6, startTime=0.0, stopTime=0.0); getErrorString();
 res := OpenModelica.Scripting.readSimulationResult("initializationTests.discreteTest6_res.mat", {time, x, y}, 2); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true
