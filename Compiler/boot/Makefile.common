@@ -103,10 +103,10 @@ make-bootstrap-tarball: clean
 	xz --best --force bootstrap-sources.tar
 
 templates:
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMBUILDDIR=$(OMBUILDDIR)
 
 scripting:
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script OMBUILDDIR=$(OMBUILDDIR)
 
 clean:
 	rm -rf $(GEN_DIR)

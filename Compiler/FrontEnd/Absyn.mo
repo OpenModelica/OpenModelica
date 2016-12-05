@@ -720,9 +720,9 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp exp2;
   end BINARY;
 
-  record UNARY  "Unary operations, e.g. -(x)"
+  record UNARY  "Unary operations, e.g. -(x), +(x)"
     Operator op "op" ;
-    Exp exp "exp Logical binary operations: and, or" ;
+    Exp exp "exp - any arithmetic expression" ;
   end UNARY;
 
   record LBINARY
@@ -733,7 +733,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
 
   record LUNARY  "Logical unary operations: not"
     Operator op "op" ;
-    Exp exp "exp Relations, e.g. a >= 0" ;
+    Exp exp "exp - any logical or relation expression" ;
   end LUNARY;
 
   record RELATION

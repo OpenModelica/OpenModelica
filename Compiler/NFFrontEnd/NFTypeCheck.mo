@@ -480,6 +480,42 @@ algorithm
   end try;
 end checkLogicalBinaryOperation;
 
+public function checkLogicalUnaryOperation
+  "petfr:
+  Typechecks logical unary operations, i.e. the not operator"
+  input DAE.Exp exp1;
+  input DAE.Type type1;
+  input DAE.Operator operator;
+  output DAE.Exp exp;
+  output DAE.Type ty;
+protected
+  DAE.Exp e1;
+  DAE.Operator op;
+  DAE.TypeSource ty_src;
+  String e1_str, ty1_str, msg_str, op_str, s1;
+algorithm
+  try
+    true := Types.isBoolean(type1);
+    // Logical unary operations here are allowed only on Booleans.
+    ty := type1;
+    op := Expression.setOpType(operator, ty);
+    exp := DAE.LUNARY(op, exp1);
+
+  else
+    e1_str := ExpressionDump.printExpStr(exp1);
+    ty1_str := Types.unparseTypeNoAttr(type1);
+    op_str := DAEDump.dumpOperatorString(operator);
+
+    // Just for proper error messages.
+    msg_str := if not (Types.isBoolean(type1)) then
+      "\n: Logical operations involving non-Boolean types are not valid in Modelica." else ty1_str;
+
+    s1 := "' " + e1_str + op_str  + " '";
+
+    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1, msg_str}, Absyn.dummyInfo);
+  end try;
+end checkLogicalUnaryOperation;
+
 public function checkRelationOperation
   "mahge:
   Type checks relational operations. Relations on scalars are handled
@@ -531,7 +567,7 @@ public function checkBinaryOperation
   "mahge:
   Type checks binary operations. operations on scalars are handled
   simply by using Types.matchType(). This way conversions from Integer to Real
-  are handled internaly.
+  are handled internally.
   Operations involving arrays and Complex types are handled differently."
   input DAE.Exp exp1;
   input DAE.Type type1;
@@ -609,6 +645,33 @@ algorithm
   end try;
 end checkBinaryOperation;
 
+
+public function checkUnaryOperation
+  "petfr:
+  Type checks arithmetic unary operations. Both for simple scalar types and
+  operations involving array types. Builds DAE unary node."
+  input DAE.Exp exp1;
+  input DAE.Type type1;
+  input DAE.Operator operator;
+  output DAE.Exp unaryExp;
+  output DAE.Type unaryType;
+protected
+  DAE.Operator op;
+  DAE.TypeSource ty_src;
+  String e1_str, ty1_str, s1;
+algorithm
+  try
+    unaryType := type1;  // ?? correct?, since no type change for unary, see matchType?
+    op := Expression.setOpType(operator, unaryType);
+    unaryExp :=  DAE.UNARY(op, exp1);
+  else
+    e1_str := ExpressionDump.printExpStr(exp1);   // ??Remove possible Error message since Unary?
+    ty1_str := Types.unparseTypeNoAttr(type1);
+    s1 := "' " + e1_str + DAEDump.dumpOperatorSymbol(operator) + " '";
+    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1, ty1_str}, Absyn.dummyInfo);
+    fail();
+  end try;
+end checkUnaryOperation;
 
 public function checkBinaryOperationArrays
   "mahge:

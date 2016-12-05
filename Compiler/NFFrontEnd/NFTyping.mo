@@ -701,6 +701,14 @@ algorithm
       then
         (typedExp, ty, Types.constAnd(var1, var2));
 
+    case Absyn.Exp.UNARY()  // Unary +, -
+      algorithm
+        (e1, ty1, var1) := typeExp(untypedExp.exp, scope, component, info);
+        op := translateOperator(untypedExp.op);
+        (typedExp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, op);
+      then
+        (typedExp, ty, var1);
+
     case Absyn.Exp.LBINARY()
       algorithm
         (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, component, info);
@@ -710,6 +718,14 @@ algorithm
         (typedExp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, op, e2, ty2);
       then
         (typedExp, ty, Types.constAnd(var1, var2));
+
+    case Absyn.Exp.LUNARY()  // Unary not
+      algorithm
+        (e1, ty1, var1) := typeExp(untypedExp.exp, scope, component, info);
+        op := translateOperator(untypedExp.op);
+        (typedExp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, op);
+      then
+        (typedExp, ty, var1);
 
     case Absyn.Exp.RELATION()
       algorithm
