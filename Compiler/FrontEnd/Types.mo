@@ -5905,7 +5905,7 @@ public function matchType
   input DAE.Exp inExp;
   input DAE.Type inActualType;
   input DAE.Type inExpectedType;
-  input Boolean inPrintFailtrace;
+  input Boolean inPrintFailtrace=false;
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm

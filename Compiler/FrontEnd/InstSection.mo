@@ -2875,7 +2875,7 @@ protected function instWhenEqBranch
   input Boolean inImpl;
   input Boolean inUnrollLoops;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input SourceInfo inInfo;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -2886,14 +2886,39 @@ protected
   Absyn.Exp cond;
   list<SCode.EEquation> body;
   DAE.Properties prop;
+  list<Absyn.Exp> aexps;
+  list<DAE.Exp> dexps;
+  DAE.Exp dexp;
+  DAE.Type ty;
+  Boolean isClock;
 algorithm
   (cond, body) := inBranch;
 
-  // Instantiate the when condition.
-  (outCache, outCondition) :=
-    instExp(inCache, inEnv, inIH, inPrefix, cond, inImpl, inInfo);
+  isClock := false;
+  outCondition := match cond
+    case Absyn.ARRAY(arrayExp=aexps)
+      algorithm
+        dexps := {};
+        for aexp in aexps loop
+          (outCache, dexp, prop) := instExp(inCache, inEnv, inIH, inPrefix, aexp, inImpl, info);
+          ty := Types.getPropType(prop);
+          dexp := checkWhenCondition(dexp, ty, aexp, info);
+          dexps := dexp::dexps;
+        end for;
+      then Expression.makeArray(listReverse(dexps), DAE.T_BOOL_DEFAULT, true);
+    else
+      algorithm
+        (outCache, dexp, prop) := instExp(inCache, inEnv, inIH, inPrefix, cond, inImpl, info);
+        ty := Types.getPropType(prop);
+        if Types.isClockOrSubTypeClock(ty) then
+          isClock := true;
+        else
+          dexp := checkWhenCondition(dexp, ty, cond, info);
+        end if;
+      then dexp;
+  end match;
 
-  if not Types.isClockOrSubTypeClock(Expression.typeof(outCondition)) then
+  if not isClock then
     List.map_0(body, checkForNestedWhenInEq);
   end if;
 
@@ -2902,6 +2927,33 @@ algorithm
     Inst.instList(outCache, inEnv, inIH, inPrefix, inSets, inState,
       instEEquation, body, inImpl, alwaysUnroll, inGraph);
 end instWhenEqBranch;
+
+protected function checkWhenCondition
+  input output DAE.Exp exp;
+  input DAE.Type ty;
+  input Absyn.Exp aexp;
+  input SourceInfo info;
+algorithm
+  try
+    exp := Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT);
+  else
+    Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),Types.unparseType(ty)},info);
+    fail();
+  end try;
+  if Config.languageStandardAtLeast(Config.LanguageStandard.'3.2') then
+    _ := match exp
+      case DAE.CALL(path=Absyn.IDENT("initial")) then ();
+      case DAE.CALL(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("initial"))) then ();
+      else
+        algorithm
+          if Expression.expHasInitial(exp) then
+            Error.addSourceMessage(Error.INITIAL_CALL_WARNING,{Dump.printExpStr(aexp)},info);
+            fail();
+          end if;
+        then ();
+    end match;
+  end if;
+end checkWhenCondition;
 
 protected function instConnect "
   Generates connectionsets for connections.

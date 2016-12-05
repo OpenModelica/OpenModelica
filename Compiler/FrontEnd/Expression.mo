@@ -6230,6 +6230,30 @@ algorithm
   end match;
 end extractCrefsStatment;
 
+public function expHasInitial "
+ returns true if the expression contains any initial() call"
+  input DAE.Exp exp;
+  output Boolean found;
+algorithm
+  (_,found) := traverseExpTopDown(exp, traversingexpHasInitial, false);
+end expHasInitial;
+
+public function traversingexpHasInitial
+  input output DAE.Exp exp;
+  output Boolean cont;
+  input output Boolean found;
+algorithm
+  if found then
+    cont := false;
+    return;
+  end if;
+  (cont,found) := match exp
+    case DAE.CALL(path= Absyn.IDENT("initial"))
+      then (false,true);
+    else (true,found);
+  end match;
+end traversingexpHasInitial;
+
 public function expHasCrefs "
 @author: adrpo 2011-04-29
  returns true if the expression contains crefs"

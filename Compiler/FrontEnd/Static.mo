@@ -7877,7 +7877,8 @@ algorithm
                                                                          functionParallelism=funcParal)),
    vect_dims,
    slots) := elabTypes(cache, inEnv, args, nargs, typelist, onlyOneFunction, true/* Check types*/, impl,isExternalObject,st,pre,info)
-   "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
+   "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
+
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
   tuple_ := Types.isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);

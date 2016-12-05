@@ -712,6 +712,8 @@ public constant Message EACH_ON_NON_ARRAY = MESSAGE(292, TRANSLATION(), ERROR(),
   Util.gettext("'each' used when modifying non-array element %s."));
 public constant Message BUILTIN_EXTENDS_INVALID_ELEMENTS = MESSAGE(293, TRANSLATION(), ERROR(),
   Util.gettext("A class extending from builtin type %s may not have other elements."));
+public constant Message INITIAL_CALL_WARNING = MESSAGE(294, TRANSLATION(), WARNING(),
+  Util.gettext("The standard says that initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition %s."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
