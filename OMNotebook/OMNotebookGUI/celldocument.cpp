@@ -1081,8 +1081,8 @@ namespace IAEX
 //  void CellDocument::anchorClicked(const QUrl *link)
   {
     // 2006-02-10 AF, check if path is empty
-    fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
-    fflush(stderr); fflush(stdout);
+    //fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
+    //fflush(stderr); fflush(stdout);
     if( !link->path().isEmpty() )
     {
       // 2005-12-05 AF, check if filename exists, otherwise use work dir
@@ -1471,4 +1471,3 @@ namespace IAEX
 
 
 };
-

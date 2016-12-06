@@ -201,7 +201,19 @@ namespace IAEX
         else
         {
           QString html = node->textHtml();
+
           html.remove( "file:///" );
+          // in printed version link to other printed document
+          if (html.contains(".onb\">")) {
+            html.replace(".onb\">",".pdf\">");
+          }
+          if (html.contains(".onb#")) {
+            while (html.contains(".onb#")) {
+              int pos1 = html.indexOf(".onb#");
+              int pos2 = html.indexOf("\">", pos1);
+              html.replace(pos1, pos2-pos1, ".pdf");
+            }
+          }
           printEditor_->document()->setTextWidth(700);
           cursor.insertFragment(QTextDocumentFragment::fromHtml( html ));
           // QMessageBox::information(0, "uu3", node->text());
