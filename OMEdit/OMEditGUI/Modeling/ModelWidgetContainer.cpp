@@ -414,7 +414,9 @@ void GraphicsView::addComponentToClass(Component *pComponent)
         }
       }
       // if the package has version only then add the uses annotation
-      if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty()) {
+      if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty() &&
+        // Do not add a uses-annotation to itself
+        pTopLevelLibraryTreeItem->getNameStructure() != packageName) {
         newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
         QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
         pMainWindow->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
