@@ -37,6 +37,7 @@
 
 #include <QWidget>
 #include <QToolButton>
+#include <QTabbar>
 #include <QFile>
 #include <QWebView>
 
@@ -46,6 +47,10 @@ class DocumentationHistory
 public:
   LibraryTreeItem *mpLibraryTreeItem;
   DocumentationHistory(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
+  bool operator==(const DocumentationHistory &documentationHistory) const
+  {
+    return (documentationHistory.mpLibraryTreeItem == this->mpLibraryTreeItem);
+  }
 };
 
 class DocumentationViewer;
@@ -76,12 +81,17 @@ private:
   QToolButton *mpSaveToolButton;
   QToolButton *mpCancelToolButton;
   DocumentationViewer *mpDocumentationViewer;
-  HTMLEditor *mpHTMLEditor;
+  QWidget *mpEditorsWidget;
+  QTabBar *mpTabBar;
+  QWidget *mpHTMLEditorWidget;
+  DocumentationViewer *mpHTMLEditor;
+  HTMLEditor *mpHTMLSourceEditor;
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
   int mDocumentationHistoryPos;
 
   void updatePreviousNextButtons();
+  void writeDocumentationFile(QString documentation);
 public slots:
   void previousDocumentation();
   void nextDocumentation();
@@ -90,6 +100,8 @@ public slots:
   void editInfoHeaderDocumentation();
   void saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem = 0);
   void cancelDocumentation();
+  void toggleEditor(int tabIndex);
+  void updateDocumentationHistory();
 };
 
 class DocumentationViewer : public QWebView
@@ -98,7 +110,7 @@ class DocumentationViewer : public QWebView
 private:
   DocumentationWidget *mpDocumentationWidget;
 public:
-  DocumentationViewer(DocumentationWidget *pParent);
+  DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
 private:
   void createActions();
   void resetZoom();
@@ -108,6 +120,7 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
 protected:
+  virtual void paintEvent(QPaintEvent *event);
   virtual QWebView* createWindow(QWebPage::WebWindowType type);
   virtual void keyPressEvent(QKeyEvent *event);
   virtual void wheelEvent(QWheelEvent *event);
