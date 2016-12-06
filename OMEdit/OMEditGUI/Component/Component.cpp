@@ -1048,7 +1048,7 @@ QString Component::getParameterDisplayString(QString parameterName)
    * Handle parameters display of inherited components.
    */
   /* case 0 */
-  if (isInheritedComponent()) {
+  if (isInheritedComponent() && mpReferenceComponent) {
     QString extendsClass = mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     displayString = mpGraphicsView->getModelWidget()->getExtendsModifiersMap(extendsClass).value(QString("%1.%2").arg(getName()).arg(parameterName), "");
   }
