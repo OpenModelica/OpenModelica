@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMOptim],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMEdit],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(APP)
 AC_SUBST(EXE)
@@ -66,6 +66,11 @@ fi
 if test "$WITH_OSG" = 1; then
   AC_MSG_CHECKING([for osg/qt broken OpenGL])
   OLD_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -Wl,--unresolved-symbols=ignore-all"
+  AC_LINK_IFELSE( [AC_LANG_PROGRAM([[]], [[]])],
+    [],
+    [CPPFLAGS="$OLD_CPPFLAGS"]
+  )
   CPPFLAGS="$CPPFLAGS -fPIC -I$QT_INSTALL_HEADERS -I$QT_INSTALL_HEADERS/QtOpenGL"
   AC_LINK_IFELSE(
         [AC_LANG_PROGRAM([[
