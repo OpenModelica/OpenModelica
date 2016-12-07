@@ -1716,7 +1716,7 @@ end checkBinaryOperationArrays_old;
 //   END: TypeCall helper functions
 // ************************************************************** //
 
-protected function matchTypeBothWays
+function matchTypeBothWays
   "mahge:
   Tries to match to types. First by converting the 2nd one to the 1st.
   if not possible then tries to convert the 1st to the 2nd."
@@ -1724,7 +1724,7 @@ protected function matchTypeBothWays
   input DAE.Type type1;
   input output DAE.Exp exp2;
   input DAE.Type type2;
-        output DAE.Type matchedType;
+  output DAE.Type matchedType;
 algorithm
   try
     (exp2, matchedType) := Types.matchType(exp2, type2, type1, true);
@@ -1732,6 +1732,54 @@ algorithm
     (exp1, matchedType) := Types.matchType(exp1, type1, type2, true);
   end try;
 end matchTypeBothWays;
+
+
+public function isInteger
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match(inType)
+    case DAE.T_INTEGER() then true;
+    else false;
+  end match;
+end isInteger;
+
+public function isReal
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match(inType)
+    case DAE.T_REAL() then true;
+    else false;
+  end match;
+end isReal;
+
+public function isBoolean
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match(inType)
+    case DAE.T_BOOL() then true;
+    else false;
+  end match;
+end isBoolean;
+
+public function isEnum
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match(inType)
+    case DAE.T_ENUMERATION() then true;
+    else false;
+  end match;
+end isEnum;
+
+function isNumeric
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := isReal(inType) or isInteger(inType);
+end isNumeric;
 
 protected function getArrayTypeDims
 "This will fail if type is not array type.
@@ -1745,7 +1793,7 @@ algorithm
   end match;
 end getArrayTypeDims;
 
-protected function getTypeDims
+public function getTypeDims
 "This will NOT fail if type is not array type."
   input DAE.Type inType;
   output DAE.Dimensions outDims;
@@ -1756,7 +1804,7 @@ algorithm
   end match;
 end getTypeDims;
 
-protected function getNrDims
+public function getNrDims
   input DAE.Type inType;
   output Integer outNrDims;
 algorithm
@@ -1766,7 +1814,7 @@ algorithm
   end match;
 end getNrDims;
 
-protected function underlyingType
+public function underlyingType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
@@ -1786,6 +1834,47 @@ algorithm
     else DAE.T_ARRAY(inType, inDims, Types.getTypeSource(inType));
   end match;
 end promoteLeft;
+
+function applySubsToDims
+  input list<DAE.Dimension> inDims;
+  input list<DAE.Subscript> inSubs;
+  output list<DAE.Dimension> outDims = {};
+protected
+  DAE.Dimension dim;
+  list<DAE.Dimension> dims1, dims2, slicedims;
+  DAE.Type baseTy, ixty;
+algorithm
+  dims1 := inDims;
+  dims2 := {};
+
+  for sub in inSubs loop
+    _ := match sub
+      case DAE.INDEX()
+        algorithm
+          ixty := Expression.typeof(sub.exp);
+          slicedims := NFTypeCheck.getTypeDims(ixty);
+          if listLength(slicedims) > 0 then
+            if listLength(slicedims) > 1 then
+              Error.addInternalError("Typing.applySubsToDims failed. Got a slice with more than one dim?. \n", Absyn.dummyInfo);
+              fail();
+            else
+              _::dims1 := dims1;
+              {dim} := slicedims;
+              outDims := dim::outDims;
+            end if;
+          end if;
+        then
+          ();
+
+      case DAE.WHOLEDIM()
+        algorithm
+          dim::dims1 := dims1;
+          outDims := dim::outDims;
+        then
+          ();
+    end match;
+  end for;
+end applySubsToDims;
 
 protected function isOpBinaryElemWise
   input DAE.Operator inOperator;
@@ -1910,6 +1999,232 @@ algorithm
   s2 := "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
   Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,suggestion}, Absyn.dummyInfo);
 end binaryArrayOpError;
+
+public function getCrefType
+  input DAE.ComponentRef inCref;
+  output DAE.Type outType;
+protected
+  DAE.Type baseTy;
+  list<DAE.Dimension> dims, accdims;
+algorithm
+  (accdims,baseTy) := getCrefType2(inCref);
+  if listLength(accdims) > 0 then
+    outType := DAE.T_ARRAY(baseTy, accdims, DAE.emptyTypeSource);
+  else
+    outType := baseTy;
+  end if;
+end getCrefType;
+
+function getCrefType2
+  input DAE.ComponentRef inCref;
+  input output list<DAE.Dimension> accDims = {};
+  output DAE.Type baseType;
+protected
+  list<DAE.Dimension> dims;
+algorithm
+  _ := match inCref
+
+    case DAE.CREF_IDENT()
+      algorithm
+        baseType := NFTypeCheck.underlyingType(inCref.identType);
+        dims := NFTypeCheck.getTypeDims(inCref.identType);
+        dims := applySubsToDims(dims, inCref.subscriptLst);
+        accDims := dims;
+      then ();
+
+    case DAE.CREF_QUAL()
+      algorithm
+        (accDims,baseType) := getCrefType2(inCref.componentRef);
+        dims := NFTypeCheck.getTypeDims(inCref.identType);
+        dims := applySubsToDims(dims, inCref.subscriptLst);
+        accDims := listAppend(dims, accDims);
+      then ();
+
+    else
+      fail();
+  end match;
+end getCrefType2;
+
+public function getRangeType
+  input DAE.Exp inStart;
+  input DAE.Type inStartTy;
+  input Option<DAE.Exp> inOptStep;
+  input Option<DAE.Type> inOptStepTy;
+  input DAE.Exp inEnd;
+  input DAE.Type inEndTy;
+  input SourceInfo info;
+  output DAE.Type outType;
+protected
+  Boolean stepreal;
+  DAE.Type stepty;
+algorithm
+
+  stepreal := false;
+  if isNumeric(inStartTy) and isNumeric(inEndTy) then
+    if isSome(inOptStepTy) then
+	    SOME(stepty) := inOptStepTy;
+	    if not isNumeric(stepty) then
+	      Error.addInternalError("Invalid range expression. Step expression is not numeric type.", info);
+	      fail();
+	    end if;
+	    stepreal := isReal(stepty);
+    end if;
+    try
+      outType := getNumericRangeType(inStart, inOptStep, inEnd);
+    else
+      // TODO: for now let it be unknown. However the expression (end-start)/step + 1 should be the dim expression.
+      if stepreal or isReal(inStartTy) or isReal(inEndTy) then
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
+      else
+        outType := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
+      end if;
+    end try;
+
+  elseif isBoolean(inStartTy) and isBoolean(inEndTy) then
+    if isSome(inOptStepTy) then
+      Error.addInternalError("Invalid range expression. Non numeric range exressions can not have steps.", info);
+      fail();
+    end if;
+    try
+      outType := getBooleanRangeType(inStart, inOptStep, inEnd);
+    else
+      // TODO: for now let it be unknown. However an expression that can deduce the size from the possible true/false
+      // combinations should be the dim expression.
+      outType := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
+    end try;
+
+  elseif isEnum(inStartTy) and isEnum(inEndTy) then
+    if isSome(inOptStepTy) then
+      Error.addInternalError("Invalid range expression. Non numeric range exressions can not have steps.", info);
+      fail();
+    end if;
+    Error.addInternalError("Enumurator ranges are not handled yet.", info);
+    fail();
+
+  else
+    Error.addInternalError("Invalid range expression. Start and end expressions have different types.", info);
+    fail();
+  end if;
+
+end getRangeType;
+
+
+function getNumericRangeType
+  input DAE.Exp inStart;
+  input Option<DAE.Exp> inOptStep;
+  input DAE.Exp inEnd;
+  output DAE.Type outType;
+algorithm
+  _ := match(inStart, inOptStep, inEnd)
+    local
+      Integer size;
+      DAE.Exp step;
+      DAE.Dimension dim;
+
+    case (DAE.ICONST(),NONE(),DAE.ICONST())
+      algorithm
+        size := inEnd.integer - inStart.integer + 1;
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.ICONST(),NONE(),DAE.RCONST())
+      algorithm
+        size := Util.realRangeSize(intReal(inStart.integer), 1.0, inEnd.real);
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.RCONST(),NONE(),DAE.ICONST())
+      algorithm
+        size := Util.realRangeSize(inStart.real, 1.0, intReal(inEnd.integer));
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.RCONST(),NONE(),DAE.RCONST())
+      algorithm
+        size := Util.realRangeSize(inStart.real, 1.0, inEnd.real);
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+
+    case (DAE.ICONST(),SOME(step as DAE.ICONST()),DAE.ICONST())
+      algorithm
+        size := inEnd.integer - inStart.integer;
+        size := intDiv(size, step.integer) + 1;
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.ICONST(),SOME(step as DAE.ICONST()),DAE.RCONST())
+      algorithm
+        size := Util.realRangeSize(intReal(inStart.integer), intReal(step.integer), inEnd.real);
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.ICONST(),SOME(step as DAE.RCONST()),DAE.ICONST())
+      algorithm
+        size := Util.realRangeSize(intReal(inStart.integer), step.real, intReal(inEnd.integer));
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.ICONST(),SOME(step as DAE.RCONST()),DAE.RCONST())
+      algorithm
+        size := Util.realRangeSize(intReal(inStart.integer), step.real, inEnd.real);
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+
+    case (DAE.RCONST(),SOME(step as DAE.ICONST()),DAE.ICONST())
+      algorithm
+        size := Util.realRangeSize(inStart.real, intReal(step.integer), intReal(inEnd.integer));
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.RCONST(),SOME(step as DAE.ICONST()),DAE.RCONST())
+      algorithm
+        size := Util.realRangeSize(inStart.real, intReal(step.integer), inEnd.real);
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.RCONST(),SOME(step as DAE.RCONST()),DAE.ICONST())
+      algorithm
+        size := Util.realRangeSize(inStart.real, step.real, intReal(inEnd.integer));
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.RCONST(),SOME(step as DAE.RCONST()),DAE.RCONST())
+      algorithm
+        size := Util.realRangeSize(inStart.real, step.real, inEnd.real);
+        dim := DAE.DIM_INTEGER(size);
+        outType := DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim}, DAE.emptyTypeSource);
+      then ();
+    else
+      fail();
+  end match;
+end getNumericRangeType;
+
+function getBooleanRangeType
+  input DAE.Exp inStart;
+  input Option<DAE.Exp> inOptStep;
+  input DAE.Exp inEnd;
+  output DAE.Type outType;
+algorithm
+  _ := match(inStart, inOptStep, inEnd)
+
+    case (DAE.BCONST(true),NONE(),DAE.BCONST(false))
+      algorithm
+        outType := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.BCONST(false),NONE(),DAE.BCONST(true))
+      algorithm
+        outType := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+      then ();
+    case (DAE.BCONST(),NONE(),DAE.BCONST())
+      algorithm
+        outType := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
+      then ();
+    else
+      fail();
+  end match;
+end getBooleanRangeType;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

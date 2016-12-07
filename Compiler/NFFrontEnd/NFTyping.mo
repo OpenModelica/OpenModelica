@@ -685,6 +685,12 @@ algorithm
       then
         (typedExp, ty, variability);
 
+    case Absyn.Exp.RANGE()
+      algorithm
+        (typedExp, ty, variability) := typeRange(untypedExp.start, untypedExp.step, untypedExp.stop, scope, component, info);
+      then
+        (typedExp, ty, variability);
+
     case Absyn.Exp.BINARY()
       algorithm
         (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, component, info);
@@ -813,6 +819,45 @@ algorithm
   daeVrs := listReverse(daeVrs);
 end typeExps;
 
+function typeRange
+  input Absyn.Exp inStart;
+  input Option<Absyn.Exp> inStep;
+  input Absyn.Exp inEnd;
+  input Component.Scope scope;
+  input ComponentNode component;
+  input SourceInfo info;
+  output DAE.Exp outRange;
+  output DAE.Type outType;
+  output DAE.Const variability;
+protected
+  Absyn.Exp astep;
+  DAE.Exp dstart, dend, dstep, dimexp;
+  Option<DAE.Exp> dopt_step;
+  DAE.Type strtype, endtype, stptype;
+  Option<DAE.Type> optsteptype;
+  DAE.Const var;
+  Boolean numeric, isreal, enum;
+algorithm
+
+  (dstart, strtype, variability) := typeExp(inStart,scope,component,info);
+  (dend, endtype, var) := typeExp(inEnd,scope,component,info);
+  variability := Types.constAnd(var, variability);
+
+  if isSome(inStep) then
+    SOME(astep) := inStep;
+    (dstep, stptype, var) := typeExp(astep,scope,component,info);
+    variability := Types.constAnd(var, variability);
+
+    dopt_step := SOME(dstep);
+    outType := NFTypeCheck.getRangeType(dstart, strtype, dopt_step, SOME(stptype), dend, endtype, info);
+  else
+    dopt_step := NONE();
+    outType := NFTypeCheck.getRangeType(dstart, strtype, dopt_step, NONE(), dend, endtype, info);
+  end if;
+
+  outRange := DAE.RANGE(outType, dstart, dopt_step, dend);
+end typeRange;
+
 function typeCref
   input Absyn.ComponentRef untypedCref;
   input Component.Scope scope;
@@ -827,45 +872,99 @@ protected
   Component.Attributes attr;
   DAE.VarKind vr;
 algorithm
-  typedCref := translateCref(untypedCref);
 
   // Look up the whole cref, and type the found component.
   (node, prefix) := Lookup.lookupComponent(untypedCref, scope, component, info);
-  typedCref := Prefix.prefixCref(typedCref, prefix);
   node := typeComponent(node);
-  Component.TYPED_COMPONENT(ty = ty, attributes = attr) := ComponentNode.component(node);
+
+  typedCref := translateCref(untypedCref, node, scope, component, info);
+  typedCref := Prefix.prefixCref(typedCref, prefix);
+  ty := NFTypeCheck.getCrefType(typedCref);
+
+  Component.TYPED_COMPONENT(attributes = attr) := ComponentNode.component(node);
   Component.ATTRIBUTES(variability = vr) := attr;
   variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
+
 end typeCref;
 
 function translateCref
   input Absyn.ComponentRef absynCref;
+  input ComponentNode crefComp;
+  input Component.Scope scope;
+  input ComponentNode topComp;
+  input SourceInfo info;
   output DAE.ComponentRef daeCref;
+  output ComponentNode preCrefComp;
 algorithm
-  daeCref := match absynCref
+  () := match absynCref
     local
       DAE.ComponentRef cref;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
 
     case Absyn.CREF_IDENT()
-      then DAE.CREF_IDENT(absynCref.name, DAE.T_UNKNOWN_DEFAULT, {});
+      algorithm
+        ty := Component.getType(ComponentNode.component(crefComp));
+        subs := list(typeSubscript(sub,scope,topComp,info) for sub in absynCref.subscripts);
+        daeCref := DAE.CREF_IDENT(absynCref.name, ty, subs);
+        preCrefComp := ComponentNode.parent(crefComp);
+      then ();
 
     case Absyn.CREF_QUAL()
       algorithm
-        cref := translateCref(absynCref.componentRef);
-      then
-        DAE.CREF_QUAL(absynCref.name, DAE.T_UNKNOWN_DEFAULT, {}, cref);
+        (cref, preCrefComp):= translateCref(absynCref.componentRef,crefComp,scope,topComp,info);
+        ty := Component.getType(ComponentNode.component(preCrefComp));
+        subs := list(typeSubscript(sub,scope,topComp,info) for sub in absynCref.subscripts);
+        daeCref := DAE.CREF_QUAL(absynCref.name, ty, subs, cref);
+        preCrefComp := ComponentNode.parent(preCrefComp);
+      then ();
 
     case Absyn.CREF_FULLYQUALIFIED()
       algorithm
-        cref := translateCref(absynCref.componentRef);
+        (daeCref,preCrefComp) := translateCref(absynCref.componentRef,crefComp,scope,topComp,info);
       then
-        cref;
+        ();
 
+    /*
     case Absyn.WILD() then DAE.WILD();
     case Absyn.ALLWILD() then DAE.WILD();
+    */
+    else
+      algorithm
+        Error.addInternalError("Typing.translateCref failed. \n", Absyn.dummyInfo);
+      then
+        fail();
 
   end match;
 end translateCref;
+
+function typeSubscript
+  input Absyn.Subscript inSub;
+  input Component.Scope scope;
+  input ComponentNode component;
+  input SourceInfo info;
+  output DAE.Subscript outSub;
+algorithm
+  outSub := match inSub
+    local
+      DAE.Exp exp;
+      DAE.Type ty;
+      Boolean valid;
+    case Absyn.SUBSCRIPT()
+      algorithm
+        exp := typeExp(inSub.subscript,scope,component,info);
+        ty := Expression.typeof(exp);
+        ty := NFTypeCheck.underlyingType(ty);
+        valid := NFTypeCheck.isInteger(ty) or NFTypeCheck.isBoolean(ty) or NFTypeCheck.isEnum(ty);
+        if not valid then
+          Error.addInternalError("Subscript is not a valid type. \n", info);
+          fail();
+        end if;
+      then DAE.INDEX(exp);
+
+    case Absyn.NOSUB() then DAE.WHOLEDIM();
+  end match;
+end typeSubscript;
 
 public function variabilityToConst "translates SCode.Variability to DAE.Const"
   input SCode.Variability variability;
