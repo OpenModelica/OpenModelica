@@ -1,5 +1,5 @@
 # makefile for Windows MinGW OMDev
-all : .testvariables settings omc
+all : .testvariables settings mkbuilddirs omc
 
 autoconfGeneratedFiles =
 
@@ -450,7 +450,7 @@ simulationruntimecmsvc: mkbuilddirs Umfpack_msvc CMinpack_msvc fmil_msvc sundial
 	cp -u 3rdParty/gc/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
 	rm -rf 3rdParty/gc/build_msvc/
 
-omc-bootstrapped:
+omc-bootstrapped: mkbuilddirs
 	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR) bootstrap-dependencies sim-dependencies
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
