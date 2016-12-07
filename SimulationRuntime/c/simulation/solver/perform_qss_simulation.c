@@ -100,7 +100,10 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     return UNKNOWN;
   }
-  printSparseStructure(data, LOG_SOLVER);
+  printSparseStructure(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern),
+      data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
+      data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
+      LOG_SOLVER, "ODE sparse pattern");
 
 /* *********************************************************************************** */
   /* Initialization */
@@ -495,11 +498,10 @@ static modelica_integer deltaQ( DATA* data, const modelica_real dQ, const modeli
 static modelica_integer getDerWithStateK(const unsigned int *index, const unsigned int* leadindex, modelica_integer* der, uinteger* numDer, const uinteger k)
 {
   uinteger start = 0, j, i;
-  if (0 < k)
-    start = leadindex[k - 1];
+  start = leadindex[k];
   j = 0;
   i = 0;
-  for (i = start; i < leadindex[k]; i++)
+  for (i = start; i < leadindex[k+1]; i++)
   {
     der[j] = index[i];
     j++;

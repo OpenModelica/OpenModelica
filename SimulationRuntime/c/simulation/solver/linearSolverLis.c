@@ -156,11 +156,8 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
     {
       if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
       {
-        if(j==0)
-          ii = 0;
-        else
-          ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j])
+        ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
+        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j+1])
         {
           l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
           /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo->analyticJacobians[index].resultVars[l]); */

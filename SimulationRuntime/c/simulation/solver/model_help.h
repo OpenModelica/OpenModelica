@@ -107,7 +107,7 @@ void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
 void printZeroCrossings(DATA *data, int stream);
 void printParameters(DATA *data, int stream);
-void printSparseStructure(DATA *data, int stream);
+void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char*);
 
 void overwriteOldSimulationData(DATA *data);
 void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing);

@@ -816,7 +816,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   const int h_index = optData->s.indexABCD[index];
   const long double * scaldt = optData->bounds.scaldt[m];
   const unsigned int * const cC = data->simulationInfo->analyticJacobians[h_index].sparsePattern.colorCols;
-  const unsigned int * const lindex  = optData->s.lindex[index];
+  const unsigned int * const lindex  = data->simulationInfo->analyticJacobians[h_index].sparsePattern.leadindex;
   const int nx = data->simulationInfo->analyticJacobians[h_index].sizeCols;
   const int Cmax = data->simulationInfo->analyticJacobians[h_index].sparsePattern.maxColors + 1;
   const int dnx = optData->dim.nx;
@@ -869,7 +869,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     const int index = 4;
     const int h_index = optData->s.indexABCD[index];
     const unsigned int * const cC = data->simulationInfo->analyticJacobians[h_index].sparsePattern.colorCols;
-    const unsigned int * const lindex  = optData->s.lindex[index];
+    const unsigned int * const lindex  = data->simulationInfo->analyticJacobians[h_index].sparsePattern.leadindex;
     const int nx = data->simulationInfo->analyticJacobians[h_index].sizeCols;
     const int Cmax = data->simulationInfo->analyticJacobians[h_index].sparsePattern.maxColors + 1;
     const modelica_real * const resultVars = data->simulationInfo->analyticJacobians[h_index].resultVars;

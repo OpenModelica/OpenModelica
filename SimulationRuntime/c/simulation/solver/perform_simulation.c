@@ -328,7 +328,21 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   fmtInit(data, &fmt);
 
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
-  printSparseStructure(data, LOG_SOLVER);
+  if (!omc_flag[FLAG_DAE_MODE])
+  {
+    printSparseStructure(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern),
+        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
+        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
+        LOG_SOLVER, "ODE sparse pattern");
+  }
+  else
+  {
+    printSparseStructure(data->simulationInfo->daeModeData->sparsePattern,
+        data->simulationInfo->daeModeData->nResidualVars,
+        data->simulationInfo->daeModeData->nResidualVars,
+        LOG_SOLVER, "DAE sparse pattern");
+  }
+
 
   modelica_boolean syncStep = 0;
 

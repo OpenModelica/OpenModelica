@@ -988,11 +988,8 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
     {
       if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
       {
-        if(j==0)
-          ii = 0;
-        else
-          ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j])
+        ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j];
+        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j+1])
         {
           l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo->analyticJacobians[index].sizeRows + l;
@@ -1276,11 +1273,8 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
     {
       if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
       {
-        if(ii==0)
-          j = 0;
-        else
-          j = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[ii-1];
-        while(j < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[ii])
+        j = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[ii];
+        while(j < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[ii+1])
         {
           l  =  data->simulationInfo->analyticJacobians[index].sparsePattern.index[j];
           k  = l + ii*data->simulationInfo->analyticJacobians[index].sizeRows;

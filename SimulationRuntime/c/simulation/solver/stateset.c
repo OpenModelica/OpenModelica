@@ -167,14 +167,11 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
     {
       if(data->simulationInfo->analyticJacobians[jacIndex].seedVars[j] == 1)
       {
-        if(j==0)
-          ii = 0;
-        else
-          ii = data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.leadindex[j-1];
+        ii = data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.leadindex[j];
 
         /* infoStreamPrint(LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
 
-        while(ii < data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.leadindex[j])
+        while(ii < data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.leadindex[j+1])
         {
           l  = data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.index[ii];
           k  = j*data->simulationInfo->analyticJacobians[jacIndex].sizeRows + l;

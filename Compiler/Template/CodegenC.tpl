@@ -2692,9 +2692,9 @@ template generateStaticSparseData(String indexName, String systemType, list<tupl
         inSysData->sparsePattern.maxColors = <%maxColor%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(  inSysData->sparsePattern.leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(inSysData->sparsePattern.leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
 
-        for(i=1;i<<%sizeleadindex%>+1;++i)
+        for(i=2;i<<%sizeleadindex%>+1;++i)
           inSysData->sparsePattern.leadindex[i] += inSysData->sparsePattern.leadindex[i-1];
 
         /* call sparse index */
@@ -4032,7 +4032,7 @@ template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, list<tuple<In
     /* write lead index of compressed sparse column */
     memcpy(daeModeData->sparsePattern->leadindex, colPtrIndex, (1+<%sizeCols%>)*sizeof(int));
     /* makek CRS compatible */
-    for(i=2;i<=<%sizeCols%>;++i)
+    for(i=2;i<<%sizeCols%>+1;++i)
       daeModeData->sparsePattern->leadindex[i] += daeModeData->sparsePattern->leadindex[i-1];
     /* call sparse index */
     memcpy(daeModeData->sparsePattern->index, rowIndex, <%sizeNNZ%>*sizeof(int));
@@ -4585,24 +4585,10 @@ case _ then
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let leadindex = (sparsepattern |> (i, indexes) =>
-      <<
-      <%listLength(indexes)%>
-      >>
-      ;separator=",")
-      let indexElems = ( sparsepattern |> (i, indexes) hasindex index0 =>
-        ( indexes |> indexrow =>
-        <<
-        <%indexrow%>
-        >>
-        ;separator=",")
-      ;separator=",")
-      let colorArray = (colorList |> (indexes) hasindex index0 =>
-        let colorCol = ( indexes |> i_index =>
-         <<data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[<%i_index%>] = <%intAdd(index0,1)%>;>>
-        ;separator="\n")
-      '<%colorCol%>'
-      ;separator="\n")
+      let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
+      let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
+      let colorString = genSPColors(colorList, "data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols")
+
       let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
       let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
@@ -4613,8 +4599,8 @@ case _ then
         TRACE_PUSH
         DATA* data = ((DATA*)inData);
         int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixname%>;
-        const int tmp[<%sizeleadindex%>] = {<%leadindex%>};
-        const int tmpElem[<%sp_size_index%>] = {<%indexElems%>};
+        <%colPtr%>
+        <%rowIndex%>
         int i = 0;
 
         data->simulationInfo->analyticJacobians[index].sizeCols = <%index_%>;
@@ -4623,7 +4609,7 @@ case _ then
         data->simulationInfo->analyticJacobians[index].seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
         data->simulationInfo->analyticJacobians[index].resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
         data->simulationInfo->analyticJacobians[index].tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
-        data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
+        data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
         data->simulationInfo->analyticJacobians[index].sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
         data->simulationInfo->analyticJacobians[index].sparsePattern.numberOfNoneZeros = <%sp_size_index%>;
         data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));
@@ -4631,16 +4617,16 @@ case _ then
         data->simulationInfo->analyticJacobians[index].jacobian = NULL;
 
         /* write lead index of compressed sparse column */
-        memcpy(data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex, tmp, <%sizeleadindex%>*sizeof(int));
+        memcpy(data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
 
-        for(i=1;i<<%sizeleadindex%>;++i)
-            data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[i] += data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[i-1];
+        for(i=2;i<<%sizeleadindex%>+1;++i)
+          data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[i] += data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[i-1];
 
         /* call sparse index */
-        memcpy(data->simulationInfo->analyticJacobians[index].sparsePattern.index, tmpElem, <%sp_size_index%>*sizeof(int));
+        memcpy(data->simulationInfo->analyticJacobians[index].sparsePattern.index, rowIndex, <%sp_size_index%>*sizeof(int));
 
         /* write color array */
-        <%colorArray%>
+        <%colorString%>
         TRACE_POP
         return 0;
       }

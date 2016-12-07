@@ -350,14 +350,14 @@ void printParameters(DATA *data, int stream)
  *
  *  prints sparse structure of jacobian A
  *
- *  \param [in]  [data]
+ *  \param [in]  [sparsePattern]
+ *  \param [in]  [sizeRow]
+ *  \param [in]  [sizeCol]
  *  \param [in]  [stream]
  *
- *  \author lochel
  */
-void printSparseStructure(DATA *data, int stream)
+void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char* name)
 {
-  const int index = data->callback->INDEX_JAC_A;
   unsigned int row, col, i, j;
   /* Will crash with a static size array */
   char *buffer = NULL;
@@ -365,29 +365,19 @@ void printSparseStructure(DATA *data, int stream)
   if (!ACTIVE_STREAM(stream))
     return;
 
-  buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*data->simulationInfo->analyticJacobians[index].sizeCols + 4);
+  buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
-  infoStreamPrint(stream, 1, "sparse structure of jacobian A [size: %ux%u]", data->simulationInfo->analyticJacobians[index].sizeRows, data->simulationInfo->analyticJacobians[index].sizeCols);
-  infoStreamPrint(stream, 0, "%u nonzero elements", data->simulationInfo->analyticJacobians[index].sparsePattern.numberOfNoneZeros);
-  /*
-  sprintf(buffer, "");
-  for(row=0; row < data->simulationInfo->analyticJacobians[index].sizeRows; row++)
-    sprintf(buffer, "%s%u ", buffer, data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[row]);
-  infoStreamPrint(stream, 0, "leadindex: %s", buffer);
+  infoStreamPrint(stream, 1, "sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
+  infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNoneZeros);
 
-  sprintf(buffer, "");
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.numberOfNoneZeros; i++)
-    sprintf(buffer, "%s%u ", buffer, data->simulationInfo->analyticJacobians[index].sparsePattern.index[i]);
-  infoStreamPrint(stream, 0, "index: %s", buffer);
-  */
   infoStreamPrint(stream, 1, "transposed sparse structure (rows: states)");
   i=0;
-  for(row=0; row < data->simulationInfo->analyticJacobians[index].sizeRows; row++)
+  for(row=0; row < sizeRows; row++)
   {
     j=0;
-    for(col=0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[row]; col++)
+    for(col=0; i < sparsePattern->leadindex[row]+1; col++)
     {
-      if(data->simulationInfo->analyticJacobians[index].sparsePattern.index[i] == col)
+      if(sparsePattern->index[i] == col)
       {
         buffer[j++] = '*';
         ++i;

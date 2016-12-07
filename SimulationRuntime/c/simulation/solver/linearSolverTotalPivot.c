@@ -337,12 +337,8 @@ int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double
     {
       if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
       {
-        if(j==0) {
-          ii = 0;
-        } else {
-          ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
-        }
-        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j]) {
+        ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j];
+        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j+1]) {
           l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo->analyticJacobians[index].sizeRows + l;
           jac[k] = data->simulationInfo->analyticJacobians[index].resultVars[l];
