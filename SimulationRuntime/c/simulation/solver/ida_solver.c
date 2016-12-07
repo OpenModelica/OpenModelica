@@ -537,7 +537,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
     flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
     if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Set intial step size failed!");
+      throwStreamPrint(threadData, "##IDA## Set initial step size failed!");
     }
     infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
   }

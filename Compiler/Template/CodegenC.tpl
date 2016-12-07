@@ -3955,7 +3955,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
     case SIMVAR(__) then
       <<
       algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal * data->simulationInfo->tolerance;
-      infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
+      infoStreamPrint(LOG_SOLVER, 0, "%ld. %s -> %g", ++i, <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
       >>
     end match)
   ;separator="\n")
@@ -3965,6 +3965,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
   int <%symbolName(modelNamePrefix,"getAlgebraicDAEVarNominals")%>(DATA *data, threadData_t *threadData, double* algebraicNominal)
   {
     TRACE_PUSH
+    long i = data->modelData->nStates;
     <%nominalVars%>
     TRACE_POP
     return 0;
