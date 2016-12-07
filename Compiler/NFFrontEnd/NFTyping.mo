@@ -58,8 +58,9 @@ import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Types;
 import ClassInf;
-import InstUtil;
+import NFInstUtil;
 import Static;
+import NFFunc;
 
 public
 function typeClass
@@ -279,12 +280,13 @@ algorithm
       Absyn.Exp aexp;
       DAE.Exp dexp;
       DAE.Type ty;
+      DAE.Const variability;
 
     case Binding.UNTYPED_BINDING(bindingExp = aexp)
       algorithm
-        (dexp, ty) := typeExp(aexp, binding.scope, ComponentNode.parent(component), binding.info);
+        (dexp, ty, variability) := typeExp(aexp, binding.scope, ComponentNode.parent(component), binding.info);
       then
-        Binding.TYPED_BINDING(dexp, ty, binding.propagatedDims, binding.info);
+        Binding.TYPED_BINDING(dexp, ty, variability, binding.propagatedDims, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -574,7 +576,7 @@ algorithm
                  ComponentNode.name(cn),
                  Component.attr2DaeAttr(Component.getAttributes(c)),
                  t,
-                 DAE.UNBOUND(),
+                 DAE.UNBOUND(), // TODO FIXME, do we need the binding?
                  NONE())::varLst;
   end for;
 
@@ -715,7 +717,7 @@ algorithm
 
     case Absyn.Exp.CALL()
       algorithm
-        (typedExp, ty, variability) := typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, scope, component, info);
+        (typedExp, ty, variability) := NFFunc.typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, scope, component, info);
       then
         (typedExp, ty, variability);
 
@@ -791,7 +793,8 @@ function typeExps
   input ComponentNode component;
   input SourceInfo info;
   output list<DAE.Exp> daeExps = {};
-  output DAE.Const variability = DAE.C_CONST();
+  output list<DAE.Type> daeTys = {};
+  output list<DAE.Const> daeVrs = {};
 protected
   DAE.Exp dexp;
   DAE.Const var;
@@ -799,10 +802,15 @@ protected
 algorithm
   for e in expressions loop
     (dexp, elem_ty, var) := typeExp(e, scope, component, info);
-    variability := Types.constAnd(var, variability);
+
     daeExps := dexp :: daeExps;
+    daeTys := elem_ty :: daeTys;
+    daeVrs := var :: daeVrs;
+
   end for;
   daeExps := listReverse(daeExps);
+  daeTys := listReverse(daeTys);
+  daeVrs := listReverse(daeVrs);
 end typeExps;
 
 function typeCref
@@ -816,6 +824,8 @@ function typeCref
 protected
   ComponentNode node;
   Prefix prefix;
+  Component.Attributes attr;
+  DAE.VarKind vr;
 algorithm
   typedCref := translateCref(untypedCref);
 
@@ -823,9 +833,9 @@ algorithm
   (node, prefix) := Lookup.lookupComponent(untypedCref, scope, component, info);
   typedCref := Prefix.prefixCref(typedCref, prefix);
   node := typeComponent(node);
-  Component.TYPED_COMPONENT(ty = ty) := ComponentNode.component(node);
-
-  variability := DAE.C_VAR();
+  Component.TYPED_COMPONENT(ty = ty, attributes = attr) := ComponentNode.component(node);
+  Component.ATTRIBUTES(variability = vr) := attr;
+  variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
 end typeCref;
 
 function translateCref
@@ -857,89 +867,18 @@ algorithm
   end match;
 end translateCref;
 
-function typeFunctionCall
-  input Absyn.ComponentRef functionName;
-  input Absyn.FunctionArgs functionArgs;
-  input Component.Scope scope;
-  input ComponentNode component;
-  input SourceInfo info;
-  output DAE.Exp typedExp;
-  output DAE.Type ty;
-  output DAE.Const variability;
-protected
-  String fn_name;
-  Absyn.Path fn, fn_1;
-  ComponentNode fakeComponent;
-  InstNode classNode;
-  list<DAE.Exp> arguments;
-  DAE.CallAttributes ca;
-  DAE.Type classType, resultType;
-  list<DAE.FuncArg> funcArg;
-  DAE.FunctionAttributes functionAttributes;
-  DAE.TypeSource source;
-  Prefix prefix;
-  SCode.Element cls;
-  list<DAE.Var> vars;
-  list<Absyn.Exp> args;
-  DAE.Const argVariability;
-  DAE.FunctionBuiltin isBuiltin;
-  Boolean builtin;
-  DAE.InlineType inlineType;
+public function variabilityToConst "translates SCode.Variability to DAE.Const"
+  input SCode.Variability variability;
+  output DAE.Const const;
 algorithm
-  try
-    // make sure the component is a path (no subscripts)
-    fn := Absyn.crefToPath(functionName);
-  else
-    fn_name := Dump.printComponentRefStr(functionName);
-    Error.addSourceMessageAndFail(Error.SUBSCRIPTED_FUNCTION_CALL, {fn_name}, info);
-    fail();
-  end try;
-
-  (classNode, prefix) := Lookup.lookupFunctionName(functionName, scope, component, info);
-  classNode := Inst.instantiate(classNode, Modifier.NOMOD(), component);
-  fn_name :=  InstNode.name(classNode);
-  cls := InstNode.definition(classNode);
-  // create a component that has the name of the function and the scope of the function as its type
-  fakeComponent := ComponentNode.new(fn_name,
-     SCode.COMPONENT(
-       fn_name,
-       SCode.defaultPrefixes,
-       SCode.defaultVarAttr,
-       Absyn.TPATH(fn, NONE()),
-       SCode.NOMOD(),
-       SCode.COMMENT(NONE(), NONE()),
-       NONE(),
-       info), component);
-
-  fakeComponent := Inst.instComponent(fakeComponent, component, InstNode.parentScope(classNode));
-  fakeComponent := typeComponent(fakeComponent);
-  (classNode, classType) := typeClass(classNode, fakeComponent);
-
-  DAE.T_COMPLEX(varLst = vars) := classType;
-  functionAttributes := InstUtil.getFunctionAttributes(cls, vars);
-  ty := Types.makeFunctionType(fn, vars, functionAttributes);
-
-  DAE.T_FUNCTION(funcResultType = resultType) := ty;
-
-  Absyn.FUNCTIONARGS(args = args) := functionArgs;
-  (arguments, argVariability) := typeExps(args, scope, component, info);
-
-  (isBuiltin,builtin,fn_1) := Static.isBuiltinFunc(fn, ty);
-  inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
-
-  ca := DAE.CALL_ATTR(
-          resultType,
-          Types.isTuple(resultType),
-          builtin,
-          functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
-          functionAttributes.isFunctionPointer,
-          inlineType,DAE.NO_TAIL());
-
-  typedExp := DAE.CALL(fn_1, arguments, ca);
-
-  variability := argVariability;
-
-end typeFunctionCall;
+  const := match variability
+    case SCode.VAR() then DAE.C_VAR();
+    case SCode.DISCRETE() then DAE.C_VAR();
+    case SCode.PARAM() then DAE.C_PARAM();
+    case SCode.CONST() then DAE.C_CONST();
+    else then DAE.C_UNKNOWN();
+  end match;
+end variabilityToConst;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTyping;

@@ -68,6 +68,7 @@ uniontype Binding
   record TYPED_BINDING
     DAE.Exp bindingExp;
     DAE.Type bindingType;
+    DAE.Const variability;
     Integer propagatedDims;
     SourceInfo info;
   end TYPED_BINDING;

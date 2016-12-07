@@ -240,6 +240,16 @@ uniontype Component
     end match;
   end getAttributes;
 
+  function getBinding
+    input Component component;
+    output NFBinding.Binding b;
+  algorithm
+    b := match component
+      case UNTYPED_COMPONENT() then component.binding;
+      case TYPED_COMPONENT() then component.binding;
+    end match;
+  end getBinding;
+
   function attr2DaeAttr
     input Attributes attr;
     output DAE.Attributes daeAttr;
