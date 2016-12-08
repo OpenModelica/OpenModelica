@@ -645,7 +645,6 @@ algorithm
   end try;
 end checkBinaryOperation;
 
-
 public function checkUnaryOperation
   "petfr:
   Type checks arithmetic unary operations. Both for simple scalar types and
@@ -661,13 +660,20 @@ protected
   String e1_str, ty1_str, s1;
 algorithm
   try
-    unaryType := type1;  // ?? correct?, since no type change for unary, see matchType?
+    // Arithmetic type expected for Unary operators, i.e., UMINUS, UMINUS_ARR;  UPLUS removed
+    true := Types.isNumericType(type1);
+
+    unaryType := type1;
     op := Expression.setOpType(operator, unaryType);
-    unaryExp :=  DAE.UNARY(op, exp1);
+    unaryExp := match op
+              case DAE.ADD() then exp1; // If UNARY +, +exp1, remove it since no unary DAE.ADD
+              else DAE.UNARY(op, exp1);
+            end match;
   else
-    e1_str := ExpressionDump.printExpStr(exp1);   // ??Remove possible Error message since Unary?
+    e1_str := ExpressionDump.printExpStr(exp1);
     ty1_str := Types.unparseTypeNoAttr(type1);
-    s1 := "' " + e1_str + DAEDump.dumpOperatorSymbol(operator) + " '";
+    s1 := "' " + e1_str + DAEDump.dumpOperatorSymbol(operator) + " '" +
+       " Arithmetic type expected for this unary operator ";
     Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1, ty1_str}, Absyn.dummyInfo);
     fail();
   end try;
