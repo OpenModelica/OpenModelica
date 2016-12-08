@@ -8,6 +8,12 @@ def convertDir(indir,outdir):
   for fil in os.listdir(indir):
     print "Converting file: %s\n" % indir+"/"+fil
     with open(indir+"/"+fil) as f:
+      # skip FMU files!
+      if 'statistics-fmu-dependencies' in f.read():
+        print "... skipping FMU file\n"
+        continue
+      else:
+        f.seek(0)
       v = {}
       for line in f.readlines():
         line = line.strip().split('=')
@@ -22,7 +28,12 @@ def convertDir(indir,outdir):
               raise Exception("Assumed buildings result format has exactly 101 data points")
             v[line[0]] = l
       keys = v.keys()
+      #for key in keys :
+      #  print key + "\n"
+      #try:
       keys.remove('time')
+      #except ValueError:
+      #  pass # no nothing
       keys.sort()
       keys = ['time'] + keys
       values = [v[key] for key in keys]
