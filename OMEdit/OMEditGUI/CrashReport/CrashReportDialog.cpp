@@ -33,6 +33,7 @@
 
 #include "CrashReportDialog.h"
 #include "Util/Helper.h"
+#include "omc_config.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -58,9 +59,20 @@ CrashReportDialog::CrashReportDialog()
   mpEmailTextBox = new QLineEdit;
   // bug description label and textbox
   mpBugDescriptionLabel = new Label(tr("Describe in a few words what you were doing when the error occurred:"));
-  mpBugDescriptionTextBox = new QPlainTextEdit;
+  mpBugDescriptionTextBox = new QPlainTextEdit(
+    QString("OMEdit %1 connected to OMC %2.\nMy OS is %3 and CPU architecture is %4.\n").arg(GIT_SHA).arg(Helper::OpenModelicaVersion).arg(
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
+  QSysInfo::prettyProductName(),
+  QSysInfo::currentCpuArchitecture()
+#elif defined(__APPLE__)
+  "OSX", "unknown (probably amd64)"
+#else
+  "unknown", "unknown"
+#endif
+  )
+  );
   // files label and checkboxes
-  mpFilesDescriptionLabel = new Label(tr("Following selected files will be sent alongwith the crash report,"));
+  mpFilesDescriptionLabel = new Label(tr("Following selected files will be sent along with the crash report,"));
   QString& tmpPath = Utilities::tempDirectory();
   // omeditcommunication.log file checkbox
   QFileInfo OMEditCommunicationLogFileInfo(QString("%1omeditcommunication.log").arg(tmpPath));
@@ -129,7 +141,7 @@ CrashReportDialog::CrashReportDialog()
 /*!
  * \brief CrashReportDialog::sendReport
  * Slot activated when mpSendReportButton clicked signal is raised.\n
- * Sends the crash report alongwith selected log files.
+ * Sends the crash report along with selected log files.
  */
 void CrashReportDialog::sendReport()
 {
