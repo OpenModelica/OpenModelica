@@ -60,14 +60,18 @@ CrashReportDialog::CrashReportDialog()
   // bug description label and textbox
   mpBugDescriptionLabel = new Label(tr("Describe in a few words what you were doing when the error occurred:"));
   mpBugDescriptionTextBox = new QPlainTextEdit(
-    QString("OMEdit %1 connected to OMC %2.\nMy OS is %3 and CPU architecture is %4.\n").arg(GIT_SHA).arg(Helper::OpenModelicaVersion).arg(
+    QString("OMEdit %1 connected to OMC %2%5.\nThe running OS is %3 on %4.\n").arg(GIT_SHA,Helper::OpenModelicaVersion,
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
-  QSysInfo::prettyProductName(),
-  QSysInfo::currentCpuArchitecture()
+  QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture(),
 #elif defined(__APPLE__)
-  "OSX", "unknown (probably amd64)"
+  "OSX", "unknown (probably amd64)",
 #else
-  "unknown", "unknown"
+  "unknown", "unknown",
+#endif
+#if defined(LSB_RELEASE)
+  " built for " LSB_RELEASE
+#else
+  ""
 #endif
   )
   );

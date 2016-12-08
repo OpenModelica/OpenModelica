@@ -12,6 +12,7 @@ AC_SUBST(SOURCE_REVISION)
 AC_SUBST(QT4BUILD)
 AC_SUBST(QMAKE_CONFIG_OSG)
 AC_SUBST(LIBOSG)
+AC_SUBST(LSB_RELEASE)
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
@@ -99,6 +100,15 @@ for flag in -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused
   CXXFLAGS="$CXXFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
+
+AC_MSG_CHECKING([for LSB description])
+LSB_RELEASE="`lsb_release -ds | tr -d '\"'`"
+if test ! -z "$LSB_RELEASE"; then
+  AC_MSG_RESULT([$LSB_RELEASE])
+  LSB_RELEASE="#define LSB_RELEASE \"$LSB_RELEASE\""
+else
+  AC_MSG_RESULT([no])
+fi
 
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
