@@ -69,7 +69,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC
+interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
@@ -405,7 +405,7 @@ graphstream-clean:
 
 # build lpsolve
 lpsolve: 3rdParty/lpsolve/Makefile
-	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" -j1
 	cp -pf 3rdParty/lpsolve/build/lib/liblpsolve55* $(builddir_lib_omc)
 	cp -prf 3rdParty/lpsolve/build/include/* $(builddir_inc)/
 3rdParty/lpsolve/Makefile: 3rdParty/lpsolve/configure.ac
