@@ -762,7 +762,7 @@ static void* System_launchParallelTasksThread(void *in)
     pthread_mutex_lock(&data->mutex);
     n = data->current++;
     pthread_mutex_unlock(&data->mutex);
-    if (data->fail || data->current > data->len) break;
+    if (data->fail || n >= data->len) break;
     MMC_TRY_TOP()
     threadData->parent = data->parent;
     threadData->mmc_thread_work_exit = threadData->mmc_jumper;
