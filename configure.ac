@@ -138,6 +138,11 @@ if test -z "$MAKE"; then
   MAKE=make
 fi
 
+dnl Disables the default CXXFLAGS="-g -O2"
+if test -z "$CXXFLAGS"; then
+CXXFLAGS=""
+fi
+
 AC_ARG_ENABLE(non-free-packages, [  --enable-non-free-packages     Enables you to link non-free packages. But doing so limits your ability to distribute code under GPL3, even to co-workers and the like. If you are an OSMC member you might be allowed to link and ship such libraries if you have a commercial license for the linked packages.],[test "yes" = "$enableval" && ENABLE_NON_FREE_PACKAGES=1 && NON_FREE_VERSION=") (non-free version for personal use only; seriously do not distribute this binary"] && FINAL_MESSAGES="$FINAL_MESSAGES\nLinking against non-free packages: Yes (this version of omc not for distribution)")
 
 dnl Checks for programs.
@@ -182,7 +187,6 @@ AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([n
 fi
 fi
 
-dnl Disables the default CFLAGS="-g -O2"
 LDFLAGS_BEFORE="$LDFLAGS"
 LIBS_BEFORE="$LIBS"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
@@ -812,6 +816,12 @@ fi
 AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
 
 CFLAGS="$CFLAGS"
+
+OLD_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$CFLAGS $CXXFLAGS -Werror"
+AC_LANG_PUSH([C++])
+AC_TRY_LINK([], [], [CXXFLAGS="$CFLAGS $OLD_CXXFLAGS"], [CXXFLAGS="$OLD_CXXFLAGS"])
+AC_LANG_POP([C++])
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 

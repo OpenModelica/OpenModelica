@@ -22,6 +22,7 @@ CONFIG_CFLAGS = -O2 -falign-functions -msse2 -mfpmath=sse \
 -I$(top_builddir)/3rdParty/sundials/build/include \
 -I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ \
 -Wall -Wno-unused-variable
+CXXFLAGS = $(CFLAGS)
 
 # Not needed since we already set fpmath
 FPMATHFORTRAN =

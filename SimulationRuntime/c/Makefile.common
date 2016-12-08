@@ -12,14 +12,15 @@ OMC_MINIMAL_RUNTIME=
 
 CPPFLAGS = -I. -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(top_builddir)/3rdParty/sundials/include/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -I$(builddir_inc)/c
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
+override CXXFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 OPTIONAL_LIBS=$(CDASKRDIR)/libcdaskr.a
 else
 override CFLAGS += -DOMC_MINIMAL_RUNTIME
+override CXXFLAGS += -DOMC_MINIMAL_RUNTIME
 endif
 
-CXXFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 builddir = ../../build
