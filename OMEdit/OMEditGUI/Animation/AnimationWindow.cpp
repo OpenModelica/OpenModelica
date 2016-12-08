@@ -584,9 +584,6 @@ void AnimationWindow::openFMUSettingsDialog()
   QLabel *solverLabel = new QLabel(tr("solver"));
   QComboBox *solverComboBox = new QComboBox(mpFMUSettingsDialog);
   solverComboBox->addItem(QString("euler forward"));
-  QLabel *stepsizeLabel = new QLabel(tr("step size"));
-  QTextEdit *stepSizeEdit = new QTextEdit("0.001");
-  stepSizeEdit->setMaximumSize(QSize(48,16));
   //assemble
   mainLayout->addWidget(simulationLabel);
   mainLayout->addLayout(simulationLayout);

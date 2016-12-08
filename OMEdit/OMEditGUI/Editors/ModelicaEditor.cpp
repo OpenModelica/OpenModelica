@@ -537,7 +537,7 @@ void ModelicaHighlighter::highlightMultiLine(const QString &text)
         parentheses.append(Parenthesis(Parenthesis::Closed, text[index], index));
       }
     }
-    if (foldingState) {
+    if (pTextBlockUserData && foldingState) {
       // if no single line comment, no multi line comment and no quotes then check for annotation end
       if (blockState < 1 || blockState > 3) {
         if (text[index] == ';') {
