@@ -95,9 +95,6 @@ namespace IAEX
 
   public slots:
     void eval();
-    void command();
-    void nextCommand();
-    void nextField();
     void clickEvent();
     void clickEventOutput();
     void contentChanged();
@@ -179,9 +176,6 @@ namespace IAEX
   signals:
     void clickOnCell();
     void wheelMove( QWheelEvent* );
-    void command();
-    void nextCommand();
-    void nextField();
     void eval();
     void forwardAction( int );
     void updatePos(int, int);

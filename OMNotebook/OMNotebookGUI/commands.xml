@@ -55,7 +55,7 @@
 		<field name="$0">var</field>
 		<helptext>Plot a variable from the most recently simulated model. Ex: plot(x).</helptext>
 	</command>
-	<command name="plot($0)">
+	<command name="plot({$0})">
 		<field name="$0">vars</field>
 		<helptext>Plot variables from the most recently simulated model given as a vector. Ex: plot({x,y}).</helptext>
 	</command>

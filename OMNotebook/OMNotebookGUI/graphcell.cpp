@@ -214,9 +214,9 @@ namespace IAEX {
         emit command();
       }
     }
-    // COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB
-    else if( event->modifiers() == Qt::ControlModifier &&
-      event->key() == Qt::Key_Tab )
+    // COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB || SHIFT + SPACE
+    else if( (event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Tab ) ||
+      (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Space ) )
     {
 
       event->accept();
@@ -1540,8 +1540,10 @@ namespace IAEX {
     CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
     QTextCursor cursor = input_->textCursor();
 
-    if( commandcompletion->insertCommand( cursor ))
+    if( commandcompletion->insertCommand( cursor )) {
       input_->setTextCursor( cursor );
+      emit newState(commandcompletion->helpCommand().toLatin1().data());
+    }
   }
 
   /*!
@@ -1553,12 +1555,14 @@ namespace IAEX {
   */
   void GraphCell::nextCommand()
   {
-    qDebug("Next Command");
+    //qDebug("Next Command");
     CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
     QTextCursor cursor = input_->textCursor();
 
-    if( commandcompletion->nextCommand( cursor ))
+    if( commandcompletion->nextCommand( cursor )) {
       input_->setTextCursor( cursor );
+      emit newState(commandcompletion->helpCommand().toLatin1().data());
+    }
   }
 
   /*!
@@ -1569,7 +1573,7 @@ namespace IAEX {
   */
   void GraphCell::nextField()
   {
-    qDebug("Next Field");
+    //qDebug("Next Field");
     CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
     QTextCursor cursor = input_->textCursor();
 

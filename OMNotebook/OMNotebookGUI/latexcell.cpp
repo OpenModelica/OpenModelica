@@ -80,7 +80,6 @@
 
 #include "treeview.h"
 #include "stylesheet.h"
-#include "commandcompletion.h"
 #include "omcinteractiveenvironment.h"
 #include "indent.h"
 
@@ -177,31 +176,6 @@ namespace IAEX {
 
       event->accept();
       emit eval();
-    }
-    // COMMAND COMPLETION, key: SHIFT + TAB (= BACKTAB) || CTRL + SPACE
-    else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) ||
-      (event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Space) )
-    {
-
-      event->accept();
-      if( inCommand )
-      {
-        emit nextCommand();
-      }
-      else
-      {
-        inCommand = true;
-        emit command();
-      }
-    }
-    // COMMAND COMPLETION- NEXT FIELD, key: CTRL + TAB
-    else if( event->modifiers() == Qt::ControlModifier &&
-      event->key() == Qt::Key_Tab )
-    {
-
-      event->accept();
-      inCommand = false;
-      emit nextField();
     }
     // BACKSPACE, DELETE
     else if( event->key() == Qt::Key_Backspace ||
@@ -499,10 +473,6 @@ namespace IAEX {
     connect( input_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
     connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
     connect( input_, SIGNAL( eval() ), this, SLOT( eval() ));
-    connect( input_, SIGNAL( command() ), this, SLOT( command() ));
-    connect( input_, SIGNAL( nextCommand() ), this, SLOT( nextCommand() ));
-    connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
-    connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
 
     //connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
@@ -1249,47 +1219,6 @@ void LatexCell::setState(int state_)
       break;
     }
   }
-
-  /*!
-  *\brief Get/Insert the command that match the last word in the
-  * input editor.
-  */
-  void LatexCell::command()
-  {
-    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-    QTextCursor cursor = input_->textCursor();
-
-    if( commandcompletion->insertCommand( cursor ))
-      input_->setTextCursor( cursor );
-  }
-
-  /*!
-  *\brief Get/Insert the next command that match the last word in
-  * the input editor.
-  */
-  void LatexCell::nextCommand()
-  {
-    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-    QTextCursor cursor = input_->textCursor();
-
-    if( commandcompletion->nextCommand( cursor ))
-      input_->setTextCursor( cursor );
-
-  }
-
-  /*!
-  *\brief Select the next field in the command, if any exists
-  */
-  void LatexCell::nextField()
-  {
-    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-    QTextCursor cursor = input_->textCursor();
-
-    if( commandcompletion->nextField( cursor ))
-      input_->setTextCursor( cursor );
-
-  }
-
 
   /*!
   * \brief set the correct style if the charFormat is changed and the
