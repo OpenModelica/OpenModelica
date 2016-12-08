@@ -60,6 +60,7 @@ constant Integer inlineHashTable = 21; // TODO: Should be a local root?
 constant Integer currentInstVar = 22;
 constant Integer operatorOverloadingCache = 23;
 constant Integer optionSimCode = 24;
+constant Integer interactiveCache = 25;
 
 // indexes in System.tick
 // ----------------------
@@ -85,6 +86,7 @@ algorithm
   setGlobalRoot(stackoverFlowIndex, NONE());
   setGlobalRoot(inlineHashTable, NONE());
   setGlobalRoot(currentInstVar, NONE());
+  setGlobalRoot(interactiveCache, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

@@ -3946,6 +3946,74 @@ algorithm
 end getParameterNames;
 
 public function getClassEnv
+"Retrieves the environment of the class, including the
+ frame of the class itself by partially instantiating it.
+ It uses a LRU cache as to remember and speed things up"
+  input Absyn.Program p;
+  input Absyn.Path p_class;
+  output FCore.Graph env_2;
+protected
+   Option<list<tuple<Absyn.Program, Absyn.Path, FCore.Graph>>> ocache;
+   list<tuple<Absyn.Program, Absyn.Path, FCore.Graph>> cache, lcache = {};
+   Absyn.Program po;
+   Absyn.Path patho;
+   FCore.Graph envo;
+   Boolean invalidate = false;
+algorithm
+  // see if we have it already
+  ocache := getGlobalRoot(Global.interactiveCache);
+  if isSome(ocache) then
+    SOME(cache) := ocache;
+    for x in cache loop
+      (po, patho, envo) := x;
+      // found the path
+      if Absyn.pathEqual(patho, p_class) then
+        // make sure the program did not change
+        if referenceEq(po, p) then
+          //print("Got it from cache: " + Absyn.pathString(patho) + "\n");
+          env_2 := envo;
+          return;
+        else // program not the same, invalidate cache
+          //print("Invalidating: " + Absyn.pathString(patho) + "\n");
+          invalidate := true;
+          break;
+        end if;
+      end if;
+    end for;
+
+    // remove the entry if the program is not the same!
+    if invalidate then
+      SOME(cache) := ocache;
+      cache := List.deleteMemberOnTrue(p_class, cache, matchPath);
+      setGlobalRoot(Global.interactiveCache, SOME(cache));
+    end if;
+
+  end if;
+
+  env_2 := getClassEnv_dispatch(p, p_class);
+
+  // update cache
+  ocache := getGlobalRoot(Global.interactiveCache);
+  if isSome(ocache) then
+    SOME(cache) := ocache;
+    setGlobalRoot(Global.interactiveCache, SOME((p, p_class, env_2)::cache));
+  else // is NONE, have our first one in
+    setGlobalRoot(Global.interactiveCache, SOME((p, p_class, env_2)::{}));
+  end if;
+end getClassEnv;
+
+function matchPath
+  input Absyn.Path p;
+  input tuple<Absyn.Program, Absyn.Path, FCore.Graph> entry;
+  output Boolean matches;
+protected
+  Absyn.Path po;
+algorithm
+  (_, po, _) := entry;
+  matches := Absyn.pathEqual(po, p);
+end matchPath;
+
+public function getClassEnv_dispatch
 " Retrieves the environment of the class,
    including the frame of the class itself
    by partially instantiating it."
@@ -3962,32 +4030,31 @@ protected
   ClassInf.State ci_state;
   FCore.Cache cache;
 algorithm
-  env_2 := matchcontinue (p,p_class)
+  p_1 := SCodeUtil.translateAbsyn2SCode(p);
+  (cache,env) := Inst.makeEnvFromProgram(p_1);
+  (cache, cl, env_1) := Lookup.lookupClass(cache,env, p_class);
+
+  env_2 := matchcontinue (cl)
     local
       Absyn.Path tp;
-    case (_,_) // Special case for derived classes. When instantiating a derived class, the environment
-                     // of the derived class is returned, which can be a totally different scope.
-      equation
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr,classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(_,_)))),env_1) =
-        Lookup.lookupClass(cache,env, p_class);
+
+    // Special case for derived classes. When instantiating a derived class, the environment
+    // of the derived class is returned, which can be a totally different scope.
+    case (SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr,classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(_,_))))
       then env_1;
 
-    case (_,_)
+    case (SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr))
       equation
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class);
         env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then env_2;
+
     else FGraph.empty();
   end matchcontinue;
-end getClassEnv;
+end getClassEnv_dispatch;
 
 protected function setComponentProperties
 "Sets the following \"properties\" of a component.
