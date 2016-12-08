@@ -70,10 +70,10 @@ namespace IAEX
 
       const bool selected() const;
       const bool isClosed() const;
+
    public slots:
       void setClosed(const bool closed);
       void setSelected(const bool sel);
-
 
    protected:
       void paintEvent(QPaintEvent *event);
@@ -81,9 +81,6 @@ namespace IAEX
       //void mouseReleaseEvent(QMouseEvent *event);
       QColor selectedColor() const;
       QColor backgroundColor() const;
-
-   signals:
-      void becomeSelected(bool); //Deprecated
 
    private:
       bool selected_;

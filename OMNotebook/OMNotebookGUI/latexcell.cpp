@@ -468,8 +468,9 @@ namespace IAEX {
   {
     delete input_;
     delete output_;
-    if(imageFile)
+    if(imageFile) {
       delete imageFile;
+    }
   }
 
  void LatexCell::createLatexCell()
@@ -1190,7 +1191,7 @@ void LatexCell::eval()
             // check for number of pages tex script generates
             if(setpage==true)
             {
-                process->start("dvipng",QStringList() << "-T" << "tight" << Dvi << "-o" << Png);
+                process->start("dvipng",QStringList() << "-T" << "tight" << "-bg" << "transparent" << Dvi << "-o" << Png);
                 process->waitForFinished();
                 QFileInfo checkpng(Png);
                 if(!checkpng.exists())
@@ -1198,12 +1199,15 @@ void LatexCell::eval()
                     input_->clear();
                     input_->textCursor().insertText("Error:Problem in finding dvipng executable");
                     setClosed(false);
-
                 }
                 else
                 {
                     input_->clear();
-                    input_->textCursor().insertImage(Png);
+                    QFileInfo fi(Png);
+                    QString res = fi.fileName();
+                    QImage img(res, "PNG");
+                    textEdit()->document()->addResource(QTextDocument::ImageResource, QUrl(res), img);
+                    input_->textCursor().insertImage(res);
                     setClosed(true);
                 }
             }
@@ -1332,7 +1336,6 @@ void LatexCell::setState(int state_)
     {
       output_->clear();
       evaluated_ = false;
-      // PORT >> layout_->remove(output_);
       layout_->removeWidget(output_);
     }
 
@@ -1355,7 +1358,6 @@ void LatexCell::setState(int state_)
 
   void LatexCell::mouseDoubleClickEvent(QMouseEvent *)
   {
-    // PORT >>if(treeView()->hasMouse())
     if(treeView()->testAttribute(Qt::WA_UnderMouse))
     {
       setClosed(!closed_);
@@ -1364,7 +1366,6 @@ void LatexCell::setState(int state_)
 
   void LatexCell::accept(Visitor &v)
   {
-
     v.visitLatexCellNodeBefore(this);
 
     if(hasChilds())

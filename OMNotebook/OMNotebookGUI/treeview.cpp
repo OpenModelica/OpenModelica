@@ -33,10 +33,8 @@
 #include <iostream>
 #include "treeview.h"
 
-#include <QtGui/QPolygon>
-//Added by qt3to4:
-#include <QtGui/QPaintEvent>
-#include <QRectF>
+#include <QPolygon>
+#include <QPaintEvent>
 #include <QMessageBox>
 namespace IAEX
 {
@@ -50,14 +48,12 @@ namespace IAEX
       :QWidget(parent),
        selected_(false),
        closed_(false),
-       //selectedColor_(QColor(0,0,255))
      selectedColor_(QColor(160,160,160))
    {
-      setFixedWidth(10);
+      setFixedWidth(std::max(12,logicalDpiX()/9));
       setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
 
-    // PORT >> setBackgroundMode(Qt::PaletteBase);
-    setBackgroundRole( QPalette::Base );
+      setBackgroundRole( QPalette::Base );
    }
 
    /*! \brief Set the background color of the treeview.
@@ -120,39 +116,25 @@ namespace IAEX
   {
     QPainter painter(this);
 
-    if(selected_)
-    {
-      painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
-      painter.drawRect( this->rect() );
-
-      painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
-    }
-    else
-    {
-      painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
-
-      painter.drawRect( this->rect() );
-
+    if(selected_) {
+      painter.fillRect( this->rect(), QBrush( selectedColor() ) );
+      painter.setPen(QPen( QBrush( QColor(160,0,0) ), 2, Qt::SolidLine));
+    } else {
+      painter.fillRect( this->rect(), QBrush( backgroundColor() ) );
       painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
     }
 
     QPolygon points(4);
+    int w = width() / 2;
 
-    if(closed_)
-    {
-      points[0] = QPoint(1,2);
-      points[1] = QPoint(5,2);
-      points[2] = QPoint(5, height()-2);
-      points[3] = QPoint(1, height()-8);
-    }
-    else
-    {
-      points[0] = QPoint(1,2);
-      points[1] = QPoint(5,2);
-      points[2] = QPoint(5,height()-2);
+    points[0] = QPoint(1,2);
+    points[1] = QPoint(w,2);
+    points[2] = QPoint(w, height()-2);
+    if(closed_) {
+      points[3] = QPoint(1, height()-w-1);
+    } else {
       points[3] = QPoint(1,height()-2);
     }
-
     painter.drawPolyline(points);
 
     QWidget::paintEvent(event);
@@ -174,38 +156,21 @@ namespace IAEX
     QPainter painter(this);
 
     //Selected or not selected
-    if(selected())
-    {
-      painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
-      painter.drawRect( this->rect() );
-
-      painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
-
-      painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
-      painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
-
-    }
-    else
-    {
-      painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
-
-
-
-
-      painter.drawRect( this->rect() );
-
-//      painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
-//      painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
+    if(selected()) {
+      painter.fillRect( this->rect(), QBrush( selectedColor() ));
+      painter.setPen(QPen( QBrush( QColor(160,0,0) ), 2, Qt::SolidLine));
+    } else {
+      painter.fillRect( this->rect(), QBrush( backgroundColor() ));
       painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
     }
 
-    if(isVisible())
-    {
+    if(isVisible()) {
       QPolygon points(4);
+      int w = width() / 2;
 
       points[0] = QPoint(1,2);
-      points[1] = QPoint(5,2);
-      points[2] = QPoint(5,height()-2);
+      points[1] = QPoint(w,2);
+      points[2] = QPoint(w,height()-2);
       points[3] = QPoint(1,height()-2);
 
       painter.drawPolyline(points);
@@ -213,4 +178,5 @@ namespace IAEX
       QWidget::paintEvent(event);
     }
   }
+
 }

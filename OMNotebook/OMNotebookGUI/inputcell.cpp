@@ -1254,14 +1254,6 @@ namespace IAEX
   }
 
 
-
-
-
-
-
-
-
-
   /*! \brief Do not use this member.
   *
   * This is an ugly part of the cell structure.
@@ -1277,7 +1269,6 @@ namespace IAEX
   void InputCell::removeCellWidgets()
   {
     /*
-    // PORT >> layout_->remove(input_);
     if(evaluated_)
       layout_->remove(output_);
       */
@@ -1296,7 +1287,6 @@ namespace IAEX
     {
       output_->clear();
       evaluated_ = false;
-      // PORT >> layout_->remove(output_);
       layout_->removeWidget(output_);
     }
 
@@ -1319,15 +1309,8 @@ namespace IAEX
     Cell::resizeEvent(event);
   }
 
-
-
-
-
-
-
   void InputCell::mouseDoubleClickEvent(QMouseEvent *)
   {
-    // PORT >>if(treeView()->hasMouse())
     if(treeView()->testAttribute(Qt::WA_UnderMouse))
     {
       setClosed(!closed_);
