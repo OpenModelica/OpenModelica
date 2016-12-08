@@ -541,21 +541,23 @@ void ModelicaHighlighter::highlightMultiLine(const QString &text)
       // if no single line comment, no multi line comment and no quotes then check for annotation end
       if (blockState < 1 || blockState > 3) {
         if (text[index] == ';') {
-          if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
-            if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
-              pTextBlockUserData->setFoldingIndent(1);
+          if (pTextBlockUserData) {
+            if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
+              if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+                pTextBlockUserData->setFoldingIndent(1);
+              }
+              pTextBlockUserData->setFoldingEndIncluded(true);
+            } else {
+              pTextBlockUserData->setFoldingIndent(0);
             }
-            pTextBlockUserData->setFoldingEndIncluded(true);
-          } else {
-            pTextBlockUserData->setFoldingIndent(0);
           }
           foldingState = false;
-        } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+        } else if (pTextBlockUserData && annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
           pTextBlockUserData->setFoldingIndent(1);
         }
-      } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
+      } else if (pTextBlockUserData && annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
         pTextBlockUserData->setFoldingIndent(1);
-      } else if (startIndex < annotationIndex) {  // if we have annotation word before quote or comment block is starting then fold.
+      } else if (pTextBlockUserData && startIndex < annotationIndex) {  // if we have annotation word before quote or comment block is starting then fold.
         pTextBlockUserData->setFoldingIndent(1);
       }
     } else {

@@ -1261,10 +1261,13 @@ void Component::drawInheritedComponentsAndShapes()
 {
   if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
     if (mComponentType == Component::Root) {
+      assert(mpDefaultComponentRectangle);
+      assert(mpDefaultComponentText);
       mpDefaultComponentRectangle->setVisible(true);
       mpDefaultComponentText->setVisible(true);
     }
   } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
+    assert(mpNonExistingComponentLine);
     mpNonExistingComponentLine->setVisible(true);
   } else {
     createClassInheritedComponents();
@@ -1280,17 +1283,20 @@ void Component::showNonExistingOrDefaultComponentIfNeeded()
 {
   mpNonExistingComponentLine->setVisible(false);
   if (mComponentType == Component::Root) {
+    assert(mpDefaultComponentRectangle);
+    assert(mpDefaultComponentText);
     mpDefaultComponentRectangle->setVisible(false);
     mpDefaultComponentText->setVisible(false);
   }
   if (!hasShapeAnnotation(this)) {
     if (hasNonExistingClass()) {
+      assert(mpNonExistingComponentLine);
       mpNonExistingComponentLine->setVisible(true);
-    } else {
-      if (mComponentType == Component::Root) {
-        mpDefaultComponentRectangle->setVisible(true);
-        mpDefaultComponentText->setVisible(true);
-      }
+    } else if (mComponentType == Component::Root) {
+      assert(mpDefaultComponentRectangle);
+      assert(mpDefaultComponentText);
+      mpDefaultComponentRectangle->setVisible(true);
+      mpDefaultComponentText->setVisible(true);
     }
   }
 }
