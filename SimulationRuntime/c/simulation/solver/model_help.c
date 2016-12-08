@@ -375,7 +375,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   for(row=0; row < sizeRows; row++)
   {
     j=0;
-    for(col=0; i < sparsePattern->leadindex[row]+1; col++)
+    for(col=0; i < sparsePattern->leadindex[row+1]; col++)
     {
       if(sparsePattern->index[i] == col)
       {
