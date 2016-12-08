@@ -1561,12 +1561,12 @@ protected
 algorithm
   for unitStr in inUnits loop
     if boolNot(stringEq(baseUnitStr, unitStr)) then // skip same units
-	    unit := str2unit(unitStr, NONE());
-	    b := valueEq(baseUnit, unit);
-	    if b then
-	      outUnits := unitStr::outUnits;
-	    end if;
-	  end if;
+      unit := str2unit(unitStr, NONE());
+      b := valueEq(baseUnit, unit);
+      if b then
+        outUnits := unitStr::outUnits;
+      end if;
+    end if;
   end for;
 end getDerivedUnitsHelper;
 

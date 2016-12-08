@@ -536,7 +536,7 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     res.time[0] = in.time[0];
     res.size = 1;
     for (i=1; i<in.size-1; i++) {
-      double x0 = res.time[res.size-1];
+      /* double x0 = res.time[res.size-1]; */
       double y0 = res.values[res.size-1];
       double x = in.time[i];
       double y = in.values[i];

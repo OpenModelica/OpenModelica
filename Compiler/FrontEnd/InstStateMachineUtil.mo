@@ -229,35 +229,35 @@ algorithm
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
   if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
-	  // == HACK Let's deal with continuous-time ==
-	  crefs := BaseHashTable.hashTableKeyList(outerOutputCrefToSMCompCref);
-	  for cref in crefs loop
-	    nOfHits := 0;
-	    // traverse dae expressions and search for der(cref) occurances
-	    (_, _, (_,(_, nOfHits))) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, Expression.traverseSubexpressionsHelper, (traversingCountDer, (cref, 0)));
-	    if nOfHits > 0 then
-	      derCrefsAcc := cref :: derCrefsAcc;
-	    end if;
-	  end for;
+    // == HACK Let's deal with continuous-time ==
+    crefs := BaseHashTable.hashTableKeyList(outerOutputCrefToSMCompCref);
+    for cref in crefs loop
+      nOfHits := 0;
+      // traverse dae expressions and search for der(cref) occurances
+      (_, _, (_,(_, nOfHits))) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, Expression.traverseSubexpressionsHelper, (traversingCountDer, (cref, 0)));
+      if nOfHits > 0 then
+        derCrefsAcc := cref :: derCrefsAcc;
+      end if;
+    end for;
     // print("InstStateMachineUtil.mergeVariableDefinitions derCrefsAcc:\n" + stringDelimitList(List.map(derCrefsAcc, ComponentReference.crefStr), ", ") + "\n");
-	  derCrefsSet := HashSet.emptyHashSetSized(listLength(derCrefsAcc));
-	  derCrefsSet := List.fold(derCrefsAcc, BaseHashSet.add, derCrefsSet);
-	  // Split the mapping from inner crefs to outer output crefs in a "continuous" part and the rest
-	  for hashEntry in BaseHashTable.hashTableList(innerCrefToOuterOutputCrefs) loop
-	    (_, outerOutputCrefs) := hashEntry;
-	    hasDer := List.exist(outerOutputCrefs, function BaseHashSet.has(hashSet=derCrefsSet));
-	    if hasDer then
-	      innerCrefToOuterOutputCrefs_der := hashEntry :: innerCrefToOuterOutputCrefs_der;
-	    else
-	      innerCrefToOuterOutputCrefs_nonDer := hashEntry :: innerCrefToOuterOutputCrefs_nonDer;
-	    end if;
-	  end for;
-	  // Create aliases between inner and outer of 'der' entries, e.g., a tuple (x -> {a.x, b.x}) will be transformed to alias equations {x = a.x, x = b.x}
-	  aliasEqns_der := List.flatten( List.map(innerCrefToOuterOutputCrefs_der, freshAliasEqn_der) );
-	  // Create merging equations for 'der' entries
-	  mergeEqns_der := listAppend(List.map(innerCrefToOuterOutputCrefs_der, freshMergingEqn_der), aliasEqns_der);
+    derCrefsSet := HashSet.emptyHashSetSized(listLength(derCrefsAcc));
+    derCrefsSet := List.fold(derCrefsAcc, BaseHashSet.add, derCrefsSet);
+    // Split the mapping from inner crefs to outer output crefs in a "continuous" part and the rest
+    for hashEntry in BaseHashTable.hashTableList(innerCrefToOuterOutputCrefs) loop
+      (_, outerOutputCrefs) := hashEntry;
+      hasDer := List.exist(outerOutputCrefs, function BaseHashSet.has(hashSet=derCrefsSet));
+      if hasDer then
+        innerCrefToOuterOutputCrefs_der := hashEntry :: innerCrefToOuterOutputCrefs_der;
+      else
+        innerCrefToOuterOutputCrefs_nonDer := hashEntry :: innerCrefToOuterOutputCrefs_nonDer;
+      end if;
+    end for;
+    // Create aliases between inner and outer of 'der' entries, e.g., a tuple (x -> {a.x, b.x}) will be transformed to alias equations {x = a.x, x = b.x}
+    aliasEqns_der := List.flatten( List.map(innerCrefToOuterOutputCrefs_der, freshAliasEqn_der) );
+    // Create merging equations for 'der' entries
+    mergeEqns_der := listAppend(List.map(innerCrefToOuterOutputCrefs_der, freshMergingEqn_der), aliasEqns_der);
     // Create merging equations for 'nonDer' entries
-	  mergeEqns := listAppend(List.map(innerCrefToOuterOutputCrefs_nonDer, freshMergingEqn), mergeEqns_der);
+    mergeEqns := listAppend(List.map(innerCrefToOuterOutputCrefs_nonDer, freshMergingEqn), mergeEqns_der);
   else
     // FIXME add support for outers that don't have "inner outer" or "inner" at closest instance level (requires to introduce a fresh intermediate variable)
     mergeEqns := List.map(BaseHashTable.hashTableList(innerCrefToOuterOutputCrefs), freshMergingEqn);

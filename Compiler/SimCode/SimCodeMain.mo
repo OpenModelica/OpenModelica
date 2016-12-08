@@ -247,7 +247,7 @@ algorithm
       String description;
       Boolean symbolicJacActivated;
       Boolean fmi20;
-      Boolean flagValue;
+      Boolean notExperimental, flagValue;
       BackendDAE.BackendDAE initDAE;
       Option<BackendDAE.BackendDAE> initDAE_lambda0;
       Boolean useHomotopy "true if homotopy(...) is used during initialization";
@@ -269,8 +269,9 @@ algorithm
         fmi20 = FMI.isFMIVersion20(FMUVersion);
         symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
-        if not Flags.isSet(Flags.FMU_EXPERIMENTAL) then
-            flagValue = Flags.enableDebug(Flags.DIS_SYMJAC_FMI20);
+        notExperimental = not Flags.isSet(Flags.FMU_EXPERIMENTAL);
+        if notExperimental then
+          flagValue = Flags.enableDebug(Flags.DIS_SYMJAC_FMI20);
         end if;
 
         _ = FCore.getFunctionTree(cache);
@@ -285,8 +286,8 @@ algorithm
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
-        if not Flags.isSet(Flags.FMU_EXPERIMENTAL) then
-            Flags.set(Flags.DIS_SYMJAC_FMI20, flagValue);
+        if notExperimental then
+          Flags.set(Flags.DIS_SYMJAC_FMI20, flagValue);
         end if;
 
         resultValues =

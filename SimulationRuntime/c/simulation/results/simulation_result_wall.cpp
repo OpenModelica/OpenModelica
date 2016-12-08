@@ -99,6 +99,9 @@ static void raw_uint32(std::ofstream &fp, uint32_t n) {
   fp.write((char *)&ibuffer, 4);
 }
 
+static void msgpack_str(std::ofstream &fp, const char *s)
+__attribute__((nonnull));
+
 static void msgpack_str(std::ofstream &fp, const char *s) {
   static char buffer[1];
   int strl = htonl(strlen(s));

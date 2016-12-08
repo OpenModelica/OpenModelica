@@ -581,10 +581,10 @@ algorithm
 
   //setting variables for the html file
   scripts := "var ctx = document.querySelector('canvas').getContext('2d');\n"::scripts;
-	scripts := "ctx.fillStyle = '#001D4B';\n"::scripts;
-	scripts := "ctx.font=\"18px Arial\";\n\n"::scripts;
-	scripts := "var blockSize = "+intString(blockSize)+";\n"::scripts;
-	scripts := "var matrixMargin = "+intString(matrixMargin)+";\n\n"::scripts;
+  scripts := "ctx.fillStyle = '#001D4B';\n"::scripts;
+  scripts := "ctx.font=\"18px Arial\";\n\n"::scripts;
+  scripts := "var blockSize = "+intString(blockSize)+";\n"::scripts;
+  scripts := "var matrixMargin = "+intString(matrixMargin)+";\n\n"::scripts;
 
   // the functions to draw the matrix
   scripts := "
@@ -595,28 +595,28 @@ function drawRectangle(px, py, blockSize, margin, ctx) {
 function rowName(name, rowIdx, blockSize, margin, ctx) {
    ctx.strokeText(name, 0, 18+margin+(rowIdx-1)*blockSize, margin);
    return ctx;
-	   }\n
+     }\n
 function colName(name, colIdx, blockSize, margin, ctx) {
    ctx.strokeText(name, 0, 18+margin+(colIdx-1)*blockSize, margin);
    return ctx;
-	   }\n
+     }\n
 function makeLines(blockSize, margin,  n,  ctx) {
-		 for (var x = 0; x < n+1; ++x) {
-		 ctx.beginPath();
-		 ctx.moveTo( x*blockSize + margin, margin);
-		 ctx.lineTo( x*blockSize + margin, margin + (n)*blockSize);
-		 ctx.stroke();
-		 }\n
+     for (var x = 0; x < n+1; ++x) {
+     ctx.beginPath();
+     ctx.moveTo( x*blockSize + margin, margin);
+     ctx.lineTo( x*blockSize + margin, margin + (n)*blockSize);
+     ctx.stroke();
+     }\n
 
-		for (var x = 0; x < n+1; ++x) {
-		 ctx.beginPath();
-		 ctx.moveTo(margin, x*blockSize + margin);
-		 ctx.lineTo(margin + (n)*blockSize, x*blockSize + margin);
-		 ctx.stroke();
-		}\n
-	return ctx;
-	}
-	"::scripts;
+    for (var x = 0; x < n+1; ++x) {
+     ctx.beginPath();
+     ctx.moveTo(margin, x*blockSize + margin);
+     ctx.lineTo(margin + (n)*blockSize, x*blockSize + margin);
+     ctx.stroke();
+    }\n
+  return ctx;
+  }
+  "::scripts;
 
   size := arrayLength(m);
 

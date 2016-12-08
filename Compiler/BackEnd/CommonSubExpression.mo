@@ -1549,10 +1549,10 @@ algorithm
       //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
       //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
 
-		  //get only the partition equations
-		  eqLst := BackendEquation.equationList(allEqs);
-		  eqLst := List.map1(partition,List.getIndexFirst,eqLst);
-		  eqs := BackendEquation.listEquation(eqLst);
+      //get only the partition equations
+      eqLst := BackendEquation.equationList(allEqs);
+      eqLst := List.map1(partition,List.getIndexFirst,eqLst);
+      eqs := BackendEquation.listEquation(eqLst);
 
       eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
       (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.SOLVABLE(), NONE());
@@ -1794,12 +1794,12 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
         //print("n2 "+intString(n2)+"\n");
 
       if n <= 2 then
-	        //print("FROM "+BackendDump.equationString(eq1)+"\n");
-	        //print("AND  "+BackendDump.equationString(eq2)+"\n");
-	      eqNew = BackendDAE.EQUATION(lhs1,rhs1,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-	        //print("MADE A NEW EQUATION "+BackendDump.equationString(eqNew)+"\n\n");
-	      //replace original equation
-	      BackendEquation.setAtIndex(eqs,eqIdx1,eqNew);
+          //print("FROM "+BackendDump.equationString(eq1)+"\n");
+          //print("AND  "+BackendDump.equationString(eq2)+"\n");
+        eqNew = BackendDAE.EQUATION(lhs1,rhs1,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+          //print("MADE A NEW EQUATION "+BackendDump.equationString(eqNew)+"\n\n");
+        //replace original equation
+        BackendEquation.setAtIndex(eqs,eqIdx1,eqNew);
       end if;
 
     then commonSubExpressionUpdate(rest, m, mT, syst);

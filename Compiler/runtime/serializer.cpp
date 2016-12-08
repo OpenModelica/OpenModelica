@@ -184,7 +184,7 @@ void writeRecordDescription(struct record_description* desc,mmc_uint_t slots,std
         writeStruct(slots-1,255,buffer);
         //printf("\n");
         for(mmc_uint_t i = 0; i<slots-1; i++){
-            bool new_field = isNewObject((void*)(&desc->fieldNames[i]),buffer,objcache);
+            // bool new_field = isNewObject((void*)(&desc->fieldNames[i]),buffer,objcache);
             size = strlen(desc->fieldNames[i]);
             //printf("%s -> ", desc->fieldNames[i]);
             writeString(size,desc->fieldNames[i],buffer);
@@ -462,6 +462,7 @@ record_description* readRecordDescription(mmc_uint_t &index,unsigned char* data,
 
         case TAG_STRUCT_SMALL:
         case TAG_STRUCT_BIG:
+          {
             readStruct(tag,index,data,size,ctor); // skipping since we already know what it is
             // Read the path
             char* path = readString_raw(data[index]&0xF0,index,data);
@@ -514,6 +515,9 @@ record_description* readRecordDescription(mmc_uint_t &index,unsigned char* data,
                 delete[] name;
             }
             break;
+          }
+        default:
+            pdesc = NULL;
     }
     return pdesc;
 }
@@ -585,8 +589,10 @@ modelica_metatype deserialize(std::string& buffer){
           default: break;
        }
     }
+#if 0
     uint64_t total = read64(index,data);
-    //printf("Sent %i :  Received %i\n",total,shared.size());
+    printf("Sent %i :  Received %i\n",total,shared.size());
+#endif
     return MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(result), 1));
 }
 

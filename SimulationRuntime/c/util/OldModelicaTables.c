@@ -436,6 +436,9 @@ static char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char *
 }
 
 static size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
+__attribute__((nonnull));
+
+static size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
 {
   size_t col = 0;
   size_t i = 0;
@@ -886,6 +889,9 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
     free(strLn);
   return 0;
 }
+
+static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows, size_t cols)
+__attribute__((nonnull));
 
 static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows, size_t cols)
 {

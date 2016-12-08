@@ -191,11 +191,11 @@ static inline void va_errorStreamPrint(int stream, int indentNext, const char *f
 static inline void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format,va_list ap) {}
 #endif
 
-extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
-extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
-extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), noreturn));
+extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn, analyzer_noreturn));
+extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), analyzer_noreturn, noreturn));
+extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), analyzer_noreturn, noreturn));
 #ifdef HAVE_VA_MACROS
-#define assertStreamPrint(threadData, cond, ...) (cond) ? (void) 0 : throwStreamPrint((threadData), __VA_ARGS__)
+#define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__);}
 #else
 static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...)

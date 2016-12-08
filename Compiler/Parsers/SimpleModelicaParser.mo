@@ -2821,7 +2821,7 @@ end LA1;
 function LAk "Do look-ahead k tokens and see if the tokens match one of the given ones."
   extends partialParser;
   input list<list<TokenId>> idsLst "k sets of tokens to check";
-  output Boolean found;
+  output Boolean found=true;
 protected
   TokenId id;
   list<Token> tmp;

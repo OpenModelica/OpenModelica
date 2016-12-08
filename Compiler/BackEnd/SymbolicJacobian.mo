@@ -2393,15 +2393,15 @@ algorithm
     try // this might fail because of algorithms TODO: fix it!
       (b1, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inResidualEqns, traverserhasEqnNonDiffParts, ({}, true, false));
       (b2, _) := BackendEquation.traverseExpsOfEquationList_WithStop(inOtherEqns, traverserhasEqnNonDiffParts, ({}, true, false));
-	    if not (b1 and b2) then
-	      if Flags.isSet(Flags.FAILTRACE) then
-	        Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
-	      end if;
-	      out := false;
-	    else
-	      out := true;
-	    end if;
-	  else
+      if not (b1 and b2) then
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("Skip symbolic jacobian for non-linear system " + name + "\n");
+        end if;
+        out := false;
+      else
+        out := true;
+      end if;
+    else
       out := false;
     end try;
   else
@@ -2424,39 +2424,39 @@ protected
   BackendDAE.Variables diffVars, oVars, resVars;
   BackendDAE.EquationArray resEqns, oEqns;
 algorithm
-	try
-	  // check non-linear flag
-	  if not isLinear and not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) then
-	   onlySparsePattern := true;
-	  end if;
-	  // generate jacobian name
-	  if isLinear then
-	    prename := "LS";
-	  else
-	    prename := "NLS";
-	  end if;
-	  name := prename + "Jac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+  try
+    // check non-linear flag
+    if not isLinear and not Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) then
+     onlySparsePattern := true;
+    end if;
+    // generate jacobian name
+    if isLinear then
+      prename := "LS";
+    else
+      prename := "NLS";
+    end if;
+    name := prename + "Jac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
-	  if debug then
-	    print("*** "+ prename + "-JAC *** start creating Jacobian for a torn system " + name + " of size " + intString(listLength(inTearingSet.tearingvars)) + " time: " + realString(clock()) + "\n");
-	  end if;
+    if debug then
+      print("*** "+ prename + "-JAC *** start creating Jacobian for a torn system " + name + " of size " + intString(listLength(inTearingSet.tearingvars)) + " time: " + realString(clock()) + "\n");
+    end if;
 
-	  (diffVars, resVars, oVars, resEqns, oEqns) := prepareTornStrongComponentData(inVars, inEqns, inTearingSet.tearingvars, inTearingSet.residualequations, inTearingSet.innerEquations);
+    (diffVars, resVars, oVars, resEqns, oEqns) := prepareTornStrongComponentData(inVars, inEqns, inTearingSet.tearingvars, inTearingSet.residualequations, inTearingSet.innerEquations);
 
-	  if debug then
-	    print("*** "+ prename + "-JAC *** prepared all data for differentiation at time: " + realString(clock()) + "\n");
-	  end if;
+    if debug then
+      print("*** "+ prename + "-JAC *** prepared all data for differentiation at time: " + realString(clock()) + "\n");
+    end if;
 
     //check if we are able to calc symbolic jacobian
     if not (isLinear or checkForSymbolicJacobian(BackendEquation.equationList(resEqns), BackendEquation.equationList(oEqns), name)) then
       onlySparsePattern := true;
     end if;
 
-	  // generate generic jacobian backend dae
+    // generate generic jacobian backend dae
     (outJacobian, outShared) := getSymbolicJacobian(diffVars, resEqns, resVars, oEqns, oVars, inShared, inVars, name, onlySparsePattern);
-	else
-	  fail();
-	end try;
+  else
+    fail();
+  end try;
 end calculateTearingSetJacobian;
 
 protected function calculateJacobianComponent
@@ -3424,7 +3424,7 @@ end traverserjacobianNonlinearExp;
 protected function jacobianConstant "author: PA
   Checks if Jacobian is constant, i.e. all expressions in each equation are constant."
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
-  output Boolean outBoolean;
+  output Boolean outBoolean=true;
 protected
   DAE.Exp e1,e2, e;
   tuple<Integer, Integer, BackendDAE.Equation> tpl;

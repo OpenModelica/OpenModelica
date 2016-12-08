@@ -6634,33 +6634,33 @@ end dumpPartitionData;
 
 public function setUpHpcOmMapping "author: waurich 12-2015
   Creates mappings between simcode and backendDAE for the hpcom module."
-	input BackendDAE.BackendDAE daeIn;
-	input SimCode.SimCode simCodeIn;
-	input Integer lastEqMappingIdx;
-	input list<tuple<Integer,Integer>> equationSccMappingIn; //Maps each simEq to the scc
-	output array<Integer> simeqCompMapping; //Maps each simEq to the scc
-	output array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
-	output array<list<Integer>> daeSccSimEqMapping; //Maps each scc to a list of simEqs, including removed equations like asserts
+  input BackendDAE.BackendDAE daeIn;
+  input SimCode.SimCode simCodeIn;
+  input Integer lastEqMappingIdx;
+  input list<tuple<Integer,Integer>> equationSccMappingIn; //Maps each simEq to the scc
+  output array<Integer> simeqCompMapping; //Maps each simEq to the scc
+  output array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
+  output array<list<Integer>> daeSccSimEqMapping; //Maps each scc to a list of simEqs, including removed equations like asserts
 protected
-	Integer highestSccIdx, compCountPlusDummy;
-	list<tuple<Integer,Integer>> equationSccMapping,equationSccMapping1;
-	BackendDAE.StrongComponents allComps;
+  Integer highestSccIdx, compCountPlusDummy;
+  list<tuple<Integer,Integer>> equationSccMapping,equationSccMapping1;
+  BackendDAE.StrongComponents allComps;
 algorithm
-	(allComps,_) := getSystemComponents(daeIn);
-	highestSccIdx := findHighestSccIdxInMapping(equationSccMappingIn,-1);
-	compCountPlusDummy := listLength(allComps)+1;
-	equationSccMapping1 := removeDummyStateFromMapping(equationSccMappingIn);
-	//the mapping can contain a dummy state as first scc
-	equationSccMapping := if intEq(highestSccIdx, compCountPlusDummy) then equationSccMapping1 else equationSccMappingIn;
-	sccSimEqMapping := convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
-	simeqCompMapping := convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
-	//for the dae-system
-	daeSccSimEqMapping := listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCodeIn),List.create));
+  (allComps,_) := getSystemComponents(daeIn);
+  highestSccIdx := findHighestSccIdxInMapping(equationSccMappingIn,-1);
+  compCountPlusDummy := listLength(allComps)+1;
+  equationSccMapping1 := removeDummyStateFromMapping(equationSccMappingIn);
+  //the mapping can contain a dummy state as first scc
+  equationSccMapping := if intEq(highestSccIdx, compCountPlusDummy) then equationSccMapping1 else equationSccMappingIn;
+  sccSimEqMapping := convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
+  simeqCompMapping := convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
+  //for the dae-system
+  daeSccSimEqMapping := listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCodeIn),List.create));
   daeSccSimEqMapping := arrayAppend(sccSimEqMapping,daeSccSimEqMapping);
 
-	//_ = getSimEqIdxSimEqMapping(simCode.allEquations, arrayLength(simeqCompMapping)); // CAN WE REMOVE IT????
-	//dumpSimEqSCCMapping(simeqCompMapping);
-	//dumpSccSimEqMapping(sccSimEqMapping);
+  //_ = getSimEqIdxSimEqMapping(simCode.allEquations, arrayLength(simeqCompMapping)); // CAN WE REMOVE IT????
+  //dumpSimEqSCCMapping(simeqCompMapping);
+  //dumpSccSimEqMapping(sccSimEqMapping);
 end setUpHpcOmMapping;
 
 protected function findHighestSccIdxInMapping "author: marcusw

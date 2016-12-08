@@ -629,12 +629,9 @@ argument returns [void* ast]
 
 element_modification_or_replaceable returns [void* ast]
 @init { ast = NULL; em.ast = NULL; e = 0; f = 0; } :
-    (e=EACH)? (f=FINAL)? ( em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mmc_mk_bcon(f)]
-                         | er=element_replaceable[e != NULL,f != NULL,false]
+    (e=EACH)? (f=FINAL)? ( em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mmc_mk_bcon(f)] { ast = $em.ast; }
+                         | er=element_replaceable[e != NULL,f != NULL,false] { ast = $er.ast; }
                          )
-      {
-        ast = $em.ast ? $em.ast : $er.ast;
-      }
     ;
 
 element_modification [void *each, void *final] returns [void* ast]

@@ -435,9 +435,9 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     int *parameter_indexesToOutput = NULL;
     FILE *fout = NULL;
     char *tmp;
-    double start_stop[2] = {0};
     double start = omc_matlab4_startTime(&simresglob.matReader);
     double stop = omc_matlab4_stopTime(&simresglob.matReader);
+    double start_stop[2] = {start, stop};
     parameter_indexes[0] = 1; /* time */
     omc_matlab4_read_all_vals(&simresglob.matReader);
     if (endsWith(outFile,".csv")) {
@@ -592,10 +592,6 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     if (writeMatVer4MatrixHeader(fout, "data_1", 2, numUniqueParam, sizeof(double))) {
       return failedToWriteToFile(outFile);
     }
-    start = omc_matlab4_startTime(&simresglob.matReader);
-    stop = omc_matlab4_stopTime(&simresglob.matReader);
-    start_stop[0]=start;
-    start_stop[1]=stop;
 
     if (1 != fwrite(start_stop, sizeof(double)*2, 1, fout)) {
       return failedToWriteToFile(outFile);
