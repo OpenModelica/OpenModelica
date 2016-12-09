@@ -73,22 +73,6 @@ using namespace std;
 namespace IAEX
 {
   /*!
-  * \class SleeperThread
-  * \author Anders Ferström
-  *
-  * \brief Extends QThread. A small trick to get access to protected
-  * function in QThread.
-  */
-  class SleeperThread : public QThread
-  {
-  public:
-    static void msleep(unsigned long msecs)
-    {
-      QThread::msleep(msecs);
-    }
-  };
-
-  /*!
   * \class SaveDocumentCommand
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-12-05 (update)

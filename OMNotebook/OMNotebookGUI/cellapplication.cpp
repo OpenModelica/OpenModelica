@@ -83,10 +83,34 @@ namespace IAEX
 
     // ******************************************************
 
+    class MyApp : public QApplication {
+    private:
+      CellApplication * ca = NULL;
+      public:
+        MyApp(int& argc, char**argv, CellApplication * c): QApplication(argc, argv)
+        {ca = c;}
+        bool event(QEvent *event) {
+          switch(event->type())
+          {
+            case QEvent::FileOpen:
+            {
+              QFileOpenEvent * fileOpenEvent = static_cast<QFileOpenEvent *>(event);
+              if(fileOpenEvent) {
+                ca->open(fileOpenEvent->file());
+
+                return true;
+              }
+            }
+            default:
+              return QApplication::event(event);
+          }
+        }
+    };
+
   CellApplication::CellApplication( int &argc, char *argv[] )
     : QObject()
   {
-    app_ = new QApplication(argc, argv);
+    app_ = new MyApp(argc, argv, this);
     mainWindow = new QMainWindow();
     QDir dir;
 
@@ -379,8 +403,12 @@ namespace IAEX
 
       // 2006-01-31 AF, show window again
       v->show();
+      v->raise();  // for MacOS
+      v->activateWindow(); // for Windows
 
-      v->resize( 801, 600 ); //fjass
+      QDesktopWidget dw;
+      v->move(0, 0);
+      v->resize(dw.geometry().width(),dw.geometry().height());
 
       // 2005-11-30 AF, apply hide() and show() to closed groupcells
       // childs in the documentview

@@ -33,7 +33,7 @@
 
 /*!
  * \file notebook.h
- * \author Ingemar Axelsson and Anders FernstrÃ¶m
+ * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-02-07
  */
 
@@ -96,7 +96,7 @@ namespace IAEX
 {
 /*!
   * \class NotebookWindow
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   *
   * \brief This class describes a mainwindow using the CellDocument
   *
@@ -124,7 +124,7 @@ QString NotebookWindow::linkDir_ = QString::null;
 
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   * \date 2006-01-17 (update)
   *
   * \brief The class constructor
@@ -165,6 +165,10 @@ NotebookWindow::NotebookWindow(Document *subject,
   createWindowMenu();
   createAboutMenu();
 
+  QWidget* spacer = new QWidget();
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  // toolBar is a pointer to an existing toolbar
+  toolBar->addWidget(spacer);
   toolBar->addSeparator();
   toolBar->addAction(quitWindowAction);
   addToolBar(toolBar); //Add icons, update the edit menu etc.
@@ -217,7 +221,7 @@ NotebookWindow::NotebookWindow(Document *subject,
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   * \date 2006-08-24 (update)
   *
   * \brief The class destructor
@@ -423,7 +427,7 @@ void NotebookWindow::update()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-30
   *
   * \brief Return the notebook windons document
@@ -442,7 +446,7 @@ CellApplication *NotebookWindow::application()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-12-01 (update)
   *
   * \brief Method for creating file nemu.
@@ -536,7 +540,7 @@ void NotebookWindow::createFileMenu()
   //    recentMenu = fileMenu->addMenu("Recent &Files");
   fileMenu->addMenu(recentMenu);
 
-  QSettings s("PELAB", "OMNotebook");
+  QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   QString recentFile;
   for(int i = 0; i < 4; ++i)
   {
@@ -583,7 +587,7 @@ void NotebookWindow::createFileMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-08-24 (update)
   *
   * \brief Method for creating edit nemu.
@@ -736,7 +740,7 @@ void NotebookWindow::createEditMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-04-27 (update)
   *
   * \brief Method for creating cell nemu.
@@ -880,7 +884,7 @@ void NotebookWindow::createCellMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-10-07
   * \date 2005-11-03 (update)
   *
@@ -1496,14 +1500,6 @@ void NotebookWindow::createFormatMenu()
   // END: Padding
 
 
-  /* Old menu code //AF
-  menuBar()->insertItem("&Format", formatMenu);
-  stylesgroup->addTo(formatMenu);
-  groupAction->addTo(formatMenu);
-  inputAction->addTo(formatMenu);
-  formatMenu->insertSeparator(1);
-  */
-
   connect(formatMenu, SIGNAL(aboutToShow()),
           this, SLOT(updateStyleMenu()));
   connect( formatMenu, SIGNAL( aboutToShow() ),
@@ -1511,16 +1507,10 @@ void NotebookWindow::createFormatMenu()
 
   formatMenu->addSeparator();
   formatMenu->addAction(toolBar->toggleViewAction());
-
-
-  //    showToolBarAction = new QAction(formatMenu, "Show toolbar", true);
-  //    connect(showToolBarAction, SIGNAL(toggled(bool)), toolBar, SLOT(setVisible(bool)));
-  //    connect(toolBar->toggleViewAction(), SIGNAL(toggled(bool)), showToolBarAction
-
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-18
   *
   * \brief Method for creating insert nemu.
@@ -1575,7 +1565,7 @@ void NotebookWindow::createInsertMenu()
 
   b->hide(); //Disable indentation button
 
-  QSettings s("PELAB", "OMNotebook");
+  QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   autoIndentAction->setChecked(s.value("AutoIndent", true).toBool());
   setAutoIndent(autoIndentAction->isChecked());
 
@@ -1596,25 +1586,25 @@ void NotebookWindow::createInsertMenu()
   connect(evalAction, SIGNAL(triggered()), this, SLOT(eval()));
   toolBar->addAction(evalAction);
 
-  evalallAction = new QAction(tr("EvaluateAllCells"), this);
+  evalallAction = new QAction(tr("Evaluate all cells"), this);
   evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
   evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
   connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
   toolBar->addAction(evalallAction);
 
-  shiftcellsupAction = new QAction(tr("MoveCellsUp"), this);
-  shiftcellsupAction->setStatusTip(tr("Move Cells Up, by clicking on the cell"));
+  shiftcellsupAction = new QAction(tr("Move cells up"), this);
+  shiftcellsupAction->setStatusTip(tr("Move cells up, by clicking on the cell"));
   shiftcellsupAction->setIcon(QIcon(":/Resources/toolbarIcons/up.png"));
   connect(shiftcellsupAction, SIGNAL(triggered()), this, SLOT(shiftcellsUp()));
   toolBar->addAction(shiftcellsupAction);
 
-  shiftcellsdownAction = new QAction(tr("MoveCellsDown"), this);
-  shiftcellsdownAction->setStatusTip(tr("Move Cells Down, by clicking on the cell"));
+  shiftcellsdownAction = new QAction(tr("Move cells down"), this);
+  shiftcellsdownAction->setStatusTip(tr("Move cells down, by clicking on the cell"));
   shiftcellsdownAction->setIcon(QIcon(":/Resources/toolbarIcons/down.png"));
   connect(shiftcellsdownAction, SIGNAL(triggered()), this, SLOT(shiftcellsDown()));
   toolBar->addAction(shiftcellsdownAction);
 
-  shiftselectedcellsAction = new QAction(tr("MoveSelectedCells"), this);
+  shiftselectedcellsAction = new QAction(tr("Move selected cells"), this);
   shiftselectedcellsAction->setStatusTip(tr("Put the cursor to a position where you want the cells to be moved, and then select the cells you would like to move that position"));
   shiftselectedcellsAction->setIcon(QIcon(":/Resources/toolbarIcons/updown.png"));
   connect(shiftselectedcellsAction, SIGNAL(triggered()), this, SLOT(shiftselectedcells()));
@@ -1630,7 +1620,7 @@ void NotebookWindow::createInsertMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-01-27
   *
   * \brief Method for creating window nemu.
@@ -1646,7 +1636,7 @@ void NotebookWindow::createWindowMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03 (update)
   *
   * \brief Method for creating about nemu.
@@ -1676,23 +1666,16 @@ void NotebookWindow::createAboutMenu()
   connect( aboutQtAction, SIGNAL( triggered() ),
            this, SLOT( aboutQT() ));
 
-
   // 2005-10-07 AF, Porting, new code for creating menu
   aboutMenu = menuBar()->addMenu( tr("&Help") );
   aboutMenu->addAction( aboutAction );
   aboutMenu->addAction( aboutQtAction );
   aboutMenu->addSeparator();
   aboutMenu->addAction( helpAction );
-
-  /* Old menu code //AF
-  aboutMenu = new Q3PopupMenu(this);
-  menuBar()->insertItem("&Help", aboutMenu);
-  aboutAction->addTo(aboutMenu);
-  */
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-11
   *
   * \brief Check if the currentCell is editable
@@ -1703,7 +1686,7 @@ bool NotebookWindow::cellEditable()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-14
   *
   * \brief eval all selected cell
@@ -1733,7 +1716,7 @@ void NotebookWindow::evalCells()
 
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   * \date 2005-11-15 (update)
   *
@@ -1745,7 +1728,6 @@ void NotebookWindow::evalCells()
 void NotebookWindow::updateMenus()
 {
   bool editable = false;
-
 
   if( cellEditable() ||
       (subject_->getCursor()->currentCell()->hasChilds() &&
@@ -1774,7 +1756,7 @@ void NotebookWindow::updateMenus()
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-02 (update)
   *
   * \brief Method for unpdating the style menu
@@ -1803,7 +1785,7 @@ void NotebookWindow::updateStyleMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-02
   * \date 2006-04-27 (update)
   *
@@ -1829,7 +1811,7 @@ void NotebookWindow::updateEditMenu()
     else
       redoAction->setEnabled( false );
 
-    // cut & copy (specialfall för input)
+    // cut & copy (special case for input)
     Cell *cell = document()->getCursor()->currentCell();
     if( cell )
     {
@@ -1841,7 +1823,6 @@ void NotebookWindow::updateEditMenu()
         if( inputcell->textEditOutput()->hasFocus() &&
             inputcell->isEvaluated() )
         {
-
           in_cursor = inputcell->textEditOutput()->textCursor();
         }
         else
@@ -1855,17 +1836,13 @@ void NotebookWindow::updateEditMenu()
         if( graphcell->textEditOutput()->hasFocus() &&
             graphcell->isEvaluated() )
         {
-
           in_cursor = graphcell->textEditOutput()->textCursor();
         }
         else
         {
           in_cursor = graphcell->textEdit()->textCursor();
-
-
         }
       }
-
       else
       {
         in_cursor = editor->textCursor();
@@ -1909,7 +1886,7 @@ void NotebookWindow::updateEditMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   * \date 2006-04-26 (update)
   *
@@ -1963,7 +1940,7 @@ void NotebookWindow::updateCellMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-03
   *
   * \brief Method for updating the font menu
@@ -1980,7 +1957,7 @@ void NotebookWindow::updateFontMenu()
     }
     else
     {
-      cout << "No font found" << endl;
+      qDebug("No font found");
       QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
       while( f_iter != fonts_.end() )
       {
@@ -1992,7 +1969,7 @@ void NotebookWindow::updateFontMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-03
   *
   * \brief Method for updating the face menu
@@ -2020,7 +1997,7 @@ void NotebookWindow::updateFontFaceMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-04
   *
   * \brief Method for updating the size menu
@@ -2043,7 +2020,7 @@ void NotebookWindow::updateFontSizeMenu()
       }
       else
       {
-        cout << "No size found" << endl;
+        qDebug("No size found");
         sizeOther->setChecked( true );
 
         QHash<QString, QAction*>::iterator s_iter = sizes_.begin();
@@ -2058,7 +2035,7 @@ void NotebookWindow::updateFontSizeMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-04
   *
   * \brief Method for updating the stretch menu
@@ -2073,7 +2050,7 @@ void NotebookWindow::updateFontStretchMenu()
       stretchs_[stretch]->setChecked( true );
     else
     {
-      cout << "No stretch found" << endl;
+      qDebug("No stretch found");
       QHash<int, QAction*>::iterator s_iter = stretchs_.begin();
       while( s_iter != stretchs_.end() )
       {
@@ -2085,7 +2062,7 @@ void NotebookWindow::updateFontStretchMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for updating the color menu
@@ -2112,14 +2089,13 @@ void NotebookWindow::updateFontColorMenu()
       ++c_iter;
     }
 
-
     if( c_iter == colors_.end() )
       colorOther->setChecked( true );
   }
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for updating the alignment menu
@@ -2135,7 +2111,7 @@ void NotebookWindow::updateTextAlignmentMenu()
       alignments_[alignment]->setChecked( true );
     else
     {
-      cout << "No alignment found" << endl;
+      qDebug("No alignment found");
       QHash<int, QAction*>::iterator a_iter = alignments_.begin();
       while( a_iter != alignments_.end() )
       {
@@ -2147,7 +2123,7 @@ void NotebookWindow::updateTextAlignmentMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for updating the vertical alignment menu
@@ -2162,7 +2138,7 @@ void NotebookWindow::updateVerticalAlignmentMenu()
       verticals_[alignment]->setChecked( true );
     else
     {
-      cout << "No vertical alignment found" << endl;
+      qDebug("No vertical alignment found");
       QHash<int, QAction*>::iterator v_iter = verticals_.begin();
       while( v_iter != verticals_.end() )
       {
@@ -2174,7 +2150,7 @@ void NotebookWindow::updateVerticalAlignmentMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for updating the border menu
@@ -2193,7 +2169,7 @@ void NotebookWindow::updateBorderMenu()
     }
     else
     {
-      cout << "No border found" << endl;
+      qDebug("No border found");
       borderOther->setChecked( true );
 
       QHash<int, QAction*>::iterator b_iter = borders_.begin();
@@ -2207,7 +2183,7 @@ void NotebookWindow::updateBorderMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for updating the margin menu
@@ -2226,7 +2202,7 @@ void NotebookWindow::updateMarginMenu()
     }
     else
     {
-      cout << "No margin found" << endl;
+      qDebug("No margin found");
       marginOther->setChecked( true );
 
       QHash<int, QAction*>::iterator m_iter = margins_.begin();
@@ -2240,7 +2216,7 @@ void NotebookWindow::updateMarginMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for updating the padding menu
@@ -2259,7 +2235,7 @@ void NotebookWindow::updatePaddingMenu()
     }
     else
     {
-      cout << "No padding found" << endl;
+      qDebug("No padding found");
       paddingOther->setChecked( true );
 
       QHash<int, QAction*>::iterator p_iter = paddings_.begin();
@@ -2273,7 +2249,7 @@ void NotebookWindow::updatePaddingMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-01-27
   *
   * \brief Method for updating the window menu
@@ -2300,7 +2276,7 @@ void NotebookWindow::updateWindowMenu()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-01-17
   *
   * \brief Method for updateing the window title
@@ -2325,7 +2301,7 @@ void NotebookWindow::updateWindowTitle()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-03-02
   *
   * \brief Method for updateing the chapter counters
@@ -2337,7 +2313,7 @@ void NotebookWindow::updateChapterCounters()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-10
   *
   * \brief Set the status message to msg, if msg is empty the default
@@ -2375,17 +2351,16 @@ void NotebookWindow::setStatusMenu(QList<QAction*> l)
     stateIndicator->setContextMenuPolicy(Qt::ActionsContextMenu);
     stateIndicator->addActions(l);
   }
-
 }
+
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-04-27
   *
   * \brief handles forwarded actions
   */
 void NotebookWindow::forwardedAction( int action )
 {
-
   switch( action )
   {
     case 1: //COPY
@@ -2403,7 +2378,7 @@ void NotebookWindow::forwardedAction( int action )
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   *
   */
 void NotebookWindow::keyPressEvent(QKeyEvent *event)
@@ -2428,7 +2403,7 @@ void NotebookWindow::keyPressEvent(QKeyEvent *event)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-22 (update)
   *
   * \brief Method for catching some keyevent, and given them
@@ -2477,7 +2452,7 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   *
   * \todo Fix the code, when the window dosen't have any file open,
   * the command should create the new document, not this function //AF
@@ -2514,7 +2489,6 @@ void NotebookWindow::newFile()
       int res = QMessageBox::question(this, QString("Save document?"), QString("The document has been modified. Do you want to save the changes?"),  QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
       if(res == QMessageBox::Yes)
       {
-
         save();
         if(subject_->getFilename().isNull())
           return;
@@ -2535,7 +2509,7 @@ void NotebookWindow::newFile()
 
 void NotebookWindow::updateRecentFiles(QString filename)
 {
-  QSettings s("PELAB", "OMNotebook");
+  QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   QStringList tmpLst;
   QString tmp;
   for(int i = 0; i < 4; ++i)
@@ -2557,7 +2531,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   *
   * \brief Open a file. Shows a file dialog.
   */
@@ -2585,20 +2559,17 @@ void NotebookWindow::openFile(const QString filename)
       // 2006-03-01 AF, Update openDir_
       openDir_ = QFileInfo( filename_ ).absolutePath();
 
-
       updateRecentFiles(filename_);
-
 
       if(subject_->isOpen())
       {
         application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
-         }
+      }
       else
       {
         subject_ = new CellDocument(app_, QString::null);
         subject_->executeCommand(new OpenFileCommand(filename_));
         subject_->attach(this);
-
       }
     }
     else
@@ -2615,12 +2586,12 @@ void NotebookWindow::openFile(const QString filename)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   *
   */
 void NotebookWindow::closeFile()
 {
-  // TODO: the function isn't used correctly, this funciton
+  // TODO: the function isn't used correctly, this function
   // should also close the window, if it isn't the last window
   //subject_->executeCommand(new CloseFileCommand());
 
@@ -2637,7 +2608,7 @@ void NotebookWindow::closeFile()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-01-19
   *
   * \brief Reimplemented closeEvent so all close event are handled
@@ -2670,17 +2641,12 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
     int res = QMessageBox::question(this, "Document is unsaved", QString("The document \"") + filename + QString("\" is unsaved, do you want to save the document?"),
                                     QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
 
-    /*
-   int res = QMessageBox::question( this, "Document is unsaved",
-    QString( "The document \"") + filename +
-     QString( "\" is unsaved, do you want to save the document" ),
-    QMessageBox::Yes | QMessageBox::Default,
-    QMessageBox::No, QMessageBox::NoButton );
-*/
-    if( res == QMessageBox::No )
+    if( res == QMessageBox::No ) {
       break;
-    else if(res == QMessageBox::Yes)
+    }
+    else if(res == QMessageBox::Yes) {
       save();
+    }
     else if(res == QMessageBox::Cancel)
     {
       event->ignore();
@@ -2690,25 +2656,76 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m and Ingemar Axelsson
+ * \class AboutDialog
+ * \brief Creates a dialog that shows the about text of OMNotebook.
+ * Information about OpenModelica Notebook Editor. Shows the list of OMNotebook contributors.
+ */
+class AboutDialog : public QDialog {
+/*!
+ * \brief AboutDialog::AboutDialog
+ * \param pMainWindow - pointer to MainWindow
+ */
+public:
+  AboutDialog(QMainWindow *pMainWindow) : QDialog(pMainWindow) {
+    QString version = OmcInteractiveEnvironment::OMCVersion();
+    setWindowTitle(tr("About %1").arg("OMNotebook"));
+    setAttribute(Qt::WA_DeleteOnClose);
+
+    const QString aboutText = tr(
+       "<h2>%1 - %2</h2>"
+       "<b>%3</b><br />"
+       "<b>Connected to %4</b><br /><br />"
+       "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
+       "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
+       "Initially developed by <b>Ingemar Axelsson</b>, <b>Anders Fernstr&ouml;m</b> and <b>Henrik Eriksson</b> as part of their final theses.<br>"
+       "<br /><br /><b>Contributors:</b>"
+       "<ul>"
+       "<li>Adeel Asghar"
+       "<li>Dr. Henning Kiel"
+       "<li>Arunkumar Palanisamy"
+       "<li>Adrian Pop"
+       "<li>Martin Sj&ouml;lund"
+       "</ul>")
+     .arg("OMNotebook",
+          "OpenModelica Notebook Editor",
+          version,
+          version);
+    // about text label
+    QLabel *pAboutTextLabel = new QLabel(aboutText);
+    pAboutTextLabel->setWordWrap(true);
+    pAboutTextLabel->setOpenExternalLinks(true);
+    pAboutTextLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    pAboutTextLabel->setToolTip("");
+    // close button
+    QPushButton *pCloseButton = new QPushButton("Close");
+    connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
+    // logo label
+    QLabel *pLogoLabel = new QLabel;
+    QPixmap pixmap(":/Resources/OMNotebook_icon.svg");
+    pLogoLabel->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    // main layout
+    QGridLayout *pMainLayout = new QGridLayout;
+    pMainLayout->addWidget(pLogoLabel, 0, 0, Qt::AlignTop | Qt::AlignLeft);
+    pMainLayout->addWidget(pAboutTextLabel, 0, 1, Qt::AlignTop | Qt::AlignLeft);
+    pMainLayout->addWidget(pCloseButton, 1, 0, 1, 2, Qt::AlignRight);
+    setLayout(pMainLayout);
+  }
+};
+
+/*!
+  * \author Anders Fernström and Ingemar Axelsson
   *
   * \brief display an ABOUT message box with information about
   * OMNotebook.
   */
 void NotebookWindow::aboutQTNotebook()
 {
-  const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
-  QString version = OmcInteractiveEnvironment::OMCVersion();
-  QString abouttext = QString("OMNotebook 3.0 Copyright 2004-") + QString(dateStr+7) + " Open Source Modelica Consortium (OSMC)\n"
-      "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n" +
-      "Connected to " + version + "\n" +
-      "Created by Ingemar Axelsson (2004-2005), Anders Fernstr" + QString(QChar(246, 0)) +"m (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.";
-
-  QMessageBox::about( this, "OMNotebook", abouttext );
+  AboutDialog *pAboutDialog = new AboutDialog(this);
+  pAboutDialog->exec();
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   *
   * \brief display an ABOUT message box with information about
   * Qt.
@@ -2719,7 +2736,7 @@ void NotebookWindow::aboutQT()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   *
   * \brief open the help document, if it exists
@@ -2758,7 +2775,7 @@ void NotebookWindow::helpText()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m and Ingemar Axelsson
+  * \author Anders Fernström and Ingemar Axelsson
   * \date 2005-09-30 (update)
   *
   * \brief Save As function
@@ -2829,7 +2846,7 @@ void NotebookWindow::saveas()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m and Ingemar Axelsson
+  * \author Anders Fernström and Ingemar Axelsson
   *
   * Added a check that controlls if the user have saved before,
   * if not the function saveas should be used insted. //AF
@@ -2844,12 +2861,6 @@ void NotebookWindow::save()
   }
   else
   {
-    //Added by Jhansi
-    //Saves the image along with document
-    //window->getFileName(subject_->getFilename());
-    //window->insertImage(subject_->getFilename());
-    //window->SaveSketchImage(subject_->getFilename());
-
     statusBar()->showMessage("Saving file");
     application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_));
     statusBar()->showMessage("Ready");
@@ -2859,7 +2870,7 @@ void NotebookWindow::save()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-01-18
   *
   * \brief Quit OMNotebook
@@ -2871,7 +2882,7 @@ void NotebookWindow::quitOMNotebook()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-12-19
   * \date 2006-02-23 (update)
   *
@@ -2883,9 +2894,7 @@ void NotebookWindow::print()
 {
   QPrinter printer( QPrinter::HighResolution );
   //printer.setFullPage( true );
-
-  //    printer.setColorMode( QPrinter::GrayScale );
-
+  //printer.setColorMode( QPrinter::GrayScale );
 
   QPrintDialog *dlg = new QPrintDialog(&printer, this);
   if( dlg->exec() == QDialog::Accepted )
@@ -2952,7 +2961,6 @@ void NotebookWindow::pdf()
   {
     if( !filename.endsWith( ".pdf", Qt::CaseInsensitive ) )
     {
-      qDebug( ".pdf not found" );
       filename.append( ".pdf" );
     }
 
@@ -2979,7 +2987,7 @@ void NotebookWindow::pdf()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing the font
@@ -3039,7 +3047,7 @@ void NotebookWindow::changeStyle(QAction *action)
 }
 
 /*!
-  * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
+  * \author Ingemar Axelsson (and Anders Fernström)
   */
 void NotebookWindow::changeStyle()
 {
@@ -3063,7 +3071,7 @@ void NotebookWindow::changeStyle()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-03
   *
   * \brief Method for changing font on selected text
@@ -3077,7 +3085,7 @@ void NotebookWindow::changeFont(QAction *action)
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-03
   *
   * \brief Method for changing face on selected text
@@ -3098,7 +3106,7 @@ void NotebookWindow::changeFontFace( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-04
   *
   * \brief Method for changing size on selected text
@@ -3163,7 +3171,7 @@ void NotebookWindow::changeFontSize( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-04
   *
   * \brief Method for changing stretch on selected text
@@ -3194,7 +3202,7 @@ void NotebookWindow::changeFontStretch( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing color on selected text
@@ -3224,7 +3232,7 @@ void NotebookWindow::changeFontColor( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing alignment on selected paragraf
@@ -3255,7 +3263,7 @@ void NotebookWindow::changeTextAlignment( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing vertical alignment on selected text
@@ -3286,7 +3294,7 @@ void NotebookWindow::changeVerticalAlignment( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing border on selected cell
@@ -3302,8 +3310,9 @@ void NotebookWindow::changeBorder( QAction *action )
     if( QDialog::Accepted == other.exec() )
     {
       int border = other.value();
-      if( border > 0 )
+      if( border > 0 ) {
         subject_->textcursorChangeBorder( border );
+      }
       else
       {
         // 2006-01-30 AF, add message box
@@ -3317,8 +3326,9 @@ void NotebookWindow::changeBorder( QAction *action )
     bool ok;
     int border = action->text().toInt( &ok );
 
-    if( ok )
+    if( ok ) {
       subject_->textcursorChangeBorder( border );
+    }
     else
     {
       // 2006-01-30 AF, add message box
@@ -3329,7 +3339,7 @@ void NotebookWindow::changeBorder( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing margin on selected cell
@@ -3372,7 +3382,7 @@ void NotebookWindow::changeMargin( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-07
   *
   * \brief Method for changing padding on selected cell
@@ -3415,7 +3425,7 @@ void NotebookWindow::changePadding( QAction *action )
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-01-27
   *
   * \brief Method for changing the current notebook window
@@ -3430,7 +3440,7 @@ void NotebookWindow::changeWindow(QAction *action)
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   *
   * \brief Method for doing undo on text
@@ -3445,7 +3455,7 @@ void NotebookWindow::undoEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   *
   * \brief Method for doing redo on text
@@ -3460,7 +3470,7 @@ void NotebookWindow::redoEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
@@ -3481,7 +3491,7 @@ void NotebookWindow::cutEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
@@ -3502,7 +3512,7 @@ void NotebookWindow::copyEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
@@ -3523,7 +3533,7 @@ void NotebookWindow::pasteEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-08-24
   *
   * \brief Menu function, perform find
@@ -3545,7 +3555,7 @@ void NotebookWindow::findEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-08-24
   *
   * \brief Menu function, perform replace
@@ -3567,7 +3577,7 @@ void NotebookWindow::replaceEdit()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-18
   *
   * \brief Method for inserting an image into the cell
@@ -3599,7 +3609,7 @@ void NotebookWindow::insertImage()
         if( size.isValid() )
           subject_->textcursorInsertImage( filepath, size );
         else
-          cout << "Not a valid image size" << endl;
+          qDebug("Not a valid image size");
       }
     }
 
@@ -3609,7 +3619,7 @@ void NotebookWindow::insertImage()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-12-05
   *
   * \brief Method for inserting an link to the selected cell
@@ -3753,7 +3763,7 @@ void NotebookWindow::viewSketchImageAttributes()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-12-01
   *
   * \brief Method for opening an old file, saved with OMNotebook (QT3)
@@ -3786,7 +3796,7 @@ void NotebookWindow::openOldFile()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2005-11-21
   * \date 2006-03-24 (update)
   *
@@ -3882,7 +3892,7 @@ void NotebookWindow::pasteCell()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-04-26
   *
   * \brief Ungroup all selected groupcells
@@ -3896,7 +3906,7 @@ void NotebookWindow::ungroupCell()
 }
 
 /*!
-  * \author Anders FernstrÃ¶m
+  * \author Anders Fernström
   * \date 2006-04-26
   *
   * \brief Split current cell
@@ -3923,7 +3933,7 @@ void NotebookWindow::moveCursorUp()
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-29 (update)
   *
   * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea
@@ -3948,7 +3958,7 @@ void NotebookWindow::groupCellsAction()
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders FernstrÃ¶m
+  * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-29 (update)
   *
   * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea
@@ -3987,7 +3997,7 @@ void NotebookWindow::setAutoIndent(bool b)
   //    if(CellDocument* d = dynamic_cast<CellDocument*>(subject_))
   subject_->setAutoIndent2(b);
 
-  QSettings s("PELAB", "OMNotebook");
+  QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   s.setValue("AutoIndent", b);
 
 }

@@ -153,7 +153,7 @@ namespace IAEX
     if(ba.indexOf("<InputCell") != -1)
     {
       /*
-      QSettings s("PELAB", "OMNotebook");
+      QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
       bool alwaysConvert = s.value("AlwaysConvert", true).toBool();
       QMessageBox m;
       int i;

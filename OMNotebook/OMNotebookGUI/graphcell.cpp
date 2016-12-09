@@ -84,24 +84,6 @@ using namespace OMPlot;
 
 namespace IAEX {
   /*!
-  * \class SleeperThread
-  * \author Anders Ferström
-  *
-  * \brief Extends QThread. A small trick to get access to protected
-  * function in QThread.
-  */
-  class SleeperThread : public QThread
-  {
-  public:
-    static void msleep(unsigned long msecs)
-    {
-      QThread::msleep(msecs);
-    }
-  };
-
-
-
-  /*!
   * \class MyTextEdit2
   * \author Anders Ferström
   * \date 2005-11-01

@@ -182,3 +182,5 @@ CONFIG += warn_off
 
 ICON = Resources/OMNotebook_icon.icns
 
+QMAKE_INFO_PLIST = Info.plist
+

@@ -71,16 +71,6 @@ using namespace std;
 
 namespace IAEX
 {
-  class SleeperThread : public QThread
-  {
-  public:
-    static void msleep(unsigned long msecs)
-    {
-      QThread::msleep(msecs);
-    }
-  };
-
-
   OmcInteractiveEnvironment* OmcInteractiveEnvironment::selfInstance = NULL;
   OmcInteractiveEnvironment* OmcInteractiveEnvironment::getInstance()
   {
