@@ -44,6 +44,15 @@
  * - Dr. Henning Kiel
  * - Haris Kapidzic
  * - Abhinn Kothari
+ * - Lennart Ochel - <a href="mailto:lennart.ochel@fh-bielefeld.de">lennart.ochel@fh-bielefeld.de</a>
+ * - Volker Waurich - <a href="mailto:volker.waurich@tu-dresden.de">volker.waurich@tu-dresden.de</a>
+ * - Rüdiger Franke
+ * - Martin Flehmig
+ * - Robert Braun - <a href=\"mailto:robert.braun@liu.se\">robert.braun@liu.se</a>
+ * - Per Östlund - <a href=\"mailto:per.ostlund@liu.se\">per.ostlund@liu.se</a>
+ * - Dietmar Winkler
+ * - Anatoly Severin
+ * - Adrian Pop - <a href="mailto:adrian.pop@liu.se">adrian.pop@liu.se</a>
  */
 
 #include <locale.h>

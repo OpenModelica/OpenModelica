@@ -33,9 +33,7 @@
  */
 
 #include "meta/meta_modelica.h"
-#ifdef WIN32
-#include "version.h"
-#endif
+#include "omc_config.h"
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;

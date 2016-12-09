@@ -56,11 +56,7 @@
 #include "TLM/TLMCoSimulationDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
-#ifdef WIN32
-#include "version.h"
-#else
 #include "omc_config.h"
-#endif
 
 #include <QtSvg/QSvgGenerator>
 
@@ -3378,10 +3374,20 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<li>Adeel Asghar - <u><a href=\"mailto:adeel.asghar@liu.se\">adeel.asghar@liu.se</a></u></li>"
      "<li>Sonia Tariq</li>"
      "<li>Martin Sjölund - <u><a href=\"mailto:martin.sjolund@liu.se\">martin.sjolund@liu.se</a></u></li>"
+     "<li>Alachew Shitahun - <u><a href=\"mailto:alachew.mengist@liu.se\">alachew.mengist@liu.se</a></u></li>"
+     "<li>Jan Kokert - <u><a href=\"mailto:jan.kokert@imtek.uni-freiburg.de\">jan.kokert@imtek.uni-freiburg.de</a></u></li>"
+     "<li>Dr. Henning Kiel</li>"
      "<li>Haris Kapidzic</li>"
      "<li>Abhinn Kothari</li>"
-     "<li>Dr. Henning Kiel</li>"
-     "<li>Alachew Shitahun</li>"
+     "<li>Lennart Ochel - <u><a href=\"mailto:lennart.ochel@fh-bielefeld.de\">lennart.ochel@fh-bielefeld.de</a></u></li>"
+     "<li>Volker Waurich - <u><a href=\"mailto:volker.waurich@tu-dresden.de\">volker.waurich@tu-dresden.de</a></u></li>"
+     "<li>Rüdiger Franke</li>"
+     "<li>Martin Flehmig</li>"
+     "<li>Robert Braun - <u><a href=\"mailto:robert.braun@liu.se\">robert.braun@liu.se</a></u></li>"
+     "<li>Per Östlund - <u><a href=\"mailto:per.ostlund@liu.se\">per.ostlund@liu.se</a></u></li>"
+     "<li>Dietmar Winkler</li>"
+     "<li>Anatoly Severin<li>"
+     "<li>Adrian Pop - <u><a href=\"mailto:adrian.pop@liu.se\">adrian.pop@liu.se</a></u></li>"
      "</ul>")
      .arg(Helper::applicationName,
           Helper::applicationIntroText,

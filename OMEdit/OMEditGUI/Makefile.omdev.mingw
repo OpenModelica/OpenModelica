@@ -2,13 +2,16 @@ ifeq ($(OMBUILDDIR),)
 $(error OMBUILDDIR variable is not set.)
 endif
 
-.PHONY: install build $(NAME) version
+.PHONY: install build $(NAME) omc_config.h
 
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_share=$(OMBUILDDIR)/share/
 resourcedir=./Resources/nls/
 SHREXT=.dll
+CONFIG_DEFAULT_OPENMODELICAHOME = "$(OMBUILDDIR)/"
 GIT_SHA = $(shell git describe --match "v*.*" --always)
+LSB_RELEASE = $(shell cmd /c "ver")
+
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 PLATFORM_ARCH = (32-bit)
 else # mingw64
@@ -39,28 +42,39 @@ clean: MakefileClean
 parsergen:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.omdev.mingw
 
-build: version $(NAME)
+build: omc_config.h $(NAME)
 	$(MAKE) -f Makefile
 Makefile: parsergen OMEditGUI.pro
 	$(QMAKE) "CONFIG+=release"
 MakefileClean: OMEditGUI.pro
 	$(QMAKE) "CONFIG+=release"
 
-version:
-	@echo Current version: $(GIT_SHA)
+omc_config.h:
+	@echo Current version: "$(GIT_SHA) $(PLATFORM_ARCH)"
+	@echo Current omhome: "$(CONFIG_DEFAULT_OPENMODELICAHOME)"
+	@echo Current lsb_release: "$(LSB_RELEASE)"
 ifeq ($(GIT_SHA),)
-	@if test -f version.h; \
-	then echo Could not retrieve version number. version.h not updated; \
-	else echo "" > version.h; echo Could not retrieve version number. empty version.h was created; \
+	@if test -f omc_config.h; \
+	then echo Could not retrieve version number. omc_config.h not updated; \
+	else \
+		echo "#define CONFIG_DEFAULT_OPENMODELICAHOME \"$(CONFIG_DEFAULT_OPENMODELICAHOME)\"" > omc_config.h; \
+		echo "#define GIT_SHA \"OMEdit unknown $(PLATFORM_ARCH)\""; >> omc_config.h; \
+		echo "#define LSB_RELEASE \"$(LSB_RELEASE)\"" >> omc_config.h; \
 	fi;
 else # version is not empty, update it if it changed
-	@if test -f version.h; \
+	@if test -f omc_config.h; \
 	then \
-		echo "#define GIT_SHA \"OMEdit $(GIT_SHA) $(PLATFORM_ARCH)\"" > version.h.tmp; diff version.h version.h.tmp > /dev/null; \
-		if [ $$? -eq 0 ]; then echo No change in version; rm version.h.tmp; \
-		else echo version has changed. updating version.h; \mv version.h.tmp version.h; \
+		echo "#define CONFIG_DEFAULT_OPENMODELICAHOME \"$(CONFIG_DEFAULT_OPENMODELICAHOME)\"" > omc_config.h.tmp; \
+		echo "#define GIT_SHA \"OMEdit $(GIT_SHA) $(PLATFORM_ARCH)\"" >> omc_config.h.tmp; \
+		echo "#define LSB_RELEASE \"$(LSB_RELEASE)\"" >> omc_config.h.tmp; \
+		diff omc_config.h omc_config.h.tmp > /dev/null; \
+		if [ $$? -eq 0 ]; then echo No change in version; rm omc_config.h.tmp; \
+		else echo version has changed. updating omc_config.h; \mv omc_config.h.tmp omc_config.h; \
 		fi; \
 	else \
-		echo "#define GIT_SHA \"OMEdit $(GIT_SHA) $(PLATFORM_ARCH)\"" > version.h; echo Retrieved version number. version.h was created; \
+		echo "#define CONFIG_DEFAULT_OPENMODELICAHOME \"$(CONFIG_DEFAULT_OPENMODELICAHOME)\"" > omc_config.h; \
+		echo "#define GIT_SHA \"OMEdit $(GIT_SHA) $(PLATFORM_ARCH)\"" >> omc_config.h; \
+		echo "#define LSB_RELEASE \"$(LSB_RELEASE)\"" >> omc_config.h; \
 	fi;
 endif
+
