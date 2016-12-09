@@ -38,7 +38,6 @@ encapsulated package NFBinding
 
 public
 import DAE;
-import NFComponent.Component;
 import NFInstNode.InstNode;
 import SCode;
 
@@ -52,7 +51,7 @@ uniontype Binding
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
-    Component.Scope scope;
+    InstNode scope;
     Integer propagatedDims;
     SourceInfo info;
   end RAW_BINDING;
@@ -60,7 +59,7 @@ uniontype Binding
   record UNTYPED_BINDING
     Absyn.Exp bindingExp;
     Boolean isProcessing;
-    Component.Scope scope;
+    InstNode scope;
     Integer propagatedDims;
     SourceInfo info;
   end UNTYPED_BINDING;
@@ -78,6 +77,7 @@ public
     input Option<Absyn.Exp> bindingExp;
     input SCode.Each eachPrefix;
     input Integer dimensions;
+    input InstNode scope;
     input SourceInfo info;
     output Binding binding;
   algorithm
@@ -85,12 +85,10 @@ public
       local
         Absyn.Exp exp;
         Integer pd;
-        Component.Scope scope;
 
       case SOME(exp)
         algorithm
           pd := if SCode.eachBool(eachPrefix) then -1 else dimensions;
-          scope := Component.Scope.RELATIVE_COMP(0);
         then
           RAW_BINDING(exp, scope, pd, info);
 

@@ -39,39 +39,38 @@ encapsulated package NFFunc
 "
 
 import NFBinding.Binding;
+import NFClass.Class;
 import NFComponent.Component;
-import NFComponentNode.ComponentNode;
 import NFDimension.Dimension;
 import NFEquation.Equation;
-import NFInstance.Instance;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
 
 protected
+import ClassInf;
 import ComponentReference;
 import Error;
 import Expression;
 import ExpressionDump;
 import Inst = NFInst;
+import InstUtil;
+import List;
 import Lookup = NFLookup;
+import NFInstUtil;
+import Record = NFRecord;
+import Static;
 import TypeCheck = NFTypeCheck;
 import Types;
-import ClassInf;
-import Static;
-import NFInstUtil;
-import NFTyping;
-import NFRecord;
-import List;
-import InstUtil;
+import Typing = NFTyping;
 
 public
 public uniontype FunctionSlot
   record SLOT
     String name "the name of the slot";
     Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> arg "the argument given by the function call";
-    Option<NFBinding.Binding> default "the default value from binding of the input component in the function";
+    Option<Binding> default "the default value from binding of the input component in the function";
     Option<tuple<DAE.Type, DAE.Const>> expected "the actual type of the input component, what we expect to get";
     Boolean isFilled;
   end SLOT;
@@ -81,8 +80,7 @@ public
 function typeFunctionCall
   input Absyn.ComponentRef functionName;
   input Absyn.FunctionArgs functionArgs;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp typedExp;
   output DAE.Type ty;
@@ -90,7 +88,7 @@ function typeFunctionCall
 protected
   String fn_name;
   Absyn.Path fn, fn_1;
-  ComponentNode fakeComponent;
+  InstNode fakeComponent;
   InstNode classNode;
   list<DAE.Exp> arguments;
   DAE.CallAttributes ca;
@@ -118,22 +116,22 @@ algorithm
 
   try
     // try to lookup the function, if is working then is either a user defined function or present in ModelicaBuiltin.mo
-    (classNode, prefix) := Lookup.lookupFunctionName(functionName, scope, component, info);
+    (classNode, prefix) := Lookup.lookupFunctionName(functionName, scope, info);
   else
     // we could not lookup the class, see if is a special builtin such as String(), etc
     if isSpecialBuiltinFunctionName(functionName) then
-      (typedExp, ty, variability) := typeSpecialBuiltinFunctionCall(functionName, functionArgs, scope, component, info);
+      (typedExp, ty, variability) := typeSpecialBuiltinFunctionCall(functionName, functionArgs, scope, info);
       return;
     end if;
     // fail otherwise
     fail();
   end try;
 
-  classNode := Inst.instantiate(classNode, Modifier.NOMOD(), component);
+  classNode := Inst.instantiate(classNode, Modifier.NOMOD(), scope);
   fn_name :=  InstNode.name(classNode);
   cls := InstNode.definition(classNode);
   // create a component that has the name of the function and the scope of the function as its type
-  fakeComponent := ComponentNode.new(fn_name,
+  fakeComponent := InstNode.newComponent(fn_name,
      SCode.COMPONENT(
        fn_name,
        SCode.defaultPrefixes,
@@ -142,46 +140,46 @@ algorithm
        SCode.NOMOD(),
        SCode.COMMENT(NONE(), NONE()),
        NONE(),
-       info), component);
+       info), scope);
 
-  fakeComponent := Inst.instComponent(fakeComponent, component, InstNode.parentScope(classNode));
+  fakeComponent := Inst.instComponent(fakeComponent, scope, InstNode.parent(classNode));
 
   // we need something better than this as this will type the function twice
-  fakeComponent := NFTyping.typeComponent(fakeComponent);
-  (classNode, classType) := NFTyping.typeClass(classNode, fakeComponent);
+  fakeComponent := Typing.typeComponent(fakeComponent);
+  (classNode, classType) := Typing.typeClass(classNode);
 
   // see if the class is a builtin function (including definitions in the ModelicaBuiltin.mo), record or normal function
 
   // is builtin function defined in ModelicaBuiltin.mo
   if isBuiltinFunctionName(functionName) then
-    (typedExp, ty, variability) := typeBuiltinFunctionCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, component, info);
+    (typedExp, ty, variability) := typeBuiltinFunctionCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
     return;
   end if;
 
   // is record
   if SCode.isRecord(cls) then
-    (typedExp, ty, variability) := NFRecord.typeRecordCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, component, info);
+    (typedExp, ty, variability) := Record.typeRecordCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
     return;
   end if;
 
   // is normal function call
-  (typedExp, ty, variability) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, component, info);
+  (typedExp, ty, variability) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
 
 end typeFunctionCall;
 
 function getFunctionInputs
   input InstNode classNode;
-  output list<ComponentNode> inputs = {};
+  output list<InstNode> inputs = {};
 protected
-  ComponentNode cn;
+  InstNode cn;
   Component.Attributes attr;
-  array<ComponentNode> components;
+  array<InstNode> components;
 algorithm
-  Instance.INSTANCED_CLASS(components = components) := InstNode.instance(classNode);
+  Class.INSTANCED_CLASS(components = components) := InstNode.getClass(classNode);
 
   for i in arrayLength(components):-1:1 loop
      cn := components[i];
-     attr := Component.getAttributes(ComponentNode.component(cn));
+     attr := Component.getAttributes(InstNode.component(cn));
      inputs := match attr
                  case Component.ATTRIBUTES(direction = DAE.INPUT()) then cn::inputs;
                  else inputs;
@@ -191,17 +189,17 @@ end getFunctionInputs;
 
 function getFunctionOutputs
   input InstNode classNode;
-  output list<ComponentNode> outputs = {};
+  output list<InstNode> outputs = {};
 protected
-  ComponentNode cn;
+  InstNode cn;
   Component.Attributes attr;
-  array<ComponentNode> components;
+  array<InstNode> components;
 algorithm
-  Instance.INSTANCED_CLASS(components = components) := InstNode.instance(classNode);
+  Class.INSTANCED_CLASS(components = components) := InstNode.getClass(classNode);
 
   for i in arrayLength(components):-1:1 loop
      cn := components[i];
-     attr := Component.getAttributes(ComponentNode.component(cn));
+     attr := Component.getAttributes(InstNode.component(cn));
      outputs := match attr
                  case Component.ATTRIBUTES(direction = DAE.OUTPUT()) then cn::outputs;
                  else outputs;
@@ -217,8 +215,7 @@ function typeNormalFunction
   input InstNode classNode;
   input DAE.Type classType;
   input SCode.Element cls;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp typedExp;
   output DAE.Type ty;
@@ -226,7 +223,7 @@ function typeNormalFunction
 protected
   String fn_name, argName;
   Absyn.Path fn, fn_1;
-  ComponentNode fakeComponent;
+  InstNode fakeComponent;
   Component c;
   DAE.CallAttributes ca;
   DAE.Type resultType;
@@ -244,7 +241,7 @@ protected
   DAE.FunctionBuiltin isBuiltin;
   Boolean builtin;
   DAE.InlineType inlineType;
-  list<ComponentNode> inputs;
+  list<InstNode> inputs;
   list<DAE.Exp> dargs;
   DAE.Exp darg;
   DAE.Type dty;
@@ -253,11 +250,11 @@ protected
   FunctionSlot s;
   Component.Attributes attr;
   DAE.VarKind vk;
-  NFBinding.Binding b;
-  Option<NFBinding.Binding> ob;
+  Binding b;
+  Option<Binding> ob;
   String sname "the name of the slot";
   Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<NFBinding.Binding> sdefault "the default value from binding of the input component in the function";
+  Option<Binding> sdefault "the default value from binding of the input component in the function";
   Option<tuple<DAE.Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
 
 algorithm
@@ -270,13 +267,13 @@ algorithm
 
   // create the slots
   for i in inputs loop
-    argName := ComponentNode.name(i);
-    c := ComponentNode.component(i);
+    argName := InstNode.name(i);
+    c := InstNode.component(i);
     attr := Component.getAttributes(c);
     Component.ATTRIBUTES(variability = vk) := attr;
-    dvr := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vk));
+    dvr := Typing.variabilityToConst(NFInstUtil.daeToSCodeVariability(vk));
     b := Component.getBinding(c);
-    ob := match b case NFBinding.Binding.TYPED_BINDING() then SOME(b); else then NONE(); end match;
+    ob := match b case Binding.TYPED_BINDING() then SOME(b); else then NONE(); end match;
     ty := Component.getType(c);
     slots := SLOT(argName, NONE(), ob, SOME((ty, dvr)), false)::slots;
   end for;
@@ -284,7 +281,7 @@ algorithm
 
   // handle positional args
   for a in args loop
-    (darg, dty, dvr) := NFTyping.typeExp(a, scope, component, info);
+    (darg, dty, dvr) := Typing.typeExp(a, scope, info);
     s::slots := slots;
     // replace sarg in the slot
     SLOT(sname, sarg, sdefault, sexpected, _) := s;
@@ -297,7 +294,7 @@ algorithm
   // handle named args
   for n in nargs loop
     Absyn.NAMEDARG(argName = argName, argValue = arg) := n;
-    (darg, dty, dvr) := NFTyping.typeExp(arg, scope, component, info);
+    (darg, dty, dvr) := Typing.typeExp(arg, scope, info);
     slots := fillNamedSlot(slots, argName, (darg, dty, dvr), fn, prefix, info);
   end for;
 
@@ -335,7 +332,7 @@ protected
   Integer d;
   DAE.Exp arg;
   Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<NFBinding.Binding> sdefault "the default value from binding of the input component in the function";
+  Option<Binding> sdefault "the default value from binding of the input component in the function";
   DAE.Const const;
 algorithm
   for s in slots loop
@@ -345,7 +342,7 @@ algorithm
       c := Types.constAnd(c, const);
     else
       // TODO FIXME what do we do with the propagatedDims?
-      SOME(NFBinding.TYPED_BINDING(bindingExp = arg, variability = const, propagatedDims = d)) := sdefault;
+      SOME(Binding.TYPED_BINDING(bindingExp = arg, variability = const, propagatedDims = d)) := sdefault;
       c := Types.constAnd(c, const);
     end if;
     args := arg :: args;
@@ -364,7 +361,7 @@ protected
   Boolean b, found = false;
   String sname "the name of the slot";
   Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<NFBinding.Binding> sdefault "the default value from binding of the input component in the function";
+  Option<Binding> sdefault "the default value from binding of the input component in the function";
   Option<tuple<DAE.Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
   Boolean sisFilled;
   DAE.Exp expActual;
@@ -420,7 +417,7 @@ protected
   Boolean b, found = false;
   String sname "the name of the slot";
   Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<NFBinding.Binding> sdefault "the default value from binding of the input component in the function";
+  Option<Binding> sdefault "the default value from binding of the input component in the function";
   Option<tuple<DAE.Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
   Boolean sisFilled;
 algorithm
@@ -543,8 +540,7 @@ protected function typeSpecialBuiltinFunctionCall
  TODO FIXME, add all"
   input Absyn.ComponentRef functionName;
   input Absyn.FunctionArgs functionArgs;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp typedExp;
   output DAE.Type ty;
@@ -563,7 +559,7 @@ algorithm
       Absyn.Path call_path;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
-      list<ComponentNode> inputs, outputs;
+      list<InstNode> inputs, outputs;
       Absyn.ForIterators iters;
       DAE.Dimensions d1, d2;
       DAE.TypeSource src1, src2;
@@ -575,7 +571,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "String"), Absyn.FUNCTIONARGS(args = afargs))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (args, tys, vrs) := NFTyping.typeExps(afargs, scope, component, info);
+        (args, tys, vrs) := Typing.typeExps(afargs, scope, info);
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
         ty := DAE.T_STRING_DEFAULT;
       then
@@ -585,7 +581,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "Integer"), Absyn.FUNCTIONARGS(args = afargs))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (args, tys, vrs) := NFTyping.typeExps(afargs, scope, component, info);
+        (args, tys, vrs) := Typing.typeExps(afargs, scope, info);
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
         ty := DAE.T_INTEGER_DEFAULT;
       then
@@ -616,8 +612,7 @@ protected function typeBuiltinFunctionCall
   input InstNode classNode;
   input DAE.Type classType;
   input SCode.Element cls;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp typedExp;
   output DAE.Type ty;
@@ -636,7 +631,7 @@ algorithm
       Absyn.Path call_path;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
-      list<ComponentNode> inputs, outputs;
+      list<InstNode> inputs, outputs;
       Absyn.ForIterators iters;
       DAE.Dimension d1, d2;
       DAE.TypeSource src1, src2;
@@ -645,8 +640,8 @@ algorithm
     // size(arr, dim)
     case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
       algorithm
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
-        (dexp2, ty2, vr2) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp2, ty2, vr2) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
         ty := DAE.T_INTEGER_DEFAULT;
@@ -658,7 +653,7 @@ algorithm
     // size(arr)
     case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
         ty := DAE.T_INTEGER_DEFAULT;
         // the variability does not actually depend on the variability of "arr" but on the variability of the dimensions of "arr"
@@ -669,8 +664,8 @@ algorithm
     case (Absyn.CREF_IDENT(name = "smooth"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
-        (dexp2, ty2, vr2) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp2, ty2, vr2) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
         ty := DAE.T_REAL_DEFAULT;
@@ -681,7 +676,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "rooted"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
         ty := DAE.T_BOOL_DEFAULT;
@@ -691,7 +686,7 @@ algorithm
 
     case (Absyn.CREF_IDENT(name = "transpose"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
 
         // transpose the type.
         DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}, src1), {d2}, src2) := ty1;
@@ -707,7 +702,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = fnName), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
         true := listMember(fnName, {"min", "max"});
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
 
         true := Types.isArray(ty1);
         dexp1 := Expression.matrixToArray(dexp1);
@@ -724,8 +719,8 @@ algorithm
     case (Absyn.CREF_IDENT(name = fnName), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
       algorithm
         true := listMember(fnName, {"min", "max"});
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
-        (dexp2, ty2, vr2) := NFTyping.typeExp(aexp2, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp2, ty2, vr2) := Typing.typeExp(aexp2, scope, info);
 
         ty := Types.scalarSuperType(ty1, ty2);
         (dexp1, _) := Types.matchType(dexp1, ty1, ty, true);
@@ -738,7 +733,7 @@ algorithm
 
     case (Absyn.CREF_IDENT(name = "diagonal"), Absyn.FUNCTIONARGS(args = aexp1::_))
       algorithm
-        (dexp1, ty1, vr1) := NFTyping.typeExp(aexp1, scope, component, info);
+        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
         DAE.T_ARRAY(dims = {d1}, ty = el_ty) := ty1;
 
         ty := DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}, DAE.emptyTypeSource), {d1}, DAE.emptyTypeSource);
@@ -751,49 +746,49 @@ algorithm
     case (Absyn.CREF_IDENT(name = "product"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "pre"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "noEvent"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "sum"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "assert"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "change"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "array"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
@@ -801,7 +796,7 @@ algorithm
       equation
         call_path = Absyn.crefToPath(functionName);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-        (dexp1, globals) = NFTyping.typeExp(aexp1, env, inPrefix, inInfo, globals);
+        (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
 
@@ -809,7 +804,7 @@ algorithm
       equation
         call_path = Absyn.crefToPath(functionName);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-        (dexp1, globals) = NFTyping.typeExp(aexp1, env, inPrefix, inInfo, globals);
+        (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
 
@@ -817,7 +812,7 @@ algorithm
       equation
         call_path = Absyn.crefToPath(functionName);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-        (dexp1, globals) = NFTyping.typeExp(aexp1, env, inPrefix, inInfo, globals);
+        (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
 
@@ -825,7 +820,7 @@ algorithm
       equation
         call_path = Absyn.crefToPath(functionName);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-        (dexp1, globals) = NFTyping.typeExp(aexp1, env, inPrefix, inInfo, globals);
+        (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
 
@@ -833,49 +828,49 @@ algorithm
       equation
         call_path = Absyn.crefToPath(functionName);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
-        (dexp1, globals) = NFTyping.typeExp(aexp1, env, inPrefix, inInfo, globals);
+        (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "cat"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "actualStream"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "inStream"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "String"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "Integer"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "Real"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
     */
@@ -890,14 +885,14 @@ algorithm
     case (Absyn.CREF_IDENT(name = "rem"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "abs"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
-        (pos_args, globals) = NFTyping.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
     */
@@ -905,7 +900,7 @@ algorithm
     // hopefully all the other ones have a complete entry in ModelicaBuiltin.mo
     case (_, _)
       algorithm
-        (typedExp, ty, vr) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, component, info);
+        (typedExp, ty, vr) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
       then
         (typedExp, ty, vr);
 

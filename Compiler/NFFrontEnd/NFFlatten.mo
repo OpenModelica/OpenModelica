@@ -40,11 +40,9 @@ encapsulated package NFFlatten
 
 import Inst = NFInst;
 import NFBinding.Binding;
+import NFClass.Class;
 import NFComponent.Component;
-import NFComponentNode.ComponentNode;
 import NFEquation.Equation;
-import NFInstance.Instance;
-import NFInstanceTree.InstanceTree;
 import NFInstNode.InstNode;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
@@ -53,6 +51,7 @@ import DAE;
 import Error;
 import Expression;
 import ExpressionDump;
+import List;
 import SCode;
 import System;
 import Util;
@@ -63,7 +62,7 @@ partial function ExpandScalarFunc<ElementT>
   input output list<DAE.Element> elements;
 end ExpandScalarFunc;
 
-function flattenClass
+function flatten
   input InstNode classInst;
   output DAE.DAElist dae;
 protected
@@ -74,7 +73,7 @@ algorithm
   elems := listReverse(elems);
   class_elem := DAE.COMP(InstNode.name(classInst), elems, DAE.emptyElementSource, NONE());
   dae := DAE.DAE({class_elem});
-end flattenClass;
+end flatten;
 
 function flattenNode
   input InstNode node;
@@ -82,16 +81,16 @@ function flattenNode
   input list<DAE.Element> inElements = {};
   output list<DAE.Element> elements;
 algorithm
-  elements := flattenInstance(InstNode.instance(node), prefix, inElements);
+  elements := flattenClass(InstNode.getClass(node), prefix, inElements);
 end flattenNode;
 
-function flattenInstance
-  input Instance instance;
+function flattenClass
+  input Class instance;
   input Prefix prefix;
   input output list<DAE.Element> elements;
 algorithm
   _ := match instance
-    case Instance.INSTANCED_CLASS()
+    case Class.INSTANCED_CLASS()
       algorithm
         for c in instance.components loop
           elements := flattenComponent(c, prefix, elements);
@@ -111,14 +110,14 @@ algorithm
         ();
 
   end match;
-end flattenInstance;
+end flattenClass;
 
 function flattenComponent
-  input ComponentNode component;
+  input InstNode component;
   input Prefix prefix;
   input output list<DAE.Element> elements;
 protected
-  Component c = ComponentNode.component(component);
+  Component c = InstNode.component(component);
   Prefix new_pre;
   DAE.Type ty;
 algorithm
@@ -126,19 +125,13 @@ algorithm
     case Component.TYPED_COMPONENT()
       algorithm
         ty := Component.getType(c);
-        new_pre := Prefix.add(ComponentNode.name(component), {}, ty, prefix);
+        new_pre := Prefix.add(InstNode.name(component), {}, ty, prefix);
 
         elements := match ty
           case DAE.T_ARRAY()
             then flattenArray(Component.unliftType(c), ty.dims, new_pre, flattenScalar, elements);
           else flattenScalar(c, new_pre, elements);
         end match;
-      then
-        ();
-
-    case Component.EXTENDS_NODE()
-      algorithm
-        elements := flattenInstance(InstNode.instance(c.node), prefix, elements);
       then
         ();
 
@@ -232,7 +225,7 @@ function flattenScalar
 algorithm
   _ := match component
     local
-      Instance i;
+      Class i;
       DAE.Element var;
       DAE.ComponentRef cref;
       Component.Attributes attr;
@@ -241,10 +234,10 @@ algorithm
 
     case Component.TYPED_COMPONENT()
       algorithm
-        i := InstNode.instance(component.classInst);
+        i := InstNode.getClass(component.classInst);
 
         elements := match i
-          case Instance.INSTANCED_BUILTIN()
+          case Class.INSTANCED_BUILTIN()
             algorithm
               cref := Prefix.toCref(prefix);
               binding_exp := flattenBinding(component.binding, prefix);
@@ -267,14 +260,14 @@ algorithm
             then
               var :: elements;
 
-          else flattenInstance(i, prefix, elements);
+          else flattenClass(i, prefix, elements);
         end match;
       then
         ();
 
     else
       algorithm
-        Error.addInternalError("NFFlatten.flattenScalar got untyped component.", Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got untyped component.");
       then
         fail();
 
@@ -305,8 +298,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("Flatten.flattenBinding got untyped binding.",
-          Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got untyped binding.");
       then
         fail();
 

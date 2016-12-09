@@ -154,12 +154,12 @@ public
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, 0, mod.info);
+          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, 0, scope, mod.info);
           submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
-        MODIFIER(name, mod.finalPrefix, mod.eachPrefix, binding, submod_table, mod.info);
+          MODIFIER(name, mod.finalPrefix, mod.eachPrefix, binding, submod_table, mod.info);
 
       case SCode.REDECL()
         then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element, scope);
@@ -318,21 +318,6 @@ public
     end match;
   end propagate;
 
-  function propagateScope
-    input output Modifier modifier;
-  algorithm
-    _ := match modifier
-      case MODIFIER()
-        algorithm
-          modifier.subModifiers := ModTable.map(modifier.subModifiers,
-            propagateSubModScope);
-        then
-          ();
-
-      else ();
-    end match;
-  end propagateScope;
-
   function checkEach
     input Modifier mod;
     input Boolean isScalar;
@@ -490,40 +475,6 @@ protected
       else ();
     end match;
   end propagateBinding;
-
-  function propagateSubModScope
-    input String name;
-    input output Modifier modifier;
-  algorithm
-    _ := match modifier
-      case MODIFIER()
-        algorithm
-          modifier.binding := propagateBindingScope(modifier.binding);
-          modifier.subModifiers := ModTable.map(modifier.subModifiers,
-            propagateSubModScope);
-        then
-          ();
-
-      else ();
-    end match;
-  end propagateSubModScope;
-
-  function propagateBindingScope
-    input output Binding binding;
-  algorithm
-    _ := match binding
-      local
-        Integer l;
-
-      case Binding.RAW_BINDING(scope = Component.Scope.RELATIVE_COMP(level = l))
-        algorithm
-          binding.scope := Component.Scope.RELATIVE_COMP(l + 1);
-        then
-          ();
-
-      else ();
-    end match;
-  end propagateBindingScope;
 end Modifier;
 
 annotation(__OpenModelica_Interface="frontend");

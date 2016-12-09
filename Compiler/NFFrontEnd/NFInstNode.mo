@@ -32,32 +32,11 @@
 encapsulated package NFInstNode
 
 import NFComponent.Component;
-import NFInst.Instance;
+import NFClass.Class;
+import NFMod.Modifier;
 import NFPrefix.Prefix;
 import SCode;
 import Absyn;
-
-uniontype InstParent
-  record CLASS
-    InstNode node;
-  end CLASS;
-
-  record COMPONENT
-    Component component;
-  end COMPONENT;
-
-  record NO_PARENT end NO_PARENT;
-
-  function isEmpty
-    input InstParent parent;
-    output Boolean empty;
-  algorithm
-    empty := match parent
-      case NO_PARENT() then true;
-      else false;
-    end match;
-  end isEmpty;
-end InstParent;
 
 uniontype InstNodeType
   record NORMAL_CLASS
@@ -79,42 +58,70 @@ uniontype InstNodeType
 end InstNodeType;
 
 uniontype InstNode
-  record INST_NODE
+  record CLASS_NODE
     String name;
     SCode.Element definition;
-    array<Instance> instance;
+    array<Class> cls;
     InstNode parentScope;
     InstNodeType nodeType;
-  end INST_NODE;
+  end CLASS_NODE;
+
+  record COMPONENT_NODE
+    String name;
+    SCode.Element definition;
+    array<Component> component;
+    InstNode parent;
+  end COMPONENT_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
 
-  function new
+  function newClass
     input String name;
     input SCode.Element definition;
     input InstNode parent;
     input InstNodeType nodeType = NORMAL_CLASS();
     output InstNode node;
   protected
-    array<Instance> i;
+    array<Class> i;
   algorithm
-    i := arrayCreate(1, Instance.NOT_INSTANTIATED());
-    node := INST_NODE(name, definition, i, parent, nodeType);
-  end new;
+    i := arrayCreate(1, Class.NOT_INSTANTIATED());
+    node := CLASS_NODE(name, definition, i, parent, nodeType);
+  end newClass;
+
+  function newComponent
+    input String name;
+    input SCode.Element definition;
+    input InstNode parent = EMPTY_NODE();
+    output InstNode node;
+  protected
+    array<Component> c;
+  algorithm
+    c := arrayCreate(1, Component.COMPONENT_DEF(definition, Modifier.NOMOD()));
+    node := COMPONENT_NODE(name, definition, c, parent);
+  end newComponent;
 
   function name
     input InstNode node;
     output String name;
   algorithm
-    INST_NODE(name = name) := node;
+    name := match node
+      case CLASS_NODE() then node.name;
+      case COMPONENT_NODE() then node.name;
+    end match;
   end name;
 
   function rename
     input output InstNode node;
     input String name;
   algorithm
-    _ := match node
-      case INST_NODE()
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          node.name := name;
+        then
+          ();
+
+      case COMPONENT_NODE()
         algorithm
           node.name := name;
         then
@@ -122,66 +129,151 @@ uniontype InstNode
     end match;
   end rename;
 
-  function parentScope
+  function parent
     input InstNode node;
-    output InstNode parentScope;
+    output InstNode parent;
   algorithm
-    INST_NODE(parentScope = parentScope) := node;
-  end parentScope;
+    parent := match node
+      case CLASS_NODE() then node.parentScope;
+      case COMPONENT_NODE() then node.parent;
+    end match;
+  end parent;
+
+  function classScope
+    input InstNode node;
+    output InstNode scope;
+  algorithm
+    scope := match node
+      case CLASS_NODE() then node;
+      case COMPONENT_NODE() then Component.classInstance(node.component[1]);
+    end match;
+  end classScope;
 
   function topScope
     input InstNode node;
     output InstNode topScope;
   algorithm
     topScope := match node
-      case INST_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
-      case INST_NODE() then topScope(node.parentScope);
+      case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
+      case CLASS_NODE() then topScope(node.parentScope);
     end match;
   end topScope;
 
-  function setParentScope
-    input InstNode parentScope;
+  function topComponent
+    input InstNode node;
+    output InstNode topComponent;
+  algorithm
+    topComponent := match node
+      case COMPONENT_NODE(parent = EMPTY_NODE()) then node;
+      case COMPONENT_NODE() then topComponent(node.parent);
+    end match;
+  end topComponent;
+
+  function setParent
+    input InstNode parent;
     input output InstNode node;
   algorithm
-    _ := match node
-      case INST_NODE()
+    () := match node
+      case CLASS_NODE()
         algorithm
-          node.parentScope := parentScope;
+          node.parentScope := parent;
+        then
+          ();
+
+      case COMPONENT_NODE()
+        algorithm
+          node.parent := parent;
         then
           ();
     end match;
-  end setParentScope;
+  end setParent;
 
-  function instance
-    input InstNode node;
-    output Instance instance;
+  function setOrphanParent
+    "Sets the parent of a node if the node lacks a parent, otherwise does nothing."
+    input InstNode parent;
+    input output InstNode node;
   algorithm
-    instance := match node
-      case INST_NODE() then node.instance[1];
-    end match;
-  end instance;
+    () := match node
+      case CLASS_NODE(parentScope = EMPTY_NODE())
+        algorithm
+          node.parentScope := parent;
+        then
+          ();
 
-  function setInstance
-    input Instance instance;
+      case COMPONENT_NODE(parent = EMPTY_NODE())
+        algorithm
+          node.parent := parent;
+        then
+          ();
+
+      else ();
+    end match;
+  end setOrphanParent;
+
+  function getClass
+    input InstNode node;
+    output Class cls;
+  algorithm
+    cls := match node
+      case CLASS_NODE() then node.cls[1];
+      case COMPONENT_NODE()
+        then getClass(Component.classInstance(node.component[1]));
+    end match;
+  end getClass;
+
+  function updateClass
+    input Class cls;
     input output InstNode node;
   algorithm
     node := match node
-      case INST_NODE()
+      case CLASS_NODE()
         algorithm
-          arrayUpdate(node.instance, 1, instance);
+          arrayUpdate(node.cls, 1, cls);
         then
           node;
     end match;
-  end setInstance;
+  end updateClass;
+
+  function component
+    input InstNode node;
+    output Component component;
+  algorithm
+    component := match node
+      case COMPONENT_NODE() then node.component[1];
+    end match;
+  end component;
+
+  function updateComponent
+    input Component component;
+    input output InstNode node;
+  algorithm
+    node := match node
+      case COMPONENT_NODE()
+        algorithm
+          arrayUpdate(node.component, 1, component);
+        then
+          node;
+    end match;
+  end updateComponent;
+
+  function replaceComponent
+    input Component component;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case COMPONENT_NODE()
+        algorithm
+          node.component := arrayCreate(1, component);
+        then
+          ();
+    end match;
+  end replaceComponent;
 
   function nodeType
     input InstNode node;
     output InstNodeType nodeType;
   algorithm
-    nodeType := match node
-      case INST_NODE() then node.nodeType;
-      else NORMAL_CLASS();
-    end match;
+    CLASS_NODE(nodeType = nodeType) := node;
   end nodeType;
 
   function setNodeType
@@ -189,13 +281,11 @@ uniontype InstNode
     input output InstNode node;
   algorithm
     () := match node
-      case INST_NODE()
+      case CLASS_NODE()
         algorithm
           node.nodeType := nodeType;
         then
           ();
-
-      else ();
     end match;
   end setNodeType;
 
@@ -203,15 +293,24 @@ uniontype InstNode
     input InstNode node;
     output SCode.Element definition;
   algorithm
-    INST_NODE(definition = definition) := node;
+    definition := match node
+      case CLASS_NODE() then node.definition;
+      case COMPONENT_NODE() then node.definition;
+    end match;
   end definition;
 
   function setDefinition
     input SCode.Element definition;
     input output InstNode node;
   algorithm
-    _ := match node
-      case INST_NODE()
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          node.definition := definition;
+        then
+          ();
+
+      case COMPONENT_NODE()
         algorithm
           node.definition := definition;
         then
@@ -219,74 +318,116 @@ uniontype InstNode
     end match;
   end setDefinition;
 
+  function info
+    input InstNode node;
+    output SourceInfo info;
+  algorithm
+    info := match node
+      case CLASS_NODE() then SCode.elementInfo(node.definition);
+      case COMPONENT_NODE() then SCode.elementInfo(node.definition);
+      else Absyn.dummyInfo;
+    end match;
+  end info;
+
   function clone
     input InstNode node;
     output InstNode clone;
   algorithm
     clone := match node
       local
-        array<Instance> i;
+        array<Class> i;
 
-      case INST_NODE()
+      case CLASS_NODE()
         algorithm
-          i := arrayCreate(1, Instance.clone(node.instance[1]));
-          //i := arrayCopy(node.instance);
+          i := arrayCreate(1, Class.clone(node.cls[1]));
+          //i := arrayCopy(node.cls);
         then
-          INST_NODE(node.name, node.definition, i, node.parentScope, node.nodeType);
+          CLASS_NODE(node.name, node.definition, i, node.parentScope, node.nodeType);
+
+      case COMPONENT_NODE()
+        algorithm
+          node.component := arrayCopy(node.component);
+        then
+          node;
 
       else node;
     end match;
   end clone;
 
-  function apply<ArgT>
+  function classApply<ArgT>
     input output InstNode node;
     input FuncType func;
     input ArgT arg;
 
     partial function FuncType
       input ArgT arg;
-      input output Instance node;
+      input output Class cls;
     end FuncType;
   algorithm
     () := match node
-      case INST_NODE()
+      case CLASS_NODE()
         algorithm
-          node.instance[1] := func(arg, node.instance[1]);
+          node.cls[1] := func(arg, node.cls[1]);
         then
           ();
     end match;
-  end apply;
+  end classApply;
 
-  function scopePrefix
-    input InstNode node;
-    input output Prefix
-    prefix = Prefix.NO_PREFIX();
+  function componentApply<ArgT>
+    input output InstNode node;
+    input FuncType func;
+    input ArgT arg;
+
+    partial function FuncType
+      input ArgT arg;
+      input output Component node;
+    end FuncType;
   algorithm
-    prefix := match node
+    () := match node
+      case COMPONENT_NODE()
+        algorithm
+          node.component[1] := func(arg, node.component[1]);
+        then
+          ();
+    end match;
+  end componentApply;
+
+  function prefix
+    input InstNode node;
+    input output Prefix pre = Prefix.NO_PREFIX();
+  algorithm
+    pre := match node
       local
         InstNodeType it;
 
-      case INST_NODE()
+      case CLASS_NODE()
         algorithm
           it := node.nodeType;
         then
           match it
             case InstNodeType.NORMAL_CLASS()
               algorithm
-                prefix := Prefix.addClass(node.name, prefix);
+                pre := Prefix.addClass(node.name, pre);
               then
-                scopePrefix(node.parentScope, prefix);
+                prefix(node.parentScope, pre);
 
             case InstNodeType.BASE_CLASS()
-              then scopePrefix(it.parent, prefix);
+              then prefix(it.parent, pre);
 
-            else prefix;
+            else pre;
           end match;
 
-      else prefix;
-    end match;
-  end scopePrefix;
+      case COMPONENT_NODE(parent = EMPTY_NODE()) then pre;
 
+      case COMPONENT_NODE()
+        algorithm
+          pre := Prefix.add(node.name, {}, DAE.T_UNKNOWN_DEFAULT, pre);
+        then
+          prefix(node.parent, pre);
+
+      else pre;
+    end match;
+  end prefix;
 
   function path
     input InstNode node;
@@ -296,7 +437,7 @@ uniontype InstNode
     InstNode parent;
   algorithm
     n := InstNode.name(node);
-    parent := InstNode.parentScope(node);
+    parent := InstNode.parent(node);
     p := Absyn.IDENT(n);
     p := match(InstNode.nodeType(parent))
       case InstNodeType.ROOT_CLASS() then p;

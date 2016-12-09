@@ -39,29 +39,28 @@ encapsulated package NFRecord
 "
 
 import NFBinding.Binding;
+import NFClass.Class;
 import NFComponent.Component;
-import NFComponentNode.ComponentNode;
 import NFDimension.Dimension;
 import NFEquation.Equation;
-import NFInstance.Instance;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
 
 protected
+import ClassInf;
 import ComponentReference;
 import Error;
 import Expression;
 import Inst = NFInst;
+import InstUtil;
+import List;
 import Lookup = NFLookup;
+import Static;
 import TypeCheck = NFTypeCheck;
 import Types;
-import ClassInf;
-import InstUtil;
-import Static;
-import NFTyping;
-import List;
+import Typing = NFTyping;
 
 public
 function typeRecordCall
@@ -71,8 +70,7 @@ function typeRecordCall
   input InstNode classNode;
   input DAE.Type classType;
   input SCode.Element cls;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode component;
   input SourceInfo info;
   output DAE.Exp typedExp;
   output DAE.Type ty;
@@ -80,7 +78,7 @@ function typeRecordCall
 protected
   String fn_name;
   Absyn.Path fn, fn_1;
-  ComponentNode fakeComponent;
+  InstNode fakeComponent;
   DAE.CallAttributes ca;
   DAE.Type resultType;
   list<DAE.FuncArg> funcArg;
@@ -105,7 +103,7 @@ algorithm
   DAE.T_FUNCTION(funcResultType = resultType) := ty;
 
   Absyn.FUNCTIONARGS(args = args) := functionArgs;
-  (dargs, dargsType, dargsVariability) := NFTyping.typeExps(args, scope, component, info);
+  (dargs, dargsType, dargsVariability) := Typing.typeExps(args, component, info);
   variability := List.fold(dargsVariability, Types.constAnd, DAE.C_CONST());
 
   (isBuiltin,builtin,fn_1) := Static.isBuiltinFunc(fn, ty);

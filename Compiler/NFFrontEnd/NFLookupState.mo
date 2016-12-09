@@ -33,7 +33,7 @@ encapsulated package NFLookupState
 
 import Absyn;
 import SCode;
-import NFLookup.LookupResult;
+import NFInstNode.InstNode;
 
 protected
 import Dump;
@@ -101,38 +101,38 @@ uniontype LookupState
 
   function assertClass
     input LookupState endState;
-    input LookupResult result;
+    input InstNode node;
     input Absyn.Path name;
     input SourceInfo info;
   algorithm
-    assertState(endState, LookupState.STATE_CLASS(), result,
+    assertState(endState, LookupState.STATE_CLASS(), node,
       LookupStateName.PATH(name), info);
   end assertClass;
 
   function assertFunction
     input LookupState endState;
-    input LookupResult result;
+    input InstNode node;
     input Absyn.ComponentRef name;
     input SourceInfo info;
   algorithm
-    assertState(endState, LookupState.STATE_FUNC(), result,
+    assertState(endState, LookupState.STATE_FUNC(), node,
       LookupStateName.CREF(name), info);
   end assertFunction;
 
   function assertComponent
     input LookupState endState;
-    input LookupResult result;
+    input InstNode node;
     input Absyn.ComponentRef name;
     input SourceInfo info;
   algorithm
-    assertState(endState, LookupState.STATE_COMP(), result,
+    assertState(endState, LookupState.STATE_COMP(), node,
       LookupStateName.CREF(name), info);
   end assertComponent;
 
   function assertState
     input LookupState endState;
     input LookupState expectedState;
-    input LookupResult result;
+    input InstNode node;
     input LookupStateName name;
     input SourceInfo info;
   algorithm
@@ -180,7 +180,8 @@ uniontype LookupState
       // c.C1...Cn.f is allowed.
       case (STATE_ERROR(errorState = STATE_COMP_FUNC()), STATE_FUNC())
         algorithm
-          (name_str, info2) := SCode.elementNameInfo(LookupResult.getDefinition(result));
+          name_str := InstNode.name(node);
+          info2 := InstNode.info(node);
           Error.addSourceMessage(Error.NON_CLASS_IN_COMP_FUNC_NAME, {name_str}, info2);
         then
           fail();
@@ -188,7 +189,7 @@ uniontype LookupState
       // Found class when looking up a composite component name.
       case (STATE_ERROR(errorState = STATE_COMP_FUNC()), STATE_COMP())
         algorithm
-          name_str := SCode.elementName(LookupResult.getDefinition(result));
+          name_str := InstNode.name(node);
           Error.addSourceMessage(Error.CLASS_IN_COMPOSITE_COMP_NAME,
             {name_str, LookupStateName.toString(name)}, info);
         then
@@ -197,7 +198,7 @@ uniontype LookupState
       // Found class via composite component name when actually looking for a class.
       case (STATE_ERROR(errorState = STATE_COMP_FUNC()), _)
         algorithm
-          name_str := SCode.elementName(LookupResult.getDefinition(result));
+          name_str := InstNode.name(node);
           Error.addSourceMessage(Error.LOOKUP_CLASS_VIA_COMP_COMP,
             {name_str, LookupStateName.toString(name)}, info);
         then
@@ -206,7 +207,7 @@ uniontype LookupState
       // Found class when looking up a composite component name.
       case (STATE_ERROR(errorState = STATE_COMP_COMP()), STATE_COMP())
         algorithm
-          name_str := SCode.elementName(LookupResult.getDefinition(result));
+          name_str := InstNode.name(node);
           Error.addSourceMessage(Error.CLASS_IN_COMPOSITE_COMP_NAME,
             {name_str, LookupStateName.toString(name)}, info);
         then
@@ -215,7 +216,7 @@ uniontype LookupState
       // Found class via composite component name when actually looking for a class.
       case (STATE_ERROR(errorState = STATE_COMP_COMP()), _)
         algorithm
-          name_str := SCode.elementName(LookupResult.getDefinition(result));
+          name_str := InstNode.name(node);
           Error.addSourceMessage(Error.LOOKUP_CLASS_VIA_COMP_COMP,
             {name_str, LookupStateName.toString(name)}, info);
         then
@@ -281,14 +282,14 @@ uniontype LookupState
     "Checks that the found name is allowed to be looked up given the current state
      of the name lookup, and returns the new state if it is. Otherwise it will
      print a (hopefully relevant) error message and fail."
-    input LookupResult result;
+    input InstNode node;
     input LookupState currentState;
     output LookupState nextState;
   protected
     LookupState entry_ty;
     SCode.Element el;
   algorithm
-    el := LookupResult.getDefinition(result);
+    el := InstNode.definition(node);
     // Check that the element is allowed to be accessed given its visibility.
     checkProtection(el, currentState);
     // Check that we're allowed to look in the current scope.
@@ -328,6 +329,13 @@ uniontype LookupState
 
     end match;
   end checkProtection;
+
+  function nodeState
+    input InstNode node;
+    output LookupState state;
+  algorithm
+    state := elementState(InstNode.definition(node));
+  end nodeState;
 
   function elementState
     "Returns the lookup state of a given element."

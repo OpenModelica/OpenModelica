@@ -894,7 +894,8 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("TypeCheck.checkBinaryOperationArrays: got a binary operation that is not handled yet", Absyn.dummyInfo);
+        assert(false, getInstanceName() + ": got a binary operation that is not
+            handled yet");
       then
         fail();
   end match;
@@ -1272,7 +1273,7 @@ algorithm
         s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " + t1Str + " tys: " + t2Str);
+        Debug.traceln("- " + getInstanceName() + " failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -1921,16 +1922,13 @@ algorithm
       case DAE.INDEX()
         algorithm
           ixty := Expression.typeof(sub.exp);
-          slicedims := NFTypeCheck.getTypeDims(ixty);
+          slicedims := getTypeDims(ixty);
           if listLength(slicedims) > 0 then
-            if listLength(slicedims) > 1 then
-              Error.addInternalError("Typing.applySubsToDims failed. Got a slice with more than one dim?. \n", Absyn.dummyInfo);
-              fail();
-            else
-              _::dims1 := dims1;
-              {dim} := slicedims;
-              outDims := dim::outDims;
-            end if;
+            assert(listLength(slicedims) == 1,
+              getInstanceName() + " failed. Got a slice with more than one dim?");
+            _::dims1 := dims1;
+            {dim} := slicedims;
+            outDims := dim::outDims;
           end if;
         then
           ();
@@ -2095,8 +2093,8 @@ algorithm
 
     case DAE.CREF_IDENT()
       algorithm
-        baseType := NFTypeCheck.underlyingType(inCref.identType);
-        dims := NFTypeCheck.getTypeDims(inCref.identType);
+        baseType := underlyingType(inCref.identType);
+        dims := getTypeDims(inCref.identType);
         dims := applySubsToDims(dims, inCref.subscriptLst);
         accDims := dims;
       then ();
@@ -2104,7 +2102,7 @@ algorithm
     case DAE.CREF_QUAL()
       algorithm
         (accDims,baseType) := getCrefType2(inCref.componentRef);
-        dims := NFTypeCheck.getTypeDims(inCref.identType);
+        dims := getTypeDims(inCref.identType);
         dims := applySubsToDims(dims, inCref.subscriptLst);
         accDims := listAppend(dims, accDims);
       then ();
@@ -2167,7 +2165,7 @@ algorithm
       Error.addInternalError("Invalid range expression. Non numeric range exressions can not have steps.", info);
       fail();
     end if;
-    Error.addInternalError("Enumurator ranges are not handled yet.", info);
+    Error.addInternalError("Enumerator ranges are not handled yet.", info);
     fail();
 
   else

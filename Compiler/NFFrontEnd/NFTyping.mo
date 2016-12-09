@@ -40,10 +40,9 @@ encapsulated package NFTyping
 
 import NFBinding.Binding;
 import NFComponent.Component;
-import NFComponentNode.ComponentNode;
 import NFDimension.Dimension;
 import NFEquation.Equation;
-import NFInstance.Instance;
+import NFClass.Class;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
@@ -58,24 +57,23 @@ import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Types;
 import ClassInf;
-import NFInstUtil;
+import InstUtil = NFInstUtil;
 import Static;
-import NFFunc;
+import Func = NFFunc;
 
 public
 function typeClass
   input output InstNode classNode;
-  input ComponentNode component;
         output DAE.Type ty;
 protected
   Component top_inst;
 algorithm
-  (classNode, ty) := typeClassNode(classNode, component);
+  (classNode, ty) := typeClassNode(classNode, classNode);
 end typeClass;
 
 function typeClassNode
   input output InstNode classNode;
-  input ComponentNode component;
+  input InstNode component;
         output DAE.Type ty;
 algorithm
   (classNode, ty) := typeComponents(classNode, component);
@@ -85,16 +83,16 @@ end typeClassNode;
 
 function typeComponents
   input output InstNode classNode;
-  input ComponentNode component;
+  input InstNode component;
         output DAE.Type ty;
 protected
-  Instance cls;
-  array<ComponentNode> components;
+  Class cls;
+  array<InstNode> components;
 algorithm
-  cls := InstNode.instance(classNode);
+  cls := InstNode.getClass(classNode);
 
   ty := match cls
-    case Instance.INSTANCED_CLASS(components = components)
+    case Class.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
           components[i] := typeComponent(components[i]);
@@ -102,23 +100,23 @@ algorithm
       then
         makeComplexType(classNode, cls, component);
 
-    case Instance.INSTANCED_BUILTIN()
+    case Class.INSTANCED_BUILTIN()
       then makeBuiltinType(cls, component);
 
     else
       algorithm
-        Error.addInternalError("Typing.typeComponents got uninstantiated class " +
-          InstNode.name(classNode) + "\n", Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got uninstantiated class " +
+          InstNode.name(classNode));
       then
         fail();
   end match;
 end typeComponents;
 
 function typeComponent
-  input output ComponentNode component;
+  input output InstNode component;
 protected
-  Component c = ComponentNode.component(component);
-  ComponentNode parent = ComponentNode.parent(component);
+  Component c = InstNode.component(component);
+  InstNode parent = InstNode.parent(component);
   array<Dimension> dims;
   list<DAE.Dimension> ty_dims;
   SourceInfo info;
@@ -138,25 +136,18 @@ algorithm
 
         (node, ty) := typeClassNode(c.classInst, component);
         ty := Expression.liftArrayLeftList(ty, ty_dims);
-        component := ComponentNode.updateComponent(Component.setType(ty, c), component);
+        component := InstNode.updateComponent(Component.setType(ty, c), component);
       then
         ();
 
     // A component that has already been typed, skip it.
     case Component.TYPED_COMPONENT() then ();
 
-    case Component.EXTENDS_NODE()
-      algorithm
-        c.node := typeComponents(c.node, component);
-        component := ComponentNode.updateComponent(c, component);
-      then
-        ();
-
     // A component that hasn't been instantiated. This might be a package
     // constant, in which case it should be instantiated and typed.
     case Component.COMPONENT_DEF()
       algorithm
-        component := Inst.instComponent(component, ComponentNode.EMPTY_NODE(),
+        component := Inst.instComponent(component, InstNode.EMPTY_NODE(),
             InstNode.EMPTY_NODE());
         component := typeComponent(component);
       then
@@ -165,8 +156,8 @@ algorithm
     // Any other component shouldn't show up here, give an error.
     else
       algorithm
-        Error.addInternalError("Typing.typeComponent got uninstantiated component " +
-          ComponentNode.name(component), Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got uninstantiated component " +
+          InstNode.name(component));
       then
         ();
   end match;
@@ -174,7 +165,7 @@ end typeComponent;
 
 function typeDimension
   input output Dimension dimension;
-  input ComponentNode component;
+  input InstNode component;
   input SourceInfo info;
 algorithm
   dimension := match dimension
@@ -185,8 +176,7 @@ algorithm
 
     case Dimension.UNTYPED_DIM(dimension = dim_exp)
       algorithm
-        typed_exp := typeExp(dim_exp, Component.Scope.RELATIVE_COMP(0),
-          component, info);
+        typed_exp := typeExp(dim_exp, component, info);
 
         dim := match typed_exp
           case DAE.ICONST() then DAE.DIM_INTEGER(typed_exp.integer);
@@ -202,14 +192,14 @@ end typeDimension;
 function typeComponentBindings
   input output InstNode classNode;
 protected
-  Instance cls;
-  array<ComponentNode> components;
+  Class cls;
+  array<InstNode> components;
   InstNode scope;
 algorithm
-  cls := InstNode.instance(classNode);
+  cls := InstNode.getClass(classNode);
 
   _ := match cls
-    case Instance.INSTANCED_CLASS(components = components)
+    case Class.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
           components[i] := typeComponentBinding(components[i]);
@@ -217,21 +207,21 @@ algorithm
       then
         ();
 
-    case Instance.INSTANCED_BUILTIN() then ();
+    case Class.INSTANCED_BUILTIN() then ();
 
     else
       algorithm
-        Error.addInternalError("Typing.typeBindings got uninstantiated class " +
-          InstNode.name(classNode) + "\n", Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got uninstantiated class " +
+          InstNode.name(classNode));
       then
         fail();
   end match;
 end typeComponentBindings;
 
 function typeComponentBinding
-  input output ComponentNode component;
+  input output InstNode component;
 protected
-  Component c = ComponentNode.component(component);
+  Component c = InstNode.component(component);
 algorithm
   () := match c
     local
@@ -249,23 +239,16 @@ algorithm
 
         if not referenceEq(binding, c.binding) then
           c.binding := binding;
-          component := ComponentNode.updateComponent(c, component);
+          component := InstNode.updateComponent(c, component);
         end if;
-      then
-        ();
-
-    case Component.EXTENDS_NODE()
-      algorithm
-        c.node := typeComponentBindings(c.node);
-        component := ComponentNode.updateComponent(c, component);
       then
         ();
 
     // Any other component shouldn't show up here, give an error.
     else
       algorithm
-        Error.addInternalError("Typing.typeBindings got uninstantiated component " +
-          ComponentNode.name(component), Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got uninstantiated component " +
+          InstNode.name(component));
       then
         fail();
   end match;
@@ -273,7 +256,7 @@ end typeComponentBinding;
 
 function typeBinding
   input output Binding binding;
-  input ComponentNode component;
+  input InstNode component;
 algorithm
   binding := match binding
     local
@@ -284,7 +267,7 @@ algorithm
 
     case Binding.UNTYPED_BINDING(bindingExp = aexp)
       algorithm
-        (dexp, ty, variability) := typeExp(aexp, binding.scope, ComponentNode.parent(component), binding.info);
+        (dexp, ty, variability) := typeExp(aexp, binding.scope, binding.info);
       then
         Binding.TYPED_BINDING(dexp, ty, variability, binding.propagatedDims, binding.info);
 
@@ -293,8 +276,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("Typing.typeBinding got uninstantiated binding.",
-          Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got uninstantiated binding");
       then
         fail();
 
@@ -303,34 +285,34 @@ end typeBinding;
 
 function typeSections
   input output InstNode classNode;
-  input ComponentNode component;
+  input InstNode component;
 protected
-  Instance cls, typed_cls;
+  Class cls, typed_cls;
   array<Component> components;
   list<Equation> eq, ieq;
   list<list<Statement>> alg, ialg;
   InstNode scope;
 algorithm
-  cls := InstNode.instance(classNode);
+  cls := InstNode.getClass(classNode);
 
   _ := match cls
-    case Instance.INSTANCED_CLASS()
+    case Class.INSTANCED_CLASS()
       algorithm
         eq := typeEquations(cls.equations, component);
         ieq := typeEquations(cls.initialEquations, component);
         alg := typeAlgorithms(cls.algorithms, component);
         ialg := typeAlgorithms(cls.initialAlgorithms, component);
-        typed_cls := Instance.setSections(eq, ieq, alg, ialg, cls);
-        classNode := InstNode.setInstance(typed_cls, classNode);
+        typed_cls := Class.setSections(eq, ieq, alg, ialg, cls);
+        classNode := InstNode.updateClass(typed_cls, classNode);
       then
         ();
 
-    case Instance.INSTANCED_BUILTIN() then ();
+    case Class.INSTANCED_BUILTIN() then ();
 
     else
       algorithm
-        Error.addInternalError("Typing.typeSections got uninstantiated class " +
-          InstNode.name(classNode) + "\n", Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got uninstantiated class " +
+          InstNode.name(classNode));
       then
         fail();
   end match;
@@ -338,14 +320,14 @@ end typeSections;
 
 function typeEquations
   input output list<Equation> equations;
-  input ComponentNode component;
+  input InstNode component;
 algorithm
   equations := list(typeEquation(eq, component) for eq in equations);
 end typeEquations;
 
 function typeEquation
   input output Equation eq;
-  input ComponentNode component;
+  input InstNode component;
 algorithm
   eq := match eq
     local
@@ -360,22 +342,22 @@ algorithm
 
     case Equation.UNTYPED_EQUALITY()
       algorithm
-        (e1, ty1) := typeExp(eq.lhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
-        (e2, ty2) := typeExp(eq.rhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e1, ty1) := typeExp(eq.lhs, component, eq.info);
+        (e2, ty2) := typeExp(eq.rhs, component, eq.info);
       then
         Equation.EQUALITY(e1, e2, ty1, eq.info);
 
     case Equation.UNTYPED_CONNECT()
       algorithm
-        (cr1, ty1) := typeCref(eq.lhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
-        (cr2, ty2) := typeCref(eq.rhs, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (cr1, ty1) := typeCref(eq.lhs, component, eq.info);
+        (cr2, ty2) := typeCref(eq.rhs, component, eq.info);
       then
         Equation.CONNECT(cr1, ty1, cr2, ty2, eq.info);
 
     /*
     case Equation.UNTYPED_FOR()
       algorithm
-        (Ope1, opty1) := typeExpOption(eq.range, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (Ope1, opty1) := typeExpOption(eq.range, component, eq.info);
         eqs1 := list(typeEquation(eq, component) for eq in eq.body);
 
         if isSome(Ope1) then
@@ -389,7 +371,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, eq.info);
+              e1 := typeExp(cond, component, eq.info);
               eqs1 := list(typeEquation(beq, component) for beq in body);
             then (e1, eqs1);
           end match
@@ -402,7 +384,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, eq.info);
+              e1 := typeExp(cond, component, eq.info);
               eqs1 := list(typeEquation(beq, component) for beq in body);
             then (e1, eqs1);
           end match
@@ -412,28 +394,28 @@ algorithm
 
     case Equation.UNTYPED_ASSERT()
       algorithm
-        (e1) := typeExp(eq.condition, NFComponent.DEFAULT_SCOPE, component, eq.info);
-        (e2) := typeExp(eq.message, NFComponent.DEFAULT_SCOPE, component, eq.info);
-        (e3) := typeExp(eq.level, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e1) := typeExp(eq.condition, component, eq.info);
+        (e2) := typeExp(eq.message, component, eq.info);
+        (e3) := typeExp(eq.level, component, eq.info);
       then
         Equation.ASSERT(e1, e2, e3, eq.info);
 
     case Equation.UNTYPED_TERMINATE()
       algorithm
-        (e1) := typeExp(eq.message, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e1) := typeExp(eq.message, component, eq.info);
       then
         Equation.TERMINATE(e1, eq.info);
 
     case Equation.UNTYPED_REINIT()
       algorithm
-        (cr1, ty1) := typeCref(eq.cref, NFComponent.DEFAULT_SCOPE, component, eq.info);
-        (e1) := typeExp(eq.reinitExp, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (cr1, ty1) := typeCref(eq.cref, component, eq.info);
+        (e1) := typeExp(eq.reinitExp, component, eq.info);
       then
         Equation.REINIT(cr1, e1, eq.info);
 
     case Equation.UNTYPED_NORETCALL()
       algorithm
-        (e1) := typeExp(eq.exp, NFComponent.DEFAULT_SCOPE, component, eq.info);
+        (e1) := typeExp(eq.exp, component, eq.info);
       then
         Equation.NORETCALL(e1, eq.info);
 
@@ -443,21 +425,21 @@ end typeEquation;
 
 function typeAlgorithms
   input output list<list<Statement>> algorithms;
-  input ComponentNode component;
+  input InstNode component;
 algorithm
   algorithms := list(typeAlgorithm(alg, component) for alg in algorithms);
 end typeAlgorithms;
 
 function typeAlgorithm
   input output list<Statement> alg;
-  input ComponentNode component;
+  input InstNode component;
 algorithm
   alg := list(typeStatement(stmt, component) for stmt in alg);
 end typeAlgorithm;
 
 function typeStatement
   input output Statement st;
-  input ComponentNode component;
+  input InstNode component;
 algorithm
   st := match st
     local
@@ -472,8 +454,8 @@ algorithm
 
     case Statement.UNTYPED_ASSIGNMENT()
       algorithm
-        (e1, ty1) := typeExp(st.lhs, NFComponent.DEFAULT_SCOPE, component, st.info);
-        (e2, ty2) := typeExp(st.rhs, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e1, ty1) := typeExp(st.lhs, component, st.info);
+        (e2, ty2) := typeExp(st.rhs, component, st.info);
       then
         Statement.ASSIGNMENT(e1, e2, st.info);
 
@@ -482,7 +464,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, st.info);
+              e1 := typeExp(cond, component, st.info);
               sts1 := list(typeStatement(bst, component) for bst in body);
             then (e1, sts1);
           end match
@@ -495,7 +477,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, NFComponent.DEFAULT_SCOPE, component, st.info);
+              e1 := typeExp(cond, component, st.info);
               sts1 := list(typeStatement(bst, component) for bst in body);
             then (e1, sts1);
           end match
@@ -505,34 +487,34 @@ algorithm
 
     case Statement.UNTYPED_ASSERT()
       algorithm
-        (e1) := typeExp(st.condition, NFComponent.DEFAULT_SCOPE, component, st.info);
-        (e2) := typeExp(st.message, NFComponent.DEFAULT_SCOPE, component, st.info);
-        (e3) := typeExp(st.level, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e1) := typeExp(st.condition, component, st.info);
+        (e2) := typeExp(st.message, component, st.info);
+        (e3) := typeExp(st.level, component, st.info);
       then
         Statement.ASSERT(e1, e2, e3, st.info);
 
     case Statement.UNTYPED_TERMINATE()
       algorithm
-        (e1) := typeExp(st.message, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e1) := typeExp(st.message, component, st.info);
       then
         Statement.TERMINATE(e1, st.info);
 
     case Statement.UNTYPED_REINIT()
       algorithm
-        (cr1, ty1) := typeCref(st.cref, NFComponent.DEFAULT_SCOPE, component, st.info);
-        (e1) := typeExp(st.reinitExp, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (cr1, ty1) := typeCref(st.cref, component, st.info);
+        (e1) := typeExp(st.reinitExp, component, st.info);
       then
         Statement.REINIT(cr1, e1, st.info);
 
     case Statement.UNTYPED_NORETCALL()
       algorithm
-        (e1) := typeExp(st.exp, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e1) := typeExp(st.exp, component, st.info);
       then
         Statement.NORETCALL(e1, st.info);
 
     case Statement.UNTYPED_WHILE()
       algorithm
-        (e1) := typeExp(st.condition, NFComponent.DEFAULT_SCOPE, component, st.info);
+        (e1) := typeExp(st.condition, component, st.info);
         sts1 := list(typeStatement(bst, component) for bst in st.body);
       then
         Statement.WHILE(e1, sts1, st.info);
@@ -550,30 +532,30 @@ end typeStatement;
 
 function makeComplexType
   input InstNode classNode;
-  input Instance classInst;
-  input ComponentNode component;
+  input Class classInst;
+  input InstNode component;
   output DAE.Type ty;
 protected
-  array<ComponentNode> components;
+  array<InstNode> components;
   ClassInf.State s;
   SCode.Element el;
   SCode.Restriction r;
   Absyn.Path p;
   list<DAE.Var> varLst = {};
-  ComponentNode cn;
+  InstNode cn;
   Component c;
   DAE.Type t;
   DAE.Binding binding;
 algorithm
-  Instance.INSTANCED_CLASS(components = components) := classInst;
+  Class.INSTANCED_CLASS(components = components) := classInst;
 
   for i in arrayLength(components):-1:1 loop
      cn := components[i];
-     c := ComponentNode.component(cn);
+     c := InstNode.component(cn);
      t := Component.getType(c);
 
      varLst := DAE.TYPES_VAR(
-                 ComponentNode.name(cn),
+                 InstNode.name(cn),
                  Component.attr2DaeAttr(Component.getAttributes(c)),
                  t,
                  DAE.UNBOUND(), // TODO FIXME, do we need the binding?
@@ -588,8 +570,8 @@ algorithm
 end makeComplexType;
 
 function makeBuiltinType
-  input Instance classInst;
-  input ComponentNode component;
+  input Class classInst;
+  input InstNode component;
   output DAE.Type ty;
 algorithm
   ty := match classInst
@@ -598,7 +580,7 @@ algorithm
       list<Modifier> type_mods;
       list<DAE.Var> type_attr;
 
-    case Instance.INSTANCED_BUILTIN(name = name, attributes = type_mods)
+    case Class.INSTANCED_BUILTIN(name = name, attributes = type_mods)
       algorithm
         type_attr := list(makeTypeAttribute(tm, component) for tm in type_mods);
       then
@@ -616,7 +598,7 @@ end makeBuiltinType;
 
 function makeTypeAttribute
   input Modifier modifier;
-  input ComponentNode component;
+  input InstNode component;
   output DAE.Var attribute;
 algorithm
   attribute := match modifier
@@ -630,15 +612,14 @@ algorithm
 
     case Modifier.MODIFIER(binding = mod_binding as Binding.UNTYPED_BINDING(bindingExp = aexp))
       algorithm
-        (dexp, ty, c) := typeExp(aexp, mod_binding.scope, component, modifier.info);
+        (dexp, ty, c) := typeExp(aexp, mod_binding.scope, modifier.info);
         binding := DAE.EQBOUND(dexp, NONE(), c, DAE.BindingSource.BINDING_FROM_START_VALUE());
       then
         DAE.TYPES_VAR(modifier.name, DAE.dummyAttrVar, ty, binding, NONE());
 
     else
       algorithm
-        Error.addInternalError("Typing.makeTypeAttribute: Bad modifier",
-            Absyn.dummyInfo);
+        assert(false, getInstanceName() + ": Bad modifier");
       then
         fail();
 
@@ -647,8 +628,7 @@ end makeTypeAttribute;
 
 function typeExp
   input Absyn.Exp untypedExp;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp typedExp;
   output DAE.Type ty;
@@ -675,26 +655,26 @@ algorithm
 
     case Absyn.Exp.CREF()
       algorithm
-        (cref, ty, variability) := typeCref(untypedExp.componentRef, scope, component, info);
+        (cref, ty, variability) := typeCref(untypedExp.componentRef, scope, info);
       then
         (DAE.Exp.CREF(cref, ty), ty, variability);
 
     case Absyn.Exp.ARRAY()
       algorithm
-        (typedExp, ty, variability) := typeArray(untypedExp.arrayExp, scope, component, info);
+        (typedExp, ty, variability) := typeArray(untypedExp.arrayExp, scope, info);
       then
         (typedExp, ty, variability);
 
     case Absyn.Exp.RANGE()
       algorithm
-        (typedExp, ty, variability) := typeRange(untypedExp.start, untypedExp.step, untypedExp.stop, scope, component, info);
+        (typedExp, ty, variability) := typeRange(untypedExp.start, untypedExp.step, untypedExp.stop, scope, info);
       then
         (typedExp, ty, variability);
 
     case Absyn.Exp.BINARY()
       algorithm
-        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, component, info);
-        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, component, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, info);
         op := translateOperator(untypedExp.op);
 
         (typedExp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, op, e2, ty2);
@@ -703,7 +683,7 @@ algorithm
 
     case Absyn.Exp.UNARY()  // Unary +, -
       algorithm
-        (e1, ty1, var1) := typeExp(untypedExp.exp, scope, component, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp, scope, info);
         op := translateOperator(untypedExp.op);
         (typedExp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, op);
       then
@@ -711,8 +691,8 @@ algorithm
 
     case Absyn.Exp.LBINARY()
       algorithm
-        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, component, info);
-        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, component, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, info);
         op := translateOperator(untypedExp.op);
 
         (typedExp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, op, e2, ty2);
@@ -721,7 +701,7 @@ algorithm
 
     case Absyn.Exp.LUNARY()  // Unary not
       algorithm
-        (e1, ty1, var1) := typeExp(untypedExp.exp, scope, component, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp, scope, info);
         op := translateOperator(untypedExp.op);
         (typedExp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, op);
       then
@@ -729,8 +709,8 @@ algorithm
 
     case Absyn.Exp.RELATION()
       algorithm
-        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, component, info);
-        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, component, info);
+        (e1, ty1, var1) := typeExp(untypedExp.exp1, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.exp2, scope, info);
         op := translateOperator(untypedExp.op);
 
         (typedExp, ty) := TypeCheck.checkRelationOperation(e1, ty1, op, e2, ty2);
@@ -739,14 +719,13 @@ algorithm
 
     case Absyn.Exp.CALL()
       algorithm
-        (typedExp, ty, variability) := NFFunc.typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, scope, component, info);
+        (typedExp, ty, variability) := Func.typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, scope, info);
       then
         (typedExp, ty, variability);
 
     else
       algorithm
-        Error.addInternalError("Typing.typeExp got unknown expression.",
-            Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got unknown expression");
       then
         fail();
   end match;
@@ -787,8 +766,7 @@ end translateOperator;
 
 function typeArray
   input list<Absyn.Exp> expressions;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp arrayExp;
   output DAE.Type arrayType = DAE.T_UNKNOWN_DEFAULT;
@@ -800,7 +778,7 @@ protected
   DAE.Type elem_ty;
 algorithm
   for e in expressions loop
-    (dexp, elem_ty, var) := typeExp(e, scope, component, info);
+    (dexp, elem_ty, var) := typeExp(e, scope, info);
     variability := Types.constAnd(var, variability);
     expl := dexp :: expl;
   end for;
@@ -811,8 +789,7 @@ end typeArray;
 
 function typeExps
   input list<Absyn.Exp> expressions;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output list<DAE.Exp> daeExps = {};
   output list<DAE.Type> daeTys = {};
@@ -823,7 +800,7 @@ protected
   DAE.Type elem_ty;
 algorithm
   for e in expressions loop
-    (dexp, elem_ty, var) := typeExp(e, scope, component, info);
+    (dexp, elem_ty, var) := typeExp(e, scope, info);
 
     daeExps := dexp :: daeExps;
     daeTys := elem_ty :: daeTys;
@@ -839,8 +816,7 @@ function typeRange
   input Absyn.Exp inStart;
   input Option<Absyn.Exp> inStep;
   input Absyn.Exp inEnd;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Exp outRange;
   output DAE.Type outType;
@@ -855,20 +831,20 @@ protected
   Boolean numeric, isreal, enum;
 algorithm
 
-  (dstart, strtype, variability) := typeExp(inStart,scope,component,info);
-  (dend, endtype, var) := typeExp(inEnd,scope,component,info);
+  (dstart, strtype, variability) := typeExp(inStart,scope,info);
+  (dend, endtype, var) := typeExp(inEnd,scope,info);
   variability := Types.constAnd(var, variability);
 
   if isSome(inStep) then
     SOME(astep) := inStep;
-    (dstep, stptype, var) := typeExp(astep,scope,component,info);
+    (dstep, stptype, var) := typeExp(astep,scope,info);
     variability := Types.constAnd(var, variability);
 
     dopt_step := SOME(dstep);
-    outType := NFTypeCheck.getRangeType(dstart, strtype, dopt_step, SOME(stptype), dend, endtype, info);
+    outType := TypeCheck.getRangeType(dstart, strtype, dopt_step, SOME(stptype), dend, endtype, info);
   else
     dopt_step := NONE();
-    outType := NFTypeCheck.getRangeType(dstart, strtype, dopt_step, NONE(), dend, endtype, info);
+    outType := TypeCheck.getRangeType(dstart, strtype, dopt_step, NONE(), dend, endtype, info);
   end if;
 
   outRange := DAE.RANGE(outType, dstart, dopt_step, dend);
@@ -876,41 +852,39 @@ end typeRange;
 
 function typeCref
   input Absyn.ComponentRef untypedCref;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.ComponentRef typedCref;
   output DAE.Type ty;
   output DAE.Const variability;
 protected
-  ComponentNode node;
+  InstNode node;
   Prefix prefix;
   Component.Attributes attr;
   DAE.VarKind vr;
 algorithm
 
   // Look up the whole cref, and type the found component.
-  (node, prefix) := Lookup.lookupComponent(untypedCref, scope, component, info);
+  (node, prefix) := Lookup.lookupComponent(untypedCref, scope, info);
   node := typeComponent(node);
 
-  typedCref := translateCref(untypedCref, node, scope, component, info);
+  typedCref := translateCref(untypedCref, node, scope, info);
   typedCref := Prefix.prefixCref(typedCref, prefix);
-  ty := NFTypeCheck.getCrefType(typedCref);
+  ty := TypeCheck.getCrefType(typedCref);
 
-  Component.TYPED_COMPONENT(attributes = attr) := ComponentNode.component(node);
+  Component.TYPED_COMPONENT(attributes = attr) := InstNode.component(node);
   Component.ATTRIBUTES(variability = vr) := attr;
-  variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
+  variability := variabilityToConst(InstUtil.daeToSCodeVariability(vr));
 
 end typeCref;
 
 function translateCref
   input Absyn.ComponentRef absynCref;
-  input ComponentNode crefComp;
-  input Component.Scope scope;
-  input ComponentNode topComp;
+  input InstNode crefComp;
+  input InstNode topComp;
   input SourceInfo info;
   output DAE.ComponentRef daeCref;
-  output ComponentNode preCrefComp;
+  output InstNode preCrefComp;
 algorithm
   () := match absynCref
     local
@@ -920,24 +894,24 @@ algorithm
 
     case Absyn.CREF_IDENT()
       algorithm
-        ty := Component.getType(ComponentNode.component(crefComp));
-        subs := list(typeSubscript(sub,scope,topComp,info) for sub in absynCref.subscripts);
+        ty := Component.getType(InstNode.component(crefComp));
+        subs := list(typeSubscript(sub,topComp,info) for sub in absynCref.subscripts);
         daeCref := DAE.CREF_IDENT(absynCref.name, ty, subs);
-        preCrefComp := ComponentNode.parent(crefComp);
+        preCrefComp := InstNode.parent(crefComp);
       then ();
 
     case Absyn.CREF_QUAL()
       algorithm
-        (cref, preCrefComp):= translateCref(absynCref.componentRef,crefComp,scope,topComp,info);
-        ty := Component.getType(ComponentNode.component(preCrefComp));
-        subs := list(typeSubscript(sub,scope,topComp,info) for sub in absynCref.subscripts);
+        (cref, preCrefComp):= translateCref(absynCref.componentRef,crefComp,topComp,info);
+        ty := Component.getType(InstNode.component(preCrefComp));
+        subs := list(typeSubscript(sub,topComp,info) for sub in absynCref.subscripts);
         daeCref := DAE.CREF_QUAL(absynCref.name, ty, subs, cref);
-        preCrefComp := ComponentNode.parent(preCrefComp);
+        preCrefComp := InstNode.parent(preCrefComp);
       then ();
 
     case Absyn.CREF_FULLYQUALIFIED()
       algorithm
-        (daeCref,preCrefComp) := translateCref(absynCref.componentRef,crefComp,scope,topComp,info);
+        (daeCref,preCrefComp) := translateCref(absynCref.componentRef,crefComp,topComp,info);
       then
         ();
 
@@ -947,7 +921,7 @@ algorithm
     */
     else
       algorithm
-        Error.addInternalError("Typing.translateCref failed. \n", Absyn.dummyInfo);
+        assert(false, getInstanceName() + " got unknown cref");
       then
         fail();
 
@@ -956,8 +930,7 @@ end translateCref;
 
 function typeSubscript
   input Absyn.Subscript inSub;
-  input Component.Scope scope;
-  input ComponentNode component;
+  input InstNode scope;
   input SourceInfo info;
   output DAE.Subscript outSub;
 algorithm
@@ -968,10 +941,10 @@ algorithm
       Boolean valid;
     case Absyn.SUBSCRIPT()
       algorithm
-        exp := typeExp(inSub.subscript,scope,component,info);
+        exp := typeExp(inSub.subscript,scope,info);
         ty := Expression.typeof(exp);
-        ty := NFTypeCheck.underlyingType(ty);
-        valid := NFTypeCheck.isInteger(ty) or NFTypeCheck.isBoolean(ty) or NFTypeCheck.isEnum(ty);
+        ty := TypeCheck.underlyingType(ty);
+        valid := TypeCheck.isInteger(ty) or TypeCheck.isBoolean(ty) or TypeCheck.isEnum(ty);
         if not valid then
           Error.addInternalError("Subscript is not a valid type. \n", info);
           fail();

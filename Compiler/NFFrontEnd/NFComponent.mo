@@ -70,8 +70,6 @@ constant Component.Attributes OUTPUT_ATTR =
      DAE.NOT_INNER_OUTER(),
      DAE.PUBLIC());
 
-constant Component.Scope DEFAULT_SCOPE = Component.Scope.RELATIVE_COMP(0);
-
 uniontype Component
   uniontype Attributes
     record ATTRIBUTES
@@ -84,12 +82,6 @@ uniontype Component
       DAE.VarVisibility visibility;
     end ATTRIBUTES;
   end Attributes;
-
-  uniontype Scope
-    record RELATIVE_COMP
-      Integer level;
-    end RELATIVE_COMP;
-  end Scope;
 
   record COMPONENT_DEF
     Element definition;
@@ -111,20 +103,6 @@ uniontype Component
     Component.Attributes attributes;
   end TYPED_COMPONENT;
 
-  record EXTENDS_NODE
-    InstNode node;
-  end EXTENDS_NODE;
-
-  function isNamedComponent
-    input Component component;
-    output Boolean isNamed;
-  algorithm
-    isNamed := match component
-      case EXTENDS_NODE() then false;
-      else true;
-    end match;
-  end isNamedComponent;
-
   function classInstance
     input Component component;
     output InstNode classInst;
@@ -132,7 +110,6 @@ uniontype Component
     classInst := match component
       case UNTYPED_COMPONENT() then component.classInst;
       case TYPED_COMPONENT() then component.classInst;
-      case EXTENDS_NODE() then component.node;
     end match;
   end classInstance;
 
@@ -150,12 +127,6 @@ uniontype Component
       case TYPED_COMPONENT()
         algorithm
           component.classInst := classInst;
-        then
-          ();
-
-      case EXTENDS_NODE()
-        algorithm
-          component.node := classInst;
         then
           ();
 
