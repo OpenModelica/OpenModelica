@@ -85,6 +85,7 @@ namespace IAEX
     void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF
     QApplication* getApplication() { return app_; }
     QWidget* getMainWindow() { return mainWindow; }
+    bool FileOpenEventTriggered = false;  // for startup only
 
   private:
     void convertDrModelica();            // Added 2006-03-21 AF

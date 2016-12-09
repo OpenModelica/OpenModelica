@@ -45,6 +45,7 @@
 #include "stylesheet.h"
 #include "inputcell.h"
 #include "notebookcommands.h"
+#include <QSplashScreen>
 
 #include <cstdlib>
 
@@ -96,6 +97,7 @@ namespace IAEX
             {
               QFileOpenEvent * fileOpenEvent = static_cast<QFileOpenEvent *>(event);
               if(fileOpenEvent) {
+                ca->FileOpenEventTriggered = true;
                 ca->open(fileOpenEvent->file());
 
                 return true;
@@ -214,32 +216,44 @@ namespace IAEX
       }
       else
       {
-        // 2006-02-27 AF, use environment variable to find DrModelica
-        // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-        QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
-        //QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/QuickTour/HelloWorld.onb";
+        QIcon icon(":/Resources/OMNotebook_icon.svg");
+        QSplashScreen splash(icon.pixmap(300,400));
+        splash.show();
+        app_->processEvents();
+        splash.finish(mainWindow);
+        if (FileOpenEventTriggered)
+        {
 
-        if( dir.exists( drmodelica ))
-          open(drmodelica);
-        else if( dir.exists( "DrModelica/DrModelica.onb" ))
-          open( "DrModelica/DrModelica.onb" );
+        }
         else
         {
-          cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
-          cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
-
-          // NB
-          drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+          // 2006-02-27 AF, use environment variable to find DrModelica
+          // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
+          QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+          //QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/QuickTour/HelloWorld.onb";
 
           if( dir.exists( drmodelica ))
             open(drmodelica);
-          else if( dir.exists( "DrModelica/DrModelica.nb" ))
-            open( "DrModelica/DrModelica.nb" );
+          else if( dir.exists( "DrModelica/DrModelica.onb" ))
+            open( "DrModelica/DrModelica.onb" );
           else
           {
-            cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
-            cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
-            open(QString::null);
+            cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
+            cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+
+            // NB
+            drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+
+            if( dir.exists( drmodelica ))
+              open(drmodelica);
+            else if( dir.exists( "DrModelica/DrModelica.nb" ))
+              open( "DrModelica/DrModelica.nb" );
+            else
+            {
+              cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
+              cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
+              open(QString::null);
+            }
           }
         }
       }
