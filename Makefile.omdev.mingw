@@ -141,12 +141,12 @@ ifeq ($(CONFIG_REVISION),)
 else # revision is not empty, update it if it changed
 	@if test -f revision.h; \
 	then \
-		echo "#define CONFIG_REVISION \"OpenModelica $(CONFIG_REVISION) $(PLATFORM_ARCH)\"" > revision.h.tmp; diff revision.h revision.h.tmp > /dev/null; \
+		echo "#define CONFIG_REVISION \"$(CONFIG_REVISION) $(PLATFORM_ARCH)\"" > revision.h.tmp; diff revision.h revision.h.tmp > /dev/null; \
 		if [ $$? -eq 0 ]; then echo No change in revision; rm revision.h.tmp; \
 		else echo Revision has changed. updating revision.h; \mv revision.h.tmp revision.h; touch Compiler/runtime/omc_config.h; \
 		fi; \
 	else \
-		echo "#define CONFIG_REVISION \"OpenModelica $(CONFIG_REVISION) $(PLATFORM_ARCH)\"" > revision.h; echo Retrieved revision number. revision.h was created; \
+		echo "#define CONFIG_REVISION \"$(CONFIG_REVISION) $(PLATFORM_ARCH)\"" > revision.h; echo Retrieved revision number. revision.h was created; \
 	fi;
 endif
 
