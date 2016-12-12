@@ -888,16 +888,17 @@ void TransformationsWidget::fetchDefinedInEquations(const OMVariable &variable)
   /* Clear the defined in tree. */
   clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
   /* add defined in equations */
-  for (int i=0; i<variable.definedIn.size(); i++)
-  {
+  for (int i=0; i<variable.definedIn.size(); i++) {
     OMEquation *equation = getOMEquation(mEquations, variable.definedIn[i]);
-    QStringList values;
-    values << QString::number(variable.definedIn[i]) << equation->section << equation->toString();
-    QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
-    pDefinedInTreeItem->setToolTip(0, values[0]);
-    pDefinedInTreeItem->setToolTip(1, values[1]);
-    pDefinedInTreeItem->setToolTip(2, values[2]);
-    mpDefinedInEquationsTreeWidget->addTopLevelItem(pDefinedInTreeItem);
+    if (equation) {
+      QStringList values;
+      values << QString::number(variable.definedIn[i]) << equation->section << equation->toString();
+      QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
+      pDefinedInTreeItem->setToolTip(0, values[0]);
+      pDefinedInTreeItem->setToolTip(1, values[1]);
+      pDefinedInTreeItem->setToolTip(2, values[2]);
+      mpDefinedInEquationsTreeWidget->addTopLevelItem(pDefinedInTreeItem);
+    }
   }
 }
 
@@ -906,16 +907,17 @@ void TransformationsWidget::fetchUsedInEquations(const OMVariable &variable)
   /* Clear the used in tree. */
   clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
   /* add used in equations */
-  foreach (int index, variable.usedIn)
-  {
+  foreach (int index, variable.usedIn) {
     OMEquation *equation = getOMEquation(mEquations, index);
-    QStringList values;
-    values << QString::number(index) << equation->section << equation->toString();
-    QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
-    pUsedInTreeItem->setToolTip(0, values[0]);
-    pUsedInTreeItem->setToolTip(1, values[1]);
-    pUsedInTreeItem->setToolTip(2, values[2]);
-    mpUsedInEquationsTreeWidget->addTopLevelItem(pUsedInTreeItem);
+    if (equation) {
+      QStringList values;
+      values << QString::number(index) << equation->section << equation->toString();
+      QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
+      pUsedInTreeItem->setToolTip(0, values[0]);
+      pUsedInTreeItem->setToolTip(1, values[1]);
+      pUsedInTreeItem->setToolTip(2, values[2]);
+      mpUsedInEquationsTreeWidget->addTopLevelItem(pUsedInTreeItem);
+    }
   }
 }
 
@@ -1020,6 +1022,9 @@ QTreeWidgetItem* TransformationsWidget::findEquationTreeItem(int equationIndex)
 void TransformationsWidget::fetchEquationData(int equationIndex)
 {
   OMEquation *equation = getOMEquation(mEquations, equationIndex);
+  if (!equation) {
+    return;
+  }
   /* fetch defines */
   fetchDefines(equation);
   /* fetch depends */
@@ -1060,12 +1065,12 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
   }
 #endif
 
-  if (!equation->info.isValid)
+  if (!equation->info.isValid) {
     return;
+  }
   /* open the model with and go to the equation line */
   QFile file(equation->info.file);
-  if (file.exists())
-  {
+  if (file.exists()) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     file.open(QIODevice::ReadOnly);
@@ -1074,7 +1079,6 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     file.close();
     mpTransformationsEditor->goToLineNumber(equation->info.lineStart);
   }
-
 }
 
 void TransformationsWidget::fetchDefines(OMEquation *equation)
@@ -1082,16 +1086,17 @@ void TransformationsWidget::fetchDefines(OMEquation *equation)
   /* Clear the defines tree. */
   clearTreeWidgetItems(mpDefinesVariableTreeWidget);
   /* add defines */
-  foreach (QString define, equation->defines)
-  {
-    QStringList values;
-    values << define;
-    QString toolTip = define;
-    QTreeWidgetItem *pDefineTreeItem = new QTreeWidgetItem(values);
-    pDefineTreeItem->setToolTip(0, toolTip);
-    mpDefinesVariableTreeWidget->addTopLevelItem(pDefineTreeItem);
+  if (equation) {
+    foreach (QString define, equation->defines) {
+      QStringList values;
+      values << define;
+      QString toolTip = define;
+      QTreeWidgetItem *pDefineTreeItem = new QTreeWidgetItem(values);
+      pDefineTreeItem->setToolTip(0, toolTip);
+      mpDefinesVariableTreeWidget->addTopLevelItem(pDefineTreeItem);
+    }
+    mpDefinesVariableTreeWidget->resizeColumnToContents(0);
   }
-  mpDefinesVariableTreeWidget->resizeColumnToContents(0);
 }
 
 void TransformationsWidget::fetchDepends(OMEquation *equation)
@@ -1099,16 +1104,17 @@ void TransformationsWidget::fetchDepends(OMEquation *equation)
   /* Clear the depends tree. */
   clearTreeWidgetItems(mpDependsVariableTreeWidget);
   /* add depends */
-  foreach (QString depend, equation->depends)
-  {
-    QStringList values;
-    values << depend;
-    QString toolTip = depend;
-    QTreeWidgetItem *pDependTreeItem = new QTreeWidgetItem(values);
-    pDependTreeItem->setToolTip(0, toolTip);
-    mpDependsVariableTreeWidget->addTopLevelItem(pDependTreeItem);
+  if (equation) {
+    foreach (QString depend, equation->depends) {
+      QStringList values;
+      values << depend;
+      QString toolTip = depend;
+      QTreeWidgetItem *pDependTreeItem = new QTreeWidgetItem(values);
+      pDependTreeItem->setToolTip(0, toolTip);
+      mpDependsVariableTreeWidget->addTopLevelItem(pDependTreeItem);
+    }
+    mpDependsVariableTreeWidget->resizeColumnToContents(0);
   }
-  mpDependsVariableTreeWidget->resizeColumnToContents(0);
 }
 
 void TransformationsWidget::fetchOperations(OMEquation *equation)
@@ -1117,12 +1123,14 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* add operations */
   if (hasOperationsEnabled) {
-    foreach (OMOperation *op, equation->ops) {
-      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
-      mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
-      // set label item
-      Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
-      mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
+    if (equation) {
+      foreach (OMOperation *op, equation->ops) {
+        QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
+        mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+        // set label item
+        Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
+        mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
+      }
     }
   } else {
     QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
