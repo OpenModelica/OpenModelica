@@ -863,7 +863,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
     if(data->simulationInfo->initial)
     {
-      warningStreamPrint(LOG_NLS, 0, "proper start-values for some of the following iteration variables might help");
+      warningStreamPrint(LOG_NLS_V, 0, "proper start-values for some of the following iteration variables might help");
     }
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
       int done=0;
@@ -874,7 +874,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+        warningStreamPrint(LOG_NLS_V, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
                                      mData->realVarsData[k].info.name,
                                      mData->realVarsData[k].attribute.start,
                                      mData->realVarsData[k].attribute.nominal);
@@ -882,7 +882,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
       if (!done)
       {
-        warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(LOG_NLS_V, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
     messageCloseWarning(LOG_NLS);

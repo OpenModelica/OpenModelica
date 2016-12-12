@@ -69,6 +69,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_RT",
   "LOG_SIMULATION",
   "LOG_SOLVER",
+  "LOG_SOLVER_V",
   "LOG_SOLVER_CONTEXT",
   "LOG_SOTI",
   "LOG_STATS",
@@ -113,6 +114,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "additional information regarding real-time processes",/* LOG_RT */
   "additional information about simulation process",     /* LOG_SIMULATION */
   "additional information about solver process",         /* LOG_SOLVER */
+  "verbose information about the integration process",   /* LOG_SOLVER_V */
   "context information during the solver process",       /* LOG_SOLVER_CONTEXT" */
   "final solution of the initialization",                /* LOG_SOTI */
   "additional statistics about timer/events/solver",     /* LOG_STATS */
