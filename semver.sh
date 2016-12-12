@@ -25,6 +25,9 @@ elif test -z "$SOURCE_REVISION" && test -e .git; then
     fi
     SOURCE_REVISION="$RELEASE_MAJOR.$RELEASE_MINOR.$RELEASE_PATCH-$PRERELEASE.$COMMIT_SINCE_LAST+$HASH"
   fi
+  if test ! -z "$1"; then
+    SOURCE_REVISION="$1 $SOURCE_REVISION"
+  fi
 fi
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
