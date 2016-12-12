@@ -8261,6 +8261,9 @@ algorithm
     case Absyn.CALL(function_=Absyn.CREF_IDENT(name="pder"),functionArgs=Absyn.FUNCTIONARGS(args={Absyn.CREF(Absyn.CREF_IDENT(name=newFieldName)),_}))
     then
       List.unionElt(newFieldName,inFieldNames);
+    case Absyn.CALL(function_=Absyn.CREF_IDENT(name="pder"),functionArgs=Absyn.FUNCTIONARGS(args={Absyn.CREF(Absyn.CREF_IDENT(name=newFieldName)),_,_}))
+    then
+      List.unionElt(newFieldName,inFieldNames);
     else
       inFieldNames;
   end match;
@@ -8615,14 +8618,15 @@ algorithm
         i = -1;
       end if;
     then
+      //TODO: add check wheter the field in extrapolateField arg is in given domain.
       Absyn.BINARY(
                Absyn.BINARY(
                  Absyn.INTEGER(2),
                  Absyn.MUL(),
-                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(inN+i))::subscripts))
+                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(inN))::subscripts))
                ),
                Absyn.SUB(),
-               Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(inN+2*i))::subscripts))
+               Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(inN+i))::subscripts))
              );
     else
       inExp;
@@ -8777,7 +8781,7 @@ algorithm
   outDiscretizedEQs := match (bl, br)
     //case ((_,false),(_,false)) //no pder()
     case (false,false) //no pder()
-    then
+    then   //TODO: both branches are the same now, when using ghost cells, simplify!
       list(newEQFun(i, lhs_exp, rhs_exp, domainCr, N, false, fieldLst, comment, info) for i in 1:N);
     else  //contains some pder()
       list(newEQFun(i, lhs_exp, rhs_exp, domainCr, N, false, fieldLst, comment, info) for i in 1:N);
@@ -8844,7 +8848,7 @@ algorithm
       Absyn.Ident name, fieldDomainName;
       list<Absyn.Subscript> subscripts;
       Absyn.ComponentRef fieldCr;
-      Absyn.Exp exp, leftVar, rightVar;
+      Absyn.Exp exp, leftVar, actualVar, rightVar;
     case  Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts={})))
     //coordinate x
     then
@@ -8863,13 +8867,13 @@ algorithm
       then
         exp;
     case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
-    //pder
+    //pder - first derivative
       equation
         if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
           failVar = true;
           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
         end if;
-        skip = true;
+        //skip = true
         leftVar = (if i == 1 then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostL"), subscripts))
                    else
@@ -8890,6 +8894,40 @@ algorithm
               Absyn.CREF(Absyn.CREF_QUAL(domName,{},Absyn.CREF_IDENT("dx",{})))
             )
           );
+    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x")),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+    //pder - second derivative
+      equation
+        if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
+          failVar = true;
+          Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
+        end if;
+        //skip = true
+        leftVar = (if i == 1 then
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostL"), subscripts))
+                   else
+                     Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
+                  );
+        actualVar = Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
+        rightVar = (if i == N then
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostR"), subscripts))
+                   else
+                     Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
+                  );
+        then
+          Absyn.BINARY(
+            Absyn.BINARY(
+              Absyn.BINARY(
+                leftVar, Absyn.SUB(), Absyn.BINARY(
+                  Absyn.INTEGER(2),Absyn.MUL(),actualVar
+                )
+              ), Absyn.ADD(),rightVar
+            ), Absyn.DIV(), Absyn.BINARY(
+                Absyn.CREF(Absyn.CREF_QUAL(domName,{},Absyn.CREF_IDENT("dx",{}))),Absyn.POW(),Absyn.INTEGER(2)
+            )
+          );
+
+
+
     case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
     //pder with differentiating wrt wrong variable
       equation
