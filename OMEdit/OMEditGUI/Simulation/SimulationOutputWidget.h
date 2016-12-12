@@ -44,6 +44,7 @@
 #include <QTextBrowser>
 #include <QProcess>
 #include <QDateTime>
+#include <QTcpServer>
 
 class Label;
 class SimulationProcessThread;
@@ -86,6 +87,8 @@ public:
   bool isOutputStructured() {return mIsOutputStructured;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
   QPlainTextEdit* getCompilationOutputTextBox() {return mpCompilationOutputTextBox;}
+  QTcpServer* getTcpServer() {return mpTcpServer;}
+  bool isSocketDisconnected() {return mSocketDisconnected;}
   SimulationProcessThread* getSimulationProcessThread() {return mpSimulationProcessThread;}
   void addGeneratedFileTab(QString fileName);
   void writeSimulationMessage(SimulationMessage *pSimulationMessage);
@@ -101,9 +104,14 @@ private:
   SimulationOutputTree *mpSimulationOutputTree;
   QPlainTextEdit *mpCompilationOutputTextBox;
   ArchivedSimulationItem *mpArchivedSimulationItem;
+  QTcpServer *mpTcpServer;
+  bool mSocketDisconnected;
   SimulationProcessThread *mpSimulationProcessThread;
   QDateTime mResultFileLastModifiedDateTime;
 public slots:
+  void createSimulationProgressSocket();
+  void readSimulationProgress();
+  void socketDisconnected();
   void compilationProcessStarted();
   void writeCompilationOutput(QString output, QColor color);
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);

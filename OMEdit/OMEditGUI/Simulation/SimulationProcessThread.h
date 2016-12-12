@@ -57,8 +57,6 @@ private:
   bool mIsCompilationProcessRunning;
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessRunning;
-  int mSimulationProcessExitCode;
-  QProcess::ExitStatus mSimulationProcessExitStatus;
 
   void compileModel();
   void runSimulationExecutable();
@@ -71,9 +69,6 @@ private slots:
   void readSimulationStandardOutput();
   void readSimulationStandardError();
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void createSimulationProgressSocket();
-  void readSimulationProgress();
-  void socketDisconnected();
 signals:
   void sendCompilationStarted();
   void sendCompilationOutput(QString, QColor);

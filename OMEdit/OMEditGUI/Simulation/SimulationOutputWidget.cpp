@@ -48,6 +48,7 @@
 #include <QMenu>
 #include <QDesktopWidget>
 #include <QClipboard>
+#include <QTcpSocket>
 
 /*!
  * \class SimulationOutputTree
@@ -302,6 +303,11 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions, this);
   MainWindow::instance()->getSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
+  // start the tcp server
+  mpTcpServer = new QTcpServer;
+  mSocketDisconnected = true;
+  mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
+  connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
   // create the thread
   mpSimulationProcessThread = new SimulationProcessThread(this);
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationStarted()), SLOT(compilationProcessStarted()));
@@ -320,6 +326,9 @@ SimulationOutputWidget::~SimulationOutputWidget()
 {
   if (mpSimulationOutputHandler) {
     delete mpSimulationOutputHandler;
+  }
+  if (mpTcpServer) {
+    delete mpTcpServer;
   }
 }
 
@@ -344,9 +353,10 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 }
 
 /*!
-  Writes the simulation output in a formatted text form.\n
-  \param - pSimulationMessage - the simulation output message.
-  */
+ * \brief SimulationOutputWidget::writeSimulationMessage
+ * Writes the simulation output in a formatted text form.\n
+ * \param pSimulationMessage - the simulation output message.
+ */
 void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulationMessage)
 {
   static QString lastSream;
@@ -385,9 +395,57 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
 }
 
 /*!
-  Slot activated when SimulationProcessThread sendCompilationStarted signal is raised.\n
-  Updates the progress label, bar and button controls.
-  */
+ * \brief SimulationOutputWidget::createSimulationProgressSocket
+ * Slot activated when QTcpServer newConnection SIGNAL is raised.\n
+ * Accepts the incoming connection and connects to readyRead SIGNAL of QTcpSocket.
+ */
+void SimulationOutputWidget::createSimulationProgressSocket()
+{
+  if (sender()) {
+    QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
+    if (pTcpServer && pTcpServer->hasPendingConnections()) {
+      QTcpSocket *pTcpSocket = pTcpServer->nextPendingConnection();
+      mSocketDisconnected = false;
+      connect(pTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
+      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(socketDisconnected()));
+      disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
+    }
+  }
+}
+
+/*!
+ * \brief SimulationProcessThread::readSimulationProgress
+ * Slot activated when QTcpSocket readyRead or disconnected SIGNAL is raised.\n
+ * Sends the recieved data to xml parser.
+ */
+void SimulationOutputWidget::readSimulationProgress()
+{
+  if (sender()) {
+    QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
+    if (pTcpSocket) {
+      QString output = QString(pTcpSocket->readAll());
+      if (!output.isEmpty()) {
+        writeSimulationOutput(output, StringHandler::Unknown, false);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief SimulationOutputWidget::socketDisconnected
+ * Slot activated when QTcpSocket disconnected SIGNAL is raised.\n
+ * Writes the exit status and exit code of the simulation process.
+ */
+void SimulationOutputWidget::socketDisconnected()
+{
+  mSocketDisconnected = true;
+}
+
+/*!
+ * \brief SimulationOutputWidget::compilationProcessStarted
+ * Slot activated when SimulationProcessThread sendCompilationStarted signal is raised.\n
+ * Updates the progress label, bar and button controls.
+ */
 void SimulationOutputWidget::compilationProcessStarted()
 {
   mpProgressLabel->setText(tr("Compiling <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
@@ -398,9 +456,12 @@ void SimulationOutputWidget::compilationProcessStarted()
 }
 
 /*!
-  Slot activated when SimulationProcessThread sendCompilationStandardOutput signal is raised.\n
-  Writes the compilation standard output to the compilation output text box.
-  */
+ * \brief SimulationOutputWidget::writeCompilationOutput
+ * Slot activated when SimulationProcessThread sendCompilationStandardOutput signal is raised.\n
+ * Writes the compilation standard output to the compilation output text box.
+ * \param output
+ * \param color
+ */
 void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color)
 {
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
@@ -412,9 +473,12 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
 }
 
 /*!
-  Slot activated when SimulationProcessThread sendCompilationFinished signal is raised.\n
-  Calls the Transformational Debugger or Algorithmic Debugger depending on the user selections.
-  */
+ * \brief SimulationOutputWidget::compilationProcessFinished
+ * Slot activated when SimulationProcessThread sendCompilationFinished signal is raised.\n
+ * Calls the Transformational Debugger or Algorithmic Debugger depending on the user selections.
+ * \param exitCode
+ * \param exitStatus
+ */
 void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mpProgressLabel->setText(tr("Compilation of <b>%1</b> is finished.").arg(mSimulationOptions.getClassName()));
@@ -433,9 +497,10 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
 }
 
 /*!
-  Slot activated when SimulationProcessThread sendSimulationStarted signal is raised.\n
-  Updates the progress label, bar and button controls.
-  */
+ * \brief SimulationOutputWidget::simulationProcessStarted
+ * Slot activated when SimulationProcessThread sendSimulationStarted signal is raised.\n
+ * Updates the progress label, bar and button controls.
+ */
 void SimulationOutputWidget::simulationProcessStarted()
 {
   mpProgressLabel->setText(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
@@ -506,9 +571,12 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
 }
 
 /*!
-  Slot activated when SimulationProcessThread sendSimulationFinished signal is raised.\n
-  Reads the result variables, populates the variables browser and shows the plotting view.
-  */
+ * \brief SimulationOutputWidget::simulationProcessFinished
+ * Slot activated when SimulationProcessThread sendSimulationFinished signal is raised.\n
+ * Reads the result variables, populates the variables browser and shows the plotting view.
+ * \param exitCode
+ * \param exitStatus
+ */
 void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   Q_UNUSED(exitCode);
@@ -521,9 +589,10 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
 }
 
 /*!
-  Slot activated when mpCancelButton clicked signal is raised.\n
-  Cancels a running compilaiton/simulation by killing the compilation/simulation process.
-  */
+ * \brief SimulationOutputWidget::cancelCompilationOrSimulation
+ * Slot activated when mpCancelButton clicked signal is raised.\n
+ * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
+ */
 void SimulationOutputWidget::cancelCompilationOrSimulation()
 {
   if (mpSimulationProcessThread->isCompilationProcessRunning()) {
@@ -543,13 +612,14 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
 }
 
 /*!
-  Slot activated when a link is clicked from simulation output.\n
-  Parses the url and loads the TransformationsWidget with the used equation.
-  \param url - the url that is clicked
-  */
+ * \brief SimulationOutputWidget::openTransformationBrowser
+ * Slot activated when a link is clicked from simulation output.\n
+ * Parses the url and loads the TransformationsWidget with the used equation.
+ * \param url - the url that is clicked
+ */
 /*
-  <a href="omedittransformationsbrowser://model_info.json?index=4></a>"
-  */
+ * <a href="omedittransformationsbrowser://model_info.json?index=4></a>"
+ */
 void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 {
   /* read the file name */

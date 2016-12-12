@@ -85,6 +85,7 @@ public:
   Sleep() {}
   ~Sleep() {}
   static void sleep(unsigned long secs) {QThread::sleep(secs);}
+  static void msleep(unsigned long msecs) {QThread::msleep(msecs);}
 protected:
   void run() {}
 };

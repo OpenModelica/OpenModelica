@@ -34,8 +34,6 @@
 #include "SimulationProcessThread.h"
 #include "Options/OptionsDialog.h"
 
-#include <QTcpSocket>
-#include <QTcpServer>
 #include <QDir>
 
 SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget)
@@ -45,10 +43,12 @@ SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimula
   mIsCompilationProcessRunning = false;
   mpSimulationProcess = 0;
   mIsSimulationProcessRunning = false;
-  mSimulationProcessExitCode = 0;
-  mSimulationProcessExitStatus = QProcess::NormalExit;
 }
 
+/*!
+ * \brief SimulationProcessThread::run
+ * Reimplementation of QThread::run()
+ */
 void SimulationProcessThread::run()
 {
   if (!mpSimulationOutputWidget->getSimulationOptions().isReSimulate()) {
@@ -59,16 +59,20 @@ void SimulationProcessThread::run()
   exec();
 }
 
+/*!
+ * \brief SimulationProcessThread::compileModel
+ * Compiles the simulation model.
+ */
 void SimulationProcessThread::compileModel()
 {
   mpCompilationProcess = new QProcess;
   SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   mpCompilationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
-  connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
-  connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()), Qt::DirectConnection);
+  connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()), Qt::DirectConnection);
+  connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()), Qt::DirectConnection);
+  connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)), Qt::DirectConnection);
   QString numProcs;
   if (simulationOptions.getNumberOfProcessors() == 0) {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
@@ -98,20 +102,21 @@ void SimulationProcessThread::compileModel()
 #endif
 }
 
+/*!
+ * \brief SimulationProcessThread::runSimulationExecutable
+ * Runs the simulation executable.
+ */
 void SimulationProcessThread::runSimulationExecutable()
 {
   mpSimulationProcess = new QProcess;
   SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
-  connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
-  connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
-  connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-  connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-  QTcpServer *pTcpServer = new QTcpServer;
-  pTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
-  connect(pTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
-  QStringList args(QString("-port=").append(QString::number(pTcpServer->serverPort())));
+  connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
+  connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()), Qt::DirectConnection);
+  connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()), Qt::DirectConnection);
+  connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)), Qt::DirectConnection);
+  QStringList args(QString("-port=").append(QString::number(mpSimulationOutputWidget->getTcpServer()->serverPort())));
   args << "-logFormat=xmltcp" << simulationOptions.getSimulationFlags();
   // start the executable
   QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName());
@@ -129,9 +134,10 @@ void SimulationProcessThread::runSimulationExecutable()
 }
 
 /*!
-  Slot activated when mpCompilationProcess started signal is raised.\n
-  Notifies SimulationOutputWidget about the start of the compilation by emitting the sendCompilationStarted SIGNAL.
-  */
+ * \brief SimulationProcessThread::compilationProcessStarted
+ * Slot activated when mpCompilationProcess started signal is raised.\n
+ * Notifies SimulationOutputWidget about the start of the compilation by emitting the sendCompilationStarted SIGNAL.
+ */
 void SimulationProcessThread::compilationProcessStarted()
 {
   mIsCompilationProcessRunning = true;
@@ -139,28 +145,33 @@ void SimulationProcessThread::compilationProcessStarted()
 }
 
 /*!
-  Slot activated when mpCompilationProcess readyReadStandardOutput signal is raised.\n
-  Notifies SimulationOutputWidget about the standard output of the compilation process by emitting the sendCompilationOutput SIGNAL.
-  */
+ * \brief SimulationProcessThread::readCompilationStandardOutput
+ * Slot activated when mpCompilationProcess readyReadStandardOutput signal is raised.\n
+ * Notifies SimulationOutputWidget about the standard output of the compilation process by emitting the sendCompilationOutput SIGNAL.
+ */
 void SimulationProcessThread::readCompilationStandardOutput()
 {
   emit sendCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), Qt::black);
 }
 
 /*!
-  Slot activated when mpCompilationProcess readyReadStandardError signal is raised.\n
-  Notifies SimulationOutputWidget about the standard error of the compilation process by emitting the sendCompilationOutput SIGNAL.
-  */
+ * \brief SimulationProcessThread::readCompilationStandardError
+ * Slot activated when mpCompilationProcess readyReadStandardError signal is raised.\n
+ * Notifies SimulationOutputWidget about the standard error of the compilation process by emitting the sendCompilationOutput SIGNAL.
+ */
 void SimulationProcessThread::readCompilationStandardError()
 {
   emit sendCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
 }
 
 /*!
-  Slot activated when mpCompilationProcess finished signal is raised.\n
-  Notifies SimulationOutputWidget about the exit status by emitting the sendCompilationOutput SIGNAL.\n
-  If the mpCompilationProcess finished normally then run the simulation executable.
-  */
+ * \brief SimulationProcessThread::compilationProcessFinished
+ * Slot activated when mpCompilationProcess finished signal is raised.\n
+ * Notifies SimulationOutputWidget about the exit status by emitting the sendCompilationOutput SIGNAL.\n
+ * If the mpCompilationProcess finished normally then run the simulation executable.
+ * \param exitCode
+ * \param exitStatus
+ */
 void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
@@ -183,9 +194,10 @@ void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess:
 }
 
 /*!
-  Slot activated when mpSimulationProcess started signal is raised.\n
-  Notifies SimulationOutputWidget about the start of the simulation by emitting the sendCompilationStarted SIGNAL.
-  */
+ * \brief SimulationProcessThread::simulationProcessStarted
+ * Slot activated when mpSimulationProcess started signal is raised.\n
+ * Notifies SimulationOutputWidget about the start of the simulation by emitting the sendCompilationStarted SIGNAL.
+ */
 void SimulationProcessThread::simulationProcessStarted()
 {
   mIsSimulationProcessRunning = true;
@@ -193,89 +205,45 @@ void SimulationProcessThread::simulationProcessStarted()
 }
 
 /*!
-  Slot activated when mpSimulationProcess readyReadStandardOutput signal is raised.\n
-  Notifies SimulationOutputWidget about the standard output of the simulation process by emitting the sendSimulationStarted SIGNAL.
-  */
+ * \brief SimulationProcessThread::readSimulationStandardOutput
+ * Slot activated when mpSimulationProcess readyReadStandardOutput signal is raised.\n
+ * Notifies SimulationOutputWidget about the standard output of the simulation process by emitting the sendSimulationStarted SIGNAL.
+ */
 void SimulationProcessThread::readSimulationStandardOutput()
 {
   emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown, true);
 }
 
 /*!
-  Slot activated when mpSimulationProcess readyReadStandardError signal is raised.\n
-  Notifies SimulationOutputWidget about the standard error of the simulation process by emitting the sendSimulationOutput SIGNAL.
-  */
+ * \brief SimulationProcessThread::readSimulationStandardError
+ * Slot activated when mpSimulationProcess readyReadStandardError signal is raised.\n
+ * Notifies SimulationOutputWidget about the standard error of the simulation process by emitting the sendSimulationOutput SIGNAL.
+ */
 void SimulationProcessThread::readSimulationStandardError()
 {
   emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error, true);
 }
 
 /*!
-  Slot activated when mpSimulationProcess finished signal is raised.\n
-  Notifies SimulationOutputWidget about the exit status by emitting the sendSimulationFinished SIGNAL.
-  */
+ * \brief SimulationProcessThread::simulationProcessFinished
+ * Slot activated when mpSimulationProcess finished signal is raised.\n
+ * Notifies SimulationOutputWidget about the exit status by emitting the sendSimulationFinished SIGNAL.
+ * \param exitCode
+ * \param exitStatus
+ */
 void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
+  while (!mpSimulationOutputWidget->isSocketDisconnected()) {
+    Sleep::msleep(1);
+  }
   mIsSimulationProcessRunning = false;
-  mSimulationProcessExitCode = exitCode;
-  mSimulationProcessExitStatus = exitStatus;
-  emit sendSimulationFinished(exitCode, exitStatus);
-}
-
-/*!
- * \brief SimulationProcessThread::createSimulationProgressSocket
- * Slot activated when QTcpServer newConnection SIGNAL is raised.\n
- * Accepts the incoming connection and connects to readyRead SIGNAL of QTcpSocket.
- */
-void SimulationProcessThread::createSimulationProgressSocket()
-{
-  if (sender()) {
-    QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
-    if (pTcpServer && pTcpServer->hasPendingConnections()) {
-      QTcpSocket *pTcpSocket = pTcpServer->nextPendingConnection();
-      QString output = QString(pTcpSocket->readAll());
-      if (!output.isEmpty()) {
-        emit sendSimulationOutput(output, StringHandler::Unknown, false);
-      }
-      connect(pTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
-      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(readSimulationProgress()));
-      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(socketDisconnected()));
-      disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
-    }
-  }
-}
-
-/*!
- * \brief SimulationProcessThread::readSimulationProgress
- * Slot activated when QTcpSocket readyRead or disconnected SIGNAL is raised.\n
- * Sends the recieved data to xml parser.
- */
-void SimulationProcessThread::readSimulationProgress()
-{
-  if (sender()) {
-    QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
-    if (pTcpSocket) {
-      QString output = QString(pTcpSocket->readAll());
-      if (!output.isEmpty()) {
-        emit sendSimulationOutput(output, StringHandler::Unknown, false);
-      }
-    }
-  }
-}
-
-/*!
- * \brief SimulationProcessThread::socketDisconnected
- * Slot activated when QTcpSocket disconnected SIGNAL is raised.\n
- * Writes the exit status and exit code of the simulation process.
- */
-void SimulationProcessThread::socketDisconnected()
-{
-  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(mSimulationProcessExitCode));
-  if (mSimulationProcessExitStatus == QProcess::NormalExit && mSimulationProcessExitCode == 0) {
+  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
+  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
   } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
     emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
   } else {
     emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
   }
+  emit sendSimulationFinished(exitCode, exitStatus);
 }
