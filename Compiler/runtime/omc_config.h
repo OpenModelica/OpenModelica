@@ -155,9 +155,9 @@
 #endif /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 
 #ifdef CONFIG_REVISION
-#define CONFIG_VERSION "OpenModelica " CONFIG_REVISION
+#define CONFIG_VERSION CONFIG_REVISION
 #else
-#define CONFIG_VERSION "OpenModelica unknown"
+#define CONFIG_VERSION "unknown"
 #endif
 
 
