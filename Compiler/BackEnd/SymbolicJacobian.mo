@@ -1188,9 +1188,9 @@ algorithm
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        if debug then execStat("generateSparsePattern -> postProcess2 "); end if;
-
         nonZeroElements = List.lengthListElements(sparsepattern);
+        if debug then execStat("generateSparsePattern -> transpose done "); end if;
+
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           // dump statistics
           dumpSparsePatternStatistics(nonZeroElements,sparsepatternT);
@@ -1199,20 +1199,23 @@ algorithm
           //execStat("generateSparsePattern -> nonZeroElements: " + intString(nonZeroElements) + " " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         end if;
 
-
         // translated to DAE.ComRefs
         translated = list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in sparsepattern);
         sparsetuple = list((cr,t) threaded for cr in depCompRefs, t in translated);
         translated = list(list(arrayGet(depCompRefs, i) for i in lst) for lst in sparsepatternT);
         sparsetupleT = list((cr,t) threaded for cr in inDepCompRefs, t in translated);
 
-        // get coloring based on sparse pattern
-        coloredArray = createColoring(sparseArray, sparseArrayT, sizeN, adjSize);
+        if debug then execStat("generateSparsePattern -> coloring start "); end if;
+        if not Flags.isSet(Flags.DISABLE_COLORING) then
+          // get coloring based on sparse pattern
+          coloredArray = createColoring(sparseArray, sparseArrayT, sizeN, adjSize);
+          coloring = list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in coloredArray);
+        else
+          //without coloring
+          coloring = list({arrayGet(inDepCompRefs, i)} for i in 1:sizeN);
+        end if;
+        if debug then execStat("generateSparsePattern -> coloring done "); end if;
 
-        coloring = list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in coloredArray);
-
-        //without coloring
-        //coloring = List.transposeList({inDepCompRefs});
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
         end if;

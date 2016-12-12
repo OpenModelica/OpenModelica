@@ -511,6 +511,8 @@ constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(168, "evalParameterDump", false,
   Util.gettext("Dumps information for evaluating parameters."));
 constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(169, "frontEndUnitCheck", false,
   Util.gettext("Checks the consistency of units in equation."));
+constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(170, "disableColoring", false,
+  Util.gettext("Disables coloring algorithm while spasity detection."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -687,7 +689,8 @@ constant list<DebugFlag> allDebugFlags = {
   LIST_REVERSE_WRONG_ORDER,
   PARTITION_INITIALIZATION,
   EVAL_PARAM_DUMP,
-  NF_UNITCHECK
+  NF_UNITCHECK,
+  DISABLE_COLORING
 };
 
 public
