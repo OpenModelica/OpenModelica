@@ -206,7 +206,7 @@ $(INITIALIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(INITIALIZATIONH
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(RESULTSOBJSPATH):%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
-	$(CXX) -c $(CFLAGS) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 $(SIMOBJSPATH):%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CXX) -c -Ilinearization/ $(CXXFLAGS) -o $@ $<
