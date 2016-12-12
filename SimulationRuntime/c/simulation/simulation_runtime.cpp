@@ -1020,7 +1020,7 @@ static void messageXMLTCP(int type, int stream, int indentNext, char *msg, int s
     int i;
     xmlTcpStream << "\">\n";
     for (i=1; i<=*indexes; i++) {
-      xmlTcpStream << "<used index=\"" << indexes[i] << "%d\" />\n";
+      xmlTcpStream << "<used index=\"" << indexes[i] << "\" />\n";
     }
     if (!indentNext) {
       numOpenTags--;
