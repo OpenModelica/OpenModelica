@@ -302,3 +302,5 @@ MOC_DIR = ../generatedfiles/moc
 RCC_DIR = ../generatedfiles/rcc
 
 ICON = Resources/icons/omedit.icns
+
+QMAKE_INFO_PLIST = Info.plist
