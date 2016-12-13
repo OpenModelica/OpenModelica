@@ -279,10 +279,11 @@ protected function traverseComponents1 "author: Frenkel TUD 2012-05"
   output Integer strongComponentIndexOut=strongComponentIndexIn;
 protected
   constant Boolean debug = false;
+  Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
 algorithm
   strongComponentIndexOut := match(inComp)
     case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      if debugFlag then
         print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\nTo disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
       end if;
      then (strongComponentIndexOut + 1);
@@ -304,17 +305,19 @@ algorithm
       true = getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
+        if debugFlag then
+          Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
+        end if;
         fail();
       end if;
       if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
-        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        if debugFlag then
           print("\nTearing deactivated by user.\n");
         end if;
         Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
         fail();
       end if;
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      if debugFlag then
         print("\nTearing of LINEAR component\nUse Flag '-d=tearingdumpV' for more details\n\n");
       end if;
       // TODO: Remove when cpp runtime ready for doLinearTearing
@@ -331,17 +334,19 @@ algorithm
       false = getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
+        if debugFlag then
+          Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
+        end if;
         fail();
       end if;
       if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
-        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        if debugFlag then
           print("\nTearing deactivated by user.\n");
         end if;
         Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
         fail();
       end if;
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      if debugFlag then
         print("\nTearing of NONLINEAR component\nUse Flag '-d=tearingdumpV' for more details\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
