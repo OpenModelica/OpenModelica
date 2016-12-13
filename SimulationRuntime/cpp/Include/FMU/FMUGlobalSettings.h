@@ -40,7 +40,7 @@ public:
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "euler"; }
     virtual void setSelectedSolver(string) {}
-    virtual string    getSelectedLinSolver() { return DEFAULT_NLS; }
+    virtual string    getSelectedLinSolver() { return "dgesvSolver"; }
     virtual void setSelectedLinSolver(string) {}
     virtual string    getSelectedNonLinSolver() { return DEFAULT_NLS; }
     virtual void setSelectedNonLinSolver(string) {}

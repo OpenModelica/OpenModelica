@@ -23,11 +23,11 @@ extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* setting
 extern "C" ISolver* createRTRK(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSettings);
 extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
-extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+extern "C" IAlgLoopSolver* createKinsol(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
-extern "C" IAlgLoopSolver* createNewton(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+extern "C" IAlgLoopSolver* createNewton(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createNewtonSettings();
-extern "C" IAlgLoopSolver* createBroyden(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+extern "C" IAlgLoopSolver* createBroyden(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createBroydenSettings();
 extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects);
 
@@ -116,7 +116,7 @@ shared_ptr<ISolverSettings> VxWorksFactory::LoadSolverSettings(string solver_nam
     return shared_ptr<ISolverSettings>(solver_settings);
 }
 
-shared_ptr<IAlgLoopSolver> VxWorksFactory::LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
+shared_ptr<IAlgLoopSolver> VxWorksFactory::LoadAlgLoopSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
 {
   IAlgLoopSolver* algloopsolver;
   if (solver_name.compare("createNewton") == 0)

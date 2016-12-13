@@ -12,7 +12,7 @@
 class Kinsol : public IAlgLoopSolver
 {
 public:
-  Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings);
+  Kinsol(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings);
   virtual ~Kinsol();
 
   /// (Re-) initialize the solver
@@ -47,7 +47,7 @@ private:
   INonLinSolverSettings
     *_kinsolSettings;     ///< Settings for the solver
 
-  IAlgLoop
+  INonLinearAlgLoop
     *_algLoop;            ///< Algebraic loop to be solved
 
   ITERATIONSTATUS
@@ -58,8 +58,6 @@ private:
   int _dim;
   bool
     _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
-  long int *_ihelpArray,
-	  *_jhelpArray;
 
   double
 	  *_y,                  ///< Temp   - Unknowns
@@ -71,9 +69,7 @@ private:
 	  *_jac,
 	  *_yHelp,              ///< Temp   - Auxillary variables
 	  *_fHelp,              ///< Temp   - Auxillary variables
-	  *_zeroVec,
 	  *_currentIterate,
-	  *_scale,
       *_y_old,
       *_y_new;
   double

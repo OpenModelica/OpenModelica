@@ -254,7 +254,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <<
 
     void calc<%name%>JacobianColumn();
-    const <%matrixreturntype%>& get<%name%>Jacobian();
+    <%matrixreturntype%>& get<%name%>Jacobian();
     >>
     ;separator="\n";empty)
     <<
@@ -398,12 +398,12 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     /// Provide Jacobian
     virtual const matrix_t& getJacobian() ;
     virtual const matrix_t& getJacobian(unsigned int index) ;
-    virtual const sparsematrix_t& getSparseJacobian();
-    virtual const sparsematrix_t& getSparseJacobian(unsigned int index);
+    virtual sparsematrix_t& getSparseJacobian();
+    virtual sparsematrix_t& getSparseJacobian(unsigned int index);
 
 
     virtual  const matrix_t& getStateSetJacobian(unsigned int index);
-    virtual  const sparsematrix_t& getStateSetSparseJacobian(unsigned int index);
+    virtual  sparsematrix_t& getStateSetSparseJacobian(unsigned int index);
     /// Called to handle all events occured at same time
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
@@ -418,6 +418,8 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual int  getAMaxColors();
 
     virtual string getModelName();
+	virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
+	virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
    private:
      //update residual methods
     <%extraFuncsDecl%>
@@ -1011,6 +1013,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           else "A matrix type is not supported"
           end match
 
+		  let isJacobianSparse = match type
+			case("dense") then
+				'return false;'
+			case("sparse") then
+				'return true;'
+			else "A matrix type is not supported"
+          end match
+
+		  let isAnalyticJacobianGenerated = if getConfigBool(GENERATE_SYMBOLIC_JACOBIAN) then 'return true;' else 'return false;'
+
      let statesetjacobian =
      (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
@@ -1067,6 +1079,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
 
+   bool <%classname%>Mixed::isJacobianSparse(){
+		<%isJacobianSparse%>
+   }
+
+
+   bool <%classname%>Mixed::isAnalyticJacobianGenerated(){
+		<%isAnalyticJacobianGenerated%>
+   }
 
    const matrix_t& <%classname%>Mixed::getJacobian( )
    {
@@ -1077,12 +1097,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       <%getDenseMatrix%>
    }
-   const sparsematrix_t& <%classname%>Mixed::getSparseJacobian( )
+   sparsematrix_t& <%classname%>Mixed::getSparseJacobian( )
    {
       <%getSparseAMatrix%>
    }
 
-   const sparsematrix_t& <%classname%>Mixed::getSparseJacobian(unsigned int index)
+   sparsematrix_t& <%classname%>Mixed::getSparseJacobian(unsigned int index)
    {
      <%getSparseMatrix%>
    }
@@ -1096,7 +1116,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
       }
    }
-   const sparsematrix_t& <%classname%>Mixed::getStateSetSparseJacobian(unsigned int index)
+   sparsematrix_t& <%classname%>Mixed::getStateSetSparseJacobian(unsigned int index)
    {
      switch (index)
      {
@@ -3137,7 +3157,7 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
-            let staticLibs = '-Wl,--start-group -lOMCppOMCFactory_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppSimulationSettings_static -lOMCppDataExchange_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppIDA_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+            let staticLibs = '-Wl,--start-group -lOMCppOMCFactory_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppSimulationSettings_static -lOMCppDataExchange_static -lOMCppDgesvSolver_static -lOMCppNewton_static -lOMCppLinearSolver_static -lOMCppEuler_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppIDA_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
@@ -3746,7 +3766,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
    <%modelname%>Algloop<%ls.index%>::<%modelname%>Algloop<%ls.index%>(<%systemname%>* system, double* z, double* zDot, bool* conditions, shared_ptr<DiscreteEvents> discrete_events)
-       : AlgLoopDefaultImplementation()
+       : LinearAlgLoopDefaultImplementation()
        , _system(system)
        , __z(z)
        , __zDot(zDot)
@@ -3755,41 +3775,27 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      let size = listLength(ls.vars)
      let nonzeros = listLength(ls.simJac)
      let type = getConfigString(MATRIX_FORMAT)
-     let helpdata = match ls.jacobianMatrix
-     case SOME(__) then
-     <<
-     >>
-     else
-     <<
-     _AData = new double[<%listLength(ls.simJac)%>];
-     _bInitialized = false;
-     _indexValue = new int[<%listLength(ls.simJac)%>];
-     sortIndex();
-     >>
 
       let inits =   match type
           case ("dense") then
             <<
             ,__A(ublas::zero_matrix<double>(<%size%>,<%size%>))
-            , _useSparseFormat(false)
             , _conditions(conditions)
             , _discrete_events(discrete_events)
             , _functions(system->_functions)
-            , _indexValue(NULL)
             {
+              _useSparseFormat=false;
               <%initAlgloopDimension(eq,varDecls)%>
             >>
           case ("sparse") then
             <<
             ,__A(<%size%>,<%size%>,<%nonzeros%>)
-            , _useSparseFormat(true)
             , _conditions(conditions)
             , _discrete_events(discrete_events)
             , _functions(system->_functions)
-            , _indexValue(NULL)
             {
+              _useSparseFormat=true;
               <%initAlgloopDimension(eq,varDecls)%>
-              <%helpdata%>
             >>
           else "A matrix type is not supported"
           end match
@@ -3803,23 +3809,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%modelname%>Algloop<%ls.index%>::~<%modelname%>Algloop<%ls.index%>()
    {
-     if (_AData)
-       delete [] _AData;
+
    }
 
    bool <%modelname%>Algloop<%ls.index%>::getUseSparseFormat()
    {
-     return _useSparseFormat;
+     return LinearAlgLoopDefaultImplementation::getUseSparseFormat();
    }
 
    void <%modelname%>Algloop<%ls.index%>::setUseSparseFormat(bool value)
    {
-     _useSparseFormat = value;
-   }
-
-   void <%modelname%>Algloop<%ls.index%>::getSparseAdata(double* data, int nonzeros)
-   {
-     memcpy(data, _AData, sizeof(double) * nonzeros);
+     LinearAlgLoopDefaultImplementation::setUseSparseFormat(value);
    }
 
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3829,9 +3829,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
 
-   <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%LinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
-   <%isLinearCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%isLinearTearingCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
 
    >>
@@ -3842,15 +3841,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
    <%modelname%>Algloop<%nls.index%>::<%modelname%>Algloop<%nls.index%>(<%systemname%>* system, double* z, double* zDot, bool* conditions, shared_ptr<DiscreteEvents> discrete_events)
-       : AlgLoopDefaultImplementation()
+       : NonLinearAlgLoopDefaultImplementation()
        , _system(system)
        , __z(z)
        , __zDot(zDot)
-       , _useSparseFormat(false)
        , _conditions(conditions)
        , _discrete_events(discrete_events)
        , _functions(system->_functions)
    {
+     _useSparseFormat=false;
      <%initAlgloopDimension(eq,varDecls)%>
 
      <%initAlgloopVarAttributes(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -3863,17 +3862,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    bool <%modelname%>Algloop<%nls.index%>::getUseSparseFormat()
    {
-     return _useSparseFormat;
+     return NonLinearAlgLoopDefaultImplementation::getUseSparseFormat();
    }
 
    void <%modelname%>Algloop<%nls.index%>::setUseSparseFormat(bool value)
    {
-     _useSparseFormat = value;
-   }
-
-   void <%modelname%>Algloop<%nls.index%>::getSparseAdata(double* data, int nonzeros)
-   {
-     throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"Adata not used in nonlinear algloop");
+     NonLinearAlgLoopDefaultImplementation::setUseSparseFormat(value);
    }
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3883,9 +3877,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
 
-   <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%NonLinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
-   <%isLinearCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%isLinearTearingCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
 
    >>
@@ -3953,7 +3946,7 @@ match simCode
      let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
+         '<%preExp%>_b[<%i0%>] = <%expPart%>;'
 
        ;separator="\n")
         <<
@@ -4004,37 +3997,29 @@ let &help = buffer ""
       let &preExp = buffer "" /*BUFD*/
     let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       match eq.exp
-      case e as RCONST(__) then match type case "sparse" then
-      let &help +=
-      <<
-      <%preExp%>
-      /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
-      _AData[_indexValue[<%i0%>]] = <%expPart%>;
-      >>
-      <<
-      <%preExp%>
-      /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
-      //_AData[_indexValue[<%i0%>]] = <%expPart%>;
-      >>
-    else
-    <<
-    <%preExp%>
-    /*comment out again!*/__A(<%row%>,<%col%>)=<%expPart%>;
-    >>
-    end match
-      else match type case "sparse" then
-    <<
-    <%preExp%>
-    /*comment out again!*///__A(<%row%>,<%col%>)=<%expPart%>;
-    //_Ax[<%i0%>] = <%expPart%>;// to be commented in lateron
-    _AData[_indexValue[<%i0%>]] = <%expPart%>;
-    >>
-    else
-    <<
-    <%preExp%>
-    __A(<%row%>,<%col%>)=<%expPart%>;
-    >>
-    end match
+      case e as RCONST(__) then
+	    match type
+		case "sparse" then
+		  <<
+		  //<%preExp%>__A.value_data()[<%i0%>] = <%expPart%>;
+		  >>
+		else
+		  <<
+		  <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
+		  >>
+		end match
+      else
+		match type case "sparse" then
+		  <<
+		  <%preExp%>
+		  __A.value_data()[<%i0%>] = <%expPart%>;
+		  >>
+		else
+		  <<
+		  <%preExp%>
+		  __A(<%row%>,<%col%>)=<%expPart%>;
+		  >>
+		end match
 
   ;separator="\n")
 
@@ -4043,7 +4028,6 @@ let &help = buffer ""
      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      match exp
    case e as RCONST(__) then
-   let &help +=  '/*comment out again!*/<%preExp%>__b(<%i0%>)=<%expPart%>; <%\n%>'
    <<
    //<%preExp%>__b(<%i0%>)=<%expPart%>;
    >>
@@ -4057,13 +4041,7 @@ let &help = buffer ""
   {
       <%varDecls%>
       <%Amatrix%>
-      //memcpy(Ax,_AData,sizeof(double)* <%listLength(ls.simJac)%> );
       <%bvector%>
-      if (_bInitialized == false)
-      {
-        <%&help%>
-        _bInitialized = true;
-      }
   }
   >>
 end updateAlgloop;
@@ -4091,7 +4069,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
+         '<%preExp%>_res[<%i0%>] = <%expPart%>;'
 
        ;separator="\n")
 
@@ -6115,17 +6093,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      }
      >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  let type = getConfigString(MATRIX_FORMAT)
-  let sort = match type
-  case "sparse" then
-   <<
-   void <%modelname%>Algloop<%ls.index%>::sortIndex()
-   {
-     /*jupp2*/
-     <%initSort(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
-   }
-   >>
-  else ''
 
   match ls.jacobianMatrix
        case SOME(__) then
@@ -6156,7 +6123,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    >>
    */
    <<
-   <%sort%>
 
    void <%modelname%>Algloop<%ls.index%>::initialize()
    {
@@ -6224,7 +6190,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     return empty;
   }
 
-  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
     throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
   }
@@ -6238,7 +6204,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     return static_cast<<%modelName%>Mixed*>(_system)->getJacobian(<%index%>);
   }
 
-  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
     throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
   }
@@ -6254,7 +6220,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     return empty;
   }
 
-  const sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
+  sparsematrix_t& <%modelName%>Algloop<%nls.index%>::getSystemSparseMatrix()
   {
     throw ModelicaSimulationError(MATH_FUNCTION, "Sparse symbolic Jacobian is not suported yet");
   }
@@ -6285,7 +6251,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%getDenseMatrix%>
     }
 
-    const sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+	sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
     {
       <%getSparseMatrix%>
     }
@@ -6314,7 +6280,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%getDenseMatrix%>
      }
 
-     const sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
+	 sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
      {
        <%getSparseMatrix%>
      }
@@ -6337,7 +6303,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
     void <%modelname%>Algloop<%nls.index%>::getRHS(double* residuals) const
     {
-         AlgLoopDefaultImplementation::getRHS(residuals);
+         NonLinearAlgLoopDefaultImplementation::getRHS(residuals);
     }
 
    >>
@@ -6347,7 +6313,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <<
       void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals) const
       {
-         AlgLoopDefaultImplementation::getRHS(residuals);
+         LinearAlgLoopDefaultImplementation::getRHS(residuals);
       }
 
       >>
@@ -6368,11 +6334,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 match eq
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-    int <%modelname%>Algloop<%ls.index%>::getDimRHS()
-    {
-      return _dimAEq;
-    }
-
     void <%modelname%>Algloop<%ls.index%>::getRHS(double* vars) const
     {
         ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A->data());
@@ -6393,41 +6354,12 @@ match eq
 
     void <%modelname%>Algloop<%nls.index%>::getRHS(double* vars) const
     {
-      AlgLoopDefaultImplementation:::getRHS(vars)
+      NonLinearAlgLoopDefaultImplementation:::getRHS(vars)
     }
     >>
  case SES_MIXED(__) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,cont)
 end algloopResiduals;
 
-template isLinearCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  let modelname = lastIdentOfPath(modelInfo.name)
-   let &varDecls = buffer ""
-   let &preExp = buffer ""
-
-
-  match eq
-  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-  <<
-
-  bool <%modelname%>Algloop<%nls.index%>::isLinear()
-  {
-    return false;
-  }
-  >>
-
-  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  <<
-
-  bool <%modelname%>Algloop<%ls.index%>::isLinear()
-  {
-    return true;
-  }
-  >>
-
-end isLinearCode;
 
 
 template isLinearTearingCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq)
@@ -6481,7 +6413,7 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    <%nls.crefs |> name hasindex i0 =>
     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-    __xd[<%i0%>] = <%namestr%>;
+    _res[<%i0%>] = <%namestr%>;
      >>
   ;separator="\n"%>
    >>
@@ -6495,7 +6427,7 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
      let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
+         '<%preExp%>_b[<%i0%>] = <%expPart%>;'
       ;separator="\n")
        <<
 
@@ -6509,90 +6441,23 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    let &varDecls = buffer "" /*BUFD*/
    let Amatrix=
     (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
-      let &preExp = buffer "" /*BUFD*/
-      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      match type case "sparse" then
-      <<
-      <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
-      _AData[_indexValue[<%i0%>]] = <%expPart%>;
-
-      >>
-      else
-      <<
-      <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
-      >>
+      let &preExp = buffer ""
+      let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
   ;separator="\n")
-   let getSparse = match type case "sparse" then
-   <<
-     getSparseMatrixData(__A, &_Ax);
-   >>
-   else
-   <<
-   >>
 
-
-let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+ let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
+     let &preExp = buffer ""
+     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      '<%preExp%>__b(<%i0%>)=<%expPart%>;'
   ;separator="\n")
  <<
      <%varDecls%>
       <%Amatrix%>
-      <%getSparse%>
       <%bvector%>
   >>
 
 end initAlgloopEquation;
-
-
-
-
-template initSort(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates a non linear equation system."
-::=
-let &varDeclsCref = buffer "" /*BUFD*/
-match eq
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))then
-   match ls.jacobianMatrix
-       case SOME(__) then
-<<
->>
-  else
-
-   let Amatrix=
-    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
-      <<
-      //__A(<%row%>,<%col%>);
-      data.push_back(mytuple(<%row%> + <%col%> * _dimAEq ,<%i0%>));
-      >>
-  ;separator="\n")
-
-
-  <<
-      std::vector<mytuple> data;
-      <%Amatrix%>
-      std::sort(data.begin(),data.end(),mycompare);
-      std::vector<mytuple> data2;
-      for (int i = 0; i < <%listLength(ls.simJac)%>; i++)
-      {
-        data2.push_back(mytuple((data[i].ele2),i));
-      }
-      std::sort(data2.begin(), data2.end(), mycompare);
-
-      /*int help[<%listLength(ls.simJac)%>];
-      for (int i = 0; i < <%listLength(ls.simJac)%>; i++)
-      {
-        help[i] = get<0>(data2[i]);
-      }*/
-      for (int i = 0; i < <%listLength(ls.simJac)%>; i++)
-      {
-         _indexValue[i] = (data2[i]).ele2;
-      }
-
-  >>
-
-end initSort;
 
 template getAlgloopVars(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates a non linear equation system."
@@ -6760,7 +6625,7 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   let size = listLength(nls.crefs)
   <<
   _dimAEq = <%size%>;
-  AlgLoopDefaultImplementation::initialize();
+  NonLinearAlgLoopDefaultImplementation::initialize();
   >>
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
     match ls.jacobianMatrix
@@ -6769,14 +6634,14 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
         <<
         // Number of unknowns equations
         _dimAEq = <%size%>;
-        AlgLoopDefaultImplementation::initialize();
+        LinearAlgLoopDefaultImplementation::initialize();
         >>
       else
         let size = listLength(ls.vars)
         <<
         // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
         _dimAEq = <%size%>;
-        AlgLoopDefaultImplementation::initialize();
+        LinearAlgLoopDefaultImplementation::initialize();
         fill_array(__b, 0.0);
         >>
 end initAlgloopDimension;
@@ -6915,7 +6780,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
       match simCode
         case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
-        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
+        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
         _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
         >>
@@ -6926,7 +6791,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
       match simCode
         case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
-        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
+        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
         _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
         >>
@@ -6937,7 +6802,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
       match simCode
         case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
-        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
+        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
         _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
         >>
@@ -7274,7 +7139,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <<
      matrix_t __A; //dense
 
-     int * _indexValue;
      //b vector
      StatArrayDim1<double,<%size%>> __b;
     >>
@@ -7282,7 +7146,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <<
      sparsematrix_t __A; //sparse
 
-      int * _indexValue;
      //b vector
      StatArrayDim1<double,<%size%>> __b;
     >>
@@ -7294,12 +7157,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    let type = getConfigString(MATRIX_FORMAT)
 
-   let sortIndex = match ls.jacobianMatrix
-       case SOME(__) then ''
-   else match type case "sparse" then'virtual void  sortIndex();'
-   end match
   <<
-  class <%modelname%>Algloop<%ls.index%>: public IAlgLoop, public AlgLoopDefaultImplementation
+  class <%modelname%>Algloop<%ls.index%>: public ILinearAlgLoop, public LinearAlgLoopDefaultImplementation
   {
    public:
     <%modelname%>Algloop<%ls.index%>(<%systemname%>* system,
@@ -7311,7 +7170,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     bool getUseSparseFormat();
 
-    <%sortIndex%>
     void setUseSparseFormat(bool value);
     float queryDensity();
 
@@ -7327,12 +7185,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     bool* _conditions;
     shared_ptr<DiscreteEvents> _discrete_events;
     <%systemname%>* _system;
-    bool _useSparseFormat;
   };
   >>
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
-  class <%modelname%>Algloop<%nls.index%>: public IAlgLoop, public AlgLoopDefaultImplementation
+  class <%modelname%>Algloop<%nls.index%>: public INonLinearAlgLoop, public NonLinearAlgLoopDefaultImplementation
   {
    public:
     <%modelname%>Algloop<%nls.index%>(<%systemname%>* system,
@@ -7356,7 +7213,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     bool* _conditions;
     shared_ptr<DiscreteEvents> _discrete_events;
     <%systemname%>* _system;
-    bool _useSparseFormat;
    };
   >>
 end generateAlgloopClassDeclarationCode;
@@ -7580,18 +7436,16 @@ template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& ext
 end getNominalStateValues;
 
 
-template algloopDefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template LinearalgloopDefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-  let index = match eq
-    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then ls.index
-    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then nls.index
-  let size = match eq
-    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then listLength(ls.vars)
-    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then listLength(nls.crefs)
+  match  eq
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  //let size = listLength(ls.vars)//changed by Q.Hua, <%size%> replaced with _dimAEq
+  let index = ls.index
   <<
   /// Provide index of equation
   int <%modelname%>Algloop<%index%>::getEquationIndex() const
@@ -7602,13 +7456,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   /// Provide number (dimension) of variables according to data type
   int <%modelname%>Algloop<%index%>::getDimReal() const
   {
-    return AlgLoopDefaultImplementation::getDimReal();
-  }
-
-  /// Provide number (dimension) of residuals according to data type
-  int <%modelname%>Algloop<%index%>::getDimRHS() const
-  {
-    return AlgLoopDefaultImplementation::getDimRHS();
+    return LinearAlgLoopDefaultImplementation::getDimReal();
   }
 
   bool <%modelname%>Algloop<%index%>::isConsistent()
@@ -7619,29 +7467,29 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   /// Provide names of alg loop variables
   void <%modelname%>Algloop<%index%>::getNamesReal(const char** names) const
   {
-    for (int i = 0; i < <%size%>; i++)
+    for (int i = 0; i < _dimAEq; i++)
       names[i] = _vars[i].name;
   }
 
   /// Provide nominal values for alg loop variables
   void <%modelname%>Algloop<%index%>::getNominalReal(double* nominals) const
   {
-    for (int i = 0; i < <%size%>; i++)
+    for (int i = 0; i < _dimAEq; i++)
       nominals[i] = _vars[i].nominal;
   }
 
   /// Provide min values for alg loop variables
   void <%modelname%>Algloop<%index%>::getMinReal(double* mins) const
   {
-    for (int i = 0; i < <%size%>; i++)
-      mins[i] = _vars[i].min;
+    for (int i = 0; i < _dimAEq; i++)
+      mins[i] = _vars[i].minValue;
   }
 
   /// Provide max values for alg loop variables
   void <%modelname%>Algloop<%index%>::getMaxReal(double* maxs) const
   {
-    for (int i = 0; i < <%size%>; i++)
-      maxs[i] = _vars[i].max;
+    for (int i = 0; i < _dimAEq; i++)
+      maxs[i] = _vars[i].maxValue;
   }
 
   /// Return simulation time
@@ -7663,8 +7511,88 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   }
 
   >>
-end algloopDefaultImplementationCode;
+  else
+  error(sourceInfo(), 'Unsupported equation system type')
+end LinearalgloopDefaultImplementationCode;
 
+template NonLinearalgloopDefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+  match  eq
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  //let size = listLength(nls.crefs)//changed by Q.Hua, <%size%> replaced with _dimAEq
+  let index = nls.index
+  <<
+  /// Provide index of equation
+  int <%modelname%>Algloop<%index%>::getEquationIndex() const
+  {
+    return <%index%>;
+  }
+
+  /// Provide number (dimension) of variables according to data type
+  int <%modelname%>Algloop<%index%>::getDimReal() const
+  {
+    return NonLinearAlgLoopDefaultImplementation::getDimReal();
+  }
+
+  bool <%modelname%>Algloop<%index%>::isConsistent()
+  {
+    return _system->isConsistent();
+  }
+
+  /// Provide names of alg loop variables
+  void <%modelname%>Algloop<%index%>::getNamesReal(const char** names) const
+  {
+    for (int i = 0; i < _dimAEq; i++)
+      names[i] = _vars[i].name;
+  }
+
+  /// Provide nominal values for alg loop variables
+  void <%modelname%>Algloop<%index%>::getNominalReal(double* nominals) const
+  {
+    for (int i = 0; i < _dimAEq; i++)
+      nominals[i] = _vars[i].nominal;
+  }
+
+  /// Provide min values for alg loop variables
+  void <%modelname%>Algloop<%index%>::getMinReal(double* mins) const
+  {
+    for (int i = 0; i < _dimAEq; i++)
+      mins[i] = _vars[i].minValue;
+  }
+
+  /// Provide max values for alg loop variables
+  void <%modelname%>Algloop<%index%>::getMaxReal(double* maxs) const
+  {
+    for (int i = 0; i < _dimAEq; i++)
+      maxs[i] = _vars[i].maxValue;
+  }
+
+  /// Return simulation time
+  double <%modelname%>Algloop<%index%>::getSimTime() const
+  {
+    return _system->_simTime;
+  }
+
+  /// Provide variables with given index to the system
+  void <%modelname%>Algloop<%index%>::getReal(double* vars) const
+  {
+    <%getAlgloopVars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+  }
+
+  /// Set variables with given index to the system
+  void <%modelname%>Algloop<%index%>::setReal(const double* vars)
+  {
+    <%setAlgloopVars(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+  }
+
+  >>
+  else
+  error(sourceInfo(), 'Unsupported equation system type')
+end NonLinearalgloopDefaultImplementationCode;
 
 template generateMethodDeclarationCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
@@ -7815,8 +7743,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual int getEquationIndex() const;
     /// Provide number (dimension) of variables according to data type
     virtual int getDimReal() const;
-    /// Provide number (dimension) of residuals according to data type
-    virtual int getDimRHS() const;
+    /*/// Provide number (dimension) of residuals according to data type
+    virtual int getDimRHS() const;test*/
      /// (Re-) initialize the system of equations
     virtual void initialize();
 
@@ -7848,11 +7776,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void giveResiduals(double* vars);
     >>%>
     virtual const matrix_t& getSystemMatrix() ;
-    virtual const sparsematrix_t& getSystemSparseMatrix() ;
-    virtual bool isLinear();
+	virtual sparsematrix_t& getSystemSparseMatrix() ;
     virtual bool isLinearTearing();
     virtual bool isConsistent();
-    virtual void getSparseAdata(double* data, int nonzeros);
 
     >>
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
@@ -10488,8 +10414,8 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
       match simCode
       case SIMCODE(modelInfo = MODELINFO(__)) then
       <<
-      _algLoop<%num%> =  shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
-      _algLoopSolver<%num%> = shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
+      _algLoop<%num%> =  shared_ptr<ILinearAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
+      _algLoopSolver<%num%> = shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createLinearAlgLoopSolver(_algLoop<%num%>.get()));
       >>
       end match
   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
@@ -10498,8 +10424,8 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
       match simCode
       case SIMCODE(modelInfo = MODELINFO(__)) then
       <<
-      _algLoop<%num%> =  shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
-      _algLoopSolver<%num%> = shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
+      _algLoop<%num%> =  shared_ptr<INonLinearAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
+      _algLoopSolver<%num%> = shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createNonLinearAlgLoopSolver(_algLoop<%num%>.get()));
       >>
       end match
   case e as SES_MIXED(cont = eq_sys)
@@ -10543,7 +10469,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
        match simCode
        case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
-        shared_ptr<IAlgLoop>  //Algloop  which holds equation system
+        shared_ptr<ILinearAlgLoop>  //Algloop  which holds equation system
              _algLoop<%num%>;
         shared_ptr<IAlgLoopSolver>
              _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
@@ -10558,7 +10484,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
        match simCode
        case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
-        shared_ptr<IAlgLoop>  //Algloop  which holds equation system
+        shared_ptr<INonLinearAlgLoop>  //Algloop  which holds equation system
              _algLoop<%num%>;
         shared_ptr<IAlgLoopSolver>
              _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
@@ -11016,7 +10942,8 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& 
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-    #include <Core/System/AlgLoopDefaultImplementation.h>
+    #include <Core/System/LinearAlgLoopDefaultImplementation.h>
+    #include <Core/System/NonLinearAlgLoopDefaultImplementation.h>
     //jac files
     <%jacfiles%>
     //alg loop files
@@ -13159,7 +13086,7 @@ case {} then
 
   }
 
-  const <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
+  <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
     throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
   }
@@ -13173,7 +13100,7 @@ case _ then
     throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
   }
 
-  const <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
+  <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
     throw ModelicaSimulationError(MATH_FUNCTION, "Symbolic jacobians not is activated");
   }
@@ -13205,7 +13132,7 @@ case _ then
   <<
   <%jacMats%>
 
-  const <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
+  <%matrixreturntype%>&  <%classname%>Jacobian::get<%matrixName%>Jacobian()
   {
     /*Index <%indexJacobian%>*/
     <%jacvals%>

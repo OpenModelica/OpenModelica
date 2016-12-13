@@ -28,8 +28,8 @@ public:
   /// Provide Jacobian
   virtual const matrix_t& getJacobian() = 0;
   virtual const matrix_t& getJacobian(unsigned int index)  = 0;
-  virtual const sparsematrix_t& getSparseJacobian() = 0;
-  virtual const sparsematrix_t& getSparseJacobian(unsigned int index)  = 0;
+  virtual sparsematrix_t& getSparseJacobian() = 0;
+  virtual sparsematrix_t& getSparseJacobian(unsigned int index)  = 0;
 
   virtual const matrix_t& getStateSetJacobian(unsigned int index) = 0;
   virtual const sparsematrix_t& getStateSetSparseJacobian(unsigned int index) = 0;
@@ -42,7 +42,6 @@ public:
    virtual void setAlgebraicDAEVars(const double* y) = 0;
    virtual void getResidual(double* f) = 0;
 
-
   virtual string getModelName() = 0;
 
   virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
@@ -50,5 +49,8 @@ public:
 
   // Copy the given IMixedSystem instance
   virtual IMixedSystem* clone() = 0;
+
+  virtual bool isJacobianSparse() = 0;//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
+  virtual bool isAnalyticJacobianGenerated() = 0;//true if the flag --generateSymbolicJacobian is true, false if not.
 };
 /** @} */ // end of coreSystem

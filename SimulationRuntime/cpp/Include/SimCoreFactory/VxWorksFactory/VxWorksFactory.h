@@ -26,7 +26,7 @@ public:
 
 
     shared_ptr<ISolverSettings> LoadSolverSettings(string solver_name, shared_ptr<IGlobalSettings>);
-    shared_ptr<IAlgLoopSolver> LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings);
+    shared_ptr<IAlgLoopSolver> LoadAlgLoopSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings);
     shared_ptr<INonLinSolverSettings> LoadAlgLoopSolverSettings(string solver_name);
 
 private:

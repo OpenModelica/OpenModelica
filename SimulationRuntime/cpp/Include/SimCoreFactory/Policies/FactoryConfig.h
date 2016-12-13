@@ -20,7 +20,8 @@
   #include <Core/System/IMixedSystem.h>
   #include <Core/SimulationSettings/IGlobalSettings.h>
   #include <Core/System/IMixedSystem.h>
-  #include <Core/System/IAlgLoop.h>
+  #include <Core/System/ILinearAlgLoop.h>
+  #include <Core/System/INonLinearAlgLoop.h>
   #include <Core/Solver/ISolverSettings.h>
   #include <Core/Solver/ISolver.h>
   #include <Core/Solver/IAlgLoopSolver.h>
@@ -90,7 +91,8 @@
   #include <Core/DataExchange/IHistory.h>
   #include <Core/System/IMixedSystem.h>
   #include <Core/SimulationSettings/IGlobalSettings.h>
-  #include <Core/System/IAlgLoop.h>
+  #include <Core/System/ILinearAlgLoop.h>
+  #include <Core/System/INonLinearAlgLoop.h>
   #include <Core/Solver/ISolverSettings.h>
   #include <Core/Solver/ISolver.h>
   #include <Core/Solver/IAlgLoopSolver.h>

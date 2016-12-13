@@ -39,7 +39,7 @@ public:
         return nonlinsolversetting;
     }
 
-    shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings)
+    shared_ptr<IAlgLoopSolver> createNonLinSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings)
     {
         if(_last_selected_solver.compare(solver_name)==0)
         {

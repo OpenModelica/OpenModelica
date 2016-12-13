@@ -20,7 +20,7 @@ class Hybrj : public IAlgLoopSolver
 {
 public:
 
-    Hybrj(IAlgLoop* algLoop,INonLinSolverSettings* settings);
+    Hybrj(INonLinearAlgLoop* algLoop,INonLinSolverSettings* settings);
 
     virtual ~Hybrj();
 
@@ -50,7 +50,7 @@ private:
     INonLinSolverSettings
         *_newtonSettings;            ///< Settings for the solver
 
-    IAlgLoop
+    INonLinearAlgLoop
         *_algLoop;                    ///< Algebraic loop to be solved
 
     ITERATIONSTATUS
@@ -76,7 +76,6 @@ private:
         *_x_nom,                    //Nominal value of unknown variables
         *_x_ex,                 //extraplated unknown varibales
         *_x_scale,                 //current scale factor of unknown varibales
-        *_zeroVec,
         *_x_old,
         *_x_new,
 		_t0,             //old time

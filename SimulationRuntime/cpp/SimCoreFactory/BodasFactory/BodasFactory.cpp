@@ -14,7 +14,7 @@ extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSetting
 extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
-extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algloop, INonLinSolverSettings* solver_settings);
+extern "C" IAlgLoopSolver* createKinsol(INonLinearAlgLoop* algloop, INonLinSolverSettings* solver_settings);
 extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, shared_ptr<IAlgLoopSolverFactory> nonlinsolver, shared_ptr<ISimData> simdata);
 
 BodasFactory::BodasFactory(string library_path, string modelicasystem_path)
@@ -89,7 +89,7 @@ shared_ptr<ISolverSettings> BodasFactory::LoadSolverSettings(string solver_name,
     return shared_ptr<ISolverSettings>(solver_settings);
 }
 
-shared_ptr<IAlgLoopSolver> BodasFactory::LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
+shared_ptr<IAlgLoopSolver> BodasFactory::LoadAlgLoopSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
 {
     IAlgLoopSolver* algloopsolver;
     if (solver_name.compare("createNewton") == 0)

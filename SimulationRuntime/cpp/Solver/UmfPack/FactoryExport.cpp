@@ -13,7 +13,7 @@
     using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> > >()
+  types.get<std::map<std::string, factory<IAlgLoopSolver,ILinearAlgLoop*, ILinSolverSettings*> > >()
     ["umfpack"].set<UmfPack>();
   types.get<std::map<std::string, factory<ILinSolverSettings> > >()
     ["umfpackSettings"].set<UmfPackSettings>();
@@ -28,7 +28,7 @@ shared_ptr<ILinSolverSettings> createUmfpackSettings()
      return settings;
 }
 
-shared_ptr<IAlgLoopSolver> createUmfpackSolver(IAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings)
+shared_ptr<IAlgLoopSolver> createUmfpackSolver(ILinearAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings)
 {
    shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new UmfPack(algLoop,solver_settings.get()));
    return solver;

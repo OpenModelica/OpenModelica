@@ -18,29 +18,17 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 
 
-class IAlgLoop
+class ILinearAlgLoop
 {
 public:
-  /// Enumeration with modelica data types
-  enum CONSTRTYPE
-  {
-      UNDEF   = 0x00000000,
-      REAL    = 0x00000001,
-      INTEGER = 0x00000002,
-      BOOLEAN = 0x00000004,
-      ALL     = 0x00000007,
-  };
 
-  virtual ~IAlgLoop() {};
+  virtual ~ILinearAlgLoop() {};
 
   /// Provide index of equation
   virtual int getEquationIndex() const = 0;
 
   /// Provide number (dimension) of variables according to the data type
   virtual int getDimReal() const = 0;
-
-  /// Provide number (dimension) of right hand sides (residuals) according to the data type
-  virtual int getDimRHS() const = 0;
 
   /// (Re-) initialize the system of equations
   virtual void initialize() = 0;
@@ -67,11 +55,10 @@ public:
   /// Provide the right hand side (residuals)
   virtual void getRHS(double* res) const = 0;
 
-  virtual void getSparseAdata(double* data, int nonzeros) = 0;
+  //testing commenting out virtual void getSparseAdata(double* data, int nonzeros) = 0;
 
   virtual const matrix_t& getSystemMatrix()  = 0;
-  virtual const sparsematrix_t& getSystemSparseMatrix()  = 0;
-  virtual bool isLinear() = 0;
+  virtual  sparsematrix_t& getSystemSparseMatrix()  = 0;
   virtual bool isLinearTearing() = 0;
   virtual bool isConsistent() = 0;
   virtual bool getUseSparseFormat() = 0;

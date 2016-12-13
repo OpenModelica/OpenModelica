@@ -209,5 +209,8 @@ protected:
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
     IEvent* _event_system; //this pointer to event system
     string _modelName;
+
+	bool _sparse;
+	bool _useAnalyticalJacobian;
 };
 /** @} */ // end of coreSystem

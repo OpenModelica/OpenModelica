@@ -17,8 +17,8 @@ public:
   virtual ~AlgLoopSolverFactory();
 
   /// Creates a solver according to given system of equations of type algebraic loop
-  virtual shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
-
+  virtual shared_ptr<IAlgLoopSolver> createLinearAlgLoopSolver(ILinearAlgLoop* algLoop);
+  virtual shared_ptr<IAlgLoopSolver> createNonLinearAlgLoopSolver(INonLinearAlgLoop* algLoop);
 private:
   //std::vector<shared_ptr<IKinsolSettings> > _algsolversettings;
   std::vector<shared_ptr<INonLinSolverSettings> > _algsolversettings;

@@ -158,10 +158,6 @@ int pivot(double *A, int n_rows, int n_cols, int *rowInd, int *colInd)
   /* all fine */
   return 0;
 }
-void getSparseMatrixData(sparsematrix_t& A, double** px)
-{
-  *px = bindings::begin_value(A);
-}
 
 
 /** @} */ // end of math

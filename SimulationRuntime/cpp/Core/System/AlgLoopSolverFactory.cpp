@@ -20,33 +20,30 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 {
 }
 
-/// Creates a solver according to given system of equations of type algebraic loop
-shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
+shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createLinearAlgLoopSolver(ILinearAlgLoop* algLoop)
 {
-  if(algLoop->getDimReal() > 0)
-  {
-
-#if defined(__vxworks)
-#else
-    if(algLoop->isLinear())
-    {
       try
       {
         string linsolver_name = _global_settings->getSelectedLinSolver();
-        shared_ptr<ILinSolverSettings> algsolversetting= createLinSolverSettings(linsolver_name);
-        _linalgsolversettings.push_back(algsolversetting);
-
-
+		shared_ptr<ILinSolverSettings> algsolversetting= createLinSolverSettings(linsolver_name);
+		_linalgsolversettings.push_back(algsolversetting);
         shared_ptr<IAlgLoopSolver> algsolver= createLinSolver(algLoop,linsolver_name,algsolversetting);
         _algsolvers.push_back(algsolver);
         return algsolver;
       }
       catch(std::exception &arg)
       {
-        //the linear solver was not found -> take the nonlinear solver
+        throw ModelicaSimulationError(MODEL_FACTORY,"Linear AlgLoop solver is not available");
       }
-    }
-#endif
+
+}
+
+/// Creates a nonlinear solver according to given system of equations of type algebraic loop
+shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createNonLinearAlgLoopSolver(INonLinearAlgLoop* algLoop)
+{
+  if(algLoop->getDimReal() > 0)
+  {
+
     string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
     shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
     algsolversetting->setContinueOnError(_global_settings->getNonLinearSolverContinueOnError());

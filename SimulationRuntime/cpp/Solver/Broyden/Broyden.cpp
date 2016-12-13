@@ -10,17 +10,10 @@
 #include <Core/Math/IBlas.h>        // use BLAS routines
 #include <Core/Math/Constants.h>        // definitializeion of constants like uround
 
-
-#if defined(klu)
-#include <klu.h>
-#endif
-
-
-
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
 
-Broyden::Broyden(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+Broyden::Broyden(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	: _algLoop            (algLoop)
 	, _BroydenSettings    ((INonLinSolverSettings*)settings)
 	, _y                  (NULL)
@@ -39,18 +32,7 @@ Broyden::Broyden(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _jacHelpMat1        (NULL)
 	, _jacHelpMat2        (NULL)
 	, _work               (NULL)
-	,_zeroVec             (NULL)
 	, _identity           (NULL)
-
-
-#if defined(klu)
-    , _kluSymbolic 			(NULL)
-    , _kluNumeric			(NULL)
-    , _kluCommon			(NULL)
-    , _Ai					(NULL)
-    , _Ap					(NULL)
-    , _Ax					(NULL)
-#endif
 
 	, _dimSys            (0)
 	, _firstCall        (true)
@@ -85,30 +67,8 @@ Broyden::~Broyden()
 	if(_work)    delete []    _work;
 
 	if(_identity) delete [] _identity;
-	if(_zeroVec) delete [] _zeroVec;
 	if(_f) delete [] _f;
 	if(_ihelpArray) delete [] _ihelpArray;
-
-#if defined(klu)
-	if(_sparse == true)
-	{
-		if(_kluCommon)
-		{
-			if(_kluSymbolic)
-				klu_free_symbolic(&_kluSymbolic, _kluCommon);
-			if(_kluNumeric)
-				klu_free_numeric(&_kluNumeric, _kluCommon);
-			delete _kluCommon;
-		}
-		if(_Ap)
-			delete [] _Ap;
-		if(_Ai)
-			delete [] _Ai;
-		if(_Ax)
-			delete [] _Ax;
-	}
-#endif
-
 }
 
 void Broyden::initialize()
@@ -150,7 +110,6 @@ void Broyden::initialize()
 			if(_jacHelpMat2)    delete []    _jacHelpMat2;
 			if(_work)    delete []    _work;
 			if(_identity) delete [] _identity;
-			if(_zeroVec) delete [] _zeroVec;
 			if(_f) delete [] _f;
 			if(_ihelpArray) delete [] _ihelpArray;
 
@@ -172,8 +131,7 @@ void Broyden::initialize()
 
 			_identity = new double[_dimSys * _dimSys];
 
-			_zeroVec          = new double[_dimSys];
-			 _f                  = new double[_dimSys];
+			_f                  = new double[_dimSys];
 			_ihelpArray       = new long int[_dimSys];
 
 
@@ -198,42 +156,6 @@ void Broyden::initialize()
 			{
 				_identity[i + i * _dimSys] = 1.0;
 			}
-
-			#if defined(klu)
-			if (_algLoop->isLinear() || _algLoop->isLinearTearing())
-				{
-
-				if(_sparse == true)
-					{
-
-					_kluCommon = new klu_common;
-						klu_defaults (_kluCommon);
-						const sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
-
-
-						 _nonzeros = A.nnz();
-						_Ap = new int[(_dim + 1)];
-						_Ai = new int[_nonzeros];//todo + 1 ?
-						_Ax = new double[_nonzeros];//todo + 1 ?
-
-						int const* Ti = boost::numeric::bindings::begin_compressed_index_major (A);
-						int const* Tj = boost::numeric::bindings::begin_index_minor (A);
-
-						double const* Ax = boost::numeric::bindings::begin_value (A);
-
-						memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-						memcpy(_Ap,Ti,sizeof(int)* (_dim + 1) );
-						memcpy(_Ai,Tj,sizeof(int)* (_nonzeros) );
-
-						_kluSymbolic = klu_analyze (_dim, _Ap, _Ai, _kluCommon);
-						_kluNumeric = klu_factor (_Ap, _Ai, _Ax, _kluSymbolic, _kluCommon) ;
-					}
-				}
-			#endif
-
-
-
-
 		}
 		else
 		{
@@ -246,16 +168,15 @@ void Broyden::initialize()
 		irtrn    = 0;
 
 	calcFunction(_y,_fold);
-	if(!_algLoop->isLinear())
-	{
-		calcJacobian();
-		if(_broydenMethod==2)
-		{
-			dgesv_(&_dimSys,&_dimSys,_jac,&_dimSys,_ihelpArray,_identity,&_dimSys,&irtrn);
-			memcpy(_jac,_identity,_dimSys*_dimSys*sizeof(double));
-		}
 
+	calcJacobian();
+	if(_broydenMethod==2)
+	{
+		dgesv_(&_dimSys,&_dimSys,_jac,&_dimSys,_ihelpArray,_identity,&_dimSys,&irtrn);
+		memcpy(_jac,_identity,_dimSys*_dimSys*sizeof(double));
 	}
+
+
 
 	Logger::write("Broyden: initialized",LC_NLS,LL_DEBUG);
 
@@ -279,275 +200,120 @@ void Broyden::solve()
 		initialize();
 	}
 
-	if(_algLoop->isLinear() && !_algLoop->isLinearTearing())
+
+	// Reset status flag
+	_iterationStatus = CONTINUE;
+	calcFunction(_y,_fold);
+	double initial_norm = dnrm2_(&_dimSys, _fold, &_iONE);
+	if(initial_norm < _fNormTol)
+		return;
+	//calcJacobian();
+	/*
+	if(_broydenMethod==2)
 	{
-
-
-		//use lapack
-		long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-		long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
-		_algLoop->evaluate();
-		_algLoop->getRHS(_f);
-
-		if(_sparse == false)
-		{
-
-			const matrix_t& A = _algLoop->getSystemMatrix();
-
-			const double* jac = A.data().begin();
-
-
-			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-
-
-			dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
-
-
-		}
-		//sparse
-		else
-		{
-
-
-
-			#if defined(klu)
-			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-
-			//double const* Ax = bindings::begin_value (As);
-			//double * Ax = (NULL);
-			_algLoop->getSparseAdata( _Ax, _nonzeros);
-
-			//memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-
-			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-			if (ok < 0)//wvEvent(4,NULL,0);
-			{
-				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
-			}
-			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-			#else
-
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu not implemented");
-
-			#endif
-		}
-
-		memcpy(_y,_f,_dimSys*sizeof(double));
-		_algLoop->setReal(_y);
-		if(irtrn != 0)
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system");
-		else
-			_iterationStatus = DONE;
-
-
+		dgetrf_(&_dimSys, &_dimSys, _jac, &_dimSys, _iHelp, &irtrn);
+		dgetri_(&_dimSys, _jac, &_dimSys, _iHelp,_work, &_lwork, &irtrn);
 	}
-	else if(_algLoop->isLinearTearing())
-	{
-
-
-		//int
-		//	method = KIN_NONE,
-		//	iter = 0,
-		//	idid;
-		//for(int i=0;i<_dimSys;i++) // Reset Scaling
-		//	_fScale[i] = 1.0;
-		////idid = KINSol(_kinMem, _Kin_y, KIN_NONE, _Kin_yScale, _Kin_fScale);
-		//solveNLS();
-		//_algLoop->setReal(_y);
-		//_algLoop->evaluate();
-		////if (check_flag(&idid, (char *)"KINSol", 1))
-		//if (_iterationStatus == SOLVERERROR)
-		//	throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
-		//else
-		//	_iterationStatus = DONE;
-
-
-
-		long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-		long int irtrn  = 0;          // Retrun-flag of Fortran code
-
-		_algLoop->setReal(_zeroVec);
-		_algLoop->evaluate();
-		_algLoop->getRHS(_f);
-
-
-		// adaptor_t f_adaptor(_dimSys,_f);
-		//shared_matrix_t b(_dimSys,1,f_adaptor);
-
-
-		//print_m (b, "b vector");
-		if(_sparse == false)
-		{
-
-
-			const matrix_t& A = _algLoop->getSystemMatrix();
-
-			//matrix_t  A_copy(A);
-
-
-			const double* jac = A.data().begin();
-
-			//double* jac = new  double[dimSys*dimSys];
-			//for(int i=0;i<dimSys;i++)
-			//for(int j=0;j<dimSys;j++)
-			//jac[i*_dimSys+j] = A_sparse(i,j);
-
-
-			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-
-
-
-
-			dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);
-
-		}
-		//std::vector< int > ipiv (_dimSys);  // pivot vector
-		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
-		else
-		{
-
-			#if defined(klu)
-			//Sparse Solve
-
-			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-
-			double const* Ax = boost::numeric::bindings::begin_value (As);
-
-			memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-
-			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-
-			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-			#else
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
-			#endif
-	    }
-
-
-
-	   for(int i=0; i<_dimSys; i++)
-		_y[i]=-_f[i];
-		_algLoop->setReal(_y);
-		_algLoop->evaluate();
-
-	}
-
-	else
-	{
-		// Reset status flag
-		_iterationStatus = CONTINUE;
-		calcFunction(_y,_fold);
-		double initial_norm = dnrm2_(&_dimSys, _fold, &_iONE);
-		if(initial_norm < _fNormTol)
-			return;
-		//calcJacobian();
-		/*
-		if(_broydenMethod==2)
-		{
-			dgetrf_(&_dimSys, &_dimSys, _jac, &_dimSys, _iHelp, &irtrn);
-			dgetri_(&_dimSys, _jac, &_dimSys, _iHelp,_work, &_lwork, &irtrn);
-		}
-		*/
+	*/
 	while(_iterationStatus == CONTINUE)
 	{
 
-			if(totStps < _BroydenSettings->getNewtMax())
+		if(totStps < _BroydenSettings->getNewtMax())
+		{
+			// Determination of Jacobian (Fortran-format)
+
+			if(_broydenMethod==2)
 			{
-				// Determination of Jacobian (Fortran-format)
-
-					if(_broydenMethod==2)
-					{
-						//-_jac*_fold = _delta_s
-					dgemv_(&_N, &_dimSys, &_dimSys, &_dMINUSONE, _jac, &_dimSys, _fold, &_iONE, &_dZERO, _delta_s, &_iONE);
+				//-_jac*_fold = _delta_s
+			dgemv_(&_N, &_dimSys, &_dimSys, &_dMINUSONE, _jac, &_dimSys, _fold, &_iONE, &_dZERO, _delta_s, &_iONE);
 
 
-					// Calculate new _y
-					daxpy_(&_dimSys, &_dONE, _delta_s, &_iONE, _y, &_iONE);
+			// Calculate new _y
+			daxpy_(&_dimSys, &_dONE, _delta_s, &_iONE, _y, &_iONE);
 
-					// Calculate new f
-					calcFunction(_y,_fnew);
+			// Calculate new f
+			calcFunction(_y,_fnew);
 
-					// _jac*_fnew
-					dgemv_(&_N, &_dimSys, &_dimSys, &_dONE, _jac, &_dimSys, _fnew, &_iONE, &_dZERO, _jacHelpVec1, &_iONE);
-					// _jac*_delta_s
-					dgemv_(&_T, &_dimSys, &_dimSys, &_dMINUSONE, _jac, &_dimSys, _delta_s, &_iONE, &_dZERO, _jacHelpVec2, &_iONE);
-					//_delta_f is in f_old
-					daxpy_(&_dimSys, &_dMINUSONE, _fnew, &_iONE, _fold, &_iONE);
+			// _jac*_fnew
+			dgemv_(&_N, &_dimSys, &_dimSys, &_dONE, _jac, &_dimSys, _fnew, &_iONE, &_dZERO, _jacHelpVec1, &_iONE);
+			// _jac*_delta_s
+			dgemv_(&_T, &_dimSys, &_dimSys, &_dMINUSONE, _jac, &_dimSys, _delta_s, &_iONE, &_dZERO, _jacHelpVec2, &_iONE);
+			//_delta_f is in f_old
+			daxpy_(&_dimSys, &_dMINUSONE, _fnew, &_iONE, _fold, &_iONE);
 
-					//delta
-					delta = ddot_(&_dimSys, _jacHelpVec2, &_iONE, _fold, &_iONE);
-					if(delta > 0)
-						delta = 1/delta;
-					else
-						delta = 1e-16;
+			//delta
+			delta = ddot_(&_dimSys, _jacHelpVec2, &_iONE, _fold, &_iONE);
+			if(delta > 0)
+				delta = 1/delta;
+			else
+				delta = 1e-16;
 
-					// jacobian update accordings to Broyden2
-					dger_(&_dimSys, &_dimSys, &delta, _jacHelpVec1, &_iONE, _jacHelpVec2 ,&_iONE, _jac, &_dimSys);
+			// jacobian update accordings to Broyden2
+			dger_(&_dimSys, &_dimSys, &delta, _jacHelpVec1, &_iONE, _jacHelpVec2 ,&_iONE, _jac, &_dimSys);
 
 
 
-					double fnorm = dnrm2_(&_dimSys, _fnew, &_iONE);
+			double fnorm = dnrm2_(&_dimSys, _fnew, &_iONE);
 
-					// Reset
-					memcpy(_fold,_fnew, _dimSys*sizeof(double));
+			// Reset
+			memcpy(_fold,_fnew, _dimSys*sizeof(double));
 
-					//Stopping Criterion
-					if( fnorm < _fNormTol)
-					{
-						//std::cout << totStps << std::endl;
-						_iterationStatus = DONE;
-						break;
-					}
+			//Stopping Criterion
+			if( fnorm < _fNormTol)
+			{
+				//std::cout << totStps << std::endl;
+				_iterationStatus = DONE;
+				break;
+			}
 
-					}
-					else if (_broydenMethod==1)
-					{
-					/*
-						memcpy(_jacHelpMat2,_jac,_dimSys*_dimSys*sizeof(double));
-						dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_fold,&_dimSys,&irtrn);
+			}
+			else if (_broydenMethod==1)
+			{
+			/*
+				memcpy(_jacHelpMat2,_jac,_dimSys*_dimSys*sizeof(double));
+				dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_iHelp,_fold,&_dimSys,&irtrn);
 
-						for(int i=0;i<_dimSys;i++)
-							_y[i] -= _fold[i];
+				for(int i=0;i<_dimSys;i++)
+					_y[i] -= _fold[i];
 
-						calcFunction(_y,_fnew);
+				calcFunction(_y,_fnew);
 
-						for(int i=0;i<_dimSys;i++)
-							_fold[i] = -_fold[i];
+				for(int i=0;i<_dimSys;i++)
+					_fold[i] = -_fold[i];
 
-						outerprod(_dimSys, _fnew,_fold,_jacHelpMat1);
-						delta = 0;
-						double delta=0.0;
-						for (int i=0;i<_dimSys;i++)
-							delta+=_fold[i]*_fold[i];
+				outerprod(_dimSys, _fnew,_fold,_jacHelpMat1);
+				delta = 0;
+				double delta=0.0;
+				for (int i=0;i<_dimSys;i++)
+					delta+=_fold[i]*_fold[i];
 
-						for(int i=0;i<_dimSys*_dimSys;i++)
-							if(delta!=0)
-								_jac[i] = _jacHelpMat2[i] + _jacHelpMat1[i]/delta;
+				for(int i=0;i<_dimSys*_dimSys;i++)
+					if(delta!=0)
+						_jac[i] = _jacHelpMat2[i] + _jacHelpMat1[i]/delta;
 
-						double fnorm = vecMaxNorm(_dimSys,_fnew);
+				double fnorm = vecMaxNorm(_dimSys,_fnew);
 
-						// Reset
-						memcpy(_fold,_fnew, _dimSys*sizeof(double));
+				// Reset
+				memcpy(_fold,_fnew, _dimSys*sizeof(double));
 
-						//Stopping Criterion
-						if( fnorm < _fNormTol)
-						{
-							_iterationStatus = DONE;
-							break;
-						}
-					*/
-					}
-
-					// Increase counter
-					++ totStps;
-
-				}
-				else
+				//Stopping Criterion
+				if( fnorm < _fNormTol)
 				{
-					throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving nonlinear system");
+					_iterationStatus = DONE;
+					break;
 				}
+			*/
+			}
+
+			// Increase counter
+			++ totStps;
 
 		}
+		else
+		{
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving nonlinear system");
+		}
+
 	}
 }
 

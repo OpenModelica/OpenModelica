@@ -12,7 +12,7 @@
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
-extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+extern "C" IAlgLoopSolver* createKinsol(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 {
     return new Kinsol(algLoop, settings);
 }
@@ -30,7 +30,7 @@ extern "C" INonLinSolverSettings* createKinsolSettings()
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::extensions::factory_map & fm)
 {
-    fm.get<IAlgLoopSolver,int,IAlgLoop*, INonLinSolverSettings*>()[1].set<Kinsol>();
+    fm.get<IAlgLoopSolver,int,INonlinearAlgLoop*, INonLinSolverSettings*>()[1].set<Kinsol>();
     fm.get<INonLinSolverSettings,int >()[2].set<KinsolSettings>();
 }
 
@@ -55,7 +55,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::exten
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> > >()
+  types.get<std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> > >()
     ["kinsol"].set<Kinsol>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
     ["kinsolSettings"].set<KinsolSettings>();
@@ -88,7 +88,7 @@ error "operating system not supported"
        shared_ptr<INonLinSolverSettings> settings = shared_ptr<INonLinSolverSettings>(new KinsolSettings());
         return settings;
    }
-    shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+    shared_ptr<IAlgLoopSolver> createKinsolSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
    {
        shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
           return solver;
@@ -98,7 +98,7 @@ error "operating system not supported"
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }
-   shared_ptr<IAlgLoopSolver> createKinsolSolver(IAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+   shared_ptr<IAlgLoopSolver> createKinsolSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }

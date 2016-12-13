@@ -99,12 +99,12 @@ public:
 
    }
 
-   virtual shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings)
+   virtual shared_ptr<IAlgLoopSolver> createNonLinSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings)
    {
        if(_last_selected_solver.compare(solver_name)==0)
        {
-            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >::iterator iter;
-            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map->get());
+            std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> >::iterator iter;
+            std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map->get());
             iter = nonlinSolverFactory.find(solver_name);
             if (iter ==nonlinSolverFactory.end())
             {

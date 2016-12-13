@@ -3348,6 +3348,7 @@ package Flags
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
   constant ConfigFlag EQUATIONS_PER_FILE;
+  constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN;
 
   function set
     input DebugFlag inFlag;

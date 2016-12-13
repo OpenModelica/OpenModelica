@@ -4,8 +4,10 @@
  *  @{
  */
 #include <SimCoreFactory/ObjectFactory.h>
-shared_ptr<ILinSolverSettings> createUmfpackSettings();
-shared_ptr<IAlgLoopSolver> createUmfpackSolver(IAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings);
+shared_ptr<ILinSolverSettings> createLinearSolverSettings();
+shared_ptr<IAlgLoopSolver> createLinearSolver(ILinearAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings);
+shared_ptr<ILinSolverSettings> createDgesvSolverSettings();
+shared_ptr<IAlgLoopSolver> createDgesvSolver(ILinearAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings);
 template<class CreationPolicy>
 struct StaticLinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>{
 
@@ -20,26 +22,31 @@ public:
 
   virtual shared_ptr<ILinSolverSettings> createLinSolverSettings(string lin_solver)
   {
-     #ifdef USE_UMFPACK
-      if(lin_solver.compare("umfpack")==0)
+      if(lin_solver.compare("linearSolver")==0)
       {
-           shared_ptr<ILinSolverSettings> settings = createUmfpackSettings();
+          throw ModelicaSimulationError(MODEL_FACTORY,"Selected lin solver is not supported for static Linking. Use DGESV instead.");
+      }
+      else if(lin_solver.compare("dgesvSolver")==0)
+      {
+           shared_ptr<ILinSolverSettings> settings = createDgesvSolverSettings();
            return settings;
       }
       else
-     #endif
         throw ModelicaSimulationError(MODEL_FACTORY,"Selected lin solver is not available");
   }
-  virtual shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
+  virtual shared_ptr<IAlgLoopSolver> createLinSolver(ILinearAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
   {
-      #ifdef USE_UMFPACK
-       if(solver_name.compare("umfpack")==0)
+
+       if(solver_name.compare("linearSolver")==0)
        {
-           shared_ptr<IAlgLoopSolver> solver =createUmfpackSolver(algLoop,solver_settings);
+          throw ModelicaSimulationError(MODEL_FACTORY,"Selected lin solver is not supported for static Linking. Use DGESV instead.");
+       }
+       else if(solver_name.compare("dgesvSolver")==0)
+       {
+           shared_ptr<IAlgLoopSolver> solver =createDgesvSolver(algLoop,solver_settings);
            return solver;
        }
        else
-      #endif
           throw ModelicaSimulationError(MODEL_FACTORY,"Selected lin solver is not available");
    }
 

@@ -106,7 +106,7 @@ int kin_DlsDenseJacFn(long int N, N_Vector u, N_Vector fu,DlsMat J, void *user_d
 }
 */
 
-Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+Kinsol::Kinsol(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	: _algLoop            (algLoop)
 	, _kinsolSettings     ((INonLinSolverSettings*)settings)
 	, _y                  (NULL)
@@ -115,9 +115,6 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _fScale             (NULL)
 	, _f                  (NULL)
 	, _helpArray          (NULL)
-	, _ihelpArray         (NULL)
-	, _jhelpArray		  (NULL)
-	, _zeroVec            (NULL)
 	, _currentIterate     (NULL)
 	, _jac                (NULL)
 	, _fHelp              (NULL)
@@ -134,7 +131,6 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _Kin_yScale         (NULL)
 	, _Kin_fScale         (NULL)
 	, _kinMem             (NULL)
-	, _scale			  (NULL)
 	/*
 	, _kluSymbolic 			(NULL)
     , _kluNumeric			(NULL)
@@ -162,14 +158,10 @@ Kinsol::~Kinsol()
 	if(_fScale)           delete []  _fScale;
 	if(_f)                delete []  _f;
 	if(_helpArray)        delete []  _helpArray;
-	if(_ihelpArray)       delete []  _ihelpArray;
-	if (_jhelpArray)       delete[]  _jhelpArray;
 	if(_jac)              delete []  _jac;
 	if(_fHelp)            delete []  _fHelp;
-	if(_zeroVec)          delete []  _zeroVec;
 	if(_currentIterate)   delete []  _currentIterate;
 	if(_yHelp)            delete []  _yHelp;
-	if (_scale)            delete[]  _scale;
 	if(_Kin_y)
 
 		N_VDestroy_Serial(_Kin_y);
@@ -224,7 +216,6 @@ void Kinsol::initialize()
 	if (dimDouble != _dimSys)
 	{
 		_dimSys = dimDouble;
-		_dim = _dimSys;
 
 		if(_dimSys > 0)
 		{
@@ -235,14 +226,10 @@ void Kinsol::initialize()
 			if(_fScale)          delete []  _fScale;
 			if(_f)               delete []  _f;
 			if(_helpArray)       delete []  _helpArray;
-			if(_ihelpArray)      delete []  _ihelpArray;
-			if(_jhelpArray)      delete []  _jhelpArray;
 			if(_jac)             delete []  _jac;
 			if(_yHelp)           delete []  _yHelp;
 			if(_fHelp)           delete []  _fHelp;
-			if(_zeroVec)         delete []  _zeroVec;
 			if(_currentIterate)  delete []  _currentIterate;
-			if (_scale)			 delete[]  _scale;
             if(_y_old)           delete [] _y_old;
             if(_y_new)           delete [] _y_new;
 			_y                = new double[_dimSys];
@@ -251,11 +238,7 @@ void Kinsol::initialize()
 			_fScale           = new double[_dimSys];
 			_f                = new double[_dimSys];
 			_helpArray        = new double[_dimSys];
-			_ihelpArray       = new long int[_dimSys];
-			_jhelpArray		  = new long int[_dimSys];
-			_zeroVec          = new double[_dimSys];
 			_currentIterate   = new double[_dimSys];
-			_scale			  = new double[_dimSys];
             _y_old            = new double[_dimSys];
             _y_new            = new double[_dimSys];
 			_jac              = new double[_dimSys*_dimSys];
@@ -268,14 +251,10 @@ void Kinsol::initialize()
             _algLoop->getReal(_y_old);
 			memset(_f, 0, _dimSys*sizeof(double));
 			memset(_helpArray, 0, _dimSys*sizeof(double));
-			memset(_ihelpArray, 0, _dimSys*sizeof(long int));
-			memset(_jhelpArray, 0, _dimSys*sizeof(long int));
 			memset(_yHelp, 0, _dimSys*sizeof(double));
 			memset(_fHelp, 0, _dimSys*sizeof(double));
 			memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
-			memset(_zeroVec, 0, _dimSys*sizeof(double));
 			memset(_currentIterate, 0, _dimSys*sizeof(double));
-			memset(_scale, 0, _dimSys*sizeof(double));
 
 			_algLoop->getNominalReal(_yScale);
 
@@ -381,355 +360,201 @@ void Kinsol::initialize()
 
 void Kinsol::solve()
 {
-
-
 	if (_firstCall)
 		initialize();
 
 	_iterationStatus = CONTINUE;
 
-	if(_algLoop->isLinear() && !_algLoop->isLinearTearing())
+	int idid;
+	_counter++;
+	_eventRetry = false;
+	_iterationStatus = CONTINUE;
+
+
+	// Try Dense first
+	////////////////////////////
+	if(_usedCompletePivoting || _usedIterativeSolver)
 	{
-
-
-		//use lapack
-		long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-		long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
-		_algLoop->evaluate();
-		_algLoop->getRHS(_f);
-		if(_sparse == false)
-		{
-			const matrix_t& A = _algLoop->getSystemMatrix();
-			const double* jac = A.data().begin();
-
-
-			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-
-
-			dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_ihelpArray,_f,&_dimSys,&irtrn);
-
-
-		}
-		//sparse
-		else
-		{
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system klu not implemented");
-
-		/*
-			//const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-
-			//double const* Ax = bindings::begin_value (As);
-			//double * Ax = (NULL);
-			_algLoop->getSparseAdata( _Ax, _nonzeros);
-
-			//memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-
-			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-			if (ok < 0)
-			{
-				throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system with klu");
-			}
-			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-		*/
-		}
-
-		memcpy(_y,_f,_dimSys*sizeof(double));
-		_algLoop->setReal(_y);
-		if(irtrn != 0)
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system");
-		else
-			_iterationStatus = DONE;
-
-
+		KINDense(_kinMem, _dimSys);
+		_usedCompletePivoting = false;
+		_usedIterativeSolver = false;
 	}
-	else if(_algLoop->isLinearTearing())
+
+	for(int i=0;i<_dimSys;i++) // Reset Scaling
+		_fScale[i] = 1.0;
+
+	solveNLS();
+	if(_iterationStatus == DONE)
 	{
-
-
-		//int
-		//	method = KIN_NONE,
-		//	iter = 0,
-		//	idid;
-		//for(int i=0;i<_dimSys;i++) // Reset Scaling
-		//	_fScale[i] = 1.0;
-		////idid = KINSol(_kinMem, _Kin_y, KIN_NONE, _Kin_yScale, _Kin_fScale);
-		//solveNLS();
-		//_algLoop->setReal(_y);
-		//_algLoop->evaluate();
-		////if (check_flag(&idid, (char *)"KINSol", 1))
-		//if (_iterationStatus == SOLVERERROR)
-		//	throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
-		//else
-		//	_iterationStatus = DONE;
-
-
-
-		long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-		long int irtrn  = 0;          // Retrun-flag of Fortran code
-
-		_algLoop->setReal(_zeroVec);
-		_algLoop->evaluate();
-		_algLoop->getRHS(_f);
-
-
-		// adaptor_t f_adaptor(_dimSys,_f);
-		//shared_matrix_t b(_dimSys,1,f_adaptor);
-
-
-		//print_m (b, "b vector");
-		if(_sparse == false)
-		{
-            const matrix_t& A = _algLoop->getSystemMatrix(); //klu
-
-			//matrix_t  A_copy(A);
-
-
-			const double* jac = A.data().begin(); //klu
-
-			//double* jac = new  double[dimSys*dimSys];
-			//for(int i=0;i<dimSys;i++)
-			//for(int j=0;j<dimSys;j++)
-			//jac[i*_dimSys+j] = A_sparse(i,j);
-
-
-			memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double)); //klu
-
-
-
-
-			dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _ihelpArray, _f,&_dimSys,&irtrn);  //klu
-
-		}
-		//std::vector< int > ipiv (_dimSys);  // pivot vector
-		//lapack::gesv (A, ipiv,b);   // solving the system, b contains x
-		else
-		{
-			//Sparse Solve
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear  system klu not implemented");
-/*
-			const sparsematrix_t& As = _algLoop->getSystemSparseMatrix();
-
-			double const* Ax = bindings::begin_value (As);
-
-			memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
-
-			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
-
-			klu_solve (_kluSymbolic, _kluNumeric, _dim, 1, _f, _kluCommon) ;
-*/
-	    }
-
-
-		if  (irtrn != 0)
-		{
-			dgetc2_(&_dimSys, _jac, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
-			dgesc2_(&_dimSys, _jac, &_dimSys, _f, _ihelpArray, _jhelpArray, _scale);
-			LOGGER_WRITE("Kinsol: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
-			_iterationStatus = DONE;
-		}
-		else
-		_iterationStatus = DONE;
-	   for(int i=0; i<_dimSys; i++)
-		_y[i]=-_f[i];
 		_algLoop->setReal(_y);
 		_algLoop->evaluate();
 
+		return;
 	}
-	else
+	else  // Try Scaling
+	{
+		_iterationStatus = CONTINUE;
+		_algLoop->setReal(_y0);
+		_algLoop->evaluate();
+		_algLoop->getRHS(_fScale);
+		for(int i=0;i<_dimSys;i++)
+		{
+
+			if(abs(_fScale[i]) >1.0)
+			_fScale[i] = abs(1/_fScale[i]);
+			else
+			_fScale[i] = 1;
+
+		}
+
+		_iterationStatus = CONTINUE;
+
+		solveNLS();
+	}
+
+	if(_iterationStatus == DONE)
+	{
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
+
+		return;
+	}
+
+	// Try complete pivoting
+	///////////////////////////////////////
+	//_usedCompletePivoting = true;
+	//
+
+	//KINLapackCompletePivoting(_kinMem, _dimSys);
+	//
+	//for(int i=0;i<_dimSys;i++) // Reset Scaling
+	//	_fScale[i] = 1.0;
+
+	//_iterationStatus = CONTINUE;
+	//solveNLS();
+	//if(_iterationStatus == DONE)
+	//	return;
+	//else  // Try Scaling
+	//{
+	//	_iterationStatus = CONTINUE;
+	//	_algLoop->setReal(_y0);
+	//	_algLoop->evaluate();
+	//	_algLoop->getRHS(_fScale);
+	//	for(int i=0;i<_dimSys;i++)
+	//	{
+	//
+	//		if(abs(_fScale[i]) >1.0)
+	//		_fScale[i] = abs(1/_fScale[i]);
+	//		else
+	//		_fScale[i] = 1;
+
+	//
+	//	}
+	//	_iterationStatus = CONTINUE;
+	//	solveNLS();
+	//}
+	//
+	//if(_iterationStatus == DONE)
+	//	return;
+
+	//Try iterative Solvers
+	/////////////////////////////////
+	_usedIterativeSolver = true;
+
+	for(int i=0;i<_dimSys;i++) // Reset Scaling
+		_fScale[i] = 1.0;
+
+	KINSpgmr(_kinMem,_dimSys);
+
+	_iterationStatus = CONTINUE;
+	solveNLS();
+
+	if(_iterationStatus == DONE)
+	{
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
+
+		return;
+	}
+	else  // Try Scaling
+	{
+		_iterationStatus = CONTINUE;
+		_algLoop->setReal(_y0);
+		_algLoop->evaluate();
+		_algLoop->getRHS(_fScale);
+		for(int i=0;i<_dimSys;i++)
+		{
+			if(abs(_fScale[i]) >1.0)
+			_fScale[i] = abs(1/_fScale[i]);
+			else
+			_fScale[i] = 1;
+		}
+		_iterationStatus = CONTINUE;
+		solveNLS();
+
+	}
+	if(_iterationStatus == DONE)
+	{
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
+		return;
+	}
+
+	for(int i=0;i<_dimSys;i++) // Reset Scaling
+		_fScale[i] = 1.0;
+
+	KINSpbcg(_kinMem,_dimSys);
+	_iterationStatus = CONTINUE;
+	solveNLS();
+	if(_iterationStatus == DONE)
+	{
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
+		return;
+	}
+	else  // Try Scaling
+	{
+		_iterationStatus = CONTINUE;
+		_algLoop->setReal(_y0);
+		_algLoop->evaluate();
+		_algLoop->getRHS(_fScale);
+		for(int i=0;i<_dimSys;i++)
+		{
+			if(abs(_fScale[i]) >1.0)
+				_fScale[i] = abs(1/_fScale[i]);
+			else
+				_fScale[i] = 1;
+		}
+		solveNLS();
+	}
+	if(_iterationStatus == DONE)
+	{
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
+		return;
+	}
+
+	if(_eventRetry)
+	{
+		memcpy(_y, _helpArray ,_dimSys*sizeof(double));
+		_iterationStatus = CONTINUE;
+		return;
+	}
+
+	if(_iterationStatus == SOLVERERROR && !_eventRetry)
 	{
 
-		int idid;
-		_counter++;
-		_eventRetry = false;
-		_iterationStatus = CONTINUE;
-
-
-		// Try Dense first
-		////////////////////////////
-		if(_usedCompletePivoting || _usedIterativeSolver)
+	  if(_kinsolSettings->getContinueOnError())
+	  {
+		if(!_solverErrorNotificationGiven)
 		{
-			KINDense(_kinMem, _dimSys);
-			_usedCompletePivoting = false;
-			_usedIterativeSolver = false;
+		  LOGGER_WRITE("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
+		  _solverErrorNotificationGiven = true;
 		}
+	  }
+	  else
 
-		for(int i=0;i<_dimSys;i++) // Reset Scaling
-			_fScale[i] = 1.0;
-
-		solveNLS();
-		if(_iterationStatus == DONE)
-		{
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-
-			return;
-		}
-		else  // Try Scaling
-		{
-			_iterationStatus = CONTINUE;
-			_algLoop->setReal(_y0);
-			_algLoop->evaluate();
-			_algLoop->getRHS(_fScale);
-			for(int i=0;i<_dimSys;i++)
-			{
-
-				if(abs(_fScale[i]) >1.0)
-				_fScale[i] = abs(1/_fScale[i]);
-				else
-				_fScale[i] = 1;
-
-			}
-
-			_iterationStatus = CONTINUE;
-
-			solveNLS();
-		}
-
-		if(_iterationStatus == DONE)
-		{
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-
-			return;
-		}
-
-		// Try complete pivoting
-		///////////////////////////////////////
-		//_usedCompletePivoting = true;
-		//
-
-		//KINLapackCompletePivoting(_kinMem, _dimSys);
-		//
-		//for(int i=0;i<_dimSys;i++) // Reset Scaling
-		//	_fScale[i] = 1.0;
-
-		//_iterationStatus = CONTINUE;
-		//solveNLS();
-		//if(_iterationStatus == DONE)
-		//	return;
-		//else  // Try Scaling
-		//{
-		//	_iterationStatus = CONTINUE;
-		//	_algLoop->setReal(_y0);
-		//	_algLoop->evaluate();
-		//	_algLoop->getRHS(_fScale);
-		//	for(int i=0;i<_dimSys;i++)
-		//	{
-		//
-		//		if(abs(_fScale[i]) >1.0)
-		//		_fScale[i] = abs(1/_fScale[i]);
-		//		else
-		//		_fScale[i] = 1;
-
-		//
-		//	}
-		//	_iterationStatus = CONTINUE;
-		//	solveNLS();
-		//}
-		//
-		//if(_iterationStatus == DONE)
-		//	return;
-
-		//Try iterative Solvers
-		/////////////////////////////////
-		_usedIterativeSolver = true;
-
-		for(int i=0;i<_dimSys;i++) // Reset Scaling
-			_fScale[i] = 1.0;
-
-		KINSpgmr(_kinMem,_dimSys);
-
-		_iterationStatus = CONTINUE;
-		solveNLS();
-
-		if(_iterationStatus == DONE)
-		{
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-
-			return;
-		}
-		else  // Try Scaling
-		{
-			_iterationStatus = CONTINUE;
-			_algLoop->setReal(_y0);
-			_algLoop->evaluate();
-			_algLoop->getRHS(_fScale);
-			for(int i=0;i<_dimSys;i++)
-			{
-				if(abs(_fScale[i]) >1.0)
-				_fScale[i] = abs(1/_fScale[i]);
-				else
-				_fScale[i] = 1;
-			}
-			_iterationStatus = CONTINUE;
-			solveNLS();
-
-		}
-		if(_iterationStatus == DONE)
-		{
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-			return;
-		}
-
-		for(int i=0;i<_dimSys;i++) // Reset Scaling
-			_fScale[i] = 1.0;
-
-		KINSpbcg(_kinMem,_dimSys);
-		_iterationStatus = CONTINUE;
-		solveNLS();
-		if(_iterationStatus == DONE)
-		{
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-			return;
-		}
-		else  // Try Scaling
-		{
-			_iterationStatus = CONTINUE;
-			_algLoop->setReal(_y0);
-			_algLoop->evaluate();
-			_algLoop->getRHS(_fScale);
-			for(int i=0;i<_dimSys;i++)
-			{
-				if(abs(_fScale[i]) >1.0)
-					_fScale[i] = abs(1/_fScale[i]);
-				else
-					_fScale[i] = 1;
-			}
-			solveNLS();
-		}
-		if(_iterationStatus == DONE)
-		{
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-			return;
-		}
-
-		if(_eventRetry)
-		{
-			memcpy(_y, _helpArray ,_dimSys*sizeof(double));
-			_iterationStatus = CONTINUE;
-			return;
-		}
-
-    if(_iterationStatus == SOLVERERROR && !_eventRetry)
-    {
-
-      if(_kinsolSettings->getContinueOnError())
-      {
-        if(!_solverErrorNotificationGiven)
-        {
-          LOGGER_WRITE("Kinsol: Solver error detected. The simulation will continue, but the results may be incorrect.",LC_NLS,LL_WARNING);
-          _solverErrorNotificationGiven = true;
-        }
-      }
-      else
-
-        throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
-    }
-
+		throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
 	}
 }
 

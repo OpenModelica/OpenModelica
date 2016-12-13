@@ -32,22 +32,7 @@ Copyright (c) 2008, OSMC
 
 //typedef tuple<int,int> mytuple;
 
-class mytuple
-{
-public:
-	 mytuple(int a, int b)
-	 {
-		ele1 = a;
-		ele2 = b;
-	 };
-	~mytuple(){};
-	int ele1;
-	int ele2;
-};
-
-
-
-bool BOOST_EXTENSION_EXPORT_DECL mycompare ( mytuple lhs, mytuple rhs);
+/*not used anymore
 
 /// Enumeration to control the output
 enum OUTPUT
@@ -63,72 +48,40 @@ enum OUTPUT
     RESULTS       =  0x00000020,      ///< Write out results
     SIMINFO       =  0x00000040      ///< Write out simulation info (e.g. number of steps)
   };
+*/
 
-/// store attributes of a variable
-struct AlgloopVarAttributes
-{
-  AlgloopVarAttributes() {};
-  AlgloopVarAttributes(const char *name,double nominal,double min,double max)
-  :name(name)
-  ,nominal(nominal)
-  ,min(min)
-  ,max(max)
-  {}
-
-  const char *name;
-  double nominal;
-  double min;
-  double max;
-};
-
-class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL AlgLoopDefaultImplementation
+class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL NonLinearAlgLoopDefaultImplementation
 {
 public:
-  AlgLoopDefaultImplementation();
+  NonLinearAlgLoopDefaultImplementation();
 
-  ~AlgLoopDefaultImplementation();
+  ~NonLinearAlgLoopDefaultImplementation();
 
   /// Provide number (dimension) of variables according to data type
   int getDimReal() const;
 
-  // Provide number (dimension) of residuals according to data type
-  int getDimRHS() const;
-
   /// (Re-) initialize the system of equations
   void initialize();
-
-  /// Provide variables of the system
-  void getReal(double* lambda) const;
-
-  /// Set variables of the system
-  void setReal(const double* lambda);
 
   /// Provide the right hand side (residuals)
   void getRHS(double* res) const;
 
+  bool getUseSparseFormat();
+
+  void setUseSparseFormat(bool value);
+
   //void getSparseAdata(double* data, int nonzeros);
-
-  /// Output routine (to be called by the solver after every successful integration step)
-  void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
-
-  //void setDim(const int dim);
-
-  /// Set stream for output
-  /*void setOutput(std::ostream* outputStream) ;*/
-
 
   // Member variables
   //---------------------------------------------------------------
 protected:
   int _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
-  double* _xd_init;
-  double* __xd;
+  double* _res;
 
-  IAlgLoop::CONSTRTYPE
-  _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
+
   double * _AData;
   double* _Ax;
-  bool _bInitialized;
+  bool _useSparseFormat;
 
 };
 /** @} */ // end of coreSystem

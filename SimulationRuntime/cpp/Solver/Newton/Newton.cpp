@@ -14,8 +14,7 @@
 #include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
-
-Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+Newton::Newton(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
   : _algLoop          (algLoop)
   , _newtonSettings   ((INonLinSolverSettings*)settings)
   , _yNames           (NULL)
@@ -31,11 +30,10 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
   , _fTest            (NULL)
   , _iHelp            (NULL)
   , _jac              (NULL)
-  , _zeroVec          (NULL)
   , _dimSys           (0)
   , _firstCall        (true)
   , _iterationStatus  (CONTINUE)
-  , _lc               (algLoop->isLinear()? LC_LS: LC_NLS)
+  , _lc               (LC_NLS)
 {
 }
 
@@ -54,7 +52,6 @@ Newton::~Newton()
   if (_fTest)    delete []    _fTest;
   if (_iHelp)    delete []    _iHelp;
   if (_jac)      delete []    _jac;
-  if (_zeroVec)  delete []   _zeroVec;
 }
 
 void Newton::initialize()
@@ -89,7 +86,6 @@ void Newton::initialize()
       if (_fTest)    delete []    _fTest;
       if (_iHelp)    delete []    _iHelp;
       if (_jac)      delete []    _jac;
-      if (_zeroVec)  delete []    _zeroVec;
 
       _yNames       = new const char* [_dimSys];
       _yNominal     = new double[_dimSys];
@@ -104,13 +100,11 @@ void Newton::initialize()
       _fTest        = new double[_dimSys];
       _iHelp        = new long int[_dimSys];
       _jac          = new double[_dimSys*_dimSys];
-      _zeroVec      = new double[_dimSys];
 
       _algLoop->getNamesReal(_yNames);
       _algLoop->getNominalReal(_yNominal);
       _algLoop->getMinReal(_yMin);
       _algLoop->getMaxReal(_yMax);
-      std::fill(_zeroVec, _zeroVec + _dimSys, 0.0);
     }
     else {
       _iterationStatus = SOLVERERROR;
@@ -140,10 +134,8 @@ void Newton::solve()
 
   // Get current values and residuals from system
   _algLoop->getReal(_y);
-  if (!_algLoop->isLinearTearing()) {
-    _algLoop->evaluate();
-    _algLoop->getRHS(_f);
-  }
+  _algLoop->evaluate();
+  _algLoop->getRHS(_f);
 
   // Reset status flag
   _iterationStatus = CONTINUE;
@@ -156,42 +148,8 @@ void Newton::solve()
     if (totSteps >= _newtonSettings->getNewtMax())
       throw ModelicaSimulationError(ALGLOOP_SOLVER,
         "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
-    // Solve linear non-torn system
-    if (_algLoop->isLinear() && !_algLoop->isLinearTearing()) {
-      calcJacobian(_jac, _fNominal);
-      for (int i = 0; i < _dimSys; i++)
-        _f[i] /= _fNominal[i];
-      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-      for (int j = 0; j < _dimSys; j++)
-        _y[j] = _f[j] /** _yNominal[j]*/;
-      _algLoop->setReal(_y);
-      if (info != 0)
-        throw ModelicaSimulationError(ALGLOOP_SOLVER,
-          "error solving linear system (dgesv info: " + to_string(info) + ")");
-      else
-        _iterationStatus = DONE;
-    }
-
-    // Solve linear torn system
-    else if (_algLoop->isLinearTearing()) {
-      calcFunction(_zeroVec, _f);
-      calcJacobian(_jac, _fNominal);
-      for (int i = 0; i < _dimSys; i++)
-        _f[i] /= _fNominal[i];
-      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
-      for (int j = 0; j < _dimSys; j++)
-        _y[j] = -_f[j] /** _yNominal[j]*/;
-      _algLoop->setReal(_y);
-      _algLoop->evaluate();
-      if (info != 0)
-        throw ModelicaSimulationError(ALGLOOP_SOLVER,
-          "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
-      else
-        _iterationStatus = DONE;
-    }
 
     // Newton step for non-linear system
-    else {
       LOGGER_WRITE_VECTOR("y" + to_string(totSteps), _y, _dimSys, _lc, LL_DEBUG);
       LOGGER_WRITE_VECTOR("f" + to_string(totSteps), _f, _dimSys, _lc, LL_DEBUG);
 
@@ -315,7 +273,6 @@ void Newton::solve()
       for (int i = 0; i < _dimSys; i++)
         _f[i] = _fHelp[i] * _fNominal[i];
       phi = phiHelp;
-    }
   } // end while
 
   LOGGER_WRITE_VECTOR("y*", _y, _dimSys, _lc, LL_DEBUG);

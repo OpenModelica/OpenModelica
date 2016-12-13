@@ -27,7 +27,7 @@ public:
         return linsolversetting;
     }
 
-    virtual shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
+    virtual shared_ptr<IAlgLoopSolver> createLinSolver(ILinearAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
     {
         shared_ptr<IAlgLoopSolver> solver;
         return solver;

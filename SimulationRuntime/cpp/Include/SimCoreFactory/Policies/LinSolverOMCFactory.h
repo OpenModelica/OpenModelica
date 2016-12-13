@@ -40,6 +40,18 @@ public:
             }
             lin_solver_key.assign("extension_export_umfpack");
         }
+		else if(lin_solver.compare("linearSolver") == 0)
+        {
+            fs::path linearSolver_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path linearSolver_name(LINEARSOLVER_LIB);
+            linearSolver_path/=linearSolver_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(linearSolver_path.string(),*_linsolver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading linear solver library!");
+            }
+            lin_solver_key.assign("extension_export_linearSolver");
+        }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected linear solver is not available");
 
@@ -56,12 +68,12 @@ public:
         return linsolversetting;
   }
 
-  virtual shared_ptr<IAlgLoopSolver> createLinSolver(IAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
+  virtual shared_ptr<IAlgLoopSolver> createLinSolver(ILinearAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
   {
     if(_last_selected_solver.compare(solver_name) == 0)
     {
-            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >::iterator iter;
-            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, ILinSolverSettings*> >& linSolverFactory(_linsolver_type_map->get());
+            std::map<std::string, factory<IAlgLoopSolver,ILinearAlgLoop*, ILinSolverSettings*> >::iterator iter;
+            std::map<std::string, factory<IAlgLoopSolver,ILinearAlgLoop*, ILinSolverSettings*> >& linSolverFactory(_linsolver_type_map->get());
             iter = linSolverFactory.find(solver_name);
             if (iter == linSolverFactory.end())
             {

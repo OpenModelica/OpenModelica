@@ -11,7 +11,7 @@
 #include <boost/numeric/ublas/io.hpp>
 namespace umf = boost::numeric::bindings::umfpack;
 #endif
-UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _rhs(NULL), _x(NULL), _firstuse(true), _jacd(NULL)
+UmfPack::UmfPack(ILinearAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _rhs(NULL), _x(NULL), _firstuse(true), _jacd(NULL)
 {
 }
 

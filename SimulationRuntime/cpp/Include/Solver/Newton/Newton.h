@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include <Core/System/IAlgLoop.h>                // Interface to AlgLoo
+#include <Core/System/ILinearAlgLoop.h>                // Interface to AlgLoo
+#include <Core/System/INonLinearAlgLoop.h>                // Interface to AlgLoo
 #include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/INonLinSolverSettings.h>
 #include <Solver/Newton/NewtonSettings.h>
@@ -34,7 +35,7 @@
 class Newton : public IAlgLoopSolver
 {
  public:
-  Newton(IAlgLoop* algLoop,INonLinSolverSettings* settings);
+  Newton(INonLinearAlgLoop* algLoop,INonLinSolverSettings* settings);
 
   virtual ~Newton();
 
@@ -61,7 +62,7 @@ class Newton : public IAlgLoopSolver
   INonLinSolverSettings
     *_newtonSettings;           ///< Settings for the solver
 
-  IAlgLoop
+  INonLinearAlgLoop
     *_algLoop;                  ///< Algebraic loop to be solved
 
   ITERATIONSTATUS
@@ -86,8 +87,7 @@ class Newton : public IAlgLoopSolver
     *_fHelp,                    ///< Temp        - Auxillary variables
     *_yTest,                    ///< Temp        - Auxillary variables
     *_fTest,                    ///< Temp        - Auxillary variables
-    *_jac,                      ///< Temp        - Jacobian
-    *_zeroVec;
+    *_jac;                      ///< Temp        - Jacobian
   long int *_iHelp;
   LogCategory _lc;              ///< LC_NLS or LC_LS
 

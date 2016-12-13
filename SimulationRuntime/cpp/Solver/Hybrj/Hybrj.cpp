@@ -10,7 +10,7 @@
 #include <Core/Math/Constants.h>        // definition of constants like uround
 #include <algorithm>    // std::max
 
-Hybrj::Hybrj(IAlgLoop* algLoop, INonLinSolverSettings* settings)
+Hybrj::Hybrj(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	: _algLoop            (algLoop)
 	, _newtonSettings    ((INonLinSolverSettings*)settings)
 	, _x                (NULL)
@@ -36,7 +36,6 @@ Hybrj::Hybrj(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 	,_x_nom(NULL)
 	,_x_scale(NULL)
 	,_x_restart(NULL)
-	, _zeroVec(NULL)
 	,_initial_factor(100)
 	,_usescale(false)
 {
@@ -64,7 +63,6 @@ Hybrj::~Hybrj()
 	if(_x_nom) delete[] _x_nom;
 	if(_x_scale) delete[] _x_scale;
 	if(_x_ex) delete[] _x_ex;
-	if(_zeroVec)          delete []  _zeroVec;
 }
 
 void Hybrj::stepCompleted(double time)
@@ -107,7 +105,6 @@ void Hybrj::initialize()
 			if(_x_scale) delete[] _x_scale;
 			if(_x_ex) delete[] _x_ex;
 			if(_x_restart) delete[] _x_restart;
-			if(_zeroVec)          delete []  _zeroVec;
 			_x            = new double[_dimSys];
 			_f            = new double[_dimSys];
 			_xHelp        = new double[_dimSys];
@@ -121,7 +118,6 @@ void Hybrj::initialize()
 			_x_scale = new double[_dimSys];
 			_x_ex = new double[_dimSys];
 			_x_restart = new double[_dimSys];
-			_zeroVec          = new double[_dimSys];
 			//ToDo: nominal variablen abfragen
 			_algLoop->getReal(_x0);
 			_algLoop->getReal(_x1);
@@ -181,226 +177,181 @@ void Hybrj::solve()
 
 
 
-	if(_algLoop->isLinear())
-	{
-		long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-		long int dimSys= _dimSys;
-		long int irtrn  = 0;          // Retrun-flag of Fortran code
-		//calcFunction(_yHelp,_fHelp);
-		const matrix_t& A = _algLoop->getSystemMatrix();
-		const double* jac = A.data().begin();
-		memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-		dgesv_(&dimSys, &dimRHS, _jac, &dimSys, _iHelp, _f,&dimSys,&irtrn);
-		memcpy(_x,_f,_dimSys*sizeof(double));
-		_algLoop->setReal(_x);
-		if(irtrn != 0)
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
-		else
-			_iterationStatus = DONE;
-	}
-	else if(_algLoop->isLinearTearing())
-	{
 
-		long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
-		long int dimSys= _dimSys;
-		long int irtrn  = 0;          // Retrun-flag of Fortran code
-
-		_algLoop->setReal(_zeroVec);
-		_algLoop->evaluate();
-		_algLoop->getRHS(_f);
-		const matrix_t& A = _algLoop->getSystemMatrix();
-		const double* jac = A.data().begin();
-		memcpy(_jac, jac, _dimSys*_dimSys*sizeof(double));
-		dgesv_(&dimSys, &dimRHS, _jac, &dimSys, _iHelp, _f,&dimSys,&irtrn);
-		for(int i=0; i<_dimSys; i++)
-			_f[i]=-_f[i];
-		memcpy(_x, _f, _dimSys*sizeof(double));
-		_algLoop->setReal(_x);
-		_algLoop->evaluate();
-		if(irtrn != 0)
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
-		else
-			_iterationStatus = DONE;
-	}
-	else
+	bool restart =true;
+	int iter = 0;
+	int iter_retry = 0;
+	int iter_retry2 = 0;
+	int info;
+	_iterationStatus = CONTINUE;
+	bool isConsistent = true;
+	double local_tol = 1e-12;
+	while(_iterationStatus == CONTINUE)
 	{
-
-		bool restart =true;
-		int iter = 0;
-		int iter_retry = 0;
-		int iter_retry2 = 0;
-		int info;
-		_iterationStatus = CONTINUE;
-		bool isConsistent = true;
-		double local_tol = 1e-12;
-		while(_iterationStatus == CONTINUE)
+		/* Scaling x vector */
+		if(_usescale)
+			std::transform (_x, _x+_dimSys, _x_scale,_x, std::divides<double>());
+		__minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag,
+			&_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf,
+			_wa1, _wa2, _wa3, _wa4,_data);
+		//check if  the conditions of the system has changed
+		if(isConsistent)
 		{
-			/* Scaling x vector */
-			if(_usescale)
-				std::transform (_x, _x+_dimSys, _x_scale,_x, std::divides<double>());
-			__minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag,
-				&_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf,
-				_wa1, _wa2, _wa3, _wa4,_data);
-			//check if  the conditions of the system has changed
-			if(isConsistent)
-			{
-				isConsistent = _algLoop->isConsistent();
-				if(!isConsistent)
-					_algLoop->getReal(_x_restart);
-			}
-			/* re-scaling x vector */
-			if(_usescale)
-				std::transform (_x, _x+_dimSys, _x_scale, _x, std::multiplies<double>());
-
-
-			_fnorm = __minpack_func__(enorm)(&_dimSys, _f);
-			/*solution was found*/
-			if(info==1  || (_fnorm <= local_tol))
-				_iterationStatus = DONE;
-
-			/* first try to decrease factor */
-			else if((info==4 || info == 5) && iter<3)
-			{
-				_algLoop->getReal(_x);
-				_iterationStatus = CONTINUE;
-				_factor/=10;
-				iter++;
-				// cout << " - iteration making no progress:\t decreasing initial step bound to "<< _factor << std::endl ;
-			}
-			/* try to vary the initial values */
-			else if((info==4 || info == 5) && iter<4)
-			{
-				_factor=_initial_factor;
-				for(int i = 0; i < _dimSys; i++)
-					_x[i] += _x_nom[i] * 0.1;
-				iter++;
-				//  cout <<"iteration making no progress:\t vary solution point by 1%%"<< std::endl ;
-			}
-			/* try old values as x-Scaling factors */
-			else if((info==4 || info == 5) && iter<5)
-			{
-				for(int i = 0; i < _dimSys; i++)
-					_x_scale[i] = std::max(_x0[i], _x_nom[i]);
-				iter++;
-				//cout << "iteration making no progress:\t try without scaling at all."<< std::endl ;
-
-			}
-			/* try to disable x-Scaling */
-			else if((info==4 || info == 5) && iter<6)
-			{
-				_usescale = false;
-				memcpy(_x_scale, _x_nom,_dimSys*(sizeof(double)));
-				iter++;
-				// cout << "iteration making no progress:\t try without scaling at all."<< std::endl ;
-			}
-			/*try with old values (instead of extrapolating )*/
-			else if((info==4 || info == 5) && iter_retry<1)
-			{
-				memcpy(_x, _x0, _dimSys*(sizeof(double)));
-				iter=0;
-				iter_retry++;
-				// cout << "- iteration making no progress:\t use old values instead extrapolated."<< std::endl ;
-			}
-			/* try to vary the initial values */
-			else if((info==4 || info == 5) && iter_retry<2)
-			{
-				memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-				for(int i = 0; i < _dimSys; i++)
-				{
-					_x[i] *= 1.01;
-				}
-				iter = 0;
-				iter_retry++;
-				//cout << "- iteration making no progress:\t vary initial point by adding 1%%."<< std::endl ;
-
-			}
-			/* try to vary the initial values */
-			else if((info==4 || info == 5) && iter_retry<3)
-			{
-				memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-				for(int i = 0; i < _dimSys; i++)
-				{
-					_x[i] *= 0.99;
-				}
-				iter = 0;
-				iter_retry++;
-				//cout << "-  iteration making no progress:\t vary initial point by -1%%."<< std::endl ;
-
-			}
-			/* try to vary the initial values */
-			else if((info==4 || info == 5) && iter_retry<4)
-			{
-				memcpy(_x, _x_nom, _dimSys*(sizeof(double)));
-				iter = 0;
-				iter_retry++;
-				// cout << "-   iteration making no progress:\t try scaling factor as initial point."<< std::endl ;
-			}
-			/* try own scaling factors */
-			else if((info==4 || info == 5) && iter_retry<5)
-			{
-				memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-				for(int i = 0; i < _dimSys; i++)
-				{
-					_diag[i] = fabs(_x_scale[i]);
-					if(_diag[i] <= 0)
-						_diag[i] = 1e-16;
-				}
-				_mode = 2;
-				iter = 0;
-				iter_retry++;
-				// cout << "-   iteration making no progress:\t try with own scaling factors."<< std::endl ;
-			}
-			/* try without internal scaling */
-			else if((info==4 || info == 5) && iter_retry2<2)
-			{
-				memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-				for(int i = 0; i < _dimSys; i++)
-				{
-					_diag[i] = 1.0;
-				}
-				_mode=2;
-				_usescale=true;
-				iter = 0;
-				iter_retry=0;
-				iter_retry2++;
-				// cout << "-  - iteration making no progress:\t disable solver internal scaling."<< std::endl ;
-			}
-			/* try to reduce the tolerance a bit */
-			else if((info==4 || info == 5) && iter_retry2<6)
-			{
-				memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-				_xtol*=10;
-				_factor = _initial_factor;
-				iter = 0;
-				iter_retry=0;
-				iter_retry2++;
-				_mode=1;
-				//  cout << " - iteration making no progress:\t reduce the tolerance slightly to %e."<< std::endl ;
-			}
-			else
-				_iterationStatus = SOLVERERROR;
-
-		}
-		if(_iterationStatus == SOLVERERROR)
-		{
+			isConsistent = _algLoop->isConsistent();
 			if(!isConsistent)
-			{
-				_algLoop->setReal(_x_restart);
-			}
-			else
-				throw ModelicaSimulationError(ALGLOOP_SOLVER,"Unsuccessful termination of HYBRJ, iteration is making no progress ");
+				_algLoop->getReal(_x_restart);
+		}
+		/* re-scaling x vector */
+		if(_usescale)
+			std::transform (_x, _x+_dimSys, _x_scale, _x, std::multiplies<double>());
 
+
+		_fnorm = __minpack_func__(enorm)(&_dimSys, _f);
+		/*solution was found*/
+		if(info==1  || (_fnorm <= local_tol))
+			_iterationStatus = DONE;
+
+		/* first try to decrease factor */
+		else if((info==4 || info == 5) && iter<3)
+		{
+			_algLoop->getReal(_x);
+			_iterationStatus = CONTINUE;
+			_factor/=10;
+			iter++;
+			// cout << " - iteration making no progress:\t decreasing initial step bound to "<< _factor << std::endl ;
+		}
+		/* try to vary the initial values */
+		else if((info==4 || info == 5) && iter<4)
+		{
+			_factor=_initial_factor;
+			for(int i = 0; i < _dimSys; i++)
+				_x[i] += _x_nom[i] * 0.1;
+			iter++;
+			//  cout <<"iteration making no progress:\t vary solution point by 1%%"<< std::endl ;
+		}
+		/* try old values as x-Scaling factors */
+		else if((info==4 || info == 5) && iter<5)
+		{
+			for(int i = 0; i < _dimSys; i++)
+				_x_scale[i] = std::max(_x0[i], _x_nom[i]);
+			iter++;
+			//cout << "iteration making no progress:\t try without scaling at all."<< std::endl ;
 
 		}
-
-		/* if(iter>4)
+		/* try to disable x-Scaling */
+		else if((info==4 || info == 5) && iter<6)
 		{
-		std::cout << " iterations: " << iter << " , " <<iter_retry << " , " << iter_retry2 <<  " norm: " <<_fnorm << std::endl;
-		}*/
-		_factor=100;
-		_mode=1;
+			_usescale = false;
+			memcpy(_x_scale, _x_nom,_dimSys*(sizeof(double)));
+			iter++;
+			// cout << "iteration making no progress:\t try without scaling at all."<< std::endl ;
+		}
+		/*try with old values (instead of extrapolating )*/
+		else if((info==4 || info == 5) && iter_retry<1)
+		{
+			memcpy(_x, _x0, _dimSys*(sizeof(double)));
+			iter=0;
+			iter_retry++;
+			// cout << "- iteration making no progress:\t use old values instead extrapolated."<< std::endl ;
+		}
+		/* try to vary the initial values */
+		else if((info==4 || info == 5) && iter_retry<2)
+		{
+			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
+			for(int i = 0; i < _dimSys; i++)
+			{
+				_x[i] *= 1.01;
+			}
+			iter = 0;
+			iter_retry++;
+			//cout << "- iteration making no progress:\t vary initial point by adding 1%%."<< std::endl ;
+
+		}
+		/* try to vary the initial values */
+		else if((info==4 || info == 5) && iter_retry<3)
+		{
+			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
+			for(int i = 0; i < _dimSys; i++)
+			{
+				_x[i] *= 0.99;
+			}
+			iter = 0;
+			iter_retry++;
+			//cout << "-  iteration making no progress:\t vary initial point by -1%%."<< std::endl ;
+
+		}
+		/* try to vary the initial values */
+		else if((info==4 || info == 5) && iter_retry<4)
+		{
+			memcpy(_x, _x_nom, _dimSys*(sizeof(double)));
+			iter = 0;
+			iter_retry++;
+			// cout << "-   iteration making no progress:\t try scaling factor as initial point."<< std::endl ;
+		}
+		/* try own scaling factors */
+		else if((info==4 || info == 5) && iter_retry<5)
+		{
+			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
+			for(int i = 0; i < _dimSys; i++)
+			{
+				_diag[i] = fabs(_x_scale[i]);
+				if(_diag[i] <= 0)
+					_diag[i] = 1e-16;
+			}
+			_mode = 2;
+			iter = 0;
+			iter_retry++;
+			// cout << "-   iteration making no progress:\t try with own scaling factors."<< std::endl ;
+		}
+		/* try without internal scaling */
+		else if((info==4 || info == 5) && iter_retry2<2)
+		{
+			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
+			for(int i = 0; i < _dimSys; i++)
+			{
+				_diag[i] = 1.0;
+			}
+			_mode=2;
+			_usescale=true;
+			iter = 0;
+			iter_retry=0;
+			iter_retry2++;
+			// cout << "-  - iteration making no progress:\t disable solver internal scaling."<< std::endl ;
+		}
+		/* try to reduce the tolerance a bit */
+		else if((info==4 || info == 5) && iter_retry2<6)
+		{
+			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
+			_xtol*=10;
+			_factor = _initial_factor;
+			iter = 0;
+			iter_retry=0;
+			iter_retry2++;
+			_mode=1;
+			//  cout << " - iteration making no progress:\t reduce the tolerance slightly to %e."<< std::endl ;
+		}
+		else
+			_iterationStatus = SOLVERERROR;
 
 	}
+	if(_iterationStatus == SOLVERERROR)
+	{
+		if(!isConsistent)
+		{
+			_algLoop->setReal(_x_restart);
+		}
+		else
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Unsuccessful termination of HYBRJ, iteration is making no progress ");
+
+
+	}
+
+	/* if(iter>4)
+	{
+	std::cout << " iterations: " << iter << " , " <<iter_retry << " , " << iter_retry2 <<  " norm: " <<_fnorm << std::endl;
+	}*/
+	_factor=100;
+	_mode=1;
 
 
 }

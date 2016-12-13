@@ -7,7 +7,8 @@
 
 #include "FactoryExport.h"
 
-#include <Core/System/IAlgLoop.h>                // Interface to AlgLoo
+#include <Core/System/ILinearAlgLoop.h>               // Interface to AlgLoo
+#include <Core/System/INonLinearAlgLoop.h>               // Interface to AlgLoo
 #include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/INonLinSolverSettings.h>
 #include <Solver/Broyden/BroydenSettings.h>
@@ -52,7 +53,7 @@ class Broyden : public IAlgLoopSolver
 {
 public:
 
-    Broyden(IAlgLoop* algLoop,INonLinSolverSettings* settings);
+    Broyden(INonLinearAlgLoop* algLoop,INonLinSolverSettings* settings);
 
     virtual ~Broyden();
 
@@ -79,7 +80,7 @@ private:
     INonLinSolverSettings
         *_BroydenSettings;            ///< Settings for the solver
 
-    IAlgLoop
+    INonLinearAlgLoop
         *_algLoop;                    ///< Algebraic loop to be solved
 
     ITERATIONSTATUS

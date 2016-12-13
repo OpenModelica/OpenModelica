@@ -16,7 +16,7 @@
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_hybrj(boost::extensions::factory_map & fm)
 {
-    fm.get<IAlgLoopSolver,int,IAlgLoop*, INonLinSolverSettings*>()[1].set<Hybrj>();
+    fm.get<IAlgLoopSolver,int,INonLinearAlgLoop*, INonLinSolverSettings*>()[1].set<Hybrj>();
     fm.get<INonLinSolverSettings,int >()[2].set<HybrjSettings>();
 }
 
@@ -29,7 +29,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_hybrj(boost::extens
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> > >()
+  types.get<std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> > >()
     ["hybrj"].set<Hybrj>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
     ["hybrjSettings"].set<HybrjSettings>();

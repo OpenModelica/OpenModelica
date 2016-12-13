@@ -76,6 +76,7 @@ OPTION(USE_BOOST_REALPATHS "USE_BOOST_REALPATHS" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_SUNDIALS "FMU_SUNDIALS" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
+OPTION(KLU_ROOT "KLU ROOT" "")
 OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 
 #Set Variables
@@ -116,6 +117,8 @@ SET(RTEulerName ${LIBPREFIX}RTEuler${LIBSUFFIX})
 SET(IdaName ${LIBPREFIX}Ida${LIBSUFFIX})
 SET(IdasName ${LIBPREFIX}Idas${LIBSUFFIX})
 SET(KinsolName ${LIBPREFIX}Kinsol${LIBSUFFIX})
+SET(LinearSolverName ${LIBPREFIX}LinearSolver${LIBSUFFIX})
+SET(DgesvSolverName ${LIBPREFIX}DgesvSolver${LIBSUFFIX})
 SET(ModelicaName ${LIBPREFIX}Modelica${LIBSUFFIX})
 SET(NewtonName ${LIBPREFIX}Newton${LIBSUFFIX})
 SET(BroydenName ${LIBPREFIX}Broyden${LIBSUFFIX})
@@ -130,6 +133,7 @@ SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
 SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
 
 SET(USE_MICO OFF)
+SET(USE_KLU OFF)
 SET(REDUCE_DAE OFF)
 IF(NOT FMU_TARGET OR FMU_SUNDIALS)
   SET(USE_SUNDIALS ON)
@@ -566,6 +570,56 @@ IF(USE_SUNDIALS)
   ENDIF(WIN32)
 ENDIF(USE_SUNDIALS)
 
+# Find Klu solvers
+IF(USE_KLU)
+  #set klu solvers include and library directories
+  IF(MSVC)
+    SET(Klu_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/SuiteSparse/install_msvc")
+  ELSE(MSVC)
+    SET(Klu_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/SuiteSparse/build")
+  ENDIF(MSVC)
+  SET(KLU_INLCUDE_HOME  ${Klu_Path}/include/omc/c/suitesparse/Include)
+  SET(KLU_LIBRARY_RELEASE_HOME  ${Klu_Path}/lib/omc)
+  MESSAGE(STATUS "Klu include:")
+  MESSAGE(STATUS "${KLU_INLCUDE_HOME}")
+  MESSAGE(STATUS "Klu library:")
+  MESSAGE(STATUS "${KLU_LIBRARY_RELEASE_HOME}")
+
+  FIND_PATH(KLU_INCLUDE_DIR klu.h PATHS ${KLU_INLCUDE_HOME} $ENV{KLU_ROOT}/include)
+  IF (NOT KLU_INCLUDE_DIR)
+    MESSAGE(FATAL_ERROR "Could not find Klu, specify environment variable KLU_ROOT")
+  ELSE(NOT KLU_INCLUDE_DIR)
+    INCLUDE_DIRECTORIES(${KLU_INCLUDE_DIR})
+  ENDIF(NOT KLU_INCLUDE_DIR)
+
+  FIND_LIBRARY(KLU_LIB "klu" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${KLU_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+  IF(NOT KLU_LIB)
+    MESSAGE(FATAL_ERROR "Could not find klu library!")
+  ENDIF()
+
+  FIND_LIBRARY(AMD_LIB "amd" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${KLU_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+  IF(NOT AMD_LIB)
+    MESSAGE(FATAL_ERROR "Could not find klu amd library!")
+  ENDIF()
+
+  FIND_LIBRARY(BTF "btf" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${KLU_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+  IF(NOT BTF)
+    MESSAGE(FATAL_ERROR "Could not find klu btf library!")
+  ENDIF()
+
+   FIND_LIBRARY(COLAMD "colamd" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${KLU_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+  IF(NOT COLAMD)
+    MESSAGE(FATAL_ERROR "Could not find klu colamd library!")
+  ENDIF()
+
+  SET(KLU_LIBRARIES ${KLU_LIB} ${AMD_LIB} ${BTF} ${COLAMD})
+
+  MESSAGE(STATUS "Klu Libraries:")
+  MESSAGE(STATUS "${KNU_LIBRARIES}")
+
+  ADD_DEFINITIONS(-Dklu)
+ENDIF(USE_KLU)
+
 #Handle umfpack
 #FIND_PACKAGE(SuiteSparse)
 IF(SUITESPARSE_UMFPACK_FOUND)
@@ -659,7 +713,7 @@ if(NOT FMU_TARGET)
   add_subdirectory(Solver/Hybrj)
   add_subdirectory(Solver/UmfPack)
   add_subdirectory(Solver/Peer)
-
+  add_subdirectory(Solver/LinearSolver)
   # add simulation solvers
   add_subdirectory(Solver/Euler)
   add_subdirectory(Solver/RK12)
@@ -704,6 +758,13 @@ IF(USE_SUNDIALS)
 
   GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
   GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
+
+  GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} LOCATION)
+  GET_FILENAME_COMPONENT(libLinearSolverName ${libLinearSolver} NAME)
+
+  GET_TARGET_PROPERTY(libDgesvSolver ${DgesvSolverName} LOCATION)
+  GET_FILENAME_COMPONENT(libDgesvSolverName ${libDgesvSolver} NAME)
+
   #GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
   #GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
   #GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
@@ -796,6 +857,8 @@ set (CPPDASSL_LIB ${libCppDASSLName})
 set (RTRK_LIB ${libRTRKName})
 set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
+SET (LINEARSOLVER_LIB ${libLinearSolverName})
+SET (DGESVSOLVER_LIB ${libDgesvSolverName})
 set (MATH_LIB ${libMathName})
 set (HYBRJ_LIB ${libHybrjName})
 set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})

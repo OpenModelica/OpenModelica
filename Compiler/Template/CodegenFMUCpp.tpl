@@ -677,7 +677,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  OMCPP_SOLVER_LIBS=OMCppNewton_static.lib OMCppDgesv_static.lib
+  OMCPP_SOLVER_LIBS=OMCppNewton_static.lib OMCppDgesv_static.lib OMCppDgesvSolver_static.lib
   EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
   LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib $(OMCPP_SOLVER_LIBS) ModelicaExternalC.lib ModelicaStandardTables.lib OMCppModelicaUtilities_static.lib $(EXTRA_LIBS)
   PLATFORM="<%makefileParams.platform%>"
@@ -766,7 +766,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
 
   # CVode can be used for Co-Simulation FMUs, Kinsol is available to handle non linear equation systems
-  OMCPP_SOLVER_LIBS=-lOMCppNewton_static
+  OMCPP_SOLVER_LIBS=-lOMCppNewton_static -lOMCppDgesvSolver_static
   ifeq ($(USE_FMU_SUNDIALS),ON)
   $(eval OMCPP_SOLVER_LIBS=$(OMCPP_SOLVER_LIBS) -lOMCppKinsol_static $(SUNDIALS_LIBRARIES))
   $(eval CFLAGS=-DENABLE_SUNDIALS_STATIC $(CFLAGS))
