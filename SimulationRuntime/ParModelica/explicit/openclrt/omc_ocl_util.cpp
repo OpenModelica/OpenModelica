@@ -163,10 +163,10 @@ void ocl_get_device(){
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
             printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %I64d MB\n", i, mem2/1024/1024);
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %d MB\n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %ld MB\n", i, arg_nr);
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %d \n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %ld \n", i, arg_nr);
             MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);

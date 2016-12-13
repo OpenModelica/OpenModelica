@@ -55,6 +55,7 @@
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
 #endif
+#include "simulation/simulation_input_xml.h"
 
 #include "optimization/OptimizerInterface.h"
 
@@ -75,8 +76,8 @@ typedef struct RK4_DATA
 {
   double** work_states;
   int work_states_ndims;
-  double *b;
-  double *c;
+  const double *b;
+  const double *c;
   double h;
 }RK4_DATA;
 

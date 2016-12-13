@@ -85,7 +85,7 @@ int array_shape_eq(const base_array_t *a, const device_array *b)
     int i;
 
     if(a->ndims != b->info[0]) {
-        fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->info[0]);
+        fprintf(stderr, "a->ndims != b->ndims, %d != %ld\n", a->ndims, b->info[0]);
         return 0;
     }
 
@@ -105,7 +105,7 @@ int array_shape_eq(const device_array *a, const device_array *b)
     int i;
 
     if(a->info[0] != b->info[0]) {
-        fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->info[0], b->info[0]);
+        fprintf(stderr, "a->ndims != b->ndims, %ld != %ld\n", a->info[0], b->info[0]);
         return 0;
     }
 
