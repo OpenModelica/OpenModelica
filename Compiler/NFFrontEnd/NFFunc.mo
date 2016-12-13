@@ -131,7 +131,7 @@ algorithm
   fn_name :=  InstNode.name(classNode);
   cls := InstNode.definition(classNode);
   // create a component that has the name of the function and the scope of the function as its type
-  fakeComponent := InstNode.newComponent(fn_name,
+  fakeComponent := InstNode.newComponent(
      SCode.COMPONENT(
        fn_name,
        SCode.defaultPrefixes,

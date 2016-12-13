@@ -125,9 +125,10 @@ protected
 algorithm
   () := match c
     // An untyped component, type it.
-    case Component.UNTYPED_COMPONENT(dimensions = dims, info = info)
+    case Component.UNTYPED_COMPONENT(dimensions = dims)
       algorithm
         ty_dims := {};
+        info := InstNode.info(component);
 
         for i in 1:arrayLength(dims) loop
           dims[i] := typeDimension(dims[i], parent, info);

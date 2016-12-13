@@ -130,8 +130,7 @@ uniontype Modifier
   record REDECLARE
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
-    SCode.Element element;
-    InstNode scope;
+    InstNode element;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -162,7 +161,7 @@ public
           MODIFIER(name, mod.finalPrefix, mod.eachPrefix, binding, submod_table, mod.info);
 
       case SCode.REDECL()
-        then REDECLARE(mod.finalPrefix, mod.eachPrefix, mod.element, scope);
+        then REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(mod.element, scope));
 
     end match;
   end create;
@@ -184,8 +183,7 @@ public
   algorithm
     name := match modifier
       case MODIFIER() then modifier.name;
-      case REDECLARE(element = SCode.COMPONENT(name = name)) then name;
-      case REDECLARE(element = SCode.CLASS(name = name)) then name;
+      case REDECLARE() then InstNode.name(modifier.element);
     end match;
   end name;
 
@@ -195,7 +193,7 @@ public
   algorithm
     info := match modifier
       case MODIFIER() then modifier.info;
-      case REDECLARE() then SCode.elementInfo(modifier.element);
+      case REDECLARE() then InstNode.info(modifier.element);
       else Absyn.dummyInfo;
     end match;
   end info;

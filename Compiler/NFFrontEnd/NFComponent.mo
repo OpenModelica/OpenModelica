@@ -84,7 +84,6 @@ uniontype Component
   end Attributes;
 
   record COMPONENT_DEF
-    Element definition;
     Modifier modifier;
   end COMPONENT_DEF;
 
@@ -93,7 +92,6 @@ uniontype Component
     array<Dimension> dimensions;
     Binding binding;
     Component.Attributes attributes;
-    SourceInfo info;
   end UNTYPED_COMPONENT;
 
   record TYPED_COMPONENT

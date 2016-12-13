@@ -136,7 +136,7 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), Absyn.dummyInfo);
 
   // Make an InstNode for the top scope.
-  topNode := InstNode.newClass("<top>", cls, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
+  topNode := InstNode.newClass(cls, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
 
   // Create a scope from the top classes, and insert them into the top scope class.
   scope := makeScope(topClasses, topNode);
@@ -163,7 +163,7 @@ algorithm
       // A class, create a new instance node for it and add it to the tree.
       case SCode.CLASS()
         algorithm
-          node := InstNode.newClass(e.name, e, parentScope);
+          node := InstNode.newClass(e, parentScope);
           scope := addClassToScope(e.name, ClassTree.Entry.CLASS(node), e.info, scope);
         then
           ();
@@ -453,7 +453,7 @@ algorithm
       case SCode.COMPONENT()
         algorithm
           // A component, add it to the list of components.
-          components := InstNode.newComponent(e.name, e) :: components;
+          components := InstNode.newComponent(e) :: components;
         then
           ();
 
@@ -565,9 +565,8 @@ algorithm
 
                   case Modifier.REDECLARE()
                     algorithm
-                      node := InstNode.newClass(SCode.elementName(m.element), m.element, m.scope);
-                      elements := ClassTree.add(elements, InstNode.name(node),
-                        ClassTree.Entry.CLASS(node), ClassTree.addConflictReplace);
+                      elements := ClassTree.add(elements, InstNode.name(m.element),
+                      ClassTree.Entry.CLASS(m.element), ClassTree.addConflictReplace);
                     then
                       ();
 
@@ -752,17 +751,16 @@ protected
   list<Dimension> dims;
 algorithm
   component := InstNode.component(node);
+  comp := InstNode.definition(node);
 
-  () := match component
-    case Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE())
+  () := match (component, comp)
+    case (Component.COMPONENT_DEF(modifier = comp_mod as Modifier.REDECLARE()), _)
       algorithm
-        component := Component.COMPONENT_DEF(comp_mod.element, Modifier.NOMOD());
-        node := InstNode.updateComponent(component, node);
-        node := instComponent(node, parent, comp_mod.scope);
+        node := instComponent(comp_mod.element, parent, InstNode.parent(comp_mod.element));
       then
         ();
 
-    case Component.COMPONENT_DEF(definition = comp as SCode.COMPONENT())
+    case (Component.COMPONENT_DEF(), SCode.COMPONENT())
       algorithm
         name := InstNode.name(node);
         node := InstNode.setOrphanParent(parent, node);
@@ -784,7 +782,7 @@ algorithm
 
         // Instantiate attributes and create the untyped component.
         attr := instComponentAttributes(comp.attributes, comp.prefixes);
-        inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding, attr, comp.info);
+        inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding, attr);
         node := InstNode.updateComponent(inst_comp, node);
       then
         ();

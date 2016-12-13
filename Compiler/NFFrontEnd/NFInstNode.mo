@@ -75,30 +75,67 @@ uniontype InstNode
 
   record EMPTY_NODE end EMPTY_NODE;
 
+  function new
+    input SCode.Element definition;
+    input InstNode parent;
+    output InstNode node;
+  algorithm
+    node := match definition
+      case SCode.CLASS()
+        then CLASS_NODE(definition.name, definition,
+          arrayCreate(1, Class.NOT_INSTANTIATED()), parent, NORMAL_CLASS());
+      case SCode.COMPONENT()
+        then COMPONENT_NODE(definition.name, definition,
+          arrayCreate(1, Component.COMPONENT_DEF(Modifier.NOMOD())), parent);
+    end match;
+  end new;
+
   function newClass
-    input String name;
     input SCode.Element definition;
     input InstNode parent;
     input InstNodeType nodeType = NORMAL_CLASS();
     output InstNode node;
   protected
     array<Class> i;
+    String name;
   algorithm
+    SCode.CLASS(name = name) := definition;
     i := arrayCreate(1, Class.NOT_INSTANTIATED());
     node := CLASS_NODE(name, definition, i, parent, nodeType);
   end newClass;
 
   function newComponent
-    input String name;
     input SCode.Element definition;
     input InstNode parent = EMPTY_NODE();
     output InstNode node;
   protected
     array<Component> c;
+    String name;
   algorithm
-    c := arrayCreate(1, Component.COMPONENT_DEF(definition, Modifier.NOMOD()));
+    SCode.COMPONENT(name = name) := definition;
+    c := arrayCreate(1, Component.COMPONENT_DEF(Modifier.NOMOD()));
     node := COMPONENT_NODE(name, definition, c, parent);
   end newComponent;
+
+  function isClass
+    input InstNode node;
+    output Boolean isClass;
+  algorithm
+    isClass := match node
+      case CLASS_NODE() then true;
+      else false;
+    end match;
+  end isClass;
+
+  function isComponent
+    input InstNode node;
+    output Boolean isComponent;
+  algorithm
+    isComponent := match node
+      case COMPONENT_NODE() then true;
+      else false;
+    end match;
+  end isComponent;
 
   function name
     input InstNode node;
