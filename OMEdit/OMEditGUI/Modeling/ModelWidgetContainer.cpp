@@ -3472,11 +3472,11 @@ void ModelWidget::writeVisualXMLFile()
             double phi[3] = {0.0, 0.0, 0.0};
             QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
             if (angleList.size() > 2) {
-              phi[0] = angleList.at(0).toDouble();
-              phi[1] = angleList.at(1).toDouble();
-              phi[2] = angleList.at(2).toDouble();
+              phi[0] = -angleList.at(0).toDouble();
+              phi[1] = -angleList.at(1).toDouble();
+              phi[2] = -angleList.at(2).toDouble();
             }
-            QGenericMatrix<3, 3, double> T = -Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
+            QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
             // get the position
             double position[3] = {0.0, 0.0, 0.0};
             QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
@@ -3489,13 +3489,13 @@ void ModelWidget::writeVisualXMLFile()
             r_shape(0, 0) = -position[0];
             r_shape(0, 1) = -position[1];
             r_shape(0, 2) = -position[2];
-            r_shape = r_shape*(-T);
+            r_shape = r_shape*(T);
             double lengthDirArr[3] = {1.0, 0.0, 0.0};
             QGenericMatrix<3, 1, double> lengthDir(lengthDirArr);
-            lengthDir = lengthDir*(-T);
+            lengthDir = lengthDir*(T);
             double widthDirArr[3] = {0.0, 1.0, 0.0};
             QGenericMatrix<3, 1, double> widthDir(widthDirArr);
-            widthDir = widthDir*(-T);
+            widthDir = widthDir*(T);
 
             visualFile << "  <shape>\n";
             visualFile << "    <ident>" << name << "</ident>\n";
