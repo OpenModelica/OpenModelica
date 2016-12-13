@@ -48,7 +48,6 @@ testTables2.csv \
 testTables2.txt \
 testTables2D.txt \
 hpcom \
-umfpack \
 fmu \
 staticLinking \
 genDebugSymbols \
