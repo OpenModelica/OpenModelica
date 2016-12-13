@@ -95,11 +95,7 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // true
 // ""
 // {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
-// "Notification: Tearing is skipped for strong component 1 because system size of 278 exceeds maximum system size for tearing of linear systems (0).
-// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
-// Notification: Tearing is skipped for strong component 2 because system size of 275 exceeds maximum system size for tearing of linear systems (0).
-// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
-// "
+// ""
 // 0
 // {"Files Equal!"}
 // 0
