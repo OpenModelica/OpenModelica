@@ -60,15 +60,15 @@ package Elevator "Test for ticket #3656 provided by Christian Kral"
     annotation(Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}})), experiment(StopTime=12, Interval=0.01),
       Documentation(info="<html>
 <p>
-This example of an elevator demonstrates the usage of a <a href=\"modelica://ModelicaAdditions/Mechanics/Rotational/Components/GearConstantEfficiency\">gearbox with constant efficiency</a> and 
+This example of an elevator demonstrates the usage of a <a href=\"modelica://ModelicaAdditions/Mechanics/Rotational/Components/GearConstantEfficiency\">gearbox with constant efficiency</a> and
 a <a href=\"modelica:/ModelicaAdditions/Mechanics.Rotational/Components/DrivePulleyConstantEfficiency\">drive pulley with constant efficiency</a>.
 </p>
 <p>
-The flange_a of the gearbox is driven by a prescribed speed, flange_b of the gearbox drives the rotational flange of the drive pulley. 
-At the two ends of a rope through translational flanges flange_a and flange_b of the drive pulley the cabin (with passengers) and a counterweight are hanging. 
+The flange_a of the gearbox is driven by a prescribed speed, flange_b of the gearbox drives the rotational flange of the drive pulley.
+At the two ends of a rope through translational flanges flange_a and flange_b of the drive pulley the cabin (with passengers) and a counterweight are hanging.
 </p>
 <p>
-Speed rises linearly between 0 and 2.5 seconds from to 2 m/s, then remains constant for 4.5 seconds and during the following 2.5 seconds speed is reduced linearly to 0. 
+Speed rises linearly between 0 and 2.5 seconds from to 2 m/s, then remains constant for 4.5 seconds and during the following 2.5 seconds speed is reduced linearly to 0.
 This results in lifting the cabin by 14 m and in turn lowering the counterweight by 14 m.
 </p>
 </html>"),
@@ -139,7 +139,7 @@ This results in lifting the cabin by 14 m and in turn lowering the counterweight
       Documentation(info = "<html>
 <p>
 This is a simple model of a drive pulley without losses and without inertia.<br>
-It is assumed that the two rotational flanges flange_a and flange_b are connected by a rope. 
+It is assumed that the two rotational flanges flange_a and flange_b are connected by a rope.
 The rope moving into flange_a moves out from flange b.<br>
 The relationship between the rotational flange and the two translational flanges flange_a and flange_b is defined by:
 </p>
@@ -150,7 +150,7 @@ The relationship between the rotational flange and the two translational flanges
 </pre>
 <p>
 Note, there is a balance between torque and the difference of forces * radius, a rotational support is not present.<br>
-The sum of the two forces appears at the optional translational support. 
+The sum of the two forces appears at the optional translational support.
 </p>
 </html>"));
   end IdealDrivePulley;
