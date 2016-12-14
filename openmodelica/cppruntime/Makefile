@@ -62,7 +62,6 @@ omedit
 CLEAN = `ls | grep -w -v -f deps.tmp`
 HPCOM_DIR = hpcom/
 HPCOM_FMI_1_0_DIR = hpcom/fmu/modelExchange/1.0
-UMFPACK_DIR = umfpack/
 FMI_1_0_DIR = fmu/modelExchange/1.0
 FMI_2_0_DIR = fmu/modelExchange/2.0
 STATIC_LINKING_DIR = staticLinking
@@ -80,7 +79,6 @@ test:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 	@$(MAKE) -C $(HPCOM_DIR)
-	@$(MAKE) -C $(UMFPACK_DIR)
 	@$(MAKE) -C $(FMI_1_0_DIR)
 	@$(MAKE) -C $(FMI_2_0_DIR)
 	@$(MAKE) -C $(HPCOM_FMI_1_0_DIR)
@@ -96,7 +94,6 @@ clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
 	@$(MAKE) -C $(HPCOM_DIR) clean
-	@$(MAKE) -C $(UMFPACK_DIR) clean
 	@$(MAKE) -C $(FMI_1_0_DIR) clean
 	@$(MAKE) -C $(FMI_2_0_DIR) clean
 	@$(MAKE) -C $(HPCOM_FMI_1_0_DIR) clean
