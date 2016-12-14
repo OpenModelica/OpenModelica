@@ -322,14 +322,15 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthAnnotationString(Modelica.Electrical.Analog.Basic.Resistor, 1)
-// "annotation(Documentation(info = \"<HTML>
+// "annotation(
+//   Documentation(info = \"<HTML>
 // <P>
 // The linear resistor connects the branch voltage <i>v</i> with the
 // branch current <i>i</i> by <i>i*R = v</i>.
 // The Resistance <i>R</i> is allowed to be positive, zero, or negative.
 // </P>
 // </HTML>
-// \", revisions = \"<html>
+//   \", revisions = \"<html>
 // <ul>
 // <li><i> August 07, 2009   </i>
 //        by Anton Haumer<br> temperature dependency of resistance added<br>
@@ -341,7 +342,9 @@ getMessagesStringInternal(unique = false); // not unique
 //        by Christoph Clauss<br> initially implemented<br>
 //        </li>
 // </ul>
-// </html>\"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {90, 0}}, color = {0, 0, 255}), Text(extent = {{-144, -40}, {142, -72}}, lineColor = {0, 0, 0}, textString = \"R=%R\"), Line(visible = useHeatPort, points = {{0, -100}, {0, -30}}, color = {127, 0, 0}, smooth = Smooth.None, pattern = LinePattern.Dot), Text(extent = {{-152, 87}, {148, 47}}, textString = \"%name\", lineColor = {0, 0, 255})}), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}), Line(points = {{-96, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {96, 0}}, color = {0, 0, 255})}));"
+// </html>\"),
+//   Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {90, 0}}, color = {0, 0, 255}), Text(extent = {{-144, -40}, {142, -72}}, lineColor = {0, 0, 0}, textString = \"R=%R\"), Line(visible = useHeatPort, points = {{0, -100}, {0, -30}}, color = {127, 0, 0}, smooth = Smooth.None, pattern = LinePattern.Dot), Text(extent = {{-152, 87}, {148, 47}}, textString = \"%name\", lineColor = {0, 0, 255})}),
+//   Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}), Line(points = {{-96, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {96, 0}}, color = {0, 0, 255})}));"
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getImportCount(Modelica.Mechanics.Rotational)
@@ -619,7 +622,8 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: list(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
 // "class Code \"Code\"
 //   extends Modelica.Icons.Information;
-//   annotation(Documentation(info = \"<html>
+//   annotation(
+//     Documentation(info = \"<html>
 // <p>
 // <a href=\\\"modelica://Modelica.UsersGuide.Conventions.ModelicaCode\\\">Modelica code</a> conventions of class and instance names,
 // parameters and variables are specified separately. In this section it is summarized how to refer to

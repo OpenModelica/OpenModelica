@@ -175,7 +175,8 @@ list(A);                                                                        
 //   final inner discrete Integer x \"comment for x\";
 // protected
 // equation
-//   connect(a, b) annotation(Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
 // end A;"
 // Evaluating: getErrorString()
 // ""
@@ -217,7 +218,8 @@ list(A);                                                                        
 //   final stream Real y;
 // protected
 // equation
-//   connect(a, b) annotation(Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
 // end A;"
 // Evaluating: getErrorString()
 // ""
@@ -313,7 +315,8 @@ list(A);                                                                        
 //   final inner discrete Integer x \"comment for x\";
 // protected
 // equation
-//   connect(a, b) annotation(Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
 // end A;"
 // Evaluating: getErrorString()
 // ""
@@ -355,7 +358,8 @@ list(A);                                                                        
 //   final stream Real y;
 // protected
 // equation
-//   connect(a, b) annotation(Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
 // end A;"
 // Evaluating: getErrorString()
 // ""

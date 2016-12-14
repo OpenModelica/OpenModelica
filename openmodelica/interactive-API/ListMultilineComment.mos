@@ -19,7 +19,8 @@ x := str1 == str2;
 // ""
 // "model test \"Line 1
 // Line2\"
-//   annotation(test = \"Line1
+//   annotation(
+//     test = \"Line1
 // Line2\");
 // end test;"
 // true
@@ -30,7 +31,8 @@ x := str1 == str2;
 // ""
 // "model test \"Line 1
 // Line2\"
-//   annotation(test = \"Line1
+//   annotation(
+//     test = \"Line1
 // Line2\");
 // end test;"
 // true

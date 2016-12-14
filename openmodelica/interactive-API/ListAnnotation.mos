@@ -32,7 +32,8 @@ list(M2); getErrorString();
 // end M;"
 // ""
 // "model M2
-//   annotation(test = true);
+//   annotation(
+//     test = true);
 // end M2;"
 // ""
 // endResult

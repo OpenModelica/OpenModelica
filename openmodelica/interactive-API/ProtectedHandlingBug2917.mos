@@ -70,7 +70,7 @@ getErrorString();
 //   package p2
 //     model m1
 //     end m1;
-// 
+//
 //     model m2
 //     end m2;
 //   end p2;
@@ -90,7 +90,7 @@ getErrorString();
 //     model m1
 //       Real var;
 //     end m1;
-// 
+//
 //     model m2
 //     end m2;
 //   end p2;
@@ -107,9 +107,10 @@ getErrorString();
 //   package p2
 //     model m1
 //       Real var;
-//       Real var annotation(Placement);
+//       Real var annotation(
+//         Placement);
 //     end m1;
-// 
+//
 //     model m2
 //     end m2;
 //   end p2;
