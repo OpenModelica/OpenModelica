@@ -926,8 +926,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   setLayout(mainLayout);
   pOkButton->setFocus();
   /* restore the window geometry. */
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
-  {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     QSettings *pSettings = Utilities::getApplicationSettings();
     restoreGeometry(pSettings->value("InformationDialog/geometry").toByteArray());
   }
@@ -936,8 +935,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
 void InformationDialog::closeEvent(QCloseEvent *event)
 {
   /* save the window geometry. */
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
-  {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->setValue("InformationDialog/geometry", saveGeometry());
   }
@@ -1042,7 +1040,12 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   } else {
     mpCopyProperties->setText(tr("Copy properties to Icon layer"));
   }
-  mpCopyProperties->setChecked(true);
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations() &&
+      Utilities::getApplicationSettings()->contains("GraphicsViewProperties/copyProperties")) {
+    mpCopyProperties->setChecked(Utilities::getApplicationSettings()->value("GraphicsViewProperties/copyProperties").toBool());
+  } else {
+    mpCopyProperties->setChecked(true);
+  }
   // Graphics tab layout
   QVBoxLayout *pGraphicsWidgetLayout = new QVBoxLayout;
   pGraphicsWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1306,6 +1309,9 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
                                                                      mpOMCFlagsTextBox->toPlainText());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+    Utilities::getApplicationSettings()->setValue("GraphicsViewProperties/copyProperties", mpCopyProperties->isChecked());
+  }
   accept();
 }
 
