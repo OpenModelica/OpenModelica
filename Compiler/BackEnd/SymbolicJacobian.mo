@@ -2487,7 +2487,7 @@ algorithm
       BackendDAE.Var tmpVar;
       BackendDAE.Variables diffVars, ovars, resVars;
       list<BackendDAE.Equation> reqns, otherEqnsLst;
-      BackendDAE.EquationArray eqns, oeqns, resEqns;
+      BackendDAE.EquationArray eqns, oeqns;
 
       BackendDAE.Jacobian jacobian,jacobianCausal;
 
@@ -2538,25 +2538,20 @@ algorithm
             onlySparsePattern = false;
           end if;
 
-          if (not onlySparsePattern) then
-            eqns = BackendEquation.listEquation(reqns);
-            // create  residual equations
-            reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
-            reqns = listReverse(reqns);
-            (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
-            resVars = BackendVariable.listVar1(resVarsLst);
-            resEqns = BackendEquation.listEquation(reqns);
-          else
-            resVars = diffVars;
-            resEqns = BackendEquation.listEquation(reqns);
-          end if;
+          eqns = BackendEquation.listEquation(reqns);
+          // create  residual equations
+          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          reqns = listReverse(reqns);
+          (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
+          resVars = BackendVariable.listVar1(resVarsLst);
+          eqns = BackendEquation.listEquation(reqns);
 
           // other eqns and vars are empty
           oeqns = BackendEquation.listEquation({});
           ovars =  BackendVariable.emptyVars();
 
           // generate generic jacobian backend dae
-          (jacobian, shared) = getSymbolicJacobian(diffVars, resEqns, resVars, oeqns, ovars, inShared, inVars, name, onlySparsePattern);
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name, onlySparsePattern);
 
       then (BackendDAE.EQUATIONSYSTEM(residualequations, iterationvarsInts, jacobian, BackendDAE.JAC_GENERIC(), mixedSystem), shared);
 
