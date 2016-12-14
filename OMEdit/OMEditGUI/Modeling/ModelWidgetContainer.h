@@ -364,6 +364,7 @@ public:
   void loadConnections();
   void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
+  void clearGraphicsViews();
   void reDrawModelWidget();
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
@@ -416,6 +417,7 @@ private:
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
   void removeInheritedClassComponents(StringHandler::ViewType viewType);
+  void removeClassComponents(StringHandler::ViewType viewType);
   void getModelComponents();
   void drawModelIconComponents();
   void drawModelDiagramComponents();

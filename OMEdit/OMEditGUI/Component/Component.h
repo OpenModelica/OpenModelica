@@ -211,6 +211,7 @@ public:
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
+  void removeChildren();
   void emitAdded();
   void emitTransformChange() {emit transformChange();}
   void emitTransformHasChanged();
@@ -272,7 +273,6 @@ private:
   void showNonExistingOrDefaultComponentIfNeeded();
   void createClassInheritedComponents();
   void createClassShapes();
-  void removeChildren();
   void createActions();
   void createResizerItems();
   void getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2);

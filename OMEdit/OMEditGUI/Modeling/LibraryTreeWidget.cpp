@@ -1348,18 +1348,6 @@ void LibraryTreeModel::createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeIte
 }
 
 /*!
- * \brief LibraryTreeModel::loadNonExistingLibraryTreeItem
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::loadNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
-{
-  pLibraryTreeItem->emitLoaded();
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    loadNonExistingLibraryTreeItem(pLibraryTreeItem->child(i));
-  }
-}
-
-/*!
  * \brief LibraryTreeModel::checkIfAnyNonExistingClassLoaded
  * Checks which non-existing classes are loaded and then call loaded for them.
  */
@@ -1370,7 +1358,7 @@ void LibraryTreeModel::checkIfAnyNonExistingClassLoaded()
     LibraryTreeItem *pLibraryTreeItem = mNonExistingLibraryTreeItemsList.at(i);
     if (!pLibraryTreeItem->isNonExisting()) {
       removeNonExistingLibraryTreeItem(pLibraryTreeItem);
-      loadNonExistingLibraryTreeItem(pLibraryTreeItem);
+      pLibraryTreeItem->emitLoaded();
       i = 0;  //Restart iteration
     } else {
       i++;
@@ -2373,6 +2361,7 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
       pMdiSubWindow->close();
       pMdiSubWindow->deleteLater();
     }
+    pLibraryTreeItem->getModelWidget()->clearGraphicsViews();
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }

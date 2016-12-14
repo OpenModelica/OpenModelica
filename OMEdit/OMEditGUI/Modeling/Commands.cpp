@@ -909,16 +909,16 @@ void DeleteConnectionCommand::redo()
 {
   // Remove the start component connection details.
   Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
-  if (pStartComponent->getRootParentComponent()) {
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
-  } else {
+  } else if (pStartComponent) {
     pStartComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
   // Remove the end component connection details.
   Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  if (pEndComponent->getRootParentComponent()) {
+  if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
-  } else {
+  } else if (pEndComponent) {
     pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromList(mpConnectionLineAnnotation);
@@ -935,16 +935,16 @@ void DeleteConnectionCommand::undo()
 {
   // Add the start component connection details.
   Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
-  if (pStartComponent->getRootParentComponent()) {
+  if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-  } else {
+  } else if (pStartComponent) {
     pStartComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
   // Add the end component connection details.
   Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  if (pEndComponent->getRootParentComponent()) {
+  if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-  } else {
+  } else if (pEndComponent) {
     pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);

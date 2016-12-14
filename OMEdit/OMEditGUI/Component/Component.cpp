@@ -500,12 +500,17 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mIsInheritedComponent = mpParentComponent->isInheritedComponent();
   mComponentType = Component::Extend;
   mTransformationString = "";
+  mpResizerRectangle = 0;
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
   drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
   mpOriginItem = 0;
+  mpBottomLeftResizerItem = 0;
+  mpTopLeftResizerItem = 0;
+  mpTopRightResizerItem = 0;
+  mpBottomRightResizerItem = 0;
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
@@ -524,6 +529,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
+  mpResizerRectangle = 0;
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
@@ -531,6 +537,10 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
+  mpBottomLeftResizerItem = 0;
+  mpTopLeftResizerItem = 0;
+  mpTopRightResizerItem = 0;
+  mpBottomRightResizerItem = 0;
   updateToolTip();
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
@@ -600,6 +610,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mTransformationString = "";
   mDialogAnnotation.clear();
+  mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
   mpDefaultComponentRectangle->setVisible(true);
@@ -613,6 +624,10 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
+  mpBottomLeftResizerItem = 0;
+  mpTopLeftResizerItem = 0;
+  mpTopRightResizerItem = 0;
+  mpBottomRightResizerItem = 0;
   updateToolTip();
 }
 
@@ -743,7 +758,8 @@ Component* Component::getRootParentComponent()
 CoOrdinateSystem Component::getCoOrdinateSystem() const
 {
   CoOrdinateSystem coOrdinateSystem;
-  if (mpLibraryTreeItem && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem && !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+      && mpLibraryTreeItem->getModelWidget()) {
     if (mpLibraryTreeItem->isConnector()) {
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
         coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
@@ -986,6 +1002,34 @@ void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation
   }
 }
 
+/*!
+ * \brief Component::removeChildren
+ * Removes the complete hirerchy of the Component.
+ */
+void Component::removeChildren()
+{
+  foreach (Component *pInheritedComponent, mInheritedComponentsList) {
+    pInheritedComponent->removeChildren();
+    pInheritedComponent->setParentItem(0);
+    mpGraphicsView->removeItem(pInheritedComponent);
+    delete pInheritedComponent;
+  }
+  mInheritedComponentsList.clear();
+  foreach (Component *pComponent, mComponentsList) {
+    pComponent->removeChildren();
+    pComponent->setParentItem(0);
+    mpGraphicsView->removeItem(pComponent);
+    delete pComponent;
+  }
+  mComponentsList.clear();
+  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+    pShapeAnnotation->setParentItem(0);
+    mpGraphicsView->removeItem(pShapeAnnotation);
+    delete pShapeAnnotation;
+  }
+  mShapesList.clear();
+}
+
 void Component::emitAdded()
 {
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -1034,7 +1078,7 @@ void Component::componentParameterHasChanged()
 QString Component::getParameterDisplayString(QString parameterName)
 {
   /* How to get the display value,
-   * 0. If the component is inherited component then check if the value is avaialble in the class extends modifiers.
+   * 0. If the component is inherited component then check if the value is available in the class extends modifiers.
    * 1. Check if the value is available in component modifier.
    * 2. Check if the value is available in the component's class as a parameter or variable.
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
@@ -1352,49 +1396,6 @@ void Component::createClassShapes()
       }
     }
   }
-}
-
-/*!
- * \brief Component::removeChildren
- * Removes the complete hirerchy of the Component.
- */
-void Component::removeChildren()
-{
-  foreach (Component *pInheritedComponent, mInheritedComponentsList) {
-    pInheritedComponent->removeChildren();
-    if (pInheritedComponent->getLibraryTreeItem()) {
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(loadedForComponent()), pInheritedComponent, SLOT(handleLoaded()));
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(unLoadedForComponent()), pInheritedComponent, SLOT(handleUnloaded()));
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(shapeAddedForComponent()), pInheritedComponent, SLOT(handleShapeAdded()));
-      disconnect(pInheritedComponent->getLibraryTreeItem(), SIGNAL(componentAddedForComponent()), pInheritedComponent, SLOT(handleComponentAdded()));
-    }
-    pInheritedComponent->setParentItem(0);
-    mpGraphicsView->removeItem(pInheritedComponent);
-    pInheritedComponent = 0;
-    delete pInheritedComponent;
-  }
-  mInheritedComponentsList.clear();
-  foreach (Component *pComponent, mComponentsList) {
-    pComponent->removeChildren();
-    if (pComponent->getLibraryTreeItem()) {
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(loadedForComponent()), pComponent, SLOT(handleLoaded()));
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(unLoadedForComponent()), pComponent, SLOT(handleUnloaded()));
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(shapeAddedForComponent()), pComponent, SLOT(handleShapeAdded()));
-      disconnect(pComponent->getLibraryTreeItem(), SIGNAL(componentAddedForComponent()), pComponent, SLOT(handleComponentAdded()));
-    }
-    pComponent->setParentItem(0);
-    mpGraphicsView->removeItem(pComponent);
-    pComponent = 0;
-    delete pComponent;
-  }
-  mComponentsList.clear();
-  foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
-    pShapeAnnotation->setParentItem(0);
-    mpGraphicsView->removeItem(pShapeAnnotation);
-    pShapeAnnotation = 0;
-    delete pShapeAnnotation;
-  }
-  mShapesList.clear();
 }
 
 void Component::createActions()
@@ -1738,7 +1739,7 @@ void Component::handleUnloaded()
 {
   removeChildren();
   showNonExistingOrDefaultComponentIfNeeded();
-  emitChanged();
+  emitDeleted();
   Component *pComponent = getRootParentComponent();
   pComponent->updateConnections();
 }

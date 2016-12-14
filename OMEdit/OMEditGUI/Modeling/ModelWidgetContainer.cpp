@@ -2938,6 +2938,25 @@ Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QS
   return pConnectorComponentFound;
 }
 
+void ModelWidget::clearGraphicsViews()
+{
+  /* remove everything from the icon view */
+  removeClassComponents(StringHandler::Icon);
+  mpIconGraphicsView->removeAllShapes();
+  mpIconGraphicsView->removeAllConnections();
+  removeInheritedClassShapes(StringHandler::Icon);
+  removeInheritedClassComponents(StringHandler::Icon);
+  mpIconGraphicsView->scene()->clear();
+  /* remove everything from the diagram view */
+  removeClassComponents(StringHandler::Diagram);
+  mpDiagramGraphicsView->removeAllShapes();
+  mpDiagramGraphicsView->removeAllConnections();
+  removeInheritedClassShapes(StringHandler::Diagram);
+  removeInheritedClassComponents(StringHandler::Diagram);
+  removeInheritedClassConnections();
+  mpDiagramGraphicsView->scene()->clear();
+}
+
 /*!
  * \brief ModelWidget::reDrawModelWidget
  * Redraws the ModelWidget.
@@ -2945,21 +2964,7 @@ Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QS
 void ModelWidget::reDrawModelWidget()
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  /* remove everything from the icon view */
-  mpIconGraphicsView->removeAllComponents();
-  mpIconGraphicsView->removeAllShapes();
-  mpIconGraphicsView->removeAllConnections();
-  removeInheritedClassShapes(StringHandler::Icon);
-  removeInheritedClassComponents(StringHandler::Icon);
-  mpIconGraphicsView->scene()->clear();
-  /* remove everything from the diagram view */
-  mpDiagramGraphicsView->removeAllComponents();
-  mpDiagramGraphicsView->removeAllShapes();
-  mpDiagramGraphicsView->removeAllConnections();
-  removeInheritedClassShapes(StringHandler::Diagram);
-  removeInheritedClassComponents(StringHandler::Diagram);
-  removeInheritedClassConnections();
-  mpDiagramGraphicsView->scene()->clear();
+  clearGraphicsViews();
   /* get model components, connection and shapes. */
   if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     // read new metamodel anem
@@ -3790,7 +3795,7 @@ void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, S
 
 /*!
  * \brief ModelWidget::removeInheritedClassComponents
- * Removes all the class inherited class components.
+ * Removes all the class inherited components.
  * \param viewType
  */
 void ModelWidget::removeInheritedClassComponents(StringHandler::ViewType viewType)
@@ -3802,10 +3807,36 @@ void ModelWidget::removeInheritedClassComponents(StringHandler::ViewType viewTyp
     pGraphicsView = mpDiagramGraphicsView;
   }
   foreach (Component *pComponent, pGraphicsView->getInheritedComponentsList()) {
+    pComponent->removeChildren();
     pGraphicsView->deleteInheritedComponentFromList(pComponent);
     pGraphicsView->removeItem(pComponent->getOriginItem());
-    pGraphicsView->removeItem(pComponent);
     delete pComponent->getOriginItem();
+    pGraphicsView->removeItem(pComponent);
+    pComponent->emitDeleted();
+    delete pComponent;
+  }
+}
+
+/*!
+ * \brief ModelWidget::removeClassComponents
+ * Removes all the class components.
+ * \param viewType
+ */
+void ModelWidget::removeClassComponents(StringHandler::ViewType viewType)
+{
+  GraphicsView *pGraphicsView = 0;
+  if (viewType == StringHandler::Icon) {
+    pGraphicsView = mpIconGraphicsView;
+  } else {
+    pGraphicsView = mpDiagramGraphicsView;
+  }
+  foreach (Component *pComponent, pGraphicsView->getComponentsList()) {
+    pComponent->removeChildren();
+    pGraphicsView->deleteComponentFromList(pComponent);
+    pGraphicsView->removeItem(pComponent->getOriginItem());
+    delete pComponent->getOriginItem();
+    pGraphicsView->removeItem(pComponent);
+    pComponent->emitDeleted();
     delete pComponent;
   }
 }
