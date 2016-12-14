@@ -2,10 +2,6 @@ package AbsynDumpTpl
 
 import interface AbsynDumpTV;
 
-template spaceString(String str)
-::= if str then ' <%str%>'
-end spaceString;
-
 template dump(Absyn.Program program, DumpOptions options)
 ::=
 match program
@@ -214,10 +210,10 @@ match class_part
         let lang_str = match lang case SOME(l) then '"<%l%>" '
         let output_str = match output_ case SOME(o) then '<%dumpCref(o)%> = '
         let args_str = if args then '(<%(args |> arg => dumpExp(arg) ;separator=", ")%>)' else (if fn_str then "()")
-        let ann2_str = dumpAnnotationOpt(annotation_)
+        let ann2_str = dumpAnnotationOptSpace(annotation_)
         <<
 
-          external <%lang_str%><%output_str%><%fn_str%><%args_str%><%spaceString(ann2_str)%>;<%ann_str%>
+          external <%lang_str%><%output_str%><%fn_str%><%args_str%><%ann2_str%>;<%ann_str%>
         >>
 end dumpClassPart;
 
@@ -296,22 +292,27 @@ end dumpInfo;
 template dumpAnnotation(Absyn.Annotation ann)
 ::=
 match ann
+  case ANNOTATION(elementArgs={}) then "annotation()"
   case ANNOTATION(__) then
-    let args = (elementArgs |> earg => dumpElementArg(earg) ;separator=", ")
-    'annotation(<%args ;absIndent%>)'
+    <<
+    annotation(
+      <%(elementArgs |> earg => dumpElementArg(earg) ;separator=',<%\n%>')%>)
+    >>
 end dumpAnnotation;
 
 template dumpAnnotationOpt(Option<Absyn.Annotation> oann)
 ::= match oann case SOME(ann) then dumpAnnotation(ann)
 end dumpAnnotationOpt;
 
+template dumpAnnotationOptSpace(Option<Absyn.Annotation> oann)
+::= match oann case SOME(ann) then " " + dumpAnnotation(ann)
+end dumpAnnotationOptSpace;
+
 template dumpComment(Absyn.Comment cmt)
 ::=
 match cmt
   case COMMENT(__) then
-    let ann_str = dumpAnnotationOpt(annotation_)
-    let cmt_str = dumpStringCommentOption(comment)
-    '<%cmt_str%><%spaceString(ann_str)%>'
+    dumpStringCommentOption(comment) + dumpAnnotationOptSpace(annotation_)
 end dumpComment;
 
 template dumpCommentOpt(Option<Absyn.Comment> ocmt)
@@ -392,8 +393,8 @@ match elem
     let bc_str = dumpPath(path)
     let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
     let mod_str = if args_str then '(<%args_str%>)'
-    let ann_str = dumpAnnotationOpt(annotationOpt)
-    'extends <%bc_str%><%mod_str%><%spaceString(ann_str)%>'
+    let ann_str = dumpAnnotationOptSpace(annotationOpt)
+    'extends <%bc_str%><%mod_str%><%ann_str%>'
   case COMPONENTS(__) then
     let ty_str = dumpTypeSpec(typeSpec)
     let attr_str = dumpElementAttr(attributes)
@@ -762,7 +763,7 @@ match exp
   case INTEGER(__) then value
   case REAL(__) then value
   case CREF(__) then dumpCref(componentRef)
-  case STRING(__) then ('"<%value ; absIndent=0%>"')
+  case STRING(__) then ('"<%value; absIndent=0%>"')
   case BOOL(__) then value
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true)
