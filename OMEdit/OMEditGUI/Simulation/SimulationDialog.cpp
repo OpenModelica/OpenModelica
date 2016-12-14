@@ -96,7 +96,8 @@ SimulationDialog::~SimulationDialog()
 void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions)
 {
   /* restore the window geometry. */
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations() &&
+      Utilities::getApplicationSettings()->contains("SimulationDialog/geometry")) {
     restoreGeometry(Utilities::getApplicationSettings()->value("SimulationDialog/geometry").toByteArray());
   }
   mpLibraryTreeItem = pLibraryTreeItem;
