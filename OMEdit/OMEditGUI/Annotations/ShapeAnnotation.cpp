@@ -1097,6 +1097,10 @@ void ShapeAnnotation::referenceShapeChanged()
       updateShape(pShapeAnnotation);
       setPos(mOrigin);
       setRotation(mRotation);
+      if (dynamic_cast<TextAnnotation*>(this)) {
+        TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(this);
+        pTextAnnotation->updateTextString();
+      }
       update();
       mpParentComponent->shapeUpdated();
     }
