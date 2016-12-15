@@ -1047,18 +1047,21 @@ match platform
   <%\t%>mkdir.exe -p ../binaries/<%platform%>
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libexpat.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libgfortran-3.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libsundials_kinsol.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libsundials_nvecserial.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libsundials_*.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libopenblas.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libquadmath-0.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libwinpthread-1.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libwinpthread-1.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/zlib1.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libszip-0.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libhdf5-0.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libexpat*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libgfortran*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libquadmath*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libwinpthread*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/zlib*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libszip*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libhdf5*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libsystre*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libtre*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libintl*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libiconv*.dll ../binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/libgcc_s_*.dll ../binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libstdc*.dll ../binaries/<%platform%>/
   <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
 
