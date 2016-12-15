@@ -135,19 +135,57 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   connect(mpTabBar, SIGNAL(currentChanged(int)), SLOT(toggleEditor(int)));
   // create the html editor widget
   mpHTMLEditorWidget = new QWidget;
+  // create the html editor viewer
+  mpHTMLEditor = new DocumentationViewer(this, true);
   // editor buttons
-  QToolButton *pBoldToolButton = new QToolButton;
-  pBoldToolButton->setText(tr("Bold"));
-  pBoldToolButton->setToolTip(tr("Cancel Documentation"));
-  pBoldToolButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
-  pBoldToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  // bold button
+  mpBoldToolButton = new QToolButton;
+  mpBoldToolButton->setText(Helper::bold);
+  mpBoldToolButton->setToolTip(Helper::bold);
+  mpBoldToolButton->setShortcut(QKeySequence("Ctrl+b"));
+  mpBoldToolButton->setIcon(QIcon(":/Resources/icons/bold-icon.svg"));
+  mpBoldToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpBoldToolButton->setAutoRaise(true);
+  mpBoldToolButton->setCheckable(true);
+  connect(mpBoldToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleBold), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleBold), SIGNAL(changed()), SLOT(updateButtons()));
+  // italic button
+  mpItalicToolButton = new QToolButton;
+  mpItalicToolButton->setText(Helper::italic);
+  mpItalicToolButton->setToolTip(Helper::italic);
+  mpItalicToolButton->setShortcut(QKeySequence("Ctrl+i"));
+  mpItalicToolButton->setIcon(QIcon(":/Resources/icons/italic-icon.svg"));
+  mpItalicToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpItalicToolButton->setAutoRaise(true);
+  mpItalicToolButton->setCheckable(true);
+  connect(mpItalicToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SIGNAL(changed()), SLOT(updateButtons()));
+  // underline button
+  mpUnderlineToolButton = new QToolButton;
+  mpUnderlineToolButton->setText(Helper::underline);
+  mpUnderlineToolButton->setToolTip(Helper::underline);
+  mpUnderlineToolButton->setShortcut(QKeySequence("Ctrl+u"));
+  mpUnderlineToolButton->setIcon(QIcon(":/Resources/icons/underline-icon.svg"));
+  mpUnderlineToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpUnderlineToolButton->setAutoRaise(true);
+  mpUnderlineToolButton->setCheckable(true);
+  connect(mpUnderlineToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SIGNAL(changed()), SLOT(updateButtons()));
+  // frame to contain font buttons
+  QHBoxLayout *pFontButtonsHorizontalLayout = new QHBoxLayout;
+  pFontButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+  pFontButtonsHorizontalLayout->setSpacing(0);
+  pFontButtonsHorizontalLayout->addWidget(mpBoldToolButton);
+  pFontButtonsHorizontalLayout->addWidget(mpItalicToolButton);
+  pFontButtonsHorizontalLayout->addWidget(mpUnderlineToolButton);
+  QFrame *pFontButtonsFrame = new QFrame;
+  pFontButtonsFrame->setLayout(pFontButtonsHorizontalLayout);
+  // editor toolbar
   QStatusBar *pEditorButtonsStatusBar = new QStatusBar;
   pEditorButtonsStatusBar->setObjectName("ModelStatusBar");
   pEditorButtonsStatusBar->setStyleSheet("QStatusBar{border-bottom: none;} QStatusBar::item{margin-bottom: -1px;}");
   pEditorButtonsStatusBar->setSizeGripEnabled(false);
-//  pEditorButtonsStatusBar->addWidget(pBoldToolButton);
-  // create the html editor viewer
-  mpHTMLEditor = new DocumentationViewer(this, true);
+  pEditorButtonsStatusBar->addWidget(pFontButtonsFrame);
   // add a layout to html editor widget
   QVBoxLayout *pHTMLWidgetLayout = new QVBoxLayout;
   pHTMLWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -572,6 +610,18 @@ void DocumentationWidget::toggleEditor(int tabIndex)
       mpHTMLEditor->setFocus(Qt::ActiveWindowFocusReason);
       break;
   }
+}
+
+/*!
+ * \brief DocumentationWidget::updateButtons
+ * Slot activated when QWebView::pageAction() changed SIGNAL is raised.\n
+ * Updates the buttons according to the cursor position.
+ */
+void DocumentationWidget::updateButtons()
+{
+  mpBoldToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
+  mpItalicToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
+  mpUnderlineToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
 }
 
 /*!

@@ -148,5 +148,8 @@
         <file>Resources/icons/perspective1.svg</file>
         <file>Resources/icons/perspective2.svg</file>
         <file>Resources/icons/perspective3.svg</file>
+        <file>Resources/icons/bold-icon.svg</file>
+        <file>Resources/icons/italic-icon.svg</file>
+        <file>Resources/icons/underline-icon.svg</file>
     </qresource>
 </RCC>

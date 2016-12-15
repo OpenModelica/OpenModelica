@@ -85,6 +85,9 @@ private:
   QTabBar *mpTabBar;
   QWidget *mpHTMLEditorWidget;
   DocumentationViewer *mpHTMLEditor;
+  QToolButton *mpBoldToolButton;
+  QToolButton *mpItalicToolButton;
+  QToolButton *mpUnderlineToolButton;
   HTMLEditor *mpHTMLSourceEditor;
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
@@ -101,6 +104,7 @@ public slots:
   void saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem = 0);
   void cancelDocumentation();
   void toggleEditor(int tabIndex);
+  void updateButtons();
   void updateDocumentationHistory();
 };
 
