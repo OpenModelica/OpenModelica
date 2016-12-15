@@ -3438,7 +3438,8 @@ void NotebookWindow::changeWindow(QAction *action)
   if( !windows_[action]->isActiveWindow() )
   {
     windows_[action]->activateWindow();
-    windows_[action]->showNormal();
+    windows_[action]->raise();
+    //windows_[action]->showNormal();
   }
 }
 

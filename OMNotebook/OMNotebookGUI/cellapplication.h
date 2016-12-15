@@ -51,6 +51,7 @@
 #include <QtGui/QMessageBox>
 #include <QtCore/QDir>
 #endif
+#include <QTranslator>
 
 // IAEX Headers
 #include "application.h"
@@ -89,6 +90,8 @@ namespace IAEX
 
   private:
     void convertDrModelica();            // Added 2006-03-21 AF
+    QTranslator translator;
+    QTranslator qtTranslator;
 
   private:
     QApplication *app_;

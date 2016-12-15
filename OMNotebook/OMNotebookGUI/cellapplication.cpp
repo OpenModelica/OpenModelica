@@ -46,7 +46,6 @@
 #include "inputcell.h"
 #include "notebookcommands.h"
 #include <QSplashScreen>
-#include <QTranslator>
 
 #include <cstdlib>
 
@@ -130,7 +129,6 @@ namespace IAEX
   #endif
     QString translationDirectory = omhome + QString("/share/omnotebook/nls");
     // install Qt's default translations
-    QTranslator qtTranslator;
   #ifdef Q_OS_WIN
     qtTranslator.load("qt_" + QLocale::system().name(), translationDirectory);
   #else
@@ -138,7 +136,6 @@ namespace IAEX
   #endif
     app_->installTranslator(&qtTranslator);
     // install application translations
-    QTranslator translator;
     translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory);
     app_->installTranslator(&translator);
 
