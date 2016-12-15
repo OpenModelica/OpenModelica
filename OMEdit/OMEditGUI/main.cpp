@@ -41,7 +41,7 @@
  * - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
  * - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
  * - Jan Kokert - <a href="mailto:jan.kokert@imtek.uni-freiburg.de">jan.kokert@imtek.uni-freiburg.de</a>
- * - Dr. Henning Kiel
+ * - Dr. Henning Kiel - <a href="mailto:henning.kiel@w-hs.de">henning.kiel@w-hs.de</a>
  * - Haris Kapidzic
  * - Abhinn Kothari
  * - Lennart Ochel - <a href="mailto:lennart.ochel@fh-bielefeld.de">lennart.ochel@fh-bielefeld.de</a>

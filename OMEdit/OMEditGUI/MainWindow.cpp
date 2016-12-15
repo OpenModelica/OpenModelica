@@ -2449,6 +2449,7 @@ void MainWindow::createActions()
   mpQuitAction = new QAction(QIcon(":/Resources/icons/quit.svg"), tr("Quit"), this);
   mpQuitAction->setStatusTip(tr("Quit the ").append(Helper::applicationIntroText));
   mpQuitAction->setShortcut(QKeySequence("Ctrl+q"));
+  mpQuitAction->setMenuRole(QAction::QuitRole);
   connect(mpQuitAction, SIGNAL(triggered()), SLOT(close()));
   // Edit Menu
   // undo action
@@ -2677,6 +2678,7 @@ void MainWindow::createActions()
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
+  mpAboutOMEditAction->setMenuRole(QAction::AboutRole);
   connect(mpAboutOMEditAction, SIGNAL(triggered()), SLOT(openAboutOMEdit()));
   /* Toolbar Actions */
   // custom shapes group
@@ -3376,7 +3378,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<li>Martin Sjölund - <u><a href=\"mailto:martin.sjolund@liu.se\">martin.sjolund@liu.se</a></u></li>"
      "<li>Alachew Shitahun - <u><a href=\"mailto:alachew.mengist@liu.se\">alachew.mengist@liu.se</a></u></li>"
      "<li>Jan Kokert - <u><a href=\"mailto:jan.kokert@imtek.uni-freiburg.de\">jan.kokert@imtek.uni-freiburg.de</a></u></li>"
-     "<li>Dr. Henning Kiel</li>"
+     "<li>Dr. Henning Kiel - <u><a href=\"mailto:henning.kiel@w-hs.de\">henning.kiel@w-hs.de</a></u></li>"
      "<li>Haris Kapidzic</li>"
      "<li>Abhinn Kothari</li>"
      "<li>Lennart Ochel - <u><a href=\"mailto:lennart.ochel@fh-bielefeld.de\">lennart.ochel@fh-bielefeld.de</a></u></li>"
