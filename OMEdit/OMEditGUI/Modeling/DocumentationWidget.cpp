@@ -197,6 +197,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // create the HTMLEditor
   mpHTMLSourceEditor = new HTMLEditor(this);
   mpHTMLSourceEditor->hide();
+  connect(mpHTMLEditor->page(), SIGNAL(contentsChanged()), SLOT(updateHTMLSourceEditor()));
   HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(OptionsDialog::instance()->getHTMLEditorPage(), mpHTMLSourceEditor->getPlainTextEdit());
   connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
   // eidtors widget layout
@@ -502,9 +503,6 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
       oldDocAnnotationString.append(")");
       // new documentation annotation
       QString newDocAnnotationString = "annotate=Documentation(";
-      if (mpHTMLEditor->isModified()) {
-        mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
-      }
       if (mEditType == EditType::Info) { // if editing the info section
         if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
           newDocAnnotationString.append("info=\"").append(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())).append("\"");
@@ -586,25 +584,14 @@ void DocumentationWidget::toggleEditor(int tabIndex)
     case 1:
       mpHTMLEditorWidget->hide();
       mpHTMLSourceEditor->show();
-      if (mpHTMLEditor->isModified()) {
-        mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
-      } else {
-        LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-        if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
-          QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
-          if (mEditType == EditType::Info) {
-            mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(documentation.at(0));
-          } else if (mEditType == EditType::Revisions) {
-            mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(documentation.at(1));
-          } else if (mEditType == EditType::InfoHeader) {
-            mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(documentation.at(2));
-          }
-        }
-      }
       mpHTMLSourceEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
       break;
     case 0:
     default:
+      if (mpHTMLSourceEditor->getPlainTextEdit()->document()->isModified()) {
+        writeDocumentationFile(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText());
+        mpHTMLEditor->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
+      }
       mpHTMLSourceEditor->hide();
       mpHTMLEditorWidget->show();
       mpHTMLEditor->setFocus(Qt::ActiveWindowFocusReason);
@@ -622,6 +609,16 @@ void DocumentationWidget::updateButtons()
   mpBoldToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
   mpItalicToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
   mpUnderlineToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
+}
+
+/*!
+ * \brief DocumentationWidget::updateHTMLSourceEditor
+ * Slot activated when QWebView::page() contentsChanged SIGNAL is rasied.\n
+ * Updates the contents of the HTML source editor.
+ */
+void DocumentationWidget::updateHTMLSourceEditor()
+{
+  mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
 }
 
 /*!

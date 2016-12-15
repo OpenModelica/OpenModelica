@@ -105,6 +105,7 @@ public slots:
   void cancelDocumentation();
   void toggleEditor(int tabIndex);
   void updateButtons();
+  void updateHTMLSourceEditor();
   void updateDocumentationHistory();
 };
 
