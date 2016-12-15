@@ -335,6 +335,9 @@ public:
   static QString bold;
   static QString italic;
   static QString underline;
+  static QString strikethrough;
+  static QString subscript;
+  static QString superscript;
 };
 
 class GUIMessages : public QObject

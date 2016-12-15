@@ -171,6 +171,36 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpUnderlineToolButton->setCheckable(true);
   connect(mpUnderlineToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SLOT(trigger()));
   connect(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SIGNAL(changed()), SLOT(updateButtons()));
+  // strikethrough button
+  mpStrikethroughToolButton = new QToolButton;
+  mpStrikethroughToolButton->setText(Helper::strikethrough);
+  mpStrikethroughToolButton->setToolTip(Helper::strikethrough);
+  mpStrikethroughToolButton->setIcon(QIcon(":/Resources/icons/strikethrough-icon.svg"));
+  mpStrikethroughToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpStrikethroughToolButton->setAutoRaise(true);
+  mpStrikethroughToolButton->setCheckable(true);
+  connect(mpStrikethroughToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SIGNAL(changed()), SLOT(updateButtons()));
+  // subscript button
+  mpSubscriptToolButton = new QToolButton;
+  mpSubscriptToolButton->setText(Helper::subscript);
+  mpSubscriptToolButton->setToolTip(Helper::subscript);
+  mpSubscriptToolButton->setIcon(QIcon(":/Resources/icons/subscript-icon.svg"));
+  mpSubscriptToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpSubscriptToolButton->setAutoRaise(true);
+  mpSubscriptToolButton->setCheckable(true);
+  connect(mpSubscriptToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SIGNAL(changed()), SLOT(updateButtons()));
+  // superscript button
+  mpSuperscriptToolButton = new QToolButton;
+  mpSuperscriptToolButton->setText(Helper::superscript);
+  mpSuperscriptToolButton->setToolTip(Helper::superscript);
+  mpSuperscriptToolButton->setIcon(QIcon(":/Resources/icons/superscript-icon.svg"));
+  mpSuperscriptToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  mpSuperscriptToolButton->setAutoRaise(true);
+  mpSuperscriptToolButton->setCheckable(true);
+  connect(mpSuperscriptToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SIGNAL(changed()), SLOT(updateButtons()));
   // frame to contain font buttons
   QHBoxLayout *pFontButtonsHorizontalLayout = new QHBoxLayout;
   pFontButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
@@ -178,6 +208,9 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pFontButtonsHorizontalLayout->addWidget(mpBoldToolButton);
   pFontButtonsHorizontalLayout->addWidget(mpItalicToolButton);
   pFontButtonsHorizontalLayout->addWidget(mpUnderlineToolButton);
+  pFontButtonsHorizontalLayout->addWidget(mpStrikethroughToolButton);
+  pFontButtonsHorizontalLayout->addWidget(mpSubscriptToolButton);
+  pFontButtonsHorizontalLayout->addWidget(mpSuperscriptToolButton);
   QFrame *pFontButtonsFrame = new QFrame;
   pFontButtonsFrame->setLayout(pFontButtonsHorizontalLayout);
   // editor toolbar
@@ -609,6 +642,9 @@ void DocumentationWidget::updateButtons()
   mpBoldToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
   mpItalicToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
   mpUnderlineToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
+  mpStrikethroughToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
+  mpSubscriptToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
+  mpSuperscriptToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
 }
 
 /*!

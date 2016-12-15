@@ -88,6 +88,9 @@ private:
   QToolButton *mpBoldToolButton;
   QToolButton *mpItalicToolButton;
   QToolButton *mpUnderlineToolButton;
+  QToolButton *mpStrikethroughToolButton;
+  QToolButton *mpSubscriptToolButton;
+  QToolButton *mpSuperscriptToolButton;
   HTMLEditor *mpHTMLSourceEditor;
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
