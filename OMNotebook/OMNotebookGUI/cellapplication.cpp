@@ -46,8 +46,11 @@
 #include "inputcell.h"
 #include "notebookcommands.h"
 #include <QSplashScreen>
+#include <QTranslator>
 
 #include <cstdlib>
+
+#include "omc_config.h"
 
 namespace IAEX
 {
@@ -113,6 +116,32 @@ namespace IAEX
     : QObject()
   {
     app_ = new MyApp(argc, argv, this);
+
+
+    const char *omhome = getenv("OPENMODELICAHOME");
+  #ifdef WIN32
+    if (!omhome) {
+      QMessageBox::critical(0, "OMNotebook", "OPENMODELICAHOME not set", "OK");
+      app_->quit();
+      exit(1);
+    }
+  #else /* unix */
+    omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
+  #endif
+    QString translationDirectory = omhome + QString("/share/omnotebook/nls");
+    // install Qt's default translations
+    QTranslator qtTranslator;
+  #ifdef Q_OS_WIN
+    qtTranslator.load("qt_" + QLocale::system().name(), translationDirectory);
+  #else
+    qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+  #endif
+    app_->installTranslator(&qtTranslator);
+    // install application translations
+    QTranslator translator;
+    translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory);
+    app_->installTranslator(&translator);
+
     mainWindow = new QMainWindow();
     QDir dir;
 

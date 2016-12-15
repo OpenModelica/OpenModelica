@@ -467,7 +467,7 @@ void NotebookWindow::createFileMenu()
   toolBar->addAction(newAction);
 
 
-  recentMenu = new QMenu("Recent &Files", this);
+  recentMenu = new QMenu(tr("Recent &Files"), this);
 
   // OPEN FILE
   openFileAction = new QAction( tr("&Open"), this );
@@ -521,6 +521,7 @@ void NotebookWindow::createFileMenu()
   quitWindowAction = new QAction( tr("&Quit"), this );
   quitWindowAction->setShortcut( tr("Ctrl+Q") );
   quitWindowAction->setStatusTip( tr("Quit OMNotebook") );
+  quitWindowAction->setMenuRole(QAction::QuitRole);
   quitWindowAction->setIcon(QIcon(":/Resources/toolbarIcons/exit.png"));
 
   connect(quitWindowAction, SIGNAL(triggered()), this, SLOT(quitOMNotebook()));
@@ -542,7 +543,7 @@ void NotebookWindow::createFileMenu()
 
   QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   QString recentFile;
-  for(int i = 0; i < 4; ++i)
+  for(int i = 0; i < 8; ++i)
   {
     if((recentFile = s.value(QString("Recent")+QString(i), QString()).toString()) != QString())
     {
@@ -1027,57 +1028,57 @@ void NotebookWindow::createFormatMenu()
   sizeLarger->setCheckable( false );
   sizeLarger->setStatusTip( tr("Set font size larger") );
 
-  size8pt = new QAction( tr("8"), this);
+  size8pt = new QAction( "8", this);
   size8pt->setCheckable( true );
   sizes_.insert( "8", size8pt );
   sizesgroup->addAction( size8pt );
 
-  size9pt = new QAction( tr("9"), this);
+  size9pt = new QAction( "9", this);
   size9pt->setCheckable( true );
   sizes_.insert( "9", size9pt );
   sizesgroup->addAction( size9pt );
 
-  size10pt = new QAction( tr("10"), this);
+  size10pt = new QAction( "10", this);
   size10pt->setCheckable( true );
   sizes_.insert( "10", size10pt );
   sizesgroup->addAction( size10pt );
 
-  size12pt = new QAction( tr("12"), this);
+  size12pt = new QAction( "12", this);
   size12pt->setCheckable( true );
   sizes_.insert( "12", size12pt );
   sizesgroup->addAction( size12pt );
 
-  size14pt = new QAction( tr("14"), this);
+  size14pt = new QAction( "14", this);
   size14pt->setCheckable( true );
   sizes_.insert( "14", size14pt );
   sizesgroup->addAction( size14pt );
 
-  size16pt = new QAction( tr("16"), this);
+  size16pt = new QAction( "16", this);
   size16pt->setCheckable( true );
   sizes_.insert( "16", size16pt );
   sizesgroup->addAction( size16pt );
 
-  size18pt = new QAction( tr("18"), this);
+  size18pt = new QAction( "18", this);
   size18pt->setCheckable( true );
   sizes_.insert( "18", size18pt );
   sizesgroup->addAction( size18pt );
 
-  size20pt = new QAction( tr("20"), this);
+  size20pt = new QAction( "20", this);
   size20pt->setCheckable( true );
   sizes_.insert( "20", size20pt );
   sizesgroup->addAction( size20pt );
 
-  size24pt = new QAction( tr("24"), this);
+  size24pt = new QAction( "24", this);
   size24pt->setCheckable( true );
   sizes_.insert( "24", size24pt );
   sizesgroup->addAction( size24pt );
 
-  size36pt = new QAction( tr("36"), this);
+  size36pt = new QAction( "36", this);
   size36pt->setCheckable( true );
   sizes_.insert( "36", size36pt );
   sizesgroup->addAction( size36pt );
 
-  size72pt = new QAction( tr("72"), this);
+  size72pt = new QAction( "72", this);
   size72pt->setCheckable( true );
   sizes_.insert( "72", size72pt );
   sizesgroup->addAction( size72pt );
@@ -1124,55 +1125,55 @@ void NotebookWindow::createFormatMenu()
 
   stretchUltraCondensed = new QAction( tr("U&ltra Condensed"), this);
   stretchUltraCondensed->setCheckable( true );
-  stretchUltraCondensed->setStatusTip( tr("Set font stretech to Ultra Condensed") );
+  stretchUltraCondensed->setStatusTip( tr("Set font stretch to Ultra Condensed") );
   stretchs_.insert( QFont::UltraCondensed, stretchUltraCondensed );
   stretchsgroup->addAction( stretchUltraCondensed );
 
   stretchExtraCondensed = new QAction( tr("E&xtra Condensed"), this);
   stretchExtraCondensed->setCheckable( true );
-  stretchExtraCondensed->setStatusTip( tr("Set font stretech to Extra Condensed") );
+  stretchExtraCondensed->setStatusTip( tr("Set font stretch to Extra Condensed") );
   stretchs_.insert( QFont::ExtraCondensed, stretchExtraCondensed );
   stretchsgroup->addAction( stretchExtraCondensed );
 
   stretchCondensed = new QAction( tr("&Condensed"), this);
   stretchCondensed->setCheckable( true );
-  stretchCondensed->setStatusTip( tr("Set font stretech to Condensed") );
+  stretchCondensed->setStatusTip( tr("Set font stretch to Condensed") );
   stretchs_.insert( QFont::Condensed, stretchCondensed );
   stretchsgroup->addAction( stretchCondensed );
 
   stretchSemiCondensed = new QAction( tr("S&emi Condensed"), this);
   stretchSemiCondensed->setCheckable( true );
-  stretchSemiCondensed->setStatusTip( tr("Set font stretech to Semi Condensed") );
+  stretchSemiCondensed->setStatusTip( tr("Set font stretch to Semi Condensed") );
   stretchs_.insert( QFont::SemiCondensed, stretchSemiCondensed );
   stretchsgroup->addAction( stretchSemiCondensed );
 
   stretchUnstretched = new QAction( tr("&Unstretched"), this);
   stretchUnstretched->setCheckable( true );
-  stretchUnstretched->setStatusTip( tr("Set font stretech to Unstretched") );
+  stretchUnstretched->setStatusTip( tr("Set font stretch to Unstretched") );
   stretchs_.insert( QFont::Unstretched, stretchUnstretched );
   stretchsgroup->addAction( stretchUnstretched );
 
   stretchSemiExpanded = new QAction( tr("&Semi Expanded"), this);
   stretchSemiExpanded->setCheckable( true );
-  stretchSemiExpanded->setStatusTip( tr("Set font stretech to Semi Expanded") );
+  stretchSemiExpanded->setStatusTip( tr("Set font stretch to Semi Expanded") );
   stretchs_.insert( QFont::SemiExpanded, stretchSemiExpanded );
   stretchsgroup->addAction( stretchSemiExpanded );
 
   stretchExpanded = new QAction( tr("&Expanded"), this);
   stretchExpanded->setCheckable( true );
-  stretchExpanded->setStatusTip( tr("Set font stretech to Expanded") );
+  stretchExpanded->setStatusTip( tr("Set font stretch to Expanded") );
   stretchs_.insert( QFont::Expanded, stretchExpanded );
   stretchsgroup->addAction( stretchExpanded );
 
   stretchExtraExpanded = new QAction( tr("Ex&tra Expanded"), this);
   stretchExtraExpanded->setCheckable( true );
-  stretchExtraExpanded->setStatusTip( tr("Set font stretech to Extra Expanded") );
+  stretchExtraExpanded->setStatusTip( tr("Set font stretch to Extra Expanded") );
   stretchs_.insert( QFont::ExtraExpanded, stretchExtraExpanded );
   stretchsgroup->addAction( stretchExtraExpanded );
 
   stretchUltraExpanded = new QAction( tr("Ult&ra Expanded"), this);
   stretchUltraExpanded->setCheckable( true );
-  stretchUltraExpanded->setStatusTip( tr("Set font stretech to Ultra Expanded") );
+  stretchUltraExpanded->setStatusTip( tr("Set font stretch to Ultra Expanded") );
   stretchs_.insert( QFont::UltraExpanded, stretchUltraExpanded );
   stretchsgroup->addAction( stretchUltraExpanded );
 
@@ -1651,6 +1652,7 @@ void NotebookWindow::createAboutMenu()
   //QObject::connect(aboutAction, SIGNAL(activated()), this, SLOT(aboutQTNotebook()));
   aboutAction = new QAction( tr("&About OMNotebook"), this );
   aboutAction->setStatusTip( tr("Display OMNotebook's About dialog") );
+  aboutAction->setMenuRole(QAction::AboutRole);
   connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutQTNotebook()));
 
   // 2006-02-03 AF, Added a help action
@@ -1663,6 +1665,7 @@ void NotebookWindow::createAboutMenu()
   // 2006-02-21 AF, Added a about qt action
   aboutQtAction = new QAction( tr("About &Qt"), this );
   aboutQtAction->setStatusTip( tr("Display information about Qt") );
+  aboutQtAction->setMenuRole(QAction::AboutQtRole);
   connect( aboutQtAction, SIGNAL( triggered() ),
            this, SLOT( aboutQT() ));
 
@@ -2512,7 +2515,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
   QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   QStringList tmpLst;
   QString tmp;
-  for(int i = 0; i < 4; ++i)
+  for(int i = 0; i < 8; ++i)
   {
     if((tmp = s.value(QString("Recent") + QString(i), QString()).toString()) != QString())
       tmpLst.push_back(tmp);
@@ -2525,7 +2528,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
   else
     tmpLst.push_front(filename);
 
-  for(int i = 0; i < 4 && i < tmpLst.size(); ++i)
+  for(int i = 0; i < 8 && i < tmpLst.size(); ++i)
     s.setValue(QString("Recent") + QString(i), tmpLst[i]);
 
 }

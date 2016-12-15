@@ -1,5 +1,7 @@
 /build
 *.o
+*.qm
+qm.stamp
 OMNotebook/bin
 OMNotebook/generatedfiles
 OMNotebook/OMNotebookGUI/Makefile

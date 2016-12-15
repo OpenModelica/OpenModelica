@@ -40,7 +40,6 @@
 // QT Headers
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocumentFragment>
-#include <QDebug>
 
 //STD Headers
 #include <exception>

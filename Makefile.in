@@ -15,7 +15,7 @@ install:
 	mkdir -p ${DESTDIR}/Applications/
 	cp -a @OMBUILDDIR@/Applications/OMNotebook@APP@ ${DESTDIR}/Applications/
 endif
-	mkdir -p ${DESTDIR}/lib/@host_short@/omc/ ${DESTDIR}/share/omedit/nls/
+	mkdir -p ${DESTDIR}/lib/@host_short@/omc/ ${DESTDIR}/share/omnotebook/nls/
 	cp -a @OMBUILDDIR@/lib/@host_short@/omc/* ${DESTDIR}/lib/@host_short@/omc/
 	cp -a @OMBUILDDIR@/share/omnotebook/nls/* ${DESTDIR}/share/omnotebook/nls/
 

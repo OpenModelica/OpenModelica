@@ -9,6 +9,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     QT *= printsupport widgets webkitwidgets
 }
 
+TRANSLATIONS = Resources/nls/OMNotebook_de_DE.ts
+
 TARGET = OMNotebook
 TEMPLATE = app
 

@@ -828,7 +828,7 @@ namespace IAEX
           // TO BIG
           if( height > (scrollBottom-scrollTop) )
           {
-            qDebug( "TO BIG" );
+            qDebug( "TOO BIG" );
             // cell so big that it span over entire viewarea
             return;
           }
