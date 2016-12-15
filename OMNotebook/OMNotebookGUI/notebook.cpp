@@ -977,20 +977,24 @@ void NotebookWindow::createFormatMenu()
   faceMenu = formatMenu->addMenu( tr("Fa&ce") );
 
   facePlain = new QAction( tr("&Plain"), this);
+  facePlain->setWhatsThis("Plain");
   facePlain->setCheckable( false );
   facePlain->setStatusTip( tr("Set font face to Plain") );
 
   faceBold = new QAction( tr("&Bold"), this);
+  faceBold->setWhatsThis("Bold");
   faceBold->setShortcut( tr("Ctrl+B") );
   faceBold->setCheckable( true );
   faceBold->setStatusTip( tr("Set font face to Bold") );
 
   faceItalic = new QAction( tr("&Italic"), this);
+  faceItalic->setWhatsThis("Italic");
   faceItalic->setShortcut( tr("Ctrl+I") );
   faceItalic->setCheckable( true );
   faceItalic->setStatusTip( tr("Set font face to Italic") );
 
   faceUnderline = new QAction( tr("&Underline"), this);
+  faceUnderline->setWhatsThis("Underline");
   faceUnderline->setShortcut( tr("Ctrl+U") );
   faceUnderline->setCheckable( true );
   faceUnderline->setStatusTip( tr("Set font face to Underline") );
@@ -1019,11 +1023,13 @@ void NotebookWindow::createFormatMenu()
   sizesgroup = new QActionGroup( this );
 
   sizeSmaller = new QAction( tr("&Smaller"), this);
+  sizeSmaller->setWhatsThis("Smaller");
   sizeSmaller->setShortcut( tr("Alt+-") );
   sizeSmaller->setCheckable( false );
   sizeSmaller->setStatusTip( tr("Set font size smaller") );
 
   sizeLarger = new QAction( tr("&Larger"), this);
+  sizeLarger->setWhatsThis("Larger");
   sizeLarger->setShortcut( tr("Alt+=") );
   sizeLarger->setCheckable( false );
   sizeLarger->setStatusTip( tr("Set font size larger") );
@@ -1084,6 +1090,7 @@ void NotebookWindow::createFormatMenu()
   sizesgroup->addAction( size72pt );
 
   sizeOther = new QAction( tr("&Other..."), this);
+  sizeOther->setWhatsThis("Other");
   sizeOther->setCheckable( true );
   sizeOther->setStatusTip( tr("Select font size") );
 
@@ -1426,6 +1433,7 @@ void NotebookWindow::createFormatMenu()
 
   borderMenu->addSeparator();
   borderOther = new QAction( "&Other...", this );
+  borderOther->setWhatsThis("Other");
   borderOther->setCheckable( true );
   borderMenu->addAction( borderOther );
 
@@ -1460,6 +1468,7 @@ void NotebookWindow::createFormatMenu()
 
   marginMenu->addSeparator();
   marginOther = new QAction( "&Other...", this );
+  marginOther->setWhatsThis("Other");
   marginOther->setCheckable( true );
   marginMenu->addAction( marginOther );
 
@@ -1494,6 +1503,7 @@ void NotebookWindow::createFormatMenu()
 
   paddingMenu->addSeparator();
   paddingOther = new QAction( "&Other...", this );
+  paddingOther->setWhatsThis("Other");
   paddingOther->setCheckable( true );
   paddingMenu->addAction( paddingOther );
 
@@ -3098,13 +3108,13 @@ void NotebookWindow::changeFontFace( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( action->text() == "&Plain" )
+  if( action->whatsThis() == "Plain" )
     subject_->textcursorChangeFontFace( 0 );
-  else if( action->text() == "&Bold" )
+  else if( action->whatsThis() == "Bold" )
     subject_->textcursorChangeFontFace( 1 );
-  else if( action->text() == "&Italic" )
+  else if( action->whatsThis() == "Italic" )
     subject_->textcursorChangeFontFace( 2 );
-  else if( action->text() == "&Underline" )
+  else if( action->whatsThis() == "Underline" )
     subject_->textcursorChangeFontFace( 3 );
 }
 
@@ -3119,7 +3129,7 @@ void NotebookWindow::changeFontSize( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( action->text() == "&Smaller" )
+  if( action->whatsThis() == "Smaller" )
   { // SMALLER
     QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
     if( !cursor.isNull() )
@@ -3131,7 +3141,7 @@ void NotebookWindow::changeFontSize( QAction *action )
       subject_->textcursorChangeFontSize( size - 1 );
     }
   }
-  else if( action->text() == "&Larger" )
+  else if( action->whatsThis() == "Larger" )
   { // LARGER
     QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
     if( !cursor.isNull() )
@@ -3141,7 +3151,7 @@ void NotebookWindow::changeFontSize( QAction *action )
     }
 
   }
-  else if( action->text() == "&Other..." )
+  else if( action->whatsThis() == "Other" )
   { // OTHER
     OtherDlg other(this, 6, 200);
     if( QDialog::Accepted == other.exec() )
@@ -3307,7 +3317,7 @@ void NotebookWindow::changeBorder( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( action->text() == "&Other..." )
+  if( action->whatsThis() == "Other" )
   {
     OtherDlg other(this, 0, 30);
     if( QDialog::Accepted == other.exec() )
@@ -3352,7 +3362,7 @@ void NotebookWindow::changeMargin( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( action->text() == "&Other..." )
+  if( action->whatsThis() == "Other" )
   {
     OtherDlg other(this, 0, 80);
     if( QDialog::Accepted == other.exec() )
@@ -3395,7 +3405,7 @@ void NotebookWindow::changePadding( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( action->text() == "&Other..." )
+  if( action->whatsThis() == "Other" )
   {
     OtherDlg other(this, 0, 60);
     if( QDialog::Accepted == other.exec() )
