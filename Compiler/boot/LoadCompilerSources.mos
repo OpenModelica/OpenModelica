@@ -348,6 +348,7 @@ if true then /* Suppress output */
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
     "../Util/GraphML.mo",
+    "../Util/JSONExt.mo",
     "../Util/HashTable4.mo",
     "../Util/HashTableCrToExp.mo",
     "../Util/HashTableExpToExp.mo",
