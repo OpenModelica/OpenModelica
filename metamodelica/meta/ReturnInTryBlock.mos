@@ -1,6 +1,6 @@
 // status: correct
 
-setCommandLineOptions("-g=MetaModelica -d=noevalfunc");
+setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");
 loadString("
 package TestFind
 

@@ -1,7 +1,7 @@
 // status: correct
 // bug #2675
 
-setCommandLineOptions({"+g=MetaModelica","+d=noevalfunc"});getErrorString();
+setCommandLineOptions({"-g=MetaModelica","-d=noevalfunc,gen"});getErrorString();
 loadFile("PartialFn16.mo");getErrorString();
 PartialFn16.all(15);getErrorString();
 

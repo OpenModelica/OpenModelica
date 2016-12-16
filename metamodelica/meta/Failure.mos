@@ -4,7 +4,7 @@
 //
 // Failure Testing
 //
-setCommandLineOptions("+g=MetaModelica");
+setCommandLineOptions("-g=MetaModelica -d=gen");
 loadFile("Failure.mo");
 a:=Failure.myFailure(1);getErrorString();
 a:=Failure.myFailure(2);getErrorString();

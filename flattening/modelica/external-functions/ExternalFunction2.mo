@@ -1,6 +1,7 @@
 // name:     ExternalFunction2
 // keywords: external function,code generation,constant propagation
 // status:   correct
+// cflags: -d=gen
 // setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o ExternalFunction2_f.o ExternalFunction2_f.c
 // teardown_command: rm -f ExternalFunction2_f.o ext__f*
 //

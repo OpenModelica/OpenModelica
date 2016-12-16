@@ -4,7 +4,7 @@
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("HashTableTest.mo");getErrorString();
-setCommandLineOptions("+d=rml,noevalfunc");
+setCommandLineOptions("-d=rml,noevalfunc,gen");
 
 HashTableTest.fn(1);
 getErrorString();

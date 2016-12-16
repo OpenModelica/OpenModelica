@@ -2,7 +2,7 @@
 // status: correct
 // teardown_command: rm -f StringArrayReturn_*
 
-setCommandLineOptions("+d=noevalfunc");
+setCommandLineOptions("-d=noevalfunc,gen");
 loadString("
 package StringArrayReturn
   function f

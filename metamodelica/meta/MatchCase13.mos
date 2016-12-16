@@ -1,7 +1,7 @@
 // name:     MatchCase13
 // keywords: Match Cases
 // status:   correct
-// cflags: +g=MetaModelica
+// cflags: -g=MetaModelica -d=gen
 // teardown_command: rm -f MatchCase13_*
 //
 // Match Testing. Tests tuple output of match expressions.

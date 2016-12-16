@@ -1,6 +1,6 @@
 // status: correct
 
-setCommandLineOptions("-g=MetaModelica");getErrorString();
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("
 package P
   replaceable type T1 subtypeof Any;

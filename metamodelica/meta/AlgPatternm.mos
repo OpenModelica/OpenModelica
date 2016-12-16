@@ -1,7 +1,7 @@
 // name: AlgPatternm
 // status: correct
 
-setCommandLineOptions("+g=MetaModelica");
+setCommandLineOptions("-g=MetaModelica -d=gen");
 loadFile("AlgPatternm.mo");
 getErrorString();
 AlgPatternm.f1(1);

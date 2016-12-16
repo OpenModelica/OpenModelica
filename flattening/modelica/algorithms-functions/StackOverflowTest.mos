@@ -25,7 +25,7 @@ getErrorString();
 // end StackOverflowTest.f;
 //
 // class StackOverflowTest
-//   constant Real r = fail();
+//   constant Real r = StackOverflowTest.f();
 // end StackOverflowTest;
 // "
 // "[Script/CevalScript.mo:0:0-0:0:writable] Error: Internal error Stack overflow when evaluating function call: StackOverflowTest.f()...

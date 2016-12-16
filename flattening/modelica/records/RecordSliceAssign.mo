@@ -1,6 +1,7 @@
 // name:     RecordSliceAssign
 // keywords: record slice #3245
 // status:   correct
+// cflags: -d=gen
 //
 // Checks that assigning to a slice of an array of records works.
 //

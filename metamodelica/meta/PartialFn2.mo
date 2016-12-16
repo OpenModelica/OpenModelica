@@ -1,7 +1,7 @@
 // name:     PartialFn2
 // keywords: PartialFn
 // status:  correct
-// cflags: +g=MetaModelica
+// cflags: -g=MetaModelica -d=gen
 //
 // Using pointers to functions pointing to other functions.
 //

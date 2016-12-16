@@ -1,7 +1,7 @@
 // status: correct
 // Based on ticket #3653
 
-setCommandLineOptions("-g=MetaModelica");getErrorString();
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("function stringRealTest
   input list<String> args;
   output Boolean res;

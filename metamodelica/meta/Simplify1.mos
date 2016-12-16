@@ -1,7 +1,7 @@
 // name:     Simplify1
 // keywords: simplification
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 // teardown_command: rm -f Simplify1.c* Simplify1.h Simplify1.libs Simplify1.log Simplify1.makefile Simplify1_records.c Simplify1.so
 //
 // Checks that terms are not removed in simplification that shouldn't be.

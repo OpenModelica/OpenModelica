@@ -1,6 +1,6 @@
 // name:     PartialFn14
 // keywords: PartialFn
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 // status:   correct
 // teardown_command: rm -rf PartialFn14_*
 //

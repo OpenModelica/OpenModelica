@@ -8,6 +8,7 @@
 // and not only when the outputs are in the same order as the default mapping.
 //
 
+setCommandLineOptions("-d=gen,noevalfunc");
 loadFile("ExternalFunctionResultOrder.mo");
 ExternalFunctionResultOrder.c1234();getErrorString();
 ExternalFunctionResultOrder.c2341();getErrorString();
@@ -20,6 +21,7 @@ ExternalFunctionResultOrder.f1243();getErrorString();
 ExternalFunctionResultOrder.f4321();getErrorString();
 
 // Result:
+// true
 // true
 // (1,2,3,4)
 // ""

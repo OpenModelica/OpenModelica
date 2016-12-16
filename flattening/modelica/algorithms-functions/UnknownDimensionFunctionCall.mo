@@ -112,6 +112,6 @@ end M;
 // end f;
 //
 // class M
-//   constant Real r = 0.2575342903011664;
+//   constant Real r = f({1, 2});
 // end M;
 // endResult

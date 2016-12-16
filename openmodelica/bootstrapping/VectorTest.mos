@@ -1,5 +1,5 @@
 // name: VectorTest
-// cflags: +g=MetaModelica +d=rml
+// cflags: -g=MetaModelica -d=rml,gen
 // status: correct
 // teardown_command: rm -f VectorTest_*
 

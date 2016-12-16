@@ -1,5 +1,5 @@
 // name: MatchCase16
-// cflags: +g=MetaModelica
+// cflags: -g=MetaModelica -d=gen
 // status: correct
 
 package MatchCase16

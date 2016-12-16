@@ -1,6 +1,6 @@
 // status: correct
 
-setCommandLineOptions("+g=MetaModelica");getErrorString();
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 setCFlags(getCFlags() + " -g");getErrorString();
 loadFile("MatchDotNotation.mo");getErrorString();
 

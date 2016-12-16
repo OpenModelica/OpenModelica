@@ -1,6 +1,6 @@
 // name: QuotedFunction
 // status: correct
-// cflags: +d=noevalfunc
+// cflags: -d=noevalfunc,gen
 // env: MODELICAUSERCFLAGS=-g
 // teardown_command: rm -f _omcQuot_*
 

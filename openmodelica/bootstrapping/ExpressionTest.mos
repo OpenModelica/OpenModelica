@@ -3,7 +3,7 @@
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("ExpressionTest.mo");getErrorString();
-setCommandLineOptions("+d=rml,noevalfunc");
+setCommandLineOptions("-d=rml,noevalfunc,gen");
 
 ExpressionTest.test();
 getErrorString();

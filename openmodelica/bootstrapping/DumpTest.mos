@@ -4,7 +4,7 @@
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("DumpTest.mo");getErrorString();
-setCommandLineOptions("+d=rml,noevalfunc");
+setCommandLineOptions("-d=rml,noevalfunc,gen");
 
 echo(false);
 body:=Absyn.PARTS({},{},{},{},NONE());

@@ -1,7 +1,7 @@
 // name:     UniontypeFunc1
 // keywords: uniontype function
 // status:   correct
-// cflags:   -g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 //
 // Tests functions inside of uniontypes.
 //

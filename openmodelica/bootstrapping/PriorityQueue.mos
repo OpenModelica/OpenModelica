@@ -1,11 +1,11 @@
 // name: PriorityQueue
-// cflags: +g=MetaModelica
+// cflags: -g=MetaModelica
 // status: correct
 //
 // TODO: Make me faster; I'm slow
 
 runScript("LoadCompilerSources.mos");getErrorString();
-setCommandLineOptions("+d=noevalfunc");getErrorString();
+setCommandLineOptions("-d=noevalfunc,gen");getErrorString();
 e:=PriorityQueue.empty;getErrorString();
 q:=PriorityQueue.insert((1,{}),e);getErrorString();
 PriorityQueue.findMin(q);getErrorString();

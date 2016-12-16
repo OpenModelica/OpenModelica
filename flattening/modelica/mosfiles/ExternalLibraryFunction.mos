@@ -12,6 +12,7 @@ echo(true);
 libs[1,1];
 testsuiteFriendlyName(libs[1,2]);
 testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("modelica://Test")); // Don't print the full path
+setCommandLineOptions("-d=gen,noevalfunc");
 Test.ext1();getErrorString();
 Test.ext2();getErrorString();
 Test.ext3();getErrorString();
@@ -25,6 +26,7 @@ Test.ext4();getErrorString();
 // "Test"
 // "flattening/modelica/mosfiles/TestLibrary"
 // "flattening/modelica/mosfiles/TestLibrary"
+// true
 // 42.1
 // ""
 // 42.2

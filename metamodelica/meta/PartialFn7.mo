@@ -1,7 +1,7 @@
 // name:     PartialFn7
 // keywords: PartialFn
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 //
 // Passing record constructors
 //

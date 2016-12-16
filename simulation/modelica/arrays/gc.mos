@@ -10,7 +10,7 @@ loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadFile("gc.mo"); getErrorString();
 
 // use DLL loading!
-setCommandLineOptions("+d=noevalfunc"); getErrorString();
+setCommandLineOptions("-d=noevalfunc,gen"); getErrorString();
 
 instantiateModel(gctest); getErrorString();
 simulate(gctest, numberOfIntervals=2); getErrorString();

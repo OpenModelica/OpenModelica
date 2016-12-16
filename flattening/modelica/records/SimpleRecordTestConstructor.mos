@@ -9,8 +9,9 @@ loadFile("RecordTest.mo");
 a:=RecordTest.mk_add1(1.0,2.0);
 a:=RecordTest.mk_add2(1.0,2.0);
 a:=RecordTest.mk_add3();
-a:=RecordTest.mk_add_ext(1.0,2.0);
 a:=RecordTest.ADD(1.0,2.0);
+setCommandLineOptions("-d=gen");
+a:=RecordTest.mk_add_ext(1.0,2.0);
 
 // Result:
 // true
@@ -30,6 +31,7 @@ a:=RecordTest.ADD(1.0,2.0);
 //     a1 = 1.0,
 //     a2 = 2.0
 // end RecordTest.ADD;
+// true
 // record RecordTest.ADD
 //     a1 = 1.0,
 //     a2 = 2.0

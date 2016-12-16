@@ -1,5 +1,5 @@
 // name: OptimizeContinue
-// cflags: +g=MetaModelica +d=patternmAllInfo
+// cflags: -g=MetaModelica -d=patternmAllInfo,gen
 // status: correct
 // teardown_command: rm -f OptimizeContinue_*
 

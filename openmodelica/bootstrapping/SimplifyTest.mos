@@ -3,7 +3,7 @@
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("SimplifyTest.mo");getErrorString();
-setCommandLineOptions("+d=rml,noevalfunc");
+setCommandLineOptions("-d=rml,noevalfunc,gen");
 
 SimplifyTest.test();
 getErrorString();

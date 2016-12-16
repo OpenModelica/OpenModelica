@@ -1,6 +1,6 @@
 // status: correct
 
-setCommandLineOptions("+g=MetaModelica");
+setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("package ForIterList
 
 function splitOnTrue<T>

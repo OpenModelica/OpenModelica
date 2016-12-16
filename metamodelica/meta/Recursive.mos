@@ -1,7 +1,7 @@
 // name:     Recursive
 // keywords: Recursive
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 //
 // Recursive function testing
 //

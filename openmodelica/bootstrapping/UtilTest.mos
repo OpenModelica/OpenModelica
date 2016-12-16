@@ -18,7 +18,7 @@ loadFiles({
   "UtilTest.mo"
 });
 getErrorString();
-setCommandLineOptions("-d=rml,noevalfunc");
+setCommandLineOptions("-d=rml,noevalfunc,gen");
 listLength(List.intRange2(1, 22000));
 setCommandLineOptions("-d=evalfunc");
 getErrorString();

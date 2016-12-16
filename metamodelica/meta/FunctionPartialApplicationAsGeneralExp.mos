@@ -1,6 +1,7 @@
 // status: correct
 
-setCommandLineOptions("+g=MetaModelica");loadString("package FunctionPartialApplicationAsGeneralExp
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("package FunctionPartialApplicationAsGeneralExp
 
 function f
   output Real o;

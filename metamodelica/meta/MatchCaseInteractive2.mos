@@ -1,7 +1,7 @@
 // name:     MatchCaseInteractive2
 // keywords: Match Cases
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 //
 // Match Testing
 //

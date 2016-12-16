@@ -1,5 +1,5 @@
 // name: GraphTest
-// cflags: +g=MetaModelica +d=rml
+// cflags: -g=MetaModelica -d=rml,gen,noevalfunc
 // status: correct
 // teardown_command: rm -f GraphTest_*
 

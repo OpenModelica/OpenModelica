@@ -10,12 +10,14 @@
 //
 
 
-setCommandLineOptions("+std=3.2"); // So we do not need to mark functions "impure"
+setCommandLineOptions("--std=3.2"); // So we do not need to mark functions "impure"
 loadFile("Random.mo"); getErrorString();
 
+setCommandLineOptions("-d=gen");
 testRandom1({5,6,13});
 testRandom1({6,7,2});
 testRandom1({33,21,17});
+setCommandLineOptions("-d=nogen");
 
 instantiateModel(testRandom2); getErrorString();
 simulate(testRandom2, stopTime=3); getErrorString();
@@ -24,6 +26,7 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // true
 // true
 // ""
+// true
 // See if seed_start is OK
 // seed_start[1] = 5
 // seed_start[2] = 6
@@ -81,24 +84,7 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // x = 0.8767777042924849
 // x = 0.699829719908992
 // 0.699829719908992
-// See if seed_start is OK
-// seed_start[1] = 23
-// seed_start[2] = 87
-// seed_start[3] = 187
-// See if seed is set from seed_start
-// seed[1] = 23
-// seed[2] = 87
-// seed[3] = 187
-// x = 0.6720613541740216
-// x = 0.3678597646977235
-// x = 0.6041085613242592
-// x = 0.1667374195729037
-// x = 0.4629589578171097
-// x = 0.9289893342375366
-// x = 0.653192131612639
-// x = 0.5926293930235835
-// x = 0.5294703487946859
-// x = 0.7684225743864568
+// true
 // "function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
 //   input String string = \"\" \"String to be printed\";
 //   input String fileName = \"\" \"File where to print (empty string is the terminal)\";
@@ -168,24 +154,6 @@ simulate(testRandom2, stopTime=3); getErrorString();
 // end testRandom2;
 // "
 // ""
-// See if seed_start is OK
-// seed_start[1] = 23
-// seed_start[2] = 87
-// seed_start[3] = 187
-// See if seed is set from seed_start
-// seed[1] = 23
-// seed[2] = 87
-// seed[3] = 187
-// x = 0.6720613541740216
-// x = 0.3678597646977235
-// x = 0.6041085613242592
-// x = 0.1667374195729037
-// x = 0.4629589578171097
-// x = 0.9289893342375366
-// x = 0.653192131612639
-// x = 0.5926293930235835
-// x = 0.5294703487946859
-// x = 0.7684225743864568
 // record SimulationResult
 //     resultFile = "testRandom2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testRandom2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

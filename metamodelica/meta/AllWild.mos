@@ -1,5 +1,5 @@
 // name: AllWild
-// cflags: +g=MetaModelica
+// cflags: -g=MetaModelica -d=gen
 // status: correct
 // teardown_command: rm -rf AllWild_*
 

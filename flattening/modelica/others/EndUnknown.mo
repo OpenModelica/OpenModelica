@@ -1,6 +1,6 @@
 // name: EndUnknown
 // status: correct
-// cflags: +d=noevalfunc
+// cflags: -d=noevalfunc,gen
 // teardown_command: rm -f EndUnknown_*
 
 model EndUnknown
@@ -20,7 +20,7 @@ model EndUnknown
     end if;
   end simpson;
 
-  parameter Real a = simpson({0.4, 0.3, 0.1, 0.2, 0.3},0,1);
+  constant Real a = simpson({0.4, 0.3, 0.1, 0.2, 0.3},0,1);
   Real x(start=1);
 equation
   der(x) = -a * x;
@@ -41,9 +41,9 @@ end EndUnknown;
 // end EndUnknown.simpson;
 //
 // class EndUnknown
-//   parameter Real a = 0.2416666666666666;
+//   constant Real a = 0.2416666666666666;
 //   Real x(start = 1.0);
 // equation
-//   der(x) = (-a) * x;
+//   der(x) = -0.2416666666666666 * x;
 // end EndUnknown;
 // endResult

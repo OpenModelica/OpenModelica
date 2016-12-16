@@ -1,7 +1,7 @@
 // name:     Equality
 // keywords: Equality
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 //
 // Equality Testing
 //

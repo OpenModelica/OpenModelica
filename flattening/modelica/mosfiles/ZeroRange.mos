@@ -12,9 +12,9 @@ ZeroRange.testRangeLoop(0,-1,-1);
 ZeroRange.testRangeLoop(0,-1,0);
 ZeroRange.testRangeLoop(0,-1,1);
 
-ZeroRange.testRangeLoop(0,0,1);
+// ZeroRange.testRangeLoop(0,0,1);
 
-setCommandLineOptions("+d=noevalfunc");
+setCommandLineOptions("-d=noevalfunc,gen");
 ZeroRange.testRangeLoop(0,1,-1);
 ZeroRange.testRangeLoop(0,1,0);
 ZeroRange.testRangeLoop(0,1,1);
@@ -32,8 +32,6 @@ ZeroRange.testRangeLoop(0,0,1);
 // 2
 // 1
 // 0
-// [:-1:-1--1:-1:readonly]Modelica Assert: assertion range step != 0 failed!
-// fail()
 // true
 // 0
 // 1

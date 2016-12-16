@@ -1,5 +1,5 @@
 // name: List4
-// cflags: +g=MetaModelica +d=noevalfunc
+// cflags: -g=MetaModelica -d=noevalfunc,gen
 // status: correct
 // teardown_command: rm -f List4_*
 model List4

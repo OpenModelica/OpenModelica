@@ -1,5 +1,5 @@
 // name: ExternalFunctionArray
-// cflags: +d=noevalfunc
+// cflags: -d=noevalfunc,gen
 // status: correct
 // teardown_command: rm -f ExternalFunctionArray_*
 //

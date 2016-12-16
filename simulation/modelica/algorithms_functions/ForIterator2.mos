@@ -6,7 +6,7 @@
 // For Iterator handling
 //
 
-setCommandLineOptions("+d=noevalfunc");getErrorString();
+setCommandLineOptions("-d=noevalfunc,gen");getErrorString();
 loadFile("ForIterator2.mo");getErrorString();
 ForIterator2.func();getErrorString();
 

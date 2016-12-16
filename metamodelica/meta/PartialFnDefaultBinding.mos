@@ -1,7 +1,7 @@
 // status: correct
 // Bug #2889
 
-setCommandLineOptions("+g=MetaModelica");getErrorString();
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("function FuncID11<IT1, OT1>
   input FuncType inFunc;
   output FuncType outFunc = inFunc;

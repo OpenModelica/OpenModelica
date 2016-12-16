@@ -1,6 +1,7 @@
 // status: correct
 
-setCommandLineOptions("--grammar=MetaModelica");loadString("
+setCommandLineOptions("--grammar=MetaModelica -d=gen");
+loadString("
 function assignMetaRecordField
   uniontype union
     record METARECORD
@@ -18,6 +19,7 @@ algorithm
   end match;
 end assignMetaRecordField;");getErrorString();
 assignMetaRecordField();getErrorString();
+
 // Result:
 // true
 // true

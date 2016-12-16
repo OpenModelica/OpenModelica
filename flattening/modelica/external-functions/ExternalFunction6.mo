@@ -1,6 +1,7 @@
 // name: ExternalFunction6
 // status: correct
 // teardown_command: rm -f ExternalFunction6_*
+// cflags: -d=gen
 
 class ExternalFunction6
   function fn

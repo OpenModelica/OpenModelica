@@ -1,7 +1,7 @@
 // name:     EqPatternm
 // keywords: EqPatternm
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   -g=MetaModelica -d=gen
 //
 // Pattern matching in equations
 //

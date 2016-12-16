@@ -47,8 +47,6 @@ val(state.s, 1);
 // Result:
 // true
 // ""
-// TwoPhaseMedium_getMolarMass_C_impl: medium: [TestMedium] library [TestMedium] substance [TestMedium]
-//
 // "function ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants \"Automatically generated record constructor for ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants\"
 //   input String iupacName;
 //   input String casRegistryNumber;
@@ -154,8 +152,6 @@ val(state.s, 1);
 // end ExternalMedia.Test.TestMedium.TestState;
 // "
 // ""
-// TwoPhaseMedium_getMolarMass_C_impl: medium: [TestMedium] library [TestMedium] substance [TestMedium]
-//
 // record SimulationResult
 //     resultFile = "ExternalMedia.Test.TestMedium.TestState_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalMedia.Test.TestMedium.TestState', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
