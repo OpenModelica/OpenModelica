@@ -310,15 +310,15 @@ void MainWindow::setUpMainWindow()
     mpOMCProxy->setCommandLineOptions(OptionsDialog::instance()->getSimulationPage()->getOMCFlagsTextBox()->text());
   }
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
+    mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
   }
-  mpOMCProxy->setCommandLineOptions(QString("+simCodeTarget=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
-  mpOMCProxy->setCommandLineOptions(QString("+target=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
+  mpOMCProxy->setCommandLineOptions(QString("--simCodeTarget=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
+  mpOMCProxy->setCommandLineOptions(QString("--target=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
   if (OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("+ignoreCommandLineOptionsAnnotation=true");
+    mpOMCProxy->setCommandLineOptions("--ignoreCommandLineOptionsAnnotation=true");
   }
   if (OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
+    mpOMCProxy->setCommandLineOptions("--ignoreSimulationFlagsAnnotation=true");
   }
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();

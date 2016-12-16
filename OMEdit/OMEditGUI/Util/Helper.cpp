@@ -549,7 +549,7 @@ void Helper::initHelperVariables()
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
   Helper::OMCFlags = tr("OMC Flags");
-  Helper::OMCFlagsTip = tr("Space separated list of flags e.g., +d=initialization +cheapmatchingAlgorithm=3");
+  Helper::OMCFlagsTip = tr("Space separated list of flags e.g., -d=initialization --cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save __OpenModelica_simulationFlags annotation inside model");
   Helper::item = tr("item");
@@ -642,7 +642,7 @@ QString GUIMessages::getMessage(int type)
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
-      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the +d=infoXmlOperations flag via <b>%2->Simulation->OMC Flags</b> and simulate again.");
+      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>%2->Simulation->OMC Flags</b> and simulate again.");
     case DEBUG_CONFIGURATION_EXISTS_MSG:
       return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
     case DEBUG_CONFIGURATION_SIZE_EXCEED:

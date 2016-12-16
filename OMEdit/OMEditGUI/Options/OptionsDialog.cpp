@@ -1105,7 +1105,7 @@ void OptionsDialog::saveDebuggerSettings()
   mpSettings->setValue("alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
   mpSettings->setValue("generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
   if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
   }
   mpSettings->endGroup();
 }
@@ -3188,7 +3188,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   // OMC Flags
   mpOMCFlagsLabel = new Label(QString("%1:").arg(Helper::OMCFlags));
   mpOMCFlagsLabel->setToolTip(Helper::OMCFlagsTip);
-  mpOMCFlagsTextBox = new QLineEdit("+d=initialization");
+  mpOMCFlagsTextBox = new QLineEdit("-d=initialization");
   mpOMCFlagsHelpButton = new QToolButton;
   mpOMCFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpOMCFlagsHelpButton->setToolTip(tr("OMC flags help"));
