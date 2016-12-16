@@ -186,7 +186,7 @@ constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(7, "dumpInlineSolver", false,
   Util.gettext("Dumps the inline solver equation system."));
 constant DebugFlag EVAL_FUNC = DEBUG_FLAG(8, "evalfunc", true,
   Util.gettext("Turns on/off symbolic function evaluation."));
-constant DebugFlag GEN = DEBUG_FLAG(9, "gen", true,
+constant DebugFlag GEN = DEBUG_FLAG(9, "gen", false,
   Util.gettext("Turns on/off dynamic loading of functions that are compiled during translation. Only enable this if external functions are needed to calculate structural parameters or constants."));
 constant DebugFlag DYN_LOAD = DEBUG_FLAG(10, "dynload", false,
   Util.gettext("Display debug information about dynamic loading of compiled functions."));
