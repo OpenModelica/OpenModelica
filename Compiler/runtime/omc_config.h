@@ -103,7 +103,7 @@
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"
-#define CONFIG_CORBALIBS "-L$(OPENMODELICAHOME)/lib/omc -lmico2313"
+#define CONFIG_CORBALIBS "-L$(OPENMODELICAHOME)/lib/omc -lomniORB420_rt -lomnithread40_rt"
 #define CONFIG_LPSOLVEINC "lpsolve/lp_lib.h"
 /* Windows is always "special" */
 #define CONFIG_SYSTEMLIBS mmc_mk_nil()

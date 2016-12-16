@@ -41,6 +41,7 @@ IS_MINGW64 = -DIS_MINGW64=ON
 MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
 endif
 BOOST_PATH_MSVC = $(OMDEVMSYS)/lib/3rdParty/boost-1_55/
+WROOT=$(shell cygpath $$SYSTEMROOT)
 
 OPENCL = Yes
 LINK = cp -rl
@@ -185,6 +186,9 @@ omdev_extra_dlls: install-openturns
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_bin)/)
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	# build 32 bit libOpenCL.a
+	test ! -f $(WROOT)/SysWOW64/OpenCL.dll || gendef - $(WROOT)/SysWOW64/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
+	test ! -f $(WROOT)/SysWOW64/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgomp-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libwinpthread-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libtre-5.dll $(builddir_bin)/)
@@ -209,6 +213,9 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.la $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.a $(builddir_lib)/omc/)
 else # mingw64
+  # build 64 bit libOpenCL.a
+	test ! -f $(WROOT)/system32/OpenCL.dll || gendef - $(WROOT)/system32/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
+	test ! -f $(WROOT)/system32/OpenCL.dll || dlltool -l $(builddir_lib)/omc/libOpenCL.a -d $(builddir_lib)/omc/OpenCL.def -A -k || true
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgomp-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libwinpthread-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libtre-5.dll $(builddir_bin)/)

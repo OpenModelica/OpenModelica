@@ -39,7 +39,7 @@
 
 #include "omc_gc.h"
 
-static mmc_GC_state_type x_mmc_GC_state;
+static mmc_GC_state_type x_mmc_GC_state = {0};
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
 
 #if defined(OMC_RECORD_ALLOC_WORDS)
