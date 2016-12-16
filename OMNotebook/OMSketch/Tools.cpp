@@ -136,15 +136,15 @@ void Tools::button_action()
     connect(file_image_save,SIGNAL(triggered()), this, SLOT(draw_image_save()));
 
     copy = new QAction(tr("&Copy"),this);
-    copy->setShortcut(tr("Ctrl+C"));
+    copy->setShortcut(QKeySequence("Ctrl+C"));
     connect(copy,SIGNAL(triggered()), this, SLOT(draw_copy()));
 
     cut = new QAction(tr("&Cut"),this);
-    cut->setShortcut(tr("Ctrl+x"));
+    cut->setShortcut(QKeySequence("Ctrl+X"));
     connect(cut,SIGNAL(triggered()), this, SLOT(draw_cut()));
 
     paste = new QAction(tr("&Paste"),this);
-    paste->setShortcut(tr("Ctrl+v"));
+    paste->setShortcut(QKeySequence("Ctrl+V"));
     connect(paste,SIGNAL(triggered()), this, SLOT(draw_paste()));
 }
 
@@ -2281,4 +2281,3 @@ void Tools::keyReleaseEvent(QKeyEvent* event)
 
     }
 }
-

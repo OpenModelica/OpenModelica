@@ -459,7 +459,7 @@ void NotebookWindow::createFileMenu()
 {
   // NEW
   newAction = new QAction( tr("&New"), this );
-  newAction->setShortcut( tr("Ctrl+N") );
+  newAction->setShortcut( QKeySequence("Ctrl+N") );
   newAction->setStatusTip( tr("Create a new document") );
   connect(newAction, SIGNAL(triggered()), this, SLOT(newFile()));
   newAction->setIcon(QIcon(":/Resources/toolbarIcons/filenew.png"));
@@ -471,7 +471,7 @@ void NotebookWindow::createFileMenu()
 
   // OPEN FILE
   openFileAction = new QAction( tr("&Open"), this );
-  openFileAction->setShortcut( tr("Ctrl+O") );
+  openFileAction->setShortcut( QKeySequence("Ctrl+O") );
   openFileAction->setStatusTip( tr("Open a file") );
   connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
   openFileAction->setIcon(QIcon(":/Resources/toolbarIcons/fileopen.png"));
@@ -485,13 +485,13 @@ void NotebookWindow::createFileMenu()
 
   // SAVE AS
   saveAsAction = new QAction( tr("Save &As..."), this );
-  saveAsAction->setShortcut( tr("Ctrl+Shift+S") );
+  saveAsAction->setShortcut( QKeySequence("Ctrl+Shift+S") );
   saveAsAction->setStatusTip( tr("Save the document as a new file") );
   connect(saveAsAction, SIGNAL(triggered()), this, SLOT(saveas()));
 
   // SAVE
   saveAction = new QAction( tr("&Save"), this );
-  saveAction->setShortcut( tr("Ctrl+S") );
+  saveAction->setShortcut( QKeySequence("Ctrl+S") );
   saveAction->setStatusTip( tr("Save the document") );
   connect(saveAction, SIGNAL(triggered()), this, SLOT(save()));
   saveAction->setIcon(QIcon(":/Resources/toolbarIcons/filesave.png"));
@@ -501,13 +501,13 @@ void NotebookWindow::createFileMenu()
 
   // CLOSE FILE
   closeFileAction = new QAction( tr("&Close"), this );
-  closeFileAction->setShortcut( tr("Ctrl+W") );
+  closeFileAction->setShortcut( QKeySequence("Ctrl+W") );
   closeFileAction->setStatusTip( tr("Close the window") );
   connect(closeFileAction, SIGNAL(triggered()), this, SLOT(closeFile()));
 
   // PRINT
   printAction = new QAction( tr("&Print"), this );
-  printAction->setShortcut( tr("Ctrl+P") );
+  printAction->setShortcut( QKeySequence("Ctrl+P") );
   printAction->setStatusTip( tr("Print the document") );
   connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
   printAction->setIcon(QIcon(":/Resources/toolbarIcons/fileprint.png"));
@@ -519,7 +519,7 @@ void NotebookWindow::createFileMenu()
 
   // QUIT WINDOW
   quitWindowAction = new QAction( tr("&Quit"), this );
-  quitWindowAction->setShortcut( tr("Ctrl+Q") );
+  quitWindowAction->setShortcut( QKeySequence("Ctrl+Q") );
   quitWindowAction->setStatusTip( tr("Quit OMNotebook") );
   quitWindowAction->setMenuRole(QAction::QuitRole);
   quitWindowAction->setIcon(QIcon(":/Resources/toolbarIcons/exit.png"));
@@ -602,7 +602,7 @@ void NotebookWindow::createEditMenu()
   // 2005-10-07 AF, Porting, replaced this
   //QAction *undoAction = new QAction("Undo", "&Undo", 0, this, "undoaction");
   undoAction = new QAction( tr("&Undo"), this);
-  undoAction->setShortcut( tr("Ctrl+Z") );
+  undoAction->setShortcut( QKeySequence("Ctrl+Z") );
   undoAction->setStatusTip( tr("Undo last action") );
   connect( undoAction, SIGNAL( triggered() ),
            this, SLOT( undoEdit() ));
@@ -615,7 +615,7 @@ void NotebookWindow::createEditMenu()
   // 2005-10-07 AF, Porting, replaced this
   //QAction *redoAction = new QAction("Redo", "&Redo", 0, this, "redoaction");
   redoAction = new QAction( tr("&Redo"), this);
-  redoAction->setShortcut( tr("Ctrl+Y") );
+  redoAction->setShortcut( QKeySequence("Ctrl+Y") );
   redoAction->setStatusTip( tr("Redo last action") );
   connect( redoAction, SIGNAL( triggered() ),
            this, SLOT( redoEdit() ));
@@ -628,7 +628,7 @@ void NotebookWindow::createEditMenu()
 
   // CUT
   cutAction = new QAction( tr("Cu&t"), this);
-  cutAction->setShortcut( tr("Ctrl+X") );
+  cutAction->setShortcut( QKeySequence("Ctrl+X") );
   cutAction->setStatusTip( tr("Cut selected text") );
   connect( cutAction, SIGNAL( triggered() ),
            this, SLOT( cutEdit() ));
@@ -639,7 +639,7 @@ void NotebookWindow::createEditMenu()
 
   // COPY
   copyAction = new QAction( tr("&Copy"), this);
-  copyAction->setShortcut( tr("Ctrl+C") );
+  copyAction->setShortcut( QKeySequence("Ctrl+C") );
   copyAction->setStatusTip( tr("Copy selected text") );
   connect( copyAction, SIGNAL( triggered() ),
            this, SLOT( copyEdit() ));
@@ -651,7 +651,7 @@ void NotebookWindow::createEditMenu()
 
   // PASTE
   pasteAction = new QAction( tr("&Paste"), this);
-  pasteAction->setShortcut( tr("Ctrl+V") );
+  pasteAction->setShortcut( QKeySequence("Ctrl+V") );
   pasteAction->setStatusTip( tr("Paste text from clipboard") );
   connect( pasteAction, SIGNAL( triggered() ),
            this, SLOT( pasteEdit() ));
@@ -665,7 +665,7 @@ void NotebookWindow::createEditMenu()
 
   // FIND
   findAction = new QAction( tr("&Find"), this);
-  findAction->setShortcut( tr("Ctrl+F") );
+  findAction->setShortcut( QKeySequence("Ctrl+F") );
   findAction->setStatusTip( tr("Search through the document") );
   connect( findAction, SIGNAL( triggered() ),
            this, SLOT( findEdit() ));
@@ -676,17 +676,17 @@ void NotebookWindow::createEditMenu()
 
   // REPLACE, added 2006-08-24 AF
   replaceAction = new QAction( tr("Re&place"), this);
-  replaceAction->setShortcut( tr("Ctrl+H") );
+  replaceAction->setShortcut( QKeySequence("Ctrl+H") );
   replaceAction->setStatusTip( tr("Search through the document and replace") );
   connect( replaceAction, SIGNAL( triggered() ),
            this, SLOT( replaceEdit() ));
 
 
   // 2005-10-07 AF, Porting, replaced this
-  //QAction *showExprAction = new QAction("View Expression", "&View Expression",0, this, "viewexpr");
+  //QAction *showExprAction = new QAction("View Raw Text", "&View Raw Text",0, this, "viewexpr");
   //QObject::connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
-  showExprAction = new QAction( tr("&View Expression"), this);
-  showExprAction->setStatusTip( tr("View the expression in the cell") );
+  showExprAction = new QAction( tr("&View Raw Text"), this);
+  showExprAction->setStatusTip( tr("View the raw text in the cell") );
   showExprAction->setCheckable(true);
   showExprAction->setChecked(false);
   connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
@@ -695,7 +695,7 @@ void NotebookWindow::createEditMenu()
 
   //Edit Sketch image,and view the attributes added by jhansi
   editSketchImage = new QAction( tr("&EditSketchImage"), this );
-  editSketchImage->setShortcut( tr("Ctrl+E") );
+  editSketchImage->setShortcut( QKeySequence("Ctrl+E") );
   editSketchImage->setStatusTip( tr("Sketch Image Edit") );
   connect( editSketchImage, SIGNAL( triggered() ),
            this, SLOT( sketchImageEdit() ));
@@ -758,7 +758,7 @@ void NotebookWindow::createCellMenu()
   //QObject::connect(cutCellAction, SIGNAL(activated()), this, SLOT(cutCell()));
   /*
   cutCellAction = new QAction( tr("Cu&t Cell"), this);
-  cutCellAction->setShortcut( tr("Ctrl+Shift+X") );
+  cutCellAction->setShortcut( QKeySequence("Ctrl+Shift+X") );
   cutCellAction->setStatusTip( tr("Cut selected cell") );
   connect(cutCellAction, SIGNAL(triggered()), this, SLOT(cutCell()));
 
@@ -766,7 +766,7 @@ void NotebookWindow::createCellMenu()
   //QAction *copyCellAction = new QAction("Copy cell", "&Copy Cell", CTRL+SHIFT+Key_C, this, "copycell");
   //QObject::connect(copyCellAction, SIGNAL(activated()), this, SLOT(copyCell()));
   copyCellAction = new QAction( tr("&Copy Cell"), this);
-  copyCellAction->setShortcut( tr("Ctrl+Shift+C") );
+  copyCellAction->setShortcut( QKeySequence("Ctrl+Shift+C") );
   copyCellAction->setStatusTip( tr("Copy selected cell") );
   connect(copyCellAction, SIGNAL(triggered()), this, SLOT(copyCell()));
 
@@ -774,23 +774,23 @@ void NotebookWindow::createCellMenu()
   //QAction *pasteCellAction = new QAction("Paste cell", "&Paste Cell", CTRL+SHIFT+Key_V, this, "pastecell");
   //QObject::connect(pasteCellAction, SIGNAL(activated()), this, SLOT(pasteCell()));
   pasteCellAction = new QAction( tr("&Paste Cell"), this);
-  pasteCellAction->setShortcut( tr("Ctrl+Shift+V") );
+  pasteCellAction->setShortcut( QKeySequence("Ctrl+Shift+V") );
   pasteCellAction->setStatusTip( tr("Paste in a cell") );
   connect(pasteCellAction, SIGNAL(triggered()), this, SLOT(pasteCell()));
   */
 
-  addCellAction = new QAction( tr("&Add Cell (previus cell style)"), this);
-  addCellAction->setShortcut( tr("Alt+Enter") );
+  addCellAction = new QAction( tr("&Add Cell (previous cell style)"), this);
+  addCellAction->setShortcut( QKeySequence("Alt+Enter") );
   addCellAction->setStatusTip( tr("Add a new textcell with the previuos cells style") );
   connect(addCellAction, SIGNAL(triggered()), this, SLOT(createNewCell()));
 
   inputAction = new QAction( tr("Add &Inputcell"), this);
-  inputAction->setShortcut( tr("Ctrl+Shift+I") );
+  inputAction->setShortcut( QKeySequence("Ctrl+Shift+I") );
   inputAction->setStatusTip( tr("Add an input cell") );
   connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
 
   latexAction = new QAction( tr("Add &Latexcell"), this);
-  latexAction->setShortcut( tr("Ctrl+Shift+E") );
+  latexAction->setShortcut( QKeySequence("Ctrl+Shift+E") );
   latexAction->setStatusTip( tr("Add Latex cell") );
   connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction()));
 
@@ -798,27 +798,27 @@ void NotebookWindow::createCellMenu()
 
   /// fjass
   textAction = new QAction( tr("Add &Textcell"), this);
-  textAction->setShortcut( tr("Ctrl+Shift+T") );
+  textAction->setShortcut( QKeySequence("Ctrl+Shift+T") );
   textAction->setStatusTip( tr("Add a text cell") );
   connect(textAction, SIGNAL(triggered()), this, SLOT(textCellsAction()));
   // \fjass
 
   groupAction = new QAction( tr("&Groupcell"), this);
-  groupAction->setShortcut( tr("Ctrl+Shift+G") );
+  groupAction->setShortcut( QKeySequence("Ctrl+Shift+G") );
   groupAction->setStatusTip( tr("Groupcell") );
   connect( groupAction, SIGNAL( triggered() ),
            this, SLOT( groupCellsAction() ));
 
   // 2006-04-26 AF, UNGROUP
   ungroupCellAction = new QAction( tr("&Ungroup groupcell"), this);
-  ungroupCellAction->setShortcut( tr("Ctrl+Shift+U") );
+  ungroupCellAction->setShortcut( QKeySequence("Ctrl+Shift+U") );
   ungroupCellAction->setStatusTip( tr("Ungroup the selected groupcell in the tree view") );
   connect( ungroupCellAction, SIGNAL( triggered() ),
            this, SLOT( ungroupCell() ));
 
   // 2006-04-26 AF, SPLIT CELL
   splitCellAction = new QAction( tr("&Split cell"), this);
-  splitCellAction->setShortcut( tr("Ctrl+Shift+P") );
+  splitCellAction->setShortcut( QKeySequence("Ctrl+Shift+P") );
   splitCellAction->setStatusTip( tr("Split selected cell") );
   connect( splitCellAction, SIGNAL( triggered() ),
            this, SLOT( splitCell() ));
@@ -827,7 +827,7 @@ void NotebookWindow::createCellMenu()
   //QAction *deleteCellAction = new QAction("Delete cell", "&Delete Cell", CTRL+SHIFT+Key_D, this, "deletecell");
   //QObject::connect(deleteCellAction, SIGNAL(activated()), this, SLOT(deleteCurrentCell()));
   deleteCellAction = new QAction( tr("&Delete Cell"), this);
-  deleteCellAction->setShortcut( tr("Ctrl+Shift+D") );
+  deleteCellAction->setShortcut( QKeySequence("Ctrl+Shift+D") );
   deleteCellAction->setStatusTip( tr("Delete selected cell") );
   connect(deleteCellAction, SIGNAL(triggered()), this, SLOT(deleteCurrentCell()));
 
@@ -836,12 +836,14 @@ void NotebookWindow::createCellMenu()
   //QObject::connect(nextCellAction, SIGNAL(activated()), this, SLOT(moveCursorDown()));
   nextCellAction = new QAction( tr("&Next Cell"), this);
   nextCellAction->setStatusTip( tr("Move to next cell") );
+  nextCellAction->setShortcut( QKeySequence("Alt+Down") );
   connect(nextCellAction, SIGNAL(triggered()), this, SLOT(moveCursorDown()));
 
   // 2005-10-07 AF, Porting, replaced this
   //QAction *previousCellAction = new QAction("previous cell", "&Previous Cell", 0, this, "prevoiscell");
   //QObject::connect(previousCellAction, SIGNAL(activated()), this, SLOT(moveCursorUp()));
   previousCellAction = new QAction( tr("P&revious Cell"), this);
+  previousCellAction->setShortcut( QKeySequence("Alt+Up") );
   previousCellAction->setStatusTip( tr("Move to previous cell") );
   connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
 
@@ -983,19 +985,19 @@ void NotebookWindow::createFormatMenu()
 
   faceBold = new QAction( tr("&Bold"), this);
   faceBold->setWhatsThis("Bold");
-  faceBold->setShortcut( tr("Ctrl+B") );
+  faceBold->setShortcut( QKeySequence("Ctrl+B") );
   faceBold->setCheckable( true );
   faceBold->setStatusTip( tr("Set font face to Bold") );
 
   faceItalic = new QAction( tr("&Italic"), this);
   faceItalic->setWhatsThis("Italic");
-  faceItalic->setShortcut( tr("Ctrl+I") );
+  faceItalic->setShortcut( QKeySequence("Ctrl+I") );
   faceItalic->setCheckable( true );
   faceItalic->setStatusTip( tr("Set font face to Italic") );
 
   faceUnderline = new QAction( tr("&Underline"), this);
   faceUnderline->setWhatsThis("Underline");
-  faceUnderline->setShortcut( tr("Ctrl+U") );
+  faceUnderline->setShortcut( QKeySequence("Ctrl+U") );
   faceUnderline->setCheckable( true );
   faceUnderline->setStatusTip( tr("Set font face to Underline") );
 
@@ -1024,13 +1026,13 @@ void NotebookWindow::createFormatMenu()
 
   sizeSmaller = new QAction( tr("&Smaller"), this);
   sizeSmaller->setWhatsThis("Smaller");
-  sizeSmaller->setShortcut( tr("Alt+-") );
+  sizeSmaller->setShortcut( QKeySequence("Ctrl+-") );
   sizeSmaller->setCheckable( false );
   sizeSmaller->setStatusTip( tr("Set font size smaller") );
 
   sizeLarger = new QAction( tr("&Larger"), this);
   sizeLarger->setWhatsThis("Larger");
-  sizeLarger->setShortcut( tr("Alt+=") );
+  sizeLarger->setShortcut( QKeySequence("Ctrl++") );
   sizeLarger->setCheckable( false );
   sizeLarger->setStatusTip( tr("Set font size larger") );
 
@@ -1530,7 +1532,7 @@ void NotebookWindow::createInsertMenu()
 {
   // IMAGE
   insertImageAction = new QAction( tr("&Image"), this );
-  insertImageAction->setShortcut( tr("Ctrl+Shift+M") );
+  insertImageAction->setShortcut( QKeySequence("Ctrl+Shift+M") );
   insertImageAction->setStatusTip( tr("Insert a image into the cell") );
   connect( insertImageAction, SIGNAL( triggered() ),
            this, SLOT( insertImage() ));
@@ -1539,7 +1541,7 @@ void NotebookWindow::createInsertMenu()
 
   // LINK
   insertLinkAction = new QAction( tr("&Link"), this );
-  insertLinkAction->setShortcut( tr("Ctrl+Shift+L") );
+  insertLinkAction->setShortcut( QKeySequence("Ctrl+Shift+L") );
   insertLinkAction->setStatusTip( tr("Insert a link to the selected text") );
   connect( insertLinkAction, SIGNAL( triggered() ),
            this, SLOT( insertLink() ));
@@ -1667,7 +1669,7 @@ void NotebookWindow::createAboutMenu()
 
   // 2006-02-03 AF, Added a help action
   helpAction = new QAction( tr("&Help Text"), this );
-  helpAction->setShortcut( tr("F1") );
+  helpAction->setShortcut( QKeySequence("F1") );
   helpAction->setStatusTip( tr("Open help document") );
   connect( helpAction, SIGNAL( triggered() ),
            this, SLOT( helpText() ));
@@ -4116,6 +4118,9 @@ void NotebookWindow::shiftselectedcells()
             subject_->getCursor()->deleteCurrentCell();
         }
         subject_->getCursor()->moveAfter(curpos);
+        // make sure that chapter numbers are updated
+        updateChapterCounters();
+
     }
     else
     {
