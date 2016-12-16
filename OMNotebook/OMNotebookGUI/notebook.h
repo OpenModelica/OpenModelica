@@ -109,6 +109,7 @@ public slots:
 protected:
   void keyPressEvent(QKeyEvent *event);
   void keyReleaseEvent(QKeyEvent *event);
+  void SearchCells(Cell* current, QVector<Cell*> * total);
 
 private slots:
   void newFile();
@@ -396,6 +397,7 @@ private:
   static QString linkDir_;  // Added 2006-03-01 AF
 
   QLabel* posIndicator, *stateIndicator;
+  QString err_hierarchy = tr("Cells cannot be moved inside or outside another hierarchy.");
 };
 }
 #endif

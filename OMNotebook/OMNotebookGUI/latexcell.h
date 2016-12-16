@@ -94,7 +94,7 @@ namespace IAEX
     void setStatusMenu(QList<QAction*>);
 
   public slots:
-    void eval();
+    void eval(bool silent=false);
     void clickEvent();
     void clickEventOutput();
     void contentChanged();

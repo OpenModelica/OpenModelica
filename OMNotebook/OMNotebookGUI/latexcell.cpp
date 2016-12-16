@@ -1018,7 +1018,7 @@ namespace IAEX {
   */
 
 
-void LatexCell::eval()
+void LatexCell::eval(bool silent)
 {
 
     /*! Steps to generate the document output
@@ -1101,10 +1101,11 @@ void LatexCell::eval()
         /* Check for latex is installed */
         if (Latexversion.isEmpty())
         {
-            QMessageBox::warning( 0, "Error", "Latex is not installed in your System, This cell cannot be evaluated", "OK" );
+          if (!silent)
+            QMessageBox::warning( 0, "Error", "Latex is not installed in your System. This cell cannot be evaluated.", "OK" );
         }
         /*Generate the DVI file from tex through latex */
-        if (!Latexversion.isEmpty())
+        else
         {
             process->start("latex", QStringList() << "-halt-on-error" << Tex);
             process->waitForFinished();

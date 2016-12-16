@@ -12,913 +12,973 @@
 <context>
     <name>IAEX::AboutDialog</name>
     <message>
-        <location filename="../../notebook.cpp" line="2695"/>
+        <location filename="../../notebook.cpp" line="2558"/>
         <source>About %1</source>
         <translation>Über %1</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="2698"/>
+        <location filename="../../notebook.cpp" line="2561"/>
         <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;%3&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %4&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and GPL, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;br /&gt;Initially developed by &lt;b&gt;Ingemar Axelsson&lt;/b&gt;, &lt;b&gt;Anders Fernstr&amp;ouml;m&lt;/b&gt; and &lt;b&gt;Henrik Eriksson&lt;/b&gt; as part of their final theses.&lt;br&gt;&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Contributors:&lt;/b&gt;&lt;ul&gt;&lt;li&gt;Adeel Asghar&lt;li&gt;Dr. Henning Kiel&lt;li&gt;Arunkumar Palanisamy&lt;li&gt;Adrian Pop&lt;li&gt;Martin Sj&amp;ouml;lund&lt;/ul&gt;</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="2587"/>
+        <source>Close</source>
+        <translation>Schließen</translation>
     </message>
 </context>
 <context>
     <name>IAEX::NotebookWindow</name>
     <message>
-        <location filename="../../notebook.cpp" line="461"/>
+        <location filename="../../notebook.cpp" line="442"/>
         <source>&amp;New</source>
         <translation>&amp;Neu</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="463"/>
+        <location filename="../../notebook.cpp" line="444"/>
         <source>Create a new document</source>
         <translation>Erstellt ein neues Dokument</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="470"/>
+        <location filename="../../notebook.cpp" line="450"/>
         <source>Recent &amp;Files</source>
         <translation>&amp;Zuletzt geöffnete Dateien</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="473"/>
+        <location filename="../../notebook.cpp" line="453"/>
         <source>&amp;Open</source>
         <translation>&amp;Öffnen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="475"/>
+        <location filename="../../notebook.cpp" line="455"/>
         <source>Open a file</source>
         <translation>Öffnet eine Datei</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="487"/>
+        <location filename="../../notebook.cpp" line="467"/>
         <source>Save &amp;As...</source>
         <translation>Speichern &amp;unter...</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="489"/>
+        <location filename="../../notebook.cpp" line="469"/>
         <source>Save the document as a new file</source>
         <translation>Speichert das Dokument als neue Datei</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="493"/>
+        <location filename="../../notebook.cpp" line="473"/>
         <source>&amp;Save</source>
         <translation>&amp;Speichern</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="495"/>
+        <location filename="../../notebook.cpp" line="475"/>
         <source>Save the document</source>
         <translation>Speichert das Dokument</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="503"/>
+        <location filename="../../notebook.cpp" line="483"/>
         <source>&amp;Close</source>
         <translation>S&amp;chliessen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="505"/>
+        <location filename="../../notebook.cpp" line="485"/>
         <source>Close the window</source>
         <translation>Fenster schliessen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="509"/>
+        <location filename="../../notebook.cpp" line="489"/>
         <source>&amp;Print</source>
         <translation>&amp;Drucken</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="511"/>
+        <location filename="../../notebook.cpp" line="491"/>
         <source>Print the document</source>
         <translation>Druckt das Dokument</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="521"/>
+        <location filename="../../notebook.cpp" line="501"/>
         <source>&amp;Quit</source>
         <translation>&amp;Beenden</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="523"/>
+        <location filename="../../notebook.cpp" line="503"/>
         <source>Quit OMNotebook</source>
         <translation>Beendet OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="530"/>
+        <location filename="../../notebook.cpp" line="510"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="558"/>
+        <location filename="../../notebook.cpp" line="537"/>
         <source>&amp;Import</source>
         <translation>&amp;Importieren</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="559"/>
+        <location filename="../../notebook.cpp" line="538"/>
         <source>E&amp;xport</source>
         <translation>E&amp;xportieren</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="566"/>
+        <location filename="../../notebook.cpp" line="545"/>
         <source>&amp;Old OMNotebook file</source>
         <translation>&amp;Alte OMNotebook Datei</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="567"/>
+        <location filename="../../notebook.cpp" line="546"/>
         <source>Import an old OMNotebook file</source>
         <translation>Importiert eine OMNotebook Datei im alten Format</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="576"/>
+        <location filename="../../notebook.cpp" line="555"/>
         <source>&amp;Pure text</source>
         <translation>&amp;Reintext</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="577"/>
+        <location filename="../../notebook.cpp" line="556"/>
         <source>Export the document content to pure text</source>
         <translation>Exportiert das Dokument als reinen Text</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="584"/>
+        <location filename="../../notebook.cpp" line="563"/>
         <source>P&amp;DF</source>
         <translation>P&amp;DF</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="585"/>
+        <location filename="../../notebook.cpp" line="564"/>
         <source>Export the document to PDF</source>
         <translation>Exporttier das Dokument als PDF</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="604"/>
+        <location filename="../../notebook.cpp" line="581"/>
         <source>&amp;Undo</source>
         <translation>&amp;Rückgängig</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="606"/>
+        <location filename="../../notebook.cpp" line="583"/>
         <source>Undo last action</source>
         <translation>Nimmt letzte Änderung zurück</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="617"/>
+        <location filename="../../notebook.cpp" line="591"/>
         <source>&amp;Redo</source>
         <translation>&amp;Wiederholen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="619"/>
+        <location filename="../../notebook.cpp" line="593"/>
         <source>Redo last action</source>
         <translation>Wiederholt die letzte Aktion</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="630"/>
+        <location filename="../../notebook.cpp" line="604"/>
         <source>Cu&amp;t</source>
         <translation>&amp;Ausschneiden</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="632"/>
+        <location filename="../../notebook.cpp" line="606"/>
         <source>Cut selected text</source>
         <translation>Schneidet den ausgewählten Text aus</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="641"/>
+        <location filename="../../notebook.cpp" line="615"/>
         <source>&amp;Copy</source>
         <translation>&amp;Kopieren</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="643"/>
+        <location filename="../../notebook.cpp" line="617"/>
         <source>Copy selected text</source>
         <translation>Kopiert den ausgewählten Text</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="653"/>
+        <location filename="../../notebook.cpp" line="626"/>
         <source>&amp;Paste</source>
         <translation>&amp;Einfügen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="655"/>
+        <location filename="../../notebook.cpp" line="628"/>
         <source>Paste text from clipboard</source>
         <translation>Fügt Text aus der Zwischenablage ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="667"/>
+        <location filename="../../notebook.cpp" line="640"/>
         <source>&amp;Find</source>
         <translation>&amp;Suchen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="669"/>
+        <location filename="../../notebook.cpp" line="642"/>
         <source>Search through the document</source>
         <translation>Sucht im Dokument</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="678"/>
+        <location filename="../../notebook.cpp" line="651"/>
         <source>Re&amp;place</source>
         <translation>&amp;Ersetzen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="680"/>
+        <location filename="../../notebook.cpp" line="653"/>
         <source>Search through the document and replace</source>
         <translation>Sucht und ersetzt im Dokument</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="688"/>
+        <location filename="../../notebook.cpp" line="658"/>
         <source>&amp;View Raw Text</source>
         <translation>&amp;Zeige Rohtext</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="689"/>
+        <location filename="../../notebook.cpp" line="659"/>
         <source>View the raw text in the cell</source>
         <translation>Zeigt den Rohtext der Zelle an</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="697"/>
+        <location filename="../../notebook.cpp" line="667"/>
         <source>&amp;EditSketchImage</source>
         <translation>Sketch Image &amp;bearbeiten</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="699"/>
+        <location filename="../../notebook.cpp" line="669"/>
         <source>Sketch Image Edit</source>
         <translation>Sketch Image bearbeiten</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="712"/>
+        <location filename="../../notebook.cpp" line="677"/>
         <source>&amp;Edit</source>
         <translation>&amp;Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="782"/>
+        <location filename="../../notebook.cpp" line="703"/>
         <source>&amp;Add Cell (previous cell style)</source>
         <translation>&amp;Zelle einzufügen (vorheriger Zellstil)</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="784"/>
+        <location filename="../../notebook.cpp" line="705"/>
         <source>Add a new textcell with the previuos cells style</source>
         <translation>Fügt eine neue Textzelle mit dem vorherigen Stil hinzu</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="787"/>
+        <location filename="../../notebook.cpp" line="708"/>
         <source>Add &amp;Inputcell</source>
         <translation>&amp;Eingabezelle einzufügen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="789"/>
+        <location filename="../../notebook.cpp" line="710"/>
         <source>Add an input cell</source>
         <translation>Fügt eine Eingabezelle ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="792"/>
+        <location filename="../../notebook.cpp" line="713"/>
         <source>Add &amp;Latexcell</source>
         <translation>&amp;LaTeX-Zelle einfügen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="794"/>
+        <location filename="../../notebook.cpp" line="715"/>
         <source>Add Latex cell</source>
         <translation>Fügt eine LaTeX-Zelle ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="800"/>
+        <location filename="../../notebook.cpp" line="719"/>
         <source>Add &amp;Textcell</source>
         <translation>&amp;Textzelle einfügen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="802"/>
+        <location filename="../../notebook.cpp" line="721"/>
         <source>Add a text cell</source>
         <translation>Fügt eine Textzelle ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="806"/>
+        <location filename="../../notebook.cpp" line="725"/>
         <source>&amp;Groupcell</source>
         <translation>&amp;Gruppierungszelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="808"/>
+        <location filename="../../notebook.cpp" line="727"/>
         <source>Groupcell</source>
         <translation>Fügt eine Gruppierungszelle ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="813"/>
+        <location filename="../../notebook.cpp" line="732"/>
         <source>&amp;Ungroup groupcell</source>
         <translation>Gruppierung &amp;aufheben</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="815"/>
+        <location filename="../../notebook.cpp" line="734"/>
         <source>Ungroup the selected groupcell in the tree view</source>
         <translation>Löst die Gruppierung der ausgewählten Zellgruppe auf</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="820"/>
+        <location filename="../../notebook.cpp" line="739"/>
         <source>&amp;Split cell</source>
         <translation>&amp;Zellen teilen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="822"/>
+        <location filename="../../notebook.cpp" line="741"/>
         <source>Split selected cell</source>
         <translation>Zelle teilen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="829"/>
+        <location filename="../../notebook.cpp" line="745"/>
         <source>&amp;Delete Cell</source>
         <translation>Zelle &amp;löschen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="831"/>
+        <location filename="../../notebook.cpp" line="747"/>
         <source>Delete selected cell</source>
         <translation>Löscht ausgewählte Zelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="837"/>
+        <location filename="../../notebook.cpp" line="750"/>
         <source>&amp;Next Cell</source>
         <translation>&amp;Nächste Zelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="838"/>
+        <location filename="../../notebook.cpp" line="751"/>
         <source>Move to next cell</source>
         <translation>Geht zu nächster Zelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="845"/>
+        <location filename="../../notebook.cpp" line="755"/>
         <source>P&amp;revious Cell</source>
         <translation>&amp;Vorherige Zelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="847"/>
+        <location filename="../../notebook.cpp" line="757"/>
         <source>Move to previous cell</source>
         <translation>Geht zu vorheriger Zelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="852"/>
+        <location filename="../../notebook.cpp" line="761"/>
         <source>&amp;Cell</source>
         <translation>&amp;Zelle</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="916"/>
+        <location filename="../../notebook.cpp" line="800"/>
         <source>&amp;Format</source>
         <translation>&amp;Formatierung</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="917"/>
+        <location filename="../../notebook.cpp" line="801"/>
         <source>&amp;Styles</source>
         <translation>&amp;Stile</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="954"/>
+        <location filename="../../notebook.cpp" line="822"/>
         <source>&amp;Font</source>
         <translation>&amp;Schriftart</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="979"/>
+        <location filename="../../notebook.cpp" line="847"/>
         <source>Fa&amp;ce</source>
         <translation>&amp;Schriftstil</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="981"/>
+        <location filename="../../notebook.cpp" line="849"/>
         <source>&amp;Plain</source>
         <translation>&amp;Normal</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="984"/>
+        <location filename="../../notebook.cpp" line="852"/>
         <source>Set font face to Plain</source>
         <translation>Setzt Schriftstil auf Normal</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="986"/>
+        <location filename="../../notebook.cpp" line="854"/>
         <source>&amp;Bold</source>
         <translation>&amp;Fett</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="990"/>
+        <location filename="../../notebook.cpp" line="858"/>
         <source>Set font face to Bold</source>
         <translation>Setzt Schriftstil auf Fett</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="992"/>
+        <location filename="../../notebook.cpp" line="860"/>
         <source>&amp;Italic</source>
         <translation>&amp;Kursiv</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="996"/>
+        <location filename="../../notebook.cpp" line="864"/>
         <source>Set font face to Italic</source>
         <translation>Setzt Schriftstil auf Kursiv</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="998"/>
+        <location filename="../../notebook.cpp" line="866"/>
         <source>&amp;Underline</source>
         <translation>&amp;Unterstreichen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1002"/>
+        <location filename="../../notebook.cpp" line="870"/>
         <source>Set font face to Underline</source>
         <translation>Setzt Schriftstil auf Unterstrichen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1024"/>
+        <location filename="../../notebook.cpp" line="892"/>
         <source>Si&amp;ze</source>
         <translation>&amp;Größe</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1027"/>
+        <location filename="../../notebook.cpp" line="895"/>
         <source>&amp;Smaller</source>
         <translation>&amp;kleiner</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1031"/>
+        <location filename="../../notebook.cpp" line="899"/>
         <source>Set font size smaller</source>
         <translation>Verkleinert die Schriftgröße</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1033"/>
+        <location filename="../../notebook.cpp" line="901"/>
         <source>&amp;Larger</source>
         <translation>&amp;größer</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1037"/>
+        <location filename="../../notebook.cpp" line="905"/>
         <source>Set font size larger</source>
         <translation>Vergrößert die Schriftgröße</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1094"/>
-        <location filename="../../notebook.cpp" line="1305"/>
+        <location filename="../../notebook.cpp" line="962"/>
+        <location filename="../../notebook.cpp" line="1173"/>
         <source>&amp;Other...</source>
         <translation>&amp;andere...</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1097"/>
+        <location filename="../../notebook.cpp" line="965"/>
         <source>Select font size</source>
         <translation>Schriftgröße auswählen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1132"/>
+        <location filename="../../notebook.cpp" line="1000"/>
         <source>S&amp;tretch</source>
         <translation>S&amp;treckung</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1135"/>
+        <location filename="../../notebook.cpp" line="1003"/>
         <source>U&amp;ltra Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1138"/>
+        <location filename="../../notebook.cpp" line="1006"/>
         <source>Set font stretch to Ultra Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1145"/>
+        <location filename="../../notebook.cpp" line="1013"/>
         <source>Set font stretch to Extra Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1152"/>
+        <location filename="../../notebook.cpp" line="1020"/>
         <source>Set font stretch to Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1159"/>
+        <location filename="../../notebook.cpp" line="1027"/>
         <source>Set font stretch to Semi Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1166"/>
+        <location filename="../../notebook.cpp" line="1034"/>
         <source>Set font stretch to Unstretched</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1173"/>
+        <location filename="../../notebook.cpp" line="1041"/>
         <source>Set font stretch to Semi Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1180"/>
+        <location filename="../../notebook.cpp" line="1048"/>
         <source>Set font stretch to Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1187"/>
+        <location filename="../../notebook.cpp" line="1055"/>
         <source>Set font stretch to Extra Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1194"/>
+        <location filename="../../notebook.cpp" line="1062"/>
         <source>Set font stretch to Ultra Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1142"/>
+        <location filename="../../notebook.cpp" line="2528"/>
+        <source>The document &quot;%1&quot; is unsaved, do you want to save the document?</source>
+        <translation>Das Dokument &quot;%1&quot; ist nicht gespeichert. Wollen Sie das Dokument jetzt speichern?</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="2697"/>
+        <source>Choose a filename to save under</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="2869"/>
+        <source>The document %1 has been exported as PDF to %2.</source>
+        <translation>Das Dokument %1 wurde als PDF unter %2 exportiert.</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3540"/>
+        <source>A text that should make up the link, must be selected</source>
+        <translation>Ein Text muss markiert sein, aus dem der Link erstellt werden soll</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3692"/>
+        <source>Choose a filename to export text to</source>
+        <translation>Wählen Sie einen Dateinamen zum Exportieren aus</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3720"/>
+        <source>The document %1 has been exported as pure text to %2.</source>
+        <translation>Das Dokument %1 wurde als Reintext unter %2 exportiert.</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3779"/>
+        <source>Ungroup can only be done on one cell at the time. Please select only one cell</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3824"/>
+        <source>A textcell, latexcell or inputcell must first be added, before a groupcell can be done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3958"/>
+        <source>This functionality works only on the selected cells. Put the cursor to a position where you want to shift and then select cells you like to move and press this button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="4052"/>
+        <source>This functionality does not work on selected cells. Click on the cell to move up, and press this action.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="1010"/>
         <source>E&amp;xtra Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1149"/>
+        <location filename="../../notebook.cpp" line="1017"/>
         <source>&amp;Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1156"/>
+        <location filename="../../notebook.cpp" line="1024"/>
         <source>S&amp;emi Condensed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1163"/>
+        <location filename="../../notebook.cpp" line="1031"/>
         <source>&amp;Unstretched</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1170"/>
+        <location filename="../../notebook.cpp" line="1038"/>
         <source>&amp;Semi Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1177"/>
+        <location filename="../../notebook.cpp" line="1045"/>
         <source>&amp;Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1184"/>
+        <location filename="../../notebook.cpp" line="1052"/>
         <source>Ex&amp;tra Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1191"/>
+        <location filename="../../notebook.cpp" line="1059"/>
         <source>Ult&amp;ra Expanded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1224"/>
+        <location filename="../../notebook.cpp" line="1092"/>
         <source>&amp;Color</source>
         <translation>&amp;Farbe</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1227"/>
+        <location filename="../../notebook.cpp" line="1095"/>
         <source>Blac&amp;k</source>
         <translation>&amp;Schwarz</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1229"/>
+        <location filename="../../notebook.cpp" line="1097"/>
         <source>Set font color to Black</source>
         <translation>Setzt Schriftfarbe auf Schwarz</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1233"/>
+        <location filename="../../notebook.cpp" line="1101"/>
         <source>&amp;White</source>
         <translation>&amp;Weiß</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1235"/>
+        <location filename="../../notebook.cpp" line="1103"/>
         <source>Set font color to White</source>
         <translation>Setzt Schriftfarbe auf Weiß</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1239"/>
+        <location filename="../../notebook.cpp" line="1107"/>
         <source>&amp;10% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1241"/>
+        <location filename="../../notebook.cpp" line="1109"/>
         <source>Set font color to 10% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1245"/>
+        <location filename="../../notebook.cpp" line="1113"/>
         <source>&amp;33% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1247"/>
+        <location filename="../../notebook.cpp" line="1115"/>
         <source>Set font color to 33% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1251"/>
+        <location filename="../../notebook.cpp" line="1119"/>
         <source>&amp;50% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1253"/>
+        <location filename="../../notebook.cpp" line="1121"/>
         <source>Set font color to 50% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1257"/>
+        <location filename="../../notebook.cpp" line="1125"/>
         <source>&amp;66% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1259"/>
+        <location filename="../../notebook.cpp" line="1127"/>
         <source>Set font color to 66% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1263"/>
+        <location filename="../../notebook.cpp" line="1131"/>
         <source>&amp;90% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1265"/>
+        <location filename="../../notebook.cpp" line="1133"/>
         <source>Set font color to 90% Gray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1269"/>
+        <location filename="../../notebook.cpp" line="1137"/>
         <source>&amp;Red</source>
         <translation>&amp;Rot</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1271"/>
+        <location filename="../../notebook.cpp" line="1139"/>
         <source>Set font color to Red</source>
         <translation>Setzt Schriftfarbe auf Rot</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1275"/>
+        <location filename="../../notebook.cpp" line="1143"/>
         <source>&amp;Green</source>
         <translation>&amp;Grün</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1277"/>
+        <location filename="../../notebook.cpp" line="1145"/>
         <source>Set font color to Green</source>
         <translation>Setzt Schriftfarbe auf Grün</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1281"/>
+        <location filename="../../notebook.cpp" line="1149"/>
         <source>&amp;Blue</source>
         <translation>&amp;Blau</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1283"/>
+        <location filename="../../notebook.cpp" line="1151"/>
         <source>Set font color to Blue</source>
         <translation>Setzt Schriftfarbe auf Blau</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1287"/>
+        <location filename="../../notebook.cpp" line="1155"/>
         <source>&amp;Cyan</source>
         <translation>&amp;Türkis</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1289"/>
+        <location filename="../../notebook.cpp" line="1157"/>
         <source>Set font color to Cyan</source>
         <translation>Setzt Schriftfarbe auf Türkis</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1293"/>
+        <location filename="../../notebook.cpp" line="1161"/>
         <source>&amp;Magenta</source>
         <translation>&amp;Magenta</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1295"/>
+        <location filename="../../notebook.cpp" line="1163"/>
         <source>Set font color to Magenta</source>
         <translation>Setzt Schriftfarbe auf Magenta</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1299"/>
+        <location filename="../../notebook.cpp" line="1167"/>
         <source>&amp;Yellow</source>
         <translation>&amp;Gelb</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1301"/>
+        <location filename="../../notebook.cpp" line="1169"/>
         <source>Set font color to Yellow</source>
         <translation>Setzt Schriftfarbe auf Gelb</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1307"/>
+        <location filename="../../notebook.cpp" line="1175"/>
         <source>Select font color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1338"/>
+        <location filename="../../notebook.cpp" line="1206"/>
         <source>C&amp;hoose Font...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1340"/>
+        <location filename="../../notebook.cpp" line="1208"/>
         <source>Select font</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1350"/>
+        <location filename="../../notebook.cpp" line="1218"/>
         <source>&amp;Alignment</source>
         <translation>&amp;Ausrichtung</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1352"/>
+        <location filename="../../notebook.cpp" line="1220"/>
         <source>&amp;Vertical Alignment</source>
         <translation>&amp;Vertikale Ausrichtung</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1355"/>
+        <location filename="../../notebook.cpp" line="1223"/>
         <source>&amp;Left</source>
         <translation>&amp;Links</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1357"/>
+        <location filename="../../notebook.cpp" line="1225"/>
         <source>Set text alignment to Left</source>
         <translation>Setzt Textausrichtung auf linksbündig</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1361"/>
+        <location filename="../../notebook.cpp" line="1229"/>
         <source>&amp;Right</source>
         <translation>&amp;Rechts</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1363"/>
+        <location filename="../../notebook.cpp" line="1231"/>
         <source>Set text alignment to Right</source>
         <translation>Setzt Textausrichtung auf rechtsbündig</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1367"/>
+        <location filename="../../notebook.cpp" line="1235"/>
         <source>&amp;Center</source>
         <translation>&amp;Zentriert</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1369"/>
+        <location filename="../../notebook.cpp" line="1237"/>
         <source>Set text alignment to Center</source>
         <translation>Setzt Textausrichtung auf zentriert</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1373"/>
+        <location filename="../../notebook.cpp" line="1241"/>
         <source>&amp;Justify</source>
         <translation>&amp;Blocksatz</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1375"/>
+        <location filename="../../notebook.cpp" line="1243"/>
         <source>Set text alignment to Justify</source>
         <translation>Setzt Textausrichtung auf Blocksatz</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1379"/>
+        <location filename="../../notebook.cpp" line="1247"/>
         <source>&amp;Normal/Baseline</source>
         <translation>&amp;Normal/Grundlinie</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1381"/>
+        <location filename="../../notebook.cpp" line="1249"/>
         <source>Set vertical text alignment to Normal</source>
         <translation>Setzt vertikale Ausrichtung auf Normal</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1385"/>
+        <location filename="../../notebook.cpp" line="1253"/>
         <source>&amp;Subscript</source>
         <translation>&amp;Tiefgestellt</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1387"/>
+        <location filename="../../notebook.cpp" line="1255"/>
         <source>Set vertical text alignment to Subscript</source>
         <translation>Setzt vertikale Ausrichtung auf tiefgestellt</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1391"/>
+        <location filename="../../notebook.cpp" line="1259"/>
         <source>S&amp;uperscript</source>
         <translation>&amp;Hochgestellt</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1393"/>
+        <location filename="../../notebook.cpp" line="1261"/>
         <source>Set vertical text alignment to Superscript</source>
         <translation>Setzt vertikale Ausrichtung auf hochgestellt</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1423"/>
+        <location filename="../../notebook.cpp" line="1291"/>
         <source>&amp;Border</source>
         <translation>&amp;Rahmen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1458"/>
+        <location filename="../../notebook.cpp" line="1326"/>
         <source>&amp;Margin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1493"/>
+        <location filename="../../notebook.cpp" line="1361"/>
         <source>&amp;Padding</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1543"/>
+        <location filename="../../notebook.cpp" line="1411"/>
         <source>&amp;Image</source>
         <translation>&amp;Bild</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1545"/>
+        <location filename="../../notebook.cpp" line="1413"/>
         <source>Insert a image into the cell</source>
         <translation>Fügt ein Bild in die Zelle ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1552"/>
+        <location filename="../../notebook.cpp" line="1420"/>
         <source>&amp;Link</source>
         <translation>&amp;Link</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1554"/>
+        <location filename="../../notebook.cpp" line="1422"/>
         <source>Insert a link to the selected text</source>
         <translation>Fügt dem ausgewählten Text einen Link hinzu</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1563"/>
+        <location filename="../../notebook.cpp" line="1431"/>
         <source>&amp;Sketch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1564"/>
+        <location filename="../../notebook.cpp" line="1432"/>
         <source>Sketch App</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1574"/>
+        <location filename="../../notebook.cpp" line="1442"/>
         <source>Indent</source>
         <translation>Einrücken</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1575"/>
+        <location filename="../../notebook.cpp" line="1443"/>
         <source>Indent the code in the selected cell</source>
         <translation>Rückt den Code in der ausgewählten Zelle ein</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1584"/>
+        <location filename="../../notebook.cpp" line="1452"/>
         <source>Tries to move the cursor to the right position when return is pressed</source>
         <translation>Versucht den Cursor auf die richtige Position zu setzen, wenn Return gedrückt wurde</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1605"/>
+        <location filename="../../notebook.cpp" line="1472"/>
         <source>Evaluate</source>
         <translation>Auswerten</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1606"/>
+        <location filename="../../notebook.cpp" line="1473"/>
         <source>Evaluate the selected cell</source>
         <translation>Ausgewählte Zelle auswerten</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1611"/>
+        <location filename="../../notebook.cpp" line="1478"/>
         <source>Evaluate all cells</source>
         <translation>Alle Zellen Auswerten</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1612"/>
+        <location filename="../../notebook.cpp" line="1479"/>
         <source>Evaluate all cells in the document</source>
         <translation>Wertet alle Zellen im Dokument aus</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1617"/>
+        <location filename="../../notebook.cpp" line="1484"/>
         <source>Move cells up</source>
         <translation>Zellen hochschieben</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1618"/>
+        <location filename="../../notebook.cpp" line="1485"/>
         <source>Move cells up, by clicking on the cell</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1623"/>
+        <location filename="../../notebook.cpp" line="1490"/>
         <source>Move cells down</source>
         <translation>Zellen runterschieben</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1624"/>
+        <location filename="../../notebook.cpp" line="1491"/>
         <source>Move cells down, by clicking on the cell</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1629"/>
+        <location filename="../../notebook.cpp" line="1496"/>
         <source>Move selected cells</source>
         <translation>Verschiebe Zellen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1630"/>
+        <location filename="../../notebook.cpp" line="1497"/>
         <source>Put the cursor to a position where you want the cells to be moved, and then select the cells you would like to move that position</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1636"/>
+        <location filename="../../notebook.cpp" line="1503"/>
         <source>&amp;Insert</source>
         <translation>&amp;Einfügen</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1652"/>
+        <location filename="../../notebook.cpp" line="1519"/>
         <source>&amp;Window</source>
         <translation>&amp;Fenster</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1674"/>
+        <location filename="../../notebook.cpp" line="1537"/>
         <source>&amp;About OMNotebook</source>
         <translation>&amp;Über OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1675"/>
+        <location filename="../../notebook.cpp" line="1538"/>
         <source>Display OMNotebook&apos;s About dialog</source>
         <translation>Zeigt Information über OMNotebook an</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1680"/>
+        <location filename="../../notebook.cpp" line="1543"/>
         <source>&amp;Help Text</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1682"/>
+        <location filename="../../notebook.cpp" line="1545"/>
         <source>Open help document</source>
         <translation>Öffnet die Hilfe</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1687"/>
+        <location filename="../../notebook.cpp" line="1550"/>
         <source>About &amp;Qt</source>
         <translation>Über &amp;Qt</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1688"/>
+        <location filename="../../notebook.cpp" line="1551"/>
         <source>Display information about Qt</source>
         <translation>Zeigt Information über Qt an</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="1694"/>
+        <location filename="../../notebook.cpp" line="1557"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.h" line="400"/>
+        <source>Cells cannot be moved inside or outside another hierarchy.</source>
+        <translation>Zellen können nicht in eine andere Ebene verschoben werden.</translation>
     </message>
 </context>
 <context>

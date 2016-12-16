@@ -108,11 +108,6 @@ namespace IAEX
   * \todo implement a timer that saves a document every 5 minutes
   * or so.
   *
-  * \todo Implement section numbering. Could be done with some kind
-  * of vistors.
-  *
-  *
-  * \bug Segmentation fault when quit. Only sometimes.
   */
 
 
@@ -400,26 +395,12 @@ NotebookWindow::~NotebookWindow()
 /*!
   * \author Ingemar Axelsson
   */
-
-//class Frame: public QFrame
-//{
-//protected:
-//  void paintEvent(QPaintEvent *event)
-//  {
-//    QPainter p(this);
-//    p.save();
-//    p.setMatrix(QMatrix(.5, 1, .3, .7,1,1));
-//    QFrame::paintEvent(event);
-//    p.restore();
-//  }
-//};
 void NotebookWindow::update()
 {
   QFrame *mainWidget = subject_->getState();
 
   mainWidget->setParent(this);
   mainWidget->move( QPoint(0,0) );
-
 
   setCentralWidget(mainWidget);
   //    mainWidget->setMaximumHeight(250);
@@ -465,7 +446,6 @@ void NotebookWindow::createFileMenu()
   newAction->setIcon(QIcon(":/Resources/toolbarIcons/filenew.png"));
 
   toolBar->addAction(newAction);
-
 
   recentMenu = new QMenu(tr("Recent &Files"), this);
 
@@ -549,7 +529,6 @@ void NotebookWindow::createFileMenu()
     {
       QAction* tmpAction = recentMenu->addAction(recentFile);
       connect(tmpAction, SIGNAL(triggered()), this, SLOT(recentTriggered()));
-
     }
   }
 
@@ -599,8 +578,6 @@ void NotebookWindow::createFileMenu()
   */
 void NotebookWindow::createEditMenu()
 {
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *undoAction = new QAction("Undo", "&Undo", 0, this, "undoaction");
   undoAction = new QAction( tr("&Undo"), this);
   undoAction->setShortcut( QKeySequence("Ctrl+Z") );
   undoAction->setStatusTip( tr("Undo last action") );
@@ -611,9 +588,6 @@ void NotebookWindow::createEditMenu()
   undoAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
   toolBar->addAction(undoAction);
 
-
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *redoAction = new QAction("Redo", "&Redo", 0, this, "redoaction");
   redoAction = new QAction( tr("&Redo"), this);
   redoAction->setShortcut( QKeySequence("Ctrl+Y") );
   redoAction->setStatusTip( tr("Redo last action") );
@@ -648,7 +622,6 @@ void NotebookWindow::createEditMenu()
   copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
   toolBar->addAction(copyAction);
 
-
   // PASTE
   pasteAction = new QAction( tr("&Paste"), this);
   pasteAction->setShortcut( QKeySequence("Ctrl+V") );
@@ -682,9 +655,6 @@ void NotebookWindow::createEditMenu()
            this, SLOT( replaceEdit() ));
 
 
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *showExprAction = new QAction("View Raw Text", "&View Raw Text",0, this, "viewexpr");
-  //QObject::connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
   showExprAction = new QAction( tr("&View Raw Text"), this);
   showExprAction->setStatusTip( tr("View the raw text in the cell") );
   showExprAction->setCheckable(true);
@@ -704,11 +674,6 @@ void NotebookWindow::createEditMenu()
 
   toolBar->addSeparator();
 
-
-
-  // 2005-10-07 AF, Porting, new code for creating menu
-  // 2006-02-03 AF, removed SEARCH from menu,
-  // because they havn't been implemented yet.
   editMenu = menuBar()->addMenu( tr("&Edit") );
   editMenu->addAction( undoAction );
   editMenu->addAction( redoAction );
@@ -722,22 +687,6 @@ void NotebookWindow::createEditMenu()
   editMenu->addSeparator();
   editMenu->addAction( showExprAction );
   editMenu->addAction(editSketchImage);
-
-
-
-  /* Old menu code //AF
-  editMenu = new Q3PopupMenu(this);
-  menuBar()->insertItem("&Edit", editMenu);
-  undoAction->addTo(editMenu);
-  redoAction->addTo(editMenu);
-  editMenu->insertSeparator(3);
-  searchAction->addTo(editMenu);
-  showExprAction->addTo(editMenu);
-  */
-
-
-  //    QObject::connect(editMenu, SIGNAL(aboutToShow()),  //HE 071119
-  //      this, SLOT(updateEditMenu()));               // -''-
 }
 
 /*!
@@ -746,39 +695,11 @@ void NotebookWindow::createEditMenu()
   *
   * \brief Method for creating cell nemu.
   *
-  * Remade the function when porting to QT4.
-  *
   * 2006-04-26 AF, Added UNGROUP and SPLIT CELL
   * 2006-04-27 AF, remove cut,copy,paste cell from menu
   */
 void NotebookWindow::createCellMenu()
 {
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *cutCellAction = new QAction("Cut cell", "&Cut Cell", CTRL+SHIFT+Key_X, this, "cutcell");
-  //QObject::connect(cutCellAction, SIGNAL(activated()), this, SLOT(cutCell()));
-  /*
-  cutCellAction = new QAction( tr("Cu&t Cell"), this);
-  cutCellAction->setShortcut( QKeySequence("Ctrl+Shift+X") );
-  cutCellAction->setStatusTip( tr("Cut selected cell") );
-  connect(cutCellAction, SIGNAL(triggered()), this, SLOT(cutCell()));
-
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *copyCellAction = new QAction("Copy cell", "&Copy Cell", CTRL+SHIFT+Key_C, this, "copycell");
-  //QObject::connect(copyCellAction, SIGNAL(activated()), this, SLOT(copyCell()));
-  copyCellAction = new QAction( tr("&Copy Cell"), this);
-  copyCellAction->setShortcut( QKeySequence("Ctrl+Shift+C") );
-  copyCellAction->setStatusTip( tr("Copy selected cell") );
-  connect(copyCellAction, SIGNAL(triggered()), this, SLOT(copyCell()));
-
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *pasteCellAction = new QAction("Paste cell", "&Paste Cell", CTRL+SHIFT+Key_V, this, "pastecell");
-  //QObject::connect(pasteCellAction, SIGNAL(activated()), this, SLOT(pasteCell()));
-  pasteCellAction = new QAction( tr("&Paste Cell"), this);
-  pasteCellAction->setShortcut( QKeySequence("Ctrl+Shift+V") );
-  pasteCellAction->setStatusTip( tr("Paste in a cell") );
-  connect(pasteCellAction, SIGNAL(triggered()), this, SLOT(pasteCell()));
-  */
-
   addCellAction = new QAction( tr("&Add Cell (previous cell style)"), this);
   addCellAction->setShortcut( QKeySequence("Alt+Enter") );
   addCellAction->setStatusTip( tr("Add a new textcell with the previuos cells style") );
@@ -793,8 +714,6 @@ void NotebookWindow::createCellMenu()
   latexAction->setShortcut( QKeySequence("Ctrl+Shift+E") );
   latexAction->setStatusTip( tr("Add Latex cell") );
   connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction()));
-
-
 
   /// fjass
   textAction = new QAction( tr("Add &Textcell"), this);
@@ -823,31 +742,21 @@ void NotebookWindow::createCellMenu()
   connect( splitCellAction, SIGNAL( triggered() ),
            this, SLOT( splitCell() ));
 
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *deleteCellAction = new QAction("Delete cell", "&Delete Cell", CTRL+SHIFT+Key_D, this, "deletecell");
-  //QObject::connect(deleteCellAction, SIGNAL(activated()), this, SLOT(deleteCurrentCell()));
   deleteCellAction = new QAction( tr("&Delete Cell"), this);
   deleteCellAction->setShortcut( QKeySequence("Ctrl+Shift+D") );
   deleteCellAction->setStatusTip( tr("Delete selected cell") );
   connect(deleteCellAction, SIGNAL(triggered()), this, SLOT(deleteCurrentCell()));
 
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *nextCellAction = new QAction("next cell", "&Next Cell", 0, this, "nextcell");
-  //QObject::connect(nextCellAction, SIGNAL(activated()), this, SLOT(moveCursorDown()));
   nextCellAction = new QAction( tr("&Next Cell"), this);
   nextCellAction->setStatusTip( tr("Move to next cell") );
   nextCellAction->setShortcut( QKeySequence("Alt+Down") );
   connect(nextCellAction, SIGNAL(triggered()), this, SLOT(moveCursorDown()));
 
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *previousCellAction = new QAction("previous cell", "&Previous Cell", 0, this, "prevoiscell");
-  //QObject::connect(previousCellAction, SIGNAL(activated()), this, SLOT(moveCursorUp()));
   previousCellAction = new QAction( tr("P&revious Cell"), this);
   previousCellAction->setShortcut( QKeySequence("Alt+Up") );
   previousCellAction->setStatusTip( tr("Move to previous cell") );
   connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
 
-  // 2005-10-07 AF, Porting, new code for creating menu
   // 2006-04-27 AF, remove cut,copy,paste cell from menu
   cellMenu = menuBar()->addMenu( tr("&Cell") );
   //cellMenu->addAction( cutCellAction );
@@ -869,21 +778,6 @@ void NotebookWindow::createCellMenu()
 
   QObject::connect(cellMenu, SIGNAL(aboutToShow()),
                    this, SLOT(updateCellMenu()));
-
-
-  /* Old menu code //AF
-  cellMenu = new Q3PopupMenu(this);
-  menuBar()->insertItem("&Cell", cellMenu);
-  cutCellAction->addTo(cellMenu);
-  copyCellAction->addTo(cellMenu);
-  pasteCellAction->addTo(cellMenu);
-  addCellAction->addTo(cellMenu);
-  deleteCellAction->addTo(cellMenu);
-  nextCellAction->addTo(cellMenu);
-  previousCellAction->addTo(cellMenu);
-  cellMenu->insertSeparator(3);
-  cellMenu->insertSeparator(5);
-  */
 }
 
 /*!
@@ -893,21 +787,11 @@ void NotebookWindow::createCellMenu()
   *
   * \brief Method for creating format nemu.
   *
-  * Remade the function when porting to QT4.
-  *
   * 2005-11-03 AF, Updated this function with functionality for
   * changes text settings.
   */
 void NotebookWindow::createFormatMenu()
 {
-  // 2005-10-07 AF, Portin, Removed
-  //Create style menus.
-  //Q3ActionGroup *stylesgroup = new Q3ActionGroup(this, 0, true);
-
-  // 2005-10-07 AF, Portin, Removed
-  //formatMenu = new Q3PopupMenu(this);
-
-
   // 2005-10-03 AF, get the stylesheet instance
   Stylesheet *sheet = Stylesheet::instance("stylesheet.xml");
 
@@ -925,30 +809,14 @@ void NotebookWindow::createFormatMenu()
     styleMenu->addAction( tmp );
     stylesgroup->addAction( tmp );
     styles_[(*i)] = tmp;
-
-    /* old action/menu code
-   QAction *tmp = new QAction((*i),(*i),0, this, (*i));
-   tmp->setToggleAction(true);
-   stylesgroup->add(tmp);
-   //tmp->addTo(styleMenu);
-   styles_[(*i)] = tmp;
-   */
   }
 
-  // 2005-10-07 AF, Porting, replaced this
-  //QObject::connect(stylesgroup, SIGNAL(selected (QAction*)), this, SLOT(changeStyle(QAction*)));
   connect( styleMenu, SIGNAL(triggered(QAction*)), this, SLOT(changeStyle(QAction*)));
-
-
-  // 2005-10-07 AF, Portin, Removed
-  //stylesgroup->setUsesDropDown(true);
-  //stylesgroup->setMenuText("&Styles");
-
 
 
   // FONT
   // -----------------------------------------------------
-  // Code for createn the font menu
+  // Code for creating the font menu
   formatMenu->addSeparator();
   fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
@@ -975,7 +843,7 @@ void NotebookWindow::createFormatMenu()
 
   // FACE
   // -----------------------------------------------------
-  // Code for createn the face menu
+  // Code for creating the face menu
   faceMenu = formatMenu->addMenu( tr("Fa&ce") );
 
   facePlain = new QAction( tr("&Plain"), this);
@@ -1019,7 +887,7 @@ void NotebookWindow::createFormatMenu()
 
   // SIZE
   // -----------------------------------------------------
-  // Code for createn the size menu
+  // Code for creating the size menu
 
   sizeMenu = formatMenu->addMenu( tr("Si&ze") );
   sizesgroup = new QActionGroup( this );
@@ -1127,7 +995,7 @@ void NotebookWindow::createFormatMenu()
 
   // STRETCH
   // -----------------------------------------------------
-  // Code for createn the stretch menu
+  // Code for creating the stretch menu
 
   stretchMenu = formatMenu->addMenu( tr("S&tretch") );
   stretchsgroup = new QActionGroup( this );
@@ -1220,7 +1088,7 @@ void NotebookWindow::createFormatMenu()
 
   // COLOR
   // -----------------------------------------------------
-  // Code for createn the color menu
+  // Code for creating the color menu
   colorMenu = formatMenu->addMenu( tr("&Color") );
   colorsgroup = new QActionGroup( this );
 
@@ -1333,7 +1201,7 @@ void NotebookWindow::createFormatMenu()
   // END: Color
 
 
-  // Extra meny for choosing font from a dialog, because all fonts
+  // Extra menu for choosing font from a dialog, because all fonts
   // can't be displayed in the font menu
   chooseFont = new QAction( tr("C&hoose Font..."), this);
   chooseFont->setCheckable( false );
@@ -1344,7 +1212,7 @@ void NotebookWindow::createFormatMenu()
 
   // ALIGNMENT
   // -----------------------------------------------------
-  // Code for createn the alignment menus
+  // Code for creating the alignment menus
   formatMenu->addSeparator();
 
   alignmentMenu = formatMenu->addMenu( tr("&Alignment") );
@@ -1418,7 +1286,7 @@ void NotebookWindow::createFormatMenu()
 
   // BORDER
   // -----------------------------------------------------
-  // Code for createn the border menu
+  // Code for creating the border menu
   formatMenu->addSeparator();
   borderMenu = formatMenu->addMenu( tr("&Border") );
   bordersgroup = new QActionGroup( this );
@@ -1454,7 +1322,7 @@ void NotebookWindow::createFormatMenu()
 
   // MARGIN
   // -----------------------------------------------------
-  // Code for createn the margin menu
+  // Code for creating the margin menu
   marginMenu = formatMenu->addMenu( tr("&Margin") );
   marginsgroup = new QActionGroup( this );
 
@@ -1489,7 +1357,7 @@ void NotebookWindow::createFormatMenu()
 
   // PADDING
   // -----------------------------------------------------
-  // Code for createn the padding menu
+  // Code for creating the padding menu
   paddingMenu = formatMenu->addMenu( tr("&Padding") );
   paddingsgroup = new QActionGroup( this );
 
@@ -1601,7 +1469,6 @@ void NotebookWindow::createInsertMenu()
 
 
   //EVAL
-
   evalAction = new QAction(tr("Evaluate"), this);
   evalAction->setStatusTip(tr("Evaluate the selected cell"));
   evalAction->setIcon(QIcon(":/Resources/toolbarIcons/apply.png"));
@@ -1663,14 +1530,10 @@ void NotebookWindow::createWindowMenu()
   *
   * \brief Method for creating about nemu.
   *
-  * 2005-10-07 AF, Remade the function when porting to QT4.
   * 2006-02-03 AF, added help action.
   */
 void NotebookWindow::createAboutMenu()
 {
-  // 2005-10-07 AF, Porting, replaced this
-  //QAction *aboutAction = new QAction("About", "&About", 0, this, "about");
-  //QObject::connect(aboutAction, SIGNAL(activated()), this, SLOT(aboutQTNotebook()));
   aboutAction = new QAction( tr("&About OMNotebook"), this );
   aboutAction->setStatusTip( tr("Display OMNotebook's About dialog") );
   aboutAction->setMenuRole(QAction::AboutRole);
@@ -1783,7 +1646,7 @@ void NotebookWindow::updateMenus()
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-02 (update)
   *
-  * \brief Method for unpdating the style menu
+  * \brief Method for updating the style menu
   *
   * 2005-10-28 AF, changed style from QString to CellStyle.
   * 2005-11-02 AF, changed from '->toggle()' to '->setChevked(true)'
@@ -2478,7 +2341,7 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
 /*!
   * \author Ingemar Axelsson and Anders Fernström
   *
-  * \todo Fix the code, when the window dosen't have any file open,
+  * \todo Fix the code, when the window doesn't have any file open,
   * the command should create the new document, not this function //AF
   */
 void NotebookWindow::newFile()
@@ -2662,7 +2525,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   // user wants to save the document
   while( subject_->hasChanged() )
   {
-    int res = QMessageBox::question(this, "Document is unsaved", QString("The document \"") + filename + QString("\" is unsaved, do you want to save the document?"),
+    int res = QMessageBox::question(this, "Document is unsaved", tr("The document \"%1\" is unsaved, do you want to save the document?").arg(filename),
                                     QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
 
     if( res == QMessageBox::No ) {
@@ -2721,7 +2584,7 @@ public:
     pAboutTextLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     pAboutTextLabel->setToolTip("");
     // close button
-    QPushButton *pCloseButton = new QPushButton("Close");
+    QPushButton *pCloseButton = new QPushButton(tr("Close"));
     connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
     // logo label
     QLabel *pLogoLabel = new QLabel;
@@ -2831,7 +2694,7 @@ void NotebookWindow::saveas()
   // open save as dialog
   filename = QFileDialog::getSaveFileName(
         this,
-        "Choose a filename to save under",
+        tr("Choose a filename to save under"),
         saveDir_,
         "OpenModelica Notebooks (*.onb);;Compressed OM Notebooks (*.onbz)");
   //}
@@ -3003,10 +2866,7 @@ void NotebookWindow::pdf()
     title.remove( "\n" );
     if( title.isEmpty() )
       title = "(untitled)";
-    QString msg = QString( "The document " ) + title +
-        QString( " has been exported as PDF to " ) +
-        filename + QString( "." );
-    QMessageBox::information( 0, "Document exported", msg, "OK" );
+    QMessageBox::information( 0, "Document exported", tr("The document %1 has been exported as PDF to %2.").arg(title,filename), "OK" );
   }
 }
 
@@ -3499,7 +3359,7 @@ void NotebookWindow::redoEdit()
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
-  * \brief Method for cuting text
+  * \brief Method for cutting text
   *
   * 2006-04-27 AF, if cells are selected in the treeview cut
   * them instead of the text.
@@ -3676,9 +3536,8 @@ void NotebookWindow::insertLink()
     }
     else
     {
-      QMessageBox::warning( this, "- No text is selected -",
-                            "A text that should make up the link, must be selected",
-                            "OK" );
+      QMessageBox::warning( this, "Error",
+        tr("A text that should make up the link, must be selected"), "OK" );
     }
   }
 }
@@ -3751,9 +3610,6 @@ void NotebookWindow::sketchImageEdit()
       break;
     }
   }
-
-
-
 }
 
 
@@ -3783,8 +3639,6 @@ void NotebookWindow::viewSketchImageAttributes()
   cursor.insertText(text);
   //QTextCharFormat format =  *subject_->getCursor()->currentCell()->style()->textCharFormat();
   QMessageBox::about(this,"char format",subject_->getCursor()->currentCell()->text());
-
-
 }
 
 /*!
@@ -3835,7 +3689,7 @@ void NotebookWindow::pureText()
 {
   QString filename = QFileDialog::getSaveFileName(
         this,
-        "Choose a filename to export text to",
+        tr("Choose a filename to export text to"),
         saveDir_,
         "Textfile (*.txt)");
 
@@ -3863,10 +3717,7 @@ void NotebookWindow::pureText()
     if( title.isEmpty() )
       title = "(untitled)";
 
-    QString msg = QString( "The document " ) + title +
-        QString( " has been exported as pure text to " ) +
-        filename + QString( "." );
-    QMessageBox::information( 0, "Document exported", msg, "OK" );
+    QMessageBox::information( 0, "Document exported", tr("The document %1 has been exported as pure text to %2.").arg(title,filename), "OK" );
   }
 }
 
@@ -3886,8 +3737,6 @@ void NotebookWindow::deleteCurrentCell()
 {
   subject_->cursorDeleteCell();
   updateChapterCounters();
-
-
 }
 
 /*!
@@ -3927,7 +3776,7 @@ void NotebookWindow::ungroupCell()
   if( subject_->getSelection().size() == 1 )
     subject_->cursorUngroupCell();
   else
-    QMessageBox::information( this, "Information", "Ungroup can only be done on one cell at the time. Please select only one cell" );
+    QMessageBox::information( this, "Information", tr("Ungroup can only be done on one cell at the time. Please select only one cell") );
 }
 
 /*!
@@ -3961,7 +3810,7 @@ void NotebookWindow::moveCursorUp()
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-29 (update)
   *
-  * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea
+  * 2005-11-29 AF, added call to updateScrollArea, so the scrollarea
   * are updated when new cell is added.
   */
 void NotebookWindow::groupCellsAction()
@@ -3972,7 +3821,7 @@ void NotebookWindow::groupCellsAction()
     if( cell->treeView()->isHidden() )
     {
       QMessageBox::information( 0, "Can make groupcell",
-                                "A textcell or inputcell must first be added, before a groupcell can be done" );
+                                tr("A textcell, latexcell or inputcell must first be added, before a groupcell can be done") );
     }
     else
     {
@@ -3986,7 +3835,7 @@ void NotebookWindow::groupCellsAction()
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-29 (update)
   *
-  * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea
+  * 2005-11-29 AF, added call to updateScrollArea, so the scrollarea
   * are updated when new cell is added.
   */
 void NotebookWindow::inputCellsAction()
@@ -4024,87 +3873,61 @@ void NotebookWindow::setAutoIndent(bool b)
 
   QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   s.setValue("AutoIndent", b);
-
 }
 
 void NotebookWindow::eval()
 {
   if(GraphCell *g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
-     {
-      g->eval();
-   }
+  {
+    g->eval();
+  }
 
   if(LatexCell *g = dynamic_cast<LatexCell*>(subject_->getCursor()->currentCell()))
-     {
-      g->eval();
-   }
+  {
+    g->eval();
+  }
 
   if(InputCell *g = dynamic_cast<InputCell*>(subject_->getCursor()->currentCell()))
-         {
-          g->eval();
-    }
-
-
+  {
+    g->eval();
+  }
 }
-/*** Search and Returns the number of cells in the document ***/
+
+/*** Search and Return the number of cells in the document ***/
+void NotebookWindow::SearchCells(Cell* current, QVector<Cell*> * total)
+{
+  if(!current->hasChilds())
+  {
+    total->append(current);
+  }
+  else
+  {
+    Cell *current1 = current->child();
+    while(current1!=NULL)
+    {
+      SearchCells(current1, total);
+      current1=current1->next();
+    }
+  }
+}
+
 QVector<Cell*> NotebookWindow::SearchCells(Cell* current)
 {
     QVector<Cell*> totalcells;
-    Cell *current1,*current2,*current3,*current4;
+    Cell *current1;
     if( current != 0 )
     {
-        //current = current->next();
-        while(current != 0)
+      while(current != 0)
+      {
+        current1=current->child();
+        while(current1!=NULL)
         {
-            if(current->hasChilds())
-            {
-                current1=current->child();
-                while(current1!=NULL)
-                {
-                    if(!current1->hasChilds())
-                    {
-                        totalcells.append(current1);
-                    }
-
-                    if(current1->hasChilds())
-                    {
-                        current2=current1->child();
-                        while(current2!=NULL)
-                        {
-                            if(!current2->hasChilds())
-                            {
-                                totalcells.append(current2);
-                            }
-                            if(current2->hasChilds())
-                            {
-                                current3=current2->child();
-                                while(current3!=NULL)
-                                {
-                                    if(!current3->hasChilds())
-                                    {
-                                        totalcells.append(current3);
-                                    }
-                                    if(current3->hasChilds())
-                                    {
-                                        current4=current3->child();
-                                        while(current4!=NULL)
-                                        {
-                                            totalcells.append(current4);
-                                            current4=current4->next();
-                                        }
-                                    }
-                                    current3=current3->next();
-                                }
-                            }
-                            current2=current2->next();
-                        }
-                    }
-                    current1=current1->next();
-                }
-            }
-            totalcells.append(current);
-            current = current->next();
+          SearchCells(current1, &totalcells);
+          current1=current1->next();
         }
+        totalcells.append(current);
+        current=current->next();
+      }
     }
 
     return totalcells;
@@ -4129,227 +3952,201 @@ void NotebookWindow::shiftselectedcells()
         subject_->getCursor()->moveAfter(curpos);
         // make sure that chapter numbers are updated
         updateChapterCounters();
-
     }
     else
     {
-        QString msg="This functionality works only on the Selected Cells,Put the cursor to a position where you want to shift and then select cells you like to move and press this button";
+        QString msg=tr("This functionality works only on the selected cells. Put the cursor to a position where you want to shift and then select cells you like to move and press this button.");
         QMessageBox::warning( 0, "Warning", msg, "OK" );
     }
 }
 
 void NotebookWindow::shiftcellsUp()
 {
-    vector<Cell *> cells = subject_->getSelection();
-    if (cells.size()==0)
+  vector<Cell *> cells = subject_->getSelection();
+
+  if (cells.size()==0)
+  {
+    Cell *current=subject_->getCursor()->currentCell();
+    if (current->hasPrevious())
     {
-
-        Cell *current=subject_->getCursor()->currentCell();
-        if (current->hasPrevious())
+      if( typeid(CellGroup) == typeid( *current->previous()))
+      {
+        QMessageBox::warning( 0, "Warning", err_hierarchy, "OK" );
+      }
+      else
+      {
+        //qDebug()<<"not a groupcell" ;
+        QString currenttext=current->text();
+        QString style=current->style()->name();
+        if (style=="Graph")
         {
-            if( typeid(CellGroup) == typeid( *current->previous()))
-            {
-                QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside to another heirarchy", "OK" );
-            }
-            else
-            {
-                //qDebug()<<"not a groupcell" ;
-                QString currenttext=current->text();
-                QString style=current->style()->name();
-                if (style=="Graph")
-                {
-                 GraphCell *g = dynamic_cast<GraphCell *>(current);
-                 bool eval= g->isEvaluated();
-                 if(eval==true)
-                 {
-                 QString currentinput=g->text();
-                 QString currentoutput=g->textOutputHtml();
-                 subject_->cursorDeleteCell();
-                 subject_->cursorStepUp();
-                 subject_->executeCommand(new CreateNewCellCommand("Graph"));
-                 GraphCell *newcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
-                 newcell->setEvaluated(true);
-                 newcell->setClosed(false);
-                 newcell->setText(currentinput);
-                 newcell->setTextOutputHtml(currentoutput);
-                  }
-                 else
-                 {
-                   subject_->cursorDeleteCell();
-                     //subject_->getCursor()->moveUp();
-                   subject_->cursorStepUp();
-                   subject_->executeCommand(new CreateNewCellCommand("Graph"));
-                   subject_->getCursor()->currentCell()->setText(currenttext);
-                 }
-                }
-                if(style=="Latex")
-                {
-                    LatexCell *l = dynamic_cast<LatexCell *>(current);
-                    bool eval= l->isEvaluated();
-                    //qDebug()<<"latexcells"<<eval << l->textOutputHtml();
-                    if(eval==true)
-                    {
-                    QString latexinput=l->textHtml();
-                    QString latexoutput=l->textOutputHtml();
-                    subject_->cursorDeleteCell();
-                    subject_->cursorStepUp();
-                    subject_->executeCommand(new CreateNewCellCommand("Latex"));
-                    LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
-                    //newcell->setEvaluated(true);
-                    //newcell->setClosed(false);
-                    newcell->setTextHtml(latexinput);
-                    newcell->setTextOutputHtml(latexoutput);
-                    }
-                    else
-                    {
-                     subject_->cursorDeleteCell();
-                     //subject_->getCursor()->moveUp();
-                     subject_->cursorStepUp();
-                     subject_->executeCommand(new CreateNewCellCommand("Latex"));
-                     subject_->getCursor()->currentCell()->setText(currenttext);
-                    }
-
-                }
-               if(style=="Text")
-                {
-                QString textoutput=current->textHtml();
-                subject_->cursorDeleteCell();
-                //subject_->getCursor()->moveUp();
-                subject_->cursorStepUp();
-                subject_->executeCommand(new CreateNewCellCommand("Text"));
-                subject_->getCursor()->currentCell()->setTextHtml(textoutput);
-                }
-            }
+          GraphCell *g = dynamic_cast<GraphCell *>(current);
+          bool eval= g->isEvaluated();
+          if(eval==true)
+          {
+            QString currentinput=g->text();
+            QString currentoutput=g->textOutputHtml();
+            subject_->cursorDeleteCell();
+            subject_->cursorStepUp();
+            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            GraphCell *newcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
+            newcell->setEvaluated(true);
+            newcell->setClosed(false);
+            newcell->setText(currentinput);
+            newcell->setTextOutputHtml(currentoutput);
+          }
+          else
+          {
+            subject_->cursorDeleteCell();
+            //subject_->getCursor()->moveUp();
+            subject_->cursorStepUp();
+            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->getCursor()->currentCell()->setText(currenttext);
+          }
         }
-        else
+        else if(style=="Latex")
         {
-            QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside to another heirarchy", "OK" );
-
+          LatexCell *l = dynamic_cast<LatexCell *>(current);
+          bool eval= l->isEvaluated();
+          //qDebug()<<"latexcells"<<eval << l->textOutputHtml();
+          if(eval==true)
+          {
+            QString latexinput=l->textHtml();
+            QString latexoutput=l->textOutputHtml();
+            subject_->cursorDeleteCell();
+            subject_->cursorStepUp();
+            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
+            //newcell->setEvaluated(true);
+            //newcell->setClosed(false);
+            newcell->setTextHtml(latexinput);
+            newcell->setTextOutputHtml(latexoutput);
+          }
+          else
+          {
+            subject_->cursorDeleteCell();
+            //subject_->getCursor()->moveUp();
+            subject_->cursorStepUp();
+            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->getCursor()->currentCell()->setText(currenttext);
+          }
         }
+        else if(style=="Text")
+        {
+          QString textoutput=current->textHtml();
+          subject_->cursorDeleteCell();
+          //subject_->getCursor()->moveUp();
+          subject_->cursorStepUp();
+          subject_->executeCommand(new CreateNewCellCommand("Text"));
+          subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+        }
+      }
     }
     else
     {
-        QMessageBox::warning( 0, "Warning", "This functionality does not work on Selected Cells, Click on the cell to moveup, and press this action", "OK" );
-
+      QMessageBox::warning( 0, "Warning", err_hierarchy, "OK" );
     }
-    /*
-  Cell *current=subject_->getCursor()->currentCell();
-  if (current->hasPrevious())
-  {
-  QString previoustext=current->previous()->text();
-  subject_->executeCommand(new CreateNewCellCommand(current->previous()->style()->name()));
-  subject_->getCursor()->moveAfter(current->previous());
-  subject_->cursorDeleteCell();
-  subject_->executeCommand(new CursorMoveAfterCommand(current->next()));
-  subject_->getCursor()->currentCell()->setText(previoustext);
-  subject_->executeCommand(new CursorMoveAfterCommand(current));
-    }
+  }
   else
   {
-      qDebug()<<"Cannot be moved";
-      QMessageBox::warning( 0, "Warning", "cells cannot moved outside another heirarchy", "OK" );
+    QMessageBox::warning( 0, "Warning", tr("This functionality does not work on selected cells. Click on the cell to move up, and press this action."), "OK" );
   }
-  */
 }
 
 void NotebookWindow::shiftcellsDown()
 {
-    vector<Cell *> cells = subject_->getSelection();
-    if (cells.size()==0)
-    {
+  vector<Cell *> cells = subject_->getSelection();
+  if (cells.size()==0)
+  {
     Cell *current=subject_->getCursor()->currentCell();
     subject_->cursorStepDown();
     Cell *next=subject_->getCursor()->currentCell();
 
     if (current!=next)
     {
-        subject_->cursorStepUp();
-        if( typeid(CellGroup) == typeid(*next))
+      subject_->cursorStepUp();
+      if( typeid(CellGroup) == typeid(*next))
+      {
+          //qDebug()<<"group cell";
+          QMessageBox::warning( 0, "Warning", err_hierarchy, "OK" );
+      }
+      else
+      {
+        //qDebug()<<"not a group cell";
+        QString style=current->style()->name();
+        QString currenttext=current->text();
+
+        if (style=="Graph")
         {
-            //qDebug()<<"group cell";
-            QMessageBox::warning( 0, "Warning", "Cells cannot moved inside or outside another heirarchy", "OK" );
-
-        }
-        else
-        {
-            //qDebug()<<"not a group cell";
-            QString style=current->style()->name();
-            QString currenttext=current->text();
-
-            if (style=="Graph")
-            {
-             GraphCell *d = dynamic_cast<GraphCell *>(current);
-             bool eval= d->isEvaluated();
-             if(eval==true)
-             {
-             QString currentinput=d->text();
-             QString currentoutput=d->textOutputHtml();
-             subject_->cursorDeleteCell();
-             subject_->cursorStepDown();
-             subject_->executeCommand(new CreateNewCellCommand("Graph"));
-             GraphCell *gcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
-             gcell->setEvaluated(true);
-             gcell->setClosed(false);
-             gcell->setText(currentinput);
-             gcell->setTextOutputHtml(currentoutput);
-              }
-             else
-             {
-                 subject_->cursorDeleteCell();
-                 subject_->cursorStepDown();
-                 subject_->executeCommand(new CreateNewCellCommand("Graph"));
-                 subject_->getCursor()->currentCell()->setText(currenttext);
-             }
-            }
-            if(style=="Latex")
-            {
-                LatexCell *ld = dynamic_cast<LatexCell *>(current);
-                bool eval= ld->isEvaluated();
-                //qDebug()<<"latexcells"<<eval << ld->textOutputHtml();
-                if(eval==true)
-                {
-                QString latexinput_d=ld->textHtml();
-                QString latexoutput_d=ld->textOutputHtml();
-                subject_->cursorDeleteCell();
-                subject_->cursorStepDown();
-                subject_->executeCommand(new CreateNewCellCommand("Latex"));
-                LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
-                //newcell_d->setEvaluated(true);
-                //newcell_d->setClosed(false);
-                newcell_d->setTextHtml(latexinput_d);
-                newcell_d->setTextOutputHtml(latexoutput_d);
-                }
-                else
-                {
-                 subject_->cursorDeleteCell();
-                 //subject_->getCursor()->moveUp();
-                 subject_->cursorStepDown();
-                 subject_->executeCommand(new CreateNewCellCommand("Latex"));
-                 subject_->getCursor()->currentCell()->setText(currenttext);
-                }
-
-            }
-            if(style=="Text")
-            {
-            QString textoutput=current->textHtml();
+          GraphCell *d = dynamic_cast<GraphCell *>(current);
+          bool eval= d->isEvaluated();
+          if(eval==true)
+          {
+            QString currentinput=d->text();
+            QString currentoutput=d->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Text"));
-            subject_->getCursor()->currentCell()->setTextHtml(textoutput);
-            }
+            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            GraphCell *gcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
+            gcell->setEvaluated(true);
+            gcell->setClosed(false);
+            gcell->setText(currentinput);
+            gcell->setTextOutputHtml(currentoutput);
+          }
+          else
+          {
+            subject_->cursorDeleteCell();
+            subject_->cursorStepDown();
+            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->getCursor()->currentCell()->setText(currenttext);
+          }
         }
+        else if(style=="Latex")
+        {
+          LatexCell *ld = dynamic_cast<LatexCell *>(current);
+          bool eval= ld->isEvaluated();
+          //qDebug()<<"latexcells"<<eval << ld->textOutputHtml();
+          if(eval==true)
+          {
+            QString latexinput_d=ld->textHtml();
+            QString latexoutput_d=ld->textOutputHtml();
+            subject_->cursorDeleteCell();
+            subject_->cursorStepDown();
+            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
+            //newcell_d->setEvaluated(true);
+            //newcell_d->setClosed(false);
+            newcell_d->setTextHtml(latexinput_d);
+            newcell_d->setTextOutputHtml(latexoutput_d);
+          }
+          else
+          {
+            subject_->cursorDeleteCell();
+            //subject_->getCursor()->moveUp();
+            subject_->cursorStepDown();
+            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->getCursor()->currentCell()->setText(currenttext);
+          }
+        }
+        else if(style=="Text")
+        {
+          QString textoutput=current->textHtml();
+          subject_->cursorDeleteCell();
+          subject_->cursorStepDown();
+          subject_->executeCommand(new CreateNewCellCommand("Text"));
+          subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+        }
+      }
     }
     else
     {
-        qDebug()<<"last cell";
+      qDebug()<<"last cell";
     }
-    }
-    else
-    {
-        QMessageBox::warning( 0, "Warning", "This functionality does not work on Selected Cells, Click on the cell to movedown, and press this action", "OK" );
-
-    }
-
+  }
+  else
+  {
+      QMessageBox::warning( 0, "Warning", "This functionality does not work on selected cells. Click on the cell to move down, and press this action", "OK" );
+  }
 }
 
 void NotebookWindow::evalall()
@@ -4368,18 +4165,14 @@ void NotebookWindow::evalall()
             {
                 g->eval();
             }
-
-           /* if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
+            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
             {
-                g->eval();
-            } */
-
-
+                g->eval(true);
+            }
             if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
             {
                 g->eval();
             }
-
         }
     }
     else
