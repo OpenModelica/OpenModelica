@@ -1,12 +1,12 @@
 // name: OMCC
 // status: correct
-// cflags: +g=MetaModelica +d=rml
-// runScript("LoadCompilerSources.mos");
+// 
 
-// getErrorString();
+// setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();
 
 OpenModelica.Scripting.setCFlags("-g " + getCFlags());
 getErrorString();
+
 files := {
   "Types.mo",
   //"Absyn.mo",
@@ -42,13 +42,22 @@ files := {
   "Mod_Builtin.mo",
   "Fnc_Handle.mo",
   "Main.mo"};
-  getErrorString();
-setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+getErrorString();
+
+setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();
+
 LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files);
 if not LoadCompilerSourcesRes then
       print("Failed to load compiler sources:\n");
       print(getErrorString());
       exit(1);
+end if;
+
+// adrpo: add -lOpenModelicaCompiler for windows otherwise we get undefined symbols to: omc_File_File_destructor
+info:=checkSettings();
+os:=info.OS;
+if os=="Windows_NT" then
+  appendEnvironmentVar("MODELICAUSERCFLAGS", "-lOpenModelicaCompiler"); getErrorString();
 end if;
 
 // add your test case here

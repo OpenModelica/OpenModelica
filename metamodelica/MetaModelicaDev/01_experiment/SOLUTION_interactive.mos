@@ -9,7 +9,7 @@
 // works properly on the Windows platform.
 //
 echo(false);
-setCommandLineOptions({"+d=rml,noevalfunc","+g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+setCommandLineOptions({"+d=rml,noevalfunc,gen","+g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
 loadFile("SOLUTION.mo");
 loadFile("Types.mo");
 

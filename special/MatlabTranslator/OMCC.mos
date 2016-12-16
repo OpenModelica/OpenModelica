@@ -1,5 +1,6 @@
 /*getInstallationDirectoryPath();
-setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"});
+
 loadFile("OMCC.mo");
 loadFile("AbsynMat.mo");
 loadFile("Absyn.mo");
@@ -46,6 +47,6 @@ files := {
   "../../../OMCompiler/Compiler/Util/System.mo",
   "LexerGenerator.mo",
   "ParserGenerator.mo"};getErrorString();
-setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"});
 loadFile(files);getErrorString();
 OMCC.main({"Modelica"});getErrorString();

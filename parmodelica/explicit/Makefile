@@ -1,4 +1,4 @@
-TEST = ../../../rtest -v
+TEST = ../../rtest -v
 
 TESTFILES = \
 bug_3326.mos \

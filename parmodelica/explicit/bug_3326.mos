@@ -2,7 +2,7 @@
 // status: correct
 
 // setGrammarParModelica();
-setCommandLineOptions("+d=noevalfunc +g=ParModelica -v=1");
+setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
 
 setDefaultOpenCLDevice(1);
 getErrorString();
