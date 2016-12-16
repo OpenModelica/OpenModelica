@@ -2664,7 +2664,7 @@ match lhsexp
     let type = expTypeArray(ty)
     if crefSubIsScalar(cr) then
       let lhsStr = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction, false)
-      'copy_<%type%>_data(<%rhsExpStr%>, &<%lhsStr%>);'
+      'copy_<%type%><%if isArrayWithUnknownDimension(ty) then "" else "_data"%>(<%rhsExpStr%>, &<%lhsStr%>);'
     else
       indexedAssign(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
 end algStmtAssignArrWithRhsExpStr;
