@@ -1,5 +1,5 @@
 OMC_PATH=@OMC@
-OMC=$(OMC_PATH) +d=failtrace
+OMC=$(OMC_PATH) -d=failtrace
 
 include Makefile.common
 

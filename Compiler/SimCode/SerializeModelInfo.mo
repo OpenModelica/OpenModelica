@@ -1210,7 +1210,7 @@ end writeEqExpStr;
 
 function serializeFunction
   input File.File file;
-  input SimCode.Function func;
+  input SimCodeFunction.Function func;
 algorithm
   File.write(file, "\n");
   serializePath(file, SimCodeUtil.functionPath(func));

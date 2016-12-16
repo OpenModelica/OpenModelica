@@ -77,14 +77,14 @@ public function createSimCode "
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
-  input list<SimCode.Function> functions;
+  input list<SimCodeFunction.Function> functions;
   input list<String> externalFunctionIncludes;
   input list<String> includeDirs;
   input list<String> libs;
   input list<String> libPaths;
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
-  input list<SimCode.RecordDeclaration> recordDecls;
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;

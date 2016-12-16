@@ -125,7 +125,6 @@ if true then /* Suppress output */
 
   // "SimCode";
     "../SimCode/HpcOmSimCode.mo",
-    "../SimCode/SimCode.mo",
     "../SimCode/SimCodeFunction.mo",
     "../SimCode/SimCodeFunctionUtil.mo",
     "../SimCode/SimCodeVar.mo",
@@ -206,7 +205,6 @@ if true then /* Suppress output */
     "../Util/List.mo",
     "../Util/ModelicaExternalC.mo",
     "../Util/Print.mo",
-    "../Util/PriorityQueue.mo",
     "../Util/Settings.mo",
     "../Util/StackOverflow.mo",
     "../Util/StringUtil.mo",
@@ -225,6 +223,7 @@ if true then /* Suppress output */
     "../Stubs/NFInstDump.mo",
     "../Stubs/Refactor.mo",
     "../Stubs/RewriteRules.mo",
+    "../Stubs/SimCode.mo",
     "../Stubs/SimCodeMain.mo",
     "../Stubs/SimCodeUtil.mo",
     "../Stubs/UnitAbsynBuilder.mo",
@@ -310,6 +309,7 @@ if true then /* Suppress output */
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
     "../SimCode/SerializeModelInfo.mo",
+    "../SimCode/SimCode.mo",
     "../SimCode/SimCodeMain.mo",
     "../SimCode/SimCodeUtil.mo",
 
@@ -331,6 +331,7 @@ if true then /* Suppress output */
     "../Template/CodegenJS.mo",
     "../Template/CodegenModelica.mo",
     "../Template/CodegenSparseFMI.mo",
+    "../Template/CodegenUtilSimulation.mo",
     "../Template/CodegenXML.mo",
     "../Template/GraphvizDump.mo",
     "../Template/GraphMLDumpTpl.mo",
@@ -357,8 +358,9 @@ if true then /* Suppress output */
     "../Util/HashTableCrToUnit.mo",
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
+    "../Util/PriorityQueue.mo",
     "../Util/Serializer.mo",
-        "../Util/SimulationResults.mo",
+    "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo"
   };
   files := cat(1, alwaysfiles, backendfiles);

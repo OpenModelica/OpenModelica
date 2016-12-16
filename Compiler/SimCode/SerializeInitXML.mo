@@ -69,7 +69,7 @@ function simulationInitFileReturnBool
   input String guid;
   output Boolean success = false;
 protected
-  SimCode.MakefileParams makefileParams;
+  SimCodeFunction.MakefileParams makefileParams;
   ModelInfo modelInfo;
   VarInfo vi;
   SimulationSettings s;

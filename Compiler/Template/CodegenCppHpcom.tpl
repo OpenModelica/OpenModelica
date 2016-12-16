@@ -23,7 +23,7 @@ template translateModel(SimCode simCode)
       let target  = simulationCodeTarget()
       let &extraFuncs = buffer "" /*BUFD*/
       let &extraFuncsDecl = buffer "" /*BUFD*/
-	  let &extraResidualsFuncsDecl = buffer "" /*BUFD*/
+    let &extraResidualsFuncsDecl = buffer "" /*BUFD*/
       let &dummyTypeElemCreation = buffer "" //remove this workaround if GCC > 4.4 is the default compiler
       let stateDerVectorName = "__zDot"
       let useMemoryOptimization = Flags.isSet(Flags.HPCOM_MEMORY_OPT)
@@ -88,8 +88,8 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationStateSelectionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>StateSelection.h')
 
       let()= textFile(simulationMixedSystemCppFile(simCode ,updateResiduals(simCode,extraFuncs,extraResidualsFuncsDecl,className,stateDerVectorName /*=__zDot*/, false)
-                   	                               , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Mixed.cpp')
-	  let() = textFile(simulationMixedSystemHeaderFile(simCode, &extraFuncs, &extraResidualsFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Mixed.h')
+                                                   , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Mixed.cpp')
+    let() = textFile(simulationMixedSystemHeaderFile(simCode, &extraFuncs, &extraResidualsFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Mixed.h')
       let() = textFile(simulationWriteOutputHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>WriteOutput.h')
       let() = textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
       let() = textFile(simulationFactoryFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
@@ -1573,8 +1573,8 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
         if(_terminateThreads)
            return;
 
-		if(_evaluateMode == 0)
-		{
+        if(_evaluateMode == 0)
+        {
           evaluateThreadFuncODE_<%iThreadIdx%>();
         }
         else if(_evaluateMode < 0)

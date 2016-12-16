@@ -49,6 +49,7 @@ import interface SimCodeTV;
 import interface SimCodeBackendTV;
 
 import CodegenUtil.*;
+import CodegenUtilSimulation.*;
 import ExpressionDumpTpl;
 import DAEDumpTpl;
 

@@ -227,8 +227,8 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
       '__z[<%i%>]'
     case STATE_DER() then
       '__zDot[<%i%>]'
-	 case DAE_RESIDUAL_VAR() then
-	 '__daeResidual[<%i%>]'
+   case DAE_RESIDUAL_VAR() then
+   '__daeResidual[<%i%>]'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
@@ -1745,13 +1745,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     match context
      case ALGLOOP_CONTEXT(genInitialisation = false)
         then
-		<<
-		 division(<%var1%>,<%var2%>,!_system->_initial,"<%var3%>")
-		>>
+    <<
+     division(<%var1%>,<%var2%>,!_system->_initial,"<%var3%>")
+    >>
     else
-        <<
-		 division(<%var1%>,<%var2%>,!_initial,"<%var3%>")
-		>>
+    <<
+     division(<%var1%>,<%var2%>,!_initial,"<%var3%>")
+    >>
     end match
 
 

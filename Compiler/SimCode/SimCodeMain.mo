@@ -138,10 +138,10 @@ protected function generateModelCodeFMU "
   output Real timeTemplates;
 protected
   list<String> includes,includeDirs;
-  list<SimCode.Function> functions;
+  list<SimCodeFunction.Function> functions;
   String filename, funcfilename;
   SimCode.SimCode simCode;
-  list<SimCode.RecordDeclaration> recordDecls;
+  list<SimCodeFunction.RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   list<String> libPaths;
@@ -183,10 +183,10 @@ protected function generateModelCodeXML "
   output Real timeTemplates;
 protected
   list<String> includes,includeDirs;
-  list<SimCode.Function> functions;
+  list<SimCodeFunction.Function> functions;
   String filename, funcfilename;
   SimCode.SimCode simCode;
-  list<SimCode.RecordDeclaration> recordDecls;
+  list<SimCodeFunction.RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   list<String> libPaths;
   Absyn.ComponentRef a_cref;
@@ -411,9 +411,9 @@ public function generateModelCode "
   output Real timeTemplates;
 protected
   list<String> includes, includeDirs,libPaths;
-  list<SimCode.Function> functions;
+  list<SimCodeFunction.Function> functions;
   SimCode.SimCode simCode;
-  list<SimCode.RecordDeclaration> recordDecls;
+  list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   list<tuple<String, String>> program;
@@ -453,14 +453,14 @@ protected function createSimCode "
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
-  input list<SimCode.Function> functions;
+  input list<SimCodeFunction.Function> functions;
   input list<String> externalFunctionIncludes;
   input list<String> includeDirs;
   input list<String> libs;
   input list<String> libPaths;
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
-  input list<SimCode.RecordDeclaration> recordDecls;
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;

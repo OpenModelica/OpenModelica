@@ -47,6 +47,7 @@ package CodegenSparseFMI
 
 import interface SimCodeTV;
 import CodegenUtil.*;
+import CodegenUtilSimulation.*;
 import CodegenFMU.*;
 import CodegenC.*;
 import ExpressionDumpTpl;

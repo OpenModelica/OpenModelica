@@ -3,6 +3,7 @@ package CodegenCpp
 import interface SimCodeTV;
 import CodegenCppCommon.*;
 import CodegenUtil.*;
+import CodegenUtilSimulation.*;
 import CodegenCppInit.*;
 import ExpressionDumpTpl;
 
@@ -26,7 +27,7 @@ template translateModel(SimCode simCode)
         let target  = simulationCodeTarget()
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
-		let &extraResidualsFuncsDecl = buffer "" /*BUFD*/
+    let &extraResidualsFuncsDecl = buffer "" /*BUFD*/
         let &dummyTypeElemCreation = buffer "" //remove this workaround if GCC > 4.4 is the default compiler
 
         let className = lastIdentOfPath(modelInfo.name)
@@ -74,8 +75,8 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
         let()= textFile(simulationMixedSystemCppFile(simCode  ,  updateResiduals(simCode,extraFuncs,extraResidualsFuncsDecl,className,stateDerVectorName /*=__zDot*/, false)
-		                                            ,&extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Mixed.cpp')
-		let()= textFile(simulationMixedSystemHeaderFile(simCode , &extraFuncs , &extraResidualsFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Mixed.h')
+                                                ,&extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Mixed.cpp')
+    let()= textFile(simulationMixedSystemHeaderFile(simCode , &extraFuncs , &extraResidualsFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Mixed.h')
 
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
@@ -411,19 +412,19 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void getAlgebraicDAEVars(double* y);
     virtual void setAlgebraicDAEVars(const double* y);
     virtual void getResidual(double* f);
-	virtual void evaluateDAE(const UPDATETYPE command = UNDEF_UPDATE);
+    virtual void evaluateDAE(const UPDATETYPE command = UNDEF_UPDATE);
 
     /*colored jacobians*/
     virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size);
     virtual int  getAMaxColors();
 
     virtual string getModelName();
-	virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
-	virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
+    virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
+    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
    private:
      //update residual methods
     <%extraFuncsDecl%>
-	<%simulationDAEMethodsDeclaration(simCode)%>
+  <%simulationDAEMethodsDeclaration(simCode)%>
   };
   >>
 end simulationMixedSystemHeaderFile;
@@ -1013,15 +1014,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           else "A matrix type is not supported"
           end match
 
-		  let isJacobianSparse = match type
-			case("dense") then
-				'return false;'
-			case("sparse") then
-				'return true;'
-			else "A matrix type is not supported"
+      let isJacobianSparse = match type
+      case("dense") then
+        'return false;'
+      case("sparse") then
+        'return true;'
+      else "A matrix type is not supported"
           end match
 
-		  let isAnalyticJacobianGenerated = if getConfigBool(GENERATE_SYMBOLIC_JACOBIAN) then 'return true;' else 'return false;'
+      let isAnalyticJacobianGenerated = if getConfigBool(GENERATE_SYMBOLIC_JACOBIAN) then 'return true;' else 'return false;'
 
      let statesetjacobian =
      (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -1080,12 +1081,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
    bool <%classname%>Mixed::isJacobianSparse(){
-		<%isJacobianSparse%>
+    <%isJacobianSparse%>
    }
 
 
    bool <%classname%>Mixed::isAnalyticJacobianGenerated(){
-		<%isAnalyticJacobianGenerated%>
+    <%isAnalyticJacobianGenerated%>
    }
 
    const matrix_t& <%classname%>Mixed::getJacobian( )
@@ -3198,7 +3199,7 @@ case "gcc" then
             CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
             CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING -DENABLE_SUNDIALS_STATIC
 
-			MINGW_EXTRA_LIBS=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lz -lhdf5 ' else ''%>
+            MINGW_EXTRA_LIBS=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lz -lhdf5 ' else ''%>
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES) $(MINGW_EXTRA_LIBS)
 
             LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%>  -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
@@ -3998,28 +3999,28 @@ let &help = buffer ""
     let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       match eq.exp
       case e as RCONST(__) then
-	    match type
-		case "sparse" then
-		  <<
-		  //<%preExp%>__A.value_data()[<%i0%>] = <%expPart%>;
-		  >>
-		else
-		  <<
-		  <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
-		  >>
-		end match
+      match type
+    case "sparse" then
+      <<
+      //<%preExp%>__A.value_data()[<%i0%>] = <%expPart%>;
+      >>
+    else
+      <<
+      <%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;
+      >>
+    end match
       else
-		match type case "sparse" then
-		  <<
-		  <%preExp%>
-		  __A.value_data()[<%i0%>] = <%expPart%>;
-		  >>
-		else
-		  <<
-		  <%preExp%>
-		  __A(<%row%>,<%col%>)=<%expPart%>;
-		  >>
-		end match
+    match type case "sparse" then
+      <<
+      <%preExp%>
+      __A.value_data()[<%i0%>] = <%expPart%>;
+      >>
+    else
+      <<
+      <%preExp%>
+      __A(<%row%>,<%col%>)=<%expPart%>;
+      >>
+    end match
 
   ;separator="\n")
 
@@ -6251,7 +6252,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%getDenseMatrix%>
     }
 
-	sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+    sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
     {
       <%getSparseMatrix%>
     }
@@ -6280,7 +6281,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%getDenseMatrix%>
      }
 
-	 sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
+     sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
      {
        <%getSparseMatrix%>
      }
@@ -7065,9 +7066,9 @@ match modelInfo
       /// Clocked synchronous equations
       void evaluateClocked(int index);
       <%clockedfuncs%>
-	  <%additionalProtectedMembers%>
+    <%additionalProtectedMembers%>
       /*Additional member functions*/
-	  <%extraFuncsDecl%>
+    <%extraFuncsDecl%>
    };
   >>
    /*! Equations Array. pointers to all the equation functions listed above stored in this
@@ -7239,7 +7240,7 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       {
         return(SystemDefaultImplementation::getDimContinuousStates());
       }
-	  int <%lastIdentOfPath(modelInfo.name)%>::getDimAE() const
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimAE() const
       {
         return(SystemDefaultImplementation::getDimAE());
       }
@@ -7603,7 +7604,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void destroy();
     /// Provide number (dimension) of variables according to the index
     virtual int getDimContinuousStates() const;
-	virtual int getDimAE() const;
+    virtual int getDimAE() const;
     /// Provide number (dimension) of boolean variables
     virtual int getDimBoolean() const;
     /// Provide number (dimension) of integer variables
@@ -7776,7 +7777,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void giveResiduals(double* vars);
     >>%>
     virtual const matrix_t& getSystemMatrix() ;
-	virtual sparsematrix_t& getSystemSparseMatrix() ;
+    virtual sparsematrix_t& getSystemSparseMatrix() ;
     virtual bool isLinearTearing();
     virtual bool isConsistent();
 
@@ -9606,7 +9607,7 @@ template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text 
         let numStringVars = numStringvars(modelInfo)
         <<
         _dimContinuousStates = <%vi.numStateVars%>;
-		_dimAE = <%listLength(algebraicDAEVars)%>;
+        _dimAE = <%listLength(algebraicDAEVars)%>;
         _dimRHS =  <%intAdd(vi.numStateVars,listLength(algebraicDAEVars))%>;
         _dimBoolean = <%numBoolVars%>;
         _dimInteger = <%numIntVars%>;
@@ -9614,7 +9615,7 @@ template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text 
         _dimReal = <%numRealVars%>;
         _dimPartitions = <%partitionData.numPartitions%>;
         >>
-	 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)),daeModeData=NONE(), partitionData = PARTITIONDATA(__))
+   case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)),daeModeData=NONE(), partitionData = PARTITIONDATA(__))
       then
         let numRealVars = numRealvars(modelInfo)
         let numIntVars = numIntvars(modelInfo)
@@ -9622,7 +9623,7 @@ template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text 
         let numStringVars = numStringvars(modelInfo)
         <<
         _dimContinuousStates = <%vi.numStateVars%>;
-		_dimRHS =  <%vi.numStateVars%>;
+        _dimRHS =  <%vi.numStateVars%>;
         _dimBoolean = <%numBoolVars%>;
         _dimInteger = <%numIntVars%>;
         _dimString = <%numStringVars%>;
@@ -14019,7 +14020,7 @@ template generateDAEEquationMemberFuncDecls(list<list<SimEqSystem>> DAEEquations
   match DAEEquations
   case _ then
     let equation_func_decls = (DAEEquations |> eqsys =>  (eqsys |> eq =>
-	generateEquationMemberFuncDecls2(eq,method) ;separator="\n"))
+  generateEquationMemberFuncDecls2(eq,method) ;separator="\n"))
     <<
     <%equation_func_decls%>
     >>
@@ -14042,12 +14043,12 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
 
      <%algebraicDAEVar(algebraicDAEVars, modelNamePrefixStr)%>
      <%evaluateDAEResiduals(daeEquations, simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace, context, enableMeasureTime)%>
-	 <%equationResidualFunctions(daeEquations,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace, context, stateDerVectorName ,  useFlatArrayNotation,  enableMeasureTime)%>
-	 void <%modelNamePrefixStr%>Mixed::getResidual(double* f)
+     <%equationResidualFunctions(daeEquations,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace, context, stateDerVectorName ,  useFlatArrayNotation,  enableMeasureTime)%>
+     void <%modelNamePrefixStr%>Mixed::getResidual(double* f)
      {
         SystemDefaultImplementation::getResidual(f);
-	 }
-	 >>
+     }
+     >>
      /* adrpo: leave a newline at the end of file to get rid of the warning */
     case SIMCODE(modelInfo=MODELINFO(__),daeModeData=NONE()) then
     let modelNamePrefixStr = lastIdentOfPath(modelInfo.name)
@@ -14056,15 +14057,15 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
     void <%modelNamePrefixStr%>Mixed::getResidual(double* f)
     {
 
-	}
-	void <%modelNamePrefixStr%>Mixed::setAlgebraicDAEVars(const double* y)
+    }
+    void <%modelNamePrefixStr%>Mixed::setAlgebraicDAEVars(const double* y)
     {
     }
-	/* get algebraic variables */
+    /* get algebraic variables */
     void <%modelNamePrefixStr%>Mixed::getAlgebraicDAEVars( double* y)
     {
     }
-	void <%modelNamePrefixStr%>Mixed::evaluateDAE(const UPDATETYPE command )
+    void <%modelNamePrefixStr%>Mixed::evaluateDAE(const UPDATETYPE command )
     {
 
     }

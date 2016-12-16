@@ -59,6 +59,7 @@ import HashTableCrILst;
 import HashTableCrIListArray;
 import HashTableCrefSimVar;
 import HpcOmSimCode;
+import SimCodeFunction;
 import SimCodeVar;
 import SCode;
 
@@ -75,8 +76,6 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
                             Integer>;                                     // jacobian index
 
 
-constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
-constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -86,7 +85,7 @@ uniontype SimCode
   record SIMCODE
     ModelInfo modelInfo;
     list<DAE.Exp> literals "shared literals";
-    list<RecordDeclaration> recordDecls;
+    list<SimCodeFunction.RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
     list<SimEqSystem> localKnownVars "state and input dependent variables, that are not inserted into any partion";
     list<SimEqSystem> allEquations;
@@ -115,7 +114,7 @@ uniontype SimCode
     list<BackendDAE.TimeEvent> timeEvents "only used by c runtime yet";
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;
-    MakefileParams makefileParams;
+    SimCodeFunction.MakefileParams makefileParams;
     DelayedExpression delayedExps;
     list<JacobianMatrix> jacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
@@ -186,20 +185,6 @@ uniontype DelayedExpression
   end DELAYED_EXPRESSIONS;
 end DelayedExpression;
 
-uniontype FunctionCode
-  "Root data structure containing information required for templates to
-  generate C functions for Modelica/MetaModelica functions."
-  record FUNCTIONCODE
-    String name;
-    Option<Function> mainFunction "This function is special; the 'in'-function should be generated for it";
-    list<Function> functions;
-    list<DAE.Exp> literals "shared literals";
-    list<String> externalFunctionIncludes;
-    MakefileParams makefileParams;
-    list<RecordDeclaration> extraRecordDecls;
-  end FUNCTIONCODE;
-end FunctionCode;
-
 uniontype ModelInfo "Container for metadata about a Modelica model."
   record MODELINFO
     Absyn.Path name;
@@ -207,7 +192,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     String directory;
     VarInfo varInfo;
     SimCodeVar.SimVars vars;
-    list<Function> functions;
+    list<SimCodeFunction.Function> functions;
     list<String> labels;
     //Files files "all the files from SourceInfo and DAE.ELementSource";
     Integer nClocks;
@@ -280,123 +265,6 @@ uniontype DaeModeData
     DaeModeConfig modeCreated; // indicates the mode in which
   end DAEMODEDATA;
 end DaeModeData;
-
-// TODO: I believe some of these fields can be removed. Check to see what is
-//       used in templates.
-uniontype Function
-  "Represents a Modelica or MetaModelica function."
-  record FUNCTION
-    Absyn.Path name;
-    list<Variable> outVars;
-    list<Variable> functionArguments;
-    list<Variable> variableDeclarations;
-    list<DAE.Statement> body;
-    SCode.Visibility visibility;
-    SourceInfo info;
-  end FUNCTION;
-
-  record PARALLEL_FUNCTION
-    Absyn.Path name;
-    list<Variable> outVars;
-    list<Variable> functionArguments;
-    list<Variable> variableDeclarations;
-    list<DAE.Statement> body;
-    SourceInfo info;
-  end PARALLEL_FUNCTION;
-
-  record KERNEL_FUNCTION
-    Absyn.Path name;
-    list<Variable> outVars;
-    list<Variable> functionArguments;
-    list<Variable> variableDeclarations;
-    list<DAE.Statement> body;
-    SourceInfo info;
-  end KERNEL_FUNCTION;
-
-  record EXTERNAL_FUNCTION
-    Absyn.Path name;
-    String extName;
-    list<Variable> funArgs;
-    list<SimExtArg> extArgs;
-    SimExtArg extReturn;
-    list<Variable> inVars;
-    list<Variable> outVars;
-    list<Variable> biVars;
-    list<String> includes "this one is needed so that we know if we should generate the external function prototype or not";
-    list<String> libs "need this one for C#";
-    String language "C or Fortran";
-    SCode.Visibility visibility;
-    SourceInfo info;
-    Boolean dynamicLoad;
-  end EXTERNAL_FUNCTION;
-
-  record RECORD_CONSTRUCTOR
-    Absyn.Path name;
-    list<Variable> funArgs;
-    list<Variable> locals;
-    SCode.Visibility visibility;
-    SourceInfo info;
-  end RECORD_CONSTRUCTOR;
-end Function;
-
-uniontype RecordDeclaration
-
-  record RECORD_DECL_FULL
-    String name "struct (record) name ? encoded";
-    Option<String> aliasName "alias of struct (record) name ? encoded. Code generators can generate an aliasing typedef using this, and avoid problems when casting a record from one type to another (*(othertype*)(&var)), which only works if you have a lhs value.";
-    Absyn.Path defPath "definition path";
-    list<Variable> variables "only name and type";
-  end RECORD_DECL_FULL;
-
-  record RECORD_DECL_DEF
-    Absyn.Path path "definition path .. encoded?";
-    list<String> fieldNames;
-  end RECORD_DECL_DEF;
-
-end RecordDeclaration;
-
-uniontype SimExtArg
-  "Information about an argument to an external function."
-  record SIMEXTARG
-    DAE.ComponentRef cref;
-    Boolean isInput;
-    Integer outputIndex "> 0 if output";
-    Boolean isArray;
-    Boolean hasBinding "avoid double allocation";
-    DAE.Type type_;
-  end SIMEXTARG;
-  record SIMEXTARGEXP
-    DAE.Exp exp;
-    DAE.Type type_;
-  end SIMEXTARGEXP;
-  record SIMEXTARGSIZE
-    DAE.ComponentRef cref;
-    Boolean isInput;
-    Integer outputIndex "> 0 if output";
-    DAE.Type type_;
-    DAE.Exp exp;
-  end SIMEXTARGSIZE;
-  record SIMNOEXTARG end SIMNOEXTARG;
-end SimExtArg;
-
-uniontype Variable
-  "a variable represents a name, a type and a possible default value"
-  record VARIABLE
-    DAE.ComponentRef name;
-    DAE.Type ty;
-    Option<DAE.Exp> value "default value";
-    list<DAE.Exp> instDims;
-    DAE.VarParallelism parallelism;
-    DAE.VarKind kind;
-  end VARIABLE;
-
-  record FUNCTION_PTR
-    String name;
-    list<DAE.Type> tys;
-    list<Variable> args;
-    Option<DAE.Exp> defaultValue "default value";
-  end FUNCTION_PTR;
-end Variable;
 
 uniontype SimEqSystem
   "Represents a single equation or a system of equations that must be solved together."
@@ -526,27 +394,6 @@ uniontype ExtObjInfo
   end EXTOBJINFO;
 end ExtObjInfo;
 
-uniontype MakefileParams
-  "Platform specific parameters used when generating makefiles."
-  record MAKEFILE_PARAMS
-    String ccompiler;
-    String cxxcompiler;
-    String linker;
-    String exeext;
-    String dllext;
-    String omhome;
-    String cflags;
-    String ldflags;
-    String runtimelibs "Libraries that are required by the runtime library";
-    list<String> includes;
-    list<String> libs;
-    list<String> libPaths;
-    String platform;
-    String compileDir;
-  end MAKEFILE_PARAMS;
-end MakefileParams;
-
-
 uniontype SimulationSettings
   "Settings for simulation init file header."
   record SIMULATION_SETTINGS
@@ -562,53 +409,6 @@ uniontype SimulationSettings
     String cflags;
   end SIMULATION_SETTINGS;
 end SimulationSettings;
-
-uniontype Context
-  "Constants of this type defined below are used by templates to be able to
-  generate different code depending on the context it is generated in."
-  record SIMULATION_CONTEXT
-    Boolean genDiscrete;
-  end SIMULATION_CONTEXT;
-
-  record FUNCTION_CONTEXT
-  end FUNCTION_CONTEXT;
-
-  record ALGLOOP_CONTEXT
-     Boolean genInitialisation;
-     Boolean genJacobian;
-  end ALGLOOP_CONTEXT;
-
-   record JACOBIAN_CONTEXT
-   end JACOBIAN_CONTEXT;
-
-  record OTHER_CONTEXT
-  end OTHER_CONTEXT;
-
-  record PARALLEL_FUNCTION_CONTEXT
-  end PARALLEL_FUNCTION_CONTEXT;
-
-  record ZEROCROSSINGS_CONTEXT
-  end ZEROCROSSINGS_CONTEXT;
-
-  record OPTIMIZATION_CONTEXT
-  end OPTIMIZATION_CONTEXT;
-
-  record FMI_CONTEXT
-  end FMI_CONTEXT;
-end Context;
-
-public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
-public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
-public constant Context contextFunction               = FUNCTION_CONTEXT();
-public constant Context contextJacobian               = JACOBIAN_CONTEXT();
-public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);
-public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true,false);
-public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false,false);
-public constant Context contextOther                  = OTHER_CONTEXT();
-public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
-public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
-public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
-public constant Context contextFMI                    = FMI_CONTEXT();
 
 /****** HashTable ComponentRef -> SimCodeVar.SimVar ******/
 

@@ -48,6 +48,7 @@ package CodegenC
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
+import CodegenUtilSimulation.*;
 import CodegenCFunctions.*;
 import ExpressionDumpTpl.*;
 

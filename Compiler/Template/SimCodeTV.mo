@@ -282,7 +282,7 @@ package SimCode
     record SIMCODE
       ModelInfo modelInfo;
       list<DAE.Exp> literals;
-      list<RecordDeclaration> recordDecls;
+      list<SimCodeFunction.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<SimEqSystem> localKnownVars;
       list<SimEqSystem> allEquations;
@@ -312,7 +312,7 @@ package SimCode
       list<BackendDAE.TimeEvent> timeEvents;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
-      MakefileParams makefileParams;
+      SimCodeFunction.MakefileParams makefileParams;
       DelayedExpression delayedExps;
       list<JacobianMatrix> jacobianMatrixes;
       Option<SimulationSettings> simulationSettingsOpt;
@@ -359,37 +359,6 @@ package SimCode
     end DELAYED_EXPRESSIONS;
   end DelayedExpression;
 
-  uniontype FunctionCode
-    record FUNCTIONCODE
-      String name;
-      Option<Function> mainFunction;
-      list<Function> functions;
-      list<DAE.Exp> literals;
-      list<String> externalFunctionIncludes;
-      MakefileParams makefileParams;
-      list<RecordDeclaration> extraRecordDecls;
-    end FUNCTIONCODE;
-  end FunctionCode;
-
-  uniontype MakefileParams
-    record MAKEFILE_PARAMS
-      String ccompiler;
-      String cxxcompiler;
-      String linker;
-      String exeext;
-      String dllext;
-      String omhome;
-      String cflags;
-      String ldflags;
-      String runtimelibs;
-      list<String> includes;
-      list<String> libs;
-      list<String> libPaths;
-      String platform;
-      String compileDir;
-    end MAKEFILE_PARAMS;
-  end MakefileParams;
-
   uniontype SimulationSettings
     record SIMULATION_SETTINGS
       Real startTime;
@@ -404,48 +373,6 @@ package SimCode
       String cflags;
     end SIMULATION_SETTINGS;
   end SimulationSettings;
-
-  uniontype Context
-    record SIMULATION_CONTEXT
-      Boolean genDiscrete;
-    end SIMULATION_CONTEXT;
-    record FUNCTION_CONTEXT
-    end FUNCTION_CONTEXT;
-    record JACOBIAN_CONTEXT
-    end JACOBIAN_CONTEXT;
-    record ALGLOOP_CONTEXT
-      Boolean genInitialisation;
-      Boolean genJacobian;
-    end ALGLOOP_CONTEXT;
-    record OTHER_CONTEXT
-    end OTHER_CONTEXT;
-    record PARALLEL_FUNCTION_CONTEXT
-    end PARALLEL_FUNCTION_CONTEXT;
-    record ZEROCROSSINGS_CONTEXT
-    end ZEROCROSSINGS_CONTEXT;
-    record OPTIMIZATION_CONTEXT
-    end OPTIMIZATION_CONTEXT;
-    record FMI_CONTEXT
-    end FMI_CONTEXT;
-  end Context;
-
-  uniontype Variable
-    record VARIABLE
-      DAE.ComponentRef name;
-      DAE.Type ty;
-      Option<DAE.Exp> value;
-      list<DAE.Exp> instDims;
-      DAE.VarParallelism parallelism;
-      DAE.VarKind kind;
-    end VARIABLE;
-
-    record FUNCTION_PTR
-      String name;
-      list<DAE.Type> tys;
-      list<Variable> args;
-      Option<DAE.Exp> defaultValue;
-    end FUNCTION_PTR;
-  end Variable;
 
   uniontype ExtObjInfo
     record EXTOBJINFO
@@ -578,7 +505,7 @@ package SimCode
       String directory;
       VarInfo varInfo;
       SimCodeVar.SimVars vars;
-      list<Function> functions;
+      list<SimCodeFunction.Function> functions;
       list<String> labels;
       Integer nClocks;
       Integer nSubClocks;
@@ -634,6 +561,100 @@ package SimCode
       list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
     end DAEMODEDATA;
   end DaeModeData;
+
+  uniontype FmiUnknown
+    record FMIUNKNOWN
+      Integer index;
+      list<Integer> dependencies;
+      list<String> dependenciesKind;
+    end FMIUNKNOWN;
+  end FmiUnknown;
+
+  uniontype FmiOutputs
+    record FMIOUTPUTS
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIOUTPUTS;
+  end FmiOutputs;
+
+  uniontype FmiDerivatives
+    record FMIDERIVATIVES
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIDERIVATIVES;
+  end FmiDerivatives;
+
+  uniontype FmiDiscreteStates
+    record FMIDISCRETESTATES
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIDISCRETESTATES;
+  end FmiDiscreteStates;
+
+  uniontype FmiInitialUnknowns
+    record FMIINITIALUNKNOWNS
+      list<FmiUnknown> fmiUnknownsList;
+    end FMIINITIALUNKNOWNS;
+  end FmiInitialUnknowns;
+
+  uniontype FmiModelStructure
+    record FMIMODELSTRUCTURE
+      FmiOutputs fmiOutputs;
+      FmiDerivatives fmiDerivatives;
+      FmiDiscreteStates fmiDiscreteStates;
+      FmiInitialUnknowns fmiInitialUnknowns;
+    end FMIMODELSTRUCTURE;
+  end FmiModelStructure;
+
+end SimCode;
+
+package SimCodeFunction
+
+  uniontype FunctionCode
+    record FUNCTIONCODE
+      String name;
+      Option<Function> mainFunction;
+      list<Function> functions;
+      list<DAE.Exp> literals;
+      list<String> externalFunctionIncludes;
+      MakefileParams makefileParams;
+      list<RecordDeclaration> extraRecordDecls;
+    end FUNCTIONCODE;
+  end FunctionCode;
+
+  uniontype MakefileParams
+    record MAKEFILE_PARAMS
+      String ccompiler;
+      String cxxcompiler;
+      String linker;
+      String exeext;
+      String dllext;
+      String omhome;
+      String cflags;
+      String ldflags;
+      String runtimelibs;
+      list<String> includes;
+      list<String> libs;
+      list<String> libPaths;
+      String platform;
+      String compileDir;
+    end MAKEFILE_PARAMS;
+  end MakefileParams;
+
+  uniontype Variable
+    record VARIABLE
+      DAE.ComponentRef name;
+      DAE.Type ty;
+      Option<DAE.Exp> value;
+      list<DAE.Exp> instDims;
+      DAE.VarParallelism parallelism;
+      DAE.VarKind kind;
+    end VARIABLE;
+
+    record FUNCTION_PTR
+      String name;
+      list<DAE.Type> tys;
+      list<Variable> args;
+      Option<DAE.Exp> defaultValue;
+    end FUNCTION_PTR;
+  end Variable;
 
   uniontype Function
     record FUNCTION
@@ -723,46 +744,29 @@ package SimCode
     record SIMNOEXTARG end SIMNOEXTARG;
   end SimExtArg;
 
-  uniontype FmiUnknown
-    record FMIUNKNOWN
-      Integer index;
-      list<Integer> dependencies;
-      list<String> dependenciesKind;
-    end FMIUNKNOWN;
-  end FmiUnknown;
-
-  uniontype FmiOutputs
-    record FMIOUTPUTS
-      list<FmiUnknown> fmiUnknownsList;
-    end FMIOUTPUTS;
-  end FmiOutputs;
-
-  uniontype FmiDerivatives
-    record FMIDERIVATIVES
-      list<FmiUnknown> fmiUnknownsList;
-    end FMIDERIVATIVES;
-  end FmiDerivatives;
-
-  uniontype FmiDiscreteStates
-    record FMIDISCRETESTATES
-      list<FmiUnknown> fmiUnknownsList;
-    end FMIDISCRETESTATES;
-  end FmiDiscreteStates;
-
-  uniontype FmiInitialUnknowns
-    record FMIINITIALUNKNOWNS
-      list<FmiUnknown> fmiUnknownsList;
-    end FMIINITIALUNKNOWNS;
-  end FmiInitialUnknowns;
-
-  uniontype FmiModelStructure
-    record FMIMODELSTRUCTURE
-      FmiOutputs fmiOutputs;
-      FmiDerivatives fmiDerivatives;
-      FmiDiscreteStates fmiDiscreteStates;
-      FmiInitialUnknowns fmiInitialUnknowns;
-    end FMIMODELSTRUCTURE;
-  end FmiModelStructure;
+  uniontype Context
+    record SIMULATION_CONTEXT
+      Boolean genDiscrete;
+    end SIMULATION_CONTEXT;
+    record FUNCTION_CONTEXT
+    end FUNCTION_CONTEXT;
+    record JACOBIAN_CONTEXT
+    end JACOBIAN_CONTEXT;
+    record ALGLOOP_CONTEXT
+      Boolean genInitialisation;
+      Boolean genJacobian;
+    end ALGLOOP_CONTEXT;
+    record OTHER_CONTEXT
+    end OTHER_CONTEXT;
+    record PARALLEL_FUNCTION_CONTEXT
+    end PARALLEL_FUNCTION_CONTEXT;
+    record ZEROCROSSINGS_CONTEXT
+    end ZEROCROSSINGS_CONTEXT;
+    record OPTIMIZATION_CONTEXT
+    end OPTIMIZATION_CONTEXT;
+    record FMI_CONTEXT
+    end FMI_CONTEXT;
+  end Context;
 
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
@@ -777,9 +781,8 @@ package SimCode
   constant Context contextOptimization;
   constant Context contextFMI;
   constant list<DAE.Exp> listExpLength1;
-  constant list<Variable> boxedRecordOutVars;
-
-end SimCode;
+  constant list<SimCodeFunction.Variable> boxedRecordOutVars;
+end SimCodeFunction;
 
 package SimCodeUtil
   function appendLists
@@ -789,12 +792,12 @@ package SimCodeUtil
   end appendLists;
 
   function functionInfo
-    input SimCode.Function fn;
+    input SimCodeFunction.Function fn;
     output builtin.SourceInfo info;
   end functionInfo;
 
   function countDynamicExternalFunctions
-    input list<SimCode.Function> inFncLst;
+    input list<SimCodeFunction.Function> inFncLst;
     output Integer outDynLoadFuncs;
   end countDynamicExternalFunctions;
 
@@ -927,6 +930,21 @@ package SimCodeUtil
     input SimCode.VarInfo varInfo;
     output Integer n;
   end nVariablesReal;
+
+  function getSimCode
+    output SimCode.SimCode code;
+  end getSimCode;
+
+  function cref2simvar
+    input DAE.ComponentRef cref;
+    input SimCode.SimCode simCode;
+    output SimCodeVar.SimVar outSimVar;
+  end cref2simvar;
+
+  function isModelTooBigForCSharpInOneFile
+    input SimCode.SimCode simCode;
+    output Boolean outIsTooBig;
+  end isModelTooBigForCSharpInOneFile;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -936,7 +954,7 @@ package SimCodeFunctionUtil
   end varName;
 
   function isParallelFunctionContext
-    input SimCode.Context context;
+    input SimCodeFunction.Context context;
     output Boolean s;
   end isParallelFunctionContext;
 
@@ -957,7 +975,7 @@ package SimCodeFunctionUtil
 
   function crefIsScalar
     input DAE.ComponentRef cref;
-    input SimCode.Context context;
+    input SimCodeFunction.Context context;
     output Boolean isScalar;
   end crefIsScalar;
 
@@ -977,17 +995,6 @@ package SimCodeFunctionUtil
     output DAE.Exp outExp;
   end makeCrefRecordExp;
 
-  function cref2simvar
-    input DAE.ComponentRef cref;
-    input SimCode.SimCode simCode;
-    output SimCodeVar.SimVar outSimVar;
-  end cref2simvar;
-
-  function isModelTooBigForCSharpInOneFile
-    input SimCode.SimCode simCode;
-    output Boolean outIsTooBig;
-  end isModelTooBigForCSharpInOneFile;
-
   function derComponentRef
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef derCref;
@@ -995,7 +1002,7 @@ package SimCodeFunctionUtil
 
   function hackArrayReverseToCref
     input DAE.Exp inExp;
-    input SimCode.Context context;
+    input SimCodeFunction.Context context;
     output DAE.Exp outExp;
   end hackArrayReverseToCref;
 
@@ -1006,7 +1013,7 @@ package SimCodeFunctionUtil
 
   function hackMatrixReverseToCref
     input DAE.Exp inExp;
-    input SimCode.Context context;
+    input SimCodeFunction.Context context;
     output DAE.Exp outExp;
   end hackMatrixReverseToCref;
 
@@ -1022,16 +1029,16 @@ package SimCodeFunctionUtil
 
   function elementVars
     input list<DAE.Element> ld;
-    output list<SimCode.Variable> vars;
+    output list<SimCodeFunction.Variable> vars;
   end elementVars;
 
   function isBoxedFunction
-    input SimCode.Function fn;
+    input SimCodeFunction.Function fn;
     output Boolean b;
   end isBoxedFunction;
 
   function funcHasParallelInOutArrays
-    input SimCode.Function fn;
+    input SimCodeFunction.Function fn;
     output Boolean b;
   end funcHasParallelInOutArrays;
 
@@ -1076,10 +1083,6 @@ package SimCodeFunctionUtil
     input DAE.ComponentRef cr;
     output String outdef;
   end generateSubPalceholders;
-
-  function getSimCode
-    output SimCode.SimCode code;
-  end getSimCode;
 
 end SimCodeFunctionUtil;
 
