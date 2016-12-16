@@ -29,6 +29,7 @@ build: $(NAME)
 	cp -p $(resourcedir)/*.qm $(builddir_share)/omnotebook/nls/
 	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin);
 	cp -p *.xml $(builddir_share)/omnotebook/
+	cp -p ../../OMNotebookHelp.onb @OMBUILDDIR@/share/omnotebook/
 	(DRMODELICAPWD=`cd ../../DrModelica/ && pwd` && \
         DIRS=`cd ../../DrModelica/ && find . -type d | grep -v svn` && \
 	(cd $(builddir_share)/omnotebook/drmodelica/ && \

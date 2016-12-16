@@ -30,6 +30,7 @@ $(NAME): Makefile OMNotebook.config
 build: $(NAME)
 	mkdir -p @OMBUILDDIR@/share/omnotebook/drmodelica/ @OMBUILDDIR@/share/omnotebook/drcontrol/
 	cp -p *.xml @OMBUILDDIR@/share/omnotebook/
+	cp -p ../../OMNotebookHelp.onb @OMBUILDDIR@/share/omnotebook/
 	(cd @DRMODELICADIR@ && find . -type d -exec mkdir -p @OMBUILDDIR@/share/omnotebook/drmodelica/{} ";")
 	(cd @DRMODELICADIR@ && find . -name "*.onb" -exec cp {} @OMBUILDDIR@/share/omnotebook/drmodelica/{} ";")
 	(cd @DRCONTROLDIR@ && find . -type d -exec mkdir -p @OMBUILDDIR@/share/omnotebook/drcontrol/{} ";")

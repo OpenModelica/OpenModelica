@@ -2776,7 +2776,7 @@ void NotebookWindow::helpText()
 
     if( !help.endsWith("/") && !help.endsWith( "\\") )
       help += "/";
-    help += "share/omnotebook/drmodelica/";
+    help += "share/omnotebook/";
 
     QString helpFile = "OMNotebookHelp.onb";
     dir.setPath( help );
