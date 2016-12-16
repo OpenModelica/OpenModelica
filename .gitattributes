@@ -1,3 +1,5 @@
 *.tex text eol=native
 *.rst text eol=native
 *.py text eol=native
+*.bib text eol=native
+Makefile* text eol=native
