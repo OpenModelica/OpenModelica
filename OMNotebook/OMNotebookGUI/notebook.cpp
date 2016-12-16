@@ -1134,54 +1134,63 @@ void NotebookWindow::createFormatMenu()
 
   stretchUltraCondensed = new QAction( tr("U&ltra Condensed"), this);
   stretchUltraCondensed->setCheckable( true );
+  stretchUltraCondensed->setWhatsThis("ucon");
   stretchUltraCondensed->setStatusTip( tr("Set font stretch to Ultra Condensed") );
   stretchs_.insert( QFont::UltraCondensed, stretchUltraCondensed );
   stretchsgroup->addAction( stretchUltraCondensed );
 
   stretchExtraCondensed = new QAction( tr("E&xtra Condensed"), this);
   stretchExtraCondensed->setCheckable( true );
+  stretchExtraCondensed->setWhatsThis("econ");
   stretchExtraCondensed->setStatusTip( tr("Set font stretch to Extra Condensed") );
   stretchs_.insert( QFont::ExtraCondensed, stretchExtraCondensed );
   stretchsgroup->addAction( stretchExtraCondensed );
 
   stretchCondensed = new QAction( tr("&Condensed"), this);
   stretchCondensed->setCheckable( true );
+  stretchCondensed->setWhatsThis("con");
   stretchCondensed->setStatusTip( tr("Set font stretch to Condensed") );
   stretchs_.insert( QFont::Condensed, stretchCondensed );
   stretchsgroup->addAction( stretchCondensed );
 
   stretchSemiCondensed = new QAction( tr("S&emi Condensed"), this);
   stretchSemiCondensed->setCheckable( true );
+  stretchSemiCondensed->setWhatsThis("scon");
   stretchSemiCondensed->setStatusTip( tr("Set font stretch to Semi Condensed") );
   stretchs_.insert( QFont::SemiCondensed, stretchSemiCondensed );
   stretchsgroup->addAction( stretchSemiCondensed );
 
   stretchUnstretched = new QAction( tr("&Unstretched"), this);
   stretchUnstretched->setCheckable( true );
+  stretchUnstretched->setWhatsThis("uns");
   stretchUnstretched->setStatusTip( tr("Set font stretch to Unstretched") );
   stretchs_.insert( QFont::Unstretched, stretchUnstretched );
   stretchsgroup->addAction( stretchUnstretched );
 
   stretchSemiExpanded = new QAction( tr("&Semi Expanded"), this);
   stretchSemiExpanded->setCheckable( true );
+  stretchSemiExpanded->setWhatsThis("sexp");
   stretchSemiExpanded->setStatusTip( tr("Set font stretch to Semi Expanded") );
   stretchs_.insert( QFont::SemiExpanded, stretchSemiExpanded );
   stretchsgroup->addAction( stretchSemiExpanded );
 
   stretchExpanded = new QAction( tr("&Expanded"), this);
   stretchExpanded->setCheckable( true );
+  stretchExpanded->setWhatsThis("exp");
   stretchExpanded->setStatusTip( tr("Set font stretch to Expanded") );
   stretchs_.insert( QFont::Expanded, stretchExpanded );
   stretchsgroup->addAction( stretchExpanded );
 
   stretchExtraExpanded = new QAction( tr("Ex&tra Expanded"), this);
   stretchExtraExpanded->setCheckable( true );
+  stretchExtraExpanded->setWhatsThis("eexp");
   stretchExtraExpanded->setStatusTip( tr("Set font stretch to Extra Expanded") );
   stretchs_.insert( QFont::ExtraExpanded, stretchExtraExpanded );
   stretchsgroup->addAction( stretchExtraExpanded );
 
   stretchUltraExpanded = new QAction( tr("Ult&ra Expanded"), this);
   stretchUltraExpanded->setCheckable( true );
+  stretchUltraExpanded->setWhatsThis("uexp");
   stretchUltraExpanded->setStatusTip( tr("Set font stretch to Ultra Expanded") );
   stretchs_.insert( QFont::UltraExpanded, stretchUltraExpanded );
   stretchsgroup->addAction( stretchUltraExpanded );
@@ -3196,23 +3205,23 @@ void NotebookWindow::changeFontStretch( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( action->text() == "U&ltra Condensed" )
+  if( action->whatsThis() == "ucon" )
     subject_->textcursorChangeFontStretch( QFont::UltraCondensed );
-  else if( action->text() == "E&xtra Condensed" )
+  else if( action->whatsThis() == "econ" )
     subject_->textcursorChangeFontStretch( QFont::ExtraCondensed );
-  else if( action->text() == "&Condensed" )
+  else if( action->whatsThis() == "con" )
     subject_->textcursorChangeFontStretch( QFont::Condensed );
-  else if( action->text() == "S&emi Condensed" )
+  else if( action->whatsThis() == "scon" )
     subject_->textcursorChangeFontStretch( QFont::SemiCondensed );
-  else if( action->text() == "&Unstretched" )
+  else if( action->whatsThis() == "uns" )
     subject_->textcursorChangeFontStretch( QFont::Unstretched );
-  else if( action->text() == "&Semi Expanded" )
+  else if( action->whatsThis() == "sexp" )
     subject_->textcursorChangeFontStretch( QFont::SemiExpanded );
-  else if( action->text() == "&Expanded" )
+  else if( action->whatsThis() == "exp" )
     subject_->textcursorChangeFontStretch( QFont::Expanded );
-  else if( action->text() == "Ex&tra Expanded" )
+  else if( action->whatsThis() == "eexp" )
     subject_->textcursorChangeFontStretch( QFont::ExtraExpanded );
-  else if( action->text() == "Ult&ra Expanded" )
+  else if( action->whatsThis() == "uexp" )
     subject_->textcursorChangeFontStretch( QFont::UltraExpanded );
 }
 
