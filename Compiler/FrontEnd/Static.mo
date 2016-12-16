@@ -2351,6 +2351,7 @@ algorithm
 
     case (_,_,e,_,pre,_)
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         Print.printErrorBuf("- Inst.elabGraphicsExp failed: ");
         ps = PrefixUtil.printPrefixStr2(pre);
         s = Dump.printExpStr(e);
