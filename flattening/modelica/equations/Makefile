@@ -54,7 +54,8 @@ WhenNotInitial.mo \
 WhenNotValid.mo \
 WhenValidResult.mo \
 WhenSemantics1.mo \
-WhenVectorPredicateEquation.mo 
+WhenVectorPredicateEquation.mo \
+WhenWithArray.mo
 
 
 
