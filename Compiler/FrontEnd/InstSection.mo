@@ -2933,9 +2933,16 @@ protected function checkWhenCondition
   input DAE.Type ty;
   input Absyn.Exp aexp;
   input SourceInfo info;
+protected
+  DAE.Type tyEl;
 algorithm
   try
-    exp := Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT);
+    if Types.isArray(ty) then
+      tyEl := Types.arrayElementType(ty);
+    else
+      tyEl := ty;
+    end if;
+    exp := Types.matchType(exp, tyEl, DAE.T_BOOL_DEFAULT);
   else
     Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),Types.unparseType(ty)},info);
     fail();

@@ -2044,6 +2044,8 @@ algorithm
       equation
         (ty,dim) = unliftArrayOrList(ty);
       then (ty,dim);
+    case (DAE.T_FUNCTION(funcResultType = ty))
+      then unliftArrayOrList(ty);
   end match;
 end unliftArrayOrList;
 
@@ -2057,6 +2059,8 @@ algorithm
     case DAE.T_SUBTYPE_BASIC()
       then if listEmpty(getDimensions(inType.complexType)) then
           inType else arrayElementType(inType.complexType);
+
+    case DAE.T_FUNCTION() then arrayElementType(inType.funcResultType);
 
     else inType;
   end match;
