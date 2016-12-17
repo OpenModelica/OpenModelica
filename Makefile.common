@@ -82,6 +82,7 @@ opc: .testvariables mkbuilddirs boehm-gc
 
 docs: mkbuilddirs
 	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
+	mkdir -p $(builddir_doc)/omc/testmodels
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 
