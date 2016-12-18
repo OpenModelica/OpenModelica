@@ -60,6 +60,7 @@ import ClassInf;
 import InstUtil = NFInstUtil;
 import Static;
 import Func = NFFunc;
+import NFClass.ClassTree;
 
 public
 function typeClass
@@ -340,6 +341,11 @@ algorithm
       DAE.Type ty1, ty2;
       list<Equation> eqs1, body;
       list<tuple<DAE.Exp, list<Equation>>> tybrs;
+      InstNode fakeComponent;
+      array<InstNode> components;
+      Class cls;
+      Integer index;
+      ClassTree.Tree elements;
 
     case Equation.UNTYPED_EQUALITY()
       algorithm
@@ -355,17 +361,40 @@ algorithm
       then
         Equation.CONNECT(cr1, ty1, cr2, ty2, eq.info);
 
-    /*
     case Equation.UNTYPED_FOR()
       algorithm
-        (Ope1, opty1) := typeExpOption(eq.range, component, eq.info);
-        eqs1 := list(typeEquation(eq, component) for eq in eq.body);
-
-        if isSome(Ope1) then
+        ope1 := NONE();
+        if (isSome(eq.range)) then
+          (e1, ty1) := typeExp(Util.getOption(eq.range), component, eq.info);
+          ty1 := Types.arrayElementType(ty1);
+          ope1 := SOME(e1);
         end if;
+        // we need to add the iterator to the component scope!
+        fakeComponent := InstNode.newComponent(
+           SCode.COMPONENT(
+              eq.name,
+              SCode.defaultPrefixes,
+              SCode.defaultVarAttr,
+              Absyn.TPATH(Absyn.IDENT("Integer"), NONE()),
+              SCode.NOMOD(),
+              SCode.COMMENT(NONE(), NONE()),
+              NONE(),
+              eq.info), component);
+        fakeComponent := Inst.instComponent(fakeComponent, component, component);
+        fakeComponent := typeComponent(fakeComponent);
+        cls := InstNode.getClass(component);
+        components := Class.components(cls);
+        index := arrayLength(components) + 1;
+        components := listArray(listAppend(arrayList(components), {fakeComponent}));
+        cls := Class.setComponents(components, cls);
+        elements := Class.elements(cls);
+        elements :=  ClassTree.add(elements, eq.name,
+              ClassTree.Entry.COMPONENT(index), ClassTree.addConflictReplace);
+        cls := Class.setElements(elements, cls);
+        fakeComponent := InstNode.updateClass(cls, component);
+        eqs1 := list(typeEquation(beq, fakeComponent) for beq in eq.body);
       then
-        Equation.FOR(eq.name, 1, ty1, ty2, eq.info);
-        */
+        Equation.FOR(eq.name, 1, ty1, ope1, eqs1, eq.info);
 
     case Equation.UNTYPED_IF()
       algorithm

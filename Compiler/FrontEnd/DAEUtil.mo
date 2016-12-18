@@ -60,12 +60,14 @@ protected import ElementSource;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import System;
 protected import Types;
 protected import Util;
 protected import StateMachineFlatten;
+protected import VarTransform;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
@@ -6126,5 +6128,188 @@ algorithm
   end if;
 end statementsContainTryBlock2;
 
+public function getVarBinding "
+  Retrive the binding from a list of Elements
+  that matches the given cref
+"
+  input list<DAE.Element> iels;
+  input DAE.ComponentRef icr;
+  output Option<DAE.Exp> obnd;
+algorithm
+  obnd :=
+  matchcontinue (iels)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      list<DAE.Element> lst;
+
+   case ({}) then NONE();
+
+    case (DAE.VAR(componentRef = cr, binding = obnd)::lst)
+      algorithm
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (DAE.DEFINE(componentRef = cr, exp = e)::lst)
+      algorithm
+        obnd := SOME(e);
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (DAE.INITIALDEFINE(componentRef = cr, exp = e)::lst)
+      algorithm
+        obnd := SOME(e);
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)::lst)
+      algorithm
+        obnd := SOME(e);
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))::lst)
+      algorithm
+        obnd := SOME(e);
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)::lst)
+      algorithm
+        obnd := SOME(e);
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))::lst)
+      algorithm
+        obnd := SOME(e);
+        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          obnd := getVarBinding(lst, icr);
+        end if;
+      then
+        obnd;
+
+    case (_::lst)
+      then getVarBinding(lst, icr);
+  end matchcontinue;
+end getVarBinding;
+
+public function evaluateCref
+"pour man's constant evaluation"
+  input DAE.ComponentRef icr;
+  input list<DAE.Element> iels;
+  output Option<DAE.Exp> oexp;
+protected
+  DAE.Exp e, ee;
+  list<DAE.ComponentRef> crefs;
+  list<Option<DAE.Exp>> oexps;
+  Option<DAE.Exp> o;
+algorithm
+  oexp := getVarBinding(iels, icr);
+  if isSome(oexp) then
+    SOME(e) := oexp;
+    (e, _) := ExpressionSimplify.simplify(e);
+    // is constant
+    if Expression.isConst(e) then
+      oexp := SOME(e);
+      return;
+    end if;
+    // not constant
+    crefs := Expression.getAllCrefs(e);
+    oexps := List.map1(crefs, evaluateCref, iels);
+    for c in crefs loop
+      SOME(ee)::oexps := oexps;
+      e := Expression.replaceCref(e, (c, ee));
+      (e, _) := ExpressionSimplify.simplify(e);
+    end for;
+    oexp := SOME(e);
+  end if;
+end evaluateCref;
+
+public function evaluateExp
+"pour man's constant evaluation"
+  input DAE.Exp iexp;
+  input list<DAE.Element> iels;
+  output Option<DAE.Exp> oexp = NONE();
+protected
+  DAE.Exp e, ee;
+  list<DAE.ComponentRef> crefs;
+  list<Option<DAE.Exp>> oexps;
+  Option<DAE.Exp> o;
+algorithm
+  // is constant
+  if Expression.isConst(iexp) then
+    oexp := SOME(iexp);
+    return;
+  end if;
+
+  // not constant
+  try
+	  e := iexp;
+	  crefs := Expression.getAllCrefs(e);
+	  oexps := List.map1(crefs, evaluateCref, iels);
+	  for c in crefs loop
+	    SOME(ee)::oexps := oexps;
+	    e := Expression.replaceCrefBottomUp(e, c, ee);
+	    (e, _) := ExpressionSimplify.simplify(e);
+	  end for;
+	  oexp := SOME(e);
+	else
+	  oexp := NONE();
+	end try;
+end evaluateExp;
+
+public function replaceCrefInDAEElements
+  input list<DAE.Element> inElements;
+  input DAE.ComponentRef inCref;
+  input DAE.Exp inExp;
+  output list<DAE.Element> outElements;
+protected
+  VarTransform.VariableReplacements repl;
+algorithm
+  repl := VarTransform.emptyReplacements();
+  repl := VarTransform.addReplacement(repl,inCref,inExp);
+  (outElements, _) := traverseDAEElementList(inElements,replaceCrefBottomUp,repl);
+end replaceCrefInDAEElements;
+
+public function replaceCrefBottomUp
+  input DAE.Exp inExp;
+  input VarTransform.VariableReplacements replIn;
+  output DAE.Exp outExp;
+  output VarTransform.VariableReplacements replOut;
+algorithm
+  replOut := replIn;
+  (outExp,_) := Expression.traverseExpBottomUp(inExp,replaceCompRef,replIn);
+end replaceCrefBottomUp;
+
+protected function replaceCompRef
+  input DAE.Exp inExp;
+  input VarTransform.VariableReplacements replIn;
+  output DAE.Exp outExp;
+  output VarTransform.VariableReplacements replOut;
+algorithm
+  replOut := replIn;
+  (outExp,_) := VarTransform.replaceExp(inExp,replIn,NONE());
+end replaceCompRef;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
+

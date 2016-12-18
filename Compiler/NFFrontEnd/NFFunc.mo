@@ -742,6 +742,15 @@ algorithm
       then
         (typedExp, ty, vr);
 
+    case (Absyn.CREF_IDENT(name = "pre"), Absyn.FUNCTIONARGS(args = {aexp1}))
+      algorithm
+        (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
+
+        // create the typed call
+        typedExp := Expression.makePureBuiltinCall("pre", {dexp1}, ty);
+      then
+        (typedExp, ty, vr);
+
     /* adrpo: adapt these to the new structures, see above
     case (Absyn.CREF_IDENT(name = "product"), Absyn.FUNCTIONARGS(args = afargs))
       equation

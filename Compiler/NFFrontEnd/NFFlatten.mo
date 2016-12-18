@@ -51,11 +51,16 @@ import DAE;
 import Error;
 import Expression;
 import ExpressionDump;
+import ExpressionSimplify;
 import List;
 import SCode;
 import System;
 import Util;
 
+protected
+import DAEUtil;
+
+public
 partial function ExpandScalarFunc<ElementT>
   input ElementT element;
   input Prefix prefix;
@@ -155,26 +160,35 @@ protected
   DAE.Dimension dim;
   list<DAE.Dimension> rest_dims;
   Prefix sub_pre;
+  DAE.ComponentRef cr;
+  Option<DAE.Exp> oe;
+  DAE.Exp e;
+  Integer i;
 algorithm
   if listEmpty(dimensions) then
     sub_pre := Prefix.setSubscripts(listReverse(subscripts), prefix);
     elements := scalarFunc(element, sub_pre, elements);
   else
     dim :: rest_dims := dimensions;
-    elements := match dim
+    elements := matchcontinue dim
       case DAE.DIM_INTEGER()
         then flattenArrayIntDim(element, dim.integer, rest_dims, prefix,
             subscripts, scalarFunc, elements);
       case DAE.DIM_ENUM()
         then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
             rest_dims, prefix, subscripts, scalarFunc, elements);
+      case DAE.DIM_EXP(DAE.CREF(componentRef = cr))
+        algorithm
+          SOME(DAE.ICONST(i)) := DAEUtil.evaluateCref(cr, elements);
+        then flattenArrayIntDim(element, i, rest_dims, prefix,
+                                           subscripts, scalarFunc, elements);
       else
         algorithm
           print("Unknown dimension " + ExpressionDump.dimensionString(dim) +
             " in NFFlatten.flattenArray\n");
         then
           fail();
-    end match;
+    end matchcontinue;
   end if;
 end flattenArray;
 
@@ -308,16 +322,52 @@ end flattenBinding;
 function flattenEquation
   input Equation eq;
   input output list<DAE.Element> elements = {};
+protected
+  list<DAE.Element> els = {}, els1, els2;
+  DAE.Exp e;
+  Option<DAE.Exp> oe;
+  list<DAE.Exp> range;
 algorithm
   elements := match eq
     local
       DAE.Exp lhs, rhs;
+      Integer is, ie, step;
 
     case Equation.EQUALITY()
       then DAE.EQUATION(eq.lhs, eq.rhs, DAE.emptyElementSource) :: elements;
 
     case Equation.IF()
       then flattenIfEquation(eq.branches, false) :: elements;
+
+    case Equation.FOR()
+      algorithm
+        // flatten the equations
+        els1 := List.flatten(List.map1(eq.body, flattenEquation, {}));
+        // deal with the range
+        if isSome(eq.range) then
+          SOME(e) := eq.range;
+          SOME(e) := DAEUtil.evaluateExp(e, elements);
+          range := match (e)
+                    case DAE.ARRAY(array = range) then range;
+                    case DAE.RANGE(_, DAE.ICONST(is), SOME(DAE.ICONST(step)), DAE.ICONST(ie))
+                      then List.map(ExpressionSimplify.simplifyRange(is, step, ie), Expression.makeIntegerExp);
+                    case DAE.RANGE(_, DAE.ICONST(is), _, DAE.ICONST(ie))
+                      then if is <= ie
+                           then List.map(ExpressionSimplify.simplifyRange(is, 1, ie), Expression.makeIntegerExp)
+                           else List.map(ExpressionSimplify.simplifyRange(is, -1, ie), Expression.makeIntegerExp);
+                  end match;
+          // replace index in elements
+          for i in range loop
+            els := DAEUtil.replaceCrefInDAEElements(els1, DAE.CREF_IDENT(eq.name, eq.indexType, {}), i);
+            elements := listAppend(els, elements);
+          end for;
+        end if;
+      then
+        elements;
+
+    case Equation.WHEN()
+      then
+        flattenWhenEquation(eq.branches)::elements;
 
     else elements;
   end match;
@@ -417,6 +467,33 @@ function flattenInitialAlgorithms
 algorithm
   elements := List.fold(algorithms, flattenInitialAlgorithm, elements);
 end flattenInitialAlgorithms;
+
+function flattenWhenEquation
+  input list<tuple<DAE.Exp, list<Equation>>> whenBranches;
+  output DAE.Element whenEquation;
+protected
+  DAE.Exp cond1,cond2;
+  list<DAE.Element> els1, els2;
+  tuple<DAE.Exp, list<Equation>> head;
+  list<tuple<DAE.Exp, list<Equation>>> rest;
+  Option<DAE.Element> owhenEquation = NONE();
+algorithm
+
+  head::rest := whenBranches;
+  cond1 := Util.tuple21(head);
+  els1 := flattenEquations(Util.tuple22(head));
+  rest := listReverse(rest);
+
+  for b in rest loop
+    cond2 := Util.tuple21(b);
+    els2 := flattenEquations(Util.tuple22(b));
+    whenEquation := DAE.WHEN_EQUATION(cond2, els2,  owhenEquation, DAE.emptyElementSource);
+    owhenEquation := SOME(whenEquation);
+  end for;
+
+  whenEquation := DAE.WHEN_EQUATION(cond1, els1,  owhenEquation, DAE.emptyElementSource);
+
+end flattenWhenEquation;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

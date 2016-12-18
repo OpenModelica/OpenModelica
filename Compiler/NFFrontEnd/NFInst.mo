@@ -63,6 +63,7 @@ import Lookup = NFLookup;
 import MetaModelica.Dangerous;
 import System;
 import Typing = NFTyping;
+import SCodeUtil;
 
 public
 function instClassInProgram
@@ -310,7 +311,7 @@ algorithm
     local
       Absyn.TypeSpec ty;
       SCode.Mod der_mod;
-      SCode.Element ext;
+      SCode.Element ext, cls;
       Class c;
       SCode.ClassDef cdef;
       ClassTree.Tree scope;
@@ -324,6 +325,11 @@ algorithm
       list<InstNode> ext_nodes;
       Option<InstNode> builtin_ext;
       InstNode builtin_comp;
+      SCode.Ident name;
+      SCode.Prefixes prefixes;
+      SCode.Comment cmt;
+      SourceInfo info;
+      list<SCode.Enum> enumLst;
 
     case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ty, modifications = der_mod))
       algorithm
@@ -376,6 +382,14 @@ algorithm
         end if;
       then
         node;
+
+     // transform SCode.ENUMERATION into a normal class
+     case SCode.CLASS(name=name, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info)
+       algorithm
+         cls := SCodeUtil.expandEnumeration(name, enumLst, prefixes, cmt, info);
+         node := InstNode.setDefinition(cls, node);
+       then
+         expandClass2(node);
 
     else
       algorithm
