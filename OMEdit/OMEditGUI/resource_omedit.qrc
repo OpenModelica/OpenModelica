@@ -154,5 +154,7 @@
         <file>Resources/icons/strikethrough-icon.svg</file>
         <file>Resources/icons/subscript-icon.svg</file>
         <file>Resources/icons/superscript-icon.svg</file>
+        <file>Resources/icons/text-color-icon.svg</file>
+        <file>Resources/icons/background-color-icon.svg</file>
     </qresource>
 </RCC>

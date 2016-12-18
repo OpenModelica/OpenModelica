@@ -40,6 +40,8 @@
 #include <QTabbar>
 #include <QFile>
 #include <QWebView>
+#include <QToolBar>
+#include <QColorDialog>
 
 class LibraryTreeItem;
 class DocumentationHistory
@@ -84,20 +86,31 @@ private:
   QWidget *mpEditorsWidget;
   QTabBar *mpTabBar;
   QWidget *mpHTMLEditorWidget;
+  QToolBar *mpEditorToolBar;
   DocumentationViewer *mpHTMLEditor;
-  QToolButton *mpBoldToolButton;
-  QToolButton *mpItalicToolButton;
-  QToolButton *mpUnderlineToolButton;
-  QToolButton *mpStrikethroughToolButton;
-  QToolButton *mpSubscriptToolButton;
-  QToolButton *mpSuperscriptToolButton;
+  QAction *mpBoldAction;
+  QAction *mpItalicAction;
+  QAction *mpUnderlineAction;
+  QAction *mpStrikethroughAction;
+  QAction *mpSubscriptAction;
+  QAction *mpSuperscriptAction;
+  QColor mTextColor;
+  QColorDialog *mpTextColorDialog;
+  QToolButton *mpTextColorToolButton;
+  QColor mBackgroundColor;
+  QColorDialog *mpBackgroundColorDialog;
+  QToolButton *mpBackgroundColorToolButton;
   HTMLEditor *mpHTMLSourceEditor;
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
   int mDocumentationHistoryPos;
 
+  QPixmap createPixmapForToolButton(QColor color, QIcon icon);
   void updatePreviousNextButtons();
   void writeDocumentationFile(QString documentation);
+  void execCommand(const QString &commandName);
+  void execCommand(const QString &commandName, const QString &valueArgument);
+  bool queryCommandState(const QString &commandName);
 public slots:
   void previousDocumentation();
   void nextDocumentation();
@@ -107,7 +120,11 @@ public slots:
   void saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem = 0);
   void cancelDocumentation();
   void toggleEditor(int tabIndex);
-  void updateButtons();
+  void updateActions();
+  void applyTextColor();
+  void applyTextColor(QColor color);
+  void applyBackgroundColor();
+  void applyBackgroundColor(QColor color);
   void updateHTMLSourceEditor();
   void updateDocumentationHistory();
 };

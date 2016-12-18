@@ -333,9 +333,6 @@ QString Helper::item;
 QString Helper::bold;
 QString Helper::italic;
 QString Helper::underline;
-QString Helper::strikethrough;
-QString Helper::subscript;
-QString Helper::superscript;
 
 void Helper::initHelperVariables()
 {
@@ -562,9 +559,6 @@ void Helper::initHelperVariables()
   Helper::bold = tr("Bold");
   Helper::italic = tr("Italic");
   Helper::underline = tr("Underline");
-  Helper::strikethrough = tr("Strikethrough");
-  Helper::subscript = tr("Subscript");
-  Helper::superscript = tr("Superscript");
 }
 
 QString GUIMessages::getMessage(int type)

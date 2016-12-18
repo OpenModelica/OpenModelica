@@ -44,12 +44,12 @@
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
-#include <QToolBar>
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QWebFrame>
+#include <QWidgetAction>
 
 /*!
  * \class DocumentationWidget
@@ -135,96 +135,110 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   connect(mpTabBar, SIGNAL(currentChanged(int)), SLOT(toggleEditor(int)));
   // create the html editor widget
   mpHTMLEditorWidget = new QWidget;
+  // editor toolbar
+  mpEditorToolBar = new QToolBar;
+  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  mpEditorToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // create the html editor viewer
   mpHTMLEditor = new DocumentationViewer(this, true);
-  // editor buttons
-  // bold button
-  mpBoldToolButton = new QToolButton;
-  mpBoldToolButton->setText(Helper::bold);
-  mpBoldToolButton->setToolTip(Helper::bold);
-  mpBoldToolButton->setShortcut(QKeySequence("Ctrl+b"));
-  mpBoldToolButton->setIcon(QIcon(":/Resources/icons/bold-icon.svg"));
-  mpBoldToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  mpBoldToolButton->setAutoRaise(true);
-  mpBoldToolButton->setCheckable(true);
-  connect(mpBoldToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleBold), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleBold), SIGNAL(changed()), SLOT(updateButtons()));
-  // italic button
-  mpItalicToolButton = new QToolButton;
-  mpItalicToolButton->setText(Helper::italic);
-  mpItalicToolButton->setToolTip(Helper::italic);
-  mpItalicToolButton->setShortcut(QKeySequence("Ctrl+i"));
-  mpItalicToolButton->setIcon(QIcon(":/Resources/icons/italic-icon.svg"));
-  mpItalicToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  mpItalicToolButton->setAutoRaise(true);
-  mpItalicToolButton->setCheckable(true);
-  connect(mpItalicToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SIGNAL(changed()), SLOT(updateButtons()));
-  // underline button
-  mpUnderlineToolButton = new QToolButton;
-  mpUnderlineToolButton->setText(Helper::underline);
-  mpUnderlineToolButton->setToolTip(Helper::underline);
-  mpUnderlineToolButton->setShortcut(QKeySequence("Ctrl+u"));
-  mpUnderlineToolButton->setIcon(QIcon(":/Resources/icons/underline-icon.svg"));
-  mpUnderlineToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  mpUnderlineToolButton->setAutoRaise(true);
-  mpUnderlineToolButton->setCheckable(true);
-  connect(mpUnderlineToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SIGNAL(changed()), SLOT(updateButtons()));
-  // strikethrough button
-  mpStrikethroughToolButton = new QToolButton;
-  mpStrikethroughToolButton->setText(Helper::strikethrough);
-  mpStrikethroughToolButton->setToolTip(Helper::strikethrough);
-  mpStrikethroughToolButton->setIcon(QIcon(":/Resources/icons/strikethrough-icon.svg"));
-  mpStrikethroughToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  mpStrikethroughToolButton->setAutoRaise(true);
-  mpStrikethroughToolButton->setCheckable(true);
-  connect(mpStrikethroughToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SIGNAL(changed()), SLOT(updateButtons()));
-  // subscript button
-  mpSubscriptToolButton = new QToolButton;
-  mpSubscriptToolButton->setText(Helper::subscript);
-  mpSubscriptToolButton->setToolTip(Helper::subscript);
-  mpSubscriptToolButton->setIcon(QIcon(":/Resources/icons/subscript-icon.svg"));
-  mpSubscriptToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  mpSubscriptToolButton->setAutoRaise(true);
-  mpSubscriptToolButton->setCheckable(true);
-  connect(mpSubscriptToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SIGNAL(changed()), SLOT(updateButtons()));
-  // superscript button
-  mpSuperscriptToolButton = new QToolButton;
-  mpSuperscriptToolButton->setText(Helper::superscript);
-  mpSuperscriptToolButton->setToolTip(Helper::superscript);
-  mpSuperscriptToolButton->setIcon(QIcon(":/Resources/icons/superscript-icon.svg"));
-  mpSuperscriptToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  mpSuperscriptToolButton->setAutoRaise(true);
-  mpSuperscriptToolButton->setCheckable(true);
-  connect(mpSuperscriptToolButton, SIGNAL(clicked()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SIGNAL(changed()), SLOT(updateButtons()));
-  // frame to contain font buttons
-  QHBoxLayout *pFontButtonsHorizontalLayout = new QHBoxLayout;
-  pFontButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-  pFontButtonsHorizontalLayout->setSpacing(0);
-  pFontButtonsHorizontalLayout->addWidget(mpBoldToolButton);
-  pFontButtonsHorizontalLayout->addWidget(mpItalicToolButton);
-  pFontButtonsHorizontalLayout->addWidget(mpUnderlineToolButton);
-  pFontButtonsHorizontalLayout->addWidget(mpStrikethroughToolButton);
-  pFontButtonsHorizontalLayout->addWidget(mpSubscriptToolButton);
-  pFontButtonsHorizontalLayout->addWidget(mpSuperscriptToolButton);
-  QFrame *pFontButtonsFrame = new QFrame;
-  pFontButtonsFrame->setLayout(pFontButtonsHorizontalLayout);
-  // editor toolbar
-  QStatusBar *pEditorButtonsStatusBar = new QStatusBar;
-  pEditorButtonsStatusBar->setObjectName("ModelStatusBar");
-  pEditorButtonsStatusBar->setStyleSheet("QStatusBar{border-bottom: none;} QStatusBar::item{margin-bottom: -1px;}");
-  pEditorButtonsStatusBar->setSizeGripEnabled(false);
-  pEditorButtonsStatusBar->addWidget(pFontButtonsFrame);
+  // editor actions
+  // bold action
+  mpBoldAction = new QAction(QIcon(":/Resources/icons/bold-icon.svg"), Helper::bold, this);
+  mpBoldAction->setStatusTip(tr("Make your text bold"));
+  mpBoldAction->setShortcut(QKeySequence("Ctrl+b"));
+  mpBoldAction->setCheckable(true);
+  connect(mpBoldAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleBold), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleBold), SIGNAL(changed()), SLOT(updateActions()));
+  // italic action
+  mpItalicAction = new QAction(QIcon(":/Resources/icons/italic-icon.svg"), Helper::italic, this);
+  mpItalicAction->setStatusTip(tr("Italicize your text"));
+  mpItalicAction->setShortcut(QKeySequence("Ctrl+i"));
+  mpItalicAction->setCheckable(true);
+  connect(mpItalicAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SIGNAL(changed()), SLOT(updateActions()));
+  // underline action
+  mpUnderlineAction = new QAction(QIcon(":/Resources/icons/underline-icon.svg"), Helper::underline, this);
+  mpUnderlineAction->setStatusTip(tr("Underline your text"));
+  mpUnderlineAction->setShortcut(QKeySequence("Ctrl+u"));
+  mpUnderlineAction->setCheckable(true);
+  connect(mpUnderlineAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SIGNAL(changed()), SLOT(updateActions()));
+  // strikethrough action
+  mpStrikethroughAction = new QAction(QIcon(":/Resources/icons/strikethrough-icon.svg"), tr("Strikethrough"), this);
+  mpStrikethroughAction->setStatusTip(tr("Cross something out by drawing a line through it"));
+  mpStrikethroughAction->setCheckable(true);
+  connect(mpStrikethroughAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SIGNAL(changed()), SLOT(updateActions()));
+  QActionGroup *pSubscriptSuperscriptActionGroup = new QActionGroup(this);
+  pSubscriptSuperscriptActionGroup->setExclusive(true);
+  // subscript action
+  mpSubscriptAction = new QAction(QIcon(":/Resources/icons/subscript-icon.svg"), tr("Subscript"), pSubscriptSuperscriptActionGroup);
+  mpSubscriptAction->setStatusTip(tr("Type very small letters just below the line of text"));
+  mpSubscriptAction->setCheckable(true);
+  connect(mpSubscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SIGNAL(changed()), SLOT(updateActions()));
+  // superscript action
+  mpSuperscriptAction = new QAction(QIcon(":/Resources/icons/superscript-icon.svg"), tr("Superscript"), pSubscriptSuperscriptActionGroup);
+  mpSuperscriptAction->setStatusTip(tr("Type very small letters just above the line of text"));
+  mpSuperscriptAction->setCheckable(true);
+  connect(mpSuperscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
+  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SIGNAL(changed()), SLOT(updateActions()));
+  // text color action
+  mTextColor = Qt::black;
+  mpTextColorDialog = new QColorDialog;
+  mpTextColorDialog->setWindowFlags(Qt::Widget);
+  QMenu *pTextColorMenu = new QMenu;
+  QWidgetAction *pTextColorWidgetAction = new QWidgetAction(this);
+  pTextColorWidgetAction->setDefaultWidget(mpTextColorDialog);
+  pTextColorMenu->addAction(pTextColorWidgetAction);
+  connect(pTextColorMenu, SIGNAL(aboutToShow()), mpTextColorDialog, SLOT(show()));
+  connect(pTextColorMenu, SIGNAL(aboutToHide()), mpTextColorDialog, SLOT(hide()));
+  connect(mpTextColorDialog, SIGNAL(colorSelected(QColor)), pTextColorMenu, SLOT(hide()));
+  connect(mpTextColorDialog, SIGNAL(colorSelected(QColor)), SLOT(applyTextColor(QColor)));
+  connect(mpTextColorDialog, SIGNAL(rejected()), pTextColorMenu, SLOT(hide()));
+  mpTextColorToolButton = new QToolButton;
+  mpTextColorToolButton->setText(tr("Text Color"));
+  mpTextColorToolButton->setStatusTip(tr("Change the color of your text"));
+  mpTextColorToolButton->setMenu(pTextColorMenu);
+  mpTextColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
+  mpTextColorToolButton->setIcon(createPixmapForToolButton(mTextColor, QIcon(":/Resources/icons/text-color-icon.svg")));
+  connect(mpTextColorToolButton, SIGNAL(clicked()), SLOT(applyTextColor()));
+  // background color action
+  mBackgroundColor = Qt::white;
+  mpBackgroundColorDialog = new QColorDialog;
+  mpBackgroundColorDialog->setWindowFlags(Qt::Widget);
+  QMenu *pBackgroundColorMenu = new QMenu;
+  QWidgetAction *pBackgroundColorWidgetAction = new QWidgetAction(this);
+  pBackgroundColorWidgetAction->setDefaultWidget(mpBackgroundColorDialog);
+  pBackgroundColorMenu->addAction(pBackgroundColorWidgetAction);
+  connect(pBackgroundColorMenu, SIGNAL(aboutToShow()), mpBackgroundColorDialog, SLOT(show()));
+  connect(pBackgroundColorMenu, SIGNAL(aboutToHide()), mpBackgroundColorDialog, SLOT(hide()));
+  connect(mpBackgroundColorDialog, SIGNAL(colorSelected(QColor)), pBackgroundColorMenu, SLOT(hide()));
+  connect(mpBackgroundColorDialog, SIGNAL(colorSelected(QColor)), SLOT(applyBackgroundColor(QColor)));
+  connect(mpBackgroundColorDialog, SIGNAL(rejected()), pBackgroundColorMenu, SLOT(hide()));
+  mpBackgroundColorToolButton = new QToolButton;
+  mpBackgroundColorToolButton->setText(tr("Background Color"));
+  mpBackgroundColorToolButton->setStatusTip(tr("Change the color of your text"));
+  mpBackgroundColorToolButton->setMenu(pBackgroundColorMenu);
+  mpBackgroundColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
+  mpBackgroundColorToolButton->setIcon(createPixmapForToolButton(mBackgroundColor, QIcon(":/Resources/icons/background-color-icon.svg")));
+  connect(mpBackgroundColorToolButton, SIGNAL(clicked()), SLOT(applyBackgroundColor()));
+  // add actions to toolbar
+  mpEditorToolBar->addAction(mpBoldAction);
+  mpEditorToolBar->addAction(mpItalicAction);
+  mpEditorToolBar->addAction(mpUnderlineAction);
+  mpEditorToolBar->addAction(mpStrikethroughAction);
+  mpEditorToolBar->addAction(mpSubscriptAction);
+  mpEditorToolBar->addAction(mpSuperscriptAction);
+  mpEditorToolBar->addSeparator();
+  mpEditorToolBar->addWidget(mpTextColorToolButton);
+  mpEditorToolBar->addWidget(mpBackgroundColorToolButton);
   // add a layout to html editor widget
   QVBoxLayout *pHTMLWidgetLayout = new QVBoxLayout;
   pHTMLWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pHTMLWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pHTMLWidgetLayout->setSpacing(0);
-  pHTMLWidgetLayout->addWidget(pEditorButtonsStatusBar);
+  pHTMLWidgetLayout->addWidget(mpEditorToolBar);
   pHTMLWidgetLayout->addWidget(mpHTMLEditor, 1);
   mpHTMLEditorWidget->setLayout(pHTMLWidgetLayout);
   // create the HTMLEditor
@@ -345,6 +359,28 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief DocumentationWidget::createPixmapForToolButton
+ * Creates a new pixmap which contains the QIcon and the QColor in the bottom.
+ * \param color
+ * \param icon
+ * \return
+ */
+QPixmap DocumentationWidget::createPixmapForToolButton(QColor color, QIcon icon)
+{
+  QSize size = mpEditorToolBar->iconSize();
+  int height = (size.height() * 20) / 100;
+  QPixmap upperPixmap = icon.pixmap(size.width(), size.height() - height);
+  QPixmap collagePixmap(size);
+  collagePixmap.fill(Qt::transparent);
+  QPainter painter(&collagePixmap);
+  painter.drawPixmap(upperPixmap.rect(), upperPixmap);
+  QPixmap bottomPixmap(size.width(), height);
+  bottomPixmap.fill(color);
+  painter.drawPixmap(QRect(0, upperPixmap.height(), bottomPixmap.width(), bottomPixmap.height()), bottomPixmap);
+  return collagePixmap;
+}
+
+/*!
  * \brief DocumentationWidget::updatePreviousNextButtons
  * Updates the previous and next button.
  */
@@ -376,6 +412,28 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   out.setCodec(Helper::utf8.toStdString().data());
   out << documentation;
   mDocumentationFile.close();
+}
+
+void DocumentationWidget::execCommand(const QString &commandName)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.execCommand(\"%1\", false, null)").arg(commandName);
+  pWebFrame->evaluateJavaScript(javaScript);
+}
+
+void DocumentationWidget::execCommand(const QString &command, const QString &valueArgument)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.execCommand(\"%1\", false, \"%2\")").arg(command).arg(valueArgument);
+  pWebFrame->evaluateJavaScript(javaScript);
+}
+
+bool DocumentationWidget::queryCommandState(const QString &commandName)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.queryCommandState(\"%1\", false, null)").arg(commandName);
+  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  return result.toString().simplified().toLower() == "true";
 }
 
 /*!
@@ -633,18 +691,42 @@ void DocumentationWidget::toggleEditor(int tabIndex)
 }
 
 /*!
- * \brief DocumentationWidget::updateButtons
+ * \brief DocumentationWidget::updateActions
  * Slot activated when QWebView::pageAction() changed SIGNAL is raised.\n
- * Updates the buttons according to the cursor position.
+ * Updates the actions according to the cursor position.
  */
-void DocumentationWidget::updateButtons()
+void DocumentationWidget::updateActions()
 {
-  mpBoldToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
-  mpItalicToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
-  mpUnderlineToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
-  mpStrikethroughToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
-  mpSubscriptToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
-  mpSuperscriptToolButton->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
+  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
+  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
+  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
+  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
+  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+}
+
+void DocumentationWidget::applyTextColor()
+{
+  applyTextColor(mTextColor);
+}
+
+void DocumentationWidget::applyTextColor(QColor color)
+{
+  mTextColor = color;
+  mpTextColorToolButton->setIcon(createPixmapForToolButton(mTextColor, QIcon(":/Resources/icons/text-color-icon.svg")));
+  execCommand("foreColor", color.name());
+}
+
+void DocumentationWidget::applyBackgroundColor()
+{
+  applyTextColor(mBackgroundColor);
+}
+
+void DocumentationWidget::applyBackgroundColor(QColor color)
+{
+  mBackgroundColor = color;
+  mpBackgroundColorToolButton->setIcon(createPixmapForToolButton(mBackgroundColor, QIcon(":/Resources/icons/background-color-icon.svg")));
+  execCommand("hiliteColor", color.name());
 }
 
 /*!
