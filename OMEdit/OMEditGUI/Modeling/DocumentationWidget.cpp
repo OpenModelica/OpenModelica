@@ -143,6 +143,26 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // create the html editor viewer
   mpHTMLEditor = new DocumentationViewer(this, true);
   // editor actions
+  // style combobox
+  mpStyleComboBox = new QComboBox;
+  mpStyleComboBox->setMinimumHeight(toolbarIconSize);
+  mpStyleComboBox->setToolTip(tr("Style"));
+  mpStyleComboBox->setStatusTip(tr("Sets the text style"));
+  mpStyleComboBox->addItem(tr("Normal"), "p");
+  mpStyleComboBox->addItem(tr("Heading 1"), "h1");
+  mpStyleComboBox->addItem(tr("Heading 2"), "h2");
+  mpStyleComboBox->addItem(tr("Heading 3"), "h3");
+  mpStyleComboBox->addItem(tr("Heading 4"), "h4");
+  mpStyleComboBox->addItem(tr("Heading 5"), "h5");
+  mpStyleComboBox->addItem(tr("Heading 6"), "h6");
+  mpStyleComboBox->addItem(tr("Preformatted"), "pre");
+  connect(mpStyleComboBox, SIGNAL(currentIndexChanged(int)), SLOT(formatBlock(int)));
+  // font combobox
+  mpFontComboBox = new QFontComboBox;
+  mpFontComboBox->setMinimumHeight(toolbarIconSize);
+  mpFontComboBox->setToolTip(tr("Font"));
+  mpFontComboBox->setStatusTip(tr("Sets the text font"));
+  connect(mpFontComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontName(QFont)));
   // bold action
   mpBoldAction = new QAction(QIcon(":/Resources/icons/bold-icon.svg"), Helper::bold, this);
   mpBoldAction->setStatusTip(tr("Make your text bold"));
@@ -262,6 +282,8 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pAlignmentButtonGroup->addButton(mpAlignRightToolButton);
   pAlignmentButtonGroup->addButton(mpJustifyToolButton);
   // add actions to toolbar
+  mpEditorToolBar->addWidget(mpStyleComboBox);
+  mpEditorToolBar->addWidget(mpFontComboBox);
   mpEditorToolBar->addAction(mpBoldAction);
   mpEditorToolBar->addAction(mpItalicAction);
   mpEditorToolBar->addAction(mpUnderlineAction);
@@ -404,6 +426,63 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief DocumentationWidget::execCommand
+ * Calls the document.execCommand API.
+ * \param commandName
+ * \sa DocumentationWidget::execCommand(commandName, valueArgument)
+ */
+void DocumentationWidget::execCommand(const QString &commandName)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.execCommand(\"%1\", false, null)").arg(commandName);
+  pWebFrame->evaluateJavaScript(javaScript);
+}
+
+/*!
+ * \brief DocumentationWidget::execCommand
+ * Calls the document.execCommand API.
+ * \param command
+ * \param valueArgument
+ * \sa DocumentationWidget::execCommand(commandName)
+ */
+void DocumentationWidget::execCommand(const QString &command, const QString &valueArgument)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.execCommand(\"%1\", false, \"%2\")").arg(command).arg(valueArgument);
+  pWebFrame->evaluateJavaScript(javaScript);
+}
+
+/*!
+ * \brief DocumentationWidget::queryCommandState
+ * Calls the document.queryCommandState API.\n
+ * Returns true if the command is enabled e.g., if the text is bold then document.queryCommandState("bold", false, null) returns true.
+ * \param commandName
+ * \return
+ */
+bool DocumentationWidget::queryCommandState(const QString &commandName)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.queryCommandState(\"%1\", false, null)").arg(commandName);
+  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  return result.toString().simplified().toLower() == "true";
+}
+
+/*!
+ * \brief DocumentationWidget::queryCommandValue
+ * Calls the document.queryCommandValue API.\n
+ * Returns the command value e.g., if the text is heading 1 then document.queryCommandValue("formatBlock", false, null) returns h1.
+ * \param commandName
+ * \return
+ */
+QString DocumentationWidget::queryCommandValue(const QString &commandName)
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("document.queryCommandValue(\"%1\", false, null)").arg(commandName);
+  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  return result.toString();
+}
+
+/*!
  * \brief DocumentationWidget::createPixmapForToolButton
  * Creates a new pixmap which contains the QIcon and the QColor in the bottom.
  * \param color
@@ -457,28 +536,6 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   out.setCodec(Helper::utf8.toStdString().data());
   out << documentation;
   mDocumentationFile.close();
-}
-
-void DocumentationWidget::execCommand(const QString &commandName)
-{
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
-  QString javaScript = QString("document.execCommand(\"%1\", false, null)").arg(commandName);
-  pWebFrame->evaluateJavaScript(javaScript);
-}
-
-void DocumentationWidget::execCommand(const QString &command, const QString &valueArgument)
-{
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
-  QString javaScript = QString("document.execCommand(\"%1\", false, \"%2\")").arg(command).arg(valueArgument);
-  pWebFrame->evaluateJavaScript(javaScript);
-}
-
-bool DocumentationWidget::queryCommandState(const QString &commandName)
-{
-  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
-  QString javaScript = QString("document.queryCommandState(\"%1\", false, null)").arg(commandName);
-  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
-  return result.toString().simplified().toLower() == "true";
 }
 
 /*!
@@ -537,7 +594,7 @@ void DocumentationWidget::editInfoDocumentation()
       mpDocumentationViewer->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
-      mpHTMLEditor->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->setFocusInternal();
     }
   }
 }
@@ -572,7 +629,7 @@ void DocumentationWidget::editRevisionsDocumentation()
       mpDocumentationViewer->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
-      mpHTMLEditor->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->setFocusInternal();
     }
   }
 }
@@ -607,7 +664,7 @@ void DocumentationWidget::editInfoHeaderDocumentation()
       mpDocumentationViewer->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
-      mpHTMLEditor->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->setFocusInternal();
     }
   }
 }
@@ -730,7 +787,7 @@ void DocumentationWidget::toggleEditor(int tabIndex)
       }
       mpHTMLSourceEditor->hide();
       mpHTMLEditorWidget->show();
-      mpHTMLEditor->setFocus(Qt::ActiveWindowFocusReason);
+      mpHTMLEditor->setFocusInternal();
       break;
   }
 }
@@ -752,6 +809,40 @@ void DocumentationWidget::updateActions()
   mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
   mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
   mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
+  bool state = mpStyleComboBox->blockSignals(true);
+  QString format = queryCommandValue("formatBlock");
+  int currentIndex = mpStyleComboBox->findData(format);
+  if (currentIndex > -1) {
+    mpStyleComboBox->setCurrentIndex(currentIndex);
+  } else {
+    mpStyleComboBox->setCurrentIndex(0);
+  }
+  mpStyleComboBox->blockSignals(state);
+  state = mpFontComboBox->blockSignals(true);
+  QString fontName = queryCommandValue("fontName");
+  // font name has extra single quote around it so remove it.
+  fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
+  currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpFontComboBox->setCurrentIndex(currentIndex);
+  }
+  mpFontComboBox->blockSignals(state);
+}
+
+/*!
+ * \brief DocumentationWidget::formatBlock
+ * SLOT activated when style combobox is changed.
+ * \param index
+ */
+void DocumentationWidget::formatBlock(int index)
+{
+  QString format = mpStyleComboBox->itemData(index).toString();
+  execCommand("formatBlock", format);
+}
+
+void DocumentationWidget::fontName(QFont font)
+{
+  execCommand("fontName", font.family());
 }
 
 /*!
@@ -916,6 +1007,21 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
 }
 
 /*!
+ * \brief DocumentationViewer::setFocusInternal
+ * Sets the focus on QWebView.\n
+ * QWebView need an initial mouse click to show the cursor.
+ */
+void DocumentationViewer::setFocusInternal()
+{
+  setFocus(Qt::ActiveWindowFocusReason);
+  QPoint center = QPoint(0, 0);
+  QMouseEvent *pMouseEvent1 = new QMouseEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QMouseEvent *pMouseEvent2 = new QMouseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::postEvent(this, pMouseEvent1);
+  QApplication::postEvent(this, pMouseEvent2);
+}
+
+/*!
  * \brief DocumentationViewer::createActions
  */
 void DocumentationViewer::createActions()
@@ -1059,24 +1165,29 @@ QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
  */
 void DocumentationViewer::keyPressEvent(QKeyEvent *event)
 {
-  if (page()->isContentEditable()) {
-    QWebView::keyPressEvent(event);
-    return;
-  }
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
-  if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
-    if (mpDocumentationWidget->getNextToolButton()->isEnabled()) {
-      mpDocumentationWidget->nextDocumentation();
+  // if editable QWebView
+  if (page()->isContentEditable()) {
+    if (!shiftModifier && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)) {
+      mpDocumentationWidget->execCommand("insertHTML", "<p><br></p>");
+    } else {
+      QWebView::keyPressEvent(event);
     }
-  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
-    if (mpDocumentationWidget->getPreviousToolButton()->isEnabled()) {
-      mpDocumentationWidget->previousDocumentation();
+  } else { // if non-editable QWebView
+    if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
+      if (mpDocumentationWidget->getNextToolButton()->isEnabled()) {
+        mpDocumentationWidget->nextDocumentation();
+      }
+    } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
+      if (mpDocumentationWidget->getPreviousToolButton()->isEnabled()) {
+        mpDocumentationWidget->previousDocumentation();
+      }
+    } else if (controlModifier && event->key() == Qt::Key_A) {
+      page()->triggerAction(QWebPage::SelectAll);
+    } else {
+      QWebView::keyPressEvent(event);
     }
-  } else if (controlModifier && event->key() == Qt::Key_A) {
-    page()->triggerAction(QWebPage::SelectAll);
-  } else {
-    QWebView::keyPressEvent(event);
   }
 }
 

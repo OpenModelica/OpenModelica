@@ -41,6 +41,8 @@
 #include <QFile>
 #include <QWebView>
 #include <QToolBar>
+#include <QComboBox>
+#include <QFontComboBox>
 #include <QColorDialog>
 
 class LibraryTreeItem;
@@ -73,6 +75,10 @@ public:
   QToolButton* getNextToolButton() {return mpNextToolButton;}
   DocumentationViewer* getDocumentationViewer() {return mpDocumentationViewer;}
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
+  void execCommand(const QString &commandName);
+  void execCommand(const QString &commandName, const QString &valueArgument);
+  bool queryCommandState(const QString &commandName);
+  QString queryCommandValue(const QString &commandName);
 private:
   QFile mDocumentationFile;
   QToolButton *mpPreviousToolButton;
@@ -88,6 +94,8 @@ private:
   QWidget *mpHTMLEditorWidget;
   QToolBar *mpEditorToolBar;
   DocumentationViewer *mpHTMLEditor;
+  QComboBox *mpStyleComboBox;
+  QFontComboBox *mpFontComboBox;
   QAction *mpBoldAction;
   QAction *mpItalicAction;
   QAction *mpUnderlineAction;
@@ -112,9 +120,6 @@ private:
   QPixmap createPixmapForToolButton(QColor color, QIcon icon);
   void updatePreviousNextButtons();
   void writeDocumentationFile(QString documentation);
-  void execCommand(const QString &commandName);
-  void execCommand(const QString &commandName, const QString &valueArgument);
-  bool queryCommandState(const QString &commandName);
 public slots:
   void previousDocumentation();
   void nextDocumentation();
@@ -125,6 +130,8 @@ public slots:
   void cancelDocumentation();
   void toggleEditor(int tabIndex);
   void updateActions();
+  void formatBlock(int index);
+  void fontName(QFont font);
   void applyTextColor();
   void applyTextColor(QColor color);
   void applyBackgroundColor();
@@ -144,6 +151,7 @@ private:
   DocumentationWidget *mpDocumentationWidget;
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
+  void setFocusInternal();
 private:
   void createActions();
   void resetZoom();
