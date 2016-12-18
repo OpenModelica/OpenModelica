@@ -64,6 +64,7 @@ import MetaModelica.Dangerous;
 import System;
 import Typing = NFTyping;
 import SCodeUtil;
+import ExecStat.{execStat,execStatReset};
 
 public
 function instClassInProgram
@@ -76,11 +77,13 @@ protected
   InstNode top, cls, inst_cls;
   Component top_comp;
   InstNode top_comp_node;
+  String name;
 algorithm
-  System.startTimer();
+  execStatReset();
 
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);
+  name := Absyn.pathString(classPath);
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo);
@@ -93,14 +96,17 @@ algorithm
   // instantiate doesn't update nodes with the instantiated class (only
   // expanded) it means that the component's parent won't be an instantiated
   // class. But the node is mutable, so we can just update cls here.
+
   cls := InstNode.updateClass(InstNode.getClass(inst_cls), cls);
+  execStat("NFInst.instantiate("+ name +")");
 
   // Type and flatten the class.
   inst_cls := Typing.typeClass(inst_cls);
-  dae := Flatten.flatten(inst_cls);
+  execStat("NFTyping.typeClass("+ name +")");
 
-  System.stopTimer();
-  //print("NFInst done in " + String(System.getTimerIntervalTime()) + "\n");
+  dae := Flatten.flatten(inst_cls);
+  execStat("NFFlatten.flatten("+ name +")");
+
 end instClassInProgram;
 
 function instantiate
