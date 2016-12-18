@@ -6135,81 +6135,80 @@ public function getVarBinding "
   input list<DAE.Element> iels;
   input DAE.ComponentRef icr;
   output Option<DAE.Exp> obnd;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp e;
+  list<DAE.Element> lst;
 algorithm
-  obnd :=
-  matchcontinue (iels)
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp e;
-      list<DAE.Element> lst;
+  obnd := NONE();
+  for i in iels loop
+    obnd := match i
+	    case DAE.VAR(componentRef = cr, binding = obnd)
+	      algorithm
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+	        end if;
+	      then
+	        obnd;
 
-   case ({}) then NONE();
+	    case DAE.DEFINE(componentRef = cr, exp = e)
+	      algorithm
+	        obnd := SOME(e);
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+	          return;
+	        end if;
+	      then
+	        obnd;
 
-    case (DAE.VAR(componentRef = cr, binding = obnd)::lst)
-      algorithm
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
+	    case DAE.INITIALDEFINE(componentRef = cr, exp = e)
+	      algorithm
+	        obnd := SOME(e);
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+	          return;
+	        end if;
+	      then
+	        obnd;
 
-    case (DAE.DEFINE(componentRef = cr, exp = e)::lst)
-      algorithm
-        obnd := SOME(e);
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
+	    case DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)
+	      algorithm
+	        obnd := SOME(e);
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+	          return;
+	        end if;
+	      then
+	        obnd;
 
-    case (DAE.INITIALDEFINE(componentRef = cr, exp = e)::lst)
-      algorithm
-        obnd := SOME(e);
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
+	    case DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))
+	      algorithm
+	        obnd := SOME(e);
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+	          return;
+	        end if;
+	      then
+	        obnd;
 
-    case (DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)::lst)
-      algorithm
-        obnd := SOME(e);
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
+	    case DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)
+	      algorithm
+	        obnd := SOME(e);
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+	          return;
+	        end if;
+	      then
+	        obnd;
 
-    case (DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))::lst)
-      algorithm
-        obnd := SOME(e);
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
+	    case DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))
+	      algorithm
+	        obnd := SOME(e);
+	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+	          return;
+	        end if;
+	      then
+	        obnd;
 
-    case (DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)::lst)
-      algorithm
-        obnd := SOME(e);
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
+	    else obnd;
 
-    case (DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))::lst)
-      algorithm
-        obnd := SOME(e);
-        if not ComponentReference.crefEqualNoStringCompare(icr, cr) then
-          obnd := getVarBinding(lst, icr);
-        end if;
-      then
-        obnd;
-
-    case (_::lst)
-      then getVarBinding(lst, icr);
-  end matchcontinue;
+	  end match;
+  end for;
 end getVarBinding;
 
 public function evaluateCref

@@ -38,6 +38,7 @@ import NFPrefix.Prefix;
 import SCode;
 import Absyn;
 
+public
 uniontype InstNodeType
   record NORMAL_CLASS
     "A normal class."

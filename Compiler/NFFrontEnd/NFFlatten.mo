@@ -47,6 +47,7 @@ import NFInstNode.InstNode;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
 
+import ComponentReference;
 import DAE;
 import Error;
 import Expression;
@@ -56,6 +57,7 @@ import List;
 import SCode;
 import System;
 import Util;
+import ElementSource;
 
 protected
 import DAEUtil;
@@ -73,10 +75,11 @@ function flatten
 protected
   list<DAE.Element> elems;
   DAE.Element class_elem;
+  SourceInfo info = InstNode.info(classInst);
 algorithm
   elems := flattenNode(classInst);
   elems := listReverse(elems);
-  class_elem := DAE.COMP(InstNode.name(classInst), elems, DAE.emptyElementSource, NONE());
+  class_elem := DAE.COMP(InstNode.name(classInst), elems, ElementSource.createElementSource(info), NONE());
   dae := DAE.DAE({class_elem});
 end flatten;
 
@@ -245,10 +248,12 @@ algorithm
       Component.Attributes attr;
       list<DAE.Dimension> dims;
       Option<DAE.Exp> binding_exp;
+      SourceInfo info;
 
     case Component.TYPED_COMPONENT()
       algorithm
         i := InstNode.getClass(component.classInst);
+        info := InstNode.info(component.classInst);
 
         elements := match i
           case Class.INSTANCED_BUILTIN()
@@ -267,7 +272,7 @@ algorithm
                 binding_exp,
                 {},
                 attr.connectorType,
-                DAE.emptyElementSource,
+                ElementSource.createElementSource(info),
                 NONE(),
                 NONE(),
                 Absyn.NOT_INNER_OUTER());
@@ -334,10 +339,14 @@ algorithm
       Integer is, ie, step;
 
     case Equation.EQUALITY()
-      then DAE.EQUATION(eq.lhs, eq.rhs, DAE.emptyElementSource) :: elements;
+      algorithm
+        lhs := ExpressionSimplify.simplify(eq.lhs);
+        rhs := ExpressionSimplify.simplify(eq.rhs);
+      then
+        DAE.EQUATION(lhs, rhs, ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, false) :: elements;
+      then flattenIfEquation(eq.branches, eq.info, false) :: elements;
 
     case Equation.FOR()
       algorithm
@@ -367,7 +376,29 @@ algorithm
 
     case Equation.WHEN()
       then
-        flattenWhenEquation(eq.branches)::elements;
+        flattenWhenEquation(eq.branches, eq.info) :: elements;
+
+    case Equation.ASSERT()
+      then
+        DAE.ASSERT(eq.condition, eq.message, eq.level, ElementSource.createElementSource(eq.info)) :: elements;
+
+    case Equation.TERMINATE()
+      then
+        DAE.TERMINATE(eq.message, ElementSource.createElementSource(eq.info)) :: elements;
+
+    case Equation.REINIT()
+      then
+        DAE.REINIT(eq.cref, eq.reinitExp, ElementSource.createElementSource(eq.info)) :: elements;
+
+    case Equation.NORETCALL()
+      then
+        DAE.NORETCALL(eq.exp, ElementSource.createElementSource(eq.info)) :: elements;
+
+    case Equation.CONNECT()
+      algorithm
+        // TODO! FIXME! implement this
+      then
+        elements;
 
     else elements;
   end match;
@@ -389,10 +420,10 @@ algorithm
       DAE.Exp lhs, rhs;
 
     case Equation.EQUALITY()
-      then DAE.INITIALEQUATION(eq.lhs, eq.rhs, DAE.emptyElementSource) :: elements;
+      then DAE.INITIALEQUATION(eq.lhs, eq.rhs, ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, true) :: elements;
+      then flattenIfEquation(eq.branches, eq.info, true) :: elements;
 
     else elements;
   end match;
@@ -407,6 +438,7 @@ end flattenInitialEquations;
 
 function flattenIfEquation
   input list<tuple<DAE.Exp, list<Equation>>> ifBranches;
+  input SourceInfo info;
   input Boolean isInitial;
   output DAE.Element ifEquation;
 protected
@@ -432,44 +464,15 @@ algorithm
   branches := listReverse(branches);
 
   if isInitial then
-    ifEquation := DAE.INITIAL_IF_EQUATION(conditions, branches, else_branch,
-      DAE.emptyElementSource);
+    ifEquation := DAE.INITIAL_IF_EQUATION(conditions, branches, else_branch, ElementSource.createElementSource(info));
   else
-    ifEquation := DAE.IF_EQUATION(conditions, branches, else_branch,
-      DAE.emptyElementSource);
+    ifEquation := DAE.IF_EQUATION(conditions, branches, else_branch, ElementSource.createElementSource(info));
   end if;
 end flattenIfEquation;
 
-function flattenAlgorithm
-  input list<Statement> algSection;
-  input output list<DAE.Element> elements;
-algorithm
-
-end flattenAlgorithm;
-
-function flattenAlgorithms
-  input list<list<Statement>> algorithms;
-  input output list<DAE.Element> elements = {};
-algorithm
-  elements := List.fold(algorithms, flattenAlgorithm, elements);
-end flattenAlgorithms;
-
-function flattenInitialAlgorithm
-  input list<Statement> algSection;
-  input output list<DAE.Element> elements;
-algorithm
-
-end flattenInitialAlgorithm;
-
-function flattenInitialAlgorithms
-  input list<list<Statement>> algorithms;
-  input output list<DAE.Element> elements = {};
-algorithm
-  elements := List.fold(algorithms, flattenInitialAlgorithm, elements);
-end flattenInitialAlgorithms;
-
 function flattenWhenEquation
   input list<tuple<DAE.Exp, list<Equation>>> whenBranches;
+  input SourceInfo info;
   output DAE.Element whenEquation;
 protected
   DAE.Exp cond1,cond2;
@@ -487,13 +490,202 @@ algorithm
   for b in rest loop
     cond2 := Util.tuple21(b);
     els2 := flattenEquations(Util.tuple22(b));
-    whenEquation := DAE.WHEN_EQUATION(cond2, els2,  owhenEquation, DAE.emptyElementSource);
+    whenEquation := DAE.WHEN_EQUATION(cond2, els2, owhenEquation, ElementSource.createElementSource(info));
     owhenEquation := SOME(whenEquation);
   end for;
 
-  whenEquation := DAE.WHEN_EQUATION(cond1, els1,  owhenEquation, DAE.emptyElementSource);
+  whenEquation := DAE.WHEN_EQUATION(cond1, els1, owhenEquation, ElementSource.createElementSource(info));
 
 end flattenWhenEquation;
+
+
+
+function flattenStatement
+  input Statement alg;
+  input output list<DAE.Statement> stmts = {};
+protected
+  list<DAE.Statement> sts;
+  DAE.Exp e;
+  Option<DAE.Exp> oe;
+  list<DAE.Exp> range;
+algorithm
+  stmts := match alg
+    local
+      DAE.Exp lhs, rhs;
+      Integer is, ie, step;
+      DAE.Type ty;
+
+    case Statement.ASSIGNMENT()
+      algorithm
+        lhs := ExpressionSimplify.simplify(alg.lhs);
+        rhs := ExpressionSimplify.simplify(alg.rhs);
+        ty := Expression.typeof(lhs);
+      then
+        DAE.STMT_ASSIGN(ty, lhs, rhs, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.FUNCTION_ARRAY_INIT()
+      then
+        DAE.STMT_ARRAY_INIT(alg.name, alg.ty, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.FOR()
+      algorithm
+        // flatten the list of statements
+        sts := flattenStatements(alg.body);
+        if isSome(alg.range) then
+          SOME(e) := alg.range;
+        else
+          e := DAE.SCONST("NO RANGE GIVEN TODO FIXME");
+        end if;
+      then
+        DAE.STMT_FOR(alg.indexType, false, alg.name, alg.index, e, sts, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.IF()
+      then flattenIfStatement(alg.branches, alg.info) :: stmts;
+
+    case Statement.WHEN()
+      then
+        flattenWhenStatement(alg.branches, alg.info) :: stmts;
+
+    case Statement.ASSERT()
+      then
+        DAE.STMT_ASSERT(alg.condition, alg.message, alg.level, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.TERMINATE()
+      then
+        DAE.STMT_TERMINATE(alg.message, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.REINIT()
+      then
+        DAE.STMT_REINIT(
+          Expression.makeCrefExp(alg.cref, ComponentReference.crefType(alg.cref)),
+          alg.reinitExp,
+          ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.NORETCALL()
+      then
+        DAE.STMT_NORETCALL(alg.exp, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.WHILE()
+      algorithm
+        // flatten the list of statements
+        sts := flattenStatements(alg.body);
+      then
+        DAE.STMT_WHILE(alg.condition, sts, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.RETURN()
+      then
+        DAE.STMT_RETURN(ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.BREAK()
+      then
+        DAE.STMT_BREAK(ElementSource.createElementSource(alg.info)) :: stmts;
+
+    case Statement.FAILURE()
+      algorithm
+        // flatten the list of statements
+        sts := flattenStatements(alg.body);
+      then
+        DAE.STMT_FAILURE(sts, ElementSource.createElementSource(alg.info)) :: stmts;
+
+    else stmts;
+  end match;
+end flattenStatement;
+
+public function flattenStatements
+  input list<Statement> algs;
+  input output list<DAE.Statement> stmts = {};
+algorithm
+  stmts := listReverse(List.fold(algs, flattenStatement, stmts));
+end flattenStatements;
+
+function flattenAlgorithmStmts
+  input list<Statement> algSection;
+  input output list<DAE.Element> elements = {};
+protected
+  DAE.Algorithm alg;
+algorithm
+  alg := DAE.ALGORITHM_STMTS(flattenStatements(algSection));
+  elements := DAE.ALGORITHM(alg, DAE.emptyElementSource) :: elements;
+end flattenAlgorithmStmts;
+
+function flattenAlgorithms
+  input list<list<Statement>> algorithms;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := List.fold(algorithms, flattenAlgorithmStmts, elements);
+end flattenAlgorithms;
+
+function flattenInitialAlgorithmStmts
+  input list<Statement> algSection;
+  input output list<DAE.Element> elements = {};
+protected
+  DAE.Algorithm alg;
+algorithm
+  alg := DAE.ALGORITHM_STMTS(flattenStatements(algSection));
+  elements := DAE.INITIALALGORITHM(alg, DAE.emptyElementSource) :: elements;
+end flattenInitialAlgorithmStmts;
+
+function flattenInitialAlgorithms
+  input list<list<Statement>> algorithms;
+  input output list<DAE.Element> elements = {};
+algorithm
+  elements := List.fold(algorithms, flattenInitialAlgorithmStmts, elements);
+end flattenInitialAlgorithms;
+
+function flattenIfStatement
+  input list<tuple<DAE.Exp, list<Statement>>> ifBranches;
+  input SourceInfo info;
+  output DAE.Statement ifStatement;
+protected
+  DAE.Exp cond1,cond2;
+  list<DAE.Statement> stmts1, stmts2;
+  tuple<DAE.Exp, list<Statement>> head;
+  list<tuple<DAE.Exp, list<Statement>>> rest;
+  DAE.Else elseStatement = DAE.NOELSE();
+algorithm
+
+  head::rest := ifBranches;
+  cond1 := Util.tuple21(head);
+  stmts1 := flattenStatements(Util.tuple22(head));
+  rest := listReverse(rest);
+
+  for b in rest loop
+    cond2 := Util.tuple21(b);
+    stmts2 := flattenStatements(Util.tuple22(b));
+    elseStatement := DAE.ELSEIF(cond2, stmts2, elseStatement);
+  end for;
+
+  ifStatement := DAE.STMT_IF(cond1, stmts1,  elseStatement, ElementSource.createElementSource(info));
+
+end flattenIfStatement;
+
+function flattenWhenStatement
+  input list<tuple<DAE.Exp, list<Statement>>> whenBranches;
+  input SourceInfo info;
+  output DAE.Statement whenStatement;
+protected
+  DAE.Exp cond1,cond2;
+  list<DAE.Statement> stmts1, stmts2;
+  tuple<DAE.Exp, list<Statement>> head;
+  list<tuple<DAE.Exp, list<Statement>>> rest;
+  Option<DAE.Statement> owhenStatement = NONE();
+algorithm
+
+  head::rest := whenBranches;
+  cond1 := Util.tuple21(head);
+  stmts1 := flattenStatements(Util.tuple22(head));
+  rest := listReverse(rest);
+
+  for b in rest loop
+    cond2 := Util.tuple21(b);
+    stmts2 := flattenStatements(Util.tuple22(b));
+    whenStatement := DAE.STMT_WHEN(cond2, {}, false, stmts2, owhenStatement, ElementSource.createElementSource(info));
+    owhenStatement := SOME(whenStatement);
+  end for;
+
+  whenStatement := DAE.STMT_WHEN(cond1, {}, false, stmts1, owhenStatement, ElementSource.createElementSource(info));
+
+end flattenWhenStatement;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

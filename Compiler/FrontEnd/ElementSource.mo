@@ -67,9 +67,9 @@ function createElementSource
 "@author: adrpo
  set the various sources of the element"
   input SourceInfo fileInfo;
-  input Option<Absyn.Path> partOf "the model(s) this element came from";
-  input Prefix.Prefix prefix "the instance(s) this element is part of";
-  input tuple<DAE.ComponentRef, DAE.ComponentRef> connectEquation=(DAE.emptyCref, DAE.emptyCref) "this element came from this connect(s)";
+  input Option<Absyn.Path> partOf = NONE() "the model(s) this element came from";
+  input Prefix.Prefix prefix = Prefix.NOPRE() "the instance(s) this element is part of";
+  input tuple<DAE.ComponentRef, DAE.ComponentRef> connectEquation = (DAE.emptyCref, DAE.emptyCref) "this element came from this connect(s)";
   output DAE.ElementSource source;
 protected
   Absyn.Path path;
