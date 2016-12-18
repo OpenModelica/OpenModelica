@@ -156,5 +156,9 @@
         <file>Resources/icons/superscript-icon.svg</file>
         <file>Resources/icons/text-color-icon.svg</file>
         <file>Resources/icons/background-color-icon.svg</file>
+        <file>Resources/icons/align-left.svg</file>
+        <file>Resources/icons/align-center.svg</file>
+        <file>Resources/icons/align-right.svg</file>
+        <file>Resources/icons/justify.svg</file>
     </qresource>
 </RCC>

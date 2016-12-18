@@ -100,6 +100,10 @@ private:
   QColor mBackgroundColor;
   QColorDialog *mpBackgroundColorDialog;
   QToolButton *mpBackgroundColorToolButton;
+  QToolButton *mpAlignLeftToolButton;
+  QToolButton *mpAlignCenterToolButton;
+  QToolButton *mpAlignRightToolButton;
+  QToolButton *mpJustifyToolButton;
   HTMLEditor *mpHTMLSourceEditor;
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
@@ -125,6 +129,10 @@ public slots:
   void applyTextColor(QColor color);
   void applyBackgroundColor();
   void applyBackgroundColor(QColor color);
+  void alignLeft();
+  void alignCenter();
+  void alignRight();
+  void justify();
   void updateHTMLSourceEditor();
   void updateDocumentationHistory();
 };

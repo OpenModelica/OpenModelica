@@ -50,6 +50,7 @@
 #include <QDesktopWidget>
 #include <QWebFrame>
 #include <QWidgetAction>
+#include <QButtonGroup>
 
 /*!
  * \class DocumentationWidget
@@ -148,27 +149,24 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpBoldAction->setShortcut(QKeySequence("Ctrl+b"));
   mpBoldAction->setCheckable(true);
   connect(mpBoldAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleBold), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleBold), SIGNAL(changed()), SLOT(updateActions()));
   // italic action
   mpItalicAction = new QAction(QIcon(":/Resources/icons/italic-icon.svg"), Helper::italic, this);
   mpItalicAction->setStatusTip(tr("Italicize your text"));
   mpItalicAction->setShortcut(QKeySequence("Ctrl+i"));
   mpItalicAction->setCheckable(true);
   connect(mpItalicAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleItalic), SIGNAL(changed()), SLOT(updateActions()));
   // underline action
   mpUnderlineAction = new QAction(QIcon(":/Resources/icons/underline-icon.svg"), Helper::underline, this);
   mpUnderlineAction->setStatusTip(tr("Underline your text"));
   mpUnderlineAction->setShortcut(QKeySequence("Ctrl+u"));
   mpUnderlineAction->setCheckable(true);
   connect(mpUnderlineAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline), SIGNAL(changed()), SLOT(updateActions()));
   // strikethrough action
   mpStrikethroughAction = new QAction(QIcon(":/Resources/icons/strikethrough-icon.svg"), tr("Strikethrough"), this);
   mpStrikethroughAction->setStatusTip(tr("Cross something out by drawing a line through it"));
   mpStrikethroughAction->setCheckable(true);
   connect(mpStrikethroughAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough), SIGNAL(changed()), SLOT(updateActions()));
+  // subscript superscript action group
   QActionGroup *pSubscriptSuperscriptActionGroup = new QActionGroup(this);
   pSubscriptSuperscriptActionGroup->setExclusive(true);
   // subscript action
@@ -176,14 +174,12 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSubscriptAction->setStatusTip(tr("Type very small letters just below the line of text"));
   mpSubscriptAction->setCheckable(true);
   connect(mpSubscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SIGNAL(changed()), SLOT(updateActions()));
   // superscript action
   mpSuperscriptAction = new QAction(QIcon(":/Resources/icons/superscript-icon.svg"), tr("Superscript"), pSubscriptSuperscriptActionGroup);
   mpSuperscriptAction->setStatusTip(tr("Type very small letters just above the line of text"));
   mpSuperscriptAction->setCheckable(true);
   connect(mpSuperscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
-  connect(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SIGNAL(changed()), SLOT(updateActions()));
-  // text color action
+  // text color toobutton
   mTextColor = Qt::black;
   mpTextColorDialog = new QColorDialog;
   mpTextColorDialog->setWindowFlags(Qt::Widget);
@@ -198,12 +194,13 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   connect(mpTextColorDialog, SIGNAL(rejected()), pTextColorMenu, SLOT(hide()));
   mpTextColorToolButton = new QToolButton;
   mpTextColorToolButton->setText(tr("Text Color"));
+  mpTextColorToolButton->setToolTip(mpTextColorToolButton->text());
   mpTextColorToolButton->setStatusTip(tr("Change the color of your text"));
   mpTextColorToolButton->setMenu(pTextColorMenu);
   mpTextColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpTextColorToolButton->setIcon(createPixmapForToolButton(mTextColor, QIcon(":/Resources/icons/text-color-icon.svg")));
   connect(mpTextColorToolButton, SIGNAL(clicked()), SLOT(applyTextColor()));
-  // background color action
+  // background color toolbutton
   mBackgroundColor = Qt::white;
   mpBackgroundColorDialog = new QColorDialog;
   mpBackgroundColorDialog->setWindowFlags(Qt::Widget);
@@ -218,11 +215,52 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   connect(mpBackgroundColorDialog, SIGNAL(rejected()), pBackgroundColorMenu, SLOT(hide()));
   mpBackgroundColorToolButton = new QToolButton;
   mpBackgroundColorToolButton->setText(tr("Background Color"));
+  mpBackgroundColorToolButton->setToolTip(mpBackgroundColorToolButton->text());
   mpBackgroundColorToolButton->setStatusTip(tr("Change the color of your text"));
   mpBackgroundColorToolButton->setMenu(pBackgroundColorMenu);
   mpBackgroundColorToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpBackgroundColorToolButton->setIcon(createPixmapForToolButton(mBackgroundColor, QIcon(":/Resources/icons/background-color-icon.svg")));
   connect(mpBackgroundColorToolButton, SIGNAL(clicked()), SLOT(applyBackgroundColor()));
+  // align left toolbutton
+  mpAlignLeftToolButton = new QToolButton;
+  mpAlignLeftToolButton->setText(tr("Align Left"));
+  mpAlignLeftToolButton->setToolTip(mpAlignLeftToolButton->text());
+  mpAlignLeftToolButton->setStatusTip(tr("Aligns the text to the left"));
+  mpAlignLeftToolButton->setIcon(QIcon(":/Resources/icons/align-left.svg"));
+  mpAlignLeftToolButton->setCheckable(true);
+  mpAlignLeftToolButton->setChecked(true);
+  connect(mpAlignLeftToolButton, SIGNAL(clicked()), SLOT(alignLeft()));
+  // align center toolbutton
+  mpAlignCenterToolButton = new QToolButton;
+  mpAlignCenterToolButton->setText(tr("Align Center"));
+  mpAlignCenterToolButton->setToolTip(mpAlignCenterToolButton->text());
+  mpAlignCenterToolButton->setStatusTip(tr("Aligns the text to the center"));
+  mpAlignCenterToolButton->setIcon(QIcon(":/Resources/icons/align-center.svg"));
+  mpAlignCenterToolButton->setCheckable(true);
+  connect(mpAlignCenterToolButton, SIGNAL(clicked()), SLOT(alignCenter()));
+  // align right toolbutton
+  mpAlignRightToolButton = new QToolButton;
+  mpAlignRightToolButton->setText(tr("Align Right"));
+  mpAlignRightToolButton->setToolTip(mpAlignRightToolButton->text());
+  mpAlignRightToolButton->setStatusTip(tr("Aligns the text to the right"));
+  mpAlignRightToolButton->setIcon(QIcon(":/Resources/icons/align-right.svg"));
+  mpAlignRightToolButton->setCheckable(true);
+  connect(mpAlignRightToolButton, SIGNAL(clicked()), SLOT(alignRight()));
+  // justify toolbutton
+  mpJustifyToolButton = new QToolButton;
+  mpJustifyToolButton->setText(tr("Justify"));
+  mpJustifyToolButton->setToolTip(mpJustifyToolButton->text());
+  mpJustifyToolButton->setStatusTip(tr("Justifies the text evenly"));
+  mpJustifyToolButton->setIcon(QIcon(":/Resources/icons/justify.svg"));
+  mpJustifyToolButton->setCheckable(true);
+  connect(mpJustifyToolButton, SIGNAL(clicked()), SLOT(justify()));
+  // alignment button group
+  QButtonGroup *pAlignmentButtonGroup = new QButtonGroup;
+  pAlignmentButtonGroup->setExclusive(true);
+  pAlignmentButtonGroup->addButton(mpAlignLeftToolButton);
+  pAlignmentButtonGroup->addButton(mpAlignCenterToolButton);
+  pAlignmentButtonGroup->addButton(mpAlignRightToolButton);
+  pAlignmentButtonGroup->addButton(mpJustifyToolButton);
   // add actions to toolbar
   mpEditorToolBar->addAction(mpBoldAction);
   mpEditorToolBar->addAction(mpItalicAction);
@@ -233,6 +271,13 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->addSeparator();
   mpEditorToolBar->addWidget(mpTextColorToolButton);
   mpEditorToolBar->addWidget(mpBackgroundColorToolButton);
+  mpEditorToolBar->addSeparator();
+  mpEditorToolBar->addWidget(mpAlignLeftToolButton);
+  mpEditorToolBar->addWidget(mpAlignCenterToolButton);
+  mpEditorToolBar->addWidget(mpAlignRightToolButton);
+  mpEditorToolBar->addWidget(mpJustifyToolButton);
+  // update the actions whenever the selectionChanged signal is raised.
+  connect(mpHTMLEditor->page(), SIGNAL(selectionChanged()), SLOT(updateActions()));
   // add a layout to html editor widget
   QVBoxLayout *pHTMLWidgetLayout = new QVBoxLayout;
   pHTMLWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -692,7 +737,7 @@ void DocumentationWidget::toggleEditor(int tabIndex)
 
 /*!
  * \brief DocumentationWidget::updateActions
- * Slot activated when QWebView::pageAction() changed SIGNAL is raised.\n
+ * Slot activated when QWebView::page() selecionChanged SIGNAL is raised.\n
  * Updates the actions according to the cursor position.
  */
 void DocumentationWidget::updateActions()
@@ -703,13 +748,28 @@ void DocumentationWidget::updateActions()
   mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
   mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
   mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
+  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
+  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
+  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
 }
 
+/*!
+ * \brief DocumentationWidget::applyTextColor
+ * SLOT activated when text color button is clicked.\n
+ * \sa DocumentationWidget::applyTextColor(QColor color)
+ */
 void DocumentationWidget::applyTextColor()
 {
   applyTextColor(mTextColor);
 }
 
+/*!
+ * \brief DocumentationWidget::applyTextColor
+ * SLOT activated when user selects a text color.\n
+ * Applies the text color by executing command foreColor.
+ * \param color
+ */
 void DocumentationWidget::applyTextColor(QColor color)
 {
   mTextColor = color;
@@ -717,16 +777,63 @@ void DocumentationWidget::applyTextColor(QColor color)
   execCommand("foreColor", color.name());
 }
 
+/*!
+ * \brief DocumentationWidget::applyBackgroundColor
+ * SLOT activated when background color button is clicked.\n
+ * \sa DocumentationWidget::applyBackgroundColor(QColor color)
+ */
 void DocumentationWidget::applyBackgroundColor()
 {
-  applyTextColor(mBackgroundColor);
+  applyBackgroundColor(mBackgroundColor);
 }
 
+/*!
+ * \brief DocumentationWidget::applyBackgroundColor
+ * SLOT activated when user selects a baclground color.\n
+ * Applies the text color by executing command hiliteColor.
+ * \param color
+ */
 void DocumentationWidget::applyBackgroundColor(QColor color)
 {
   mBackgroundColor = color;
   mpBackgroundColorToolButton->setIcon(createPixmapForToolButton(mBackgroundColor, QIcon(":/Resources/icons/background-color-icon.svg")));
   execCommand("hiliteColor", color.name());
+}
+
+/*!
+ * \brief DocumentationWidget::alignLeft
+ * Aligns the text left by executing command justifyLeft.
+ */
+void DocumentationWidget::alignLeft()
+{
+  execCommand("justifyLeft");
+}
+
+/*!
+ * \brief DocumentationWidget::alignCenter
+ * Aligns the text center by executing command justifyCenter.
+ */
+void DocumentationWidget::alignCenter()
+{
+  execCommand("justifyCenter");
+}
+
+/*!
+ * \brief DocumentationWidget::alignRight
+ * Aligns the text right by executing command justifyRight.
+ */
+void DocumentationWidget::alignRight()
+{
+  execCommand("justifyRight");
+}
+
+/*!
+ * \brief DocumentationWidget::justify
+ * Justifies the text by executing command justifyFull.
+ */
+void DocumentationWidget::justify()
+{
+  execCommand("justifyFull");
 }
 
 /*!
