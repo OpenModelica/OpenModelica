@@ -33,8 +33,6 @@
 #include <iostream>
 #include <sstream>
 #include <stack>
-#include "omc_msvc.h" /* For round() */
-#include "meta_modelica.h"
 
 #ifndef NO_LPLIB
 
@@ -52,7 +50,7 @@
 /*   CLASS: Rational                                                                   */
 /***************************************************************************************/
 
-Rational::Rational(long numerator, long denominator) {
+Rational::Rational(mmc_sint_t numerator, mmc_sint_t denominator) {
   num = numerator;
   denom = denominator;
   fixsign();
@@ -64,16 +62,16 @@ void Rational::rationalize(double r) {
 #ifndef NO_LPLIB
   const double eps = 1e-6;
   double rapp;
-  long numerator = (long) r;
-  long denominator = 1;
+  mmc_sint_t numerator = (mmc_sint_t) r;
+  mmc_sint_t denominator = 1;
   r = round(r / eps) * eps;
   do {
     rapp = (double) numerator / (double) denominator;
     denominator *= 10;
-    numerator = (long) (r * denominator);
+    numerator = (mmc_sint_t) (r * denominator);
   } while (fabs(r - rapp) > eps);
 
-  long d = gcd(numerator, denominator);
+  mmc_sint_t d = gcd(numerator, denominator);
   num = numerator / d;
   denom = denominator / d;
   //cout << "Rationalized " << r << " to " << num << " / " << denom << endl;
@@ -90,7 +88,7 @@ bool Rational::isZero() {
   return num == 0;
 }
 
-bool Rational::is(long numerator, long denominator) {
+bool Rational::is(mmc_sint_t numerator, mmc_sint_t denominator) {
   return (num == numerator) && (denom == denominator);
 }
 
@@ -131,7 +129,7 @@ Rational Rational::div(Rational q1, Rational q2) {
 }
 
 Rational Rational::simplify(const Rational q) {
-  long gcd = Rational::gcd(q.num, q.denom);
+  mmc_sint_t gcd = Rational::gcd(q.num, q.denom);
   Rational q2(Rational(q.num / gcd, q.denom / gcd));
   q2.fixsign();
   return q2;
@@ -144,9 +142,9 @@ void Rational::fixsign() {
   }
 }
 
-long Rational::gcd(long a, long b) {
+mmc_sint_t Rational::gcd(mmc_sint_t a, mmc_sint_t b) {
   while (b != 0) {
-    long t = b;
+    mmc_sint_t t = b;
     b = a % b;
     a = t;
   }
@@ -309,7 +307,7 @@ void UnitParser::addBase(const string quantityName, const string unitName,
     u.quantityName = b.quantityName;
     u.unitName = b.unitName;
     u.unitSymbol = unitSymbol;
-    for (unsigned long j = 0; j < _base.size(); j++) {
+    for (mmc_uint_t j = 0; j < _base.size(); j++) {
       u.unitVec.push_back(Rational((_base.size() - 1) == j ? 1 : 0));
     }
 
@@ -994,7 +992,7 @@ UnitRes UnitParser::parseSymbol(Scanner& scan, Unit& unit) {
 UnitRes UnitParser::parseRational(Scanner& scan, Rational& q) {
 
   string str;
-  long l1, l2;
+  mmc_sint_t l1, l2;
   Scanner::TokenType tok = scan.getToken(str);
   if (tok == scan.TOK_INT) {
     istringstream iss1(str);

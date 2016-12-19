@@ -37,18 +37,20 @@
 #include <map>
 #include <list>
 #include <set>
+#include "omc_msvc.h" /* For round() */
+#include "meta_modelica.h"
 
 using namespace std;
 
 class Rational{
 public:
-  Rational(long numerator=0, long denominator=1);
+  Rational(mmc_sint_t numerator=0, mmc_sint_t denominator=1);
   Rational(const Rational& r);
   virtual ~Rational(){;}
-  long num;  //numerator
-  long denom;  //denominator
+  mmc_sint_t num;  //numerator
+  mmc_sint_t denom;  //denominator
   bool isZero();
-  bool is(long numerator, long denominator=1);
+  bool is(mmc_sint_t numerator, mmc_sint_t denominator=1);
   string toString(); //e.g. "(7/9)". If denominator is one, only numerator is printed, e.g. "7".
   double toReal();
   void rationalize(double r);
@@ -59,7 +61,7 @@ public:
   static Rational add(Rational q1, Rational q2);
   static Rational mul(Rational q1, Rational q2);
   static Rational div(Rational q1, Rational q2);
-  static long gcd(long a, long b);
+  static mmc_sint_t gcd(mmc_sint_t a, mmc_sint_t b);
 
 };
 
@@ -95,7 +97,7 @@ struct UnitRes{
 
 class Unit{
 public:
-  Unit(long pExp=0, long sFact=1, long off=0,double w = 1.0,bool b=false) :
+  Unit(mmc_sint_t pExp=0, mmc_sint_t sFact=1, mmc_sint_t off=0,double w = 1.0,bool b=false) :
     prefixExpo(Rational(pExp)), scaleFactor(Rational(sFact)), offset(Rational(off)), prefixAllowed(true), weight(w) {;}
 
   /** Vector stating exponents to the unit vector */

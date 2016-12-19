@@ -12,7 +12,7 @@ extern "C"
 
 const char* UnitParserExt_unit2str(void *nums, void *denoms, void *tpnoms, void *tpdenoms, void *tpstrs)
 {
-  long int i1,i2;
+  mmc_sint_t i1,i2;
   string tpParam;
   Unit unit;
   unit.unitVec.clear();
