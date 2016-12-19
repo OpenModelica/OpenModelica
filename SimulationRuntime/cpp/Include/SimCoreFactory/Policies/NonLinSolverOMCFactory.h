@@ -83,6 +83,19 @@ public:
             }
             nonlin_solver_key.assign("extension_export_hybrj");
         }
+        else if(nonlin_solver.compare("nox")==0)
+        {
+            fs::path nox_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path nox_name(NOX_LIB);
+            nox_path/=nox_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(nox_path.string(),*_non_linsolver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Nox solver library!");
+            }
+            nonlin_solver_key.assign("extension_export_nox");
+        }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlinear solver is not available");
         _last_selected_solver =  nonlin_solver;
