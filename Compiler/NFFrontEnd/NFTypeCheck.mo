@@ -1859,6 +1859,7 @@ Use in places where only arrays are expected"
 algorithm
   outDims := match (inType)
     case DAE.T_ARRAY() then inType.dims;
+    case DAE.T_FUNCTION() then getArrayTypeDims(inType.funcResultType);
     else fail();
   end match;
 end getArrayTypeDims;
@@ -1870,6 +1871,7 @@ public function getTypeDims
 algorithm
   outDims := match (inType)
     case DAE.T_ARRAY() then inType.dims;
+    case DAE.T_FUNCTION() then getTypeDims(inType.funcResultType);
     else {};
   end match;
 end getTypeDims;
@@ -1880,6 +1882,7 @@ public function getNrDims
 algorithm
   outNrDims := match (inType)
     case DAE.T_ARRAY() then listLength(inType.dims);
+    case DAE.T_FUNCTION() then getNrDims(inType.funcResultType);
     else 0;
   end match;
 end getNrDims;
@@ -1890,6 +1893,7 @@ public function underlyingType
 algorithm
   outType := match(inType)
     case DAE.T_ARRAY() then inType.ty;
+    case DAE.T_FUNCTION() then underlyingType(inType.funcResultType);
     else inType;
   end match;
 end underlyingType;
@@ -2002,14 +2006,19 @@ algorithm
       Integer ns;
       DAE.Type t;
       DAE.Dimensions dims;
-    case (DAE.T_ARRAY(ty = t, dims = dims))
+
+    case DAE.T_ARRAY(ty = t, dims = dims)
       equation
         // TODO: we shouldn't allow T_ARRAY(T_ARRAY(),_,_) structures anymore
         // Make sure it gets caught.
         ns = getArrayNumberOfDimensions(t) + listLength(dims);
       then
         ns;
+
+    case DAE.T_FUNCTION() then getArrayNumberOfDimensions(inType.funcResultType);
+
     else 0;
+
   end match;
 end getArrayNumberOfDimensions;
 

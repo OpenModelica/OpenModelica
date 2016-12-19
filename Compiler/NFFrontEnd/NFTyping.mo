@@ -204,7 +204,7 @@ algorithm
     case Class.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
-          components[i] := typeComponentBinding(components[i]);
+          components[i] := typeComponentBinding(components[i], classNode);
         end for;
       then
         ();
@@ -222,6 +222,7 @@ end typeComponentBindings;
 
 function typeComponentBinding
   input output InstNode component;
+  input InstNode scope;
 protected
   Component c = InstNode.component(component);
 algorithm
@@ -237,7 +238,7 @@ algorithm
     // An untyped component, type it.
     case Component.TYPED_COMPONENT()
       algorithm
-        binding := typeBinding(c.binding, component);
+        binding := typeBinding(c.binding, scope);
 
         if not referenceEq(binding, c.binding) then
           c.binding := binding;
@@ -973,7 +974,7 @@ algorithm
       algorithm
         exp := typeExp(inSub.subscript,scope,info);
         ty := Expression.typeof(exp);
-        ty := TypeCheck.underlyingType(ty);
+        ty := Types.arrayElementType(ty);
         valid := TypeCheck.isInteger(ty) or TypeCheck.isBoolean(ty) or TypeCheck.isEnum(ty);
         if not valid then
           Error.addInternalError("Subscript is not a valid type. \n", info);

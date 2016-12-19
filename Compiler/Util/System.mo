@@ -1272,5 +1272,18 @@ external "C" res=SystemImpl__relocateFunctions(fileName, names) annotation(Libra
 </html>"));
 end relocateFunctions;
 
+function fflush
+external "C" SystemImpl__fflush() annotation(Include = "
+#include <stdio.h>
+void SystemImpl__fflush(void)
+{
+  fflush(NULL);
+}
+",Documentation(info="<html>
+<p>This function will call fflush(NULL) to flush all buffers.</p>
+</html>"));
+end fflush;
+
+
 annotation(__OpenModelica_Interface="util");
 end System;

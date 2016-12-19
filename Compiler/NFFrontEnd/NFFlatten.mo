@@ -163,7 +163,6 @@ protected
   DAE.Dimension dim;
   list<DAE.Dimension> rest_dims;
   Prefix sub_pre;
-  DAE.ComponentRef cr;
   Option<DAE.Exp> oe;
   DAE.Exp e;
   Integer i;
@@ -180,9 +179,9 @@ algorithm
       case DAE.DIM_ENUM()
         then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
             rest_dims, prefix, subscripts, scalarFunc, elements);
-      case DAE.DIM_EXP(DAE.CREF(componentRef = cr))
+      case DAE.DIM_EXP(e)
         algorithm
-          SOME(DAE.ICONST(i)) := DAEUtil.evaluateCref(cr, elements);
+          SOME(DAE.ICONST(i)) := DAEUtil.evaluateExp(e, elements);
         then flattenArrayIntDim(element, i, rest_dims, prefix,
                                            subscripts, scalarFunc, elements);
       else
@@ -301,6 +300,7 @@ algorithm
   bindingExp := match binding
     local
       list<DAE.Subscript> subs;
+      DAE.Exp e;
 
     case Binding.UNBOUND() then NONE();
 
@@ -312,8 +312,11 @@ algorithm
         // TODO: Implement this in a saner way.
         subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
           binding.propagatedDims);
+        // try Expression.applyExpSubscripts directly as Expression.subscriptExp
+        // does not work for indexing expressions containing functions
+        e := Expression.applyExpSubscripts(binding.bindingExp, subs);
       then
-        SOME(Expression.subscriptExp(binding.bindingExp, subs));
+        SOME(e);
 
     else
       algorithm

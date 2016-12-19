@@ -449,7 +449,8 @@ algorithm
 
           // Initialize the modifiers from the extends clause.
           mod_scope := ModifierScope.EXTENDS_SCOPE(e.baseClassPath);
-          mod := Modifier.create(e.modifications, "", mod_scope, ext_node);
+          // adrpo: TODO! FIXME! the modifier scope of the extends clause should be the currentScope not ext_node??!!
+          mod := Modifier.create(e.modifications, "", mod_scope, currentScope);
 
           // Apply the modifier from the extends clause to the expanded class.
           ext_inst := InstNode.getClass(ext_node);
