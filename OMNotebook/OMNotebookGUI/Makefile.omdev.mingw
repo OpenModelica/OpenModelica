@@ -4,16 +4,13 @@ endif
 
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_share=$(OMBUILDDIR)/share/
+resourcedir=./Resources/nls/
 
 QMAKE=qmake
 EXE=.exe
 NAME=OMNotebook
 
-Resources/nls/qm.stamp: OMNotebookGUI.pro Resources/nls/*.ts
-	lrelease $<
-	@touch $@
-
-.PHONY: always $(NAME)
+.PHONY: build always $(NAME)
 
 all: build
 
@@ -21,11 +18,15 @@ clean: Makefile
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	rm -rf ../bin/$(NAME)$(EXE) Makefile Makefile.Debug Makefile.Release object_script.*
 
+Resources/nls/qm.stamp: OMNotebookGUI.pro Resources/nls/*.ts
+	lrelease $<
+	@touch $@
+
 $(NAME): Makefile
 	$(MAKE) -f Makefile
 
-build: $(NAME)
-	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/ $(builddir_share)/omedit/nls/
+build: $(NAME) Resources/nls/qm.stamp
+	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/ $(builddir_share)/omnotebook/nls/
 	cp -p $(resourcedir)/*.qm $(builddir_share)/omnotebook/nls/
 	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin);
 	cp -p *.xml $(builddir_share)/omnotebook/
