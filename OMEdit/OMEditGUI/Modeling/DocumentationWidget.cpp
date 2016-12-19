@@ -163,6 +163,15 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpFontComboBox->setToolTip(tr("Font"));
   mpFontComboBox->setStatusTip(tr("Sets the text font"));
   connect(mpFontComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontName(QFont)));
+  // font combobox
+  mpFontSizeSpinBox = new QSpinBox;
+  mpFontSizeSpinBox->setMinimumHeight(toolbarIconSize);
+  mpFontSizeSpinBox->setToolTip(tr("Font Size"));
+  mpFontSizeSpinBox->setStatusTip(tr("Sets the text font size"));
+  mpFontSizeSpinBox->setMinimum(1);
+  mpFontSizeSpinBox->setMaximum(7);
+//  mpFontSizeSpinBox->setSpecialValueText(tr("(Default)"));
+  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(int)), SLOT(fontSize(int)));
   // bold action
   mpBoldAction = new QAction(QIcon(":/Resources/icons/bold-icon.svg"), Helper::bold, this);
   mpBoldAction->setStatusTip(tr("Make your text bold"));
@@ -281,9 +290,38 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pAlignmentButtonGroup->addButton(mpAlignCenterToolButton);
   pAlignmentButtonGroup->addButton(mpAlignRightToolButton);
   pAlignmentButtonGroup->addButton(mpJustifyToolButton);
+  // decrease indent action
+  mpDecreaseIndentAction = new QAction(QIcon(":/Resources/icons/decrease-indent.svg"), tr("Decrease Indent"), this);
+  mpDecreaseIndentAction->setStatusTip(tr("Decreases the indent by moving left"));
+  connect(mpDecreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::Outdent), SLOT(trigger()));
+  // increase indent action
+  mpIncreaseIndentAction = new QAction(QIcon(":/Resources/icons/increase-indent.svg"), tr("Increase Indent"), this);
+  mpIncreaseIndentAction->setStatusTip(tr("Increases the indent by moving right"));
+  connect(mpIncreaseIndentAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::Indent), SLOT(trigger()));
+  // bullet list action
+  mpBulletListAction = new QAction(QIcon(":/Resources/icons/bullet-list.svg"), tr("Bullet List"), this);
+  mpBulletListAction->setStatusTip(tr("Creates a bulleted list"));
+  mpBulletListAction->setCheckable(true);
+  connect(mpBulletListAction, SIGNAL(triggered()), SLOT(bulletList()));
+  // numbered list action
+  mpNumberedListAction = new QAction(QIcon(":/Resources/icons/numbered-list.svg"), tr("Numbered List"), this);
+  mpNumberedListAction->setStatusTip(tr("Creates a numbered list"));
+  mpNumberedListAction->setCheckable(true);
+  connect(mpNumberedListAction, SIGNAL(triggered()), SLOT(numberedList()));
+  // link action
+  mpLinkAction = new QAction(QIcon(":/Resources/icons/link.svg"), tr("Create Link"), this);
+  mpLinkAction->setStatusTip(tr("Creates a link"));
+  mpLinkAction->setEnabled(false);
+  connect(mpLinkAction, SIGNAL(triggered()), SLOT(createLink()));
+  // unklink action
+  mpUnLinkAction = new QAction(QIcon(":/Resources/icons/unlink.svg"), tr("Remove Link"), this);
+  mpUnLinkAction->setStatusTip(tr("Removes a link"));
+  mpUnLinkAction->setEnabled(false);
+  connect(mpUnLinkAction, SIGNAL(triggered()), SLOT(removeLink()));
   // add actions to toolbar
   mpEditorToolBar->addWidget(mpStyleComboBox);
   mpEditorToolBar->addWidget(mpFontComboBox);
+  mpEditorToolBar->addWidget(mpFontSizeSpinBox);
   mpEditorToolBar->addAction(mpBoldAction);
   mpEditorToolBar->addAction(mpItalicAction);
   mpEditorToolBar->addAction(mpUnderlineAction);
@@ -298,11 +336,20 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->addWidget(mpAlignCenterToolButton);
   mpEditorToolBar->addWidget(mpAlignRightToolButton);
   mpEditorToolBar->addWidget(mpJustifyToolButton);
+  mpEditorToolBar->addSeparator();
+  mpEditorToolBar->addAction(mpDecreaseIndentAction);
+  mpEditorToolBar->addAction(mpIncreaseIndentAction);
+  mpEditorToolBar->addSeparator();
+  mpEditorToolBar->addAction(mpBulletListAction);
+  mpEditorToolBar->addAction(mpNumberedListAction);
+//  mpEditorToolBar->addSeparator();
+//  mpEditorToolBar->addAction(mpLinkAction);
+//  mpEditorToolBar->addAction(mpUnLinkAction);
   // update the actions whenever the selectionChanged signal is raised.
   connect(mpHTMLEditor->page(), SIGNAL(selectionChanged()), SLOT(updateActions()));
   // add a layout to html editor widget
   QVBoxLayout *pHTMLWidgetLayout = new QVBoxLayout;
-  pHTMLWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pHTMLWidgetLayout->setAlignment(Qt::AlignTop);
   pHTMLWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pHTMLWidgetLayout->setSpacing(0);
   pHTMLWidgetLayout->addWidget(mpEditorToolBar);
@@ -316,7 +363,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
   // eidtors widget layout
   QVBoxLayout *pEditorsWidgetLayout = new QVBoxLayout;
-  pEditorsWidgetLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pEditorsWidgetLayout->setAlignment(Qt::AlignTop);
   pEditorsWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pEditorsWidgetLayout->setSpacing(0);
   pEditorsWidgetLayout->addWidget(mpTabBar);
@@ -799,16 +846,6 @@ void DocumentationWidget::toggleEditor(int tabIndex)
  */
 void DocumentationWidget::updateActions()
 {
-  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
-  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
-  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
-  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
-  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
-  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
-  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
-  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
-  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
-  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
   bool state = mpStyleComboBox->blockSignals(true);
   QString format = queryCommandValue("formatBlock");
   int currentIndex = mpStyleComboBox->findData(format);
@@ -827,6 +864,27 @@ void DocumentationWidget::updateActions()
     mpFontComboBox->setCurrentIndex(currentIndex);
   }
   mpFontComboBox->blockSignals(state);
+  bool ok;
+  int fontSize = queryCommandValue("fontSize").toInt(&ok);
+  if (ok) {
+    state = mpFontSizeSpinBox->blockSignals(true);
+    mpFontSizeSpinBox->setValue(fontSize);
+    mpFontSizeSpinBox->blockSignals(state);
+  }
+  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
+  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
+  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
+  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
+  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
+  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
+  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
+  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
+  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
+  mpBulletListAction->setChecked(queryCommandState("insertUnorderedList"));
+  mpNumberedListAction->setChecked(queryCommandState("insertOrderedList"));
+//  mpLinkAction->setEnabled(mpHTMLEditor->page()->hasSelection());
+//  mpUnLinkAction->setEnabled(mpHTMLEditor->page()->hasSelection() && queryCommandState("unlink"));
 }
 
 /*!
@@ -840,9 +898,28 @@ void DocumentationWidget::formatBlock(int index)
   execCommand("formatBlock", format);
 }
 
+/*!
+ * \brief DocumentationWidget::fontName
+ * Sets the text font name.
+ * \param font
+ */
 void DocumentationWidget::fontName(QFont font)
 {
+//  execCommand("styleWithCSS", "true");
   execCommand("fontName", font.family());
+//  execCommand("styleWithCSS", "false");
+}
+
+/*!
+ * \brief DocumentationWidget::fontSize
+ * Sets the text font size.
+ * \param size
+ */
+void DocumentationWidget::fontSize(int size)
+{
+//  execCommand("styleWithCSS", "true");
+  execCommand("fontSize", QString::number(size));
+//  execCommand("styleWithCSS", "false");
 }
 
 /*!
@@ -925,6 +1002,44 @@ void DocumentationWidget::alignRight()
 void DocumentationWidget::justify()
 {
   execCommand("justifyFull");
+}
+
+/*!
+ * \brief DocumentationWidget::bulletList
+ * Inserts the unordered list.
+ */
+void DocumentationWidget::bulletList()
+{
+  execCommand("insertUnorderedList");
+}
+
+/*!
+ * \brief DocumentationWidget::numberedList
+ * Inserts the ordered list.
+ */
+void DocumentationWidget::numberedList()
+{
+  execCommand("insertOrderedList");
+}
+
+/*!
+ * \brief DocumentationWidget::createLink
+ * Creates a link.
+ */
+void DocumentationWidget::createLink()
+{
+  QString link = queryCommandValue("createLink");
+  qDebug() << link;
+  execCommand("createLink", "http://www.google.com");
+}
+
+/*!
+ * \brief DocumentationWidget::removeLink
+ * Removes the link.
+ */
+void DocumentationWidget::removeLink()
+{
+  execCommand("unlink");
 }
 
 /*!
@@ -1170,7 +1285,8 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
   // if editable QWebView
   if (page()->isContentEditable()) {
     if (!shiftModifier && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)) {
-      mpDocumentationWidget->execCommand("insertHTML", "<p><br></p>");
+//      mpDocumentationWidget->execCommand("insertHTML", "<p><br></p>");
+      QWebView::keyPressEvent(event);
     } else {
       QWebView::keyPressEvent(event);
     }

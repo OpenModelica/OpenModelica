@@ -160,5 +160,11 @@
         <file>Resources/icons/align-center.svg</file>
         <file>Resources/icons/align-right.svg</file>
         <file>Resources/icons/justify.svg</file>
+        <file>Resources/icons/decrease-indent.svg</file>
+        <file>Resources/icons/increase-indent.svg</file>
+        <file>Resources/icons/bullet-list.svg</file>
+        <file>Resources/icons/numbered-list.svg</file>
+        <file>Resources/icons/link.svg</file>
+        <file>Resources/icons/unlink.svg</file>
     </qresource>
 </RCC>

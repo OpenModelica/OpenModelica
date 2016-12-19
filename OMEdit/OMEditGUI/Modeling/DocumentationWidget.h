@@ -43,6 +43,7 @@
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
+#include <QSpinBox>
 #include <QColorDialog>
 
 class LibraryTreeItem;
@@ -96,6 +97,7 @@ private:
   DocumentationViewer *mpHTMLEditor;
   QComboBox *mpStyleComboBox;
   QFontComboBox *mpFontComboBox;
+  QSpinBox *mpFontSizeSpinBox;
   QAction *mpBoldAction;
   QAction *mpItalicAction;
   QAction *mpUnderlineAction;
@@ -112,6 +114,12 @@ private:
   QToolButton *mpAlignCenterToolButton;
   QToolButton *mpAlignRightToolButton;
   QToolButton *mpJustifyToolButton;
+  QAction *mpDecreaseIndentAction;
+  QAction *mpIncreaseIndentAction;
+  QAction *mpBulletListAction;
+  QAction *mpNumberedListAction;
+  QAction *mpLinkAction;
+  QAction *mpUnLinkAction;
   HTMLEditor *mpHTMLSourceEditor;
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
@@ -132,6 +140,7 @@ public slots:
   void updateActions();
   void formatBlock(int index);
   void fontName(QFont font);
+  void fontSize(int size);
   void applyTextColor();
   void applyTextColor(QColor color);
   void applyBackgroundColor();
@@ -140,6 +149,10 @@ public slots:
   void alignCenter();
   void alignRight();
   void justify();
+  void bulletList();
+  void numberedList();
+  void createLink();
+  void removeLink();
   void updateHTMLSourceEditor();
   void updateDocumentationHistory();
 };
