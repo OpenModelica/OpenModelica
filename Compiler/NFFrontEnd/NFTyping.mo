@@ -670,9 +670,9 @@ algorithm
   (typedExp, ty, variability) := match untypedExp
     local
       DAE.ComponentRef cref;
-      DAE.Exp e1, e2;
-      DAE.Type ty1, ty2;
-      DAE.Const var1, var2;
+      DAE.Exp e1, e2, e3;
+      DAE.Type ty1, ty2, ty3;
+      DAE.Const var1, var2, var3;
       DAE.Operator op;
 
     case Absyn.Exp.INTEGER()
@@ -747,6 +747,16 @@ algorithm
         (typedExp, ty) := TypeCheck.checkRelationOperation(e1, ty1, op, e2, ty2);
       then
         (typedExp, ty, Types.constAnd(var1, var2));
+
+    case Absyn.Exp.IFEXP()
+      algorithm
+        (e1, ty1, var1) := typeExp(untypedExp.ifExp, scope, info);
+        (e2, ty2, var2) := typeExp(untypedExp.trueBranch, scope, info);
+        (e3, ty3, var3) := typeExp(untypedExp.elseBranch, scope, info);
+
+        (typedExp, ty, variability) := TypeCheck.checkIfExpression(e1, ty1, var1, e2, ty2, var2, e3, ty3, var3, info);
+      then
+        (typedExp, ty, variability);
 
     case Absyn.Exp.CALL()
       algorithm

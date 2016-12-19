@@ -2302,5 +2302,51 @@ algorithm
   end match;
 end getBooleanRangeType;
 
+function checkIfExpression
+  input DAE.Exp condExp;
+  input DAE.Type condType;
+  input DAE.Const condVar;
+  input DAE.Exp thenExp;
+  input DAE.Type thenType;
+  input DAE.Const thenVar;
+  input DAE.Exp elseExp;
+  input DAE.Type elseType;
+  input DAE.Const elseVar;
+  input SourceInfo info;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output DAE.Const outVar;
+protected
+   DAE.Exp ec, e1, e2;
+   String s1, s2, s3, s4;
+   Boolean tyMatch;
+algorithm
+  (ec, _, tyMatch) := Types.matchTypeNoFail(condExp, condType, DAE.T_BOOL_DEFAULT);
+
+  // if the condtion is not boolean that's bad :)
+  if not tyMatch then
+    s1 := ExpressionDump.printExpStr(condExp);
+    s2 := Types.unparseType(condType);
+    Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR , {s1, s2}, info);
+  end if;
+
+  (e1, e2, outType, tyMatch) :=
+    Types.checkTypeCompat(thenExp, thenType, elseExp, elseType);
+
+  // if the types are not matching, print an error and fail.
+  if not tyMatch then
+    s1 := ExpressionDump.printExpStr(thenExp);
+    s2 := ExpressionDump.printExpStr(elseExp);
+    s3 := Types.unparseTypeNoAttr(thenType);
+    s4 := Types.unparseTypeNoAttr(elseType);
+    Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_IF_EXP,
+      {"", s1, s3, s2, s4}, info);
+  end if;
+
+  outExp := DAE.IFEXP(ec, e1, e2);
+  outType := thenType;
+  outVar := Types.constAnd(thenVar, elseVar);
+end checkIfExpression;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;
