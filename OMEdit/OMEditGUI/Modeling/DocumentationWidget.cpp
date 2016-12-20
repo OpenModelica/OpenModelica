@@ -510,7 +510,7 @@ void DocumentationWidget::execCommand(const QString &command, const QString &val
 bool DocumentationWidget::queryCommandState(const QString &commandName)
 {
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
-  QString javaScript = QString("document.queryCommandState(\"%1\", false, null)").arg(commandName);
+  QString javaScript = QString("document.queryCommandState(\"%1\")").arg(commandName);
   QVariant result = pWebFrame->evaluateJavaScript(javaScript);
   return result.toString().simplified().toLower() == "true";
 }
@@ -525,7 +525,7 @@ bool DocumentationWidget::queryCommandState(const QString &commandName)
 QString DocumentationWidget::queryCommandValue(const QString &commandName)
 {
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
-  QString javaScript = QString("document.queryCommandValue(\"%1\", false, null)").arg(commandName);
+  QString javaScript = QString("document.queryCommandValue(\"%1\")").arg(commandName);
   QVariant result = pWebFrame->evaluateJavaScript(javaScript);
   return result.toString();
 }
@@ -579,7 +579,7 @@ void DocumentationWidget::updatePreviousNextButtons()
 void DocumentationWidget::writeDocumentationFile(QString documentation)
 {
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
-  mDocumentationFile.open(QIODevice::WriteOnly | QIODevice::Text);
+  mDocumentationFile.open(QIODevice::WriteOnly);
   QTextStream out(&mDocumentationFile);
   out.setCodec(Helper::utf8.toStdString().data());
   out << documentation;
