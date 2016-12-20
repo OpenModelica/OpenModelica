@@ -70,6 +70,7 @@ import Debug;
 import Dump;
 import ExecStat;
 import Expression;
+import ExpressionDump;
 import Figaro;
 import FindZeroCrossings;
 import Flags;

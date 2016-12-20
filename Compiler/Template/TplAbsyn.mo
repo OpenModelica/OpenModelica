@@ -37,17 +37,19 @@ encapsulated package TplAbsyn
   $Id$
 "
 
-protected import Debug;
-protected import Error;
-protected import Flags;
-protected import List;
-protected import System;
-protected import Util;
+import Tpl;
 
-public import Tpl;
-protected import TplCodegen;
-protected import MetaModelica.Dangerous.listReverseInPlace;
+protected
 
+import AvlSetString;
+import Debug;
+import Error;
+import Flags;
+import List;
+import MetaModelica.Dangerous.listReverseInPlace;
+import System;
+import TplCodegen;
+import Util;
 
 /* Input AST */
 public type Ident = String;
@@ -5437,6 +5439,14 @@ algorithm
   end matchcontinue;
 end splitPackageAndIdent;
 
+protected function getPackageIdent
+  input PathIdent inTypePathIdent;
+
+  output Ident outTypeIdent;
+algorithm
+  (_, outTypeIdent) := splitPackageAndIdent(inTypePathIdent);
+end getPackageIdent;
+
 
 public function makePathIdent
   input PathIdent inPackage;
@@ -6655,6 +6665,131 @@ algorithm
   txt := TplCodegen.mmStatements(eTxt, inStmts); //<statements : mmExp(it, '=')\n>
   outStr := Tpl.textString(txt);
 end stmtsString;
+
+public function removeUnusedImports
+  input output MMPackage pkg;
+protected
+  AvlSetString.Tree set;
+  PathIdent name;
+  Boolean b;
+algorithm
+  set := AvlSetString.EMPTY();
+  for e in pkg.mmDeclarations loop
+    _ := match e
+      case MM_FUN()
+        algorithm
+          set := addTypedIdentsToSet(set, e.inArgs);
+          set := addTypedIdentsToSet(set, e.outArgs);
+          set := addTypedIdentsToSet(set, e.locals);
+          for exp in e.statements loop
+            set := addExpToSet(set, exp);
+          end for;
+        then ();
+      else ();
+    end match;
+  end for;
+  pkg.mmDeclarations := list(elt for elt guard match elt
+    case MM_IMPORT(packageName=name)
+      algorithm
+        b := AvlSetString.hasKey(set, getPackageIdent(name));
+        if not b and Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("removeUnusedImports: "+encodePathIdent(name,"")+"\n");
+        end if;
+      then b;
+    else true;
+  end match in pkg.mmDeclarations);
+end removeUnusedImports;
+
+protected
+
+function addTypedIdentsToSet
+  input output AvlSetString.Tree set;
+  input TypedIdents ids;
+protected
+  TypeSignature sig;
+algorithm
+  for tpl in ids loop
+    (_,sig) := tpl;
+    set := addTypeSignatureToSet(set,sig);
+  end for;
+end addTypedIdentsToSet;
+
+function addTypeSignatureToSet
+  input output AvlSetString.Tree set;
+  input TypeSignature sig;
+protected
+  TypeSignature sig2;
+  list<TypeSignature> sigs;
+  PathIdent name;
+algorithm
+  set := match sig
+    case LIST_TYPE(sig2) then addTypeSignatureToSet(set, sig2);
+    case ARRAY_TYPE(sig2) then addTypeSignatureToSet(set, sig2);
+    case OPTION_TYPE(sig2) then addTypeSignatureToSet(set, sig2);
+    case TUPLE_TYPE(sigs) then List.foldr(sigs, addTypeSignatureToSet, set);
+    case NAMED_TYPE(name) then addPathIdentToSet(set, name);
+    else set;
+  end match;
+end addTypeSignatureToSet;
+
+function addPathIdentToSet
+  input output AvlSetString.Tree set;
+  input PathIdent name;
+algorithm
+  set := match name
+    case IDENT() then AvlSetString.add(set, name.ident);
+    case PATH_IDENT() then AvlSetString.add(set, name.ident);
+  end match;
+end addPathIdentToSet;
+
+function addExpToSet
+  input output AvlSetString.Tree set;
+  input MMExp exp;
+algorithm
+  set := match exp
+    case MM_ASSIGN() then addExpToSet(set, exp.rhs);
+    case MM_FN_CALL() then List.foldr(exp.args, addExpToSet, addPathIdentToSet(set, exp.fnName));
+    case MM_IDENT() then addPathIdentToSet(set, exp.ident);
+    case MM_MATCH() then List.foldr(exp.matchCases, addMatchCaseToSet, set);
+    else set;
+  end match;
+end addExpToSet;
+
+function addMatchCaseToSet
+  input output AvlSetString.Tree set;
+  input MMMatchCase c;
+protected
+  list<MatchingExp> mexps;
+  list<MMExp> exps;
+algorithm
+  (mexps,exps) := c;
+  set := List.foldr(exps, addExpToSet, set);
+  set := List.foldr(mexps, addMatchingExpToSet, set);
+end addMatchCaseToSet;
+
+function addMatchingExpToSet
+  input output AvlSetString.Tree set;
+  input MatchingExp exp;
+protected
+  MatchingExp e;
+algorithm
+  set := match exp
+    case BIND_AS_MATCH() then addMatchingExpToSet(set, exp.matchingExp);
+    case RECORD_MATCH()
+      algorithm
+        set := addPathIdentToSet(set, exp.tagName);
+        for tpl in exp.fieldMatchings loop
+          (_, e) := tpl;
+          set := addMatchingExpToSet(set, e);
+        end for;
+      then set;
+    case SOME_MATCH() then addMatchingExpToSet(set, exp.value);
+    case TUPLE_MATCH() then List.foldr(exp.tupleArgs, addMatchingExpToSet, set);
+    case LIST_MATCH() then List.foldr(exp.listElts, addMatchingExpToSet, set);
+    case LIST_CONS_MATCH() then addMatchingExpToSet(addMatchingExpToSet(set, exp.head), exp.rest);
+    else set;
+  end match;
+end addMatchingExpToSet;
 
 annotation(__OpenModelica_Interface="susan");
 end TplAbsyn;

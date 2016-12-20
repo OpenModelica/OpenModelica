@@ -46,39 +46,41 @@ encapsulated package BackendDump
   into the corresponding section (except unsorted section).
 "
 
-public import BackendDAE;
-public import DAE;
-public import HashSet;
-public import Tpl;
+import BackendDAE;
+import DAE;
+import HashSet;
+import Tpl;
 
-protected import Absyn;
-protected import Array;
-protected import BackendDAEUtil;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BaseHashSet;
-protected import ClassInf;
-protected import CodegenModelica;
-protected import ComponentReference;
-protected import DAEDump;
-protected import DAEUtil;
-protected import Debug;
-protected import DumpHTML;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import GraphvizDump;
-protected import GraphML;
-protected import HpcOmTaskGraph;
-protected import Initialization;
-protected import IOStream;
-protected import List;
-protected import Matching;
-protected import SCode;
-protected import System;
-protected import Util;
-protected import ZeroCrossings;
+protected
+import Absyn;
+import Array;
+import BackendDAEUtil;
+import BackendEquation;
+import BackendVariable;
+import BaseHashSet;
+import ClassInf;
+import CodegenModelica;
+import ComponentReference;
+import DAEDump;
+import DAEUtil;
+import Debug;
+import DumpHTML;
+import ElementSource;
+import Error;
+import Expression;
+import ExpressionDump;
+import Flags;
+import GraphvizDump;
+import GraphML;
+import HpcOmTaskGraph;
+import Initialization;
+import IOStream;
+import List;
+import Matching;
+import SCode;
+import System;
+import Util;
+import ZeroCrossings;
 
 // =============================================================================
 // section for all print* functions

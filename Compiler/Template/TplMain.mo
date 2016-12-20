@@ -60,7 +60,7 @@ public function main
   input String inFile;
 
 algorithm
-  _ := matchcontinue inFile
+  _ := match inFile
     local
       String file, strErrBuf;
 
@@ -71,7 +71,6 @@ algorithm
 
     case ( file )
       equation
-        failure("SusanTest.tpl" = file);
         Print.clearBuf();
         translateFile(file);
         strErrBuf = Print.getErrorString();
@@ -79,7 +78,7 @@ algorithm
         print(strErrBuf);
       then ();
 
-  end matchcontinue;
+  end match;
 end main;
 
 
