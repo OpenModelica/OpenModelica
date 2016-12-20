@@ -332,6 +332,9 @@ public:
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;
   static QString item;
+  static QString bold;
+  static QString italic;
+  static QString underline;
 };
 
 class GUIMessages : public QObject

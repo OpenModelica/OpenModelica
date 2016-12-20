@@ -161,5 +161,23 @@
         <file>Resources/icons/perspective14.svg</file>
         <file>Resources/icons/perspective15.svg</file>
         <file>Resources/icons/perspective16.svg</file>
+        <file>Resources/icons/bold-icon.svg</file>
+        <file>Resources/icons/italic-icon.svg</file>
+        <file>Resources/icons/underline-icon.svg</file>
+        <file>Resources/icons/strikethrough-icon.svg</file>
+        <file>Resources/icons/subscript-icon.svg</file>
+        <file>Resources/icons/superscript-icon.svg</file>
+        <file>Resources/icons/text-color-icon.svg</file>
+        <file>Resources/icons/background-color-icon.svg</file>
+        <file>Resources/icons/align-left.svg</file>
+        <file>Resources/icons/align-center.svg</file>
+        <file>Resources/icons/align-right.svg</file>
+        <file>Resources/icons/justify.svg</file>
+        <file>Resources/icons/decrease-indent.svg</file>
+        <file>Resources/icons/increase-indent.svg</file>
+        <file>Resources/icons/bullet-list.svg</file>
+        <file>Resources/icons/numbered-list.svg</file>
+        <file>Resources/icons/link.svg</file>
+        <file>Resources/icons/unlink.svg</file>
     </qresource>
 </RCC>
