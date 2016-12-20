@@ -67,63 +67,55 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   setObjectName("DocumentationWidget");
   setMinimumWidth(175);
   mDocumentationFile.setFileName(Utilities::tempDirectory() + "/DocumentationWidget.html");
-  // create previous and next buttons for documentation navigation
-  // create the previous button
-  mpPreviousToolButton = new QToolButton;
-  mpPreviousToolButton->setText(Helper::previous);
-  mpPreviousToolButton->setToolTip(tr("Previous (backspace)"));
-  mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.svg"));
-  mpPreviousToolButton->setAutoRaise(true);
-  mpPreviousToolButton->setDisabled(true);
-  connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousDocumentation()));
-  // create the next button
-  mpNextToolButton = new QToolButton;
-  mpNextToolButton->setText(Helper::next);
-  mpNextToolButton->setToolTip(tr("Next (shift+backspace)"));
-  mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.svg"));
-  mpNextToolButton->setAutoRaise(true);
-  mpNextToolButton->setDisabled(true);
-  connect(mpNextToolButton, SIGNAL(clicked()), SLOT(nextDocumentation()));
-  // create the edit info button
-  mpEditInfoToolButton = new QToolButton;
-  mpEditInfoToolButton->setText(tr("Edit Info"));
-  mpEditInfoToolButton->setToolTip(tr("Edit Info Documentation"));
-  mpEditInfoToolButton->setIcon(QIcon(":/Resources/icons/edit-info.svg"));
-  mpEditInfoToolButton->setAutoRaise(true);
-  mpEditInfoToolButton->setDisabled(true);
-  connect(mpEditInfoToolButton, SIGNAL(clicked()), SLOT(editInfoDocumentation()));
-  // create the edit revisions button
-  mpEditRevisionsToolButton = new QToolButton;
-  mpEditRevisionsToolButton->setText(tr("Edit Revisions"));
-  mpEditRevisionsToolButton->setToolTip(tr("Edit Revisions Documentation"));
-  mpEditRevisionsToolButton->setIcon(QIcon(":/Resources/icons/edit-revisions.svg"));
-  mpEditRevisionsToolButton->setAutoRaise(true);
-  mpEditRevisionsToolButton->setDisabled(true);
-  connect(mpEditRevisionsToolButton, SIGNAL(clicked()), SLOT(editRevisionsDocumentation()));
-  // create the edit infoHeader button
-  mpEditInfoHeaderToolButton = new QToolButton;
-  mpEditInfoHeaderToolButton->setText(tr("Edit __OpenModelica_infoHeader"));
-  mpEditInfoHeaderToolButton->setToolTip(tr("Edit __OpenModelica_infoHeader Documentation"));
-  mpEditInfoHeaderToolButton->setIcon(QIcon(":/Resources/icons/edit-info-header.svg"));
-  mpEditInfoHeaderToolButton->setAutoRaise(true);
-  mpEditInfoHeaderToolButton->setDisabled(true);
-  connect(mpEditInfoHeaderToolButton, SIGNAL(clicked()), SLOT(editInfoHeaderDocumentation()));
-  // create the save button
-  mpSaveToolButton = new QToolButton;
-  mpSaveToolButton->setText(Helper::save);
-  mpSaveToolButton->setToolTip(tr("Save Documentation"));
-  mpSaveToolButton->setIcon(QIcon(":/Resources/icons/save.svg"));
-  mpSaveToolButton->setAutoRaise(true);
-  mpSaveToolButton->setDisabled(true);
-  connect(mpSaveToolButton, SIGNAL(clicked()), SLOT(saveDocumentation()));
-  // create the cancel button
-  mpCancelToolButton = new QToolButton;
-  mpCancelToolButton->setText(Helper::cancel);
-  mpCancelToolButton->setToolTip(tr("Cancel Documentation"));
-  mpCancelToolButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
-  mpCancelToolButton->setAutoRaise(true);
-  mpCancelToolButton->setDisabled(true);
-  connect(mpCancelToolButton, SIGNAL(clicked()), SLOT(cancelDocumentation()));
+  // documentation toolbar
+  QToolBar *pDocumentationToolBar = new QToolBar;
+  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  pDocumentationToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
+  // create the previous action
+  mpPreviousAction = new QAction(QIcon(":/Resources/icons/previous.svg"), tr("Previous (backspace)"), this);
+  mpPreviousAction->setStatusTip(tr("Moves to previous documentation"));
+  mpPreviousAction->setDisabled(true);
+  connect(mpPreviousAction, SIGNAL(triggered()), SLOT(previousDocumentation()));
+  // create the next action
+  mpNextAction = new QAction(QIcon(":/Resources/icons/next.svg"), tr("Next (shift+backspace)"), this);
+  mpNextAction->setStatusTip(tr("Moves to next documentation"));
+  mpNextAction->setDisabled(true);
+  connect(mpNextAction, SIGNAL(triggered()), SLOT(nextDocumentation()));
+  // create the edit info action
+  mpEditInfoAction = new QAction(QIcon(":/Resources/icons/edit-info.svg"), tr("Edit Info Documentation"), this);
+  mpEditInfoAction->setStatusTip(tr("Starts editing info documentation"));
+  mpEditInfoAction->setDisabled(true);
+  connect(mpEditInfoAction, SIGNAL(triggered()), SLOT(editInfoDocumentation()));
+  // create the edit revisions action
+  mpEditRevisionsAction = new QAction(QIcon(":/Resources/icons/edit-revisions.svg"), tr("Edit Revisions Documentation"), this);
+  mpEditRevisionsAction->setStatusTip(tr("Starts editing revisions documentation"));
+  mpEditRevisionsAction->setDisabled(true);
+  connect(mpEditRevisionsAction, SIGNAL(triggered()), SLOT(editRevisionsDocumentation()));
+  // create the edit infoHeader action
+  mpEditInfoHeaderAction = new QAction(QIcon(":/Resources/icons/edit-info-header.svg"), tr("Edit __OpenModelica_infoHeader Documentation"), this);
+  mpEditInfoHeaderAction->setStatusTip(tr("Starts editing __OpenModelica_infoHeader documentation"));
+  mpEditInfoHeaderAction->setDisabled(true);
+  connect(mpEditInfoHeaderAction, SIGNAL(triggered()), SLOT(editInfoHeaderDocumentation()));
+  // create the save action
+  mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
+  mpSaveAction->setStatusTip(tr("Saves the edited documentation"));
+  mpSaveAction->setDisabled(true);
+  connect(mpSaveAction, SIGNAL(triggered()), SLOT(saveDocumentation()));
+  // create the cancel action
+  mpCancelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::cancel, this);
+  mpCancelAction->setStatusTip(tr("Cancels the documentation editing"));
+  mpCancelAction->setDisabled(true);
+  connect(mpCancelAction, SIGNAL(triggered()), SLOT(cancelDocumentation()));
+  // add actions to documentation toolbar
+  pDocumentationToolBar->addAction(mpPreviousAction);
+  pDocumentationToolBar->addAction(mpNextAction);
+  pDocumentationToolBar->addSeparator();
+  pDocumentationToolBar->addAction(mpEditInfoAction);
+  pDocumentationToolBar->addAction(mpEditRevisionsAction);
+  pDocumentationToolBar->addAction(mpEditInfoHeaderAction);
+  pDocumentationToolBar->addSeparator();
+  pDocumentationToolBar->addAction(mpSaveAction);
+  pDocumentationToolBar->addAction(mpCancelAction);
   // create the documentation viewer
   mpDocumentationViewer = new DocumentationViewer(this, false);
   // create the editors tab widget
@@ -139,7 +131,6 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpHTMLEditorWidget = new QWidget;
   // editor toolbar
   mpEditorToolBar = new QToolBar;
-  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpEditorToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // create the html editor viewer
   mpHTMLEditor = new DocumentationViewer(this, true);
@@ -319,7 +310,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpUnLinkAction->setStatusTip(tr("Removes a link"));
   mpUnLinkAction->setEnabled(false);
   connect(mpUnLinkAction, SIGNAL(triggered()), SLOT(removeLink()));
-  // add actions to toolbar
+  // add actions to editor toolbar
   mpEditorToolBar->addWidget(mpStyleComboBox);
   mpEditorToolBar->addWidget(mpFontComboBox);
   mpEditorToolBar->addWidget(mpFontSizeSpinBox);
@@ -375,44 +366,6 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // navigation history list
   mpDocumentationHistoryList = new QList<DocumentationHistory>();
   mDocumentationHistoryPos = -1;
-  // Documentation buttons layout
-  QHBoxLayout *pNavigationButtonsLayout = new QHBoxLayout;
-  pNavigationButtonsLayout->setContentsMargins(0, 0, 0, 0);
-  pNavigationButtonsLayout->setSpacing(0);
-  pNavigationButtonsLayout->setAlignment(Qt::AlignLeft);
-  pNavigationButtonsLayout->addWidget(mpPreviousToolButton);
-  pNavigationButtonsLayout->addWidget(mpNextToolButton);
-  // navigation buttons frame
-  QFrame *pNavigationButtonsFrame = new QFrame;
-  pNavigationButtonsFrame->setLayout(pNavigationButtonsLayout);
-  // edit buttons layout
-  QHBoxLayout *pEditButtonsLayout = new QHBoxLayout;
-  pEditButtonsLayout->setContentsMargins(0, 0, 0, 0);
-  pEditButtonsLayout->setSpacing(0);
-  pEditButtonsLayout->setAlignment(Qt::AlignLeft);
-  pEditButtonsLayout->addWidget(mpEditInfoToolButton);
-  pEditButtonsLayout->addWidget(mpEditRevisionsToolButton);
-  pEditButtonsLayout->addWidget(mpEditInfoHeaderToolButton);
-  // edit buttons frame
-  QFrame *pEditButtonsFrame = new QFrame;
-  pEditButtonsFrame->setLayout(pEditButtonsLayout);
-  // save buttons layout
-  QHBoxLayout *pSaveButtonsLayout = new QHBoxLayout;
-  pSaveButtonsLayout->setContentsMargins(0, 0, 0, 0);
-  pSaveButtonsLayout->setSpacing(0);
-  pSaveButtonsLayout->setAlignment(Qt::AlignLeft);
-  pSaveButtonsLayout->addWidget(mpSaveToolButton);
-  pSaveButtonsLayout->addWidget(mpCancelToolButton);
-  // save buttons frame
-  QFrame *pSaveButtonsFrame = new QFrame;
-  pSaveButtonsFrame->setLayout(pSaveButtonsLayout);
-  // buttons status bar
-  QStatusBar *pDocumentationButtonsStatusBar = new QStatusBar;
-  pDocumentationButtonsStatusBar->setObjectName("ModelStatusBar");
-  pDocumentationButtonsStatusBar->setSizeGripEnabled(false);
-  pDocumentationButtonsStatusBar->addWidget(pNavigationButtonsFrame);
-  pDocumentationButtonsStatusBar->addWidget(pEditButtonsFrame);
-  pDocumentationButtonsStatusBar->addWidget(pSaveButtonsFrame);
   // Documentation viewer layout
   QGridLayout *pGridLayout = new QGridLayout;
   pGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -420,7 +373,8 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pGridLayout->addWidget(mpEditorsWidget);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(pDocumentationButtonsStatusBar);
+  pMainLayout->setSpacing(0);
+  pMainLayout->addWidget(pDocumentationToolBar);
   pMainLayout->addLayout(pGridLayout, 1);
   setLayout(pMainLayout);
 }
@@ -464,11 +418,11 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   }
 
   updatePreviousNextButtons();
-  mpEditInfoToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
-  mpEditRevisionsToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
-  mpEditInfoHeaderToolButton->setDisabled(pLibraryTreeItem->isSystemLibrary());
-  mpSaveToolButton->setDisabled(true);
-  mpCancelToolButton->setDisabled(true);
+  mpEditInfoAction->setDisabled(pLibraryTreeItem->isSystemLibrary());
+  mpEditRevisionsAction->setDisabled(pLibraryTreeItem->isSystemLibrary());
+  mpEditInfoHeaderAction->setDisabled(pLibraryTreeItem->isSystemLibrary());
+  mpSaveAction->setDisabled(true);
+  mpCancelAction->setDisabled(true);
   mpDocumentationViewer->show();
   mpEditorsWidget->hide();
 }
@@ -560,15 +514,15 @@ void DocumentationWidget::updatePreviousNextButtons()
 {
   // update previous button
   if (mDocumentationHistoryPos > 0) {
-    mpPreviousToolButton->setDisabled(false);
+    mpPreviousAction->setDisabled(false);
   } else {
-    mpPreviousToolButton->setDisabled(true);
+    mpPreviousAction->setDisabled(true);
   }
   // update next button
   if (mpDocumentationHistoryList->count() == (mDocumentationHistoryPos + 1)) {
-    mpNextToolButton->setDisabled(true);
+    mpNextAction->setDisabled(true);
   } else {
-    mpNextToolButton->setDisabled(false);
+    mpNextAction->setDisabled(false);
   }
 }
 
@@ -652,13 +606,13 @@ void DocumentationWidget::editInfoDocumentation()
       mpTabBar->setTabText(1, tr("Info Source"));
       mEditType = EditType::Info;
       // update the buttons
-      mpPreviousToolButton->setDisabled(true);
-      mpNextToolButton->setDisabled(true);
-      mpEditInfoToolButton->setDisabled(true);
-      mpEditRevisionsToolButton->setDisabled(true);
-      mpEditInfoHeaderToolButton->setDisabled(true);
-      mpSaveToolButton->setDisabled(false);
-      mpCancelToolButton->setDisabled(false);
+      mpPreviousAction->setDisabled(true);
+      mpNextAction->setDisabled(true);
+      mpEditInfoAction->setDisabled(true);
+      mpEditRevisionsAction->setDisabled(true);
+      mpEditInfoHeaderAction->setDisabled(true);
+      mpSaveAction->setDisabled(false);
+      mpCancelAction->setDisabled(false);
       mpDocumentationViewer->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
@@ -687,13 +641,13 @@ void DocumentationWidget::editRevisionsDocumentation()
       mpTabBar->setTabText(1, tr("Revisions Source"));
       mEditType = EditType::Revisions;
       // update the buttons
-      mpPreviousToolButton->setDisabled(true);
-      mpNextToolButton->setDisabled(true);
-      mpEditInfoToolButton->setDisabled(true);
-      mpEditRevisionsToolButton->setDisabled(true);
-      mpEditInfoHeaderToolButton->setDisabled(true);
-      mpSaveToolButton->setDisabled(false);
-      mpCancelToolButton->setDisabled(false);
+      mpPreviousAction->setDisabled(true);
+      mpNextAction->setDisabled(true);
+      mpEditInfoAction->setDisabled(true);
+      mpEditRevisionsAction->setDisabled(true);
+      mpEditInfoHeaderAction->setDisabled(true);
+      mpSaveAction->setDisabled(false);
+      mpCancelAction->setDisabled(false);
       mpDocumentationViewer->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
@@ -722,13 +676,13 @@ void DocumentationWidget::editInfoHeaderDocumentation()
       mpTabBar->setTabText(1, tr("__OpenModelica_infoHeader Source"));
       mEditType = EditType::InfoHeader;
       // update the buttons
-      mpPreviousToolButton->setDisabled(true);
-      mpNextToolButton->setDisabled(true);
-      mpEditInfoToolButton->setDisabled(true);
-      mpEditRevisionsToolButton->setDisabled(true);
-      mpEditInfoHeaderToolButton->setDisabled(true);
-      mpSaveToolButton->setDisabled(false);
-      mpCancelToolButton->setDisabled(false);
+      mpPreviousAction->setDisabled(true);
+      mpNextAction->setDisabled(true);
+      mpEditInfoAction->setDisabled(true);
+      mpEditRevisionsAction->setDisabled(true);
+      mpEditInfoHeaderAction->setDisabled(true);
+      mpSaveAction->setDisabled(false);
+      mpCancelAction->setDisabled(false);
       mpDocumentationViewer->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
@@ -823,11 +777,11 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
 void DocumentationWidget::cancelDocumentation()
 {
   updatePreviousNextButtons();
-  mpEditInfoToolButton->setDisabled(false);
-  mpEditRevisionsToolButton->setDisabled(false);
-  mpEditInfoHeaderToolButton->setDisabled(false);
-  mpSaveToolButton->setDisabled(true);
-  mpCancelToolButton->setDisabled(true);
+  mpEditInfoAction->setDisabled(false);
+  mpEditRevisionsAction->setDisabled(false);
+  mpEditInfoHeaderAction->setDisabled(false);
+  mpSaveAction->setDisabled(true);
+  mpCancelAction->setDisabled(true);
   mpDocumentationViewer->show();
   mpEditorsWidget->hide();
   mEditType = EditType::None;
@@ -1109,11 +1063,11 @@ void DocumentationWidget::updateDocumentationHistory()
         cancelDocumentation();
         showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
       } else {
-        mpEditInfoToolButton->setDisabled(true);
-        mpEditRevisionsToolButton->setDisabled(true);
-        mpEditInfoHeaderToolButton->setDisabled(true);
-        mpSaveToolButton->setDisabled(true);
-        mpCancelToolButton->setDisabled(true);
+        mpEditInfoAction->setDisabled(true);
+        mpEditRevisionsAction->setDisabled(true);
+        mpEditInfoHeaderAction->setDisabled(true);
+        mpSaveAction->setDisabled(true);
+        mpCancelAction->setDisabled(true);
         mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
         mpDocumentationViewer->show();
         mpEditorsWidget->hide();
@@ -1323,11 +1277,11 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
     }
   } else { // if non-editable QWebView
     if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
-      if (mpDocumentationWidget->getNextToolButton()->isEnabled()) {
+      if (mpDocumentationWidget->getNextAction()->isEnabled()) {
         mpDocumentationWidget->nextDocumentation();
       }
     } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
-      if (mpDocumentationWidget->getPreviousToolButton()->isEnabled()) {
+      if (mpDocumentationWidget->getPreviousAction()->isEnabled()) {
         mpDocumentationWidget->previousDocumentation();
       }
     } else if (controlModifier && event->key() == Qt::Key_A) {

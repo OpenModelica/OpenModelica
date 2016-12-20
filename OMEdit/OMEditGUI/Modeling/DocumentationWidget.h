@@ -72,8 +72,8 @@ public:
   };
   DocumentationWidget(QWidget *pParent = 0);
   ~DocumentationWidget();
-  QToolButton* getPreviousToolButton() {return mpPreviousToolButton;}
-  QToolButton* getNextToolButton() {return mpNextToolButton;}
+  QAction* getPreviousAction() {return mpPreviousAction;}
+  QAction* getNextAction() {return mpNextAction;}
   DocumentationViewer* getDocumentationViewer() {return mpDocumentationViewer;}
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
   void execCommand(const QString &commandName);
@@ -82,13 +82,13 @@ public:
   QString queryCommandValue(const QString &commandName);
 private:
   QFile mDocumentationFile;
-  QToolButton *mpPreviousToolButton;
-  QToolButton *mpNextToolButton;
-  QToolButton *mpEditInfoToolButton;
-  QToolButton *mpEditRevisionsToolButton;
-  QToolButton *mpEditInfoHeaderToolButton;
-  QToolButton *mpSaveToolButton;
-  QToolButton *mpCancelToolButton;
+  QAction *mpPreviousAction;
+  QAction *mpNextAction;
+  QAction *mpEditInfoAction;
+  QAction *mpEditRevisionsAction;
+  QAction *mpEditInfoHeaderAction;
+  QAction *mpSaveAction;
+  QAction *mpCancelAction;
   DocumentationViewer *mpDocumentationViewer;
   QWidget *mpEditorsWidget;
   QTabBar *mpTabBar;
