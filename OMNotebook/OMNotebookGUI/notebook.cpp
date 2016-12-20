@@ -2633,24 +2633,16 @@ void NotebookWindow::helpText()
   try
   {
     QDir dir;
-    QString help( getenv( "OPENMODELICAHOME" ) );
-    if( help.isEmpty() )
-      QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+    QString helpFile = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/OMNotebookHelp.onb";
 
-    if( !help.endsWith("/") && !help.endsWith( "\\") )
-      help += "/";
-    help += "share/omnotebook/";
-
-    QString helpFile = "OMNotebookHelp.onb";
-    dir.setPath( help );
     if( dir.exists( helpFile ) )
     {
       application()->commandCenter()->executeCommand(
-            new OpenFileCommand( help + helpFile ));
+            new OpenFileCommand( helpFile ));
     }
     else
     {
-      QString msg = QString( "Could not find the help doucment: OMNotebookHelp.onb in path: " ) + dir.path();
+      QString msg = QString( "Could not find the help document OMNotebookHelp.onb" );
       QMessageBox::warning( 0, "Warning", msg, "OK" );
     }
   }
