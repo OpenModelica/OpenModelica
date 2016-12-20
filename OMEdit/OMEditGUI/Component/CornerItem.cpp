@@ -347,7 +347,7 @@ OriginItem::OriginItem(Component *pComponent)
   mInheritedActivePen = QPen(Qt::darkRed, 2);
   mInheritedActivePen.setCosmetic(true);
   mPassivePen = QPen(Qt::transparent);
-  mRectangle = QRectF (-5, -5, 10, 10);
+  mRectangle = QRectF (-2, -2, 2, 2);
   mPen = mPassivePen;
 }
 
