@@ -26,9 +26,9 @@ sudo make install
 ```
 
 But first you need to install dependencies:
-- autoconf, automake, libtool, g++, gfortran (pretty standard compilers)
+- autoconf, automake, libtool, pkgconfig, g++, gfortran (pretty standard compilers)
 - boost (optional; used with configure --with-cppruntime)
-- [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*; if you use gcc instead, use gcc 4.4 or 4.9, not 4.5-4.8 as they are very slow)
+- [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*; if you use gcc instead, use gcc 4.4 or 4.9+, not 4.5-4.8 as they are very slow)
 - [cmake](http://www.cmake.org)
 - hwloc (optional; queries the number of hardware CPU cores instead of logical CPU cores)
 - Java JRE (JDK is option; compiles the Java CORBA interface)
