@@ -21,7 +21,7 @@ $(NAME): Makefile OMShell.config omc_communication.cc
 
 build: $(NAME)
 	mkdir -p @OMBUILDDIR@/share/omshell/nls/
-	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin; fi
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin; fi
 	cp -p commands.xml @OMBUILDDIR@/share/omshell/
 	cp -p OMShell_*.qm @OMBUILDDIR@/share/omshell/nls/
 
