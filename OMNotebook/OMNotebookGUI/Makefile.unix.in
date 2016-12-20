@@ -12,7 +12,7 @@ LRELEASE=@LRELEASE@
 install: build Resources/nls/qm.stamp
 	mkdir -p @OMBUILDDIR@/share/omnotebook/nls/
 	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omnotebook/nls/
-	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin/$(NAME); fi
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin/$(NAME); fi
 
 Resources/nls/qm.stamp: OMNotebookGUI.pro Resources/nls/*.ts
 	$(LRELEASE) $<
