@@ -17,7 +17,7 @@ LRELEASE=@LRELEASE@
 install: build Resources/nls/qm.stamp
 	mkdir -p ../../build/share/omedit/nls/
 	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omedit/nls/
-	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/OMEdit.app @OMBUILDDIR@/Applications/ ; else cp -p ../bin/OMEdit @OMBUILDDIR@/bin/OMEdit; fi
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp ../bin/OMEdit.app @OMBUILDDIR@/Applications/ ; else cp -p ../bin/OMEdit @OMBUILDDIR@/bin/OMEdit; fi
 
 Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 	$(LRELEASE) $<
