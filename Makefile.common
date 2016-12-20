@@ -81,10 +81,10 @@ opc: .testvariables mkbuilddirs boehm-gc
 	$(MAKE) -C SimulationRuntime/opc/ua -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 docs: mkbuilddirs
-	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
 	mkdir -p $(builddir_doc)/omc/testmodels
-	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
+	cp -p Examples/*.* $(builddir_doc)/omc/testmodels/
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
+	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
 
 GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h gc_pthread_redirects.h
 libgc-dev: /usr/include/gc/gc_inline.h
