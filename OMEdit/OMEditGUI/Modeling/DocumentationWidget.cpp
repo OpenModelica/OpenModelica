@@ -51,6 +51,7 @@
 #include <QWebFrame>
 #include <QWidgetAction>
 #include <QButtonGroup>
+#include <QInputDialog>
 
 /*!
  * \class DocumentationWidget
@@ -342,9 +343,9 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->addSeparator();
   mpEditorToolBar->addAction(mpBulletListAction);
   mpEditorToolBar->addAction(mpNumberedListAction);
-//  mpEditorToolBar->addSeparator();
-//  mpEditorToolBar->addAction(mpLinkAction);
-//  mpEditorToolBar->addAction(mpUnLinkAction);
+  mpEditorToolBar->addSeparator();
+  mpEditorToolBar->addAction(mpLinkAction);
+  mpEditorToolBar->addAction(mpUnLinkAction);
   // update the actions whenever the selectionChanged signal is raised.
   connect(mpHTMLEditor->page(), SIGNAL(selectionChanged()), SLOT(updateActions()));
   // add a layout to html editor widget
@@ -583,6 +584,26 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   out.setCodec(Helper::utf8.toStdString().data());
   out << documentation;
   mDocumentationFile.close();
+}
+
+/*!
+ * \brief DocumentationWidget::isLinkSelected
+ * Returns true if a link is selected.
+ * \return
+ */
+bool DocumentationWidget::isLinkSelected()
+{
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("function isLinkSelected() {"
+                               "  if (document.getSelection().anchorNode.parentNode.nodeName == 'A') {"
+                               "    return true;"
+                               "  } else {"
+                               "    return false;"
+                               "  }"
+                               "}"
+                               "isLinkSelected()");
+  QVariant result = pWebFrame->evaluateJavaScript(javaScript);
+  return result.toString().simplified().toLower() == "true";
 }
 
 /*!
@@ -883,8 +904,8 @@ void DocumentationWidget::updateActions()
   mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
   mpBulletListAction->setChecked(queryCommandState("insertUnorderedList"));
   mpNumberedListAction->setChecked(queryCommandState("insertOrderedList"));
-//  mpLinkAction->setEnabled(mpHTMLEditor->page()->hasSelection());
-//  mpUnLinkAction->setEnabled(mpHTMLEditor->page()->hasSelection() && queryCommandState("unlink"));
+  mpLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty());
+  mpUnLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty() && isLinkSelected());
 }
 
 /*!
@@ -1028,9 +1049,19 @@ void DocumentationWidget::numberedList()
  */
 void DocumentationWidget::createLink()
 {
-  QString link = queryCommandValue("createLink");
-  qDebug() << link;
-  execCommand("createLink", "http://www.google.com");
+  QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
+  QString javaScript = QString("function getLinkHref() {"
+                               "  if (document.getSelection().anchorNode.parentNode.nodeName == 'A') {"
+                               "    if (document.getSelection().anchorNode.parentNode.hasAttribute('href')) {"
+                               "      return document.getSelection().anchorNode.parentNode.getAttribute('href');"
+                               "    }"
+                               "  }"
+                               "  return '';"
+                               "}"
+                               "getLinkHref()");
+  QString href = pWebFrame->evaluateJavaScript(javaScript).toString();
+  href = QInputDialog::getText(this, tr("Create Link"), "Enter URL", QLineEdit::Normal, href);
+  execCommand("createLink", href);
 }
 
 /*!

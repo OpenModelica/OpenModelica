@@ -128,6 +128,7 @@ private:
   QPixmap createPixmapForToolButton(QColor color, QIcon icon);
   void updatePreviousNextButtons();
   void writeDocumentationFile(QString documentation);
+  bool isLinkSelected();
 public slots:
   void previousDocumentation();
   void nextDocumentation();
