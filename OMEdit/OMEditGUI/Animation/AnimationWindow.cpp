@@ -502,6 +502,11 @@ void AnimationWindow::cameraPositionIsometric()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+
+/*!
+ * \brief AnimationWindow::cameraPositionLeft1
+ * sets the camera position to Left 1
+ */
 void AnimationWindow::cameraPositionLeft1()
 {
     double d = computeDistanceToOrigin();
@@ -513,34 +518,23 @@ void AnimationWindow::cameraPositionLeft1()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionXY
- * sets the camera position to XY
+ * \brief AnimationWindow::cameraPositionLeft2
+ * sets the camera position to Left 2
  */
 void AnimationWindow::cameraPositionLeft2()
 {
-    //the new orientation
-    //osg::Matrix3 newOrient = osg::Matrix3(1, 0, 0, 0, 0, 1, 0, -1, 0);
-    osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
-    osg::Matrixd mat2 = manipulator->getMatrix();
-
-    std::stringstream ss;
-    ss << "Matrix:\n" << mat2(0,0) << ", " << mat2(0,1) << ", " << mat2(0,2) << ", " << mat2(0,3) << "\n"
-                      << mat2(1,0) << ", " << mat2(1,1) << ", " << mat2(1,2) << ", " << mat2(1,3) << "\n"
-                      << mat2(2,0) << ", " << mat2(2,1) << ", " << mat2(2,2) << ", " << mat2(2,3) << "\n"
-                      << mat2(3,0) << ", " << mat2(3,1) << ", " << mat2(3,2) << ", " << mat2(3,3) << "\n\n";
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, QString(ss.str().c_str()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-
-
-
     double d = computeDistanceToOrigin();
     osg::Matrixd mat = osg::Matrixd(-1, 0, 0, 0,
-                       0, 1, 0, 0,
-                       0, 0,-1, 0,
-                       0, 0,-d, 1);
+                                     0, 1, 0, 0,
+                                     0, 0,-1, 0,
+                                     0, 0,-d, 1);
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionRight1
+ * sets the camera position to Right 1
+ */
 void AnimationWindow::cameraPositionRight1()
 {
     double d = computeDistanceToOrigin();
@@ -552,8 +546,8 @@ void AnimationWindow::cameraPositionRight1()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionXY
- * sets the camera position to XY
+ * \brief AnimationWindow::cameraPositionRight2
+ * sets the camera position to Right 2
  */
 void AnimationWindow::cameraPositionRight2()
 {
@@ -565,6 +559,10 @@ void AnimationWindow::cameraPositionRight2()
   mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionFront1
+ * sets the camera position to Front 1
+ */
 void AnimationWindow::cameraPositionFront1()
 {
     double d = computeDistanceToOrigin();
@@ -575,6 +573,10 @@ void AnimationWindow::cameraPositionFront1()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionFront2
+ * sets the camera position to Front 2
+ */
 void AnimationWindow::cameraPositionFront2()
 {
     double d = computeDistanceToOrigin();
@@ -585,6 +587,10 @@ void AnimationWindow::cameraPositionFront2()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionFront3
+ * sets the camera position to Front 3
+ */
 void AnimationWindow::cameraPositionFront3()
 {
     double d = computeDistanceToOrigin();
@@ -595,6 +601,10 @@ void AnimationWindow::cameraPositionFront3()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionBack1
+ * sets the camera position to Back 1
+ */
 void AnimationWindow::cameraPositionBack1()
 {
     double d = computeDistanceToOrigin();
@@ -606,8 +616,8 @@ void AnimationWindow::cameraPositionBack1()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionXZ
- * sets the camera position to XZ
+ * \brief AnimationWindow::cameraPositionBack2
+ * sets the camera position to Back 2
  */
 void AnimationWindow::cameraPositionBack2()
 {
@@ -619,6 +629,10 @@ void AnimationWindow::cameraPositionBack2()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionBack3
+ * sets the camera position to Back 3
+ */
 void AnimationWindow::cameraPositionBack3()
 {
     double d = computeDistanceToOrigin();
@@ -629,6 +643,10 @@ void AnimationWindow::cameraPositionBack3()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionTop1
+ * sets the camera position to Top 1
+ */
 void AnimationWindow::cameraPositionTop1()
 {
     double d = computeDistanceToOrigin();
@@ -640,8 +658,8 @@ void AnimationWindow::cameraPositionTop1()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionYZ
- * sets the camera position to YZ
+ * \brief AnimationWindow::cameraPositionTop2
+ * sets the camera position to Top 2
  */
 void AnimationWindow::cameraPositionTop2()
 {
@@ -653,6 +671,10 @@ void AnimationWindow::cameraPositionTop2()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionTop3
+ * sets the camera position to Top 3
+ */
 void AnimationWindow::cameraPositionTop3()
 {
     double d = computeDistanceToOrigin();
@@ -663,6 +685,10 @@ void AnimationWindow::cameraPositionTop3()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionBottom1
+ * sets the camera position to Bottom 1
+ */
 void AnimationWindow::cameraPositionBottom1()
 {
     double d = computeDistanceToOrigin();
@@ -673,6 +699,10 @@ void AnimationWindow::cameraPositionBottom1()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionBottom2
+ * sets the camera position to Bottom 2
+ */
 void AnimationWindow::cameraPositionBottom2()
 {
     double d = computeDistanceToOrigin();
@@ -683,6 +713,10 @@ void AnimationWindow::cameraPositionBottom2()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
+/*!
+ * \brief AnimationWindow::cameraPositionBottom3
+ * sets the camera position to Bottom 3
+ */
 void AnimationWindow::cameraPositionBottom3()
 {
     double d = computeDistanceToOrigin();
