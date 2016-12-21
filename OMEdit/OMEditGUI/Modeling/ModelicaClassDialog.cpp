@@ -807,8 +807,12 @@ void DuplicateClassDialog::duplicateClass()
     if (mSaveAs) {
       MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
     }
+    accept();
+  } else {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to create class <b>%1</b>. %2")
+                          .arg(mpNameTextBox->text(), GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
   }
-  accept();
+
 }
 
 /*!

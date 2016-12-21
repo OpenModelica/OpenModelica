@@ -37,7 +37,7 @@
 
 #include <QWidget>
 #include <QToolButton>
-#include <QTabbar>
+#include <QTabBar>
 #include <QFile>
 #include <QWebView>
 #include <QToolBar>
