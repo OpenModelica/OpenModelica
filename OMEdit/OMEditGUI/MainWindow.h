@@ -63,6 +63,7 @@ class GDBLoggerWidget;
 class DocumentationWidget;
 class PlotWindowContainer;
 class VariablesWidget;
+class AnimationWindow;
 class BreakpointsWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
@@ -213,6 +214,8 @@ private:
   PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
+  AnimationWindow *mp3DViewWindow;
+  QDockWidget *mp3DViewDockWidget;
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;

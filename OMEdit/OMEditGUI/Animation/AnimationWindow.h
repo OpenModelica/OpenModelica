@@ -35,87 +35,17 @@
 #ifndef ANIMATIONWINDOW_H
 #define ANIMATIONWINDOW_H
 
-#include <iostream>
-#include <string>
+#include "AbstractAnimationWindow.h"
 
-#include <osg/GraphicsContext>
-#include <osg/io_utils>
-#include <osg/MatrixTransform>
-#include <osg/Vec3>
-#include <osgDB/ReadFile>
-#include <osgGA/MultiTouchTrackballManipulator>
-#include <osg/Version>
-#include <osgViewer/CompositeViewer>
-#include <osgViewer/View>
-#include <osgViewer/ViewerEventHandlers>
-#include <../../osgQt/OMEdit_GraphicsWindowQt.h>
+class AbstractAnimationWindow;
 
-#include <QMainWindow>
-#include <QToolBar>
-#include <QSlider>
-#include <QLineEdit>
-#include <QComboBox>
-#include <QTimer>
-
-class PlotWindowContainer;
-class VisualizerAbstract;
-class Label;
-
-class AnimationWindow : public QMainWindow, public osgViewer::CompositeViewer
+class AnimationWindow : public AbstractAnimationWindow
 {
   Q_OBJECT
 public:
-  AnimationWindow(PlotWindowContainer *pPlotWindowContainer);
+  AnimationWindow(QWidget *pParent);
   ~AnimationWindow();
-  QWidget* setupViewWidget();
-  void loadVisualization();
-  double getTimeFraction();
-  double getVisTime();
-  void setPathName(std::string name);
-  void setFileName(std::string name);
-  void openAnimationFile(QString fileName);
-  void openFMUSettingsDialog();
-public slots:
-  void sliderSetTimeSlotFunction(int value);
-  void playSlotFunction();
-  void pauseSlotFunction();
-  void initSlotFunction();
-  void updateScene();
-  void renderFrame();
-  void chooseAnimationFileSlotFunction();
-  void setSpeedSlotFunction();
-  void jumpToTimeSlotFunction();
-  void resetCamera();
-  void cameraPositionXY();
-  void cameraPositionXZ();
-  void cameraPositionYZ();
-  void setPerspective(int value);
-  void saveSimSettings();
-private:
-  PlotWindowContainer *mpPlotWindowContainer;
-  //to be animated
-  std::string mPathName;
-  std::string mFileName;
-  //osg viewer scene
-  osgViewer::View* mpSceneView;
-  //stores the data for the shapes, time management, functionality for updating the values(mat/fmu) etc.
-  VisualizerAbstract* mpVisualizer;
-  //widgets
-  QWidget* mpViewerWidget;
-  QTimer mRenderFrameTimer;
-  QToolBar* mpAnimationToolBar;
-  QSlider* mpAnimationSlider;
-  Label *mpAnimationTimeLabel;
-  QLineEdit *mpTimeTextBox;
-  Label *mpAnimationSpeedLabel;
-  QComboBox *mpSpeedComboBox;
-  QComboBox *mpPerspectiveDropDownBox;
-  QDialog *mpFMUSettingsDialog;
-  //actions
-  QAction *mpAnimationChooseFileAction;
-  QAction *mpAnimationInitializeAction;
-  QAction *mpAnimationPlayAction;
-  QAction *mpAnimationPauseAction;
+  void createActions();
 };
 
 #endif // ANIMATIONWINDOW_H
