@@ -204,11 +204,11 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpFontSizeSpinBox->setValue(mpShapeAnnotation->getFontSize());
   mpFontSizeSpinBox->setSingleStep(1);
   mpFontStyleLabel = new Label(tr("Style:"));
-  mpTextBoldCheckBox = new QCheckBox(tr("Bold"));
+  mpTextBoldCheckBox = new QCheckBox(Helper::bold);
   mpTextBoldCheckBox->setChecked(StringHandler::getFontWeight(mpShapeAnnotation->getTextStyles()) == QFont::Bold ? true : false);
-  mpTextItalicCheckBox = new QCheckBox(tr("Italic"));
+  mpTextItalicCheckBox = new QCheckBox(Helper::italic);
   mpTextItalicCheckBox->setChecked(StringHandler::getFontItalic(mpShapeAnnotation->getTextStyles()));
-  mpTextUnderlineCheckBox = new QCheckBox(tr("Underline"));
+  mpTextUnderlineCheckBox = new QCheckBox(Helper::underline);
   mpTextUnderlineCheckBox->setChecked(StringHandler::getFontUnderline(mpShapeAnnotation->getTextStyles()));
   mpTextHorizontalAlignmentLabel = new Label(tr("Horizontal Alignment:"));
   mpTextHorizontalAlignmentComboBox = new QComboBox;
