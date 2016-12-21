@@ -510,54 +510,11 @@ void AnimationWindow::cameraPositionIsometric()
     mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
-
 /*!
- * \brief AnimationWindow::cameraPositionLeft1
- * sets the camera position to Left 1
+ * \brief AnimationWindow::cameraPositionSide
+ * sets the camera position to Side
  */
-void AnimationWindow::cameraPositionLeft1()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(0, 1, 0, 0,
-                                    1, 0, 0, 0,
-                                    0, 0,-1, 0,
-                                    0, 0,-d, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionLeft2
- * sets the camera position to Left 2
- */
-void AnimationWindow::cameraPositionLeft2()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(-1, 0, 0, 0,
-                                     0, 1, 0, 0,
-                                     0, 0,-1, 0,
-                                     0, 0,-d, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionRight1
- * sets the camera position to Right 1
- */
-void AnimationWindow::cameraPositionRight1()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(0,-1, 0, 0,
-                                    1, 0, 0, 0,
-                                    0, 0, 1, 0,
-                                    0, 0, d, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionRight2
- * sets the camera position to Right 2
- */
-void AnimationWindow::cameraPositionRight2()
+void AnimationWindow::cameraPositionSide()
 {
   double d = computeDistanceToOrigin();
   osg::Matrixd mat = osg::Matrixd(1, 0, 0, 0,
@@ -568,10 +525,10 @@ void AnimationWindow::cameraPositionRight2()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionFront1
- * sets the camera position to Front 1
+ * \brief AnimationWindow::cameraPositionFront
+ * sets the camera position to Front
  */
-void AnimationWindow::cameraPositionFront1()
+void AnimationWindow::cameraPositionFront()
 {
     double d = computeDistanceToOrigin();
     osg::Matrixd mat = osg::Matrixd(0, 0, 1, 0,
@@ -582,80 +539,10 @@ void AnimationWindow::cameraPositionFront1()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionFront2
- * sets the camera position to Front 2
+ * \brief AnimationWindow::cameraPositionTop
+ * sets the camera position to Top
  */
-void AnimationWindow::cameraPositionFront2()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(-1, 0, 0, 0,
-                                    0, 0, 1, 0,
-                                    0, 1, 0, 0,
-                                    0, d, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionFront3
- * sets the camera position to Front 3
- */
-void AnimationWindow::cameraPositionFront3()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(1, 0, 0, 0,
-                                    0, 0,-1, 0,
-                                    0, 1, 0, 0,
-                                    0, d, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionBack1
- * sets the camera position to Back 1
- */
-void AnimationWindow::cameraPositionBack1()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(0, 0,-1, 0,
-                                    1, 0, 0, 0,
-                                    0,-1, 0, 0,
-                                    0,-d, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionBack2
- * sets the camera position to Back 2
- */
-void AnimationWindow::cameraPositionBack2()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(1, 0, 0, 0,
-                                    0, 0, 1, 0,
-                                    0,-1, 0, 0,
-                                    0,-d, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionBack3
- * sets the camera position to Back 3
- */
-void AnimationWindow::cameraPositionBack3()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(-1, 0, 0, 0,
-                                     0, 0,-1, 0,
-                                     0,-1, 0, 0,
-                                     0,-d, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionTop1
- * sets the camera position to Top 1
- */
-void AnimationWindow::cameraPositionTop1()
+void AnimationWindow::cameraPositionTop()
 {
     double d = computeDistanceToOrigin();
     osg::Matrixd mat = osg::Matrixd( 0, 0,-1, 0,
@@ -666,94 +553,9 @@ void AnimationWindow::cameraPositionTop1()
 }
 
 /*!
- * \brief AnimationWindow::cameraPositionTop2
- * sets the camera position to Top 2
+ * \brief AnimationWindow::rotateCameraLeft
+ * rotates the camera 90 degress left about the line of sight
  */
-void AnimationWindow::cameraPositionTop2()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(0, 1, 0, 0,
-                                    0, 0, 1, 0,
-                                    1, 0, 0, 0,
-                                    d, 0, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionTop3
- * sets the camera position to Top 3
- */
-void AnimationWindow::cameraPositionTop3()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(0,-1, 0, 0,
-                                    0, 0,-1, 0,
-                                    1, 0, 0, 0,
-                                    d, 0, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionBottom1
- * sets the camera position to Bottom 1
- */
-void AnimationWindow::cameraPositionBottom1()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd( 0, 0, 1, 0,
-                                     0, 1, 0, 0,
-                                    -1, 0, 0, 0,
-                                    -d, 0, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionBottom2
- * sets the camera position to Bottom 2
- */
-void AnimationWindow::cameraPositionBottom2()
-{
-    double d = computeDistanceToOrigin();
-    osg::Matrixd mat = osg::Matrixd(0,-1, 0, 0,
-                                    0, 0, 1, 0,
-                                    -1,0, 0, 0,
-                                    -d,0, 0, 1);
-    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-}
-
-/*!
- * \brief AnimationWindow::cameraPositionBottom3
- * sets the camera position to Bottom 3
- */
-void AnimationWindow::cameraPositionBottom3()
-{
-//    double d = computeDistanceToOrigin();
-//    osg::Matrixd mat = osg::Matrixd(0, 1, 0, 0,
-//                                    0, 0,-1, 0,
-//                                    -1,0, 0, 0,
-//                                    -d,0, 0, 1);
-//    mpSceneView->getCameraManipulator()->setByMatrix(mat);
-
-    osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
-    osg::Matrixd mat = manipulator->getMatrix();
-
-    osg::Camera *pCamera = mpSceneView->getCamera();
-
-    osg::Vec3d eye, center, up;
-    pCamera->getViewMatrixAsLookAt(eye, center, up);
-    osg::Vec3d rotationAxis = center-eye;
-
-    std::stringstream ss;
-    ss << "rotationAxis: " << rotationAxis.x() << "," << rotationAxis.y() << "," << rotationAxis.z();
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, QString(ss.str().c_str()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-
-    osg::Matrixd rotMatrix;
-    rotMatrix.makeRotate(3.1415/2.0, rotationAxis);
-
-    mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
-}
-
 void AnimationWindow::rotateCameraLeft()
 {
     osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
@@ -770,6 +572,10 @@ void AnimationWindow::rotateCameraLeft()
     mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
 }
 
+/*!
+ * \brief AnimationWindow::rotateCameraLeft
+ * rotates the camera 90 degress right about the line of sight
+ */
 void AnimationWindow::rotateCameraRight()
 {
     osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
@@ -785,9 +591,6 @@ void AnimationWindow::rotateCameraRight()
 
     mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
 }
-
-
-
 
 /*!
  * \brief AnimationWindow::computeDistanceToOrigin
@@ -832,54 +635,15 @@ void AnimationWindow::setPerspective(int value)
     case 0:
       cameraPositionIsometric();
       break;
-//    case 1:
-//      cameraPositionLeft1();
-//      break;
-//    case 2:
-//      cameraPositionLeft2();
-//      break;
-//    case 3:
-//      cameraPositionRight1();
-//      break;
     case 1:
-      cameraPositionRight2();
+      cameraPositionSide();
       break;
     case 2:
-      cameraPositionTop1();
+      cameraPositionTop();
       break;
-//    case 6:
-//      cameraPositionFront2();
-//      break;
-//    case 7:
-//      cameraPositionFront3();
-//      break;
-//    case 8:
-//      cameraPositionBack1();
-//      break;
-//    case 9:
-//      cameraPositionBack2();
-//      break;
-//    case 10:
-//      cameraPositionBack3();
-//      break;
     case 3:
-      cameraPositionFront1();
+      cameraPositionFront();
       break;
-//    case 12:
-//      cameraPositionTop2();
-//      break;
-//    case 13:
-//      cameraPositionTop3();
-//      break;
-//    case 14:
-//      cameraPositionBottom1();
-//      break;
-//    case 15:
-//      cameraPositionBottom2();
-//      break;
-//    case 16:
-//      cameraPositionBottom3();
-//      break;
   }
 }
 
