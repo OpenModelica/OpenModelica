@@ -330,6 +330,9 @@ QString Helper::OMCFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
 QString Helper::item;
+QString Helper::bold;
+QString Helper::italic;
+QString Helper::underline;
 
 void Helper::initHelperVariables()
 {
@@ -553,6 +556,9 @@ void Helper::initHelperVariables()
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save __OpenModelica_simulationFlags annotation inside model");
   Helper::item = tr("item");
+  Helper::bold = tr("Bold");
+  Helper::italic = tr("Italic");
+  Helper::underline = tr("Underline");
 }
 
 QString GUIMessages::getMessage(int type)

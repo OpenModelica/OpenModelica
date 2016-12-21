@@ -2545,7 +2545,6 @@ void MainWindow::createActions()
   // simulate action
   mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateModelAction->setStatusTip(Helper::simulateTip);
-  mpSimulateModelAction->setShortcut(QKeySequence("Ctrl+b"));
   mpSimulateModelAction->setEnabled(false);
   connect(mpSimulateModelAction, SIGNAL(triggered()), SLOT(simulateModel()));
   // simulate with transformational debugger action
