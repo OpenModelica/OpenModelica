@@ -148,18 +148,8 @@
         <file>Resources/icons/perspective1.svg</file>
         <file>Resources/icons/perspective2.svg</file>
         <file>Resources/icons/perspective3.svg</file>
-        <file>Resources/icons/perspective4.svg</file>
-        <file>Resources/icons/perspective5.svg</file>
-        <file>Resources/icons/perspective6.svg</file>
-        <file>Resources/icons/perspective7.svg</file>
-        <file>Resources/icons/perspective8.svg</file>
-        <file>Resources/icons/perspective9.svg</file>
-        <file>Resources/icons/perspective10.svg</file>
-        <file>Resources/icons/perspective11.svg</file>
-        <file>Resources/icons/perspective12.svg</file>
-        <file>Resources/icons/perspective13.svg</file>
-        <file>Resources/icons/perspective14.svg</file>
-        <file>Resources/icons/perspective15.svg</file>
-        <file>Resources/icons/perspective16.svg</file>
+        <file>Resources/icons/rotateCameraLeft.svg</file>
+        <file>Resources/icons/rotateCameraRight.svg</file>
+
     </qresource>
 </RCC>

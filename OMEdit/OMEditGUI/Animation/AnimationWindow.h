@@ -103,6 +103,8 @@ public slots:
   void cameraPositionBottom1();
   void cameraPositionBottom2();
   void cameraPositionBottom3();
+  void rotateCameraLeft();
+  void rotateCameraRight();
 
   double computeDistanceToOrigin();
   void setPerspective(int value);
@@ -126,6 +128,8 @@ private:
   Label *mpAnimationSpeedLabel;
   QComboBox *mpSpeedComboBox;
   QComboBox *mpPerspectiveDropDownBox;
+  QToolButton *mpRotateCameraLeftButton;
+  QToolButton *mpRotateCameraRightButton;
   QDialog *mpFMUSettingsDialog;
   //actions
   QAction *mpAnimationChooseFileAction;
