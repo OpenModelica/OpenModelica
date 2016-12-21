@@ -87,22 +87,9 @@ public slots:
   void jumpToTimeSlotFunction();
   void resetCamera();
   void cameraPositionIsometric();
-  void cameraPositionLeft1();
-  void cameraPositionLeft2();
-  void cameraPositionRight1();
-  void cameraPositionRight2();
-  void cameraPositionFront1();
-  void cameraPositionFront2();
-  void cameraPositionFront3();
-  void cameraPositionBack1();
-  void cameraPositionBack2();
-  void cameraPositionBack3();
-  void cameraPositionTop1();
-  void cameraPositionTop2();
-  void cameraPositionTop3();
-  void cameraPositionBottom1();
-  void cameraPositionBottom2();
-  void cameraPositionBottom3();
+  void cameraPositionSide();
+  void cameraPositionFront();
+  void cameraPositionTop();
   void rotateCameraLeft();
   void rotateCameraRight();
 
