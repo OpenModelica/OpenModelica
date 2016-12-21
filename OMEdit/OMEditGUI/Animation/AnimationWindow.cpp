@@ -477,9 +477,16 @@ void AnimationWindow::openAnimationFile(QString fileName)
     mpSpeedComboBox->setEnabled(true);
     mpTimeTextBox->setEnabled(true);
     mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
-    state = mpPerspectiveDropDownBox->blockSignals(true);
-    mpPerspectiveDropDownBox->setCurrentIndex(0);
-    mpPerspectiveDropDownBox->blockSignals(state);
+    /* Only use isometric view as default for csv file type.
+     * Otherwise use side view as default which suits better for Modelica models.
+     */
+    if (isCSV(mFileName)) {
+      mpPerspectiveDropDownBox->setCurrentIndex(0);
+      cameraPositionIsometric();
+    } else {
+      mpPerspectiveDropDownBox->setCurrentIndex(1);
+      cameraPositionSide();
+    }
   }
 }
 
