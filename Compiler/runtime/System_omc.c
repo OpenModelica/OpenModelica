@@ -796,6 +796,8 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   void *status[len];
   int ids[len];
   pthread_t th[numThreads];
+  int isInteger = 0;
+  bzero(th, numThreads*sizeof(pthread_t)); /* Make sure we get nothing unexpected here */
 
 #if defined(__MINGW32__)
   /* adrpo: set thread stack size on Windows to 2MB */
@@ -829,19 +831,60 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   }
   numThreads = numThreads > len ? len : numThreads;
   for (i=0; i<numThreads; i++) {
+    if (GC_pthread_create(&th[i],
 #if defined(__MINGW32__)
-    GC_pthread_create(&th[i],&attr,System_launchParallelTasksThread,&data);
+    &attr,
 #else
-    GC_pthread_create(&th[i],NULL,System_launchParallelTasksThread,&data);
+    NULL,
 #endif
+    System_launchParallelTasksThread,&data)) {
+      /* GC_pthread_create failed. We need to join already created threads though... */
+      const char *tok[1] = {strerror(errno)};
+      data.fail = 1;
+      c_add_message(NULL,5999,
+        ErrorType_scripting,
+        ErrorLevel_internal,
+        gettext("System.launchParallelTasks: Failed to create thread: %s"),
+        NULL,
+        0);
+      break;
+    }
   }
   for (i=0; i<numThreads; i++) {
-    GC_pthread_join(th[i], NULL);
+    if (th[i] && GC_pthread_join(th[i], NULL)) {
+      const char *tok[1] = {strerror(errno)};
+      data.fail = 1;
+      c_add_message(NULL,5999,
+        ErrorType_scripting,
+        ErrorLevel_internal,
+        gettext("System.launchParallelTasks: Failed to join thread: %s"),
+        NULL,
+        0);
+    }
   }
   if (data.fail) {
     MMC_THROW_INTERNAL();
   }
+  if (data.current < len) {
+    c_add_message(NULL,5999,
+      ErrorType_scripting,
+      ErrorLevel_internal,
+      gettext("System.launchParallelTasks: We seem to have executed fewer tasks than expected."),
+      NULL,
+      0);
+    MMC_THROW_INTERNAL();
+  }
+  isInteger = MMC_IS_INTEGER(status[0]);
   for (i=len-1; i>=0; i--) {
+    if (isInteger != MMC_IS_INTEGER(status[i])) {
+      c_add_message(NULL,5999,
+        ErrorType_scripting,
+        ErrorLevel_internal,
+        gettext("System.launchParallelTasks: Got mismatched results types. Was there a thread synchronization error?"),
+        NULL,
+        0);
+      MMC_THROW_INTERNAL();
+    }
     result = mmc_mk_cons(status[i], result);
   }
   return result;
