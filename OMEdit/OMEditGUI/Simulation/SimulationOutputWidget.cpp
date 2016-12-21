@@ -596,6 +596,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
 void SimulationOutputWidget::cancelCompilationOrSimulation()
 {
   if (mpSimulationProcessThread->isCompilationProcessRunning()) {
+    mpSimulationProcessThread->setCompilationProcessKilled(true);
     mpSimulationProcessThread->getCompilationProcess()->kill();
     mpProgressLabel->setText(tr("Compilation of <b>%1</b> is cancelled.").arg(mSimulationOptions.getClassName()));
     mpProgressBar->setRange(0, 1);
@@ -603,6 +604,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
     mpCancelButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
   } else if (mpSimulationProcessThread->isSimulationProcessRunning()) {
+    mpSimulationProcessThread->setSimulationProcessKilled(true);
     mpSimulationProcessThread->getSimulationProcess()->kill();
     mpProgressLabel->setText(tr("Simulation of <b>%1</b> is cancelled.").arg(mSimulationOptions.getClassName()));
     mpProgressBar->setValue(mpProgressBar->maximum());
