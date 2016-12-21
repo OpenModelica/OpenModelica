@@ -853,7 +853,12 @@ extern int SystemImpl__directoryExists(const char *str)
 #if defined(__MINGW32__) || defined(_MSC_VER)
   WIN32_FIND_DATA FileData;
   HANDLE sh;
-  sh = FindFirstFile(str, &FileData);
+  char* path = strdup(str);
+  int last = strlen(path)-1;
+  /* adrpo: RTFM! the path cannot end in a slash??!! https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx */
+  if (last > 0 && (path[last] == '\\' || path[last] == '/')) path[last] = '\0';
+  sh = FindFirstFile(path, &FileData);
+  free(path);
   if (sh == INVALID_HANDLE_VALUE)
     return 0;
   FindClose(sh);
