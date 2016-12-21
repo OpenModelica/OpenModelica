@@ -832,54 +832,15 @@ void AnimationWindow::setPerspective(int value)
     case 0:
       cameraPositionIsometric();
       break;
-//    case 1:
-//      cameraPositionLeft1();
-//      break;
-//    case 2:
-//      cameraPositionLeft2();
-//      break;
-//    case 3:
-//      cameraPositionRight1();
-//      break;
     case 1:
       cameraPositionRight2();
       break;
     case 2:
       cameraPositionTop1();
       break;
-//    case 6:
-//      cameraPositionFront2();
-//      break;
-//    case 7:
-//      cameraPositionFront3();
-//      break;
-//    case 8:
-//      cameraPositionBack1();
-//      break;
-//    case 9:
-//      cameraPositionBack2();
-//      break;
-//    case 10:
-//      cameraPositionBack3();
-//      break;
     case 3:
       cameraPositionFront1();
       break;
-//    case 12:
-//      cameraPositionTop2();
-//      break;
-//    case 13:
-//      cameraPositionTop3();
-//      break;
-//    case 14:
-//      cameraPositionBottom1();
-//      break;
-//    case 15:
-//      cameraPositionBottom2();
-//      break;
-//    case 16:
-//      cameraPositionBottom3();
-//      break;
   }
 }
 
