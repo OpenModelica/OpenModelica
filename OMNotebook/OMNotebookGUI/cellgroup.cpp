@@ -95,8 +95,6 @@ namespace IAEX{
     setMainWidget(main_);
 
     style_.setName( "cellgroup" );
-
-
   }
 
   /*!

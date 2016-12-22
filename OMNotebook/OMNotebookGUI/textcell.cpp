@@ -372,7 +372,13 @@ namespace IAEX
    */
   QString TextCell::textHtml()
   {
-    return text_->toHtml();
+    if (isViewExpression()) {
+      return text_->toPlainText();
+    }
+    else
+    {
+      return text_->toHtml();
+    }
   }
 
   /*!

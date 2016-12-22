@@ -217,14 +217,14 @@ namespace IAEX
       }
       else
       {
-    document()->clearSelection(); //Notice
-    application()->clearPasteboard();
+        document()->clearSelection(); //Notice
+        application()->clearPasteboard();
 
-    vector<Cell *>::iterator i = cells.begin();
-    for(;i != cells.end();++i)
-    {
-      application()->addToPasteboard((*i));
-    }
+        vector<Cell *>::iterator i = cells.begin();
+        for(;i != cells.end();++i)
+        {
+          application()->addToPasteboard((*i));
+        }
       }
    }
 
@@ -248,7 +248,6 @@ namespace IAEX
    }
    else
    {
-
       document()->clearSelection(); //Notice
       application()->clearPasteboard();
 
@@ -428,7 +427,6 @@ namespace IAEX
 
       newGraphCell->setClosed( oldGraphCell->isClosed() );
     }
-
     else if( typeid(LatexCell) == typeid( *newCell ))
     {
       LatexCell *newLatexCell = dynamic_cast<LatexCell *>( newCell );
@@ -444,13 +442,11 @@ namespace IAEX
 
       }
       else
-       {
+      {
         newLatexCell->setEvaluated(false);
       }
       newLatexCell->setClosed( oldLatexCell->isClosed() );
-
     }
-
     else if( typeid(TextCell) == typeid( *newCell ))
     {
       newCell->setStyle( style );

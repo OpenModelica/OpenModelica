@@ -149,7 +149,12 @@ FORMS += ImageSizeDlg.ui \
 win32 {
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   DEFINES += IMPORT_INTO=1
-  QMAKE_CXXFLAGS += -Wl,--stack,16777216
+  # win32 vs. win64
+  contains(QT_ARCH, i386) { # 32-bit
+    QMAKE_LFLAGS += -Wl,--stack,16777216
+  } else { # 64-bit
+    QMAKE_LFLAGS += -Wl,--stack,33554432
+  }
   PLOTLIBS = -L$$(OMBUILDDIR)/build/lib/omc -lOMPlot -lomqwt
   PLOTINC = $$(OMBUILDDIR)/include/omplot \
             $$(OMBUILDDIR)/include/omplot/qwt

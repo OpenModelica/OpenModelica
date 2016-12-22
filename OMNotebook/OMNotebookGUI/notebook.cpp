@@ -804,11 +804,14 @@ void NotebookWindow::createFormatMenu()
   vector<QString>::iterator i = styles.begin();
   for(;i != styles.end(); ++i)
   {
-    QAction *tmp = new QAction( tr( (*i).toStdString().c_str() ), this );
-    tmp->setCheckable( true );
-    styleMenu->addAction( tmp );
-    stylesgroup->addAction( tmp );
-    styles_[(*i)] = tmp;
+    if ((*i != "Latex") && (*i != "Graph") && (*i != "Input"))
+    {
+      QAction *tmp = new QAction( tr( (*i).toStdString().c_str() ), this );
+      tmp->setCheckable( true );
+      styleMenu->addAction( tmp );
+      stylesgroup->addAction( tmp );
+      styles_[(*i)] = tmp;
+    }
   }
 
   connect( styleMenu, SIGNAL(triggered(QAction*)), this, SLOT(changeStyle(QAction*)));
@@ -3932,18 +3935,24 @@ void NotebookWindow::shiftselectedcells()
 
     if( !cells.empty() )
     {
-        subject_->cursorCopyCell();
-        subject_->cursorPasteCell();
-        Cell* curpos=subject_->getCursor()->currentCell();
-        vector<Cell *>::iterator i = cells.begin();
-        for(;i != cells.end();++i)
-        {
-            subject_->getCursor()->moveAfter(*i);
-            subject_->getCursor()->deleteCurrentCell();
-        }
-        subject_->getCursor()->moveAfter(curpos);
-        // make sure that chapter numbers are updated
-        updateChapterCounters();
+      // open closed groupcells otherwise OMNotebook does not copy right and crashes afterwards
+      vector<Cell *>::iterator i = cells.begin();
+      for(;i != cells.end();++i)
+      {
+        (*i)->setClosed(false);
+      }
+      subject_->cursorCopyCell();
+      subject_->cursorPasteCell();
+      Cell* curpos=subject_->getCursor()->currentCell();
+      i = cells.begin();
+      for(;i != cells.end();++i)
+      {
+          subject_->getCursor()->moveAfter(*i);
+          subject_->getCursor()->deleteCurrentCell();
+      }
+      subject_->getCursor()->moveAfter(curpos);
+      // make sure that chapter numbers are updated
+      updateChapterCounters();
     }
     else
     {
@@ -4023,14 +4032,19 @@ void NotebookWindow::shiftcellsUp()
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
-        else if(style=="Text")
+        else
         {
-          QString textoutput=current->textHtml();
-          subject_->cursorDeleteCell();
-          //subject_->getCursor()->moveUp();
-          subject_->cursorStepUp();
-          subject_->executeCommand(new CreateNewCellCommand("Text"));
-          subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+          Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+          std::vector<QString> vector = sheet->getAvailableStyleNames();
+          if (std::find(vector.begin(), vector.end(), style) != vector.end() )
+          {
+            QString textoutput=current->textHtml();
+            subject_->cursorDeleteCell();
+            //subject_->getCursor()->moveUp();
+            subject_->cursorStepUp();
+            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+          }
         }
       }
     }
@@ -4120,13 +4134,18 @@ void NotebookWindow::shiftcellsDown()
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
-        else if(style=="Text")
+        else
         {
-          QString textoutput=current->textHtml();
-          subject_->cursorDeleteCell();
-          subject_->cursorStepDown();
-          subject_->executeCommand(new CreateNewCellCommand("Text"));
-          subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+          Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+          std::vector<QString> vector = sheet->getAvailableStyleNames();
+          if (std::find(vector.begin(), vector.end(), style) != vector.end() )
+          {
+            QString textoutput=current->textHtml();
+            subject_->cursorDeleteCell();
+            subject_->cursorStepDown();
+            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->getCursor()->currentCell()->setTextHtml(textoutput);
+          }
         }
       }
     }

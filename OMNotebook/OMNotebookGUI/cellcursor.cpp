@@ -304,32 +304,13 @@ namespace IAEX
       // 2006-04-27 AF,
       cursorIsMoved();
 
-      //removeCurrentCell();
-
-      //OLD CODE
-      //Remove currentCell.
       Cell *current = previous(); //Save a pointer to the cell being deleted.
 
+      //Remove currentCell.
       removeCurrentCell();
-      // removeFromCurrentPosition();
-
-      //    if(current->hasPrevious())
-      //       current->previous()->setNext(this);
-      //    else
-      //       parentCell()->setChild(this);
-
-      //    setPrevious(current->previous());
-
-      //    current->setParentCell(0);
-      //    current->setPrevious(0);
-      //    current->setNext(0);
-      //    current->setChild(0);
-      //    current->setLast(0);
 
       //Segfault on delete.
       delete current;
-
-      //parentCell()->addCellWidgets();
     }
     // TMP EMIT
     emit changedPosition();
