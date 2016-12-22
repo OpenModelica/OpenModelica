@@ -32,13 +32,25 @@
  */
 
 #include "ThreeDViewer.h"
+#include "Visualizer.h"
 
+/*!
+ * \class ThreeDViewer
+ * \brief A QMainWindow for 3d view.
+ */
+/*!
+ * \brief ThreeDViewer::ThreeDViewer
+ * \param pParent
+ */
 ThreeDViewer::ThreeDViewer(QWidget *pParent)
   : AbstractAnimationWindow(pParent)
 {
   createActions();
 }
 
+/*!
+ * \brief ThreeDViewer::~ThreeDViewer
+ */
 ThreeDViewer::~ThreeDViewer()
 {
   if (mpVisualizer) {
@@ -46,6 +58,9 @@ ThreeDViewer::~ThreeDViewer()
   }
 }
 
+/*!
+ * \brief ThreeDViewer::createActions
+ */
 void ThreeDViewer::createActions()
 {
   AbstractAnimationWindow::createActions();

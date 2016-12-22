@@ -42,7 +42,7 @@ class ThreeDViewer : public AbstractAnimationWindow
 public:
   ThreeDViewer(QWidget *pParent);
   ~ThreeDViewer();
-  void createActions();
+  void createActions() override;
 };
 
 #endif // THREEDVIEWER_H

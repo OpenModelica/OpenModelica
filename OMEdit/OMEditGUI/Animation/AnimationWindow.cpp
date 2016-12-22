@@ -36,8 +36,6 @@
 #include "Options/OptionsDialog.h"
 #include "Visualizer.h"
 
-#include <QGridLayout>
-
 /*!
  * \class AnimationWindow
  * \brief A QMainWindow for animation.
@@ -52,6 +50,9 @@ AnimationWindow::AnimationWindow(QWidget *pParent)
   createActions();
 }
 
+/*!
+ * \brief AnimationWindow::~AnimationWindow
+ */
 AnimationWindow::~AnimationWindow()
 {
   if (mpVisualizer) {
@@ -59,6 +60,9 @@ AnimationWindow::~AnimationWindow()
   }
 }
 
+/*!
+ * \brief AnimationWindow::createActions
+ */
 void AnimationWindow::createActions()
 {
   AbstractAnimationWindow::createActions();
