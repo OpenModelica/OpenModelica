@@ -2580,7 +2580,6 @@ void LibraryTreeView::createActions()
   // simulate Action
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
-  mpSimulateAction->setShortcut(QKeySequence("Ctrl+b"));
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
   // simulate with transformational debugger Action
   mpSimulateWithTransformationalDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-equation.svg"), Helper::simulateWithTransformationalDebugger, this);
