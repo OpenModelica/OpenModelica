@@ -47,7 +47,6 @@
 #if !defined(WITHOUT_OSG)
 #include "Animation/ThreeDViewer.h"
 #endif
-#include "Animation/AnimationWindow.h"
 #include "Util/Helper.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
