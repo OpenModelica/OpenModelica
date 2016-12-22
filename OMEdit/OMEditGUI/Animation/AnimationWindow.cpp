@@ -35,6 +35,7 @@
 #include "AnimationWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Visualizer.h"
+#include <QAction>
 
 /*!
  * \class AnimationWindow
