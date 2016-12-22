@@ -55,9 +55,9 @@ void UmfPack::solve()
         long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
         long int * _helpArray = new long int[_algLoop->getDimReal()];
         _algLoop->evaluate();
-        _algLoop->getRHS(_rhs);
+        _algLoop->getb(_rhs);
 
-        const matrix_t& A = _algLoop->getSystemMatrix();
+        const matrix_t& A = _algLoop->getAMatrix();
 		const double* jacd = A.data().begin();
 		memcpy(_jacd, jacd, dimSys*dimSys*sizeof(double));
 
@@ -77,9 +77,9 @@ void UmfPack::solve()
 		Control [UMFPACK_PRL] = 6;
 
 		 _algLoop->evaluate();
-        _algLoop->getRHS(_rhs);
+        _algLoop->getb(_rhs);
          long int dimSys = _algLoop->getDimReal();
-        const sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
+        const sparsematrix_t& A = _algLoop->getSparseAMatrix();
 
         adaptor_t rhs_adaptor(dimSys,_rhs);
 		shared_vector_t b(dimSys,rhs_adaptor);

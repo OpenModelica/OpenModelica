@@ -39,7 +39,7 @@ void LinearAlgLoopDefaultImplementation::initialize()
   memset(_b,0,_dimAEq*sizeof(double));
 };
 
-void LinearAlgLoopDefaultImplementation::getRHS(double* res) const
+void LinearAlgLoopDefaultImplementation::getb(double* res) const
 {
   memcpy(res, _b, sizeof(double) * _dimAEq);
 }

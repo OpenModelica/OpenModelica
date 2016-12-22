@@ -138,7 +138,7 @@ void LinearSolver::initialize()
 					ok=klu_defaults (_kluCommon);
 					if (ok!=1) throw ModelicaSimulationError(ALGLOOP_SOLVER,"error initializing Sparse Solver KLU");
 
-					sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
+					sparsematrix_t& A = _algLoop->getSparseAMatrix();
 
 					 _nonzeros = A.nnz();
 
@@ -194,10 +194,10 @@ void LinearSolver::solve()
 		_algLoop->setReal(_zeroVec);	//if the system is linear Tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
 
 	_algLoop->evaluate();
-	_algLoop->getRHS(_b);
+	_algLoop->getb(_b);
 
 	if (_sparse == false){
-		const matrix_t& A = _algLoop->getSystemMatrix();
+		const matrix_t& A = _algLoop->getAMatrix();
 		const double* Atemp = A.data().begin();
 
 		memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
@@ -240,7 +240,7 @@ void LinearSolver::solve()
 			/*this version is a test. it extracts the dense format out of the sparse format and uses the dense lapack solver to sove the dense problem.
 
 			//writing entries of A
-			sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
+			sparsematrix_t& A = _algLoop->getSparseAMatrix();
 			_Ax= boost::numeric::bindings::begin_value (A);
 
 
@@ -346,7 +346,7 @@ void LinearSolver::solve()
 
 
 			//writing entries of A
-			sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
+			sparsematrix_t& A = _algLoop->getSparseAMatrix();
 			_Ax= boost::numeric::bindings::begin_value (A);
 
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;

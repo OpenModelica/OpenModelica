@@ -32,7 +32,7 @@ public:
   void initialize();
 
   /// Provide the right hand side (residuals)
-  void getRHS(double* res) const;
+  void getb(double* res) const;
 
   bool getUseSparseFormat();
 

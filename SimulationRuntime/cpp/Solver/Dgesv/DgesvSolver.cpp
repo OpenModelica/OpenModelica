@@ -113,9 +113,9 @@ void DgesvSolver::solve()
 		_algLoop->setReal(_zeroVec);	//if the system is linear Tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
 
 	_algLoop->evaluate();
-	_algLoop->getRHS(_b);
+	_algLoop->getb(_b);
 
-	const matrix_t& A = _algLoop->getSystemMatrix();
+	const matrix_t& A = _algLoop->getAMatrix();
 	const double* Atemp = A.data().begin();
 
 	memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));

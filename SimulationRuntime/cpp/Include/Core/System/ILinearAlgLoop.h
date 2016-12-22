@@ -52,13 +52,13 @@ public:
   /// Evaluate equations for given variables
   virtual void evaluate() = 0;
 
-  /// Provide the right hand side (residuals)
-  virtual void getRHS(double* res) const = 0;
+  /// Provide the right hand side (b-vector)
+  virtual void getb(double* res) const = 0;
 
   //testing commenting out virtual void getSparseAdata(double* data, int nonzeros) = 0;
 
-  virtual const matrix_t& getSystemMatrix()  = 0;
-  virtual  sparsematrix_t& getSystemSparseMatrix()  = 0;
+  virtual const matrix_t& getAMatrix()  = 0;
+  virtual  sparsematrix_t& getSparseAMatrix()  = 0;
   virtual bool isLinearTearing() = 0;
   virtual bool isConsistent() = 0;
   virtual bool getUseSparseFormat() = 0;

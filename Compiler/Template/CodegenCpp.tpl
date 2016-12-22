@@ -6110,12 +6110,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         end match
     <<
 
-    const matrix_t& <%modelName%>Algloop<%ls.index%>::getSystemMatrix()
+    const matrix_t& <%modelName%>Algloop<%ls.index%>::getAMatrix()
     {
       <%getDenseMatrix%>
     }
 
-    sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix( )
+    sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSparseAMatrix( )
     {
       <%getSparseMatrix%>
     }
@@ -6139,12 +6139,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       end match
      <<
 
-     const matrix_t& <%modelName%>Algloop<%ls.index%>::getSystemMatrix()
+     const matrix_t& <%modelName%>Algloop<%ls.index%>::getAMatrix()
      {
        <%getDenseMatrix%>
      }
 
-     sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSystemSparseMatrix()
+     sparsematrix_t& <%modelName%>Algloop<%ls.index%>::getSparseAMatrix()
      {
        <%getSparseMatrix%>
      }
@@ -6175,15 +6175,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     match ls.jacobianMatrix
        case SOME(__) then
       <<
-      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals) const
+      void <%modelname%>Algloop<%ls.index%>::getb(double* residuals) const
       {
-         LinearAlgLoopDefaultImplementation::getRHS(residuals);
+         LinearAlgLoopDefaultImplementation::getb(residuals);
       }
 
       >>
       else
       <<
-      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals) const
+      void <%modelname%>Algloop<%ls.index%>::getb(double* residuals) const
       {
         memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
       }
@@ -6198,7 +6198,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 match eq
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-    void <%modelname%>Algloop<%ls.index%>::getRHS(double* vars) const
+    void <%modelname%>Algloop<%ls.index%>::getb(double* vars) const
     {
         ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A->data());
         double* doubleUnknowns = new double[_dimAEq];
@@ -6666,7 +6666,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
         case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
         double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
-        _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
+        _algLoop<%num%>->getb(doubleResiduals<%num%>);
 
         >>
       end match
@@ -7031,6 +7031,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%generateAlgloopMethodDeclarationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
+    /// Provide the right hand side (residuals)
+    virtual void getb(double* vars) const;
+    virtual const matrix_t& getAMatrix() ;
+    virtual sparsematrix_t& getSparseAMatrix() ;
+
     bool getUseSparseFormat();
 
     void setUseSparseFormat(bool value);
@@ -7061,6 +7066,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual ~<%modelname%>Algloop<%nls.index%>();
 
     <%generateAlgloopMethodDeclarationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+
+    /// Provide the right hand side (residuals)
+    virtual void getRHS(double* vars) const;
+    virtual const matrix_t& getSystemMatrix() ;
+    virtual sparsematrix_t& getSystemSparseMatrix() ;
 
     bool getUseSparseFormat();
     void setUseSparseFormat(bool value);
@@ -7629,8 +7639,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     /// Evaluate equations for given variables
     virtual void evaluate();
-    /// Provide the right hand side (residuals)
-    virtual void getRHS(double* vars) const;
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
     /// Provide dimensions of residuals for linear equation systems
@@ -7638,8 +7646,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     /// Provide the residuals for linear equation systems
     virtual void giveResiduals(double* vars);
     >>%>
-    virtual const matrix_t& getSystemMatrix() ;
-    virtual sparsematrix_t& getSystemSparseMatrix() ;
     virtual bool isLinearTearing();
     virtual bool isConsistent();
 
