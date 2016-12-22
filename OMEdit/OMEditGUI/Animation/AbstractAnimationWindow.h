@@ -28,7 +28,7 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
 #ifndef ABSTRACTANIMATIONWINDOW_H
@@ -70,39 +70,39 @@ protected:
   QWidget* mpViewerWidget;
   QTimer mRenderFrameTimer;
   QToolBar* mpAnimationToolBar;
+  QAction *mpAnimationChooseFileAction;
+  QAction *mpAnimationInitializeAction;
+  QAction *mpAnimationPlayAction;
+  QAction *mpAnimationPauseAction;
   QSlider* mpAnimationSlider;
   Label *mpAnimationTimeLabel;
   QLineEdit *mpTimeTextBox;
   Label *mpAnimationSpeedLabel;
   QComboBox *mpSpeedComboBox;
   QComboBox *mpPerspectiveDropDownBox;
+  QAction *mpRotateCameraLeftAction;
+  QAction *mpRotateCameraRightAction;
   QDialog *mpFMUSettingsDialog;
-  //actions
-  QAction *mpAnimationChooseFileAction;
-  QAction *mpAnimationInitializeAction;
-  QAction *mpAnimationPlayAction;
-  QAction *mpAnimationPauseAction;
-  QAction *mpAnimationSliderAction;
-  QAction *mpAnimationTimeLabelAction;
-  QAction *mpTimeTextBoxAction;
-  QAction *mpAnimationSpeedLabelAction;
-  QAction *mpSpeedComboBoxAction;
-  QAction *mpPerspectiveDropDownBoxAction;
+
+  void resetCamera();
+  void cameraPositionIsometric();
+  void cameraPositionSide();
+  void cameraPositionFront();
+  void cameraPositionTop();
+  double computeDistanceToOrigin();
 public slots:
-  void sliderSetTimeSlotFunction(int value);
+  void renderFrame();
+  void updateScene();
+  void chooseAnimationFileSlotFunction();
+  void initSlotFunction();
   void playSlotFunction();
   void pauseSlotFunction();
-  void initSlotFunction();
-  void updateScene();
-  void renderFrame();
-  void chooseAnimationFileSlotFunction();
-  void setSpeedSlotFunction();
+  void sliderSetTimeSlotFunction(int value);
   void jumpToTimeSlotFunction();
-  void resetCamera();
-  void cameraPositionXY();
-  void cameraPositionXZ();
-  void cameraPositionYZ();
+  void setSpeedSlotFunction();
   void setPerspective(int value);
+  void rotateCameraLeft();
+  void rotateCameraRight();
   void saveSimSettings();
 };
 

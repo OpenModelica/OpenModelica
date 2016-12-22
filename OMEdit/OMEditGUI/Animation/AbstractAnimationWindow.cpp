@@ -28,7 +28,7 @@
  *
  */
 /*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+ * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
 #include <osg/GraphicsContext>
@@ -52,6 +52,14 @@
 #include "VisualizerCSV.h"
 #include "VisualizerFMU.h"
 
+/*!
+ * \class AbstractAnimationWindow
+ * \brief Abstract animation class defines a QMainWindow for animation.
+ */
+/*!
+ * \brief AbstractAnimationWindow::AbstractAnimationWindow
+ * \param pParent
+ */
 AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
   : QMainWindow(pParent),
     osgViewer::CompositeViewer(),
@@ -61,11 +69,19 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpVisualizer(nullptr),
     mpViewerWidget(nullptr),
     mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
-    mpFMUSettingsDialog(nullptr),
     mpAnimationChooseFileAction(nullptr),
     mpAnimationInitializeAction(nullptr),
     mpAnimationPlayAction(nullptr),
-    mpAnimationPauseAction(nullptr)
+    mpAnimationPauseAction(nullptr),
+    mpAnimationSlider(nullptr),
+    mpAnimationTimeLabel(nullptr),
+    mpTimeTextBox(nullptr),
+    mpAnimationSpeedLabel(nullptr),
+    mpSpeedComboBox(nullptr),
+    mpPerspectiveDropDownBox(nullptr),
+    mpRotateCameraLeftAction(nullptr),
+    mpRotateCameraRightAction(nullptr),
+    mpFMUSettingsDialog(nullptr)
 {
   // to distinguish this widget as a subwindow among the plotwindows
   this->setObjectName(QString("animationWidget"));
@@ -120,9 +136,16 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
     mpSpeedComboBox->setEnabled(true);
     mpTimeTextBox->setEnabled(true);
     mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
-    state = mpPerspectiveDropDownBox->blockSignals(true);
-    mpPerspectiveDropDownBox->setCurrentIndex(0);
-    mpPerspectiveDropDownBox->blockSignals(state);
+    /* Only use isometric view as default for csv file type.
+     * Otherwise use side view as default which suits better for Modelica models.
+     */
+    if (isCSV(mFileName)) {
+      mpPerspectiveDropDownBox->setCurrentIndex(0);
+      cameraPositionIsometric();
+    } else {
+      mpPerspectiveDropDownBox->setCurrentIndex(1);
+      cameraPositionSide();
+    }
   }
 }
 
@@ -164,12 +187,21 @@ void AbstractAnimationWindow::openFMUSettingsDialog()
 
 void AbstractAnimationWindow::createActions()
 {
+  // perspective drop down
   mpPerspectiveDropDownBox = new QComboBox(this);
-  //mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("to home position"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("normal to x-y plane"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("normal to y-z plane"));
-  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"),QString("normal to x-z plane"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("Isometric"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("Side"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("Front"));
+  mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective3.svg"),QString("Top"));
   connect(mpPerspectiveDropDownBox, SIGNAL(activated(int)), this, SLOT(setPerspective(int)));
+  // rotate camera left action
+  mpRotateCameraLeftAction = new QAction(QIcon(":/Resources/icons/rotateCameraLeft.svg"), tr("Rotate Left"), this);
+  mpRotateCameraLeftAction->setStatusTip(tr("Rotates the camera left"));
+  connect(mpRotateCameraLeftAction, SIGNAL(triggered()), this, SLOT(rotateCameraLeft()));
+  // rotate camera right action
+  mpRotateCameraRightAction = new QAction(QIcon(":/Resources/icons/rotateCameraRight.svg"), tr("Rotate Right"), this);
+  mpRotateCameraRightAction->setStatusTip(tr("Rotates the camera right"));
+  connect(mpRotateCameraRightAction, SIGNAL(triggered()), this, SLOT(rotateCameraRight()));
 }
 
 /*!
@@ -271,52 +303,104 @@ void AbstractAnimationWindow::loadVisualization()
   //add window title
   this->setWindowTitle(QString::fromStdString(mFileName));
   //jump to xy-view
-  cameraPositionXY();
+  cameraPositionIsometric();
 }
 
 /*!
- * \brief AbstractAnimationWindow::sliderSetTimeSlotFunction
- * slot function for the time slider to jump to the adjusted point of time
+ * \brief AbstractAnimationWindow::resetCamera
+ * resets the camera position
  */
-void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
+void AbstractAnimationWindow::resetCamera()
 {
-  float time = (mpVisualizer->getTimeManager()->getEndTime()
-                - mpVisualizer->getTimeManager()->getStartTime())
-                * (float) (value / 100.0);
-  mpVisualizer->getTimeManager()->setVisTime(time);
-  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
-  mpVisualizer->updateScene(time);
+  mpSceneView->home();
 }
 
 /*!
- * \brief AbstractAnimationWindow::playSlotFunction
- * slot function for the play button
+ * \brief AbstractAnimationWindow::cameraPositionIsometric
+ * sets the camera position to isometric view
  */
-void AbstractAnimationWindow::playSlotFunction()
+void AbstractAnimationWindow::cameraPositionIsometric()
 {
-  mpVisualizer->getTimeManager()->setPause(false);
+  double d = computeDistanceToOrigin();
+  osg::Matrixd mat = osg::Matrixd(0.7071, 0, -0.7071, 0,
+                                  -0.409, 0.816, -0.409, 0,
+                                  0.57735,  0.57735, 0.57735, 0,
+                                  0.57735*d, 0.57735*d, 0.57735*d, 1);
+  mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
 /*!
- * \brief AbstractAnimationWindow::pauseSlotFunction
- * slot function for the pause button
+ * \brief AbstractAnimationWindow::cameraPositionSide
+ * sets the camera position to Side
  */
-void AbstractAnimationWindow::pauseSlotFunction()
+void AbstractAnimationWindow::cameraPositionSide()
 {
-  mpVisualizer->getTimeManager()->setPause(true);
+  double d = computeDistanceToOrigin();
+  osg::Matrixd mat = osg::Matrixd(1, 0, 0, 0,
+                                  0, 1, 0, 0,
+                                  0, 0, 1, 0,
+                                  0, 0, d, 1);
+  mpSceneView->getCameraManipulator()->setByMatrix(mat);
 }
 
 /*!
- * \brief AbstractAnimationWindow::initSlotFunction
- * slot function for the init button
+ * \brief AbstractAnimationWindow::cameraPositionFront
+ * sets the camera position to Front
  */
-void AbstractAnimationWindow::initSlotFunction()
+void AbstractAnimationWindow::cameraPositionFront()
 {
-  mpVisualizer->initVisualization();
-  bool state = mpAnimationSlider->blockSignals(true);
-  mpAnimationSlider->setValue(0);
-  mpAnimationSlider->blockSignals(state);
-  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  double d = computeDistanceToOrigin();
+  osg::Matrixd mat = osg::Matrixd(0, 0, 1, 0,
+                                  1, 0, 0, 0,
+                                  0, 1, 0, 0,
+                                  0, d, 0, 1);
+  mpSceneView->getCameraManipulator()->setByMatrix(mat);
+}
+
+/*!
+ * \brief AbstractAnimationWindow::cameraPositionTop
+ * sets the camera position to Top
+ */
+void AbstractAnimationWindow::cameraPositionTop()
+{
+  double d = computeDistanceToOrigin();
+  osg::Matrixd mat = osg::Matrixd( 0, 0,-1, 0,
+                                   0, 1, 0, 0,
+                                   1, 0, 0, 0,
+                                   d, 0, 0, 1);
+  mpSceneView->getCameraManipulator()->setByMatrix(mat);
+}
+
+/*!
+ * \brief AbstractAnimationWindow::computeDistanceToOrigin
+ * computes distance to origin using pythagoras theorem
+ */
+double AbstractAnimationWindow::computeDistanceToOrigin()
+{
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+  osg::Matrixd mat = manipulator->getMatrix();
+  //assemble
+
+  //Compute distance to center using pythagoras theorem
+  double d = sqrt(abs(mat(3,0))*abs(mat(3,0))+
+                  abs(mat(3,1))*abs(mat(3,1))+
+                  abs(mat(3,2))*abs(mat(3,2)));
+
+  //If d is very small (~0), set it to 1 as default
+  if(d < 1e-10) {
+    d=1;
+  }
+
+  return d;
+}
+
+/*!
+ * \brief AbstractAnimationWindow::renderFrame
+ * renders the osg viewer
+ */
+void AbstractAnimationWindow::renderFrame()
+{
+  frame();
 }
 
 /*!
@@ -343,22 +427,13 @@ void AbstractAnimationWindow::updateScene()
 }
 
 /*!
- * \brief AbstractAnimationWindow::renderFrame
- * renders the osg viewer
- */
-void AbstractAnimationWindow::renderFrame()
-{
-  frame();
-}
-
-/*!
  * \brief AbstractAnimationWindow::animationFileSlotFunction
  * opens a file dialog to chooes an animation
  */
 void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
 {
   QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
-                                                       NULL, Helper::visualizationFileTypes, NULL);
+                                                    NULL, Helper::visualizationFileTypes, NULL);
   if (fileName.isEmpty()) {
     return;
   }
@@ -366,17 +441,48 @@ void AbstractAnimationWindow::chooseAnimationFileSlotFunction()
 }
 
 /*!
- * \brief AbstractAnimationWindow::setSpeedUpSlotFunction
- * slot function to set the user input speed up
+ * \brief AbstractAnimationWindow::initSlotFunction
+ * slot function for the init button
  */
-void AbstractAnimationWindow::setSpeedSlotFunction()
+void AbstractAnimationWindow::initSlotFunction()
 {
-  QString str = mpSpeedComboBox->lineEdit()->text();
-  bool isFloat = true;
-  double value = str.toFloat(&isFloat);
-  if (isFloat && value > 0.0) {
-    mpVisualizer->getTimeManager()->setSpeedUp(value);
-  }
+  mpVisualizer->initVisualization();
+  bool state = mpAnimationSlider->blockSignals(true);
+  mpAnimationSlider->setValue(0);
+  mpAnimationSlider->blockSignals(state);
+  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+}
+
+/*!
+ * \brief AbstractAnimationWindow::playSlotFunction
+ * slot function for the play button
+ */
+void AbstractAnimationWindow::playSlotFunction()
+{
+  mpVisualizer->getTimeManager()->setPause(false);
+}
+
+/*!
+ * \brief AbstractAnimationWindow::pauseSlotFunction
+ * slot function for the pause button
+ */
+void AbstractAnimationWindow::pauseSlotFunction()
+{
+  mpVisualizer->getTimeManager()->setPause(true);
+}
+
+/*!
+ * \brief AbstractAnimationWindow::sliderSetTimeSlotFunction
+ * slot function for the time slider to jump to the adjusted point of time
+ */
+void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
+{
+  float time = (mpVisualizer->getTimeManager()->getEndTime()
+                - mpVisualizer->getTimeManager()->getStartTime())
+      * (float) (value / 100.0);
+  mpVisualizer->getTimeManager()->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  mpVisualizer->updateScene(time);
 }
 
 /*!
@@ -405,71 +511,17 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
 }
 
 /*!
- * \brief AbstractAnimationWindow::resetCamera
- * resets the camera position
+ * \brief AbstractAnimationWindow::setSpeedUpSlotFunction
+ * slot function to set the user input speed up
  */
-void AbstractAnimationWindow::resetCamera()
+void AbstractAnimationWindow::setSpeedSlotFunction()
 {
-  mpSceneView->home();
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionXY
- * sets the camera position to XY
- */
-void AbstractAnimationWindow::cameraPositionXY()
-{
-  resetCamera();
-  //the new orientation
-  osg::Matrix3 newOrient = osg::Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
-  osg::Matrixd mat = manipulator->getMatrix();
-  //assemble
-  mat = osg::Matrixd(newOrient(0, 0), newOrient(0, 1), newOrient(0, 2), 0,
-                     newOrient(1, 0), newOrient(1, 1), newOrient(1, 2), 0,
-                     newOrient(2, 0), newOrient(2, 1), newOrient(2, 2), 0,
-                     abs(mat(3, 0)), abs(mat(3, 2)), abs(mat(3, 1)), 1);
-  manipulator->setByMatrix(mat);
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionXZ
- * sets the camera position to XZ
- */
-void AbstractAnimationWindow::cameraPositionXZ()
-{
-  //to get the correct distance of the bodies, reset to home position and use the values of this camera position
-  resetCamera();
-  //the new orientation
-  osg::Matrix3 newOrient = osg::Matrix3(1, 0, 0, 0, 0, 1, 0, -1, 0);
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
-  osg::Matrixd mat = manipulator->getMatrix();
-  //assemble
-  mat = osg::Matrixd(newOrient(0, 0), newOrient(0, 1), newOrient(0, 2), 0,
-                     newOrient(1, 0), newOrient(1, 1), newOrient(1, 2), 0,
-                     newOrient(2, 0), newOrient(2, 1), newOrient(2, 2), 0,
-                     abs(mat(3, 0)), -abs(mat(3, 1)), abs(mat(3, 2)), 1);
-  manipulator->setByMatrix(mat);
-}
-
-/*!
- * \brief AbstractAnimationWindow::cameraPositionYZ
- * sets the camera position to YZ
- */
-void AbstractAnimationWindow::cameraPositionYZ()
-{
-  //to get the correct distance of the bodies, reset to home position and use the values of this camera position
-  resetCamera();
-  //the new orientation
-  osg::Matrix3 newOrient = osg::Matrix3(0, 1, 0, 0, 0, 1, 1, 0, 0);
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
-  osg::Matrixd mat = manipulator->getMatrix();
-  //assemble
-  mat = osg::Matrixd(newOrient(0, 0), newOrient(0, 1), newOrient(0, 2), 0,
-                     newOrient(1, 0), newOrient(1, 1), newOrient(1, 2), 0,
-                     newOrient(2, 0), newOrient(2, 1), newOrient(2, 2), 0,
-                     abs(mat(3, 1)), abs(mat(3, 2)), abs(mat(3, 0)), 1);
-  manipulator->setByMatrix(mat);
+  QString str = mpSpeedComboBox->lineEdit()->text();
+  bool isFloat = true;
+  double value = str.toFloat(&isFloat);
+  if (isFloat && value > 0.0) {
+    mpVisualizer->getTimeManager()->setSpeedUp(value);
+  }
 }
 
 /*!
@@ -480,15 +532,58 @@ void AbstractAnimationWindow::setPerspective(int value)
 {
   switch(value) {
     case 0:
-      cameraPositionXY();
+      cameraPositionIsometric();
       break;
     case 1:
-      cameraPositionYZ();
+      cameraPositionSide();
       break;
     case 2:
-      cameraPositionXZ();
+      cameraPositionTop();
+      break;
+    case 3:
+      cameraPositionFront();
       break;
   }
+}
+
+/*!
+ * \brief AbstractAnimationWindow::rotateCameraLeft
+ * rotates the camera 90 degress left about the line of sight
+ */
+void AbstractAnimationWindow::rotateCameraLeft()
+{
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+  osg::Matrixd mat = manipulator->getMatrix();
+  osg::Camera *pCamera = mpSceneView->getCamera();
+
+  osg::Vec3d eye, center, up;
+  pCamera->getViewMatrixAsLookAt(eye, center, up);
+  osg::Vec3d rotationAxis = center-eye;
+
+  osg::Matrixd rotMatrix;
+  rotMatrix.makeRotate(3.1415/2.0, rotationAxis);
+
+  mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+}
+
+/*!
+ * \brief AbstractAnimationWindow::rotateCameraRight
+ * rotates the camera 90 degress right about the line of sight
+ */
+void AbstractAnimationWindow::rotateCameraRight()
+{
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+  osg::Matrixd mat = manipulator->getMatrix();
+  osg::Camera *pCamera = mpSceneView->getCamera();
+
+  osg::Vec3d eye, center, up;
+  pCamera->getViewMatrixAsLookAt(eye, center, up);
+  osg::Vec3d rotationAxis = center-eye;
+
+  osg::Matrixd rotMatrix;
+  rotMatrix.makeRotate(-3.1415/2.0, rotationAxis);
+
+  mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
 }
 
 /*!
