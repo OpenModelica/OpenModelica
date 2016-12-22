@@ -52,6 +52,7 @@
 
 #include <QMainWindow>
 #include <QToolBar>
+#include <QToolButton>
 #include <QSlider>
 #include <QLineEdit>
 #include <QComboBox>
