@@ -3976,6 +3976,11 @@ void NotebookWindow::shiftcellsUp()
       }
       else
       {
+        if (current->isClosed())
+        {
+          QMessageBox::warning( 0, "Warning", tr("Cannot move closed cells."), "OK" );
+          return;
+        }
         //qDebug()<<"not a groupcell" ;
         QString currenttext=current->text();
         QString style=current->style()->name();
@@ -4078,6 +4083,11 @@ void NotebookWindow::shiftcellsDown()
       }
       else
       {
+        if (current->isClosed())
+        {
+          QMessageBox::warning( 0, "Warning", tr("Cannot move closed cells."), "OK" );
+          return;
+        }
         //qDebug()<<"not a group cell";
         QString style=current->style()->name();
         QString currenttext=current->text();
