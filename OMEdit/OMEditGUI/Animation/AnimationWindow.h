@@ -39,13 +39,80 @@
 
 class AbstractAnimationWindow;
 
-class AnimationWindow : public AbstractAnimationWindow
+#include <QMainWindow>
+#include <QToolBar>
+#include <QToolButton>
+#include <QSlider>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QTimer>
+
+class PlotWindowContainer;
+class VisualizerAbstract;
+class Label;
+
+class AnimationWindow : public QMainWindow, public osgViewer::CompositeViewer
 {
   Q_OBJECT
 public:
   AnimationWindow(QWidget *pParent);
   ~AnimationWindow();
-  void createActions();
+  QWidget* setupViewWidget();
+  void loadVisualization();
+  double getTimeFraction();
+  double getVisTime();
+  void setPathName(std::string name);
+  void setFileName(std::string name);
+  void openAnimationFile(QString fileName);
+  void openFMUSettingsDialog();
+public slots:
+  void sliderSetTimeSlotFunction(int value);
+  void playSlotFunction();
+  void pauseSlotFunction();
+  void initSlotFunction();
+  void updateScene();
+  void renderFrame();
+  void chooseAnimationFileSlotFunction();
+  void setSpeedSlotFunction();
+  void jumpToTimeSlotFunction();
+  void resetCamera();
+  void cameraPositionIsometric();
+  void cameraPositionSide();
+  void cameraPositionFront();
+  void cameraPositionTop();
+  void rotateCameraLeft();
+  void rotateCameraRight();
+
+  double computeDistanceToOrigin();
+  void setPerspective(int value);
+  void saveSimSettings();
+private:
+  PlotWindowContainer *mpPlotWindowContainer;
+  //to be animated
+  std::string mPathName;
+  std::string mFileName;
+  //osg viewer scene
+  osgViewer::View* mpSceneView;
+  //stores the data for the shapes, time management, functionality for updating the values(mat/fmu) etc.
+  VisualizerAbstract* mpVisualizer;
+  //widgets
+  QWidget* mpViewerWidget;
+  QTimer mRenderFrameTimer;
+  QToolBar* mpAnimationToolBar;
+  QSlider* mpAnimationSlider;
+  Label *mpAnimationTimeLabel;
+  QLineEdit *mpTimeTextBox;
+  Label *mpAnimationSpeedLabel;
+  QComboBox *mpSpeedComboBox;
+  QComboBox *mpPerspectiveDropDownBox;
+  QToolButton *mpRotateCameraLeftButton;
+  QToolButton *mpRotateCameraRightButton;
+  QDialog *mpFMUSettingsDialog;
+  //actions
+  QAction *mpAnimationChooseFileAction;
+  QAction *mpAnimationInitializeAction;
+  QAction *mpAnimationPlayAction;
+  QAction *mpAnimationPauseAction;
 };
 
 #endif // ANIMATIONWINDOW_H

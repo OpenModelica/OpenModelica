@@ -3345,9 +3345,9 @@ void ModelWidget::writeVisualXMLFile()
     visualFile << "    <height><exp>0.0025</exp></height>\n";
     visualFile << "    <extra><exp>0.0</exp></extra>\n";
     visualFile << "    <color>\n";
-    visualFile << "      <exp>0.0</exp>\n";
-    visualFile << "      <exp>0.0</exp>\n";
     visualFile << "      <exp>255.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>0.0</exp>\n";
     visualFile << "    </color>\n";
     visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
     visualFile << "  </shape>\n";
@@ -3391,8 +3391,8 @@ void ModelWidget::writeVisualXMLFile()
     visualFile << "    <height><exp>0.0025</exp></height>\n";
     visualFile << "    <extra><exp>0.0</exp></extra>\n";
     visualFile << "    <color>\n";
-    visualFile << "      <exp>255.0</exp>\n";
     visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>255.0</exp>\n";
     visualFile << "      <exp>0.0</exp>\n";
     visualFile << "    </color>\n";
     visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
@@ -3438,8 +3438,8 @@ void ModelWidget::writeVisualXMLFile()
     visualFile << "    <extra><exp>0.0</exp></extra>\n";
     visualFile << "    <color>\n";
     visualFile << "      <exp>0.0</exp>\n";
-    visualFile << "      <exp>255.0</exp>\n";
     visualFile << "      <exp>0.0</exp>\n";
+    visualFile << "      <exp>255.0</exp>\n";
     visualFile << "    </color>\n";
     visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
     visualFile << "  </shape>\n";
