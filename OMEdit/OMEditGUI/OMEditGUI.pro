@@ -243,7 +243,9 @@ HEADERS  += Util/Helper.h \
 
 CONFIG(osg) {
 
-SOURCES += Animation/AnimationWindow.cpp \
+SOURCES += Animation/AbstractAnimationWindow.cpp \
+  Animation/AnimationWindow.cpp \
+  Animation/ThreeDViewer.cpp \
   Animation/ExtraShapes.cpp \
   Animation/Visualizer.cpp \
   Animation/VisualizerMAT.cpp \
@@ -255,7 +257,9 @@ SOURCES += Animation/AnimationWindow.cpp \
   ../../osgQt/GraphicsWindowQt.cpp \
 
 
-HEADERS += Animation/AnimationWindow.h \
+HEADERS += Animation/AbstractAnimationWindow.h \
+  Animation/AnimationWindow.h \
+  Animation/ThreeDViewer.h \
   Animation/AnimationUtil.h \
   Animation/ExtraShapes.h \
   Animation/Visualizer.h \

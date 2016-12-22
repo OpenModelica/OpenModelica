@@ -63,6 +63,9 @@ class GDBLoggerWidget;
 class DocumentationWidget;
 class PlotWindowContainer;
 class VariablesWidget;
+#if !defined(WITHOUT_OSG)
+class ThreeDViewer;
+#endif
 class BreakpointsWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
@@ -213,6 +216,10 @@ private:
   PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
+#if !defined(WITHOUT_OSG)
+  ThreeDViewer *mpThreeDViewer;
+  QDockWidget *mpThreeDViewerDockWidget;
+#endif
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;

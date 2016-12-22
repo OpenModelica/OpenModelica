@@ -44,6 +44,10 @@
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
+#if !defined(WITHOUT_OSG)
+#include "Animation/ThreeDViewer.h"
+#endif
+#include "Animation/AnimationWindow.h"
 #include "Util/Helper.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
@@ -263,6 +267,17 @@ void MainWindow::setUpMainWindow()
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
+#if !defined(WITHOUT_OSG)
+  // create an object of ThreeDViewer
+  mpThreeDViewer = new ThreeDViewer(this);
+  // Create ThreeDViewer dock
+  mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer Browser"), this);
+  mpThreeDViewerDockWidget->setObjectName("3DViewer");
+  mpThreeDViewerDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
+  addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
+  mpThreeDViewerDockWidget->hide();
+#endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -2876,6 +2891,9 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
+#if !defined(WITHOUT_OSG)
+  pViewWindowsMenu->addAction(mpThreeDViewerDockWidget->toggleViewAction());
+#endif
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
