@@ -468,6 +468,9 @@ private:
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
+#if !defined(WITHOUT_OSG)
+  void updateThreeDViewer(QMdiSubWindow *pSubWindow);
+#endif
   void saveModelWidget();
   void saveAsModelWidget();
   void saveTotalModelWidget();

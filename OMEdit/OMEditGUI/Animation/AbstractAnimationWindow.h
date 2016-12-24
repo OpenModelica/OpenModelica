@@ -57,7 +57,7 @@ public:
   virtual void createActions();
 private:
   QWidget* setupViewWidget();
-  void loadVisualization();
+  bool loadVisualization();
 protected:
   //to be animated
   std::string mPathName;

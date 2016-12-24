@@ -46,6 +46,9 @@
 #include "Options/NotificationsDialog.h"
 #include "ModelicaClassDialog.h"
 #include "TLM/TLMCoSimulationDialog.h"
+#if !defined(WITHOUT_OSG)
+#include "Animation/ThreeDViewer.h"
+#endif
 
 #include <QNetworkReply>
 
@@ -4516,6 +4519,9 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   QApplication::instance()->installEventFilter(this);
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(currentModelWidgetChanged(QMdiSubWindow*)));
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), MainWindow::instance(), SLOT(updateModelSwitcherMenu(QMdiSubWindow*)));
+#if !defined(WITHOUT_OSG)
+  connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(updateThreeDViewer(QMdiSubWindow*)));
+#endif
   // add actions
   connect(MainWindow::instance()->getSaveAction(), SIGNAL(triggered()), SLOT(saveModelWidget()));
   connect(MainWindow::instance()->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
@@ -4965,6 +4971,28 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     enabled = false;
   }
 }
+
+#if !defined(WITHOUT_OSG)
+/*!
+ * \brief ModelWidgetContainer::updateThreeDViewer
+ * Updates the ThreeDViewer when subWindowActivated(QMdiSubWindow*) signal of ModelWidgetContainer is raised.
+ * \param pSubWindow
+ */
+void ModelWidgetContainer::updateThreeDViewer(QMdiSubWindow *pSubWindow)
+{
+  if (!pSubWindow) {
+    return;
+  }
+  ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
+  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    pModelWidget->writeVisualXMLFile();
+    QFileInfo fileInfo(pModelWidget->getLibraryTreeItem()->getFileName());
+    QString fileName = QString("%1/%2.csv").arg(fileInfo.absolutePath()).arg(fileInfo.baseName());
+    MainWindow::instance()->getThreeDViewerDockWidget()->show();
+    MainWindow::instance()->getThreeDViewer()->openAnimationFile(fileName);
+  }
+}
+#endif
 
 /*!
  * \brief ModelWidgetContainer::saveModelWidget

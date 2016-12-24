@@ -124,27 +124,28 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
     //std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
-    loadVisualization();
-    // start the widgets
-    mpAnimationInitializeAction->setEnabled(true);
-    mpAnimationPlayAction->setEnabled(true);
-    mpAnimationPauseAction->setEnabled(true);
-    mpAnimationSlider->setEnabled(true);
-    bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(0);
-    mpAnimationSlider->blockSignals(state);
-    mpSpeedComboBox->setEnabled(true);
-    mpTimeTextBox->setEnabled(true);
-    mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
-    /* Only use isometric view as default for csv file type.
-     * Otherwise use side view as default which suits better for Modelica models.
-     */
-    if (isCSV(mFileName)) {
-      mpPerspectiveDropDownBox->setCurrentIndex(0);
-      cameraPositionIsometric();
-    } else {
-      mpPerspectiveDropDownBox->setCurrentIndex(1);
-      cameraPositionSide();
+    if (loadVisualization()) {
+      // start the widgets
+      mpAnimationInitializeAction->setEnabled(true);
+      mpAnimationPlayAction->setEnabled(true);
+      mpAnimationPauseAction->setEnabled(true);
+      mpAnimationSlider->setEnabled(true);
+      bool state = mpAnimationSlider->blockSignals(true);
+      mpAnimationSlider->setValue(0);
+      mpAnimationSlider->blockSignals(state);
+      mpSpeedComboBox->setEnabled(true);
+      mpTimeTextBox->setEnabled(true);
+      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+      /* Only use isometric view as default for csv file type.
+       * Otherwise use side view as default which suits better for Modelica models.
+       */
+      if (isCSV(mFileName)) {
+        mpPerspectiveDropDownBox->setCurrentIndex(0);
+        cameraPositionIsometric();
+      } else {
+        mpPerspectiveDropDownBox->setCurrentIndex(1);
+        cameraPositionSide();
+      }
     }
   }
 }
@@ -187,8 +188,59 @@ void AbstractAnimationWindow::openFMUSettingsDialog()
 
 void AbstractAnimationWindow::createActions()
 {
+  // actions and widgets for the toolbar
+  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  // choose file action
+  mpAnimationChooseFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::animationChooseFile, this);
+  mpAnimationChooseFileAction->setStatusTip(Helper::animationChooseFileTip);
+  connect(mpAnimationChooseFileAction, SIGNAL(triggered()),this, SLOT(chooseAnimationFileSlotFunction()));
+  // initialize action
+  mpAnimationInitializeAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), Helper::animationInitialize, this);
+  mpAnimationInitializeAction->setStatusTip(Helper::animationInitializeTip);
+  mpAnimationInitializeAction->setEnabled(false);
+  connect(mpAnimationInitializeAction, SIGNAL(triggered()),this, SLOT(initSlotFunction()));
+  // animation play action
+  mpAnimationPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
+  mpAnimationPlayAction->setStatusTip(Helper::animationPlayTip);
+  mpAnimationPlayAction->setEnabled(false);
+  connect(mpAnimationPlayAction, SIGNAL(triggered()),this, SLOT(playSlotFunction()));
+  // animation pause action
+  mpAnimationPauseAction = new QAction(QIcon(":/Resources/icons/pause.svg"), Helper::animationPause, this);
+  mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
+  mpAnimationPauseAction->setEnabled(false);
+  connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
+  // animation slide
+  mpAnimationSlider = new QSlider(Qt::Horizontal);
+  mpAnimationSlider->setMinimum(0);
+  mpAnimationSlider->setMaximum(100);
+  mpAnimationSlider->setSliderPosition(0);
+  mpAnimationSlider->setEnabled(false);
+  connect(mpAnimationSlider, SIGNAL(valueChanged(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
+  // animation time
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  pDoubleValidator->setBottom(0);
+  mpAnimationTimeLabel = new Label;
+  mpAnimationTimeLabel->setText(tr("Time [s]:"));
+  mpTimeTextBox = new QLineEdit("0.0");
+  mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpTimeTextBox->setEnabled(false);
+  mpTimeTextBox->setValidator(pDoubleValidator);
+  connect(mpTimeTextBox, SIGNAL(returnPressed()),this, SLOT(jumpToTimeSlotFunction()));
+  // animation speed
+  mpAnimationSpeedLabel = new Label;
+  mpAnimationSpeedLabel->setText(tr("Speed:"));
+  mpSpeedComboBox = new QComboBox;
+  mpSpeedComboBox->setEditable(true);
+  mpSpeedComboBox->addItems(QStringList() << "10" << "5" << "2" << "1" << "0.5" << "0.2" << "0.1");
+  mpSpeedComboBox->setCurrentIndex(3);
+  mpSpeedComboBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpSpeedComboBox->setEnabled(false);
+  mpSpeedComboBox->setValidator(pDoubleValidator);
+  mpSpeedComboBox->setCompleter(0);
+  connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)),this, SLOT(setSpeedSlotFunction()));
+  connect(mpSpeedComboBox->lineEdit(), SIGNAL(textChanged(QString)),this, SLOT(setSpeedSlotFunction()));
   // perspective drop down
-  mpPerspectiveDropDownBox = new QComboBox(this);
+  mpPerspectiveDropDownBox = new QComboBox;
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective0.svg"), QString("Isometric"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective1.svg"),QString("Side"));
   mpPerspectiveDropDownBox->addItem(QIcon(":/Resources/icons/perspective2.svg"),QString("Front"));
@@ -256,7 +308,7 @@ QWidget* AbstractAnimationWindow::setupViewWidget()
  * \brief AbstractAnimationWindow::loadVisualization
  * loads the data and the xml scene description
  */
-void AbstractAnimationWindow::loadVisualization()
+bool AbstractAnimationWindow::loadVisualization()
 {
   VisType visType = VisType::NONE;
   // Get visualization type.
@@ -269,6 +321,7 @@ void AbstractAnimationWindow::loadVisualization()
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unknown visualization type."),
                                                           Helper::scriptingKind, Helper::errorLevel));
+    return false;
   }
   //init visualizer
   if (visType == VisType::MAT) {
@@ -281,6 +334,7 @@ void AbstractAnimationWindow::loadVisualization()
     QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
+    return false;
   }
   //load the XML File, build osgTree, get initial values for the shapes
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
@@ -288,6 +342,7 @@ void AbstractAnimationWindow::loadVisualization()
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
+    return false;
   } else {
     connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualizer->initData();
@@ -302,8 +357,7 @@ void AbstractAnimationWindow::loadVisualization()
   }
   //add window title
   this->setWindowTitle(QString::fromStdString(mFileName));
-  //jump to xy-view
-  cameraPositionIsometric();
+  return true;
 }
 
 /*!

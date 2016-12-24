@@ -104,6 +104,10 @@ public:
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+#if !defined(WITHOUT_OSG)
+  ThreeDViewer* getThreeDViewer() {return mpThreeDViewer;}
+  QDockWidget* getThreeDViewerDockWidget() {return mpThreeDViewerDockWidget;}
+#endif
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
