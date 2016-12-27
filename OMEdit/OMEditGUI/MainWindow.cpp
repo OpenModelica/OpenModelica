@@ -138,7 +138,7 @@ void MainWindow::setUpMainWindow()
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
   mpOutputFileDataNotifier = new FileDataNotifier(outputFileName);
-  connect(mpOutputFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readOutputFile(qint64)));
+  connect(mpOutputFileDataNotifier, SIGNAL(sendData(QString)), SLOT(writeOutputFileData(QString)));
   mpOutputFileDataNotifier->start();
   // Reopen the standard error stream.
   QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
@@ -146,7 +146,7 @@ void MainWindow::setUpMainWindow()
   setbuf(stderr, NULL); // used non-buffered stderr
   mpErrorFileDataNotifier = 0;
   mpErrorFileDataNotifier = new FileDataNotifier(errorFileName);
-  connect(mpErrorFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readErrorFile(qint64)));
+  connect(mpErrorFileDataNotifier, SIGNAL(sendData(QString)), SLOT(writeErrorFileData(QString)));
   mpErrorFileDataNotifier->start();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
@@ -1378,25 +1378,25 @@ void MainWindow::loadSystemLibrary()
 }
 
 /*!
- * \brief MainWindow::readOutputFile
- * Reads the available output data from file and adds it to MessagesWidget.
- * \param bytes
+ * \brief MainWindow::writeOutputFileData
+ * Writes the output data from stdout file and adds it to MessagesWidget.
+ * \param data
  */
-void MainWindow::readOutputFile(qint64 bytes)
+void MainWindow::writeOutputFileData(QString data)
 {
-  QString data = mpOutputFileDataNotifier->read(bytes);
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data,
+                                                        Helper::scriptingKind, Helper::notificationLevel));
 }
 
 /*!
- * \brief MainWindow::readErrorFile
- * Reads the available error data from file and adds it to MessagesWidget.
- * \param bytes
+ * \brief MainWindow::writeErrorFileData
+ * Writes the error data from stderr file and adds it to MessagesWidget.
+ * \param data
  */
-void MainWindow::readErrorFile(qint64 bytes)
+void MainWindow::writeErrorFileData(QString data)
 {
-  QString data = mpErrorFileDataNotifier->read(bytes);
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data,
+                                                        Helper::scriptingKind, Helper::errorLevel));
 }
 
 //! Opens the recent file.

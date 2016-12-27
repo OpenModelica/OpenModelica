@@ -120,17 +120,15 @@ class FileDataNotifier : public QThread
 public:
   FileDataNotifier(const QString fileName);
   void exit(int retcode = 0);
-  QByteArray read(qint64 maxlen);
 private:
   QFile mFile;
   bool mStop;
-  qint64 mBytesAvailable;
 protected:
   void run();
 public slots:
   void start(Priority = InheritPriority);
 signals:
-  void bytesAvailable(qint64 bytes);
+  void sendData(QString data);
 };
 
 /*!

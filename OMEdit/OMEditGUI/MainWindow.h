@@ -368,8 +368,8 @@ public slots:
   void loadExternalModels();
   void openDirectory();
   void loadSystemLibrary();
-  void readOutputFile(qint64 bytes);
-  void readErrorFile(qint64 bytes);
+  void writeOutputFileData(QString data);
+  void writeErrorFileData(QString data);
   void openRecentFile();
   void clearRecentFilesList();
   void undo();

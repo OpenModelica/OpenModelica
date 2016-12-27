@@ -149,7 +149,6 @@ FileDataNotifier::FileDataNotifier(const QString fileName)
 {
   mFile.setFileName(fileName);
   mStop = false;
-  mBytesAvailable = 0;
 }
 
 /*!
@@ -162,17 +161,6 @@ void FileDataNotifier::exit(int retcode)
 {
   mStop = true;
   QThread::exit(retcode);
-}
-
-/*!
- * \brief FileDataNotifier::read
- * Reads the bytes from the file.
- * \param maxlen
- * \return
- */
-QByteArray FileDataNotifier::read(qint64 maxlen)
-{
-  return mFile.read(maxlen);
 }
 
 /*!
@@ -190,9 +178,8 @@ void FileDataNotifier::run()
         break;
       }
       // if file has bytes available to read.
-      if (mFile.bytesAvailable() > mBytesAvailable) {
-        mBytesAvailable = mFile.bytesAvailable();
-        emit bytesAvailable(mFile.bytesAvailable());
+      if (mFile.bytesAvailable() > 0) {
+        emit sendData(QString(mFile.readAll()));
       }
       Sleep::sleep(1);
     }
