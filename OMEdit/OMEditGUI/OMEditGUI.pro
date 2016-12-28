@@ -72,11 +72,11 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     }
-    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+    LIBS += -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
   } else { # debug
     contains(QT_ARCH, i386) { # 32-bit
       LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
@@ -171,7 +171,8 @@ SOURCES += main.cpp \
   Debugger/DebuggerConfigurationsDialog.cpp \
   Debugger/Attach/AttachToProcessDialog.cpp \
   Debugger/Attach/ProcessListModel.cpp \
-  CrashReport/backtrace.c \
+#  CrashReport/backtrace.c \
+  CrashReport/GDBBacktrace.cpp \
   CrashReport/CrashReportDialog.cpp
 
 HEADERS  += Util/Helper.h \
@@ -238,7 +239,8 @@ HEADERS  += Util/Helper.h \
   Debugger/DebuggerConfigurationsDialog.h \
   Debugger/Attach/AttachToProcessDialog.h \
   Debugger/Attach/ProcessListModel.h \
-  CrashReport/backtrace.h \
+#  CrashReport/backtrace.h \
+  CrashReport/GDBBacktrace.h \
   CrashReport/CrashReportDialog.h
 
 CONFIG(osg) {

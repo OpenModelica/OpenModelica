@@ -800,6 +800,25 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
   return R;
 }
 
+#ifdef WIN32
+QString Utilities::getGDBPath()
+{
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+  const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
+#endif
+#if defined(__MINGW64__)
+  const char *sgdb = "/tools/msys/mingw64/bin/gdb.exe";
+#endif
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty()) {
+    return QString(Helper::OpenModelicaHome).append(sgdb);
+  } else {
+    QString qOMDEV = QString(OMDEV).replace("\\", "/");
+    return QString(qOMDEV).append(sgdb);
+  }
+}
+#endif
+
 Utilities::FileIconProvider::FileIconProviderImplementation *instance()
 {
   static Utilities::FileIconProvider::FileIconProviderImplementation theInstance;

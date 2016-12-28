@@ -680,6 +680,8 @@ QString GUIMessages::getMessage(int type)
           .arg(Helper::simulate);
     case MULTIPLE_DECLARATIONS_COMPONENT:
       return tr("Multiple declarations of component <b>%1</b> are found.");
+    case GDB_ERROR:
+      return tr("Following error has occurred <b>%1</b> GDB arguments are <b>\"%2\"</b>");
     default:
       return "";
   }
