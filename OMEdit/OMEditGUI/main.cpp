@@ -93,8 +93,9 @@ static inline void writeGDBErrorFile(QString output)
 
 #ifdef WIN32
 #include "CrashReport/backtrace.h"
+
 static char *g_output = NULL;
-LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS /*info*/)
+LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 {
   GDBBacktrace *pGDBBacktrace = new GDBBacktrace;
   if (pGDBBacktrace->errorOccurred()) {

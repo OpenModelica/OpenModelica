@@ -98,6 +98,10 @@ win32 {
   CONFIG += osg
 } else { # Unix libraries and includes
   include(OMEdit.config)
+  # required for backtrace
+  # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+  # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+  # -s will remove all symbol table and relocation information from the executable.
   # On unix we use backtrace of execinfo.h which requires -rdynamic
   # The symbol names may be unavailable without the use of special linker
   # options.  For systems using the GNU linker, it is necessary to use
@@ -172,7 +176,7 @@ SOURCES += main.cpp \
   Debugger/DebuggerConfigurationsDialog.cpp \
   Debugger/Attach/AttachToProcessDialog.cpp \
   Debugger/Attach/ProcessListModel.cpp \
-#  CrashReport/backtrace.c \
+  CrashReport/backtrace.c \
   CrashReport/GDBBacktrace.cpp \
   CrashReport/CrashReportDialog.cpp
 
@@ -240,7 +244,7 @@ HEADERS  += Util/Helper.h \
   Debugger/DebuggerConfigurationsDialog.h \
   Debugger/Attach/AttachToProcessDialog.h \
   Debugger/Attach/ProcessListModel.h \
-#  CrashReport/backtrace.h \
+  CrashReport/backtrace.h \
   CrashReport/GDBBacktrace.h \
   CrashReport/CrashReportDialog.h
 

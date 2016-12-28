@@ -371,8 +371,6 @@ void MainWindow::setUpMainWindow()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked()) {
     mpAutoSaveTimer->start();
   }
-  QWidget *p;
-  p->setObjectName("a");
 }
 
 /*!
