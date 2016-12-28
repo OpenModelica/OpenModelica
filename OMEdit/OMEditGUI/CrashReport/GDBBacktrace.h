@@ -42,10 +42,13 @@ class GDBBacktrace : public QObject
   Q_OBJECT
 public:
   GDBBacktrace(QObject *parent = 0);
+  QString output() {return mOutput;}
+  bool errorOccurred() {return mErrorOccurred;}
 private:
   QProcess *mpGDBProcess;
   QStringList mGDBArguments;
   QString mOutput;
+  bool mErrorOccurred;
 
   QString createTemporaryCommandsFile();
   void showCrashReportDialog();

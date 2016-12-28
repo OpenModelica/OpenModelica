@@ -72,11 +72,11 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
     }
-    LIBS += -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
   } else { # debug
     contains(QT_ARCH, i386) { # 32-bit
       LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
@@ -104,7 +104,8 @@ win32 {
   # the -rdynamic linker option.  Note that names of "static" functions
   # are not exposed, and won't be available in the backtrace.
   CONFIG(release, debug|release) {
-    QMAKE_LFLAGS_RELEASE += -rdynamic
+    QMAKE_CXXFLAGS += -g
+    QMAKE_LFLAGS_RELEASE = -rdynamic
   }
 }
 

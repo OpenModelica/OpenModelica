@@ -76,6 +76,7 @@ GDBBacktrace::GDBBacktrace(QObject *parent)
   mGDBArguments.clear();
   mGDBArguments << "-q" << "--nw" << "--nx" << "--batch" << "--command" << createTemporaryCommandsFile() << "--pid" << QString::number(processId);
   mOutput.clear();
+  mErrorOccurred = false;
   mpGDBProcess->start(program, mGDBArguments);
   mpGDBProcess->waitForFinished(-1);
 }
@@ -135,7 +136,12 @@ void GDBBacktrace::showCrashReportDialog()
  */
 void GDBBacktrace::readGDBOutput()
 {
-  mOutput.append(QString(mpGDBProcess->readAll()));
+  QString msg = QString(mpGDBProcess->readAll());
+  // if we are unable to attach then set error occurred to true.
+  if (msg.startsWith("Could not attach to process", Qt::CaseInsensitive)) {
+    mErrorOccurred = true;
+  }
+  mOutput.append(msg);
 }
 
 /*!
@@ -145,15 +151,9 @@ void GDBBacktrace::readGDBOutput()
  */
 void GDBBacktrace::handleGDBProcessError(QProcess::ProcessError error)
 {
-  switch (error) {
-    case QProcess::FailedToStart:
-      mOutput.append(GUIMessages::getMessage(GUIMessages::GDB_ERROR).arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" ")));
-      showCrashReportDialog();
-      break;
-    default:
-      mOutput.append(GUIMessages::getMessage(GUIMessages::GDB_ERROR).arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" ")));
-      break;
-  }
+  Q_UNUSED(error);
+  mErrorOccurred = true;
+  mOutput.append(GUIMessages::getMessage(GUIMessages::GDB_ERROR).arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" ")));
 }
 
 /*!
@@ -164,12 +164,13 @@ void GDBBacktrace::handleGDBProcessError(QProcess::ProcessError error)
  */
 void GDBBacktrace::handleGDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  Q_UNUSED(exitStatus);
   QString exitCodeStr = tr("GDB process failed. Exited with code %1.").arg(exitCode);
-  if (mpGDBProcess->error() == QProcess::UnknownError) {
-    mOutput.append(exitCodeStr);
+  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+    if (!mErrorOccurred) {
+      showCrashReportDialog();
+    }
   } else {
+    mErrorOccurred = true;
     mOutput.append(mpGDBProcess->errorString() + "\n" + exitCodeStr);
   }
-  showCrashReportDialog();
 }
