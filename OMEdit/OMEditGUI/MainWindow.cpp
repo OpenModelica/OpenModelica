@@ -269,6 +269,7 @@ void MainWindow::setUpMainWindow()
 #if !defined(WITHOUT_OSG)
   // create an object of ThreeDViewer
   mpThreeDViewer = new ThreeDViewer(this);
+  mpThreeDViewer->stopRenderFrameTimer();
   // Create ThreeDViewer dock
   mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer Browser"), this);
   mpThreeDViewerDockWidget->setObjectName("3DViewer");
@@ -276,6 +277,7 @@ void MainWindow::setUpMainWindow()
   mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
   addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
   mpThreeDViewerDockWidget->hide();
+  connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
 #endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
@@ -2306,6 +2308,22 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
     }
   }
 }
+
+#if !defined(WITHOUT_OSG)
+/*!
+ * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
+ * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
+ * \param visible
+ */
+void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
+{
+  if (visible) {
+    mpThreeDViewer->startRenderFrameTimer();
+  } else {
+    mpThreeDViewer->stopRenderFrameTimer();
+  }
+}
+#endif
 
 /*!
  * \brief MainWindow::autoSave

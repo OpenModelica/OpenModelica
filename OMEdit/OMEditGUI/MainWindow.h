@@ -427,6 +427,9 @@ public slots:
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
+#if !defined(WITHOUT_OSG)
+  void threeDViewerDockWidgetVisibilityChanged(bool visible);
+#endif
   void autoSave();
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();
