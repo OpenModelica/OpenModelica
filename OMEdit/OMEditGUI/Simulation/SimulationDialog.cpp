@@ -1215,6 +1215,8 @@ void SimulationDialog::performSimulation()
   }
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   simulationOptions = createSimulationOptions();
+  // change the cursor to Qt::WaitCursor
+  QApplication::setOverrideCursor(Qt::WaitCursor);
   // show the progress bar
   MainWindow::instance()->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
   MainWindow::instance()->getProgressBar()->setRange(0, 0);
@@ -1223,6 +1225,8 @@ void SimulationDialog::performSimulation()
   // hide the progress bar
   MainWindow::instance()->hideProgressBar();
   MainWindow::instance()->getStatusBar()->clearMessage();
+  // restore the cursor
+  QApplication::restoreOverrideCursor();
   mIsReSimulate = false;
   if (isTranslationSuccessful) {
     // check if we can compile using the target compiler
