@@ -2309,7 +2309,6 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
   }
 }
 
-#if !defined(WITHOUT_OSG)
 /*!
  * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
  * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
@@ -2317,13 +2316,14 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
  */
 void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 {
+#if !defined(WITHOUT_OSG)
   if (visible) {
     mpThreeDViewer->startRenderFrameTimer();
   } else {
     mpThreeDViewer->stopRenderFrameTimer();
   }
-}
 #endif
+}
 
 /*!
  * \brief MainWindow::autoSave
