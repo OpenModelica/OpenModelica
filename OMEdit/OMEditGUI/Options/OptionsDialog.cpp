@@ -801,6 +801,7 @@ void OptionsDialog::saveGeneralSettings()
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
+  MainWindow::instance()->getAutoSaveTimer()->setInterval(mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value() * 1000);
   MainWindow::instance()->toggleAutoSave();
   // save welcome page
   switch (mpGeneralSettingsPage->getWelcomePageView()) {

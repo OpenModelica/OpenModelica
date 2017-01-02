@@ -3023,9 +3023,8 @@ void MainWindow::createMenus()
  */
 void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
 {
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (!pChildLibraryTreeItem->isSystemLibrary()) {
+  foreach (LibraryTreeItem *pChildLibraryTreeItem, pLibraryTreeItem->childrenItems()) {
+    if (pChildLibraryTreeItem && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (pChildLibraryTreeItem->isFilePathValid() && !pChildLibraryTreeItem->isSaved()) {
         mpLibraryWidget->saveLibraryTreeItem(pChildLibraryTreeItem);
       } else {
