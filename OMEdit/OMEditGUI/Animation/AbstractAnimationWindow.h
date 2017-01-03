@@ -51,7 +51,8 @@ class AbstractAnimationWindow : public QMainWindow, public osgViewer::CompositeV
   Q_OBJECT
 public:
   AbstractAnimationWindow(QWidget *pParent);
-  QToolBar* getAnimationToolBar() {return mpAnimationToolBar;}
+  void stopRenderFrameTimer() {mRenderFrameTimer.stop();}
+  void startRenderFrameTimer() {mRenderFrameTimer.start();}
   void openAnimationFile(QString fileName);
   void openFMUSettingsDialog();
   virtual void createActions();

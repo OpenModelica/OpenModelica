@@ -372,8 +372,8 @@ public slots:
   void loadExternalModels();
   void openDirectory();
   void loadSystemLibrary();
-  void readOutputFile(qint64 bytes);
-  void readErrorFile(qint64 bytes);
+  void writeOutputFileData(QString data);
+  void writeErrorFileData(QString data);
   void openRecentFile();
   void clearRecentFilesList();
   void undo();
@@ -431,6 +431,7 @@ public slots:
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
+  void threeDViewerDockWidgetVisibilityChanged(bool visible);
   void autoSave();
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();

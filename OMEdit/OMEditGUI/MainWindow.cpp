@@ -138,7 +138,7 @@ void MainWindow::setUpMainWindow()
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
   mpOutputFileDataNotifier = new FileDataNotifier(outputFileName);
-  connect(mpOutputFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readOutputFile(qint64)));
+  connect(mpOutputFileDataNotifier, SIGNAL(sendData(QString)), SLOT(writeOutputFileData(QString)));
   mpOutputFileDataNotifier->start();
   // Reopen the standard error stream.
   QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
@@ -146,7 +146,7 @@ void MainWindow::setUpMainWindow()
   setbuf(stderr, NULL); // used non-buffered stderr
   mpErrorFileDataNotifier = 0;
   mpErrorFileDataNotifier = new FileDataNotifier(errorFileName);
-  connect(mpErrorFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readErrorFile(qint64)));
+  connect(mpErrorFileDataNotifier, SIGNAL(sendData(QString)), SLOT(writeErrorFileData(QString)));
   mpErrorFileDataNotifier->start();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
@@ -269,6 +269,7 @@ void MainWindow::setUpMainWindow()
 #if !defined(WITHOUT_OSG)
   // create an object of ThreeDViewer
   mpThreeDViewer = new ThreeDViewer(this);
+  mpThreeDViewer->stopRenderFrameTimer();
   // Create ThreeDViewer dock
   mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer Browser"), this);
   mpThreeDViewerDockWidget->setObjectName("3DViewer");
@@ -276,6 +277,7 @@ void MainWindow::setUpMainWindow()
   mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
   addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
   mpThreeDViewerDockWidget->hide();
+  connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
 #endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
@@ -1378,25 +1380,25 @@ void MainWindow::loadSystemLibrary()
 }
 
 /*!
- * \brief MainWindow::readOutputFile
- * Reads the available output data from file and adds it to MessagesWidget.
- * \param bytes
+ * \brief MainWindow::writeOutputFileData
+ * Writes the output data from stdout file and adds it to MessagesWidget.
+ * \param data
  */
-void MainWindow::readOutputFile(qint64 bytes)
+void MainWindow::writeOutputFileData(QString data)
 {
-  QString data = mpOutputFileDataNotifier->read(bytes);
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data,
+                                                        Helper::scriptingKind, Helper::notificationLevel));
 }
 
 /*!
- * \brief MainWindow::readErrorFile
- * Reads the available error data from file and adds it to MessagesWidget.
- * \param bytes
+ * \brief MainWindow::writeErrorFileData
+ * Writes the error data from stderr file and adds it to MessagesWidget.
+ * \param data
  */
-void MainWindow::readErrorFile(qint64 bytes)
+void MainWindow::writeErrorFileData(QString data)
 {
-  QString data = mpErrorFileDataNotifier->read(bytes);
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data,
+                                                        Helper::scriptingKind, Helper::errorLevel));
 }
 
 //! Opens the recent file.
@@ -2308,6 +2310,22 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
 }
 
 /*!
+ * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
+ * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
+ * \param visible
+ */
+void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
+{
+#if !defined(WITHOUT_OSG)
+  if (visible) {
+    mpThreeDViewer->startRenderFrameTimer();
+  } else {
+    mpThreeDViewer->stopRenderFrameTimer();
+  }
+#endif
+}
+
+/*!
  * \brief MainWindow::autoSave
  * Slot activated when mpAutoSaveTimer timeout SIGNAL is raised.\n
  * Auto saves the classes which user has alreadys saved to a file. Classes not saved to a file are not saved.
@@ -3005,9 +3023,8 @@ void MainWindow::createMenus()
  */
 void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
 {
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (!pChildLibraryTreeItem->isSystemLibrary()) {
+  foreach (LibraryTreeItem *pChildLibraryTreeItem, pLibraryTreeItem->childrenItems()) {
+    if (pChildLibraryTreeItem && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (pChildLibraryTreeItem->isFilePathValid() && !pChildLibraryTreeItem->isSaved()) {
         mpLibraryWidget->saveLibraryTreeItem(pChildLibraryTreeItem);
       } else {

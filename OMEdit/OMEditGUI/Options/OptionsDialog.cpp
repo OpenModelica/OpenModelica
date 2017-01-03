@@ -801,6 +801,7 @@ void OptionsDialog::saveGeneralSettings()
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
+  MainWindow::instance()->getAutoSaveTimer()->setInterval(mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value() * 1000);
   MainWindow::instance()->toggleAutoSave();
   // save welcome page
   switch (mpGeneralSettingsPage->getWelcomePageView()) {
@@ -3974,19 +3975,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpGDBPathLabel = new Label(tr("GDB Path:"));
   mpGDBPathTextBox = new QLineEdit;
 #ifdef WIN32
-#if defined(__MINGW32__) && !defined(__MINGW64__)
-  const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
-#endif
-#if defined(__MINGW64__)
-  const char *sgdb = "/tools/msys/mingw64/bin/gdb.exe";
-#endif
-  const char *OMDEV = getenv("OMDEV");
-  if (QString(OMDEV).isEmpty()) {
-    mpGDBPathTextBox->setPlaceholderText(QString(Helper::OpenModelicaHome).append(sgdb));
-  } else {
-    QString qOMDEV = QString(OMDEV).replace("\\", "/");
-    mpGDBPathTextBox->setPlaceholderText(QString(qOMDEV).append(sgdb));
-  }
+  mpGDBPathTextBox->setPlaceholderText(Utilities::getGDBPath());
 #else
   mpGDBPathTextBox->setPlaceholderText("gdb");
 #endif
