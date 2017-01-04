@@ -376,7 +376,8 @@ public:
   void updateUndoRedoActions();
   void updateDynamicResults(QString resultFileName);
   QString getResultFileName() {return mResultFileName;}
-  void writeVisualXMLFile();
+  bool writeCoSimulationResultFile(QString fileName);
+  bool writeVisualXMLFile(QString fileName);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;

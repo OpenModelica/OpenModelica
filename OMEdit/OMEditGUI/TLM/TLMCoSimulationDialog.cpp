@@ -404,7 +404,10 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
       }
       mpLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
-      mpLibraryTreeItem->getModelWidget()->writeVisualXMLFile();
+      // write the visual xml file
+      QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
+      QString fileName = QString("%1/%2_visual.xml").arg(fileInfo.absolutePath()).arg(fileInfo.baseName());
+      mpLibraryTreeItem->getModelWidget()->writeVisualXMLFile(fileName);
       mpTLMCoSimulationOutputWidget->showTLMCoSimulationOutputWidget(tlmCoSimulationOptions);
       showTLMCoSimulationOutputWindow();
       accept();
