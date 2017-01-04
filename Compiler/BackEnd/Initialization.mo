@@ -780,7 +780,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   This function wraps selectInitializationVariables.
   All primary parameters get removed from the dae."
   input output BackendDAE.BackendDAE dae;
-  output BackendDAE.Variables outVars;
+  output BackendDAE.Variables outInitVars;
   output list<BackendDAE.Var> outPrimaryParameters = {};
   output list<BackendDAE.Var> outAllPrimaryParameters = {};
 protected
@@ -797,15 +797,16 @@ protected
   BackendDAE.Var p;
   DAE.Exp bindExp;
 algorithm
-  outVars := selectInitializationVariables(dae.eqs);
-  outVars := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectInitializationVariables2, outVars);
-  outVars := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, selectInitializationVariables2, outVars);
+  outInitVars := selectInitializationVariables(dae.eqs);
+  outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectInitializationVariables2, outInitVars);
+  outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, selectInitializationVariables2, outInitVars);
 
   // select all parameters
   allParameters := BackendVariable.emptyVars();
   allParameterEqns := BackendEquation.emptyEqns();
   otherVariables := BackendVariable.emptyVars();
   (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectParameter2, (allParameters, allParameterEqns, otherVariables));
+  (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.externalObjects, selectParameter2, (allParameters, allParameterEqns, otherVariables));
   nParam := BackendVariable.varsSize(allParameters);
 
   if nParam > 0 then
@@ -843,11 +844,11 @@ algorithm
       if 1 == secondary[i] then
         otherVariables := BackendVariable.addVar(p, otherVariables);
         p := BackendVariable.setVarFixed(p, false);
-        outVars := BackendVariable.addVar(p, outVars);
+        outInitVars := BackendVariable.addVar(p, outInitVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
         bindExp := BackendVariable.varBindExpStartValueNoFail(p);
-        if (not Expression.isConst(bindExp)) or BackendVariable.isFinalOrProtectedVar(p) then
+        if (not Expression.isConst(bindExp)) or BackendVariable.isFinalOrProtectedVar(p) or BackendVariable.isExtObj(p) then
           outPrimaryParameters := p::outPrimaryParameters "this is used in SimCode to generate parameter equations";
         end if;
       end if;
@@ -857,6 +858,10 @@ algorithm
     outPrimaryParameters := listReverse(outPrimaryParameters);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
     dae := BackendDAEUtil.setKnownVars(dae, otherVariables);
+
+    //BackendDump.dumpVarList(outPrimaryParameters, "outPrimaryParameters");
+    //BackendDump.dumpVarList(outAllPrimaryParameters, "outAllPrimaryParameters");
+    //BackendDump.dumpVariables(otherVariables, "otherVariables");
   end if;
 end selectInitializationVariablesDAE;
 
@@ -978,6 +983,17 @@ algorithm
     // parameter with binding
     case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, eqns, otherVars)) equation
       vars = BackendVariable.addVar(inVar, vars);
+
+      cref = BackendVariable.varCref(inVar);
+      crefExp = Expression.crefExp(cref);
+      eqn = BackendDAE.EQUATION(crefExp, bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqns = BackendEquation.addEquation(eqn, eqns);
+    then ((vars, eqns, otherVars));
+
+    // external object with binding
+    case (BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp)), (vars, eqns, otherVars)) equation
+    var = BackendVariable.setVarFixed(inVar, true);
+    vars = BackendVariable.addVar(var, vars);
 
       cref = BackendVariable.varCref(inVar);
       crefExp = Expression.crefExp(cref);

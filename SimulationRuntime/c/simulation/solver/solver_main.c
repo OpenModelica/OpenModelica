@@ -474,8 +474,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   data->localData[0]->timeValue = simInfo->startTime;
 
-  /* instance all external Objects */
-  data->callback->callExternalObjectConstructors(data, threadData);
+
 
   threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */
