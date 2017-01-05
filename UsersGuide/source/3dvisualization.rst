@@ -31,3 +31,16 @@ show up automatically as shown in :numref:`omedit-visualization`.
   :name: omedit-visualization
 
   OMEdit 3D Visualization.
+
+The 3D view can be manipulated as follows:
+
+===============  ======================== ========================
+  Operation       Key                      Mouse Action
+===============  ======================== ========================
+Zoom In/Out       none                     Wheel
+Zoom In/Out       Right Mouse Hold         Up/Down
+Move              Middle Mouse Hold        Move Mouse
+Rotate            Left Mouse Hold          Move Mouse
+===============  ======================== ========================
+
+Predefined views (Isometric, Side, Front, Top) can be selected and the scene can be tilted by 90° either clock or anticlockwise with the rotation buttons.
