@@ -1,5 +1,5 @@
 // name:      dynamicTearing1
-// keywords:  dynamic tearing
+// keywords:  nonlinear, dynamic tearing
 // status:    correct
 
 loadString("
@@ -22,7 +22,7 @@ end dynamicTearing1;
 setTearingMethod("cellier"); getErrorString();
 setCommandLineOptions("+forceTearing"); getErrorString();
 setCommandLineOptions("+dynamicTearing=nonlinear"); getErrorString();
-simulate(dynamicTearing1,startTime=0,stopTime=2,numberOfIntervals=500,simflags="-lv=LOG_DT"); getErrorString();
+simulate(dynamicTearing1,startTime=0,stopTime=2,numberOfIntervals=500,simflags="-lv=LOG_DT,LOG_DT_CONS"); getErrorString();
 
 print("x at time=0.0");
 val(x,0.0); getErrorString();
@@ -65,21 +65,40 @@ val(z2,1.1); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "dynamicTearing1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT'",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT,LOG_DT_CONS'",
 //     messages = "LOG_DT            | info    | Solving nonlinear system 5 (STRICT TEARING SET if tearing enabled) at time =   0.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 11 (STRICT TEARING SET if tearing enabled) at time =   0.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   0.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   0.0000000000e+00
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(y1) > 1e-12
+// LOG_DT            | info    | Constraints of the casual tearing set are violated! Now the strict tearing set is used.
+// LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   0.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   4.0000000000e-03
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   4.0000000000e-03
-// LOG_DT            | info    | Solving the casual tearing set failed! Now the strict tearing set is used.
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(y1) > 1e-12
+// LOG_DT            | info    | Constraints of the casual tearing set are violated! Now the strict tearing set is used.
 // LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   4.0000000000e-03
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   8.0000000000e-03
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   8.0000000000e-03
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(y1) > 1e-12
+// LOG_DT            | info    | Constraints of the casual tearing set are violated! Now the strict tearing set is used.
+// LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   8.0000000000e-03
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   1.2000000000e-02
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   1.2000000000e-02
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(y1) > 1e-12
+// LOG_DT            | info    | Constraints of the casual tearing set are violated! Now the strict tearing set is used.
+// LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   1.2000000000e-02
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   1.6000000000e-02
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   1.6000000000e-02
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(y1) > 1e-12
+// LOG_DT            | info    | Local constraints of the casual tearing set are violated! Let's fail...
+// LOG_DT            | info    | Solving the casual tearing set failed! Now the strict tearing set is used.
+// LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   1.6000000000e-02
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   2.0000000000e-02
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   2.0000000000e-02
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   2.4000000000e-02
@@ -571,9 +590,13 @@ val(z2,1.1); getErrorString();
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   9.9600000000e-01
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   9.9600000000e-01
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   1.0000000000e+00
-// LOG_DT            | info    | Solving the casual tearing set failed! Now the strict tearing set is used.
+// LOG_DT_CONS       | info    | The following global constraint is violated:
+// |                 | |       | abs(-4.0 + a + (-b) - time) > 1e-12
+// LOG_DT            | info    | Constraints of the casual tearing set are violated! Now the strict tearing set is used.
 // LOG_DT            | info    | Solving nonlinear system 18 (STRICT TEARING SET if tearing enabled) at time =   1.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   1.0000000000e+00
+// LOG_DT            | info    | The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...
+// LOG_DT            | info    | It is not the solution.
 // LOG_DT            | info    | Solving the casual tearing set failed! Now the strict tearing set is used.
 // LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   1.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   1.0040000000e+00
