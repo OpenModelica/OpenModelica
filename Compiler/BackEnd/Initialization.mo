@@ -945,11 +945,14 @@ protected function selectParameter2 "author: lochel"
 algorithm
   outTpl := match (inVar, inTpl)
     local
+      BackendDAE.Var var;
       BackendDAE.Variables vars, otherVars;
       BackendDAE.EquationArray eqns;
       DAE.Exp bindExp, crefExp, startValue;
       BackendDAE.Equation eqn;
       DAE.ComponentRef cref;
+      String s, str;
+      SourceInfo info;
 
     // parameter without binding
     case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, eqns, otherVars)) equation
@@ -960,6 +963,16 @@ algorithm
       startValue = BackendVariable.varStartValue(inVar);
       eqn = BackendDAE.EQUATION(crefExp, startValue, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = BackendEquation.addEquation(eqn, eqns);
+
+      if BackendVariable.varFixed(inVar) then
+        s = ComponentReference.printComponentRefStr(cref);
+        str = ExpressionDump.printExpStr(startValue);
+        var = BackendVariable.setVarKind(inVar, BackendDAE.VARIABLE());
+        var = BackendVariable.setBindExp(var, SOME(startValue));
+        var = BackendVariable.setVarFixed(var, true);
+        info = ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
+      end if;
     then ((vars, eqns, otherVars));
 
     // parameter with binding
