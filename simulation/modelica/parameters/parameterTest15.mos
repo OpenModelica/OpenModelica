@@ -398,7 +398,9 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 //     messages = "time=1,p1=1,p2=1,p3=5
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "[<interactive>:11:3-11:39:writable] Warning: Parameter p7 has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// [<interactive>:12:3-12:36:writable] Warning: Parameter p8 has no value, and is fixed during initialization (fixed=true), using available start value (start=2 * p3) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // stdout            | warning | It is not possible to override the following quantity: p2
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.

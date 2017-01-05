@@ -1802,7 +1802,17 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "[Modelica 3.2.1/Electrical/Machines.mo:15348:7-15350:33:writable] Warning: Parameter terminalBox.terminalConnection has no value, and is fixed during initialization (fixed=true), using available start value (start="Y") as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12918:7-12920:69:writable] Warning: Parameter aimc.TsOperational has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12924:7-12926:71:writable] Warning: Parameter aimc.TsRef has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12927:7-12929:71:writable] Warning: Parameter aimc.alpha20s has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12803:7-12804:76:writable] Warning: Parameter aimc.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=aimc.Jr) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:10964:7-10965:79:writable] Warning: Parameter aimc.statorCoreParameters.VRef has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:10940:7-10941:52:writable] Warning: Parameter aimc.strayLoadParameters.IRef has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:4740:9-4742:73:writable] Warning: Parameter aimc.TrRef has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:4743:9-4745:73:writable] Warning: Parameter aimc.alpha20r has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:4746:9-4748:76:writable] Warning: Parameter aimc.TrOperational has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // -15.0
 // -15.0

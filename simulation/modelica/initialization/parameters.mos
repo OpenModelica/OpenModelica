@@ -60,7 +60,15 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT"); getErrorStrin
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // "
 // end SimulationResult;
-// "[<interactive>:10:5-10:41:writable] Warning: The parameter r2 has fixed = false and a binding equation r2 = 2.0, which is probably redundant.
+// "[<interactive>:5:5-5:22:writable] Warning: Parameter r1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:6:5-6:25:writable] Warning: Parameter i1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:7:5-7:25:writable] Warning: Parameter b1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:8:5-8:24:writable] Warning: Parameter s1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:14:5-14:33:writable] Warning: Parameter r3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3.0) as default value.
+// [<interactive>:15:5-15:34:writable] Warning: Parameter i3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3) as default value.
+// [<interactive>:16:5-16:37:writable] Warning: Parameter b3 has no value, and is fixed during initialization (fixed=true), using available start value (start=true) as default value.
+// [<interactive>:17:5-17:39:writable] Warning: Parameter s3 has no value, and is fixed during initialization (fixed=true), using available start value (start="three") as default value.
+// [<interactive>:10:5-10:41:writable] Warning: The parameter r2 has fixed = false and a binding equation r2 = 2.0, which is probably redundant.
 // Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
 // [<interactive>:11:5-11:42:writable] Warning: The parameter i2 has fixed = false and a binding equation i2 = 2, which is probably redundant.
 // Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.

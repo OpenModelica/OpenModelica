@@ -54,13 +54,16 @@ val(mechanics.r6.w, 0);
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "[Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// -2.330259529581858e-16
-// 3.147476127398008e-18
 // 0.0
-// 5.825648823954646e-15
-// -1.165129764790929e-16
+// 0.0
+// 0.0
+// 0.0
+// 0.0
 // -5.146936976669323
 // 0.2741508617066707
 // 0.0
@@ -76,14 +79,14 @@ val(mechanics.r6.w, 0);
 // -0.6004243931967619
 // -1.448558630786392
 // 36.21396576965979
-// -0.7242793153931958
-// 1.992515895792666e-16
-// -4.981289739481664e-15
-// 9.962579478963328e-17
+// -0.7242793153931959
+// 0.0
+// 0.0
+// -0.0
 // 0.0
 // -1.047197551196598
 // -0.0
-// 0.3490658503988659
+// 0.349065850398866
 // 1.570796326794897
 // 0.0
 // 0.0

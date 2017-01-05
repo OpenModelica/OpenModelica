@@ -40,7 +40,8 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT -override=a=2"); g
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // "
 // end SimulationResult;
-// ""
+// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
 // record SimulationResult
 //     resultFile = "initializationTests.bug_2994_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2994', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT -override=a=2'",
@@ -59,5 +60,6 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT -override=a=2"); g
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // "
 // end SimulationResult;
-// ""
+// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
 // endResult

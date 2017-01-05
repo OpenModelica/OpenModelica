@@ -27,6 +27,7 @@ getErrorString();
 // "
 // end SimulationResult;
 // "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4630:5-4631:56:writable] Warning: Parameter mn.IC has no value, and is fixed during initialization (fixed=true), using available start value (start=-1e+40) as default value.
 // "
 // {"Files Equal!"}
 // ""

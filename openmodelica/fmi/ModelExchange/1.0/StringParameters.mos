@@ -29,5 +29,7 @@ simulate(StringParameters_me_FMU, stopTime=3.0, simflags="-output=sball,eball");
 //     messages = "time=3,sball=\"RedBall\",eball=\"BlueBall\"
 // "
 // end SimulationResult;
-// ""
+// "[openmodelica/fmi/ModelExchange/1.0/StringParameters_me_FMU.mo:14:3-14:55:writable] Warning: Parameter eball has no value, and is fixed during initialization (fixed=true), using available start value (start="BlueBall") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/StringParameters_me_FMU.mo:15:3-15:54:writable] Warning: Parameter sball has no value, and is fixed during initialization (fixed=true), using available start value (start="RedBall") as default value.
+// "
 // endResult
