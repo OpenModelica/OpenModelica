@@ -281,6 +281,15 @@ uniontype SimEqSystem
     DAE.ElementSource source;
   end SES_SIMPLE_ASSIGN;
 
+  record SES_SIMPLE_ASSIGN_CONSTRAINTS
+    "Solved inner equation of (casual) tearing set (Dynamic Tearing) with constraints on the solvability"
+    Integer index;
+    DAE.ComponentRef cref;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+    BackendDAE.Constraints cons;
+  end SES_SIMPLE_ASSIGN_CONSTRAINTS;
+
   record SES_ARRAY_CALL_ASSIGN
     Integer index;
     DAE.Exp lhs;

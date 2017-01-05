@@ -1719,13 +1719,13 @@ algorithm
   DAEtypeStr := BackendDump.printBackendDAEType2String(DAEtype);
 
   // check if dynamic tearing is enabled for linear/nonlinear system
-  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION))
-    case ("true",_,true,"simulation",_) then true;
-    case ("true",_,true,"initialization",true) then true;
-    case ("linear",true,true,"simulation",_) then true;
-    case ("linear",true,true,"initialization",true) then true;
-    case ("nonlinear",false,true,"simulation",_) then true;
-    case ("nonlinear",false,true,"initialization",true) then true;
+  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),Config.simCodeTarget())
+    case ("true",_,true,"simulation",_,"C") then true;
+    case ("true",_,true,"initialization",true,"C") then true;
+    case ("linear",true,true,"simulation",_,"C") then true;
+    case ("linear",true,true,"initialization",true,"C") then true;
+    case ("nonlinear",false,true,"simulation",_,"C") then true;
+    case ("nonlinear",false,true,"initialization",true,"C") then true;
     else false;
   end match;
 
@@ -1949,7 +1949,7 @@ algorithm
 
   else
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("Note:\n=====\nNo dynamic Tearing for this strong component. Check if\n- flag 'dynamicTearing' is set proper\n- strong component does not contain statesets\n- system belongs to simulation\n\n");
+          print("Note:\n=====\nNo dynamic Tearing for this strong component. Check if\n- flag 'dynamicTearing' is set proper\n- strong component does not contain statesets\n- system belongs to simulation\n- SimCode target is 'C'\n\n");
     end if;
     if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

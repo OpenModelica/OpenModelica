@@ -4872,7 +4872,7 @@ case BINARY(__) then
       then '<%e1%> - <%e2%>'
       else '<%e1%> - (<%e2%>)'
   case MUL(__) then '(<%e1%>) * (<%e2%>)'
-  case DIV(__) then
+  case DIV(ty = ty) then
     let tvar = tempDecl(expTypeModelica(ty),&varDecls)
     let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
     let &preExp +=
@@ -4903,7 +4903,7 @@ case BINARY(__) then
         let tmp = tempDecl("modelica_real", &varDecls)
         let &preExp +=
           <<
-          <%tmp%> = <%e1%>;
+          <%tmp%> = <%e1%>;<%\n%>
           <%tmp%> *= <%tmp%>;
           >>
         '(<%tmp%> * <%tmp%>)'
@@ -5131,38 +5131,38 @@ case rel as RELATION(__) then
 
     case LESS(ty = T_BOOL(__))             then '(!<%e1%> && <%e2%>)'
     case LESS(ty = T_STRING(__))           then '(stringCompare(<%e1%>, <%e2%>) < 0)'
-    case LESS(ty = T_INTEGER(__))              then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_INTEGER(__))          then '(<%e1%> < <%e2%>)'
     case LESS(ty = T_REAL(__))             then '(<%e1%> < <%e2%>)'
     case LESS(ty = T_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
 
     case GREATER(ty = T_BOOL(__))          then '(<%e1%> && !<%e2%>)'
     case GREATER(ty = T_STRING(__))        then '(stringCompare(<%e1%>, <%e2%>) > 0)'
-    case GREATER(ty = T_INTEGER(__))           then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = T_INTEGER(__))       then '(<%e1%> > <%e2%>)'
     case GREATER(ty = T_REAL(__))          then '(<%e1%> > <%e2%>)'
     case GREATER(ty = T_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
 
     case LESSEQ(ty = T_BOOL(__))           then '(!<%e1%> || <%e2%>)'
     case LESSEQ(ty = T_STRING(__))         then '(stringCompare(<%e1%>, <%e2%>) <= 0)'
-    case LESSEQ(ty = T_INTEGER(__))            then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = T_INTEGER(__))        then '(<%e1%> <= <%e2%>)'
     case LESSEQ(ty = T_REAL(__))           then '(<%e1%> <= <%e2%>)'
     case LESSEQ(ty = T_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
 
     case GREATEREQ(ty = T_BOOL(__))        then '(<%e1%> || !<%e2%>)'
     case GREATEREQ(ty = T_STRING(__))      then '(stringCompare(<%e1%>, <%e2%>) >= 0)'
-    case GREATEREQ(ty = T_INTEGER(__))         then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = T_INTEGER(__))     then '(<%e1%> >= <%e2%>)'
     case GREATEREQ(ty = T_REAL(__))        then '(<%e1%> >= <%e2%>)'
     case GREATEREQ(ty = T_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
 
     case EQUAL(ty = T_BOOL(__))            then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
     case EQUAL(ty = T_STRING(__))          then '(stringEqual(<%e1%>, <%e2%>))'
-    case EQUAL(ty = T_INTEGER(__))             then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_INTEGER(__))         then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_REAL(__))            then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_ARRAY(__))           then '<%e2%>' /* Used for Boolean array. Called from daeExpLunary. */
 
     case NEQUAL(ty = T_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
     case NEQUAL(ty = T_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
-    case NEQUAL(ty = T_INTEGER(__))            then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = T_INTEGER(__))        then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
 

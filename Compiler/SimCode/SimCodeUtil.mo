@@ -1427,7 +1427,7 @@ algorithm
 
     case BackendDAE.SINGLEEQUATION(eqn=index, var=vindex)
       equation
-        (equations1, uniqueEqIndex1, tempvars) = createEquation(index, vindex, syst, shared, false, uniqueEqIndex, tempvars);
+        (equations1, uniqueEqIndex1, tempvars) = createEquation(index, vindex, syst, shared, false, uniqueEqIndex, tempvars, {});
         if not listEmpty(equations1) then
           firstSES = listHead(equations1);  // check if the all equations occur with this index in the c file
           firstEqIndex = if isSimEqSys(firstSES) then uniqueEqIndex1-1 else uniqueEqIndex;
@@ -1536,7 +1536,7 @@ algorithm
     // EQUATIONSYSTEM size 1 -> single equation
     case BackendDAE.EQUATIONSYSTEM(eqns={index}, vars={vindex})
       equation
-        (equations1, uniqueEqIndex1, tempvars) = createEquation(index, vindex, syst, shared, false, uniqueEqIndex, tempvars);
+        (equations1, uniqueEqIndex1, tempvars) = createEquation(index, vindex, syst, shared, false, uniqueEqIndex, tempvars, {});
         if not listEmpty(equations1) then
           firstSES = listHead(equations1);  // check if the all equations occur with this index in the c file
           firstEqIndex = if isSimEqSys(firstSES) then uniqueEqIndex1-1 else uniqueEqIndex;
@@ -1609,7 +1609,7 @@ protected
   list<list<SimCode.SimEqSystem>> accNoDiscEquations = {};
 algorithm
   for comp in comps loop
-    (equations, noDiscEquations, ouniqueEqIndex, otempvars) := createEquationsWork(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comp, ouniqueEqIndex, otempvars);
+    (equations, noDiscEquations, ouniqueEqIndex, otempvars) := createEquationsWork(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comp, ouniqueEqIndex, otempvars, {});
     accEquations := equations::accEquations;
     accNoDiscEquations := noDiscEquations::accNoDiscEquations;
   end for;
@@ -1627,6 +1627,7 @@ protected function createEquationsWork
   input BackendDAE.StrongComponent comp;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
+  input BackendDAE.Constraints cons;
   output list<SimCode.SimEqSystem> equations;
   output list<SimCode.SimEqSystem> noDiscEquations;
   output Integer ouniqueEqIndex;
@@ -1667,7 +1668,11 @@ algorithm
         // single equation
     case (_, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex))
       equation
-        (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars);
+        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and not listEmpty(cons) then
+          print("Single Equation with constraint:\n" + BackendDump.equationString(BackendEquation.equationNth1(syst.orderedEqs, index)) + "\n");
+          print("Constraints:" + ExpressionDump.constraintDTlistToString(cons,"\n") + "\n\n");
+        end if;
+        (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars, cons);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
       // A single array equation
@@ -2363,6 +2368,7 @@ protected function createEquation
   input Boolean skipDiscInAlgorithm;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
+  input BackendDAE.Constraints cons;
   output list<SimCode.SimEqSystem> equation_;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
@@ -2399,20 +2405,6 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<SimCode.SimEqSystem> oelseWhenSimEq;
 
-    /*
-    // solve always a linear equations
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
-      equation
-        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = BackendEquation.equationNth1(eqns, eqNum);
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
-        varexp = Expression.crefExp(cr);
-        varexp = bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
-        (exp_, asserts) = ExpressionSolve.solveLin(e1, e2, varexp);
-        source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-        (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source)}, iuniqueEqIndex+1);
-      then
-        (resEqs, uniqueEqIndex, itempvars);
-    */
     // solved equation
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
@@ -2455,7 +2447,11 @@ algorithm
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
-        (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
+        if listEmpty(cons) then
+          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
+        else
+          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex, cr, exp_, source, cons)}, uniqueEqIndex+1);
+        end if;
         eqSystlst = listAppend(eqSystlst,resEqs);
         tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
       then
@@ -3846,6 +3842,7 @@ protected
   BackendDAE.StrongComponent comp;
   list<SimCode.SimEqSystem> simequations;
   DoubleEndedList<SimCode.SimEqSystem> equations;
+  BackendDAE.Constraints cons;
 algorithm
   if listEmpty(innerEquations) then
     equations_ := isimequations;
@@ -3857,11 +3854,11 @@ algorithm
 
   for eq in innerEquations loop
     // get Eqn
-    (eqnindx,vars,_) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
+    (eqnindx, vars, cons) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
     eqn := BackendEquation.equationNth1(eqns, eqnindx);
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
-    (simequations, _, ouniqueEqIndex, otempvars) := createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared, {comp}, ouniqueEqIndex, otempvars);
+    (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(true, false, true, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
     DoubleEndedList.push_list_back(equations, simequations);
   end for;
 
@@ -3881,24 +3878,31 @@ algorithm
     case (BackendDAE.EQUATION(), _, v::{})
       then
         BackendDAE.SINGLEEQUATION(eqnindx, v);
+
     case (BackendDAE.RESIDUAL_EQUATION(), _, v::{})
       then
         BackendDAE.SINGLEEQUATION(eqnindx, v);
+
     case (BackendDAE.SOLVED_EQUATION(), _, v::{})
       then
         BackendDAE.SINGLEEQUATION(eqnindx, v);
+
     case (BackendDAE.ARRAY_EQUATION(), _, _)
       then
         BackendDAE.SINGLEARRAY(eqnindx, varindx);
+
     case (BackendDAE.IF_EQUATION(), _, _)
       then
         BackendDAE.SINGLEIFEQUATION(eqnindx, varindx);
+
     case (BackendDAE.ALGORITHM(), _, _)
       then
         BackendDAE.SINGLEALGORITHM(eqnindx, varindx);
+
     case (BackendDAE.COMPLEX_EQUATION(), _, _)
       then
         BackendDAE.SINGLECOMPLEXEQUATION(eqnindx, varindx);
+
     case (BackendDAE.WHEN_EQUATION(), _, _)
       then
         BackendDAE.SINGLEWHENEQUATION(eqnindx, varindx);
@@ -7585,6 +7589,7 @@ algorithm
       Option<SimCode.JacobianMatrix> jac,jac2;
       Option<SimCode.SimEqSystem> elseWhen;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      BackendDAE.Constraints cons;
 
     case(SimCode.SES_RESIDUAL(index=idx,exp=exp))
       equation
@@ -7593,12 +7598,17 @@ algorithm
 
     case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp))
       equation
-        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
+        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp) + " [" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
+      then s;
+
+    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=idx,cref=cref,exp=exp,cons=cons))
+      equation
+        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp) + " [constraints: " + ExpressionDump.constraintDTlistToString(cons, "") + "]" + " [" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
       then s;
 
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp))
       equation
-        s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
+        s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp) + " [" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
     then s;
 
       case(SimCode.SES_IFEQUATION(index=idx))
@@ -7654,7 +7664,7 @@ algorithm
     // dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
       equation
-        s = "strict set: \n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = "strict set: \n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
         s = s+"\t";
         s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
@@ -8800,17 +8810,26 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst, whenOps;
       BackendDAE.WhenOperator whenOpNew;
       Option<SimCode.SimEqSystem> oelsewe;
+      BackendDAE.Constraints cons;
 
     case SimCode.SES_RESIDUAL(index= index, exp = e, source = source)
       equation
         e = addDivExpErrorMsgtoExp(e, source);
       then
         SimCode.SES_RESIDUAL(index, e, source);
+
     case SimCode.SES_SIMPLE_ASSIGN(index= index, cref = cr, exp = e, source = source)
       equation
         e_ = addDivExpErrorMsgtoExp(e, source);
       then
         if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN(index, cr, e_, source);
+
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index= index, cref = cr, exp = e, source = source, cons = cons)
+      equation
+        e_ = addDivExpErrorMsgtoExp(e, source);
+      then
+        if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, e_, source, cons);
+
     case SimCode.SES_ARRAY_CALL_ASSIGN(index = index, lhs = left, exp = e, source = source)
       equation
         e = addDivExpErrorMsgtoExp(e, source);
@@ -9143,6 +9162,7 @@ algorithm
   info := match eq
     case SimCode.SES_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_SIMPLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_ARRAY_CALL_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_WHEN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_FOR_LOOP(source=DAE.SOURCE(info=info)) then info;
@@ -9156,6 +9176,7 @@ algorithm
   index := match eq
     case SimCode.SES_RESIDUAL(index=index) then index;
     case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index) then index;
     case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
     case SimCode.SES_IFEQUATION(index=index) then index;
     case SimCode.SES_ALGORITHM(index=index) then index;
@@ -9771,6 +9792,12 @@ algorithm
         (inSimEqSystem, files);
 
     case (SimCode.SES_SIMPLE_ASSIGN(source = source), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+      then
+        (inSimEqSystem, files);
+
+    case (SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(source = source), files)
       equation
         files = getFilesFromDAEElementSource(source, files);
       then
@@ -10578,6 +10605,7 @@ algorithm
       list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> ifbranches;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      BackendDAE.Constraints cons;
 
     case (SimCode.SES_RESIDUAL(index, exp, source), _, a) equation
       (exp_, a) = func(exp, a);
@@ -10594,6 +10622,15 @@ algorithm
         eq_ = eq;
       else
         eq_ = SimCode.SES_SIMPLE_ASSIGN(index, cr, exp_, source);
+      end if;
+    then (eq_, a);
+
+    case (SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp, source, cons), _, a) equation
+      (exp_, a) = func(exp, a);
+      if referenceEq(exp,exp_) then
+        eq_ = eq;
+      else
+        eq_ = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp_, source, cons);
       end if;
     then (eq_, a);
 
@@ -11885,6 +11922,8 @@ algorithm
       then {};
     case(SimCode.SES_SIMPLE_ASSIGN(cref=cref))
       then {cref};
+    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref))
+      then {cref};
     case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs))
       then {Expression.expCref(lhs)};
     case(SimCode.SES_IFEQUATION())
@@ -12014,6 +12053,7 @@ algorithm
       Boolean homotopySupport;
       Boolean mixedSystem;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      BackendDAE.Constraints cons;
     case(SimCode.SES_RESIDUAL(exp=exp,source=source),_)
       equation
         simEqSys = SimCode.SES_RESIDUAL(idx,exp,source);
@@ -12021,6 +12061,10 @@ algorithm
     case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source),_)
       equation
         simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
+    then simEqSys;
+    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref,exp=exp,source=source,cons=cons),_)
+      equation
+        simEqSys = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(idx,cref,exp,source,cons);
     then simEqSys;
     case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs,exp=exp,source=source),_)
       equation
@@ -12845,6 +12889,13 @@ algorithm
     case ({},_,r)
         then r;
     case ( (head as SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))::tail,_,r)
+        equation
+            true = List.isMemberOnTrue(cref,unknowns,ComponentReference.crefEqual);
+            // We must include this equation in the ODE
+            new_unknowns = Expression.getAllCrefs(exp);
+            // And include all those one defining the RHS
+        then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns), listAppend(r,{head}));
+    case ( (head as SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref,exp=exp))::tail,_,r)
         equation
             true = List.isMemberOnTrue(cref,unknowns,ComponentReference.crefEqual);
             // We must include this equation in the ODE

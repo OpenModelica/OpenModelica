@@ -351,7 +351,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].numberOfIterations = 0;
 
     /* check if residual function pointer are valid */
-    assertStreamPrint(threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
+    assertStreamPrint(threadData, ((0 != nonlinsys[i].residualFunc)) || ((nonlinsys[i].strictTearingFunctionCall != NULL) ? (0 != nonlinsys[i].strictTearingFunctionCall) : 0), "residual function pointer is invalid" );
 
     /* check if analytical jacobian is created */
     if(nonlinsys[i].jacobianIndex != -1)
@@ -630,6 +630,7 @@ int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
 
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   int success = 0;
+  int constraintViolated = 0;
 
   /* solve non continuous at discrete points*/
   if(discrete)
@@ -643,18 +644,22 @@ int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
 #endif
 
   /* call residual function */
-  nonlinsys->residualFunc((void*) dataIn, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
+  if (nonlinsys->strictTearingFunctionCall != NULL)
+    constraintViolated = nonlinsys->residualFuncConstraints((void*) dataIn, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
+  else
+    nonlinsys->residualFunc((void*) dataIn, nonlinsys->nlsx, nonlinsys->resValues, (int*)&nonlinsys->size);
 
   /* replace extrapolated values by current x for discrete step */
   memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsx, nonlinsys->size*(sizeof(double)));
 
-  success = 1;
+  if (!constraintViolated)
+    success = 1;
   /*catch */
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
-  if (!success)
+  if (!success && !constraintViolated)
   {
     warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
   }
@@ -678,8 +683,9 @@ int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
   void *dataAndThreadData[2] = {data, threadData};
-  int success = 0, saveJumpState;
+  int success = 0, saveJumpState, constraintsSatisfied = 1;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   struct dataNewtonAndHybrid *mixedSolverData;
 
   data->simulationInfo->currentNonlinearSystemIndex = sysNumber;
@@ -692,9 +698,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
   /* grab the initial guess */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %ld at time at %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
   /* if last solving is too long ago use just old values  */
-  if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize)
+  if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
   {
     getInitialGuess(nonlinsys, data->localData[0]->timeValue);
   }
@@ -703,11 +709,10 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     nonlinsys->getIterationVars(data, nonlinsys->nlsx);
     memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
   }
-
   /* update non continuous */
   if (data->simulationInfo->discreteCall)
   {
-    updateInnerEquation(dataAndThreadData, sysNumber, 1);
+    constraintsSatisfied = updateInnerEquation(dataAndThreadData, sysNumber, 1);
   }
 
   /* try */
@@ -732,7 +737,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   case NLS_NEWTON:
     success = solveNewton(data, threadData, sysNumber);
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
-    if (!success && nonlinsys->strictTearingFunctionCall != NULL){
+    if (!success && casualTearingSet){
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
       success = nonlinsys->strictTearingFunctionCall(data, threadData);
       if (success) success=2;
@@ -747,15 +752,19 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonData;
 
-   success = solveHomotopy(data, threadData, sysNumber);
+
+    /* try to solve the system if it is the strict set, only try to solve the casual set if the constraints are satisfied */
+    if ((!casualTearingSet) || constraintsSatisfied)
+      success = solveHomotopy(data, threadData, sysNumber);
+
 
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
-    if (!success && nonlinsys->strictTearingFunctionCall != NULL){
+    if (!success && casualTearingSet){
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
       success = nonlinsys->strictTearingFunctionCall(data, threadData);
       if (success){
         success=2;
-        /* update iteration variables of the causal set*/
+        /* update iteration variables of the casual set*/
         nonlinsys->getIterationVars(data, nonlinsys->nlsx);
       }
     }

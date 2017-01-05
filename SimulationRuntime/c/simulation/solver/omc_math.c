@@ -795,7 +795,7 @@ _omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec)
 {
   _omc_size i;
   _omc_scalar result = 0;
-  assertStreamPrint(NULL, vec->size > 0, "Vector size is greater the zero");
+  assertStreamPrint(NULL, vec->size > 0, "Vector size is greater than zero");
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
   for (i = 0; i < vec->size; ++i) {
     result += pow(fabs(vec->data[i]),2.0);

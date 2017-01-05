@@ -79,6 +79,7 @@ template eqIndex(SimEqSystem eq)
 match eq
     case SES_RESIDUAL(__)
     case SES_SIMPLE_ASSIGN(__)
+    case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
     case SES_ARRAY_CALL_ASSIGN(__)
     case SES_ALGORITHM(__) then index
     case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then ls.index
@@ -110,7 +111,8 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
         </residual>
       </equation><%\n%>
       >>
-    case e as SES_SIMPLE_ASSIGN(__) then
+    case e as SES_SIMPLE_ASSIGN(__)
+    case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
       let &defines = buffer ""
       let &depends = buffer ""
       let _ = eqDefinesDepends(e, defines, depends)
@@ -297,7 +299,8 @@ template eqDefinesDepends(SimEqSystem eq, Text &defines, Text &depends)
   case e as SES_RESIDUAL(__) then
     let &depends += extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>"/>' ; separator = "\n"
     ""
-  case e as SES_SIMPLE_ASSIGN(__) then
+  case e as SES_SIMPLE_ASSIGN(__)
+  case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
     let &defines += '<defines name="<%crefStrNoUnderscore(e.cref)%>"/><%\n%>'
     let &depends += extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
     ""

@@ -47,6 +47,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_DSS",
   "LOG_DSS_JAC",
   "LOG_DT",
+  "LOG_DT_CONS",
   "LOG_EVENTS",
   "LOG_EVENTS_V",
   "LOG_INIT",
@@ -83,47 +84,48 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
 
 const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "unknown",
-  "this stream is always active",                        /* LOG_STDOUT */
-  "this stream is always active",                        /* LOG_ASSERT */
+  "this stream is always active",                                               /* LOG_STDOUT */
+  "this stream is always active",                                               /* LOG_ASSERT */
 
-  "additional information about dassl solver",           /* LOG_DASSL */
-  "outputs the states at every dassl call",              /* LOG_DASSL_STATES */
-  "additional debug information",                        /* LOG_DEBUG */
-  "outputs information about dynamic state selection",   /* LOG_DSS */
-  "outputs jacobian of the dynamic state selection",     /* LOG_DSS_JAC */
-  "additional information about dynamic tearing",        /* LOG_DT */
-  "additional information during event iteration",       /* LOG_EVENTS */
-  "verbose logging of event system",                     /* LOG_EVENTS_V */
-  "additional information during initialization",        /* LOG_INIT */
-  "information from Ipopt",                              /* LOG_IPOPT */
-  "more information from Ipopt",                         /* LOG_IPOPT_FULL*/
-  "check jacobian matrix with Ipopt",                    /* LOG_IPOPT_JAC*/
-  "check hessian matrix with Ipopt",                     /* LOG_IPOPT_HESSE*/
-  "print max error in the optimization",                 /* LOG_IPOPT_ERROR*/
-  "outputs the jacobian matrix used by dassl",           /* LOG_JAC */
-  "logging for linear systems",                          /* LOG_LS */
-  "verbose logging of linear systems",                   /* LOG_LS_V */
-  "logging for nonlinear systems",                       /* LOG_NLS */
-  "verbose logging of nonlinear systems",                /* LOG_NLS_V */
-  "logging of homotopy solver for nonlinear systems",    /* LOG_NLS_HOMOTOPY */
-  "outputs the jacobian of nonlinear systems",           /* LOG_NLS_JAC */
-  "tests the analytical jacobian of nonlinear systems",  /* LOG_NLS_JAC_TEST */
-  "outputs every evaluation of the residual function",   /* LOG_NLS_RES */
-  "outputs debug information about extrapolate process", /* LOG_NLS_EXTRAPOLATE */
-  "outputs residuals of the initialization",             /* LOG_RES_INIT */
-  "additional information regarding real-time processes",/* LOG_RT */
-  "additional information about simulation process",     /* LOG_SIMULATION */
-  "additional information about solver process",         /* LOG_SOLVER */
-  "verbose information about the integration process",   /* LOG_SOLVER_V */
-  "context information during the solver process",       /* LOG_SOLVER_CONTEXT" */
-  "final solution of the initialization",                /* LOG_SOTI */
-  "additional statistics about timer/events/solver",     /* LOG_STATS */
-  "additional statistics for LOG_STATS",                 /* LOG_STATS_V */
+  "additional information about dassl solver",                                  /* LOG_DASSL */
+  "outputs the states at every dassl call",                                     /* LOG_DASSL_STATES */
+  "additional debug information",                                               /* LOG_DEBUG */
+  "outputs information about dynamic state selection",                          /* LOG_DSS */
+  "outputs jacobian of the dynamic state selection",                            /* LOG_DSS_JAC */
+  "additional information about dynamic tearing",                               /* LOG_DT */
+  "additional information about dynamic tearing (local and global constraints)",/* LOG_DT_CONS */
+  "additional information during event iteration",                              /* LOG_EVENTS */
+  "verbose logging of event system",                                            /* LOG_EVENTS_V */
+  "additional information during initialization",                               /* LOG_INIT */
+  "information from Ipopt",                                                     /* LOG_IPOPT */
+  "more information from Ipopt",                                                /* LOG_IPOPT_FULL*/
+  "check jacobian matrix with Ipopt",                                           /* LOG_IPOPT_JAC*/
+  "check hessian matrix with Ipopt",                                            /* LOG_IPOPT_HESSE*/
+  "print max error in the optimization",                                        /* LOG_IPOPT_ERROR*/
+  "outputs the jacobian matrix used by dassl",                                  /* LOG_JAC */
+  "logging for linear systems",                                                 /* LOG_LS */
+  "verbose logging of linear systems",                                          /* LOG_LS_V */
+  "logging for nonlinear systems",                                              /* LOG_NLS */
+  "verbose logging of nonlinear systems",                                       /* LOG_NLS_V */
+  "logging of homotopy solver for nonlinear systems",                           /* LOG_NLS_HOMOTOPY */
+  "outputs the jacobian of nonlinear systems",                                  /* LOG_NLS_JAC */
+  "tests the analytical jacobian of nonlinear systems",                         /* LOG_NLS_JAC_TEST */
+  "outputs every evaluation of the residual function",                          /* LOG_NLS_RES */
+  "outputs debug information about extrapolate process",                        /* LOG_NLS_EXTRAPOLATE */
+  "outputs residuals of the initialization",                                    /* LOG_RES_INIT */
+  "additional information regarding real-time processes",                       /* LOG_RT */
+  "additional information about simulation process",                            /* LOG_SIMULATION */
+  "additional information about solver process",                                /* LOG_SOLVER */
+  "verbose information about the integration process",                          /* LOG_SOLVER_V */
+  "context information during the solver process",                              /* LOG_SOLVER_CONTEXT" */
+  "final solution of the initialization",                                       /* LOG_SOTI */
+  "additional statistics about timer/events/solver",                            /* LOG_STATS */
+  "additional statistics for LOG_STATS",                                        /* LOG_STATS_V */
 #ifdef USE_DEBUG_TRACE
-  "enables additional output to trace call stack",       /* LOG_TRACE */
+  "enables additional output to trace call stack",                              /* LOG_TRACE */
 #endif
-  "???",                                                 /* LOG_UTIL*/
-  "additional information about the zerocrossings"       /* LOG_ZEROCROSSINGS */
+  "???",                                                                        /* LOG_UTIL*/
+  "additional information about the zerocrossings"                              /* LOG_ZEROCROSSINGS */
 };
 
 const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {

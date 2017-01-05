@@ -102,6 +102,9 @@ typedef struct DATA_HOMOTOPY
   int numberOfFunctionEvaluations; /* over the whole simulation time */
   int maxNumberOfIterations; /* number of Newton steps */
 
+  /* strict tearing set or casual tearing set */
+  int casualTearingSet;
+
   /* newton algorithm*/
   double* x;
   double* x0;
@@ -137,6 +140,7 @@ typedef struct DATA_HOMOTOPY
   int* indCol;
 
   int (*f)         (struct DATA_HOMOTOPY*, double*, double*);
+  int (*f_con)     (struct DATA_HOMOTOPY*, double*, double*);
   int (*fJac_f)    (struct DATA_HOMOTOPY*, double*, double*);
   int (*h_function)(struct DATA_HOMOTOPY*, double*, double*);
   int (*hJac_dh)   (struct DATA_HOMOTOPY*, double*, double*);
@@ -820,8 +824,10 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
     x[i] += delta_hh;
     /* Calculate scaled difference quotient */
     delta_hh = 1. / delta_hh * solverData->xScaling[i];
-
-    solverData->f(solverData, x, solverData->f2);
+    if (solverData->casualTearingSet)
+      solverData->f_con(solverData, x, solverData->f2);
+    else
+      solverData->f(solverData, x, solverData->f2);
 
     for(j = 0; j < solverData->n; j++) {
       l = i * solverData->n + j;
@@ -832,7 +838,7 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
   return 0;
 }
 
-/*! \fn wrapper_fvec_hybrd for the residual Function
+/*! \fn wrapper_fvec for the residual Function
  *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
  *
  *  \author bbachmann
@@ -850,7 +856,26 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
   return 0;
 }
 
-/*! \fn wrapper_fvec_hybrd for the residual Function
+/*! \fn wrapper_fvec_constraints for the residual Function
+ *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
+ *
+ *  \author ptaeuber
+ *
+ */
+int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
+{
+  void *dataAndThreadData[2] = {solverData->data, solverData->threadData};
+  int iflag = 0;
+  int retVal;
+
+  /*TODO: change input to residualFunc from data to systemData */
+  retVal = (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].residualFuncConstraints(dataAndThreadData, x, f, &iflag);
+  solverData->numberOfFunctionEvaluations++;
+
+  return retVal;
+}
+
+/*! \fn wrapper_fvec_der for the residual Function
  *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
  *
  *  \author bbachmann
@@ -889,7 +914,7 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
   return 0;
 }
 
-/*! \fn wrapper_fvec_homotopy for the residual Function
+/*! \fn wrapper_fvec_homotopy_newton for the residual Function
  *
  *  \author bbachmann
  *
@@ -906,7 +931,7 @@ static int wrapper_fvec_homotopy_newton(DATA_HOMOTOPY* solverData, double* x, do
   return 0;
 }
 
-/*! \fn wrapper_fvec_homotopy_der for the residual Function
+/*! \fn wrapper_fvec_homotopy_newton_der for the residual Function
  *
  *  \author bbachmann
  *
@@ -925,7 +950,7 @@ static int wrapper_fvec_homotopy_newton_der(DATA_HOMOTOPY* solverData, double* x
   return 0;
 }
 
-/*! \fn wrapper_fvec_homotopy for the residual Function
+/*! \fn wrapper_fvec_homotopy_fixpoint for the residual Function
  *
  *  \author bbachmann
  *
@@ -944,7 +969,7 @@ static int wrapper_fvec_homotopy_fixpoint(DATA_HOMOTOPY* solverData, double* x, 
   return 0;
 }
 
-/*! \fn wrapper_fvec_homotopy_der for the residual Function
+/*! \fn wrapper_fvec_homotopy_fixpoint_der for the residual Function
  *
  *  \author bbachmann
  *
@@ -998,7 +1023,7 @@ static int wrapper_fvec_homotopy_fixpoint_der(DATA_HOMOTOPY* solverData, double*
  *  \author bbachmann
  *
  */
-int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank)
+int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int casualTearingSet)
 {
    int i, k, j, l, m=n+1, nrsh=1, singular=0, nPivot=n;
    int pCol, pRow;
@@ -1007,6 +1032,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
    double absMax, detJac;
    int r,s;
    double *res;
+   int returnValue = 0;
 
    debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:",A, n, m);
    debugVectorDouble(LOG_NLS_JAC,"vector b:", A+n*n, n);
@@ -1067,6 +1093,11 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     warningStreamPrint(LOG_NLS, 0, "Jacobian determinant is NaN.");
     return -1;
   }
+  else if (fabs(detJac) < 1e-9 && casualTearingSet)
+  {
+    debugString(LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
+    returnValue = 1;
+  }
 
   /* Solve even singular matrices !!! */
   for (i=n-1;i>=0; i--) {
@@ -1093,13 +1124,13 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     *pos=indCol[n];
   }
 
-  return 0;
+  return returnValue;
 }
 
 
 /*! \fn linearSolverWrapper
  */
-int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int method)
+int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int method, int casualTearingSet)
 {
   /* First try to use lapack and if it fails then
    * use solveSystemWithTotalPivotSearch */
@@ -1107,6 +1138,8 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
   int solverinfo;
   int nrhs = 1;
   int lda = n;
+  int k;
+  double detJac;
 
   debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:", A, n, n+1);
   debugVectorDouble(LOG_NLS_JAC,"vector b:", x, n);
@@ -1114,13 +1147,17 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
   switch(method){
     case (1): /* NLS_LS_TOTALPIVOT */
 
-      solverinfo = solveSystemWithTotalPivotSearch(n, x, A, indRow, indCol, pos, rank);
+      solverinfo = solveSystemWithTotalPivotSearch(n, x, A, indRow, indCol, pos, rank, casualTearingSet);
       /* in case of failing */
-      if (solverinfo != 0)
+      if (solverinfo == -1)
       {
         /* debug information */
         debugString(LOG_NLS_V, "Linear total pivot solver failed!!!");
         debugString(LOG_NLS_V, "******************************************************");
+      }
+      else if (solverinfo == 1)
+      {
+        returnValue = 1;
       }
       else
       {
@@ -1138,13 +1175,22 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
           (int*) &n,
           &solverinfo);
 
+      for (detJac=1.0, k=0; k<n; k++) detJac *= A[k + k*n];
+
       debugMatrixDouble(LOG_NLS_JAC,"Linear system matrix [Jac res] after decomposition:", A, n, n+1);
+      debugDouble(LOG_NLS_JAC,"Determinant = ", detJac);
+
       /* in case of failing */
       if (solverinfo != 0)
       {
         /* debug information */
         debugString(LOG_NLS_V, "Linear lapack solver failed!!!");
         debugString(LOG_NLS_V, "******************************************************");
+      }
+      else if (fabs(detJac) < 1e-9 && casualTearingSet)
+      {
+        debugString(LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
+        returnValue = 1;
       }
       else
       {
@@ -1191,6 +1237,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   double a2, a3, rhs1, rhs2, D;
   double alpha = 1e-1;
   int firstrun;
+  int constraintViolated;
+  int solverinfo = 0;
 
   int assert = 1;
   threadData_t *threadData = solverData->threadData;
@@ -1217,7 +1265,10 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     debugInt(LOG_NLS_V, "Iteration:", numberOfIterations);
 
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
-    if ((numberOfIterations>1) && linearSolverWrapper(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, linearSolverMethod) != 0)
+    if (numberOfIterations>1)
+      solverinfo = linearSolverWrapper(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, linearSolverMethod, solverData->casualTearingSet);
+
+    if (solverinfo == -1)
     {
       /* report solver abortion */
       solverData->info=-1;
@@ -1249,7 +1300,16 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-        solverData->f(solverData, solverData->x1, solverData->f1);
+        if (solverData->casualTearingSet){
+          constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
+          if (constraintViolated){
+            lambda1 = lambdaMin-1;
+            break;
+          }
+        }
+        else
+          solverData->f(solverData, solverData->x1, solverData->f1);
+
         assert = 0;
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1287,7 +1347,16 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #ifndef OMC_EMCC
         MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-        solverData->f(solverData, solverData->x1, solverData->f1);
+        if (solverData->casualTearingSet){
+          constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
+          if (constraintViolated){
+            solverData->info = -1;
+            break;
+          }
+        }
+        else
+          solverData->f(solverData, solverData->x1, solverData->f1);
+
         error_f2_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
         debugDouble(LOG_NLS_V,"Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
         assert = 0;
@@ -1326,7 +1395,16 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #ifndef OMC_EMCC
           MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-          solverData->f(solverData, solverData->x1, solverData->f1);
+          if (solverData->casualTearingSet){
+            constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
+            if (constraintViolated){
+              solverData->info = -1;
+              break;
+            }
+          }
+          else
+            solverData->f(solverData, solverData->x1, solverData->f1);
+
           error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
           debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
           assert = 0;
@@ -1409,6 +1487,11 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       solverData->numberOfIterations += numberOfIterations;
       solverData->error_f_sqrd = error_f_sqrd;
 
+      break;
+    }
+    else if (solverinfo == 1){
+      solverData->info = -1;
+      debugString(LOG_DT, "It is not the solution.");
       break;
     }
 
@@ -1572,7 +1655,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
-      if (assert || (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0))
+      if (assert || (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1))
       {
         /* report solver abortion */
         solverData->info=-1;
@@ -1670,7 +1753,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       /* copy vector h to column "pos" of the jacobian */
       vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
       scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
-      if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0)
+      if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
       {
         stepAccept = 0;
         break;
@@ -1803,12 +1886,14 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   int runHomotopy = 0;
   int skipNewton = 0;
   int numberOfFunctionEvaluationsOld = solverData->numberOfFunctionEvaluations;
-  int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
+  solverData->casualTearingSet = systemData->strictTearingFunctionCall != NULL;
+  int constraintViolated;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
   solverData->f = wrapper_fvec;
+  solverData->f_con = wrapper_fvec_constraints;
   solverData->fJac_f = wrapper_fvec_der;
 
   solverData->data = data;
@@ -1867,7 +1952,16 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     if (mixedSystem)
       memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
 
-    solverData->f(solverData, solverData->x0, solverData->f1);
+    if (solverData->casualTearingSet){
+      constraintViolated = solverData->f_con(solverData, solverData->x0, solverData->f1);
+      if (constraintViolated){
+        giveUp = 1;
+        break;
+      }
+    }
+    else
+      solverData->f(solverData, solverData->x0, solverData->f1);
+
     /* Try to get out of here!!! */
     error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
     if ((error_f_sqrd - solverData->error_f_sqrd)<=0)
@@ -1907,14 +2001,14 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
 
     pos = solverData->n;
-    assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0);
+    assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1);
     if (!assert)
       debugString(LOG_NLS_V, "regular initial point!!!");
     giveUp = 0;
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
  #endif
-    if (assert && casualTearingSet)
+    if (assert && solverData->casualTearingSet)
     {
       giveUp = 1;
       break;
@@ -1963,7 +2057,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       newtonAlgorithm(solverData, solverData->x);
 
       // If this is the casual tearing set (only exists for dynamic tearing), break after first try
-      if (solverData->info == -1 && casualTearingSet){
+      if (solverData->info == -1 && solverData->casualTearingSet){
         infoStreamPrint(LOG_NLS, 0, "### No Solution for the casual tearing set at the first try! ###");
         break;
       }
@@ -1989,7 +2083,17 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
         debugVectorInt(LOG_NLS_V,"Relations Pre vector ", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
         debugVectorInt(LOG_NLS_V,"Relations Backup vector ", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
-        solverData->f(solverData, solverData->x, solverData->f1);
+
+        if (solverData->casualTearingSet){
+          constraintViolated = solverData->f_con(solverData, solverData->x, solverData->f1);
+          if (constraintViolated){
+            success = 0;
+            break;
+          }
+        }
+        else
+          solverData->f(solverData, solverData->x, solverData->f1);
+
         debugVectorInt(LOG_NLS_V,"Relations vector ", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
         if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
         {
@@ -2007,7 +2111,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
           scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
 
           pos = solverData->n;
-          solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank);
+          solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet);
           debugDouble(LOG_NLS,"solve mixed system at time : ", solverData->timeValue);
           continue;
         }
@@ -2071,7 +2175,16 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
  #endif
-      solverData->f(solverData, solverData->x, solverData->f1);
+      if (solverData->casualTearingSet){
+        constraintViolated = solverData->f_con(solverData, solverData->x, solverData->f1);
+        if (constraintViolated){
+          success = 0;
+          break;
+        }
+      }
+      else
+        solverData->f(solverData, solverData->x, solverData->f1);
+
       solverData->fJac_f(solverData, solverData->x, solverData->fJac);
       vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
       /* calculate scaling factor of residuals */
@@ -2080,7 +2193,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
 
       pos = solverData->n;
-      assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank) != 0);
+      assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1);
       if (!assert)
         debugString(LOG_NLS_V, "regular initial point!!!");
 #ifndef OMC_EMCC

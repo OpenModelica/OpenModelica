@@ -73,6 +73,7 @@ template equationIndex(SimEqSystem eq)
   match eq
   case SES_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
+  case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
@@ -114,6 +115,13 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN
       <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: SIMPLE_ASSIGN_CONSTRAINTS
+      <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      constraints: <%escapeCComments(dumpConstraints(e.cons))%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       <<

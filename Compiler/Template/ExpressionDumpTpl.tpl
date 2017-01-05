@@ -628,8 +628,6 @@ match exp
 end dumpExpCrefs;
 
 
-
-
 template errorMsg(String errMessage)
 ::=
 let() = Tpl.addTemplateError(errMessage)
@@ -637,6 +635,18 @@ let() = Tpl.addTemplateError(errMessage)
 <%errMessage%>
 >>
 end errorMsg;
+
+
+template dumpConstraints(list<DAE.Constraint> cons)
+::=
+  (cons |> con => (match con
+    case con as DAE.CONSTRAINT_DT(constraint = c, localCon=true) then
+      '<%dumpExp(c,"\"")%> (local)'
+    case con as DAE.CONSTRAINT_DT(constraint = c, localCon=false) then
+      '<%dumpExp(c,"\"")%> (global)'
+   )
+  ;separator=", ")
+end dumpConstraints;
 
 annotation(__OpenModelica_Interface="frontend");
 end ExpressionDumpTpl;

@@ -351,6 +351,7 @@ template ScalarVariableTypeRealMaxAttribute(Option<DAE.Exp> maxValue)
     // case NONE() then ' max="1.7976931348623157E+308"'
 end ScalarVariableTypeRealMaxAttribute;
 
+
 /*********************************************************************
  *********************************************************************
  *                       Paths

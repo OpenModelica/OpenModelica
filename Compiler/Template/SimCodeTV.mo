@@ -395,6 +395,14 @@ package SimCode
       DAE.ElementSource source;
     end SES_SIMPLE_ASSIGN;
 
+    record SES_SIMPLE_ASSIGN_CONSTRAINTS
+      Integer index;
+      DAE.ComponentRef cref;
+      DAE.Exp exp;
+      DAE.ElementSource source;
+      BackendDAE.Constraints cons;
+    end SES_SIMPLE_ASSIGN_CONSTRAINTS;
+
     record SES_ARRAY_CALL_ASSIGN
       Integer index;
       DAE.Exp lhs;
@@ -1202,6 +1210,8 @@ package BackendDAE
   constant String optimizationMayerTermName;
   constant String optimizationLagrangeTermName;
   constant String symEulerDT;
+
+  type Constraints = list<DAE.Constraint> "Constraints on the solvability of the (casual) tearing set; needed for proper Dynamic Tearing";
 
 end BackendDAE;
 
@@ -2293,6 +2303,11 @@ package DAE
     record CONSTRAINT_EXPS
       list<Exp> constraintLst;
     end CONSTRAINT_EXPS;
+
+    record CONSTRAINT_DT "Constraints needed for proper Dynamic Tearing"
+      Exp constraint;
+      Boolean localCon "local or global constraint; local constraints depend on variables that are computed within the algebraic loop itself";
+    end CONSTRAINT_DT;
   end Constraint;
 
   uniontype ClassAttributes "currently for Optimica extension: these are the objectives of optimization class"

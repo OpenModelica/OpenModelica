@@ -1894,17 +1894,21 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   let &tempeqns2 += (initialEquations_lambda0 |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
   let &tempeqns3 = buffer ""
   let &tempeqns3 += (allEquations |> eq => match eq case eq as SES_LINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
-  let initbody = functionInitialLinearSystemsTemp(initialEquations, modelNamePrefix)
-  let initbody_lambda0 = functionInitialLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
-  let parambody = functionInitialLinearSystemsTemp(parameterEquations, modelNamePrefix)
-  let body = functionInitialLinearSystemsTemp(allEquations, modelNamePrefix)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialLinearSystemsTemp(jacobianEquations, modelNamePrefix);separator="\n\n")
+  let &globalConstraintsFunctions = buffer ""
+  let initbody = functionInitialLinearSystemsTemp(initialEquations, modelNamePrefix, &globalConstraintsFunctions)
+  let initbody_lambda0 = functionInitialLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix, &globalConstraintsFunctions)
+  let parambody = functionInitialLinearSystemsTemp(parameterEquations, modelNamePrefix, &globalConstraintsFunctions)
+  let body = functionInitialLinearSystemsTemp(allEquations, modelNamePrefix, &globalConstraintsFunctions)
+  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialLinearSystemsTemp(jacobianEquations, modelNamePrefix, &globalConstraintsFunctions);separator="\n\n")
   <<
-  /* function initialize linear systems */
+  /* Prototypes for the strict sets (Dynamic Tearing) */
   <%tempeqns1%>
   <%tempeqns2%>
   <%tempeqns3%>
 
+  /* Global constraints for the casual sets */
+  <%globalConstraintsFunctions%>
+  /* function initialize linear systems */
   void <%symbolName(modelNamePrefix,"initialLinearSystem")%>(int nLinearSystems, LINEAR_SYSTEM_DATA* linearSystemData)
   {
     /* initial linear systems */
@@ -1921,11 +1925,11 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   >>
 end functionInitialLinearSystems;
 
-template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String modelNamePrefix)
+template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String modelNamePrefix, Text &globalConstraintsFunctions)
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix)
+     case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix, "")
      // no dynamic tearing
      case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
        match ls.jacobianMatrix
@@ -1978,6 +1982,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            // for casual tearing set
            let size2 = listLength(at.vars)
            let nnz2 = listLength(at.simJac)
+           let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
            <<
            assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
@@ -1998,6 +2003,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setb = setLinearVectorb<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
+           linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
            >>
          case SOME(__) then
            let size = listLength(ls.vars)
@@ -2010,6 +2016,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            let generatedJac2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
            let initialJac2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
            let jacIndex2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+           let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
            <<
            assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
@@ -2038,6 +2045,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
            linearSystemData[<%at.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
+           linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
            >>
          else
          error(sourceInfo(), ' No jacobian create for linear system <%ls.index%> or <%at.index%>.')
@@ -2394,17 +2402,21 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   let &tempeqns2 += (initialEquations_lambda0 |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
   let &tempeqns3 = buffer ""
   let &tempeqns3 += (allEquations |> eq => match eq case eq as SES_NONLINEAR(alternativeTearing = SOME(__)) then 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
-  let initbody = functionInitialNonLinearSystemsTemp(initialEquations, modelNamePrefix)
-  let initbody_lambda0 = functionInitialNonLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
-  let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix)
-  let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialNonLinearSystemsTemp(jacobianEquations, modelNamePrefix) ;separator="\n\n")
+  let &globalConstraintsFunctions = buffer ""
+  let initbody = functionInitialNonLinearSystemsTemp(initialEquations, modelNamePrefix,&globalConstraintsFunctions)
+  let initbody_lambda0 = functionInitialNonLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix,&globalConstraintsFunctions)
+  let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix,&globalConstraintsFunctions)
+  let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix,&globalConstraintsFunctions)
+  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialNonLinearSystemsTemp(jacobianEquations, modelNamePrefix, &globalConstraintsFunctions) ;separator="\n\n")
   <<
-  /* function initialize non-linear systems */
+  /* Prototypes for the strict sets (Dynamic Tearing) */
   <%tempeqns1%>
   <%tempeqns2%>
   <%tempeqns3%>
 
+  /* Global constraints for the casual sets */
+  <%globalConstraintsFunctions%>
+  /* function initialize non-linear systems */
   void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
     <%initbody%>
@@ -2416,31 +2428,34 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   >>
 end functionInitialNonLinearSystems;
 
-template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, String modelPrefixName)
+template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, String modelPrefixName, Text &globalConstraintsFunctions)
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1), modelPrefixName)
+     case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1), modelPrefixName, &globalConstraintsFunctions)
      // no dynamic tearing
      case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
-       let system = generateNonLinearSystemData(nls, 'NULL', modelPrefixName)
+       let system = generateNonLinearSystemData(nls, 0, modelPrefixName)
        <<
        <%system%>
        >>
      // dynamic tearing
      case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-       let system = generateNonLinearSystemData(nls, 'NULL', modelPrefixName)
-       let systemStrict = generateNonLinearSystemData(at, '<%symbolName(modelPrefixName,"eqFunction")%>_<%nls.index%>', modelPrefixName)
+       let system = generateNonLinearSystemData(nls, 0, modelPrefixName)
+       let systemCasual = generateNonLinearSystemData(at, nls.index, modelPrefixName)
+       let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
        <<
        <%system%>
-       <%systemStrict%>
+       <%systemCasual%>
        >>
      )
    ;separator="\n\n")
 end functionInitialNonLinearSystemsTemp;
 
-template generateNonLinearSystemData(NonlinearSystem system, String strictSet, String modelPrefixName)
-  "Generates nonlinear system data."
+template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict, String modelPrefixName)
+  "Generates nonlinear system data.
+   indexStrict = 0: no dynamic tearing or strict set,
+   else: casual set and indexStrict is the index of the corresponding strict set"
 ::=
   match system
     case nls as NONLINEARSYSTEM(__) then
@@ -2448,7 +2463,13 @@ template generateNonLinearSystemData(NonlinearSystem system, String strictSet, S
       let generatedJac = match nls.jacobianMatrix case SOME(({},_,name,_,_,_,_)) then 'NULL' case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
       let initialJac = match nls.jacobianMatrix case SOME(({},_,name,_,_,_,_)) then 'NULL' case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
       let jacIndex = match nls.jacobianMatrix case SOME(({},_,name,_,_,_,jacindex)) then '-1' case SOME((_,_,name,_,_,_,jacindex)) then  '<%jacindex%>' case NONE() then '-1'
-      let innerSystems = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName)
+      let innerSystems = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName, "")
+      let casualCall = if not intEq(indexStrict, 0) then '<%symbolName(modelPrefixName,"eqFunction")%>_<%indexStrict%>' else 'NULL'
+      let constraintsCall = if not intEq(indexStrict, 0) then 'checkConstraints<%nls.index%>' else 'NULL'
+      let residualCall = if intEq(indexStrict, 0) then
+                           'nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;'
+                         else
+                           'nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFuncConstraints = residualFuncConstraints<%nls.index%>;'
       <<
       <%innerSystems%>
 
@@ -2456,27 +2477,113 @@ template generateNonLinearSystemData(NonlinearSystem system, String strictSet, S
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%boolStrC(nls.homotopySupport)%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%boolStrC(nls.mixedSystem)%>;
-      nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
-      nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = <%strictSet%>;
+      <%residualCall%>
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].strictTearingFunctionCall = <%casualCall%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticDataNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].getIterationVars = getIterationVarsNLS<%nls.index%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].checkConstraints = <%constraintsCall%>;
       >>
 end generateNonLinearSystemData;
+
+template createGlobalConstraintsFunction(SimEqSystem system)
+  "Creates a function which is called before each evaluation of the casual set to make sure that the constraints are not violated."
+::=
+   match system
+     case SES_NONLINEAR(alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+       let constraints = createGlobalConstraints(at.eqs)
+       <<
+       int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
+       {
+         const int equationIndexes[2] = {1,<%at.index%>};
+         <%constraints%>
+         return 1;
+       }
+
+       >>
+
+     case SES_LINEAR(alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+       let constraints = createGlobalConstraints(at.residual)
+       <<
+       int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
+       {
+         const int equationIndexes[2] = {1,<%at.index%>};
+         <%constraints%>
+         return 1;
+       }
+
+       >>
+end createGlobalConstraintsFunction;
+
+template createGlobalConstraints(list<SimEqSystem> innerEqns)
+  "Creates a single constraint from SES_SIMPLE_ASSIGN_CONSTRAINTS which must not be violated to use the casual set."
+::=
+   (innerEqns |> innerEqn => (match innerEqn
+     case innerEqn as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+       (innerEqn.cons |> con => (match con
+         case con as DAE.CONSTRAINT_DT(constraint = c, localCon = localCon) then
+           let &preExp = buffer ""
+           let &varDecls = buffer ""
+           let &auxFunction = buffer ""
+           let condition = daeExp(c, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+           <<
+           <%varDecls%>
+           <%auxFunction%>
+           <%preExp%>
+           if (!<%condition%>){
+             debugString(LOG_DT_CONS, "The following <%if localCon then "local" else "global"%> constraint is violated:\n<%dumpExp(c,"\"")%>");
+             return 0;
+           }
+           >>
+         )
+       ;separator="\n")
+     )
+   ;separator="\n")
+end createGlobalConstraints;
 
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNamePrefixStr)
  "Generates an equation."
 ::=
   match eq
   case e as SES_RESIDUAL(__)
-  then ""
+   then ""
   else
     let &eqs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefixStr)
-    equation_call(eq, modelNamePrefixStr)
+    <<
+    /* local constraints */
+    <%createLocalConstraints(eq)%>
+    <%equation_call(eq, modelNamePrefixStr)%>
+    >>
   end match
 end functionExtraResidualsPreBody;
+
+template createLocalConstraints(SimEqSystem eq)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+    (e.cons |> con => (match con
+      case con as DAE.CONSTRAINT_DT(constraint = c, localCon = true) then
+        let &preExp = buffer ""
+        let &varDecls = buffer ""
+        let &auxFunction = buffer ""
+        let condition = daeExp(c, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+        <<
+        <%varDecls%>
+        <%auxFunction%>
+        <%preExp%>
+        if (!<%condition%>){
+          debugString(LOG_DT_CONS, "The following local constraint is violated:\n<%dumpExp(c,"\"")%>");
+          debugString(LOG_DT, "Local constraints of the casual tearing set are violated! Let's fail...");
+          return 1;
+        }
+        >>
+      )
+      ;separator="\n")
+   end match
+end createLocalConstraints;
 
 template functionNonLinearResiduals(list<SimEqSystem> allEquations, String modelNamePrefix)
   "Generates functions in simulation file."
@@ -2487,7 +2594,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
         jacobianMatrix=SOME((_,_,_,(sparsePattern,_),colorList,maxColor,_))),
         alternativeTearing=NONE()) then
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
@@ -2499,7 +2606,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       <%updateIterationVars%>
       >>
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__),alternativeTearing=NONE()) then
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
@@ -2517,64 +2624,68 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
         jacobianMatrix=SOME((_,_,_,(sparsePattern2,_),colorList2,maxColor2,_))))
         ) then
       // for strict tearing set
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
-      let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
+      // for casual tearing set
+      let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
-      let sparseDataStrict = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
-      let bodyStaticDataStrict = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
-      let updateIterationVarsStrict = getIterationVars(nls.crefs, indexName)
+      let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       <<
-      /* start dynamic tearing sets */
-      /* causal tearing set */
+      /* start residuals for dynamic tearing sets */
+      /* strict tearing set */
       <%residualFunction%>
       <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
-      /* strict tearing set */
-      <%residualFunctionStrict%>
-      <%sparseDataStrict%>
-      <%bodyStaticDataStrict%>
-      <%updateIterationVarsStrict%>
-      /* end dynamic tearing sets */
+      /* casual tearing set */
+      <%residualFunctionCasual%>
+      <%sparseDataCasual%>
+      <%bodyStaticDataCasual%>
+      <%updateIterationVarsCasual%>
+      /* end residuals for dynamic tearing sets */
       >>
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__),
         alternativeTearing = SOME(at as NONLINEARSYSTEM(__))
         ) then
       // for strict tearing set
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
-      let residualFunctionStrict = generateNonLinearResidualFunction(at, modelNamePrefix)
+      // for casual tearing set
+      let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
       let indexName = 'NLS<%at.index%>'
-      let sparseDataStrict = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
-      let bodyStaticDataStrict = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
-      let updateIterationVarsStrict = getIterationVars(nls.crefs, indexName)
+      let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
+      let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
       <<
-      /* start dynamic tearing sets */
-      /* causal tearing set */
+      /* start residuals for dynamic tearing sets */
+      /* strict tearing set */
       <%residualFunction%>
       <%sparseData%>
       <%bodyStaticData%>
       <%updateIterationVars%>
-      /* strict tearing set */
-      <%residualFunctionStrict%>
-      <%sparseDataStrict%>
-      <%bodyStaticDataStrict%>
-      <%updateIterationVarsStrict%>
-      /* end dynamic tearing sets */
+      /* casual tearing set */
+      <%residualFunctionCasual%>
+      <%sparseDataCasual%>
+      <%bodyStaticDataCasual%>
+      <%updateIterationVarsCasual%>
+      /* end residuals for dynamic tearing sets */
       >>
     )
     ;separator="\n\n")
 end functionNonLinearResiduals;
 
-template generateNonLinearResidualFunction(NonlinearSystem system, String modelNamePrefix)
-  "Generates residual function for nonlinear loops."
+template generateNonLinearResidualFunction(NonlinearSystem system, String modelNamePrefix, Integer whichSet)
+  "Generates residual function for nonlinear loops.
+   whichSet = 0: Strict Set
+   whichSet = 1: Casual Set"
 ::=
 match system
   case nls as NONLINEARSYSTEM(__) then
@@ -2615,13 +2726,19 @@ match system
           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
           >>
         ;separator="\n")
+    let residualFunctionHeader =
+      if intEq(whichSet, 0) then
+        'void residualFunc<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)'
+      else
+        'int residualFuncConstraints<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)'
+    let returnValue = if intEq(whichSet, 1) then 'return 0;'
     <<
     <%innerNLSSystems%>
 
     /* inner equations */
     <%&innerEqns%>
 
-    void residualFunc<%nls.index%>(void** dataIn, const double* xloc, double* res, const int* iflag)
+    <%residualFunctionHeader%>
     {
       TRACE_PUSH
       DATA *data = (DATA*) ((void**)dataIn[0]);
@@ -2642,6 +2759,7 @@ match system
       <%restoreKnownOutputs%>
       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
       TRACE_POP
+      <%returnValue%>
     }
     >>
 end generateNonLinearResidualFunction;
@@ -4762,6 +4880,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   else 0
   let x = match eq
   case e as SES_SIMPLE_ASSIGN(__)
+  case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
     then equationSimpleAssign(e, context, &varD, &tempeqns)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD, &tempeqns)
@@ -4844,6 +4963,7 @@ template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, Stri
   else 0
   let x = match eq
   case e as SES_SIMPLE_ASSIGN(__)
+  case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
     then equationSimpleAssign(e, context, &varD, &tempeqns)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD, &tempeqns)
@@ -5013,9 +5133,11 @@ template equationSimpleAssign(SimEqSystem eq, Context context,
  "Generates an equation that is just a simple assignment."
 ::=
 match eq
-case SES_SIMPLE_ASSIGN(exp=CALL(path=IDENT(name="fail"))) then
+case SES_SIMPLE_ASSIGN(exp=CALL(path=IDENT(name="fail")))
+case SES_SIMPLE_ASSIGN_CONSTRAINTS(exp=CALL(path=IDENT(name="fail"))) then
   '<%generateThrow()%><%\n%>'
-case SES_SIMPLE_ASSIGN(__) then
+case SES_SIMPLE_ASSIGN(__)
+case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   <<
@@ -5112,10 +5234,10 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* Linear equation system */
   int retValue;
   if(ACTIVE_STREAM(LOG_DT))
-      {
-        infoStreamPrint(LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
-        messageClose(LOG_DT);
-      }
+  {
+    infoStreamPrint(LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
+    messageClose(LOG_DT);
+  }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   <%ls.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>] = <%crefOld(name,1)%>;' ;separator="\n"%>
   retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>);
@@ -5143,18 +5265,31 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   /* Linear equation system */
   int retValue;
   if(ACTIVE_STREAM(LOG_DT))
-      {
-        infoStreamPrint(LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
-        messageClose(LOG_DT);
-      }
+  {
+    infoStreamPrint(LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
+    messageClose(LOG_DT);
+  }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
-  <%at.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].x[<%i0%>] = <%crefOld(name,1)%>;' ;separator="\n"%>
-  retValue = solve_linear_system(data, threadData, <%at.indexLinearSystem%>);
-  /* The casual tearing set found a solution */
-  if (retValue == 0){
-    /* write solution */
-    <%at.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
-    <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
+  if (data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].checkConstraints(data, threadData) == 1)
+  {
+    <%at.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].x[<%i0%>] = <%crefOld(name,1)%>;' ;separator="\n"%>
+    retValue = solve_linear_system(data, threadData, <%at.indexLinearSystem%>);
+    /* The casual tearing set found a solution */
+    if (retValue == 0){
+      /* write solution */
+      <%at.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
+      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
+    }
+  }
+  else
+  {
+    if(ACTIVE_STREAM(LOG_DT))
+    {
+      infoStreamPrint(LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
+      messageClose(LOG_DT);
+    }
+    /* Global constraints are violated. Use the strict tearing set now. */
+    data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall(data, threadData);
   }
   >>
 end equationLinearAlternativeTearing;
@@ -5246,16 +5381,30 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex,-1);
       >>
       %>
-      /* get old value */
-      <%at.crefs |> name hasindex i0 =>
-        'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%cref(name)%>;'
-      ;separator="\n"%>
-      retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
-      /* The casual tearing set found a solution */
-      if (retValue == 0){
-        /* write solution */
-        <%at.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
-        <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
+
+      if (data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].checkConstraints(data, threadData) == 1)
+      {
+        /* get old value */
+        <%at.crefs |> name hasindex i0 =>
+          'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%cref(name)%>;'
+        ;separator="\n"%>
+        retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
+        /* The casual tearing set found a solution */
+        if (retValue == 0){
+          /* write solution */
+          <%at.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+          <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
+        }
+      }
+      else
+      {
+        if(ACTIVE_STREAM(LOG_DT))
+        {
+          infoStreamPrint(LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
+          messageClose(LOG_DT);
+        }
+        /* Global constraints are violated. Use the strict tearing set now. */
+        data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].strictTearingFunctionCall(data, threadData);
       }
       >>
 end equationNonlinearAlternativeTearing;

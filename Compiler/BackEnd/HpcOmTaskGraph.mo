@@ -6874,6 +6874,7 @@ algorithm
   (oIdx,oIdx2) := match(iEq)
     case(SimCode.SES_RESIDUAL(index=index)) then (index,0);
     case(SimCode.SES_SIMPLE_ASSIGN(index=index)) then (index,0);
+    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index)) then (index,0);
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then (index,0);
     case(SimCode.SES_IFEQUATION(index=index)) then (index,0);
     case(SimCode.SES_ALGORITHM(index=index)) then (index,0);

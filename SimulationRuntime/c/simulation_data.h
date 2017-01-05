@@ -273,9 +273,11 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_boolean isPatternAvailable;
 
   void (*residualFunc)(void**, const double*, double*, const int*);
+  int (*residualFuncConstraints)(void**, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
   void (*getIterationVars)(struct DATA*, double*);
+  int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
   void *solverData;
   modelica_real *nlsx;                 /* x */
@@ -319,6 +321,7 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*);
   int (*strictTearingFunctionCall)(struct DATA*, threadData_t *threadData);
+  int (*checkConstraints)(struct DATA*, threadData_t *threadData);
 
   /* attributes of iteration variables */
   modelica_real *min;

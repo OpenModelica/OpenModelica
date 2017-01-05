@@ -4141,6 +4141,7 @@ algorithm
       Boolean homotopySupport;
       Boolean mixedSystem;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      BackendDAE.Constraints cons;
     case(SimCode.SES_RESIDUAL(index=idx,exp=exp,source=source),_)
       equation
         (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
@@ -4152,6 +4153,13 @@ algorithm
         DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
         (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
+    then (simEqSys,changed or hasRepl);
+    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=idx,cref=cref,exp=exp,source=source,cons=cons),_)
+      equation
+        hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
+        DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
+        (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
+        simEqSys = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(idx,cref,exp,source,cons);
     then (simEqSys,changed or hasRepl);
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp,source=source),_)
       equation

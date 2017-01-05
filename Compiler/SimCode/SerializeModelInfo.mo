@@ -480,6 +480,26 @@ algorithm
       File.write(file, "}");
     then true;
 
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
+      writeCref(file,eq.cref,escape=JSON);
+      File.write(file, "\"],\"uses\":[");
+      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      File.write(file, "],\"equation\":[\"");
+      File.writeEscape(file,expStr(eq.exp),escape=JSON);
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
     case SimCode.SES_ARRAY_CALL_ASSIGN() equation
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);

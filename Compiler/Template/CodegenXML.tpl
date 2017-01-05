@@ -710,6 +710,7 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
   let &varD = buffer ""
   let x = match eq
   case e as SES_SIMPLE_ASSIGN(__)
+  case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
     then  equationSimpleAssignXml(e, context, &varD /*BUFD*/)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then  equationArrayCallAssignXml(e, context, &varD /*BUFD*/)
@@ -744,6 +745,7 @@ template old_equation_Xml(SimEqSystem eq, Context context, Text &varDecls)
   match eq
   case e as SES_MIXED(__)
   case e as SES_SIMPLE_ASSIGN(__)
+  case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
     then equationSimpleAssignXml(e, context, &varDecls)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssignXml(e, context, &varDecls)
@@ -761,7 +763,8 @@ template equationSimpleAssignXml(SimEqSystem eq, Context context,
  "Generates an equation that is just a simple assignment."
 ::=
 match eq
-case SES_SIMPLE_ASSIGN(__) then
+case SES_SIMPLE_ASSIGN(__)
+case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let result = if preExp then preExp else expPart

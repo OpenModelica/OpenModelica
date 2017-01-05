@@ -674,7 +674,7 @@ uniontype Solvability
 end Solvability;
 
 public
-type Constraints = list<.DAE.Constraint> "Constraints needed for proper Dynamic Tearing";
+type Constraints = list<.DAE.Constraint> "Constraints on the solvability of the (casual) tearing set; needed for proper Dynamic Tearing";
 
 public
 uniontype IndexType

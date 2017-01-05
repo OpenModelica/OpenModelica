@@ -4803,7 +4803,7 @@ protected function tryToSolveOrDerive
   input DAE.ComponentRef cr "x";
   input BackendDAE.Variables vars;
   input Option<DAE.FunctionTree> functions;
-  input Boolean trytosolve1 "if true, try to solve the expression for the variable, even if flag 'advanceTearing' is not set";
+  input Boolean trytosolve1 "if true, try to solve the expression for the variable, even if flag 'allowImpossibleAssignments' is not set";
   output DAE.Exp f;
   output Boolean solved=false "true if equation is solved for the variable with ExpressionSolve.solve2, false if equation is differentiated";
   output Boolean derived=false;
@@ -4811,12 +4811,48 @@ protected function tryToSolveOrDerive
 protected
   DAE.Type tp = Expression.typeof(e);
   Boolean trytosolve2 = Flags.isSet(Flags.ALLOW_IMPOSSIBLE_ASSIGNMENTS);
-  DAE.Exp one,solvedExp;
+  Boolean localCon;
+  DAE.Exp one, tmpEqn, solvedExp, con;
+  list<BackendDAE.Equation> eqnForNewVars;
+  list<DAE.ComponentRef> newVarsCrefs;
+  DAE.ComponentRef tmpVar;
+  DAE.Constraint constraint;
+  BackendDAE.Constraints constraints;
 algorithm
   if trytosolve1 or trytosolve2 then
     try // try to solve for x (1*x = f(y))
-      (solvedExp,_,_,_) := ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(-1));
-      (_,(outCons,_)) := Expression.traverseExpTopDown(solvedExp, getConstraints, ({},vars));
+      (solvedExp,_,eqnForNewVars,newVarsCrefs) := ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(1));
+
+      // print("Solve expression:\n" + ExpressionDump.printExpStr(e) + "\n");
+      // print("for variable: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
+      // print("Solved expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
+      // ComponentReference.printComponentRefList(newVarsCrefs);
+      // BackendDump.dumpEquationList(eqnForNewVars, "eqnForNewVars");
+      // ExpressionDump.dumpExp(solvedExp);
+      // print("listLength(eqnForNewVars): " + intString(listLength(eqnForNewVars)) + "\n\n");
+
+      (_,(constraints,_)) := Expression.traverseExpTopDown(solvedExp, getConstraints, ({},vars));
+
+      for eqn in eqnForNewVars loop
+        BackendDAE.SOLVED_EQUATION(componentRef=tmpVar, exp=tmpEqn) := eqn;
+        (_,(constraints,_)) := Expression.traverseExpTopDown(tmpEqn, getConstraints, (constraints,vars));
+      end for;
+
+      // print("Constraints before substitution: " + ExpressionDump.constraintDTlistToString(constraints, "\n") + "\n\n");
+
+      for i in listLength(constraints):-1:1 loop
+        constraint := listGet(constraints, i);
+        DAE.CONSTRAINT_DT(constraint = con, localCon=localCon) := constraint;
+        for eqn in eqnForNewVars loop
+          BackendDAE.SOLVED_EQUATION(componentRef=tmpVar, exp=tmpEqn) := eqn;
+          con := Expression.replaceCrefBottomUp(con, tmpVar, tmpEqn);
+        end for;
+        outCons := DAE.CONSTRAINT_DT(con, localCon)::outCons;
+      end for;
+
+      // print("Substituted expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
+      // print("Constraints:" + ExpressionDump.constraintDTlistToString(outCons, "\n") + "\n\n");
+
       solved := true;
     else end try;
   end if;
@@ -4849,29 +4885,86 @@ Function to find the constraints for Dynamic Tearing."
   input DAE.Exp inExp;
   input tuple<BackendDAE.Constraints,BackendDAE.Variables> inTpl;
   output DAE.Exp outExp;
-  output Boolean cont;
+  output Boolean cont=true;
   output tuple<BackendDAE.Constraints,BackendDAE.Variables> outTpl;
 protected
   BackendDAE.Constraints inCons;
   BackendDAE.Variables vars;
 algorithm
   (inCons,vars) := inTpl;
-  (outExp,cont,outTpl) := match(inExp)
+  (outExp,outTpl) := match(inExp)
     local
-      DAE.Exp e1, e2;
+      DAE.Exp e;
       DAE.Exp rel;
       DAE.Constraint con;
       list<DAE.ComponentRef> crlst;
       Boolean localCon;
-    case DAE.BINARY(operator=DAE.DIV(), exp2=e2)
+    case DAE.BINARY(operator=DAE.DIV(), exp2=e)
       equation
-        rel = DAE.RELATION(e2,DAE.NEQUAL(DAE.T_UNKNOWN(DAE.emptyTypeSource)),DAE.RCONST(0.0),-1,NONE());
+        rel = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"), {e}, DAE.callAttrBuiltinOther), DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(1e-12), -1, NONE());
         (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
-        localCon = containAnyVar(crlst,vars);
+        localCon = containAnyVarWithoutStates(crlst,vars);
         con = DAE.CONSTRAINT_DT(rel,localCon);
-     then (inExp,true,(con::inCons,vars));
+     then (inExp,(con::inCons,vars));
+
+    case DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst = {e})
+      equation
+        rel = DAE.RELATION(e, DAE.GREATEREQ(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
+    case DAE.BINARY(exp1=e, operator=DAE.POW(), exp2=DAE.RCONST(0.5))
+      equation
+        rel = DAE.RELATION(e, DAE.GREATEREQ(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
+    case DAE.CALL(path = Absyn.IDENT(name = "log"), expLst = {e})
+      equation
+        rel = DAE.RELATION(e, DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(1e-12), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
+    case DAE.CALL(path = Absyn.IDENT(name = "log10"), expLst = {e})
+      equation
+        rel = DAE.RELATION(e, DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(1e-12), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
+    case DAE.CALL(path = Absyn.IDENT(name = "asin"), expLst = {e})
+      equation
+        rel = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"), {e}, DAE.callAttrBuiltinOther), DAE.LESSEQ(DAE.T_REAL_DEFAULT), DAE.RCONST(1.0), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
+    case DAE.CALL(path = Absyn.IDENT(name = "acos"), expLst = {e})
+      equation
+        rel = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"), {e}, DAE.callAttrBuiltinOther), DAE.LESSEQ(DAE.T_REAL_DEFAULT), DAE.RCONST(1.0), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
+    case DAE.CALL(path = Absyn.IDENT(name = "tan"), expLst = {e})
+      equation
+        rel = DAE.RELATION(DAE.BINARY(exp1=DAE.CALL(Absyn.IDENT("abs"), {DAE.BINARY(exp1=DAE.BINARY(exp1=e, operator=DAE.DIV(ty=DAE.T_REAL_DEFAULT), exp2=DAE.RCONST(3.14159265358979)), operator=DAE.MUL(ty=DAE.T_REAL_DEFAULT), exp2=DAE.RCONST(2.0))}, DAE.callAttrBuiltinOther), operator=DAE.SUB(ty=DAE.T_REAL_DEFAULT), exp2=DAE.CALL(Absyn.IDENT("floor"), {DAE.CALL(Absyn.IDENT("abs"), {DAE.BINARY(exp1=DAE.BINARY(exp1=e, operator=DAE.DIV(ty=DAE.T_REAL_DEFAULT), exp2=DAE.RCONST(3.14159265358979)), operator=DAE.MUL(ty=DAE.T_REAL_DEFAULT), exp2=DAE.RCONST(2.0))}, DAE.callAttrBuiltinOther)}, DAE.callAttrBuiltinOther)), DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(1e-12), -1, NONE());
+        (_,crlst) = Expression.traverseExpTopDown(rel, Expression.traversingComponentRefFinderNoPreDer, {});
+        localCon = containAnyVarWithoutStates(crlst,vars);
+        con = DAE.CONSTRAINT_DT(rel,localCon);
+     then (inExp,(con::inCons,vars));
+
     else
-     then (inExp,true,inTpl);
+     then (inExp,inTpl);
   end match;
 end getConstraints;
 
@@ -5574,6 +5667,31 @@ algorithm
        containAnyVar(crefs, vars);
   end matchcontinue;
 end containAnyVar;
+
+protected function containAnyVarWithoutStates
+"Like containAnyVar but if var is state it is not counted."
+  input list<DAE.ComponentRef> inExpComponentRefLst;
+  input BackendDAE.Variables inVariables;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inExpComponentRefLst,inVariables)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crefs;
+      BackendDAE.Variables vars;
+      BackendDAE.Var v;
+    case ({},_) then false;
+    case ((cr::_),vars)
+      equation
+        (v::_,_) = BackendVariable.getVar(cr, vars);
+        false = BackendVariable.isStateVar(v);
+      then
+        true;
+    case ((_::crefs),vars)
+      then
+       containAnyVarWithoutStates(crefs, vars);
+  end matchcontinue;
+end containAnyVarWithoutStates;
 
 public function getEqnSysRhs "author: Frenkel TUD 2013-02
 

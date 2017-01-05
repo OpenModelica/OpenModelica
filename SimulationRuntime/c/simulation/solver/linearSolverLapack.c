@@ -258,9 +258,10 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
       /* update inner equations */
       wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, dataAndThreadData, sysNumber);
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
+
       if ((isnan(residualNorm)) || (residualNorm>1e-4)){
         warningStreamPrint(LOG_LS, 0,
-            "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %g.",
+            "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
             (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
         success = 0;
       }
@@ -270,11 +271,11 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
     }
 
     if (ACTIVE_STREAM(LOG_LS_V)){
-      infoStreamPrint(LOG_LS_V, 1, "Residual Norm %g of solution x:", residualNorm);
+      infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %.15g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
       }
 
       messageClose(LOG_LS_V);
