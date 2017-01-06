@@ -4,6 +4,7 @@ FAILINGTESTFILES = \
 Inverter2.mos
 
 TESTFILES = \
+functionEvaluation.mos \
 functionTest4.mos \
 functionTest5.mos \
 functionTest7.mos \
