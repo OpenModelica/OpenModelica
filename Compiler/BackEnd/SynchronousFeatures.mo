@@ -188,10 +188,31 @@ algorithm
           BackendDAE.CLOCKED_PARTITION(idx) := syst.partitionKind;
           subPartition := shared.partitionsInfo.subPartitions[idx];
           solverMethod := BackendDump.optionString(subPartition.clock.solver);
+          if stringLength(solverMethod) > 7 and substring(solverMethod, 1, 8) == "Explicit" then
+            if solverMethod <> "ExplicitEuler" then
+              Error.addCompilerWarning("Solving clocked continuous equations with " +
+                                       "ExplicitEuler instead of specified " + solverMethod + ". "
+                                       + "Supporting ExplicitEuler and ImplicitEuler.");
+            end if;
+            for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+              eq := BackendEquation.equationNth1(eqs, i);
+              (_, derVars) := BackendEquation.traverseExpsOfEquation(eq, getDerVars1, derVars);
+            end for;
+            for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+              eq := BackendEquation.equationNth1(eqs, i);
+              (eq, _) := BackendEquation.traverseExpsOfEquation(eq, shiftDerVars1, derVars);
+              eqs := BackendEquation.setAtIndex(eqs, i, eq);
+            end for;
+          elseif stringLength(solverMethod) > 0 and solverMethod <> "ImplicitEuler" then
+            Error.addCompilerWarning("Solving clocked continuous equations with " +
+                                     "ImplicitEuler instead of specified " + solverMethod + ". "
+                                     + "Supporting ExplicitEuler and ImplicitEuler.");
+          end if;
           lstEqs := {};
+          derVars := {};
           for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
             eq := BackendEquation.equationNth1(eqs, i);
-            (eq, (solverMethod, derVars)) := BackendEquation.traverseExpsOfEquation(eq, applySolverMethod1, (solverMethod, derVars));
+            (eq, derVars) := BackendEquation.traverseExpsOfEquation(eq, applyEulerMethod1, derVars);
             lstEqs := eq::lstEqs;
           end for;
           syst.orderedEqs := BackendEquation.listEquation(listReverse(lstEqs));
@@ -203,53 +224,120 @@ algorithm
   outSysts := listReverse(outSysts);
 end treatClockedStates;
 
-protected function applySolverMethod1 "helper to applySolverMethod"
+protected function getDerVars1 "helper to getDerVars"
   input DAE.Exp inExp;
-  input tuple<String, list<DAE.ComponentRef>> inTpl;
+  input list<DAE.ComponentRef> inDerVars;
   output DAE.Exp outExp;
-  output tuple<String, list<DAE.ComponentRef>> outTpl;
+  output list<DAE.ComponentRef> outDerVars;
 algorithm
-  (outExp, outTpl) := Expression.traverseExpBottomUp(inExp, applySolverMethod, inTpl);
-end applySolverMethod1;
+  (outExp, outDerVars) := Expression.traverseExpBottomUp(inExp, getDerVars, inDerVars);
+end getDerVars1;
 
-protected function applySolverMethod
-"Apply given solverMethod to convert continous-time to clocked expression.
- So far ImplicitEuler, replacing der(x) -> (x - previous(x))/interval().
+protected function getDerVars
+"Get all crefs that appear in a der() operator.
  author: rfranke"
   input DAE.Exp inExp;
-  input tuple<String, list<DAE.ComponentRef>> inTpl;
-  output DAE.Exp outExp;
-  output tuple<String, list<DAE.ComponentRef>> outTpl;
+  input list<DAE.ComponentRef> inDerVars;
+  output DAE.Exp outExp = inExp;
+  output list<DAE.ComponentRef> outDerVars;
 algorithm
-  (outExp, outTpl) := match inExp
+  outDerVars := match inExp
+    local
+      DAE.ComponentRef x;
+    case DAE.CALL(path = Absyn.IDENT(name = "der"),
+                  expLst = {DAE.CREF(componentRef = x)})
+      then x :: inDerVars;
+    else inDerVars;
+  end match;
+end getDerVars;
+
+protected function shiftDerVars1 "helper to shiftDerVars"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inDerVars;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outDerVars;
+algorithm
+  (outExp, outDerVars) := Expression.traverseExpBottomUp(inExp, shiftDerVars, inDerVars);
+end shiftDerVars1;
+
+protected function shiftDerVars
+"Apply previous() operator to all inDerVars.
+ author: rfranke"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inDerVars;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outDerVars = inDerVars;
+algorithm
+  outExp := match inExp
     local
       List<DAE.Exp> expLst;
       DAE.CallAttributes attr;
       DAE.ComponentRef x;
       DAE.Type ty;
       DAE.Exp exp;
-      String inSolverMethod, outSolverMethod;
-      list<DAE.ComponentRef> inDerVars;
+    // introduce previous()
+    case DAE.CREF(componentRef = x)
+      guard ComponentReference.crefInLst(x, inDerVars)
+      algorithm
+        exp := DAE.CALL(Absyn.IDENT(name = "previous"), {inExp}, DAE.callAttrBuiltinImpureReal);
+      then exp;
+    // check for possibly introduced der(previous())
+    case DAE.CALL(path = Absyn.IDENT(name = "der"),
+                  expLst = {DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = expLst)},
+                  attr = attr as DAE.CALL_ATTR(ty = ty))
+      algorithm
+        exp := DAE.CALL(Absyn.IDENT(name = "der"), expLst, attr);
+      then exp;
+    // check for possibly introduced previous(previous())
+    case DAE.CALL(path = Absyn.IDENT(name = "previous"),
+                  expLst = {DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = expLst)},
+                  attr = attr as DAE.CALL_ATTR(ty = ty))
+      algorithm
+        exp := DAE.CALL(Absyn.IDENT(name = "previous"), expLst, attr);
+      then exp;
+    // do nothing per default
+    else inExp;
+  end match;
+end shiftDerVars;
+
+protected function applyEulerMethod1 "helper to applyEulerMethod"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inDerVars;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outDerVars;
+algorithm
+  (outExp, outDerVars) := Expression.traverseExpBottomUp(inExp, applyEulerMethod, inDerVars);
+end applyEulerMethod1;
+
+protected function applyEulerMethod
+"Convert continous-time to clocked expression by replacing
+ der(x) -> (x - previous(x)) / interval().
+ author: rfranke"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inDerVars;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outDerVars;
+algorithm
+  (outExp, outDerVars) := match inExp
+    local
+      List<DAE.Exp> expLst;
+      DAE.CallAttributes attr;
+      DAE.ComponentRef x;
+      DAE.Type ty;
+      DAE.Exp exp;
     case DAE.CALL(path = Absyn.IDENT(name = "der"),
                   expLst = expLst as {DAE.CREF(componentRef = x)},
                   attr = attr as DAE.CALL_ATTR(ty = ty))
       algorithm
-        (inSolverMethod, inDerVars) := inTpl;
-        outSolverMethod := "ImplicitEuler";
         exp := DAE.CALL(Absyn.IDENT(name = "previous"), expLst, attr);
         exp := DAE.BINARY(DAE.CREF(x, ty), DAE.SUB(DAE.T_REAL_DEFAULT), exp);
         exp := DAE.BINARY(exp, DAE.DIV(DAE.T_REAL_DEFAULT),
                           DAE.CALL(Absyn.IDENT(name = "interval"), {},
                                    DAE.callAttrBuiltinImpureReal));
-        if outSolverMethod <> inSolverMethod then
-          Error.addCompilerWarning("Solved clocked continuous equations with " +
-                                   outSolverMethod + " instead of specified " +
-                                   inSolverMethod + ".");
-        end if;
-      then (exp, (outSolverMethod, x :: inDerVars));
-    else (inExp, inTpl);
+      then (exp, x :: inDerVars);
+    else (inExp, inDerVars);
   end match;
-end applySolverMethod;
+end applyEulerMethod;
 
 protected function markClockedStates
 "Collect discrete states and mark them for further processing.
