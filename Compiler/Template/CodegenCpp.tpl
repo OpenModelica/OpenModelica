@@ -83,12 +83,17 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationFactoryFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
         let()= textFile(simulationMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
         let jac =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode , &extraFuncs , &extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, false) ;separator="")
+          (mat |> (eqs,_,_) => algloopfiles(eqs, simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, 0, stateDerVectorName, false) ;separator="")
          ;separator="")
+        let alg = algloopfiles(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, 0, stateDerVectorName, false)
+        let clk = getSubPartitions(clockedPartitions) |> subPartition hasindex i fromindex 1 =>
+          match subPartition
+          case SUBPARTITION(__) then
+            algloopfiles(listAppend(equations, removedEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, i, stateDerVectorName, false)
+          ; separator = "\n"
 
-        let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl, "", contextAlgloop, stateDerVectorName, false)
-        let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
-        let()= textFile(calcHelperMainfile(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+        let() = textFile(algloopMainfile(simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
+        let() = textFile(calcHelperMainfile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
 
         match target
           case "vxworks69" then
@@ -510,7 +515,7 @@ template simulationInitCppFile(SimCode simCode, Text& extraFuncs, Text& extraFun
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+   <%algloopfilesInclude(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
    : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings, simObjects)
@@ -3609,9 +3614,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         return _algLoopSolverFactory;
     }
 
-    <%generateInitAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
+    <%generateInitAlgloopsolverVariables(jacobianMatrixes, listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, className)%>
 
-    <%generateDeleteAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
+    <%generateDeleteAlgloopsolverVariables(jacobianMatrixes, listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, className)%>
 
     <%updateFunctionsCode%>
 
@@ -3748,7 +3753,7 @@ match simCode
 
 end generateSimulationCppConstructorContent;
 
-template algloopCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template algloopCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq, Context context, Integer clockIndex, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for algloop system ."
 ::=
 match simCode
@@ -3828,7 +3833,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
-   <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%updateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
 
    <%LinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3876,7 +3881,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
-   <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%updateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
 
    <%NonLinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -4047,7 +4052,7 @@ let &help = buffer ""
   >>
 end updateAlgloop;
 
-template upateAlgloopNonLinear(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template updateAlgloopNonLinear(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Integer clockIndex, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates functions in simulation file."
 ::=
 match simCode
@@ -4083,15 +4088,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    >>
    %>
    {
-        <%varDecls%>
+      <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
+      <%varDecls%>
 
-        //prebody
-        <%prebody%>
-        //body
-        <%body%>
+      //prebody
+      <%prebody%>
+      //body
+      <%body%>
    }
    >>
-end upateAlgloopNonLinear;
+end updateAlgloopNonLinear;
 
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -4104,52 +4110,6 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Context c
   equation_(eq, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   end match
 end functionExtraResidualsPreBody;
-
-
-
-template upateAlgloopLinear(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates functions in simulation file."
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  //let () = System.tmpTickReset(0)
-  let modelname = lastIdentOfPath(modelInfo.name)
- match eqn
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  match ls.jacobianMatrix
-       case SOME(__) then
-         ""
-  else
-
-  let uid = System.tmpTick()
-  let size = listLength(ls.vars)
-  let aname = 'A<%uid%>'
-  let bname = 'b<%uid%>'
-    let &varDecls = buffer "" /*BUFD*/
-
- let Amatrix=
-    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-      let &preExp = buffer "" /*BUFD*/
-      let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
-  ;separator="\n")
-
- let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
-  ;separator="\n")
-
-  <<
-  template <typename T>
-  void <%modelname%>Algloop<%ls.index%>::evaluate(T* __A)
-  {
-      <%varDecls%>
-      <%Amatrix%>
-      <%bvector%>
-  }
-  >>
-end upateAlgloopLinear;
 
 template functionBodies(list<Function> functions, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates the body for a set of functions."
@@ -5792,8 +5752,8 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    let initEventHandling = eventHandlingInit(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
    let initClockIntervals = clockIntervalsInit(simCode, &varDecls, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
-   let initAlgloopSolvers = initAlgloopsolvers(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-   let initAlgloopvars = initAlgloopVars(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+   let initAlgloopSolvers = initAlgloopsolvers(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))),simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+   let initAlgloopvars = initAlgloopVars(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
 
    let initialequations  = functionInitialEquations(initialEquations,"initEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, false)
    let boundparameterequations  = functionInitialEquations(parameterEquations,"initParameterEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, true)
@@ -5812,7 +5772,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       _discrete_events = _event_handling->initialize(this,getSimVars());
 
       //create and initialize Algloopsolvers
-      <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+      <%generateAlgloopsolvers(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
       //initialize Algloop variables
       initializeAlgloopSolverVariables();
@@ -6902,7 +6862,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   class Functions;
   class EventHandling;
   class DiscreteEvents;
-  <%algloopForwardDeclaration(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+  <%algloopForwardDeclaration(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
   /*****************************************************************************
   *
@@ -6943,8 +6903,8 @@ template generateClassDeclarationCode(SimCode simCode,Context context,Text& extr
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 
-let friendclasses = generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace )
+let friendclasses = generatefriendAlgloops(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+let algloopsolver = generateAlgloopsolverVariables(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace )
 let jacalgloopsolver =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
                         (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
                         ;separator="")
@@ -6961,7 +6921,7 @@ match modelInfo
     >>
     ;separator="\n")
 
-  let initDeleteAlgloopSolverVars = (List.partition(listAppend(allEquations,initialEquations), 100) |> ls hasindex idx =>
+  let initDeleteAlgloopSolverVars = (List.partition(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), 100) |> ls hasindex idx =>
     <<
     void initializeAlgloopSolverVariables_<%idx%>();
     void deleteAlgloopSolverVariables_<%idx%>();
@@ -10876,11 +10836,11 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
 
 
 // use allEquations instead of odeEquations, because only allEquations are labeled for reduction algorithms
-template algloopfiles(list<SimEqSystem> allEquations, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template algloopfiles(list<SimEqSystem> allEquations, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Integer clockIndex, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (allEquations |> eqs =>
-      algloopfiles2(eqs, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      algloopfiles2(eqs, context, clockIndex, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n")
 
   <<
@@ -10889,7 +10849,7 @@ template algloopfiles(list<SimEqSystem> allEquations, SimCode simCode, Text& ext
 end algloopfiles;
 
 
-template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template algloopfiles2(SimEqSystem eq, Context context, Integer clockIndex, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -10901,7 +10861,7 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
               let()= textFile(algloopHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.h')
-              let()= textFile(algloopCppFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
+              let()= textFile(algloopCppFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
             " "
       end match
   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
@@ -10910,7 +10870,7 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
               let()= textFile(algloopHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.h')
-              let()= textFile(algloopCppFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
+              let()= textFile(algloopCppFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
             " "
       end match
   case e as SES_MIXED(cont = eq_sys)
@@ -10918,14 +10878,14 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
        match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
               let()= textFile(algloopHeaderFile(simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq_sys,context, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.h')
-              let()= textFile(algloopCppFile(simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq_sys,context, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
+              let()= textFile(algloopCppFile(simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq_sys, context, clockIndex, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
             " "
         end match
   else
     " "
  end algloopfiles2;
 
-template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Context context)
+template algloopMainfile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context)
 ::=
   match(simCode )
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -10933,8 +10893,8 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& 
     let filename = fileNamePrefix
     let modelfilename =  match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%filename%>Jacobian' else '<%filename%>'
 
-    let jacfiles = (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopMainfile1(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,filename) ;separator="") ;separator="")
-    let algloopfiles = (listAppend(allEquations,initialEquations) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, filename) ;separator="\n")
+    let jacfiles = (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopMainfile1(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, filename) ;separator="") ;separator="")
+    let algloopfiles = (listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))) |> eqs => algloopMainfile2(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, filename) ;separator="\n")
 
     <<
     /*****************************************************************************

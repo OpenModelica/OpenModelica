@@ -322,6 +322,16 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
+template contextSystem(Context context)
+ "Dereference _system in algloop context"
+::=
+  match context
+  case ALGLOOP_CONTEXT(genInitialisation = false) then
+    '_system->'
+  else
+    ''
+end contextSystem;
+
 template daeExpCrefRhs(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
                        Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for a component reference on the right hand side of an
@@ -1698,13 +1708,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '_discrete_events->pre(<%var1%>)'
 
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
-    '<%cref(crefPrefixPrevious(arg.componentRef), useFlatArrayNotation)%>'
+    '<%contextSystem(context)%><%cref(crefPrefixPrevious(arg.componentRef), useFlatArrayNotation)%>'
 
   case CALL(path=IDENT(name="firstTick")) then
-    '_clockStart[clockIndex - 1]'
+    '<%contextSystem(context)%>_clockStart[clockIndex - 1]'
 
   case CALL(path=IDENT(name="interval")) then
-    '_clockInterval[clockIndex - 1]'
+    '<%contextSystem(context)%>_clockInterval[clockIndex - 1]'
 
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
     '_time_conditions[<%arg.integer%> - 1 + <%timeEventLength(simCode)%>] = (_simTime > _clockTime[<%arg.integer%> - 1])'

@@ -902,6 +902,11 @@ package SimCodeUtil
     output list<SimCode.SubPartition> outSubPartitions;
   end getSubPartitions;
 
+  function getClockedEquations
+    input list<SimCode.SubPartition> inSubPartitions;
+    output list<SimCode.SimEqSystem> outEqs;
+  end getClockedEquations;
+
   function getClockIndex
     input SimCodeVar.SimVar simVar;
     input SimCode.SimCode simCode;

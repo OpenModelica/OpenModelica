@@ -96,10 +96,15 @@ template translateModel(SimCode simCode)
 
       let() = textFile(simulationMainRunScript(simCode, &extraFuncs, &extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode, &extraFuncs, &extraFuncsDecl, "")%>')
       let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, &extraFuncs, &extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, false) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, 0, stateDerVectorName, false) ;separator="")
           ;separator="")
-      let alg = algloopfiles(listAppend(allEquations,initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, stateDerVectorName, false)
-      let() = textFile(algloopMainfile(listAppend(allEquations,initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
+      let alg = algloopfiles(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, 0, stateDerVectorName, false)
+      let clk = getSubPartitions(clockedPartitions) |> subPartition hasindex i fromindex 1 =>
+        match subPartition
+        case SUBPARTITION(__) then
+          algloopfiles(listAppend(equations, removedEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, i, stateDerVectorName, false)
+        ; separator = "\n"
+      let() = textFile(algloopMainfile(simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
       let() = textFile(calcHelperMainfile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
       ""
       // empty result of the top-level template .., only side effects
