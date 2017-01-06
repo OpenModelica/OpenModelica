@@ -50,7 +50,6 @@
 #include "Visualizer.h"
 #include "VisualizerMAT.h"
 #include "VisualizerCSV.h"
-#include "VisualizerFMU.h"
 
 /*!
  * \class AbstractAnimationWindow
@@ -149,42 +148,6 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
   }
 }
 
-/*!
- * \brief AbstractAnimationWindow::openmpFMUSettingsDialog
- * opens a dialog to set the settings for the FMU visualization
- */
-void AbstractAnimationWindow::openFMUSettingsDialog()
-{
-  //create dialog
-  mpFMUSettingsDialog = new QDialog(this);
-  mpFMUSettingsDialog->setWindowTitle("FMU settings");
-  mpFMUSettingsDialog->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
-  //the layouts
-  QVBoxLayout *mainLayout = new QVBoxLayout;
-  QHBoxLayout *simulationLayout = new QHBoxLayout;
-  QVBoxLayout *leftSimLayout = new QVBoxLayout;
-  QVBoxLayout *rightSimLayout = new QVBoxLayout;
-  //the widgets
-  QLabel *simulationLabel = new QLabel(tr("Simulation settings"));
-  QPushButton *okButton = new QPushButton(tr("OK"));
-  //solver settings
-  QLabel *solverLabel = new QLabel(tr("solver"));
-  QComboBox *solverComboBox = new QComboBox(mpFMUSettingsDialog);
-  solverComboBox->addItem(QString("euler forward"));
-  //assemble
-  mainLayout->addWidget(simulationLabel);
-  mainLayout->addLayout(simulationLayout);
-  simulationLayout->addLayout(leftSimLayout);
-  simulationLayout->addLayout(rightSimLayout);
-  leftSimLayout->addWidget(solverLabel);
-  rightSimLayout->addWidget(solverComboBox);
-  mainLayout->addWidget(okButton);
-  mpFMUSettingsDialog->setLayout(mainLayout);
-  //connections
-  connect(okButton, SIGNAL(clicked()),this, SLOT(saveSimSettings()));
-  mpFMUSettingsDialog->show();
-}
-
 void AbstractAnimationWindow::createActions()
 {
   // perspective drop down
@@ -253,6 +216,15 @@ QWidget* AbstractAnimationWindow::setupViewWidget()
 }
 
 /*!
+ * \brief AbstractAnimationWindow::openFMUSettingsDialog
+ * opens a dialog to set the settings for the FMU visualization
+ */
+void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* fmuVisualizer)
+{
+  mpFMUSettingsDialog = new FMUSettingsWindow(this, fmuVisualizer);
+}
+
+/*!
  * \brief AbstractAnimationWindow::loadVisualization
  * loads the data and the xml scene description
  */
@@ -277,6 +249,7 @@ void AbstractAnimationWindow::loadVisualization()
     mpVisualizer = new VisualizerCSV(mFileName, mPathName);
   } else if (visType == VisType::FMU) {
     mpVisualizer = new VisualizerFMU(mFileName, mPathName);
+    openFMUSettingsDialog(dynamic_cast <VisualizerFMU*>(mpVisualizer));
   } else {
     QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
@@ -295,10 +268,6 @@ void AbstractAnimationWindow::loadVisualization()
     mpVisualizer->initVisualization();
     //add scene for the chosen visualization
     mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
-  }
-  //FMU settings dialog
-  if (visType == VisType::FMU) {
-    //openFMUSettingsDialog();
   }
   //add window title
   this->setWindowTitle(QString::fromStdString(mFileName));
@@ -586,11 +555,4 @@ void AbstractAnimationWindow::rotateCameraRight()
   mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
 }
 
-/*!
- * \brief AbstractAnimationWindow::saveSimSettings
- */
-void AbstractAnimationWindow::saveSimSettings()
-{
-  std::cout<<"save simulation settings"<<std::endl;
-  mpFMUSettingsDialog->close();
-}
+
