@@ -34,10 +34,11 @@
 record DomainLineSegment1D "Record representing 1-dimensional domain where a partial differential equation hold."
   record Region
   end Region;
+  parameter Real x0(unit="m")=0 "x value at left boundary";
   parameter Real L(unit="m")=1 "length of the domain";
   constant Integer N(unit="")=10 "number of grid nodes";
   parameter Real dx = L / (N-1) "grid space step";
-  parameter Real[N] x(each unit="m") = array(i*dx for i in 0:N-1) "space coordinate";
+  parameter Real[N] x(each unit="m") = array(x0 + i*dx for i in 0:N-1) "space coordinate";
   Region left, right, interior "regions representing boundaries and the interior";
 end DomainLineSegment1D;
 
