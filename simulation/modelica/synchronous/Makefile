@@ -12,14 +12,14 @@ WhenClocks.mos \
 Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
-synch.mos \
+DID.mos \
 
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
 Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse.mos \
-DID.mos \
+synch.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
