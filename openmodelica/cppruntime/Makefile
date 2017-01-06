@@ -6,6 +6,7 @@ WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
 arraySliceTest.mos \
+clockedAlgloopTest.mos \
 clockedEventTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
