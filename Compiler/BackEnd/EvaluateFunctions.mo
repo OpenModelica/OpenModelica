@@ -623,6 +623,46 @@ algorithm
   end match;
 end hasUnknownType;
 
+protected function hasMultipleArrayDimensions
+"outputs true if the expression type is an array with multiple dimensions."
+  input DAE.Exp eIn;
+  output Boolean bOut;
+algorithm
+  bOut := match(eIn)
+  local
+    Boolean b;
+    DAE.Type ty;
+    list<DAE.Exp> eLst;
+  case(DAE.TUPLE(PR = eLst))
+    algorithm
+      then List.fold(List.map(eLst,hasMultipleArrayDimensions),boolOr,false);
+  case(DAE.CREF(ty=ty))
+    algorithm
+    if Types.isArray(ty) then
+      b := intNe(1, listLength(Types.getDimensionSizes(ty)));
+    else
+      b := false;
+    end if;
+    then b;
+  else
+    then false;
+  end match;
+end hasMultipleArrayDimensions;
+
+protected function doNotInline
+"outputs true if the function should not be inlined."
+  input DAE.Function func;
+  output Boolean dontInline;
+algorithm
+  dontInline := match(func)
+ case(DAE.FUNCTION(inlineType=DAE.NO_INLINE()))
+  then true;
+ else
+  then false;
+  end match;
+end doNotInline;
+
+
 public function evaluateConstantFunction "Analyses if the rhsExp is a function call. the constant inputs are inserted and it will be checked if the outputs can be evaluated to a constant.
 If the function can be completely evaluated, the function call will be removed.
 If its partially constant, the constant assignments are added as additional equations and the former function will be replaced with an updated new one.
@@ -636,7 +676,7 @@ author: Waurich TUD 2014-04"
 algorithm
   outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx,callSignLstIn)
     local
-      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort, changed, isUnknownType;
+      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort, changed, isUnknownType, isNDimArray;
       Integer idx;
       list<Boolean> bList;
       list<Integer> constIdcs;
@@ -650,7 +690,7 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.Type ty, singleOutputType;
       list<BackendDAE.Equation> constEqs;
-      list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsOut,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
+      list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsLhs,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
       list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, updatedVarOutputs, newOutputVars;
       list<DAE.Exp> exps, expsIn, inputExps, complexExp, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps, sub;
       list<list<DAE.Exp>> scalarExp;
@@ -674,8 +714,10 @@ algorithm
           //print(stringDelimitList(List.map(callSignLst,callSignatureStr),"\n"));
         continueEval = checkCallSignatureForExp(rhsExpIn,callSignLst);
         isUnknownType = hasUnknownType(lhsExpIn);
+        isNDimArray = hasMultipleArrayDimensions(lhsExpIn);
+
         if not continueEval and Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("THIS FUNCTION CALL WITH THIS SPECIFIC SIGNATURE CANNOT BE EVALUTED\n"); end if;
-        if not continueEval or isUnknownType then fail(); end if;
+        if not continueEval or isUnknownType or isNDimArray then fail(); end if;
 
         //------------------------------------------------
         //Collect all I/O Information for the function call
@@ -683,6 +725,9 @@ algorithm
 
         // get the elements of the function and the algorithms
         SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
+
+        false = doNotInline(func);
+
         elements = DAEUtil.getFunctionElements(func);
         protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
         algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
@@ -804,12 +849,12 @@ algorithm
 
         // build the new lhs, the new statements for the function, the constant parts...
         (updatedVarOutputs,outputExp,varScalarCrefsInFunc) = buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
-        (constScalarCrefsOut,constComplexCrefs) = buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
-        //print("constScalarCrefsOut\n"+stringDelimitList(List.map(constScalarCrefsOut,ComponentReference.printComponentRefStr),"\n")+"\n");
-        //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        (constScalarCrefsLhs,constComplexCrefs) = buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
+          //print("constScalarExps\n"+stringDelimitList(List.map(constScalarExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("constComplexExps\n"+stringDelimitList(List.map(constComplexExps,ExpressionDump.printExpStr),"\n")+"\n");
 
         if not funcIsConst then
-          (algs,constEqs) = buildPartialFunction((varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsOut),repl);
+          (algs,constEqs) = buildPartialFunction((varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsLhs),repl);
         else
           constEqs = {};
         end if;
