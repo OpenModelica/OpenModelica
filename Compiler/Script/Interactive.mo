@@ -266,6 +266,7 @@ algorithm
     case (true, true)
       equation
         print("Evaluating: " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
+        System.fflush();
       then
         ();
 
@@ -276,12 +277,14 @@ algorithm
       equation
         System.realtimeTick(ClockIndexes.RT_CLOCK_SHOW_STATEMENT);
         print("Evaluating:   > " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
+        System.fflush();
       then
         ();
 
     case (false, false)
       equation
         print("Evaluated:    < " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_SHOW_STATEMENT)) + " / " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
+        System.fflush();
       then
         ();
 
@@ -9340,23 +9343,44 @@ algorithm
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
-    /* First try without instantiating, if class is in parents */
+
+    // first try without instantiating, if class is in parents
     case ((SCode.CLASS()),cdef,env)
       equation
+        ErrorExt.setCheckpoint("getInheritedClassesHelper");
         lst = getBaseClasses(cdef, env);
+        ErrorExt.rollBack("getInheritedClassesHelper");
       then
         lst;
-    /* If that fails, instantiate, which takes more time */
+
+    // clear any messages that may have been added
+    case ((SCode.CLASS()),cdef,env)
+      equation
+        ErrorExt.rollBack("getInheritedClassesHelper");
+      then
+        fail();
+
+    // if that fails, instantiate, which takes more time
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,env)
       equation
+        ErrorExt.setCheckpoint("getInheritedClassesHelper");
         env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         lst = getBaseClasses(cdef, env_2);
+        ErrorExt.rollBack("getInheritedClassesHelper");
       then
         lst;
+
+    // clear any messages that may have been added
+    case ((SCode.CLASS()),cdef,env)
+      equation
+        ErrorExt.rollBack("getInheritedClassesHelper");
+      then
+        fail();
+
   end matchcontinue;
 end getInheritedClassesHelper;
 
@@ -15620,7 +15644,7 @@ algorithm
   end match;
 end deleteProtectedList;
 
-protected function getPublicList "
+public function getPublicList "
   This function takes a ClassPart List and returns an appended list of
   all public lists.
 "
@@ -15648,7 +15672,7 @@ algorithm
   end match;
 end getPublicList;
 
-protected function getProtectedList "
+public function getProtectedList "
   This function takes a ClassPart List and returns an appended list of
   all protected lists."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
