@@ -494,6 +494,66 @@ re-simulate from the menu.
   :alt: OMEdit Re-simulate button
   :height: 14pt
 
+3D Visualization
+----------------
+
+.. highlight:: modelica
+
+Since OpenModelica 1.11 , OMEdit has built-in 3D visualization,
+which replaces third-party libraries (such as `Modelica3D
+<https://github.com/OpenModelica/Modelica3D>`_) for 3D visualization.
+
+Running a Visualization
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The 3d visualization is based on OpenSceneGraph. In order to run the
+visualization simply right click the class in Libraries Browser an
+choose “\ **Simulate with Animation**\ ” as shown in :numref:`omedit-simulate-animation`.
+
+.. figure :: media/omedit_simulate_animation.png
+  :name: omedit-simulate-animation
+
+  OMEdit Simulate with Animation.
+
+One can also run the visualization via Simulation > Simulate with Animation from the menu.
+
+When simulating a model in animation mode, the flag *+d=visxml* is set.
+Hence, the compiler will generate a scene description file *_visual.xml* which stores all information on the multibody shapes.
+This scene description references all variables which are needed for the animation of the multibody system.
+When simulating with *+d=visxml*, the compiler will always generate results for these variables.
+
+Viewing a Visualization
+^^^^^^^^^^^^^^^^^^^^^^^
+
+After the successful simulation of the model, the visualization window will
+show up automatically as shown in :numref:`omedit-visualization`.
+
+.. figure :: media/omedit_visualization.png
+  :name: omedit-visualization
+
+  OMEdit 3D Visualization.
+
+The animation starts with pushing the *play* button. The animation is played until stopTime or until the *pause* button is pushed.
+By pushing the *previous* button, the animation jumps to the initial point of time.
+Points of time can be selected by moving the *time slider* or by inserting a simulation time in the *Time-box*.
+The speed factor of animation in relation to realtime can be set in the *Speed-dialog*.
+Other animations can be openend by using the *open file* button and selecting a result file with a corresping scene description file.
+	
+The 3D camera view can be manipulated as follows:
+
+========================  ============================== ========================
+  Operation                Key                            Mouse Action
+========================  ============================== ========================
+Move Closer/Further        none                           Wheel
+Move Closer/Further        Right Mouse Hold               Up/Down
+Move Up/Down/Left/Right    Middle Mouse Hold              Move Mouse
+Move Up/Down/Left/Right    Left and Right Mouse Hold      Move Mouse
+Rotate                     Left Mouse Hold                Move Mouse
+========================  ============================== ========================
+
+Predefined views (Isometric, Side, Front, Top) can be selected and the scene can be tilted by 90° either clock or anticlockwise with the rotation buttons.
+
+
 How to Create User Defined Shapes – Icons
 -----------------------------------------
 
