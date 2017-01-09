@@ -797,7 +797,7 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   int ids[len];
   pthread_t th[numThreads];
   int isInteger = 0;
-  bzero(th, numThreads*sizeof(pthread_t)); /* Make sure we get nothing unexpected here */
+  memset(th, 0, numThreads*sizeof(pthread_t)); /* Make sure we get nothing unexpected here */
 
 #if defined(__MINGW32__)
   /* adrpo: set thread stack size on Windows to 2MB */
