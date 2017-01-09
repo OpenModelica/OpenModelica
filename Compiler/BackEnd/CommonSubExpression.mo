@@ -462,29 +462,29 @@ algorithm
   (HT, exarray, cseIndex, index, functionTree) := inTuple;
 
   _ := match(inEq)
-    case BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs) equation
+    case BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs) algorithm
       if debug then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_analysis (COMPLEX_EQUATION)");
       end if;
 
       // TUPLE = CALL
       if isCallAndTuple(lhs, rhs) then
-        (cref, call) = getTheRightPattern(lhs, rhs);
+        (cref, call) := getTheRightPattern(lhs, rhs);
         if BaseHashTable.hasKey(call, HT) then
-          exIndex = BaseHashTable.get(call, HT);
-          cseEquation = ExpandableArray.get(exIndex, exarray);
+          exIndex := BaseHashTable.get(call, HT);
+          cseEquation := ExpandableArray.get(exIndex, exarray);
     //print("cref1: " + ExpressionDump.printExpStr(cseEquation.cse) + "\n");
     //print("cref2: " + ExpressionDump.printExpStr(cref) + "\n");
-          cseEquation.cse = mergeCSETuples(cseEquation.cse, cref);
-          exarray = ExpandableArray.update(exIndex, cseEquation, exarray);
+          cseEquation.cse := mergeCSETuples(cseEquation.cse, cref);
+          exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
         elseif not isSkipCase(call, functionTree) then
-          index = index + 1;
-          HT = BaseHashTable.add((call, index), HT);
-          exarray = ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
+          index := index + 1;
+          HT := BaseHashTable.add((call, index), HT);
+          exarray := ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
         end if;
       end if;
 
-      (_, (HT, exarray, cseIndex, index, functionTree)) = BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_analysis2, (HT, exarray, cseIndex, index, functionTree));
+      (_, (HT, exarray, cseIndex, index, functionTree)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_analysis2, (HT, exarray, cseIndex, index, functionTree));
     then ();
 
     case BackendDAE.EQUATION(exp=lhs, scalar=rhs) algorithm
@@ -868,9 +868,30 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("noClock")) then true;
     case DAE.CALL(path=Absyn.IDENT("sign")) then true;
     case DAE.CALL() guard(Expression.isImpureCall(inCall) or isCallRecordConstructor(inCall, functionTree)) then true;
+    case DAE.CALL() guard(Flags.getConfigBool(Flags.WFC_ADVANCED)) then isSkipCase_advanced(inCall);
     else false;
   end match;
 end isSkipCase;
+
+protected function isSkipCase_advanced
+  input DAE.Exp inCall;
+  output Boolean outB;
+algorithm
+  outB := match(inCall)
+    local
+      Absyn.Path path;
+    case DAE.CALL(path=Absyn.IDENT("abs")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sin")) then true;
+    case DAE.CALL(path=Absyn.IDENT("cos")) then true;
+    case DAE.CALL(path=Absyn.IDENT("log")) then true;
+    case DAE.CALL(path=Absyn.IDENT("exp")) then true;
+    case DAE.CALL(path=Absyn.IDENT("tan")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sinh")) then true;
+    case DAE.CALL(path=Absyn.IDENT("cosh")) then true;
+    case DAE.CALL(path=Absyn.IDENT("tanh")) then true;
+    else false;
+  end match;
+end isSkipCase_advanced;
 
 protected function isCallRecordConstructor
 //DAEUtil.funcIsRecord(DAEUtil.getNamedFunction(path, functionTree))

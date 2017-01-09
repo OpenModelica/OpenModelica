@@ -836,6 +836,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
+    "wrapFunctionCalls",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",
@@ -1333,6 +1334,9 @@ constant ConfigFlag REPLACE_EVALUATED_PARAMS = CONFIG_FLAG(109, "replaceEvaluate
 constant ConfigFlag CONDENSE_ARRAYS = CONFIG_FLAG(110, "condenseArrays",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Sets whether array expressions containing function calls are condensed or not."));
+constant ConfigFlag WFC_ADVANCED = CONFIG_FLAG(111, "wfcAdvanced",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("wrapFunctionCalls ignores more then default cases, e.g. exp, sin, cos, log, (experimental flag)"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1448,7 +1452,8 @@ constant list<ConfigFlag> allConfigFlags = {
   EVALUATE_FINAL_PARAMS,
   EVALUATE_PROTECTED_PARAMS,
   REPLACE_EVALUATED_PARAMS,
-  CONDENSE_ARRAYS
+  CONDENSE_ARRAYS,
+  WFC_ADVANCED
 };
 
 public function new
