@@ -20,14 +20,14 @@ getErrorString();
 //
 // indxdae: eqns in order
 // ========================================
-// SingleEquation: 4
+// SingleEquation: 3
 // 1: a:VARIABLE()  type: Real 
 // 1/1 (1): a = time   [dynamic]
 //
 // ComplexEquation:
-// 1: r2.y:VARIABLE()  type: Real 
-// 2: r2.z:VARIABLE()  type: Real 
-// 1/1 (2): (r2.y, r2.z) = PartEvalFunc.recfunc2_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [dynamic]
+// 1: r2.z:VARIABLE()  type: Real 
+// 2: r2.y:VARIABLE()  type: Real 
+// 1/1 (2): (r2.y, r2.z) = PartEvalFunc.recfunc2_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [unknown]
 //
 // SingleEquation: 2
 // 1: c:VARIABLE()  type: Real 

@@ -10,7 +10,7 @@ getErrorString();
 
 res :=simulate(drumBoiler.optDrumBoiler, stopTime=3600, fileNamePrefix = "init");
 
-setCommandLineOptions("+gDynOpt +d=reduceDynOpt +loop2con=noLin +demoMode");
+setCommandLineOptions("+gDynOpt +d=reduceDynOpt +loop2con=noLin +demoMode --postOptModules-=wrapFunctionCalls");
 getErrorString();
 
 res :=optimize(drumBoiler.optDrumBoiler, stopTime=3600, numberOfIntervals=50, tolerance=1e-4, simflags="-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE -ipopt_max_iter=100");

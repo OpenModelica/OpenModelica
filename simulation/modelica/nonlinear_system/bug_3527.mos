@@ -75,8 +75,8 @@ val(z,{0,1});
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (2):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for simulation (5):
+//  * Single equations (assignments): 3
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -92,7 +92,7 @@ val(z,{0,1});
 //  * Without analytic Jacobian: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 1}
+//  * Non-linear torn systems: 1 {1 2}
 // "
 // {0.0,-0.7061414637186959}
 // {0.5707963267948966,1.520669413132999}

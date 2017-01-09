@@ -15,7 +15,7 @@ equation
   cosh(v*(w+1) + time*10) = sinh(v*(w+1)+time*10);
 end ModelTestSolve3;
 "); getErrorString();
-
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 simulate(ModelTestSolve3, simflags="-lv LOG_NLS_V"); getErrorString();
 val(x,0.0);
 val(y,0.0);
@@ -29,6 +29,8 @@ val(w,0.5);
 val(v,0.5);
 
 // Result:
+// true
+// ""
 // true
 // ""
 // record SimulationResult

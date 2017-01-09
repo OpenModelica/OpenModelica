@@ -5,7 +5,7 @@
 loadModel(Modelica,{"3.2"});
 getErrorString();
 
-setCommandLineOptions("+gDynOpt +d=reduceDynOpt +demoMode");
+setCommandLineOptions("+gDynOpt +d=reduceDynOpt +demoMode --postOptModules-=wrapFunctionCalls");
 
 
 loadFile("DrumBoiler.mo");

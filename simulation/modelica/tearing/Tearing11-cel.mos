@@ -65,8 +65,8 @@ val(i5,0.0); getErrorString();
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (2):
-//  * Single equations (assignments): 1
+// Notification: Strong component statistics for simulation (3):
+//  * Single equations (assignments): 2
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -87,7 +87,9 @@ val(i5,0.0); getErrorString();
 // ""
 // 0.0
 // ""
-// 0.0
+// -0.0
+// ""
+// -0.0
 // ""
 // 0.0
 // ""
@@ -95,10 +97,8 @@ val(i5,0.0); getErrorString();
 // ""
 // 0.0
 // ""
-// 0.0
+// -0.0
 // ""
-// 0.0
-// ""
-// 0.0
+// -0.0
 // ""
 // endResult

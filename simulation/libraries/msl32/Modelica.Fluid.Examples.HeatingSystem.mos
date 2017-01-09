@@ -5,7 +5,7 @@
 // Simulation Results
 // Modelica Standard Library
 //
-
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 timeoutSim := 600;
@@ -28,6 +28,8 @@ compareVars :=
 runScript(modelTesting);getErrorString();
 
 // Result:
+// true
+// ""
 // "true
 // "
 // ""

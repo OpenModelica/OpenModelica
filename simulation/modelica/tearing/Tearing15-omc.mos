@@ -71,7 +71,7 @@ val(v7,0.0); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
-//  * Non-linear torn systems: 2 {1 1,2 2}
+//  * Non-linear torn systems: 2 {1 2,2 3}
 // "
 // 0.0
 // ""
@@ -81,9 +81,9 @@ val(v7,0.0); getErrorString();
 // ""
 // 13.5
 // ""
-// 11.00000000000001
+// 11.00000000000003
 // ""
-// -13.5
+// -13.50000000000002
 // ""
 // 49.30148747263441
 // ""

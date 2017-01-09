@@ -214,12 +214,14 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | | | [2] parameter Real yn(start=1e-05, fixed=true) = 1e-05
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
-// |                 | |       | | | [1] Real x(start=50000, nominal=100000) = -77390.7 (pre: 50000)
-// |                 | |       | | | [2] Real y(start=5e-06, nominal=1e-05) = 3.31182e-06 (pre: 5e-06)
+// |                 | |       | | | [1] Real $cse3(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real $cse4(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [3] Real x(start=50000, nominal=100000) = -77390.7 (pre: 50000)
+// |                 | |       | | | [4] Real y(start=5e-06, nominal=1e-05) = 3.31182e-06 (pre: 5e-06)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)
-// LOG_NLS_V         | info    | EQUATION NUMBER: 14
+// LOG_NLS_V         | info    | EQUATION NUMBER: 18
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  0
 // LOG_NLS_V         | info    | System values [2-dim]
@@ -232,7 +234,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |       -77390.689    3.3118158e-06 
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
-// LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  14
+// LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  18
 // LOG_NLS_V         | info    | maximum number of function evaluation:  200
 // LOG_NLS           | info    | nls status
 // |                 | |       | | variables
@@ -249,9 +251,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    4.9650683065e-16
 // LOG_NLS_V         | info    | Need to damp, forced error =    9.8607613153e-33
 // LOG_NLS_V         | info    | function values: [2-dim]
-// |                 | |       | |     2.220446e-16    4.4408921e-16 
+// |                 | |       | |    4.4408921e-16     2.220446e-16 
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |    9.2625353e-17    8.8472946e-17 
+// |                 | |       | |    8.8472946e-17    9.2625353e-17 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   7.7595205169e-12
 // LOG_NLS_V         | info    | delta_x_scaled =   7.7595205169e-17
@@ -277,7 +279,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |       -77390.689    3.3118158e-06 
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)
-// LOG_NLS_V         | info    | EQUATION NUMBER: 14
+// LOG_NLS_V         | info    | EQUATION NUMBER: 18
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  2
 // LOG_NLS_V         | info    | System values [2-dim]

@@ -56,20 +56,22 @@ simulate(foo,stopTime=0);
 // unspecified partition
 // ========================================
 //
-// Variables (4)
+// Variables (5)
 // ========================================
 // 1: u_norm:VARIABLE()  type: Real 
 // 2: x_norm:VARIABLE()  type: Real 
 // 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: x__OMC$scaled_state:VARIABLE()  type: Real 
+// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 5: x__OMC$scaled_state:VARIABLE()  type: Real 
 //
 //
-// Equations (4, 4)
+// Equations (5, 5)
 // ========================================
 // 1/1 (1): x_norm = 0.01 * x   [binding]
 // 2/2 (1): u_norm = 0.05 * u   [dynamic]
-// 3/3 (1): der(x) = sin(10.0 * time * u_norm)   [dynamic]
-// 4/4 (1): x__OMC$scaled_state = 0.01 * x   [dynamic]
+// 3/3 (1): der(x) = $cse1   [dynamic]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown]
+// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -82,131 +84,19 @@ simulate(foo,stopTime=0);
 //
 // Matching
 // ========================================
-// 4 variables and equations
+// 5 variables and equations
 // var 1 is solved in eqn 2
 // var 2 is solved in eqn 1
 // var 3 is solved in eqn 3
 // var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
 //
 //
 // StrongComponents
 // ========================================
-// {4:4}
+// {5:5}
 // {2:1}
-// {3:3}
-// {1:2}
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (1)
-// ========================================
-// 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
-// record SimulationResult
-//     resultFile = "foo_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// true
-// true
-//
-// ########################################
-// dumpindxdae
-// ########################################
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (4)
-// ========================================
-// 1: u_norm:VARIABLE()  type: Real 
-// 2: x_norm:VARIABLE()  type: Real 
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: u__OMC$scaled_input:VARIABLE()  type: Real 
-//
-//
-// Equations (4, 4)
-// ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic]
-// 3/3 (1): der(x) = sin(10.0 * time * u_norm)   [dynamic]
-// 4/4 (1): u__OMC$scaled_input = 0.05 * u   [dynamic]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 4 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
-// var 4 is solved in eqn 4
-//
-//
-// StrongComponents
-// ========================================
 // {4:4}
-// {2:1}
 // {3:3}
 // {1:2}
 //
@@ -289,7 +179,7 @@ simulate(foo,stopTime=0);
 // 1: u_norm:VARIABLE()  type: Real 
 // 2: x_norm:VARIABLE()  type: Real 
 // 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: x__OMC$scaled_state:VARIABLE()  type: Real 
+// 4: $cse1:VARIABLE()  type: Real  unreplaceable
 // 5: u__OMC$scaled_input:VARIABLE()  type: Real 
 //
 //
@@ -297,8 +187,8 @@ simulate(foo,stopTime=0);
 // ========================================
 // 1/1 (1): x_norm = 0.01 * x   [binding]
 // 2/2 (1): u_norm = 0.05 * u   [dynamic]
-// 3/3 (1): der(x) = sin(10.0 * time * u_norm)   [dynamic]
-// 4/4 (1): x__OMC$scaled_state = 0.01 * x   [dynamic]
+// 3/3 (1): der(x) = $cse1   [dynamic]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown]
 // 5/5 (1): u__OMC$scaled_input = 0.05 * u   [dynamic]
 //
 //
@@ -323,8 +213,130 @@ simulate(foo,stopTime=0);
 // StrongComponents
 // ========================================
 // {5:5}
-// {4:4}
 // {2:1}
+// {4:4}
+// {3:3}
+// {1:2}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// true
+// true
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: u_norm:VARIABLE()  type: Real 
+// 2: x_norm:VARIABLE()  type: Real 
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
+// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 5: x__OMC$scaled_state:VARIABLE()  type: Real 
+// 6: u__OMC$scaled_input:VARIABLE()  type: Real 
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (1): x_norm = 0.01 * x   [binding]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic]
+// 3/3 (1): der(x) = $cse1   [dynamic]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown]
+// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic]
+// 6/6 (1): u__OMC$scaled_input = 0.05 * u   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 6
+//
+//
+// StrongComponents
+// ========================================
+// {6:6}
+// {5:5}
+// {2:1}
+// {4:4}
 // {3:3}
 // {1:2}
 //

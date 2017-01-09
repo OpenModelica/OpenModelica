@@ -546,29 +546,29 @@ readFile("stateSpace-MSD.xml");
 // </equation>
 // <equation id=\"3\">force1.s = mass1.s + -0.5 * mass1.L
 // </equation>
-// <equation id=\"4\">force1.f = sin(time)
+// <equation id=\"4\">damper1.flange_a.s = fixed1.s0 - damper1.s_rel
 // </equation>
-// <equation id=\"5\">damper1.flange_a.s = fixed1.s0 - damper1.s_rel
+// <equation id=\"5\">mass1.flange_b.s = mass1.s + 0.5 * mass1.L
 // </equation>
-// <equation id=\"6\">mass1.flange_b.s = mass1.s + 0.5 * mass1.L
+// <equation id=\"6\">spring1.s_rel = damper1.flange_a.s - mass1.flange_b.s
 // </equation>
-// <equation id=\"7\">spring1.s_rel = damper1.flange_a.s - mass1.flange_b.s
+// <equation id=\"7\">spring1.f = spring1.c * (spring1.s_rel - spring1.s_rel0)
 // </equation>
-// <equation id=\"8\">spring1.f = spring1.c * (spring1.s_rel - spring1.s_rel0)
+// <equation id=\"8\">damper1.v_rel = spring1.f / damper1.d
 // </equation>
-// <equation id=\"9\">damper1.v_rel = spring1.f / damper1.d
+// <equation id=\"9\">der(damper1.s_rel) = damper1.v_rel
 // </equation>
-// <equation id=\"10\">der(damper1.s_rel) = damper1.v_rel
+// <equation id=\"10\">$DER.spring1.s_rel = (-damper1.v_rel) - mass1.v
 // </equation>
-// <equation id=\"11\">$DER.spring1.s_rel = (-damper1.v_rel) - mass1.v
+// <equation id=\"11\">$DER.spring1.f = spring1.c * $DER.spring1.s_rel
 // </equation>
-// <equation id=\"12\">$DER.spring1.f = spring1.c * $DER.spring1.s_rel
+// <equation id=\"12\">$DER.damper1.v_rel = $DER.spring1.f / damper1.d
 // </equation>
-// <equation id=\"13\">$DER.damper1.v_rel = $DER.spring1.f / damper1.d
+// <equation id=\"13\">$DER.damper1.flange_a.s = -damper1.v_rel
 // </equation>
-// <equation id=\"14\">$DER.damper1.flange_a.s = -damper1.v_rel
+// <equation id=\"14\">damper1.lossPower = spring1.f * damper1.v_rel
 // </equation>
-// <equation id=\"15\">damper1.lossPower = spring1.f * damper1.v_rel
+// <equation id=\"15\">force1.f = sin(time)
 // </equation>
 // <equation id=\"16\">mass1.a = (force1.f + spring1.f) / mass1.m
 // </equation>
@@ -581,18 +581,18 @@ readFile("stateSpace-MSD.xml");
 // <solvingInfo>
 // <matchingAlgorithm>
 // <solvedIn variableId=\"1\" equationId=\"1\" />
-// <solvedIn variableId=\"2\" equationId=\"7\" />
+// <solvedIn variableId=\"2\" equationId=\"2\" />
 // <solvedIn variableId=\"3\" equationId=\"10\" />
 // <solvedIn variableId=\"4\" equationId=\"9\" />
-// <solvedIn variableId=\"5\" equationId=\"3\" />
-// <solvedIn variableId=\"6\" equationId=\"6\" />
+// <solvedIn variableId=\"5\" equationId=\"4\" />
+// <solvedIn variableId=\"6\" equationId=\"7\" />
 // <solvedIn variableId=\"7\" equationId=\"8\" />
 // <solvedIn variableId=\"8\" equationId=\"11\" />
 // <solvedIn variableId=\"9\" equationId=\"12\" />
-// <solvedIn variableId=\"10\" equationId=\"2\" />
+// <solvedIn variableId=\"10\" equationId=\"3\" />
 // <solvedIn variableId=\"11\" equationId=\"13\" />
-// <solvedIn variableId=\"12\" equationId=\"5\" />
-// <solvedIn variableId=\"13\" equationId=\"4\" />
+// <solvedIn variableId=\"12\" equationId=\"6\" />
+// <solvedIn variableId=\"13\" equationId=\"5\" />
 // <solvedIn variableId=\"14\" equationId=\"15\" />
 // <solvedIn variableId=\"15\" equationId=\"14\" />
 // <solvedIn variableId=\"16\" equationId=\"16\" />
@@ -612,40 +612,40 @@ readFile("stateSpace-MSD.xml");
 // <involvedEquation equationId=\"10\" />
 // </bltBlock>
 // <bltBlock id=\"4\">
-// <involvedEquation equationId=\"7\" />
+// <involvedEquation equationId=\"4\" />
 // </bltBlock>
 // <bltBlock id=\"5\">
 // <involvedEquation equationId=\"3\" />
 // </bltBlock>
 // <bltBlock id=\"6\">
-// <involvedEquation equationId=\"2\" />
-// </bltBlock>
-// <bltBlock id=\"7\">
-// <involvedEquation equationId=\"4\" />
-// </bltBlock>
-// <bltBlock id=\"8\">
 // <involvedEquation equationId=\"5\" />
 // </bltBlock>
-// <bltBlock id=\"9\">
+// <bltBlock id=\"7\">
 // <involvedEquation equationId=\"6\" />
 // </bltBlock>
-// <bltBlock id=\"10\">
+// <bltBlock id=\"8\">
+// <involvedEquation equationId=\"7\" />
+// </bltBlock>
+// <bltBlock id=\"9\">
 // <involvedEquation equationId=\"8\" />
 // </bltBlock>
-// <bltBlock id=\"11\">
+// <bltBlock id=\"10\">
 // <involvedEquation equationId=\"14\" />
 // </bltBlock>
-// <bltBlock id=\"12\">
+// <bltBlock id=\"11\">
 // <involvedEquation equationId=\"15\" />
 // </bltBlock>
-// <bltBlock id=\"13\">
+// <bltBlock id=\"12\">
 // <involvedEquation equationId=\"16\" />
 // </bltBlock>
-// <bltBlock id=\"14\">
+// <bltBlock id=\"13\">
 // <involvedEquation equationId=\"17\" />
 // </bltBlock>
-// <bltBlock id=\"15\">
+// <bltBlock id=\"14\">
 // <involvedEquation equationId=\"9\" />
+// </bltBlock>
+// <bltBlock id=\"15\">
+// <involvedEquation equationId=\"2\" />
 // </bltBlock>
 // <bltBlock id=\"16\">
 // <involvedEquation equationId=\"11\" />

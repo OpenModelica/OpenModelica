@@ -20,12 +20,14 @@ equation
              + abs((sin(1/x + 1/v + 1/(sqrt(abs(z)/(z^2))) + 1/z) + sin(1/x) + sqrt(abs(v-1))*sqrt(w-1))^x);
 end ModelTestSolve17;
 "); getErrorString();
-
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 simulate(ModelTestSolve17, simflags="-lv LOG_NLS_V -s euler", stopTime=0.1); getErrorString();
 val(res,0.1);
 val(res,0.0);
 
 // Result:
+// true
+// ""
 // true
 // ""
 // record SimulationResult

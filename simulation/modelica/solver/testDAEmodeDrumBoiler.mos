@@ -6,7 +6,7 @@
 loadModel(Modelica,{"3.2.1"});
 getErrorString();
 
-setCommandLineOptions("--daeMode=dynamic");
+setCommandLineOptions("--daeMode=dynamic --postOptModules-=wrapFunctionCalls");
 simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
 getErrorString();
 

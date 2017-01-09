@@ -97,28 +97,30 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 //   // top-level inputs
 //   parameter Integer l = 1;
 //   // top-level outputs
-//   parameter Integer nz = 3;
+//   parameter Integer nz = 5;
 //   // data recovery variables
 //   parameter Real x0[2] = {2, 1};
 //   parameter Real u0[1] = {0};
-//   parameter Real z0[3] = {0, 2, 1};
+//   parameter Real z0[5] = {1, 1, 0, 2, 1};
 //   parameter Real A[2, 2] = [-0.4999999873490973, 0.5000000165041055; 1.999999949396389, -3.000000034050615];
 //   parameter Real B[2, 1] = [0.500000000677101; 0];
 //   parameter Real C[1, 2] = [0, 0.4999999840170964];
 //   parameter Real D[1, 1] = [0];
-//   parameter Real Cz[3, 2] = [0, 0; 0.9999999746981947, -1.000000033008211; 0, 0.4999999840170964];
-//   parameter Real Dz[3, 1] = [1; 0; 0];
+//   parameter Real Cz[5, 2] = [0.4999999873490973, -0.5000000165041055; 0, 0.4999999840170964; 0, 0; 0.9999999746981947, -1.000000033008211; 0, 0.4999999840170964];
+//   parameter Real Dz[5, 1] = [0; 0; 1; 0; 0];
 //   Real x[2](start = x0);
 //   input Real u[1](start = u0);
 //   output Real y[1];
-//   output Real z[3];
+//   output Real z[5];
 //   Real 'x_h1' = x[1];
 //   Real 'x_h2' = x[2];
 //   Real 'u_F' = u[1];
 //   Real 'y_F2' = y[1];
-//   Real 'z_F' = z[1];
-//   Real 'z_F1' = z[2];
-//   Real 'z_F2' = z[3];
+//   Real 'z_$cse1' = z[1];
+//   Real 'z_$cse2' = z[2];
+//   Real 'z_F' = z[3];
+//   Real 'z_F1' = z[4];
+//   Real 'z_F2' = z[5];
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;

@@ -32,16 +32,11 @@ equation
 end Tearing3;
 "); getErrorString();
 
-//test the CSE of binary terms with introducing cse variables
-
 setDebugFlags("dumpCSE"); getErrorString();
-setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1 --postOptModules+=wrapFunctionCalls,cseBinary --preOptModules-=comSubExp"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls,cseBinary --preOptModules-=comSubExp"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

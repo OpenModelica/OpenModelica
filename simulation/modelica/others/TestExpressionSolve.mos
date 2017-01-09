@@ -381,7 +381,7 @@ model noNls
 end noNls;
 
 "); getErrorString();
-
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
 simulate(noNls, simflags ="-lv LOG_NLS -s euler"); getErrorString();
 val(m1.x,0.0);
 val(m2.x,0.0);
@@ -468,6 +468,8 @@ val(v, {0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0});
 
 
 // Result:
+// true
+// ""
 // true
 // ""
 // record SimulationResult

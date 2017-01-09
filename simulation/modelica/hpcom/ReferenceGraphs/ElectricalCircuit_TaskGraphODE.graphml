@@ -73,7 +73,7 @@
             <data key="cust4"><![CDATA[ 4 ]]></data>
             <data key="cust5"><![CDATA[{4}]]></data>
             <data key="cust6">0</data>
-            <data key="cust7"><![CDATA[19]]></data>
+            <data key="cust7"><![CDATA[13]]></data>
             <data key="cust8"><![CDATA[Th -1]]></data>
             <data key="cust9">-1</data>
             <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
@@ -98,7 +98,7 @@
             <data key="cust4"><![CDATA[ 3 ]]></data>
             <data key="cust5"><![CDATA[{3}]]></data>
             <data key="cust6">0</data>
-            <data key="cust7"><![CDATA[18]]></data>
+            <data key="cust7"><![CDATA[12]]></data>
             <data key="cust8"><![CDATA[Th -1]]></data>
             <data key="cust9">-1</data>
             <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
@@ -123,7 +123,7 @@
             <data key="cust4"><![CDATA[ 2 ]]></data>
             <data key="cust5"><![CDATA[{2}]]></data>
             <data key="cust6">0</data>
-            <data key="cust7"><![CDATA[17]]></data>
+            <data key="cust7"><![CDATA[11]]></data>
             <data key="cust8"><![CDATA[Th -1]]></data>
             <data key="cust9">-1</data>
             <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
@@ -148,7 +148,7 @@
             <data key="cust4"><![CDATA[ 1 ]]></data>
             <data key="cust5"><![CDATA[{1}]]></data>
             <data key="cust6">0</data>
-            <data key="cust7"><![CDATA[16]]></data>
+            <data key="cust7"><![CDATA[10]]></data>
             <data key="cust8"><![CDATA[Th -1]]></data>
             <data key="cust9">-1</data>
             <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
