@@ -87,8 +87,8 @@ class SimSettingsFMU
   void setSolver(const Solver& solver);
   int* getCallEventUpdate();
   int getIntermediateResults();
-  void setHandleEvents(bool hE);
-  bool getHandleEvents();
+  void setIterateEvents(bool iE);
+  bool getIterateEvents();
 
  private:
   int _callEventUpdate;
@@ -99,7 +99,7 @@ class SimSettingsFMU
   double _tend;
   double _relativeTolerance;
   Solver _solver;
-  bool mHandleEvents;
+  bool mIterateEvents;
 };
 
 

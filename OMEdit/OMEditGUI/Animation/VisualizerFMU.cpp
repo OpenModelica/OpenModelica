@@ -183,7 +183,7 @@ double VisualizerFMU::simulateStep(const double time)
   bool zeroCrossingEvent = mpFMU->checkForTriggeredEvent();
 
   // Handle any events
-  if (mpSimSettings->getHandleEvents() && (mpSimSettings->getCallEventUpdate() || zeroCrossingEvent || mpFMU->itsEventTime()))
+  if (mpSimSettings->getIterateEvents() && (mpSimSettings->getCallEventUpdate() || zeroCrossingEvent || mpFMU->itsEventTime()))
   {
     mpFMU->handleEvents(mpSimSettings->getIntermediateResults());
   }
@@ -327,9 +327,9 @@ void VisualizerFMU::updateObjectAttributeFMU(ShapeObjectAttribute* attr, FMUWrap
   }
 }
 
-void VisualizerFMU::setSimulationSettings(double stepsize, Solver solver, bool handleEvents)
+void VisualizerFMU::setSimulationSettings(double stepsize, Solver solver, bool iterateEvents)
 {
   mpSimSettings->setHdef(stepsize);
   mpSimSettings->setSolver(solver);
-  mpSimSettings->setHandleEvents(handleEvents);
+  mpSimSettings->setIterateEvents(iterateEvents);
 }

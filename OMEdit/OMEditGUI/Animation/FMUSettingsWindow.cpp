@@ -38,9 +38,8 @@
 
 /*!
  * \class FMUSettingsWindow
- * \brief widget for FMu-simulation settings.
+ * \brief widget for FMU-simulation settings.
  */
-
 FMUSettingsWindow::FMUSettingsWindow(QWidget *pParent, VisualizerFMU* fmuVisualizer)
   : QMainWindow(pParent),
     fmu(fmuVisualizer),

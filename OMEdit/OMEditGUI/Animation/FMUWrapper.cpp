@@ -44,7 +44,7 @@ SimSettingsFMU::SimSettingsFMU()
                   _tend(0.1),
                   _relativeTolerance(0.001),
                   _solver(Solver::EULER_FORWARD),
-                  mHandleEvents(true)
+                  mIterateEvents(true)
 {
 }
 
@@ -108,14 +108,14 @@ int SimSettingsFMU::getIntermediateResults()
   return _intermediateResults;
 }
 
-void SimSettingsFMU::setHandleEvents(bool hE)
+void SimSettingsFMU::setIterateEvents(bool iE)
 {
-  mHandleEvents = hE;
+  mIterateEvents = iE;
 }
 
-bool SimSettingsFMU::getHandleEvents()
+bool SimSettingsFMU::getIterateEvents()
 {
-  return mHandleEvents;
+  return mIterateEvents;
 }
 //-------------------------------
 // Abstract FMU class
