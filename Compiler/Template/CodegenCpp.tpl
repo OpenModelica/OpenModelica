@@ -3959,11 +3959,11 @@ match simCode
 
         void <%modelname%>Algloop<%ls.index%>::evaluate()
         {
-           <%varDecls%>
-           //prebody
-           <%prebody%>
-           //body
-           <%body%>
+          <%varDecls%>
+          //prebody
+          <%prebody%>
+          //body
+          <%body%>
         }
         >>
      else
@@ -4073,13 +4073,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      ;separator="\n")
      let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>_res[<%i0%>] = <%expPart%>;'
-
+       let &preExp = buffer "" /*BUFD*/
+       let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+       '<%preExp%>_res[<%i0%>] = <%expPart%>;'
        ;separator="\n")
-
-
    <<
    <% match eq
    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
@@ -4088,13 +4085,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    >>
    %>
    {
-      <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
-      <%varDecls%>
-
-      //prebody
-      <%prebody%>
-      //body
-      <%body%>
+     <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
+     <%varDecls%>
+     //prebody
+     <%prebody%>
+     //body
+     <%body%>
    }
    >>
 end updateAlgloopNonLinear;
@@ -6391,12 +6387,11 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
          '<%preExp%>_b[<%i0%>] = <%expPart%>;'
       ;separator="\n")
        <<
-
-           <%varDecls%>
-           //prebody
-           <%prebody%>
-           //body
-           <%body%>
+         <%varDecls%>
+         //prebody
+         <%prebody%>
+         //body
+         <%body%>
        >>
   else
    let &varDecls = buffer "" /*BUFD*/
@@ -9544,6 +9539,7 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
           _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
           _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
           _clockStart[<%i%>] = true;
+          _clockSubactive[<%i%>] = false;
           <%i%> ++;
           >>
       ; separator="\n")
@@ -11327,8 +11323,8 @@ match eq
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let startFixedExp = match cref2simvar(cref, simCode)
-    case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = true)) then
-      "if (_clockStart[clockIndex - 1]) return;"
+    case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = isStartFixed)) then
+      'if (<%if isStartFixed then "_clockStart[clockIndex - 1] || "%>_clockSubactive[clockIndex - 1]) return;'
   let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   match cref
@@ -12557,13 +12553,12 @@ end createEvaluateAll;
 template createTimeConditionTreatments(String numberOfTimeEvents)
 ::=
   <<
-
   // treatment of clocks in model as time events
   for (int i = <%numberOfTimeEvents%>; i < _dimTimeEvent; i++) {
     if (_time_conditions[i]) {
       evaluateClocked(i - <%numberOfTimeEvents%> + 1);
       _time_conditions[i] = false; // reset clock after one evaluation
-
+      _clockSubactive[i - <%numberOfTimeEvents%>] = false;
     }
   }
   >>

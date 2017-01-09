@@ -58,6 +58,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _clockTime      (NULL)
   , _clockCondition (NULL)
   , _clockStart     (NULL)
+  , _clockSubactive (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -96,6 +97,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _clockTime      (NULL)
   , _clockCondition (NULL)
   , _clockStart     (NULL)
+  , _clockSubactive (NULL)
   , _outputStream(NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
@@ -140,6 +142,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_clockTime) delete [] _clockTime;
   if(_clockCondition) delete [] _clockCondition;
   if(_clockStart) delete [] _clockStart;
+  if(_clockSubactive) delete [] _clockSubactive;
   if(__daeResidual) delete [] __daeResidual;
 }
 
@@ -254,11 +257,13 @@ void SystemDefaultImplementation::initialize()
     memset(_clockCondition,false,(_dimClock)*sizeof(bool));
     if (_clockStart) delete [] _clockStart;
     _clockStart = new bool [_dimClock];
+    if (_clockSubactive) delete [] _clockSubactive;
+    _clockSubactive = new bool [_dimClock];
   }
   if(_dimRHS>0)
   {
-	   if (__daeResidual) delete [] __daeResidual;
-          __daeResidual = new double [_dimRHS];
+    if (__daeResidual) delete [] __daeResidual;
+      __daeResidual = new double [_dimRHS];
   }
   _start_time = 0.0;
   _terminal = false;
@@ -428,10 +433,11 @@ void SystemDefaultImplementation::setReal(const double* z)
   }
 };
 
-void SystemDefaultImplementation::setClock(const bool* z)
+void SystemDefaultImplementation::setClock(const bool* tick, const bool* subactive)
 {
-  for(int i = _dimTimeEvent - _dimClock; i < _dimTimeEvent; i++) {
-    _time_conditions[i] = z[i];
+  for (int i = 0; i < _dimClock; i++) {
+    _time_conditions[_dimTimeEvent - _dimClock + i] = tick[i];
+    _clockSubactive[i] = subactive[i];
   }
 }
 

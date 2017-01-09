@@ -113,7 +113,7 @@ public:
   virtual void setString(const std::string* z);
 
   /// Provide clocks
-  virtual void setClock(const bool* z);
+  virtual void setClock(const bool* tick, const bool* subactive);
 
   /// Provide the right hand side
   virtual void setStateDerivatives(const double* f);
@@ -183,6 +183,7 @@ protected:
     double *_clockTime;       ///< time of clock ticks
     bool *_clockCondition;    ///< clock tick active
     bool *_clockStart;        ///< only active at clock start
+    bool *_clockSubactive;    ///< don't update states
     std::ostream *_outputStream;        ///< Output stream for results
 
     IContinuous::UPDATETYPE _callType;

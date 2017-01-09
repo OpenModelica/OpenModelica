@@ -228,12 +228,12 @@ extern "C"
 
   fmi2Status fmi2GetClock(fmi2Component c,
                           const fmi2Integer clockIndex[],
-                          size_t nClockIndex, fmi2Boolean active[])
+                          size_t nClockIndex, fmi2Boolean tick[])
   {
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
     LOG_CALL(w, "fmi2GetClock(nClockIndex = %d)", nClockIndex);
     try {
-      return w->getClock(clockIndex, nClockIndex, active);
+      return w->getClock(clockIndex, nClockIndex, tick);
     }
     CATCH_EXCEPTION(w);
   }
@@ -300,12 +300,13 @@ extern "C"
 
   fmi2Status fmi2SetClock(fmi2Component c,
                           const fmi2Integer clockIndex[],
-                          size_t nClockIndex, const fmi2Boolean active[])
+                          size_t nClockIndex, const fmi2Boolean tick[],
+                          const fmi2Boolean subactive[])
   {
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
     LOG_CALL(w, "fmi2SetClock(nClockIndex = %d)", nClockIndex);
     try {
-      return w->setClock(clockIndex, nClockIndex, active);
+      return w->setClock(clockIndex, nClockIndex, tick, subactive);
     }
     CATCH_EXCEPTION(w);
   }

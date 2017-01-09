@@ -128,7 +128,7 @@ class FMU2Wrapper
   virtual fmi2Status getString (const fmi2ValueReference vr[], size_t nvr,
                                 fmi2String  value[]);
   virtual fmi2Status getClock  (const fmi2Integer clockIndex[],
-                                size_t nClockIndex, fmi2Boolean active[]);
+                                size_t nClockIndex, fmi2Boolean tick[]);
   virtual fmi2Status getInterval(const fmi2Integer clockIndex[],
                                  size_t nClockIndex, fmi2Real interval[]);
 
@@ -141,7 +141,8 @@ class FMU2Wrapper
   virtual fmi2Status setString (const fmi2ValueReference vr[], size_t nvr,
                                 const fmi2String  value[]);
   virtual fmi2Status setClock  (const fmi2Integer clockIndex[],
-                                size_t nClockIndex, const fmi2Boolean active[]);
+                                size_t nClockIndex, const fmi2Boolean tick[],
+                                const fmi2Boolean subactive[]);
   virtual fmi2Status setInterval(const fmi2Integer clockIndex[],
                                  size_t nClockIndex, const fmi2Real interval[]);
 
@@ -166,8 +167,9 @@ class FMU2Wrapper
   Logger *_logger;
   MODEL_CLASS *_model;
   std::vector<string> _string_buffer;
-  bool *_clock_buffer;
-  int _nclock_active;
+  bool *_clockTick;
+  bool *_clockSubactive;
+  int _nclockTick;
   double _need_update;
   void updateModel();
 
