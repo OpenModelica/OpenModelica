@@ -453,7 +453,15 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
       if (!variable.isEmpty()) {
-        QString textValue = mpComponent->getParameterDisplayString(variable);
+        QString textValue;
+        /* Ticket:4204
+         * If we have extend component then call Component::getParameterDisplayString from root component.
+         */
+        if (mpComponent->getComponentType() == Component::Extend) {
+          textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
+        } else {
+          textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
+        }
         if (!textValue.isEmpty()) {
           mTextString.replace(pos, regExp.matchedLength(), textValue);
         } else { /* if the value of %\\W* is empty then remove the % sign. */

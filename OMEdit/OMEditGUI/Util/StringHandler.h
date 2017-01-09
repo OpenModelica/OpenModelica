@@ -152,6 +152,7 @@ public:
   static QMap<int, int> getLeadingSpaces(QString contents);
   static int getLeadingSpacesSize(QString str);
   static bool isFileWritAble(QString filePath);
+  static bool containsSpace(QString str);
 protected:
   static QString mLastOpenDir;
 };

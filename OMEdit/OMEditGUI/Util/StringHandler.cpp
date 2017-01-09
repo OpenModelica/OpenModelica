@@ -1607,3 +1607,19 @@ bool StringHandler::isFileWritAble(QString filePath)
     return true;
   }
 }
+
+/*!
+ * \brief StringHandler::containsSpace
+ * Returns true if string contains a space.
+ * \param str
+ * \return
+ */
+bool StringHandler::containsSpace(QString str)
+{
+  for (int i = 0 ; i < str.size() ; i++) {
+    if (str.at(i).isSpace()) {
+      return true;
+    }
+  }
+  return false;
+}
