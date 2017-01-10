@@ -15,6 +15,7 @@ AC_SUBST(APP)
 
 AC_SUBST(OMC_TARGET)
 AC_ARG_WITH(cppruntime,  [  --with-cppruntime       (build the optional cppruntime simulation libraries)],[OMC_TARGET="$withval"],[OMC_TARGET="no"])
+AC_ARG_WITH(cppruntime-args,  [  --with-cppruntime-args=[cpp-args]       (pass comma separated arguments to the cppruntime configuration - see the cpp runtime documentation for details)],[CPP_RUNTIME_ARGS="$withval"],[CPP_RUNTIME_ARGS=""])
 
 AC_MSG_CHECKING([if cppruntime is requested])
 if test "$OMC_TARGET" = "yes"; then
