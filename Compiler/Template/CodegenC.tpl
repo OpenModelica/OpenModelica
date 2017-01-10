@@ -128,7 +128,6 @@ end translateModel;
 
     <%variableDefinitions(modelInfo, timeEvents)%><%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
 
-    extern void <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>(DATA *data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>(DATA *_data, threadData_t *threadData);
     #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
     <% if intGt(varInfo.numNonLinearSystems, 0) then 'extern void <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>(int nNonLinearSystems, NONLINEAR_SYSTEM_DATA *data);' %>
@@ -478,8 +477,6 @@ template simulationFile_exo(SimCode simCode)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-
-    <%functionCallExternalObjectConstructors(extObjInfo, modelNamePrefix(simCode))%>
 
     <%functionCallExternalObjectDestructors(extObjInfo, modelNamePrefix(simCode))%>
     #if defined(__cplusplus)
@@ -1039,7 +1036,6 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,
        <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,
        <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,
-       <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
        <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
        <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,
@@ -1555,41 +1551,6 @@ template aliasVarNameType(AliasVariable var)
     >>
   end match
 end aliasVarNameType;
-
-template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo, String modelNamePrefix)
-  "Generates function in simulation file."
-::=
-  match extObjInfo
-  case EXTOBJINFO(__) then
-    let &auxFunction = buffer ""
-    let &varDecls = buffer ""
-    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp)) =>
-        let &preExp = buffer ""
-        let arg = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
-        /* Restore the memory state after each object has been initialized. Then we can
-         * initalize a really large number of external objects that play with strings :)
-         */
-        <<
-        <%preExp%>
-        <%cref(var.name)%> = <%arg%>;
-        >>
-      ;separator="\n")
-
-    <<
-    <%auxFunction%>
-    /* Has to be performed after _init.xml file has been read */
-    void <%symbolName(modelNamePrefix,"callExternalObjectConstructors")%>(DATA *data, threadData_t *threadData)
-    {
-      <%varDecls%>
-      /* data->simulationInfo->extObjs = NULL; */
-      infoStreamPrint(LOG_DEBUG, 0, "call external Object Constructors");
-      <%ctorCalls%>
-      <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
-      infoStreamPrint(LOG_DEBUG, 0, "call external Object Constructors finished");
-    }
-    >>
-  end match
-end functionCallExternalObjectConstructors;
 
 template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, String modelNamePrefix)
   "Generates function in simulation file."

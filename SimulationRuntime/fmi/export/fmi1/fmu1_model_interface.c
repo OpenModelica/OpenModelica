@@ -197,9 +197,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   strcpy((char*)comp->GUID, (const char*)GUID);
 
   /* read input vars */
-  //input_function(comp->fmuData);
-  /* initial sample and delay before initial the system */
-  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData, comp->threadData);
+  /* input_function(comp->fmuData);*/
   /* allocate memory for non-linear system solvers */
   initializeNonlinearSystems(comp->fmuData, comp->threadData);
   /* allocate memory for non-linear system solvers */

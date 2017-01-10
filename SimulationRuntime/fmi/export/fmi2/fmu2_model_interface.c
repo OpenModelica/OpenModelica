@@ -373,9 +373,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
   /* read input vars */
-  //input_function(comp->fmuData);
-  /* initial sample and delay before initial the system */
-  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData, comp->threadData);
+  /* input_function(comp->fmuData); */
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   /* allocate memory for non-linear system solvers */
   initializeNonlinearSystems(comp->fmuData, comp->threadData);
@@ -1282,4 +1280,3 @@ fmi2Status fmi2GetSpecificDerivatives(fmi2Component c, fmi2Real derivatives[], c
   return fmi2Error;
 }
 #endif
-

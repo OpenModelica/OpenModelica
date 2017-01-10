@@ -58,8 +58,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
 int (*performSimulation)(DATA* data, threadData_t*, void* solverInfo);
 int (*performQSSSimulation)(DATA* data, threadData_t*, void* solverInfo);
 void (*updateContinuousSystem)(DATA *data, threadData_t*);
-/* Function for calling external object constructors */
-void (*callExternalObjectConstructors)(DATA *data, threadData_t*);
 /* Function for calling external object deconstructors */
 void (*callExternalObjectDestructors)(DATA *_data, threadData_t*);
 
