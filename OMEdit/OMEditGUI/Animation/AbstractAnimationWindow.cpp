@@ -122,27 +122,28 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
     mPathName = file.substr(0, pos + 1);
     mFileName = file.substr(pos + 1, file.length());
     //std::cout<<"file "<<mFileName<<"   path "<<mPathName<<std::endl;
-    loadVisualization();
-    // start the widgets
-    mpAnimationInitializeAction->setEnabled(true);
-    mpAnimationPlayAction->setEnabled(true);
-    mpAnimationPauseAction->setEnabled(true);
-    mpAnimationSlider->setEnabled(true);
-    bool state = mpAnimationSlider->blockSignals(true);
-    mpAnimationSlider->setValue(0);
-    mpAnimationSlider->blockSignals(state);
-    mpSpeedComboBox->setEnabled(true);
-    mpTimeTextBox->setEnabled(true);
-    mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
-    /* Only use isometric view as default for csv file type.
-     * Otherwise use side view as default which suits better for Modelica models.
-     */
-    if (isCSV(mFileName)) {
-      mpPerspectiveDropDownBox->setCurrentIndex(0);
-      cameraPositionIsometric();
-    } else {
-      mpPerspectiveDropDownBox->setCurrentIndex(1);
-      cameraPositionSide();
+    if (loadVisualization()) {
+      // start the widgets
+      mpAnimationInitializeAction->setEnabled(true);
+      mpAnimationPlayAction->setEnabled(true);
+      mpAnimationPauseAction->setEnabled(true);
+      mpAnimationSlider->setEnabled(true);
+      bool state = mpAnimationSlider->blockSignals(true);
+      mpAnimationSlider->setValue(0);
+      mpAnimationSlider->blockSignals(state);
+      mpSpeedComboBox->setEnabled(true);
+      mpTimeTextBox->setEnabled(true);
+      mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getStartTime()));
+      /* Only use isometric view as default for csv file type.
+       * Otherwise use side view as default which suits better for Modelica models.
+       */
+      if (isCSV(mFileName)) {
+        mpPerspectiveDropDownBox->setCurrentIndex(0);
+        cameraPositionIsometric();
+      } else {
+        mpPerspectiveDropDownBox->setCurrentIndex(1);
+        cameraPositionSide();
+      }
     }
   }
 }
@@ -215,20 +216,11 @@ QWidget* AbstractAnimationWindow::setupViewWidget()
 }
 
 /*!
- * \brief AbstractAnimationWindow::openFMUSettingsDialog
- * opens a dialog to set the settings for the FMU visualization
- */
-void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* fmuVisualizer)
-{
-  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, fmuVisualizer);
-  pFMUSettingsDialog->exec();
-}
-
-/*!
  * \brief AbstractAnimationWindow::loadVisualization
  * loads the data and the xml scene description
+ * \return
  */
-void AbstractAnimationWindow::loadVisualization()
+bool AbstractAnimationWindow::loadVisualization()
 {
   VisType visType = VisType::NONE;
   // Get visualization type.
@@ -241,18 +233,7 @@ void AbstractAnimationWindow::loadVisualization()
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unknown visualization type."),
                                                           Helper::scriptingKind, Helper::errorLevel));
-  }
-  //init visualizer
-  if (visType == VisType::MAT) {
-    mpVisualizer = new VisualizerMAT(mFileName, mPathName);
-  } else if (visType == VisType::CSV) {
-    mpVisualizer = new VisualizerCSV(mFileName, mPathName);
-  } else if (visType == VisType::FMU) {
-    mpVisualizer = new VisualizerFMU(mFileName, mPathName);
-  } else {
-    QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                                          Helper::errorLevel));
+    return false;
   }
   //load the XML File, build osgTree, get initial values for the shapes
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
@@ -260,7 +241,21 @@ void AbstractAnimationWindow::loadVisualization()
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
+    return false;
   } else {
+    //init visualizer
+    if (visType == VisType::MAT) {
+      mpVisualizer = new VisualizerMAT(mFileName, mPathName);
+    } else if (visType == VisType::CSV) {
+      mpVisualizer = new VisualizerCSV(mFileName, mPathName);
+    } else if (visType == VisType::FMU) {
+      mpVisualizer = new VisualizerFMU(mFileName, mPathName);
+    } else {
+      QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                            Helper::errorLevel));
+      return false;
+    }
     connect(mpVisualizer->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualizer->initData();
     mpVisualizer->setUpScene();
@@ -272,8 +267,9 @@ void AbstractAnimationWindow::loadVisualization()
   this->setWindowTitle(QString::fromStdString(mFileName));
   //open settings dialog for FMU simulation
   if (visType == VisType::FMU) {
-    openFMUSettingsDialog(dynamic_cast <VisualizerFMU*>(mpVisualizer));
+    openFMUSettingsDialog(dynamic_cast<VisualizerFMU*>(mpVisualizer));
   }
+  return true;
 }
 
 /*!
@@ -362,6 +358,17 @@ double AbstractAnimationWindow::computeDistanceToOrigin()
   }
 
   return d;
+}
+
+/*!
+ * \brief AbstractAnimationWindow::openFMUSettingsDialog
+ * Opens a dialog to set the settings for the FMU visualization
+ * \param pVisualizerFMU
+ */
+void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFMU)
+{
+  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizerFMU);
+  pFMUSettingsDialog->exec();
 }
 
 /*!

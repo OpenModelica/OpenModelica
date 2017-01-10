@@ -38,32 +38,31 @@
 
 #include "VisualizerFMU.h"
 
-#include <QMainWindow>
-#include <QLineEdit>
-#include <QComboBox>
-#include <QCheckBox>
-#include <QLayout>
-#include <QLabel>
 #include <QDialog>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QPushButton>
+#include <QLayout>
 #include <QDialogButtonBox>
-
 
 class FMUSettingsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisualizer);
-  ~FMUSettingsDialog();
+  FMUSettingsDialog(QWidget *pParent, VisualizerFMU *pVisualizerFMU);
 private:
-  VisualizerFMU* fmu;
-  double stepSize;
-  double renderFreq;
-  Solver solver;
-  bool handleEvents;
-  QLineEdit* mpStepsizeLineEdit;
+  VisualizerFMU *mpVisualizerFMU;
+  double mStepSize;
+  double mRenderFreq;
+  Solver mSolver;
+  bool mHandleEvents;
+  QLineEdit* mpStepSizeLineEdit;
   QCheckBox* mpHandleEventsCheck;
   QComboBox* mpSolverComboBox;
-  QDialogButtonBox* mpButtonBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
 public slots:
   void saveSimSettings();
 };

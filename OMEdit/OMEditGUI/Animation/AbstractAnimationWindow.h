@@ -45,7 +45,6 @@
 
 #include "FMUSettingsDialog.h"
 
-
 class VisualizerAbstract;
 class Label;
 
@@ -57,11 +56,10 @@ public:
   void stopRenderFrameTimer() {mRenderFrameTimer.stop();}
   void startRenderFrameTimer() {mRenderFrameTimer.start();}
   void openAnimationFile(QString fileName);
-  void openFMUSettingsDialog();
   virtual void createActions();
 private:
   QWidget* setupViewWidget();
-  void loadVisualization();
+  bool loadVisualization();
 protected:
   //to be animated
   std::string mPathName;
@@ -93,7 +91,7 @@ protected:
   void cameraPositionFront();
   void cameraPositionTop();
   double computeDistanceToOrigin();
-  void openFMUSettingsDialog(VisualizerFMU* fmuVisualizer);
+  void openFMUSettingsDialog(VisualizerFMU *pVisualizerFMU);
 public slots:
   void renderFrame();
   void updateScene();
