@@ -41,7 +41,7 @@
  * \brief widget for FMU-simulation settings.
  */
 FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisualizer)
-  : QDialog(),
+  : QDialog(pParent),
     fmu(fmuVisualizer),
     stepSize(0.001),
     renderFreq(0.1),
