@@ -398,7 +398,10 @@ QString TextAnnotation::getShapeAnnotation()
     annotationString.append(QString("fontSize=").append(QString::number(mFontSize)));
   }
   // get the font name
-  if (!mFontName.isEmpty()) {
+  /* Ticket:4204
+   * Don't insert the default font name as it might be operating system specific.
+   */
+  if (!mFontName.isEmpty() && mFontName.compare(Helper::systemFontInfo.family()) != 0) {
     annotationString.append(QString("fontName=\"").append(mFontName).append("\""));
   }
   // get the font styles
