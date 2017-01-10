@@ -482,6 +482,11 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
+  /* Ticket:4204
+   * If the child class use text annotation from base class then we need to call this
+   * since when the base class is created the child class doesn't exist.
+   */
+  displayTextChangedRecursive();
 }
 
 Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent)
@@ -598,6 +603,11 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
   connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceComponentChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
+  /* Ticket:4204
+   * If the child class use text annotation from base class then we need to call this
+   * since when the base class is created the child class doesn't exist.
+   */
+  displayTextChangedRecursive();
 }
 
 Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
@@ -1106,8 +1116,9 @@ QString Component::getParameterDisplayString(QString parameterName)
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
-          if (displayString.isEmpty())
+          if (displayString.isEmpty()) {
             displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
+          }
           typeName = pComponent->getComponentInfo()->getClassName();
           checkEnumerationDisplayString(displayString, typeName);
           break;
@@ -1592,17 +1603,22 @@ void Component::updateConnections()
 QString Component::getParameterDisplayStringFromExtendsModifiers(QString parameterName)
 {
   QString displayString = "";
-  foreach (Component *pComponent, mInheritedComponentsList) {
-    if (pComponent->getLibraryTreeItem()) {
-      QMap<QString, QString> extendsModifiersMap = pComponent->getLibraryTreeItem()->getModelWidget()->getExtendsModifiersMap(pComponent->getLibraryTreeItem()->getNameStructure());
-      displayString = extendsModifiersMap.value(parameterName, "");
+  /* Ticket:4204
+   * Get the extends modifiers of the class not the inherited class.
+   */
+  if (mpLibraryTreeItem) {
+    foreach (Component *pComponent, mInheritedComponentsList) {
+      if (pComponent->getLibraryTreeItem()) {
+        QMap<QString, QString> extendsModifiersMap = mpLibraryTreeItem->getModelWidget()->getExtendsModifiersMap(pComponent->getLibraryTreeItem()->getNameStructure());
+        displayString = extendsModifiersMap.value(parameterName, "");
+        if (!displayString.isEmpty()) {
+          return displayString;
+        }
+      }
+      displayString = pComponent->getParameterDisplayStringFromExtendsModifiers(parameterName);
       if (!displayString.isEmpty()) {
         return displayString;
       }
-    }
-    displayString = pComponent->getParameterDisplayStringFromExtendsModifiers(parameterName);
-    if (!displayString.isEmpty()) {
-      return displayString;
     }
   }
   return displayString;
@@ -1625,9 +1641,13 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
           OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-          if (pComponent->getLibraryTreeItem()) {
-            if (displayString.isEmpty())
-              displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
+          /* Ticket:4204
+           * Look for the parameter value in the parameter containing class not in the parameter class.
+           */
+          if (pInheritedComponent->getLibraryTreeItem()) {
+            if (displayString.isEmpty()) {
+              displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pInheritedComponent->getLibraryTreeItem()->getNameStructure());
+            }
             typeName = pComponent->getComponentInfo()->getClassName();
             checkEnumerationDisplayString(displayString, typeName);
             if (!(displayString.isEmpty() || typeName.isEmpty())) {

@@ -640,6 +640,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       mPoints.back() = point;
       updateCornerItem(lastIndex);
       /* update the 2nd point */
+      assert(secondLastIndex < mGeometries.size());
       if (mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine) {
         mPoints[secondLastIndex] = QPointF(mPoints[secondLastIndex].x(), mPoints[secondLastIndex].y() + dy);
       } else if (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine) {

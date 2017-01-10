@@ -1883,7 +1883,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   /* Double click on Component also end up here.
    * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
    */
-  if (pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
+  if (!isCreatingConnection() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       pShapeAnnotation->showShapeProperties();
       return;
