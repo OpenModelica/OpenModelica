@@ -47,17 +47,18 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisuali
     renderFreq(0.1),
     solver(Solver::EULER_FORWARD)
 {
+  setAttribute(Qt::WA_DeleteOnClose);
   //create dialog
-  mpSettingsDialog = new QDialog;
-  mpSettingsDialog->setWindowTitle("FMU-Simulation Settings");
-  mpSettingsDialog->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
+  this->setWindowTitle("FMU-Simulation Settings");
+  this->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
+
   //the layouts
   QVBoxLayout *mainLayout = new QVBoxLayout;
   QGridLayout *settingsLayOut = new QGridLayout;
   //the widgets
   mpButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   QLabel *solverLabel = new QLabel(tr("Solver"));
-  mpSolverComboBox = new QComboBox(mpSettingsDialog);
+  mpSolverComboBox = new QComboBox();
   mpSolverComboBox->addItem(QString("Explicit Euler"));
   QLabel *stepsizeLabel = new QLabel(tr("Step Size [s]"));
   mpStepsizeLineEdit = new QLineEdit(QString::number(stepSize));
@@ -65,7 +66,7 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisuali
   mpHandleEventsCheck = new QCheckBox();
   mpHandleEventsCheck->setCheckState(Qt::Checked);
   //assemble
-  mpSettingsDialog->setLayout(mainLayout);
+  this->setLayout(mainLayout);
   mainLayout->addLayout(settingsLayOut);
   settingsLayOut->addWidget(solverLabel,0,0);
   settingsLayOut->addWidget(mpSolverComboBox,0,1);
@@ -74,25 +75,14 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisuali
   settingsLayOut->addWidget(handleEventsLabel,2,0);
   settingsLayOut->addWidget(mpHandleEventsCheck,2,1);
   mainLayout->addWidget(mpButtonBox);
+
   //connections
   QObject::connect(mpButtonBox, SIGNAL(accepted()), this,SLOT(saveSimSettings()));
-  QObject::connect(mpButtonBox, SIGNAL(rejected()), mpSettingsDialog,SLOT(close()));
-
-  mpSettingsDialog->exec();
+  QObject::connect(mpButtonBox, SIGNAL(rejected()), this,SLOT(reject()));
 }
 
 FMUSettingsDialog::~FMUSettingsDialog()
 {
-  if (mpSettingsDialog)
-    delete mpSettingsDialog;
-  if (mpStepsizeLineEdit)
-    delete mpStepsizeLineEdit;
-  if (mpHandleEventsCheck)
-    delete mpHandleEventsCheck;
-  if (mpSolverComboBox)
-    delete mpSolverComboBox;
-  if (mpButtonBox)
-    delete mpButtonBox;
 }
 
 /*!
@@ -119,5 +109,5 @@ void FMUSettingsDialog::saveSimSettings()
   }
   //store in FMU simulator
   fmu->setSimulationSettings(stepSize, solver, handleEvents);
-  mpSettingsDialog->close();
+  accept();
 }

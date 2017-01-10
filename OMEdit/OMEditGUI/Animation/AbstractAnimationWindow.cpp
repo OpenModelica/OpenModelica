@@ -79,8 +79,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpSpeedComboBox(nullptr),
     mpPerspectiveDropDownBox(nullptr),
     mpRotateCameraLeftAction(nullptr),
-    mpRotateCameraRightAction(nullptr),
-    mpFMUSettingsDialog(nullptr)
+    mpRotateCameraRightAction(nullptr)
 {
   // to distinguish this widget as a subwindow among the plotwindows
   this->setObjectName(QString("animationWidget"));
@@ -221,7 +220,8 @@ QWidget* AbstractAnimationWindow::setupViewWidget()
  */
 void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* fmuVisualizer)
 {
-  mpFMUSettingsDialog = new FMUSettingsDialog(this, fmuVisualizer);
+  FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, fmuVisualizer);
+  pFMUSettingsDialog->exec();
 }
 
 /*!

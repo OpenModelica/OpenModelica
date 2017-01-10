@@ -60,7 +60,6 @@ private:
   double renderFreq;
   Solver solver;
   bool handleEvents;
-  QDialog* mpSettingsDialog;
   QLineEdit* mpStepsizeLineEdit;
   QCheckBox* mpHandleEventsCheck;
   QComboBox* mpSolverComboBox;

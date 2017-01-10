@@ -86,7 +86,6 @@ protected:
   QComboBox *mpPerspectiveDropDownBox;
   QAction *mpRotateCameraLeftAction;
   QAction *mpRotateCameraRightAction;
-  FMUSettingsDialog *mpFMUSettingsDialog;
 
   void resetCamera();
   void cameraPositionIsometric();
