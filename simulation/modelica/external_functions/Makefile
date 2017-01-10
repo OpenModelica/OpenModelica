@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 MDD_test.mos \
+extObj_ticket3446.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
 ExternalLibraries.mos \
