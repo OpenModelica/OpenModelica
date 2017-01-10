@@ -47,6 +47,7 @@ encapsulated package ClassTree
     end CLASS;
 
     record COMPONENT
+      Integer node;
       Integer index;
     end COMPONENT;
   end Entry;
@@ -89,7 +90,7 @@ uniontype Class
 
   record EXPANDED_CLASS
     ClassTree.Tree elements;
-    list<InstNode> extendsNodes;
+    array<InstNode> extendsNodes;
     array<InstNode> components;
     Modifier modifier;
     list<Equation> equations;
@@ -129,7 +130,7 @@ uniontype Class
     input ClassTree.Tree classes;
     output Class cls;
   algorithm
-    cls := EXPANDED_CLASS(classes, {}, listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
+    cls := EXPANDED_CLASS(classes, listArray({}), listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
   end initExpandedClass;
 
   function instExpandedClass
@@ -137,27 +138,22 @@ uniontype Class
     input Class expandedClass;
     output Class instancedClass;
   protected
-    list<Equation> eqs = {}, eqs1 = {}, eqs2 = {};
-    list<Equation> ieqs = {}, ieqs1 = {}, ieqs2 = {};
-    list<list<Statement>> algs = {}, algs1 = {}, algs2 = {};
-    list<list<Statement>> ialgs = {}, ialgs1 = {}, ialgs2 = {};
+    list<Equation> eqs;
+    list<Equation> ieqs;
+    list<list<Statement>> algs;
+    list<list<Statement>> ialgs;
   algorithm
     instancedClass := match expandedClass
       case EXPANDED_CLASS()
         algorithm
-          eqs1 := expandedClass.equations;
-          ieqs1 := expandedClass.initialEquations;
-          algs1 := expandedClass.algorithms;
-          ialgs1 := expandedClass.initialAlgorithms;
+          eqs := expandedClass.equations;
+          ieqs := expandedClass.initialEquations;
+          algs := expandedClass.algorithms;
+          ialgs := expandedClass.initialAlgorithms;
 
-          // append the sections from the inherited classes
-          for ext in expandedClass.extendsNodes loop
-            (eqs2, ieqs2, algs2, ialgs2) := collectInherited(ext, eqs2, ieqs2, algs2, ialgs2);
-          end for;
-          eqs := listAppend(eqs2, eqs1);
-          ieqs := listAppend(ieqs2, ieqs1);
-          algs := listAppend(algs2, algs1);
-          ialgs := listAppend(ialgs2, ialgs1);
+          // ***TODO***: Sections should *not* be appended here, they need to be
+          // instantiated and typed in the correct scope. They should be
+          // collected from the extends nodes when flattening the class.
         then
           INSTANCED_CLASS(expandedClass.elements, components, eqs, ieqs, algs, ialgs);
     end match;
@@ -251,6 +247,13 @@ uniontype Class
     end match;
   end setElements;
 
+  function extendsNodes
+    input Class cls;
+    output array<InstNode> extendsNodes;
+  algorithm
+    EXPANDED_CLASS(extendsNodes = extendsNodes) := cls;
+  end extendsNodes;
+
   function setSections
     input list<Equation> equations;
     input list<Equation> initialEquations;
@@ -283,12 +286,23 @@ uniontype Class
     end match;
 
     element := ClassTree.get(scope, name);
+    node := resolveElement(element, cls);
+  end lookupElement;
 
+  function resolveElement
+    input Class.Element element;
+    input Class cls;
+    output InstNode node;
+  algorithm
     node := match element
       case Element.CLASS() then element.node;
-      case Element.COMPONENT() then arrayGet(components(cls), element.index);
+      case Element.COMPONENT(node = 0)
+        then arrayGet(components(cls), element.index);
+      case Element.COMPONENT()
+        then arrayGet(components(InstNode.getClass(
+          arrayGet(extendsNodes(cls), element.node))), element.index);
     end match;
-  end lookupElement;
+  end resolveElement;
 
   function isBuiltin
     input Class cls;
@@ -352,22 +366,14 @@ uniontype Class
       local
         ClassTree.Tree tree;
 
-      //case PARTIAL_CLASS()
-      //  algorithm
-      //    instance.classes := ClassTree.map(instance.classes, cloneEntry);
-      //  then
-      //    ();
-
       case EXPANDED_CLASS()
         algorithm
-          //instance.elements := ClassTree.map(instance.elements, cloneEntry);
           cls.components := Array.map(cls.components, InstNode.clone);
         then
           ();
 
       case INSTANCED_CLASS()
         algorithm
-          //instance.elements := ClassTree.map(instance.elements, cloneEntry);
           cls.components := Array.map(cls.components, InstNode.clone);
         then
           ();
@@ -386,6 +392,31 @@ uniontype Class
       else entry;
     end match;
   end cloneEntry;
+
+  function resolveExtendsRef
+    input InstNode ref;
+    input Class scope;
+    output InstNode ext;
+  algorithm
+    ext := match (ref, scope)
+      case (InstNode.REF_NODE(), EXPANDED_CLASS())
+        then arrayGet(scope.extendsNodes, ref.index);
+    end match;
+  end resolveExtendsRef;
+
+  function updateExtends
+    input InstNode ref;
+    input InstNode ext;
+    input output Class scope;
+  algorithm
+    () := match (ref, scope)
+      case (InstNode.REF_NODE(), EXPANDED_CLASS())
+        algorithm
+          arrayUpdate(scope.extendsNodes, ref.index, ext);
+        then
+          ();
+    end match;
+  end updateExtends;
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

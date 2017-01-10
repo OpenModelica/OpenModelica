@@ -74,6 +74,10 @@ uniontype InstNode
     InstNode parent;
   end COMPONENT_NODE;
 
+  record REF_NODE
+    Integer index;
+  end REF_NODE;
+
   record EMPTY_NODE end EMPTY_NODE;
 
   function new
@@ -128,6 +132,16 @@ uniontype InstNode
     end match;
   end isClass;
 
+  function isBaseClass
+    input InstNode node;
+    output Boolean isBaseClass;
+  algorithm
+    isBaseClass := match node
+      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS()) then true;
+      else false;
+    end match;
+  end isBaseClass;
+
   function isComponent
     input InstNode node;
     output Boolean isComponent;
@@ -137,6 +151,26 @@ uniontype InstNode
       else false;
     end match;
   end isComponent;
+
+  function isRef
+    input InstNode node;
+    output Boolean isRef;
+  algorithm
+    isRef := match node
+      case REF_NODE() then true;
+      else false;
+    end match;
+  end isRef;
+
+  function isEmpty
+    input InstNode node;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match node
+      case EMPTY_NODE() then true;
+      else false;
+    end match;
+  end isEmpty;
 
   function name
     input InstNode node;

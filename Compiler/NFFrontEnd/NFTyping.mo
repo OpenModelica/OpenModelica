@@ -96,7 +96,11 @@ algorithm
     case Class.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
-          components[i] := typeComponent(components[i]);
+          if InstNode.isComponent(components[i]) then
+            components[i] := typeComponent(components[i]);
+          else
+            components[i] := typeClassNode(components[i], component);
+          end if;
         end for;
       then
         makeComplexType(classNode, cls, component);
@@ -204,7 +208,11 @@ algorithm
     case Class.INSTANCED_CLASS(components = components)
       algorithm
         for i in 1:arrayLength(components) loop
-          components[i] := typeComponentBinding(components[i], classNode);
+          if InstNode.isComponent(components[i]) then
+            components[i] := typeComponentBinding(components[i], classNode);
+          else
+            components[i] := typeComponentBindings(components[i]);
+          end if;
         end for;
       then
         ();
@@ -390,7 +398,7 @@ algorithm
         cls := Class.setComponents(components, cls);
         elements := Class.elements(cls);
         elements :=  ClassTree.add(elements, eq.name,
-              ClassTree.Entry.COMPONENT(index), ClassTree.addConflictReplace);
+              ClassTree.Entry.COMPONENT(0, index), ClassTree.addConflictReplace);
         cls := Class.setElements(elements, cls);
         fakeComponent := InstNode.updateClass(cls, component);
         eqs1 := list(typeEquation(beq, fakeComponent) for beq in eq.body);
@@ -581,16 +589,19 @@ algorithm
   Class.INSTANCED_CLASS(components = components) := classInst;
 
   for i in arrayLength(components):-1:1 loop
-     cn := components[i];
-     c := InstNode.component(cn);
-     t := Component.getType(c);
+    cn := components[i];
 
-     varLst := DAE.TYPES_VAR(
-                 InstNode.name(cn),
-                 Component.attr2DaeAttr(Component.getAttributes(c)),
-                 t,
-                 DAE.UNBOUND(), // TODO FIXME, do we need the binding?
-                 NONE())::varLst;
+    if InstNode.isComponent(cn) then
+      c := InstNode.component(cn);
+      t := Component.getType(c);
+
+      varLst := DAE.TYPES_VAR(
+                  InstNode.name(cn),
+                  Component.attr2DaeAttr(Component.getAttributes(c)),
+                  t,
+                  DAE.UNBOUND(), // TODO FIXME, do we need the binding?
+                  NONE())::varLst;
+    end if;
   end for;
 
   el := InstNode.definition(classNode);

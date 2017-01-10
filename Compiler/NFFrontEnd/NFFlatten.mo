@@ -101,7 +101,11 @@ algorithm
     case Class.INSTANCED_CLASS()
       algorithm
         for c in instance.components loop
-          elements := flattenComponent(c, prefix, elements);
+          if InstNode.isComponent(c) then
+            elements := flattenComponent(c, prefix, elements);
+          else
+            elements := flattenNode(c, prefix, elements);
+          end if;
         end for;
 
         elements := flattenEquations(instance.equations, elements);
