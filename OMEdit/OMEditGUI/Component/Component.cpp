@@ -1641,9 +1641,13 @@ QString Component::getParameterDisplayStringFromExtendsParameters(QString parame
       foreach (Component *pComponent, pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
         if (pComponent->getComponentInfo()->getName().compare(parameterName) == 0) {
           OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-          if (pComponent->getLibraryTreeItem()) {
-            if (displayString.isEmpty())
-              displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pComponent->getLibraryTreeItem()->getNameStructure());
+          /* Ticket:4204
+           * Look for the parameter value in the parameter containing class not in the parameter class.
+           */
+          if (pInheritedComponent->getLibraryTreeItem()) {
+            if (displayString.isEmpty()) {
+              displayString = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, pInheritedComponent->getLibraryTreeItem()->getNameStructure());
+            }
             typeName = pComponent->getComponentInfo()->getClassName();
             checkEnumerationDisplayString(displayString, typeName);
             if (!(displayString.isEmpty() || typeName.isEmpty())) {
