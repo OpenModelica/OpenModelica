@@ -125,7 +125,7 @@ Full example:
   cmds = [
     "loadModel(Modelica)",
     "model test end test;",
-    'loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")'
+    'loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")',
     "getIconAnnotation(Modelica.Electrical.Analog.Basic.Resistor)",
     "getElementsInfo(Modelica.Electrical.Analog.Basic.Resistor)",
     "simulate(BouncingBall)",
@@ -133,7 +133,7 @@ Full example:
     ]
   for cmd in cmds:
     answer = omc.sendExpression(cmd)
-    print "\\nResult:\\n%s"%answer
+    print("\n{}:\n{}".format(cmd, answer))
 
 Implementation
 ~~~~~~~~~~~~~~
