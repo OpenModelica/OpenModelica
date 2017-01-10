@@ -32,16 +32,16 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include "FMUSettingsWindow.h"
+#include "FMUSettingsDialog.h"
 
 
 
 /*!
- * \class FMUSettingsWindow
+ * \class FMUSettingsDialog
  * \brief widget for FMU-simulation settings.
  */
-FMUSettingsWindow::FMUSettingsWindow(QWidget *pParent, VisualizerFMU* fmuVisualizer)
-  : QMainWindow(pParent),
+FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisualizer)
+  : QDialog(),
     fmu(fmuVisualizer),
     stepSize(0.001),
     renderFreq(0.1),
@@ -49,105 +49,75 @@ FMUSettingsWindow::FMUSettingsWindow(QWidget *pParent, VisualizerFMU* fmuVisuali
 {
   //create dialog
   mpSettingsDialog = new QDialog;
-  mpSettingsDialog->setWindowTitle("Visualization settings");
+  mpSettingsDialog->setWindowTitle("FMU-Simulation Settings");
   mpSettingsDialog->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   //the layouts
   QVBoxLayout *mainLayout = new QVBoxLayout;
-  QHBoxLayout *buttonLayout = new QHBoxLayout;
-  QHBoxLayout *visualizationLayout = new QHBoxLayout;
-  QVBoxLayout *visLeftLayout = new QVBoxLayout;
-  QVBoxLayout *visRightLayout = new QVBoxLayout;
-  QHBoxLayout *simulationLayout = new QHBoxLayout;
-  QVBoxLayout *simLeftLayout = new QVBoxLayout;
-  QVBoxLayout *simRightLayout = new QVBoxLayout;
+  QGridLayout *settingsLayOut = new QGridLayout;
   //the widgets
-  QLabel *visualizationHeading = new QLabel(tr("Visualization Settings"));
-  QLabel *freqLabel = new QLabel(tr("Render Frequency [s]"));
-  mpRenderFreqLineEdit = new QLineEdit(QString::number(renderFreq));
-  mpOkButton = new QPushButton(tr("OK"));
-  //solver settings
-  QLabel *simulationHeading = new QLabel(tr("FMU-Simulation Settings"));
-  QLabel *solverLabel = new QLabel(tr("solver"));
+  mpButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  QLabel *solverLabel = new QLabel(tr("Solver"));
   mpSolverComboBox = new QComboBox(mpSettingsDialog);
-  mpSolverComboBox->addItem(QString("explicit euler"));
-  QLabel *stepsizeLabel = new QLabel(tr("step size [s]"));
+  mpSolverComboBox->addItem(QString("Explicit Euler"));
+  QLabel *stepsizeLabel = new QLabel(tr("Step Size [s]"));
   mpStepsizeLineEdit = new QLineEdit(QString::number(stepSize));
   QLabel *handleEventsLabel = new QLabel(tr("Process Events in FMU"));
   mpHandleEventsCheck = new QCheckBox();
   mpHandleEventsCheck->setCheckState(Qt::Checked);
   //assemble
   mpSettingsDialog->setLayout(mainLayout);
-  //mainLayout->addWidget(visualizationHeading);
-  //mainLayout->addLayout(visualizationLayout);
-  visualizationLayout->addLayout(visLeftLayout);
-  visualizationLayout->addLayout(visRightLayout);
-  visLeftLayout->addWidget(freqLabel);
-  visRightLayout->addWidget(mpRenderFreqLineEdit);
-  mainLayout->addWidget(simulationHeading);
-  mainLayout->addLayout(simulationLayout);
-  simulationLayout->addLayout(simLeftLayout);
-  simulationLayout->addLayout(simRightLayout);
-
-  simLeftLayout->addWidget(solverLabel);
-  simRightLayout->addWidget(mpSolverComboBox);
-  simLeftLayout->addWidget(stepsizeLabel);
-  simRightLayout->addWidget(mpStepsizeLineEdit);
-  simLeftLayout->addWidget(handleEventsLabel);
-  simRightLayout->addWidget(mpHandleEventsCheck);
-
-  mainLayout->addLayout(buttonLayout);
-  buttonLayout->addWidget(mpOkButton);
-
+  mainLayout->addLayout(settingsLayOut);
+  settingsLayOut->addWidget(solverLabel,0,0);
+  settingsLayOut->addWidget(mpSolverComboBox,0,1);
+  settingsLayOut->addWidget(stepsizeLabel,1,0);
+  settingsLayOut->addWidget(mpStepsizeLineEdit,1,1);
+  settingsLayOut->addWidget(handleEventsLabel,2,0);
+  settingsLayOut->addWidget(mpHandleEventsCheck,2,1);
+  mainLayout->addWidget(mpButtonBox);
   //connections
-  QObject::connect(mpOkButton, SIGNAL(clicked()), this,SLOT(saveSimSettings()));
+  QObject::connect(mpButtonBox, SIGNAL(accepted()), this,SLOT(saveSimSettings()));
+  QObject::connect(mpButtonBox, SIGNAL(rejected()), mpSettingsDialog,SLOT(close()));
 
-  mpSettingsDialog->show();
+  mpSettingsDialog->exec();
 }
 
-FMUSettingsWindow::~FMUSettingsWindow()
+FMUSettingsDialog::~FMUSettingsDialog()
 {
-  if (mpRenderFreqLineEdit)
-    delete mpRenderFreqLineEdit;
+  if (mpSettingsDialog)
+    delete mpSettingsDialog;
   if (mpStepsizeLineEdit)
     delete mpStepsizeLineEdit;
   if (mpHandleEventsCheck)
     delete mpHandleEventsCheck;
   if (mpSolverComboBox)
     delete mpSolverComboBox;
-  if (mpOkButton)
-    delete mpOkButton;
+  if (mpButtonBox)
+    delete mpButtonBox;
 }
 
 /*!
- * \brief FMUSettingsWindow::saveSimSettings
+ * \brief FMUSettingsDialog::saveSimSettings
  */
-void FMUSettingsWindow::saveSimSettings()
+void FMUSettingsDialog::saveSimSettings()
 {
-  //step size and render freq
+  //step size
   bool isFloat = true;
   double stepSize = mpStepsizeLineEdit->text().toFloat(&isFloat);
   if (!isFloat) {
     stepSize = 0.0001;
   };
-  double renderFreq = mpRenderFreqLineEdit->text().toFloat(&isFloat);
-  if (!isFloat) {
-    stepSize = 0.1;
-  };
-
   //handle events
   bool handleEvents = true;
   if (!mpHandleEventsCheck->isChecked()){
     handleEvents = false;
   };
-
   //solver
   QString s = mpSolverComboBox->currentText();
   if (0 == s.compare(QString("explicit euler")))
   {
     Solver solver = Solver::EULER_FORWARD;
   }
-
- //store in FMU simulator
+  //store in FMU simulator
   fmu->setSimulationSettings(stepSize, solver, handleEvents);
   mpSettingsDialog->close();
 }

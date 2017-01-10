@@ -44,15 +44,16 @@
 #include <QCheckBox>
 #include <QLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QDialog>
+#include <QDialogButtonBox>
 
-class FMUSettingsWindow : public QMainWindow
+
+class FMUSettingsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FMUSettingsWindow(QWidget *pParent, VisualizerFMU* fmuVisualizer);
-  ~FMUSettingsWindow();
+  FMUSettingsDialog(QWidget *pParent, VisualizerFMU* fmuVisualizer);
+  ~FMUSettingsDialog();
 private:
   VisualizerFMU* fmu;
   double stepSize;
@@ -60,11 +61,10 @@ private:
   Solver solver;
   bool handleEvents;
   QDialog* mpSettingsDialog;
-  QLineEdit* mpRenderFreqLineEdit;
   QLineEdit* mpStepsizeLineEdit;
   QCheckBox* mpHandleEventsCheck;
   QComboBox* mpSolverComboBox;
-  QPushButton* mpOkButton;
+  QDialogButtonBox* mpButtonBox;
 public slots:
   void saveSimSettings();
 };

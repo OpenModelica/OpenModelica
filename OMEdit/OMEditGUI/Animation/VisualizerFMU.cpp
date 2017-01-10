@@ -92,7 +92,7 @@ void VisualizerFMU::allocateContext(const std::string& modelFile, const std::str
   mCallbacks.realloc = realloc;
   mCallbacks.free = free;
   mCallbacks.logger = jm_default_logger;
-  mCallbacks.log_level = jm_log_level_debug;  // jm_log_level_error;
+  mCallbacks.log_level = jm_log_level_error;  // jm_log_level_error;
   mCallbacks.context = 0;
   #ifdef FMILIB_GENERATE_BUILD_STAMP
     std::cout << "Library build stamp: \n" << fmilib_get_build_stamp() << std::endl;

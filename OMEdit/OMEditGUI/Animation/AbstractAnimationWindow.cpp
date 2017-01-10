@@ -221,7 +221,7 @@ QWidget* AbstractAnimationWindow::setupViewWidget()
  */
 void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* fmuVisualizer)
 {
-  mpFMUSettingsDialog = new FMUSettingsWindow(this, fmuVisualizer);
+  mpFMUSettingsDialog = new FMUSettingsDialog(this, fmuVisualizer);
 }
 
 /*!
@@ -249,7 +249,6 @@ void AbstractAnimationWindow::loadVisualization()
     mpVisualizer = new VisualizerCSV(mFileName, mPathName);
   } else if (visType == VisType::FMU) {
     mpVisualizer = new VisualizerFMU(mFileName, mPathName);
-    openFMUSettingsDialog(dynamic_cast <VisualizerFMU*>(mpVisualizer));
   } else {
     QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
@@ -271,8 +270,10 @@ void AbstractAnimationWindow::loadVisualization()
   }
   //add window title
   this->setWindowTitle(QString::fromStdString(mFileName));
-  //jump to xy-view
-  cameraPositionIsometric();
+  //open settings dialog for FMU simulation
+  if (visType == VisType::FMU) {
+    openFMUSettingsDialog(dynamic_cast <VisualizerFMU*>(mpVisualizer));
+  }
 }
 
 /*!

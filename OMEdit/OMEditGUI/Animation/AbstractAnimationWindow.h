@@ -43,7 +43,7 @@
 #include <QComboBox>
 #include <QTimer>
 
-#include "FMUSettingsWindow.h"
+#include "FMUSettingsDialog.h"
 
 
 class VisualizerAbstract;
@@ -86,7 +86,7 @@ protected:
   QComboBox *mpPerspectiveDropDownBox;
   QAction *mpRotateCameraLeftAction;
   QAction *mpRotateCameraRightAction;
-  FMUSettingsWindow *mpFMUSettingsDialog;
+  FMUSettingsDialog *mpFMUSettingsDialog;
 
   void resetCamera();
   void cameraPositionIsometric();
