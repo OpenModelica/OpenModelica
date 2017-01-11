@@ -11,6 +11,7 @@ end ArrayModTypeError;
 
 // Result:
 // Error processing file: ArrayModTypeError.mo
+// [flattening/modelica/modification/ArrayModTypeError.mo:7:16-7:46:writable] Notification: From here:
 // [flattening/modelica/modification/ArrayModTypeError.mo:7:3-7:47:writable] Error: Array dimension mismatch, expression {4, 5, 6} has type Integer[3], expected array dimensions [2].
 // Error: Error occurred while flattening model ArrayModTypeError
 //
