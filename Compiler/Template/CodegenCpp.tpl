@@ -66,7 +66,6 @@ template translateModel(SimCode simCode)
           else
             ""
 
-        let()= textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
         let()= textFile(simulationInitHeaderFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
 
         let &jacobianVarsInit = buffer "" /*BUFD*/
@@ -173,7 +172,7 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
     private:
       <%initeqs%>
       <%initparameqs%>
-      <%initExtVarsDecl(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false)%>
+      <%destructExtObjsDecl(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, false)%>
 
       void InitializeDummyTypeElems();
 
@@ -552,6 +551,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%setIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
    <%init(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, complexStartExpressions)%>
+
+   <%destructExtObjs(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+
+   <%extraFuncs%>
   >>
 end simulationInitCppFile;
 
@@ -622,13 +625,6 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    <%init7%>
    >>
 end simulationInitAlgVarsCppFile;
-
-
-template simulationInitExtVarsCppFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for main cpp file for simulation target."
-::=
-  initExtVars(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-end simulationInitExtVarsCppFile;
 
 
 template simulationJacobianCppFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -2767,7 +2763,6 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
     >>
     %>
-    #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"
     #include "OMCpp<%fileNamePrefix%>Initialize.cpp"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.cpp"
     #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
@@ -5689,34 +5684,28 @@ template funStatement(list<DAE.Statement> statementLst, Text &varDecls, SimCode 
   statementLst |> stmt => algStatement(stmt, contextFunction, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; separator="\n"
 end funStatement;
 
-template initExtVars(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template destructExtObjs(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__))  then
-    let externalvarfuncs = functionCallExternalObjectsConstruct('<%lastIdentOfPath(modelInfo.name)%>Initialize', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let externalvarsfunccalls = functionCallExternalObjectsCall('<%lastIdentOfPath(modelInfo.name)%>Initialize', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
+    let externalObjsFuncs = functionExternalObjects('<%lastIdentOfPath(modelInfo.name)%>Initialize', extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
     <<
-    <%externalvarfuncs%>
-    <%externalvarsfunccalls%>
-    <%extraFuncs%>
+    <%externalObjsFuncs%>
     >>
   end match
-end initExtVars;
+end destructExtObjs;
 
-template initExtVarsDecl(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template destructExtObjsDecl(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__))  then
-    let externalobjsdecl = functionCallExternalObjectsDecl(extObjInfo, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
     <<
-    <%externalobjsdecl%>
 
-    void constructExternalObjects();
     void destructExternalObjects();
     bool _constructedExternalObjects;
     >>
   end match
-end initExtVarsDecl;
+end destructExtObjsDecl;
 
 
 template init(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
@@ -5917,87 +5906,24 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
 end init2;
 
 
-template functionCallExternalObjectsConstruct(Text className, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
-  "Generates function in simulation file."
+template functionExternalObjects(Text className, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+  "Generates the method destructExternalObjects."
 ::=
   match extObjInfo
   case EXTOBJINFO(__) then
-    let tors = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
-      let &preExp = buffer "" /*BUFD*/
-      let &varDecls = buffer "" /*BUFD*/
-      let arg = daeExp(exp, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      <<
-      void <%className%>::constructExternalObject_<%idx%>()
-      {
-        <%varDecls%>
-        <%preExp%>
-        <%cref(var.name, useFlatArrayNotation)%> = <%arg%>;
-      }
-
-      >>
-      ;separator="")
-    tors
-  end match
-end functionCallExternalObjectsConstruct;
-
-
-template functionCallExternalObjectsCall(Text className, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
-  "Generates function in simulation file."
-::=
-  match extObjInfo
-  case EXTOBJINFO(__) then
-    let &funDecls = buffer "" /*BUFD*/
-    let &varDecls = buffer "" /*BUFD*/
-    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
-      <<
-      constructExternalObject_<%idx%>();
-      >>
-      ;separator="\n")
     let dtorCalls = (vars |> var as SIMVAR(varKind=ext as EXTOBJ(), initialValue=SOME(exp)) hasindex idx =>
       <<
       _functions-><%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name, useFlatArrayNotation)%>);
       >>
       ;separator="\n")
     <<
-    void <%className%>::constructExternalObjects()
-    {
-      <%ctorCalls%>
-      <%aliases |> (var1, var2) => '<%cref(var1,useFlatArrayNotation)%> = <%cref(var2,useFlatArrayNotation)%>;' ;separator="\n"%>
-    }
-
     void <%className%>::destructExternalObjects()
     {
       <%dtorCalls%>
     }
-
     >>
   end match
-end functionCallExternalObjectsCall;
-
-
-template functionCallExternalObjectsDecl(ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
-  "Generates function in simulation file."
-::=
-  match extObjInfo
-  case EXTOBJINFO(__) then
-    let &funDecls = buffer "" /*BUFD*/
-    let &varDecls = buffer "" /*BUFD*/
-    let ctorCallsDecl = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
-      <<
-      void constructExternalObject_<%idx%>();
-      >>
-      ;separator="\n")
-    let dtorCallsDecl = (vars |> var as SIMVAR(initialValue=SOME(exp)) hasindex idx =>
-      <<
-      void destructExternalObject_<%idx%>();
-      >>
-      ;separator="\n")
-  <<
-  <%ctorCallsDecl%>
-  <%dtorCallsDecl%>
-  >>
-  end match
-end functionCallExternalObjectsDecl;
+end functionExternalObjects;
 
 
 template functionInitialEquations(list<SimEqSystem> initalEquations, Text methodName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime, Boolean assignToStartValues, Boolean overwriteOldStartValues)

@@ -78,7 +78,6 @@ template translateModel(SimCode simCode)
         else
           ""
 
-      let()= textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
       let() = textFile(simulationInitHeaderFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
 
       let &jacobianVarsInit = buffer "" /*BUFD*/

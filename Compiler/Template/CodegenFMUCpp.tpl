@@ -126,7 +126,6 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
     >>
     %>
-    #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"
     #include "OMCpp<%fileNamePrefix%>Initialize.cpp"
     #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
     #include "OMCpp<%fileNamePrefix%>StateSelection.cpp"
