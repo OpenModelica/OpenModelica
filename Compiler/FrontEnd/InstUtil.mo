@@ -4094,7 +4094,7 @@ algorithm
       Absyn.Exp aexp;
       Option<DAE.EqMod> eq;
       InstDims inst_dims;
-      SourceInfo info;
+      SourceInfo info, info2;
 
     // The size of function input arguments should not be set here, since they
     // may vary depending on the inputs. So we ignore any modifications on input
@@ -4135,7 +4135,7 @@ algorithm
       then
         (cache,dim3);
 
-    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre,info,inst_dims)
+    case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_,info2)),impl,st,doVect, _,pre,info,inst_dims)
       equation
         // adrpo: do not display error when running checkModel
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
@@ -4146,7 +4146,7 @@ algorithm
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         dim_str = printDimStr(dim1);
-        Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info);
+        Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info2::info::{});
       then
         fail();
 

@@ -1151,7 +1151,9 @@ algorithm
     // Multiple infos left, print a trace with the first info.
     case (_, _, info :: rest_info)
       equation
-        addSourceMessage(ERROR_FROM_HERE, {}, info);
+        if not listMember(info, rest_info) then
+          addSourceMessage(ERROR_FROM_HERE, {}, info);
+        end if;
         addMultiSourceMessage(inErrorMsg, inMessageTokens, rest_info);
       then
         ();

@@ -1217,6 +1217,7 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
     Option<Values.Value> modifierAsValue "modifier as Value option" ;
     Properties properties "properties" ;
     Absyn.Exp modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
+    SourceInfo info;
   end TYPED;
 
   record UNTYPED

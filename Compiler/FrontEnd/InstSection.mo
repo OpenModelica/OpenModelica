@@ -1297,6 +1297,7 @@ public function instEqEquation "author: LS, ELN
   input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial5;
   input Boolean inImplicit;
+  input SourceInfo extraInfo=Absyn.dummyInfo "We have 2 sources?";
   output DAE.DAElist outDae;
 algorithm
   outDae := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,source,inInitial5,inImplicit)
@@ -1405,7 +1406,7 @@ algorithm
         s2 = stringAppendList({t1_str,"=",t2_str});
         info = ElementSource.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(t1_str, t2_str, info);
-        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, info);
+        Error.addMultiSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, if extraInfo.fileName=="" then {info} else {extraInfo,info});
       then fail();
   end matchcontinue;
 end instEqEquation;

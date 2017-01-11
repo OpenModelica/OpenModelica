@@ -1459,8 +1459,9 @@ algorithm
       Integer dim_size1, dim_size2;
       String exp_str, exp_ty_str, dims_str;
       DAE.Dimensions ty_dims;
+      SourceInfo info;
 
-    case SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))
+    case SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty), info=info))
       equation
         ty_dim = Types.getDimensionNth(ty, 1);
         dim_size1 = Expression.dimensionSize(inDimension);
@@ -1473,8 +1474,8 @@ algorithm
         // rest of the expression's type is correct (will be caught later anyway).
         _ :: ty_dims = Types.getDimensions(ty);
         dims_str = ExpressionDump.dimensionsString(inDimension :: ty_dims);
-        Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
-          {exp_str, exp_ty_str, dims_str}, inInfo);
+        Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
+          {exp_str, exp_ty_str, dims_str}, info::inInfo::{});
       then
         false;
 

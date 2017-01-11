@@ -172,7 +172,7 @@ algorithm
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
       then
-        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e)),info));
+        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e,info)),info));
 
     // Delayed type checking
     case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME(e), info = info)),impl,_,_)
@@ -625,16 +625,16 @@ algorithm
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         if Flags.isSet(Flags.UPDMOD) then
           Debug.trace("Updated mod: ");
-          Debug.traceln(printModStr(DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,e)),info)));
+          Debug.traceln(printModStr(DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,e,info)),info)));
         end if;
       then
-        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e)),info));
+        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e,info)),info));
 
     case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,binding = SOME(DAE.TYPED(e_1,e_val,p,e)),info = info),impl,_)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
       then
-        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_1,e_val,p,e)),info));
+        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_1,e_val,p,e,info)),info));
 
     case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,binding = NONE(), info = info),impl,_)
       equation
@@ -1179,10 +1179,11 @@ protected
   Absyn.Exp ae;
   DAE.Type ty;
   DAE.EqMod eq_mod;
+  SourceInfo info;
 algorithm
   try
     SOME(DAE.TYPED(modifierAsValue =
-      SOME(Values.RECORD(orderd = values, comp = names, index = -1)))) := inEqMod;
+      SOME(Values.RECORD(orderd = values, comp = names, index = -1)), info=info)) := inEqMod;
 
     for name in names loop
       v :: values := values;
@@ -1191,7 +1192,7 @@ algorithm
         e := ValuesUtil.valueExp(v);
         ae := Expression.unelabExp(e);
         ty := Types.complicateType(Expression.typeof(e));
-        eq_mod := DAE.TYPED(e, SOME(v), DAE.PROP(ty, DAE.C_CONST()), ae);
+        eq_mod := DAE.TYPED(e, SOME(v), DAE.PROP(ty, DAE.C_CONST()), ae, info);
         outMod := DAE.MOD(inFinal, inEach, {}, SOME(eq_mod), inInfo);
         break;
       end if;
@@ -1495,7 +1496,7 @@ algorithm
     case DAE.TYPED(modifierAsValue = SOME(Values.ARRAY(valueLst = {}))) then NONE();
 
     // A normal typed binding.
-    case DAE.TYPED(exp, oval, DAE.PROP(ty, c), aexp)
+    case DAE.TYPED(exp, oval, DAE.PROP(ty, c), aexp, info)
       algorithm
         // Subscript the expression with the indices.
         for i in inIndices loop
@@ -1525,7 +1526,7 @@ algorithm
           oval := SOME(val);
         end if;
       then
-        SOME(DAE.TYPED(exp, oval, DAE.PROP(ty, c), aexp));
+        SOME(DAE.TYPED(exp, oval, DAE.PROP(ty, c), aexp, info));
 
     else
       algorithm
