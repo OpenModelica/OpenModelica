@@ -5289,23 +5289,6 @@ case FUNCTION(__)
 case EXTERNAL_FUNCTION(__) then
  let fname = underscorePath(name)
 match var
-/* The storage size of arrays is known at call time, so they can be allocated
- * before set_memory_state. Strings are not known, so we copy them, etc...
- */
-case var as VARIABLE(ty = T_STRING(__)) then
-    if not acceptMetaModelicaGrammar() then
-      // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
-      let strVar = tempDecl("string", &varDecls)
-
-      let &varAssign +=
-        <<
-        //_<%fname%> = <%strVar%>;
-        output = <%strVar%>;
-        >>
-      ""
-    else
-      let &varAssign += /*_<%fname%> */'output = <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
-      ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   let &varInits += '/* varOutput varInits(<%marker%>) */ <%\n%>'
