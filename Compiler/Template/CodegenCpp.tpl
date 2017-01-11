@@ -4373,16 +4373,16 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
  "Generates type for external function argument or return value."
 ::=
   let s = match type
-  case T_INTEGER(__)         then "int"
+  case T_INTEGER(__)     then "int"
   case T_REAL(__)        then "double"
   case T_STRING(__)      then "const char*"
   case T_BOOL(__)        then "int"
   case T_ENUMERATION(__) then "int"
   case T_ARRAY(__)       then extType2(ty,isInput,true)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "void *"
+                         then "void*"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then 'struct <%underscorePath(rname)%>'
+                         then 'struct <%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
@@ -5815,10 +5815,6 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       initializeDerVars();
       >>
       %>
-      /*external objects*/
-      if (_constructedExternalObjects)
-        destructExternalObjects();
-      _constructedExternalObjects = false;
 
    #if defined(__TRICORE__) || defined(__vxworks)
       //init inputs
@@ -5837,11 +5833,13 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
       //variable decls
       <%varDecls%>
 
+      //destruct external objects if already constructed in a previous call
+      if (_constructedExternalObjects)
+        destructExternalObjects();
+
       initParameterEquations();
 
-      //construct external objects once
-      if (!_constructedExternalObjects)
-        constructExternalObjects();
+      //mark external objects constructed during initParameterEquations
       _constructedExternalObjects = true;
 
       //bound start values
@@ -11318,22 +11316,24 @@ case SES_SIMPLE_ASSIGN(__) then
     _discrete_events->pre(<%cref(componentRef, useFlatArrayNotation)%>)=<%expPart%>;
     >>
   else
-   match exp
+  match exp
   case CREF(ty = t as  T_ARRAY(__)) then
-  <<
-  //Array assign
-  <%cref1(cref, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls, stateDerVectorName, useFlatArrayNotation)%> = <%expPart%>;
-  >>
+    <<
+    //Array assign
+    <%cref1(cref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,context,varDecls, stateDerVectorName, useFlatArrayNotation)%> = <%expPart%>;
+    >>
   else
-  let &assignExp = buffer if(assignToStartValues) then 'SystemDefaultImplementation::set<%crefStartValueType(cref)%>StartValue(' else ''
-  let &assignExp += cref1(cref, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
-  let &assignExp += if(assignToStartValues) then ',<%expPart%>,<%overwriteOldStartValue%>);' else ' = <%expPart%>;'
-  <<
-  <%if not assignToStartValues then '<%startFixedExp%>'%>
-  <%preExp%>
-  <%assignExp%>
-  >>
- end match
+    let startValueType = crefStartValueType(cref)
+    let lvalue = cref1(cref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+    let assignExp = if boolAnd(assignToStartValues, boolNot(stringEq(startValueType, "ExternalObject"))) then
+      'SystemDefaultImplementation::set<%startValueType%>StartValue(<%lvalue%>, <%expPart%>, <%overwriteOldStartValue%>);' else
+      '<%lvalue%> = <%expPart%>;'
+    <<
+    <%if not assignToStartValues then '<%startFixedExp%>'%>
+    <%preExp%>
+    <%assignExp%>
+    >>
+  end match
 end match
 end equationSimpleAssign;
 

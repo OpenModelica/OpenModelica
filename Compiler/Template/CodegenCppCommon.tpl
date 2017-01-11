@@ -602,6 +602,7 @@ template crefStartValueType(ComponentRef cr)
       else if stringEq(typeShort, "int") then "Int"
       else if stringEq(typeShort, "bool") then "Bool"
       else if stringEq(typeShort, "string") then "String"
+      else if stringEq(typeShort, "void*") then "ExternalObject"
       else 'ERROR:crefStartValueType <%typeShort%> '
     '<%typeString%>'
   case CREF_QUAL(__) then
