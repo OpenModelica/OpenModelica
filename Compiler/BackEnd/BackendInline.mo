@@ -512,7 +512,6 @@ algorithm
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
-      Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Option<DAE.VariableAttributes> values,values1;
       Option<BackendDAE.TearingSelect> ts;
@@ -525,10 +524,10 @@ algorithm
       DAE.VarInnerOuter io;
       Boolean unreplaceable;
 
-    case BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,ts,hideResult,comment,ct,io,unreplaceable) equation
+    case BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,arrayDim,source,values,ts,hideResult,comment,ct,io,unreplaceable) equation
       (bind,source,b1) = Inline.inlineExpOpt(bind,inElementList,source);
       (values1,source,b2) = Inline.inlineStartAttribute(values,source,inElementList);
-    then (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,ts,hideResult,comment,ct,io,unreplaceable), b1 or b2);
+    then (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,arrayDim,source,values1,ts,hideResult,comment,ct,io,unreplaceable), b1 or b2);
 
     else (inVar, false);
   end match;

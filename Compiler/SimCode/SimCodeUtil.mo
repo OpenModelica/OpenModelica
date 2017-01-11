@@ -9005,108 +9005,46 @@ algorithm
   initVal := matchcontinue(daelowVar)
     local
       Option<DAE.VariableAttributes> dae_var_attr;
-      Values.Value value;
       DAE.Exp e;
-
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value))) equation
-      e = ValuesUtil.valueExp(value);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
-
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = DAE.T_STRING(), values = dae_var_attr)) equation
-      e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
-
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), bindValue = SOME(value))) equation
-      e = ValuesUtil.valueExp(value);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
-
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), bindValue = SOME(value))) equation
-      e = ValuesUtil.valueExp(value);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
-
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), bindValue = SOME(value))) equation
-      e = ValuesUtil.valueExp(value);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(), bindValue = SOME(value))) equation
-      e = ValuesUtil.valueExp(value);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+    /* Parameters with constant binding */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindExp = SOME(e))) guard Expression.isConst(e)
+     then SOME(e);
 
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = SOME(value))) equation
-      e = ValuesUtil.valueExp(value);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
-
-    /* String - Parameters without value binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(), bindValue = NONE(), values = dae_var_attr)) equation
+    /* Parameters without constant binding. Investigate if it has start value */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr)) equation
       e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
-
-    /* Parameters without value binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr)) equation
-      e = DAEUtil.getStartAttrFail(dae_var_attr);
-      // lochel: #2597
-      // true = Expression.isConstValue(e);
-    then SOME(e);
+     then SOME(e);
 
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
-    then SOME(e);
+     then SOME(e);
 
-    case (BackendDAE.VAR(values = dae_var_attr))
-    guard(BackendVariable.isVarNonDiscreteAlg(daelowVar))
-    then SOME(DAEUtil.getStartAttrFail(dae_var_attr));
-
+    case (BackendDAE.VAR(values = dae_var_attr)) guard(BackendVariable.isVarNonDiscreteAlg(daelowVar))
+     then SOME(DAEUtil.getStartAttrFail(dae_var_attr));
 
     else NONE();
   end matchcontinue;

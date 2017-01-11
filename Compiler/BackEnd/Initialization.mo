@@ -1032,7 +1032,7 @@ algorithm
     case (BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), vars) equation
       false = BackendVariable.varFixed(inVar);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       vars = BackendVariable.addVar(preVar, vars);
     then (inVar, vars);
 
@@ -1954,7 +1954,7 @@ algorithm
       startValue = BackendVariable.varStartValue(var);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
 
@@ -1970,7 +1970,7 @@ algorithm
       preUsed = BaseHashSet.has(cr, hs);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
@@ -2095,13 +2095,11 @@ algorithm
       derVar = BackendVariable.copyVarNewName(derCR, var);
       derVar = BackendVariable.setVarDirection(derVar, DAE.BIDIR());
       derVar = BackendVariable.setBindExp(derVar, NONE());
-      derVar = BackendVariable.setBindValue(derVar, NONE());
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
-      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
@@ -2125,7 +2123,6 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
-      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue_));
 
@@ -2147,7 +2144,6 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
-      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -2259,7 +2255,6 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
-      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
@@ -2284,7 +2279,6 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
-      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
@@ -2336,7 +2330,6 @@ algorithm
           previousVar = BackendVariable.setVarKind(previousVar, BackendDAE.VARIABLE());
           previousVar = BackendVariable.setVarDirection(previousVar, DAE.BIDIR());
           previousVar = BackendVariable.setBindExp(previousVar, NONE());
-          previousVar = BackendVariable.setBindValue(previousVar, NONE());
           previousVar = BackendVariable.setVarFixed(previousVar, true);
           previousVar = BackendVariable.setVarStartValueOption(previousVar, SOME(DAE.CREF(cr, ty)));
           previousExp = Expression.crefExp(previousCR);

@@ -701,18 +701,11 @@ algorithm
       DAE.ComponentRef varName;
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp,exp1;
-      Values.Value bindValue;
 
     case (v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp)),(repl,vars))
       equation
         (exp1, _) = Expression.traverseExpBottomUp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1,NONE());
-      then (v,(repl_1,vars));
-
-    case (v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue)),(repl,vars))
-      equation
-        exp = ValuesUtil.valueExp(bindValue);
-        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then (v,(repl_1,vars));
 
     else (inVar,inTpl);
@@ -886,19 +879,12 @@ algorithm
       DAE.ComponentRef varName;
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp;
-      Values.Value bindValue;
     case (v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp),values=values),repl)
       equation
         true = DAEUtil.getProtectedAttr(values);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then (v,repl_1);
-    case (v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),repl)
-      equation
-        true = DAEUtil.getProtectedAttr(values);
-        true = BackendVariable.varFixed(v);
-        exp = ValuesUtil.valueExp(bindValue);
-        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
-      then (v,repl_1);
+
     else (inVar,inRepl);
   end matchcontinue;
 end protectedParametersFinder;
@@ -5690,7 +5676,7 @@ protected
 algorithm
   (BackendDAE.DAE(eqs, shared), _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, addTimeAsState1, 0);
   orderedVars := BackendVariable.emptyVars();
-  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE()), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE()), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
   var := BackendVariable.setVarFixed(var, true);
   var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
   orderedVars := BackendVariable.addVar(var, orderedVars);

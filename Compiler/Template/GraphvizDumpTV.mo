@@ -214,7 +214,6 @@ interface package GraphvizDumpTV
         DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
         DAE.Type varType "builtin type or enumeration" ;
         Option<DAE.Exp> bindExp "Binding expression e.g. for parameters" ;
-        Option<Values.Value> bindValue "binding value for parameters" ;
         DAE.InstDims arryDim "array dimensions on nonexpanded var" ;
         DAE.ElementSource source "origin of variable" ;
         Option<DAE.VariableAttributes> values "values on builtin attributes" ;

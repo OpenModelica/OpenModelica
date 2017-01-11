@@ -1024,7 +1024,6 @@ algorithm
   nStates := listLength(q);
   nStatesRef := qCref("nState", DAE.T_INTEGER_DEFAULT, {}, preRef);
   nStatesVar := createVarWithDefaults(nStatesRef, BackendDAE.PARAM(), DAE.T_INTEGER_DEFAULT);
-  //nStatesVar := BackendVariable.setBindValue(nStatesVar, SOME(Values.INTEGER(nStates)));
   nStatesVar := BackendVariable.setBindExp(nStatesVar, SOME(DAE.ICONST(nStates)));
   knowns := nStatesVar :: knowns;
 
@@ -1439,7 +1438,7 @@ Create a BackendDAE.Var with some defaults"
   input BackendDAE.Type varType;
   output BackendDAE.Var var;
 algorithm
-  var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), NONE(), {},
+  var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), {},
     DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(),false);
 end createVarWithDefaults;
 
@@ -1564,7 +1563,6 @@ protected
   DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
   BackendDAE.Type varType "built-in type or enumeration";
   Option<DAE.Exp> bindExp "Binding expression e.g. for parameters";
-  Option<Values.Value> bindValue "binding value for parameters";
   DAE.InstDims arryDim "array dimensions of non-expanded var";
   DAE.ElementSource source "origin of variable";
   Option<DAE.VariableAttributes> values "values on built-in attributes";
@@ -1578,7 +1576,7 @@ algorithm
   try
     (SOME(var), mt) := inVarModeTable;
     BackendDAE.VAR(varName, varKind, DAE.OUTPUT(), varParallelism, varType, bindExp,
-      bindValue, arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, DAE.OUTER()) := var;
+      arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, DAE.OUTER()) := var;
 
     DAE.SOURCE(instance=instance as Prefix.PRE()) := source;
     cref := PrefixUtil.prefixToCref(Prefix.PREFIX(instance,Prefix.CLASSPRE(SCode.PARAM())));
@@ -2612,8 +2610,8 @@ public function dumpVarStr
   input BackendDAE.Var inVar;
   output String outStr;
 protected
-  Option<String> s1,s2,s3;
-  String sVarName,sVarKind,sVarDirection,sVarType,sBindExp,sBindValue,sInstanceOpt,sIo;
+  Option<String> s1;
+  String sVarName,sVarKind,sVarDirection,sVarType,sBindExp,sInstanceOpt,sIo;
   Option<DAE.ComponentRef> crefOpt;
   // BackendDAE.Var
   DAE.ComponentRef varName "variable name";
@@ -2622,7 +2620,6 @@ protected
   DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
   BackendDAE.Type varType "built-in type or enumeration";
   Option<DAE.Exp> bindExp "Binding expression e.g. for parameters";
-  Option<Values.Value> bindValue "binding value for parameters";
   DAE.InstDims arryDim "array dimensions of non-expanded var";
   DAE.ElementSource source "origin of variable";
   Option<DAE.VariableAttributes> values "values on built-in attributes";
@@ -2633,15 +2630,13 @@ protected
   DAE.VarInnerOuter io;
 algorithm
   BackendDAE.VAR(varName, varKind, varDirection, varParallelism, varType,
-   bindExp, bindValue, arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, io) := inVar;
+   bindExp, arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, io) := inVar;
    sVarName := ComponentReference.crefStr(varName);
    sVarKind := BackendDump.kindString(varKind);
    sVarDirection := DAEDump.dumpDirectionStr(varDirection);
    sVarType := DAEDump.daeTypeStr(varType);
    s1 := Util.applyOption(bindExp, function ExpressionDump.dumpExpStr(inInteger=0));
    sBindExp := Util.getOptionOrDefault(s1, "");
-   s2 := Util.applyOption(bindValue, ValuesUtil.valString);
-   sBindValue := Util.getOptionOrDefault(s2, "");
    sInstanceOpt := PrefixUtil.printComponentPrefixStr(source.instance);
    sIo := match io
      case DAE.INNER() then "inner";
@@ -2651,7 +2646,7 @@ algorithm
    end match;
 
   outStr := sVarName + ": " + sIo + " " + sVarDirection + " " + sVarType + "=" +
-            sBindExp + ":" + sBindValue + "; in " + sInstanceOpt;
+            sBindExp + "; in " + sInstanceOpt;
 end dumpVarStr;
 
 protected function debugDumpMathematicaStr

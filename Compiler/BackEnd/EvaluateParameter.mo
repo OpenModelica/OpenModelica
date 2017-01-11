@@ -509,20 +509,6 @@ algorithm
         //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
      then ();
 
-    // Parameter with bindValue and fixed
-    case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=SOME(value))
-      equation
-        true = BackendVariable.varFixed(var);
-        e = ValuesUtil.valueExp(value);
-        v = BackendVariable.setVarFinal(var, true);
-        // update Vararray
-        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
-        // save replacement
-        repl = BackendVarTransform.addReplacement(repl, cr, e, NONE());
-        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e, NONE());
-        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
-     then ();
-
     // Parameter without bindExp but with start attribute and fixed
     //waurich: if there is unevaluated binding, dont take the start value as a binding replacement. compute the unevaluated binding!
     case BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), values=attr)
@@ -592,21 +578,6 @@ algorithm
         repl = BackendVarTransform.addReplacement(repl, cr, e1, NONE());
         replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e1, NONE());
         //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
-      then ();
-
-    case BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=SOME(value))
-      guard
-        BackendVariable.varFixed(var)
-      equation
-        e = ValuesUtil.valueExp(value);
-        // also set this var final because it is used for the calculation of another variable
-        v = BackendVariable.setVarFinal(var, true);
-        // update Vararray
-        globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
-        // save replacement
-        repl = BackendVarTransform.addReplacement(repl, cr, e, NONE());
-        replEvaluate = BackendVarTransform.addReplacement(replEvaluate, cr, e, NONE());
-        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e) + "\n");
       then ();
 
     case BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr)
@@ -894,7 +865,7 @@ algorithm
      then ();
 
     // Parameter without bind expression but with start attribute
-    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindValue=NONE(), values=attr, hideResult=hideResultExp) equation
+    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), values=attr, hideResult=hideResultExp) equation
       true = BackendVariable.varFixed(var);
       e = DAEUtil.getStartAttrFail(attr);
       // apply replacements

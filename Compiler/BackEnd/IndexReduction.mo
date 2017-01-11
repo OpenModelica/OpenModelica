@@ -1189,20 +1189,14 @@ algorithm
       DAE.ComponentRef cr;
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp;
-      Values.Value bindValue;
+
     case (BackendDAE.VAR(varName=cr,bindExp=SOME(exp)))
       guard BackendVariable.isFinalVar(inVar)
       equation
         repl1 = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
     then
       (repl1,true);
-    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),bindValue=SOME(bindValue)))
-      guard BackendVariable.isFinalVar(inVar)
-      equation
-        exp = ValuesUtil.valueExp(bindValue);
-        repl1 = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
-    then
-      (repl1,true);
+
     case (BackendDAE.VAR(varName=cr,bindExp=NONE(),values=values))
       guard BackendVariable.isFinalVar(inVar)
       equation
@@ -1210,6 +1204,7 @@ algorithm
         repl1 = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
     then
       (repl1,true);
+
     else (repl, b);
   end matchcontinue;
 end replaceFinalVarsGetExp;
@@ -3335,7 +3330,7 @@ algorithm
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
         //kind = if_(intGt(n,1),BackendDAE.DUMMY_DER(),BackendDAE.STATE(1,NONE()));
-        var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE()),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false);
+        var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE()),dir,prl,tp,NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false);
       then (var,ht);
    // state
     case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount,derName=derName)),_,_)
@@ -3481,7 +3476,7 @@ algorithm
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
         kind = if intGt(diffCount,0) then BackendDAE.STATE(diffCount,NONE()) else BackendDAE.DUMMY_DER();
-        var = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false);
+        var = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),dim,source,odattr,ts,hideResult,comment,ct,io,false);
         (vlst,ht,n) = makeHigherStatesRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,var::iVarLst,ht,iN+1);
       then (vlst,ht,n);
     // finished
@@ -3535,7 +3530,6 @@ algorithm
       DAE.VarParallelism prl;
       DAE.Type tp;
       Option<DAE.Exp> bind;
-      Option<Values.Value> value;
       DAE.InstDims dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
@@ -3566,22 +3560,22 @@ algorithm
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
       then (var,(vars,so,varlst,ht));
     // state, replaceable with known derivative
-    case (var as BackendDAE.VAR(name,BackendDAE.STATE(derName=SOME(_)),dir,prl,tp,bind,value,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(derName=SOME(_)),dir,prl,tp,bind,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
         cr = ComponentReference.crefPrefixDer(name);
         source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
     // state replacable without unknown derivative
-    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,value,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=diffcount,derName=NONE()),dir,prl,tp,bind,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffcount,1,name,name,var,vars,so,varlst,ht);
         // dummy_der name vor Source information
         cr = ComponentReference.crefPrefixDer(name);
         source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
     else (inVar,inTpl);
   end matchcontinue;
 end makeAllDummyVarandDummyDerivativeRepl;
@@ -3647,7 +3641,7 @@ algorithm
         /* Dummy variables are algebraic variables without start value, min/max, .., hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
-        var = BackendDAE.VAR(name,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io, false);
+        var = BackendDAE.VAR(name,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),dim,source,odattr,ts,hideResult,comment,ct,io, false);
         (vlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,so,var::iVarLst,ht);
       then (vlst,ht);
     else
@@ -3733,9 +3727,9 @@ algorithm
         /* Dummy variables are algebraic variables, hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
-        dummy_derstate = BackendDAE.VAR(dummyderName,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io, false);
+        dummy_derstate = BackendDAE.VAR(dummyderName,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),dim,source,odattr,ts,hideResult,comment,ct,io, false);
         kind = if intEq(dn,0) then BackendDAE.DUMMY_STATE() else BackendDAE.DUMMY_DER();
-        dummy_state = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),NONE(),dim,source,odattr,ts,hideResult,comment,ct,io, false);
+        dummy_state = BackendDAE.VAR(name,kind,dir,prl,tp,NONE(),dim,source,odattr,ts,hideResult,comment,ct,io, false);
         dummy_state = if intEq(dn,0) then inVar else dummy_state;
         dummy_state = BackendVariable.setVarKind(dummy_state, kind);
         vars = BackendVariable.addVar(dummy_derstate, vars);
@@ -4017,7 +4011,6 @@ algorithm
       DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
-      Option<Values.Value> v;
       list<DAE.Dimension> dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
@@ -4040,7 +4033,6 @@ algorithm
               varParallelism = prl,
               varType = tp,
               bindExp = bind,
-              bindValue = v,
               arryDim = dim,
               source = source,
               values = attr,
@@ -4052,7 +4044,7 @@ algorithm
     equation
       b = intGt(counter,diffcounter);
       diffcounter = if b then counter else diffcounter;
-      var = BackendDAE.VAR(cr, BackendDAE.STATE(diffcounter,dcr), dir, prl, tp, bind, v, dim, source, attr, ts, hideResult, comment, ct,io, false);
+      var = BackendDAE.VAR(cr, BackendDAE.STATE(diffcounter,dcr), dir, prl, tp, bind, dim, source, attr, ts, hideResult, comment, ct,io, false);
       vars = if b then BackendVariable.addVar(var, inVars) else inVars;
       changedVars = List.consOnTrue(b,i,iChangedVars);
       (vars,ilst) = increaseDifferentiation(vlst,ilst,counter,vars,changedVars);

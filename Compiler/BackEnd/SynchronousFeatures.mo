@@ -1741,14 +1741,13 @@ end substituteExpsCall;
 protected function createVar
   input DAE.ComponentRef inComp;
   input DAE.Type inType;
-  input Option<Values.Value> inValue = NONE();
   output BackendDAE.Var outVar;
 algorithm
   outVar := BackendDAE.VAR (
                   varName = inComp, varKind = BackendDAE.VARIABLE(),
                   varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
                   varType = inType, bindExp = NONE(),
-                  bindValue = inValue, arryDim = {}, source = DAE.emptyElementSource,
+                  arryDim = {}, source = DAE.emptyElementSource,
                   values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
                   hideResult = DAE.BCONST(false),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),

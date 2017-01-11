@@ -222,7 +222,6 @@ uniontype Var "variables"
     .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
     Type varType "built-in type or enumeration";
     Option< .DAE.Exp> bindExp "Binding expression e.g. for parameters";
-    Option<Values.Value> bindValue "binding value for parameters";
     .DAE.InstDims arryDim "array dimensions of non-expanded var";
     .DAE.ElementSource source "origin of variable";
     Option< .DAE.VariableAttributes> values "values on built-in attributes";

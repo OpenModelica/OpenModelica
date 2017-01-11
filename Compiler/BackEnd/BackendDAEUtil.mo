@@ -379,7 +379,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -628,94 +628,6 @@ algorithm
     else (var,nDiscreteVars);
   end match;
 end countDiscreteVars3;
-
-protected function calculateValues "author: PA
-  This function calculates the values from the parameter binding expressions.
-  modefication: wbraun
-  Use really only parameter bindungs for evaluation."
-  input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.BackendDAE outBackendDAE;
-algorithm
-  outBackendDAE := match inBackendDAE
-    local
-      BackendDAE.Variables globalKnownVars;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      BackendDAE.EqSystems eqs;
-      BackendDAE.Shared shared;
-
-    case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, cache=cache, graph=graph))
-      algorithm
-        globalKnownVars := BackendVariable.traverseBackendDAEVarsWithUpdate (
-            globalKnownVars, function calculateValueTraverser(inEnv = graph), cache );
-        // Reverse the order of the known vars in the hashtable. This is stupid,
-        // but things break otherwise.
-        shared.globalKnownVars := BackendVariable.listVar(BackendVariable.varList(globalKnownVars));
-      then
-        BackendDAE.DAE(eqs, shared);
-  end match;
-end calculateValues;
-
-protected function calculateValueTraverser
-  input BackendDAE.Var inVar;
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  output BackendDAE.Var outVar;
-  output FCore.Cache outCache = inCache;
-algorithm
-  if BackendVariable.isParam(inVar) then
-    outVar := calculateValue(inVar, inCache, inEnv);
-  else
-    outVar := inVar;
-  end if;
-end calculateValueTraverser;
-
-protected function calculateValue
-  input BackendDAE.Var inVar;
-  input FCore.Cache cache;
-  input FCore.Graph graph;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar := matchcontinue(inVar)
-    local
-      BackendDAE.Var var;
-      DAE.ComponentRef cr;
-      BackendDAE.VarKind vk;
-      DAE.VarDirection vd;
-      DAE.VarParallelism prl;
-      BackendDAE.Type ty;
-      DAE.Exp e;
-      DAE.InstDims dims;
-      DAE.ElementSource src;
-      Option<DAE.VariableAttributes> va;
-      Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
-      Option<SCode.Comment> c;
-      DAE.ConnectorType ct;
-      Values.Value v;
-      DAE.VarInnerOuter io;
-    case BackendDAE.VAR(bindValue = SOME(_))
-      equation
-        print("*** Not Ceval.eval var: ");
-        BackendDump.printVar(inVar);
-        print("\n");
-      then
-        inVar;
-    case BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
-          varType = ty, bindExp = SOME(e), arryDim = dims, source = src,
-          values = va, tearingSelectOption = ts, hideResult = hideResult, comment = c, connectorType = ct, innerOuter = io)
-      equation
-        // wbraun: Evaluate parameter expressions only if they are
-        //         constant at compile time otherwise we solve them
-        //         much faster at runtime.
-        //((e, _)) = Expression.traverseExpBottomUp(e, replaceCrefsWithValues, (vars, cr_orign));
-        true = Expression.isConst(e);
-        (_, v, _) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
-      then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, ts, hideResult, c, ct, io, false);
-    else inVar;
-  end matchcontinue;
-end calculateValue;
 
 public function replaceCrefsWithValues
   input DAE.Exp inExp;
@@ -6427,7 +6339,6 @@ algorithm
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
-      Option<Values.Value> bindValue;
       DAE.ElementSource source;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -6439,22 +6350,22 @@ algorithm
     case NONE()
     then (NONE(), inTypeA);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), bindValue, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
       (e1_, ext_arg_1) = func(e1, inTypeA);
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
       if referenceEq(e1,e1_) and referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), bindValue, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
       end if;
     then (v, ext_arg_2);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
       if referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
       end if;
     then (v, ext_arg_2);
 
@@ -6918,10 +6829,7 @@ algorithm
   simDAE := Initialization.removeInitializationStuff(simDAE);
 
   // post-optimization phase
-  simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
-
-  outSimDAE := calculateValues(simDAE);
-  execStat("calculateValue");
+  outSimDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
     BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");

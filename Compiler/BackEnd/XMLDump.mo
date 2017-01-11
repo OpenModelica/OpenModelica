@@ -47,7 +47,6 @@
 // =============================================================================
 // With a delaration like:
 // parameter Real a = 1;
-// the bindValue Optional value of the BackendDAE.VAR
 // record is everytime empty.  Why?
 // =============================================================================
 
@@ -257,14 +256,11 @@ import ZeroCrossings;
   protected constant String VAR_ATTR_FIXED        = "fixed";
 
   //Name of the element containing the binding information
-  //for the variables (both expression (BindExpression) and value (BindValue).
+  //for the variables (bindExpression)
   //For example consider:
   //parameter Real a = 3*2+e; //With Real constant e = 3;
   //BindExpression 3*2+e
-  //BindValue = 9
-  protected constant String BIND_VALUE_EXPRESSION   = "bindValueExpression";
   protected constant String BIND_EXPRESSION         = "bindExpression";
-  protected constant String BIND_VALUE              = "bindValue";
 
   //Name of the element representing the subscript, for example the array's index.
   protected constant String SUBSCRIPT               = "subscript";
@@ -618,50 +614,29 @@ algorithm
   end match;
 end dumpBltInvolvedEquations1;
 
-protected function dumpBindValueExpression "
+protected function dumpBindExpression "
 This function is necessary for printing the
-BindValue and BindExpression of a variable,
-if present. If there are not DAE.Exp nor
-Values.Value passed as input nothing is
-printed.
+BindExpression of a variable, if present.
+If there is no DAE.Exp passed as input
+nothing is printed.
 "
   input Option<DAE.Exp> inOptExpExp;
-  input Option<Values.Value> inOptValuesValue;
   input Boolean addMathMLCode;
-
-  algorithm
-    _:=
-  matchcontinue (inOptExpExp,inOptValuesValue,addMathMLCode)
-      local
-        DAE.Exp e;
-        Values.Value b;
-        Boolean addMMLCode;
-  case(NONE(),NONE(),_)
-    equation
-    then();
-  case(SOME(_),NONE(),addMMLCode)
-    equation
-      dumpStrOpenTag(BIND_VALUE_EXPRESSION);
-      dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMMLCode);
-      dumpStrCloseTag(BIND_VALUE_EXPRESSION);
-    then();
-  case(NONE(),SOME(_),addMMLCode)
-    equation
-      dumpStrOpenTag(BIND_VALUE_EXPRESSION);
-      dumpOptValue(inOptValuesValue,BIND_VALUE,addMMLCode);
-      dumpStrCloseTag(BIND_VALUE_EXPRESSION);
-    then();
-  case(SOME(_),SOME(_),addMMLCode)
-    equation
-      dumpStrOpenTag(BIND_VALUE_EXPRESSION);
-      dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMMLCode);
-      dumpOptValue(inOptValuesValue,BIND_VALUE,addMMLCode);
-      dumpStrCloseTag(BIND_VALUE_EXPRESSION);
-    then();
-  case(_,_,_)
-    then ();
-  end matchcontinue;
-end dumpBindValueExpression;
+algorithm
+    _ := match (inOptExpExp)
+    case(NONE())
+      equation
+      then();
+    case(SOME(_))
+      equation
+        // dumpStrOpenTag(BIND_EXPRESSION);
+        dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMathMLCode);
+        // dumpStrCloseTag(BIND_EXPRESSION);
+      then();
+    case(_)
+      then ();
+  end match;
+end dumpBindExpression;
 
 protected function dumpComment "
 Function for adding comments using the XML tag.
@@ -2662,34 +2637,6 @@ algorithm
 end dumpOptionDAEStateSelect;
 
 
-protected function dumpOptValue "
- This function print an Optional Values.Value variable
-as one attribute of a within a specific XML element.
-It takes the optional Values.Value and element name
-as input an prints on a new line a string to the
-standard output like:
-<Content = \"ExpressionDump.printExpStr(ValuesUtil.valueExp(Optional<Values.Value>)/>
-"
-  input Option<Values.Value> inValueValueOption;
-  input String Content;
-  input Boolean addMathMLCode;
-algorithm
-  _ :=
-  match (inValueValueOption,Content,addMathMLCode)
-    local
-      Values.Value v;
-      Boolean addMMLCode;
-    case (NONE(),_,_)  then ();
-    case (SOME(v),_,addMMLCode)
-      equation
-        dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(ValuesUtil.valueExp(v)));
-        dumpExp(ValuesUtil.valueExp(v),addMMLCode);
-        dumpStrCloseTag(Content);
-      then ();
-  end match;
-end dumpOptValue;
-
-
 protected function dumpRow
 "Prints a list of expressions to a string."
   input list<DAE.Exp> es_1;
@@ -3312,7 +3259,6 @@ algorithm
                             varDirection = dir,
                             varType = var_type,
                             bindExp = e,
-                            bindValue = b,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -3321,7 +3267,7 @@ algorithm
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
                      dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
-        dumpBindValueExpression(e,b,addMMLCode);
+        dumpBindExpression(e,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
@@ -3375,7 +3321,6 @@ algorithm
                             varDirection = dir,
                             varType = var_type,
                             bindExp = e,
-                            bindValue = b,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -3384,7 +3329,7 @@ algorithm
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                         getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
                         DAEDump.dumpCommentAnnotationStr(comment));
-        dumpBindValueExpression(e,b,addMMLCode);
+        dumpBindExpression(e,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
