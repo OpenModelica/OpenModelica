@@ -95,7 +95,6 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // <knownVariables dimension=\"2\">
 // <variablesList>
 // <variable id=\"1\" name=\"b1.ay\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <bindValueExpression>
 // <bindExpression string=\"-9.800000000000001\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -104,7 +103,6 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </math>
 // </MathML>
 // </bindExpression>
-// </bindValueExpression>
 // </variable>
 // <variable id=\"2\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>

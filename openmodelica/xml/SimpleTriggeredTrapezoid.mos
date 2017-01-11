@@ -109,7 +109,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <knownVariables dimension=\"4\">
 // <variablesList>
 // <variable id=\"1\" name=\"tt.amplitude\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Amplitude of trapezoid\">
-// <bindValueExpression>
 // <bindExpression string=\"1.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -118,10 +117,8 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </bindExpression>
-// </bindValueExpression>
 // </variable>
 // <variable id=\"2\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
-// <bindValueExpression>
 // <bindExpression string=\"0.5\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -130,7 +127,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </bindExpression>
-// </bindValueExpression>
 // <attributesValues>
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
@@ -159,7 +155,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </attributesValues>
 // </variable>
 // <variable id=\"3\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
-// <bindValueExpression>
 // <bindExpression string=\"0.5\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -168,7 +163,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </bindExpression>
-// </bindValueExpression>
 // <attributesValues>
 // <quantity string=\"&quot;Time&quot;\">
 // <MathML>
@@ -197,7 +191,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </attributesValues>
 // </variable>
 // <variable id=\"4\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
-// <bindValueExpression>
 // <bindExpression string=\"1.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -206,14 +199,12 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </bindExpression>
-// </bindValueExpression>
 // </variable>
 // </variablesList>
 // </knownVariables>
 // <aliasVariables dimension=\"1\">
 // <variablesList>
 // <variable id=\"1\" name=\"tt.u\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Boolean input signal\">
-// <bindValueExpression>
 // <bindExpression string=\"b\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -222,7 +213,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </bindExpression>
-// </bindValueExpression>
 // </variable>
 // </variablesList>
 // </aliasVariables>

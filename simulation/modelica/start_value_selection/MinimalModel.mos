@@ -72,8 +72,8 @@ buildModel(MinimalModel); getErrroString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (2)
 // ========================================
-// 1: b:VARIABLE()  = 0.0  type: Real 
-// 2: const_k:PARAM(start = 1.0 )  = -15.0  type: Real 
+// 1: const_k:PARAM(start = 1.0 )  = -15.0  type: Real 
+// 2: b:VARIABLE()  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
