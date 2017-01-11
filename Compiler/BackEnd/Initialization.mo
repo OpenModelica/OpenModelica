@@ -806,14 +806,7 @@ algorithm
   allParameterEqns := BackendEquation.emptyEqns();
   otherVariables := BackendVariable.emptyVars();
   (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectParameter2, (allParameters, allParameterEqns, otherVariables));
-
-  // FIXME: This if clause is a workaround. Remove it as soon as cpp runtime is
-  // adapted to handle external objects together with parameters.
-  // see ticket:3446
-  if not stringEq(Config.simCodeTarget(), "Cpp") then
-    (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.externalObjects, selectParameter2, (allParameters, allParameterEqns, otherVariables));
-  end if;
-
+  (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.externalObjects, selectParameter2, (allParameters, allParameterEqns, otherVariables));
   nParam := BackendVariable.varsSize(allParameters);
 
   if nParam > 0 then
