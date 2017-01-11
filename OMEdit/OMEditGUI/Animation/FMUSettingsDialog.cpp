@@ -57,7 +57,7 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* pVisualize
   //the widgets
   QLabel *solverLabel = new QLabel(tr("Solver"));
   mpSolverComboBox = new QComboBox();
-  mpSolverComboBox->addItem(QString("Explicit Euler"), QVariant(Solver::EULER_FORWARD));
+  mpSolverComboBox->addItem(QString("Explicit Euler"), QVariant((int)Solver::EULER_FORWARD));
   Label *stepsizeLabel = new Label(tr("Step Size [s]"));
   mpStepSizeLineEdit = new QLineEdit(QString::number(mStepSize));
   Label *handleEventsLabel = new Label(tr("Process Events in FMU"));
