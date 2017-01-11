@@ -55,7 +55,6 @@ private:
   VisualizerFMU *mpVisualizerFMU;
   double mStepSize;
   double mRenderFreq;
-  Solver mSolver;
   bool mHandleEvents;
   QLineEdit* mpStepSizeLineEdit;
   QCheckBox* mpHandleEventsCheck;

@@ -49,8 +49,7 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* pVisualize
   : QDialog(pParent),
     mpVisualizerFMU(pVisualizerFMU),
     mStepSize(0.001),
-    mRenderFreq(0.1),
-    mSolver(Solver::EULER_FORWARD)
+    mRenderFreq(0.1)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   //create dialog
@@ -58,7 +57,7 @@ FMUSettingsDialog::FMUSettingsDialog(QWidget *pParent, VisualizerFMU* pVisualize
   //the widgets
   QLabel *solverLabel = new QLabel(tr("Solver"));
   mpSolverComboBox = new QComboBox();
-  mpSolverComboBox->addItem(QString("Explicit Euler"));
+  mpSolverComboBox->addItem(QString("Explicit Euler"), QVariant(Solver::EULER_FORWARD));
   Label *stepsizeLabel = new Label(tr("Step Size [s]"));
   mpStepSizeLineEdit = new QLineEdit(QString::number(mStepSize));
   Label *handleEventsLabel = new Label(tr("Process Events in FMU"));
@@ -107,12 +106,8 @@ void FMUSettingsDialog::saveSimSettings()
   if (!mpHandleEventsCheck->isChecked()){
     handleEvents = false;
   };
-  //solver
-  QString s = mpSolverComboBox->currentText();
-  if (0 == s.compare(QString("explicit euler"))) {
-    Solver solver = Solver::EULER_FORWARD;
-  }
   //store in FMU simulator
-  mpVisualizerFMU->setSimulationSettings(stepSize, mSolver, handleEvents);
+  mpVisualizerFMU->setSimulationSettings(stepSize, static_cast<Solver>(mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt()),
+                                         handleEvents);
   accept();
 }
