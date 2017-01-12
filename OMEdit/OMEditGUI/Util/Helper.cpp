@@ -49,7 +49,7 @@ QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;TIFF (*.tiff)";
-QString Helper::bitmapFileTypes = "PNG image (*.png);Windows BMP image (*.bmp);JPEG (*.jpg *.jpeg)";
+QString Helper::bitmapFileTypes = "Image Files (*.png *.bmp *.jpg *.jpeg);;PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info Files (*_info.json)";
@@ -680,6 +680,8 @@ QString GUIMessages::getMessage(int type)
           .arg(Helper::simulate);
     case MULTIPLE_DECLARATIONS_COMPONENT:
       return tr("Multiple declarations of component <b>%1</b> are found.");
+    case GDB_ERROR:
+      return tr("Following error has occurred <b>%1</b> GDB arguments are <b>\"%2\"</b>");
     default:
       return "";
   }

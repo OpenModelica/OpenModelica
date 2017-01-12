@@ -46,16 +46,22 @@ class SimulationProcessThread : public QThread
 public:
   SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget);
   QProcess* getCompilationProcess() {return mpCompilationProcess;}
+  void setCompilationProcessKilled(bool killed) {mIsCompilationProcessKilled = killed;}
+  bool isCompilationProcessKilled() {return mIsCompilationProcessKilled;}
   bool isCompilationProcessRunning() {return mIsCompilationProcessRunning;}
   QProcess* getSimulationProcess() {return mpSimulationProcess;}
+  void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
+  bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 protected:
   virtual void run();
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
   QProcess *mpCompilationProcess;
+  bool mIsCompilationProcessKilled;
   bool mIsCompilationProcessRunning;
   QProcess *mpSimulationProcess;
+  bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
 
   void compileModel();
@@ -64,10 +70,12 @@ private slots:
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();
+  void compilationProcessError(QProcess::ProcessError error);
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessStarted();
   void readSimulationStandardOutput();
   void readSimulationStandardError();
+  void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 signals:
   void sendCompilationStarted();

@@ -92,6 +92,7 @@ public:
   bool isRootItem() {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
   LibraryTreeItem* childAt(int index) const {return mChildren.at(index);}
+  QList<LibraryTreeItem*> childrenItems() {return mChildren;}
   LibraryType getLibraryType() {return mLibraryType;}
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}

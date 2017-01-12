@@ -120,17 +120,15 @@ class FileDataNotifier : public QThread
 public:
   FileDataNotifier(const QString fileName);
   void exit(int retcode = 0);
-  QByteArray read(qint64 maxlen);
 private:
   QFile mFile;
   bool mStop;
-  qint64 mBytesAvailable;
 protected:
   void run();
 public slots:
   void start(Priority = InheritPriority);
 signals:
-  void bytesAvailable(qint64 bytes);
+  void sendData(QString data);
 };
 
 /*!
@@ -444,6 +442,9 @@ namespace Utilities {
   bool isModelicaFile(QString extension);
   void insertText(QPlainTextEdit *pPlainTextEdit, QString text, QTextCharFormat format = QTextCharFormat());
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
+#ifdef WIN32
+  QString getGDBPath();
+#endif
 
   namespace FileIconProvider {
     class FileIconProviderImplementation : public QFileIconProvider

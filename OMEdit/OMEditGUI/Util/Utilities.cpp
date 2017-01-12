@@ -149,7 +149,6 @@ FileDataNotifier::FileDataNotifier(const QString fileName)
 {
   mFile.setFileName(fileName);
   mStop = false;
-  mBytesAvailable = 0;
 }
 
 /*!
@@ -162,17 +161,6 @@ void FileDataNotifier::exit(int retcode)
 {
   mStop = true;
   QThread::exit(retcode);
-}
-
-/*!
- * \brief FileDataNotifier::read
- * Reads the bytes from the file.
- * \param maxlen
- * \return
- */
-QByteArray FileDataNotifier::read(qint64 maxlen)
-{
-  return mFile.read(maxlen);
 }
 
 /*!
@@ -190,9 +178,8 @@ void FileDataNotifier::run()
         break;
       }
       // if file has bytes available to read.
-      if (mFile.bytesAvailable() > mBytesAvailable) {
-        mBytesAvailable = mFile.bytesAvailable();
-        emit bytesAvailable(mFile.bytesAvailable());
+      if (mFile.bytesAvailable() > 0) {
+        emit sendData(QString(mFile.readAll()));
       }
       Sleep::sleep(1);
     }
@@ -812,6 +799,25 @@ QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,doub
 
   return R;
 }
+
+#ifdef WIN32
+QString Utilities::getGDBPath()
+{
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+  const char *sgdb = "/tools/msys/mingw32/bin/gdb.exe";
+#endif
+#if defined(__MINGW64__)
+  const char *sgdb = "/tools/msys/mingw64/bin/gdb.exe";
+#endif
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty()) {
+    return QString(Helper::OpenModelicaHome).append(sgdb);
+  } else {
+    QString qOMDEV = QString(OMDEV).replace("\\", "/");
+    return QString(qOMDEV).append(sgdb);
+  }
+}
+#endif
 
 Utilities::FileIconProvider::FileIconProviderImplementation *instance()
 {

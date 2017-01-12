@@ -828,6 +828,9 @@ bool ShapePropertiesDialog::applyShapeProperties()
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
   if (mpLineAnnotation) {
     lineType = mpLineAnnotation->getLineType();
+    if (lineType == LineAnnotation::ConnectionType) {
+      mpLineAnnotation->adjustGeometries();
+    }
   }
   // if nothing has changed then just simply return true.
   if (mOldAnnotation.compare(mpShapeAnnotation->getOMCShapeAnnotation()) == 0) {

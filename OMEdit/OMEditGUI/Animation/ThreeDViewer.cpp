@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -9,9 +9,8 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -29,22 +28,43 @@
  *
  */
 /*
- * @author Volker Waurich <volker.waurich@tu-dresden.de>
+ * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef ANIMATIONWINDOW_H
-#define ANIMATIONWINDOW_H
+#include "ThreeDViewer.h"
+#include "Visualizer.h"
 
-#include "AbstractAnimationWindow.h"
-
-class AnimationWindow : public AbstractAnimationWindow
+/*!
+ * \class ThreeDViewer
+ * \brief A QMainWindow for 3d view.
+ */
+/*!
+ * \brief ThreeDViewer::ThreeDViewer
+ * \param pParent
+ */
+ThreeDViewer::ThreeDViewer(QWidget *pParent)
+  : AbstractAnimationWindow(pParent)
 {
-  Q_OBJECT
-public:
-  AnimationWindow(QWidget *pParent);
-  ~AnimationWindow();
+  createActions();
+}
 
-  void createActions() override;
-};
+/*!
+ * \brief ThreeDViewer::~ThreeDViewer
+ */
+ThreeDViewer::~ThreeDViewer()
+{
+  if (mpVisualizer) {
+    delete mpVisualizer;
+  }
+}
 
-#endif // ANIMATIONWINDOW_H
+/*!
+ * \brief ThreeDViewer::createActions
+ */
+void ThreeDViewer::createActions()
+{
+  AbstractAnimationWindow::createActions();
+  mpAnimationToolBar->addWidget(mpPerspectiveDropDownBox);
+  mpAnimationToolBar->addAction(mpRotateCameraLeftAction);
+  mpAnimationToolBar->addAction(mpRotateCameraRightAction);
+}

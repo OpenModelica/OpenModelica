@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -9,9 +9,8 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -29,22 +28,21 @@
  *
  */
 /*
- * @author Volker Waurich <volker.waurich@tu-dresden.de>
+ * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef ANIMATIONWINDOW_H
-#define ANIMATIONWINDOW_H
+#ifndef THREEDVIEWER_H
+#define THREEDVIEWER_H
 
 #include "AbstractAnimationWindow.h"
 
-class AnimationWindow : public AbstractAnimationWindow
+class ThreeDViewer : public AbstractAnimationWindow
 {
   Q_OBJECT
 public:
-  AnimationWindow(QWidget *pParent);
-  ~AnimationWindow();
-
+  ThreeDViewer(QWidget *pParent);
+  ~ThreeDViewer();
   void createActions() override;
 };
 
-#endif // ANIMATIONWINDOW_H
+#endif // THREEDVIEWER_H

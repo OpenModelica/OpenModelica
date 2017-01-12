@@ -40,8 +40,10 @@ SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimula
   : QThread(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
 {
   mpCompilationProcess = 0;
+  setCompilationProcessKilled(false);
   mIsCompilationProcessRunning = false;
   mpSimulationProcess = 0;
+  setSimulationProcessKilled(false);
   mIsSimulationProcessRunning = false;
 }
 
@@ -68,10 +70,16 @@ void SimulationProcessThread::compileModel()
   mpCompilationProcess = new QProcess;
   SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   mpCompilationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
+  qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()), Qt::DirectConnection);
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()), Qt::DirectConnection);
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()), Qt::DirectConnection);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
+#else
+  connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
+#endif
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)), Qt::DirectConnection);
   QString numProcs;
   if (simulationOptions.getNumberOfProcessors() == 0) {
@@ -89,16 +97,16 @@ void SimulationProcessThread::compileModel()
 #endif
   args << simulationOptions.getOutputFileName() << pSimulationPage->getTargetCompilerComboBox()->currentText() << omPlatform << "parallel" << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
-  mpCompilationProcess->start(compilationProcessPath, args);
   emit sendCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
+  mpCompilationProcess->start(compilationProcessPath, args);
 #else
   int numProcsInt = numProcs.toInt();
   if (numProcsInt > 1) {
     args << "-j" + numProcs;
   }
   args << "-f" << simulationOptions.getOutputFileName() + ".makefile";
-  mpCompilationProcess->start("make", args);
   emit sendCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
+  mpCompilationProcess->start("make", args);
 #endif
 }
 
@@ -115,6 +123,11 @@ void SimulationProcessThread::runSimulationExecutable()
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()), Qt::DirectConnection);
   connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()), Qt::DirectConnection);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
+#else
+  connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
+#endif
   connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)), Qt::DirectConnection);
   QStringList args(QString("-port=").append(QString::number(mpSimulationOutputWidget->getTcpServer()->serverPort())));
   args << "-logFormat=xmltcp" << simulationOptions.getSimulationFlags();
@@ -129,8 +142,8 @@ void SimulationProcessThread::runSimulationExecutable()
   processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
   mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #endif
-  mpSimulationProcess->start(fileName, args);
   emit sendSimulationOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
+  mpSimulationProcess->start(fileName, args);
 }
 
 /*!
@@ -162,6 +175,23 @@ void SimulationProcessThread::readCompilationStandardOutput()
 void SimulationProcessThread::readCompilationStandardError()
 {
   emit sendCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
+}
+
+/*!
+ * \brief SimulationProcessThread::compilationProcessError
+ * Slot activated when mpCompilationProcess errorOccurred signal is raised.\n
+ * Notifies the SimulationOutputWidget about the erro by emitting the sendCompilationOutput signal.
+ * \param error
+ */
+void SimulationProcessThread::compilationProcessError(QProcess::ProcessError error)
+{
+  Q_UNUSED(error);
+  /* this signal is raised when we kill the compilation process forcefully. */
+  if (isCompilationProcessKilled()) {
+    return;
+  }
+  mIsCompilationProcessRunning = false;
+  emit sendCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
 }
 
 /*!
@@ -222,6 +252,23 @@ void SimulationProcessThread::readSimulationStandardOutput()
 void SimulationProcessThread::readSimulationStandardError()
 {
   emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error, true);
+}
+
+/*!
+ * \brief SimulationProcessThread::simulationProcessError
+ * Slot activated when mpSimulationProcess errorOccurred signal is raised.\n
+ * Notifies the SimulationOutputWidget about the erro by emitting the sendSimulationOutput signal.
+ * \param error
+ */
+void SimulationProcessThread::simulationProcessError(QProcess::ProcessError error)
+{
+  Q_UNUSED(error);
+  /* this signal is raised when we kill the simulation process forcefully. */
+  if (isSimulationProcessKilled()) {
+    return;
+  }
+  mIsSimulationProcessRunning = false;
+  emit sendSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error, true);
 }
 
 /*!

@@ -1490,22 +1490,12 @@ void GDBAdapter::readGDBErrorOutput()
  */
 void GDBAdapter::handleGDBProcessError(QProcess::ProcessError error)
 {
+  Q_UNUSED(error);
   /* this signal is raised when we kill the timed out GDB forcefully. */
   if (isGDBKilled()) {
     return;
   }
-  QString errorString;
-  switch (error) {
-    case QProcess::FailedToStart:
-      errorString = tr("%1 GDB arguments are \"%2\"").arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" "));
-      break;
-    case QProcess::Crashed:
-      errorString = tr("GDB crashed with the error %1. GDB arguments are \"%2\"").arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" "));
-      break;
-    default:
-      errorString = tr("Following error has occurred %1. GDB arguments are \"%2\"").arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" "));
-      break;
-  }
+  QString errorString = GUIMessages::getMessage(GUIMessages::GDB_ERROR).arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" "));
   MainWindow::instance()->getTargetOutputWidget()->logDebuggerErrorOutput(errorString);
   setGDBRunning(false);
 }

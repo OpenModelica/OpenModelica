@@ -32,19 +32,39 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#ifndef ANIMATIONWINDOW_H
-#define ANIMATIONWINDOW_H
 
-#include "AbstractAnimationWindow.h"
+#ifndef FMU_SETTINGS_WINDOW_H
+#define FMU_SETTINGS_WINDOW_H
 
-class AnimationWindow : public AbstractAnimationWindow
+#include "VisualizerFMU.h"
+
+#include <QDialog>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QPushButton>
+#include <QLayout>
+#include <QDialogButtonBox>
+
+class FMUSettingsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AnimationWindow(QWidget *pParent);
-  ~AnimationWindow();
-
-  void createActions() override;
+  FMUSettingsDialog(QWidget *pParent, VisualizerFMU *pVisualizerFMU);
+private:
+  VisualizerFMU *mpVisualizerFMU;
+  double mStepSize;
+  double mRenderFreq;
+  bool mHandleEvents;
+  QLineEdit* mpStepSizeLineEdit;
+  QCheckBox* mpHandleEventsCheck;
+  QComboBox* mpSolverComboBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+public slots:
+  void saveSimSettings();
 };
 
-#endif // ANIMATIONWINDOW_H
+
+#endif // end FMU_SETTINGS_WINDOW_H
