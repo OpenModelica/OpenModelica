@@ -106,11 +106,11 @@ void DgesvSolver::solve()
 	_iterationStatus = CONTINUE;
 
 	//use lapack
-	long int dimRHS  = 1;          // Dimension of right hand side of linear system (=_b)
-	long int irtrn  = 0;          // Return-flag of Fortran code
+	long int dimRHS  = 1; // Dimension of right hand side of linear system (=_b)
+	long int irtrn  = 0; // Return-flag of Fortran code
 
 	if(_algLoop->isLinearTearing())
-		_algLoop->setReal(_zeroVec);	//if the system is linear Tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
+		_algLoop->setReal(_zeroVec); //if the system is linear Tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
 
 	_algLoop->evaluate();
 	_algLoop->getb(_b);
@@ -132,6 +132,7 @@ void DgesvSolver::solve()
 		_iterationStatus = DONE;
 
 
+	//we need to revert the sign of y, because the sign of b was changed before.
 	if(_algLoop->isLinearTearing()){
 		for(int i=0; i<_dimSys; i++)
 			_y[i]=-_b[i];
@@ -140,7 +141,7 @@ void DgesvSolver::solve()
 	}
 
 	_algLoop->setReal(_y);
-	if(_algLoop->isLinearTearing())		_algLoop->evaluate();//warum nur in diesem Fall??
+	if(_algLoop->isLinearTearing())		_algLoop->evaluate();//resets the right hand side to zero in the case of linear tearing. Otherwise, the b vector on the right hand side needs no update.
 }
 
 IAlgLoopSolver::ITERATIONSTATUS DgesvSolver::getIterationStatus()

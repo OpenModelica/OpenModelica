@@ -57,8 +57,8 @@ private:
 	  *_zeroVec,			///zero vector
 	  *_scale;				//scaling parameter to prevent overflow in singular systems
   bool _sparse;
+  bool _generateoutput;		//prints nothing, if set to false. Prints Matrix, right hand side, and solution of the linear system, if set to true.
 #if defined(klu)
-  int _dim;
   klu_symbolic* _kluSymbolic ;
   klu_numeric* _kluNumeric ;
   klu_common* _kluCommon ;

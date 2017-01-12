@@ -850,12 +850,6 @@ IF(USE_SUNDIALS)
   GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
   GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
 
-  GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} LOCATION)
-  GET_FILENAME_COMPONENT(libLinearSolverName ${libLinearSolver} NAME)
-
-  GET_TARGET_PROPERTY(libDgesvSolver ${DgesvSolverName} LOCATION)
-  GET_FILENAME_COMPONENT(libDgesvSolverName ${libDgesvSolver} NAME)
-
   #GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
   #GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
   #GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
@@ -877,6 +871,12 @@ IF(USE_TRILINOS)
 
   SET(NOX_LIB ${libNoxName})
 ENDIF(USE_TRILINOS)
+
+GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} LOCATION)
+GET_FILENAME_COMPONENT(libLinearSolverName ${libLinearSolver} NAME)
+
+GET_TARGET_PROPERTY(libDgesvSolver ${DgesvSolverName} LOCATION)
+GET_FILENAME_COMPONENT(libDgesvSolverName ${libDgesvSolver} NAME)
 
 GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
 GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)

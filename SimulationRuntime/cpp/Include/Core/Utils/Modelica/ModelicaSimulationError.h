@@ -8,7 +8,7 @@
 //Enum for error types that can occur
 enum SIMULATION_ERROR {
                       SOLVER, //all errors occur in solver (Euler,CVode)
-                      ALGLOOP_SOLVER, //all errors occur in non-,lin-solver (Kinsol,Newton,Hybrj)
+                      ALGLOOP_SOLVER, //all errors occur in non-,lin-solver (Nox,Kinsol,Newton,Hybrj)
                       MODEL_EQ_SYSTEM, //all errors occur in model system class during simulation
                       ALGLOOP_EQ_SYSTEM,//all errors occur in algloop system class during simulation
                       MODEL_FACTORY, //all errors occur model system factory classes

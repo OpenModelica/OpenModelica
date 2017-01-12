@@ -46,6 +46,7 @@ LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings
 	, _iterationStatus    (CONTINUE)
 	, _firstCall          (true)
 	, _scale			  (NULL)
+	, _generateoutput (false)
 {
 	_sparse = _algLoop->getUseSparseFormat();
 }
@@ -187,38 +188,37 @@ void LinearSolver::solve()
 	_iterationStatus = CONTINUE;
 
 	//use lapack
-	long int dimRHS  = 1;          // Dimension of right hand side of linear system (=_b)
-	long int irtrn  = 0;          // Return-flag of Fortran code
+	long int dimRHS  = 1; // Dimension of right hand side of linear system (=_b)
+	long int irtrn  = 0; // Return-flag of Fortran code
 
 	if(_algLoop->isLinearTearing())
-		_algLoop->setReal(_zeroVec);	//if the system is linear Tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
+		_algLoop->setReal(_zeroVec); //if the system is linear tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
 
 	_algLoop->evaluate();
 	_algLoop->getb(_b);
 
-	if (_sparse == false){
+	//if !_sparse, we use LAPACK routines, otherwise we use KLU to solve the linear system
+	if (!_sparse){
 		const matrix_t& A = _algLoop->getAMatrix();
 		const double* Atemp = A.data().begin();
 
 		memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
 
-		/*
-		//output routine
-		std::cout << std::endl;
-		std::cout << "We solve a linear system with coefficient matrix" << std::endl;
-		for (int i=0;i<_dimSys;i++){
-			for (int j=0;j<_dimSys;j++){
-				std::cout << Atemp[i+j*_dimSys] << " ";
+		if(_generateoutput){
+			std::cout << std::endl;
+			std::cout << "We solve a linear system with coefficient matrix" << std::endl;
+			for (int i=0;i<_dimSys;i++){
+				for (int j=0;j<_dimSys;j++){
+					std::cout << Atemp[i+j*_dimSys] << " ";
+				}
+				std::cout << std::endl;
+			}
+			std::cout << "and right hand side" << std::endl;
+			for (int i=0;i<_dimSys;i++){
+				std::cout << _b[i] << " ";
 			}
 			std::cout << std::endl;
 		}
-		std::cout << "and right hand side" << std::endl;
-		for (int i=0;i<_dimSys;i++){
-			std::cout << _b[i] << " ";
-		}
-		std::cout << std::endl;
-		*/
-
 
 		dgesv_(&_dimSys,&dimRHS,_A,&_dimSys,_ihelpArray,_b,&_dimSys,&irtrn);
 
@@ -232,122 +232,41 @@ void LinearSolver::solve()
 		else
 			_iterationStatus = DONE;
 	}else{
-
 		#if defined(klu)
-
-
-			//testing sparse with dense
-			/*this version is a test. it extracts the dense format out of the sparse format and uses the dense lapack solver to sove the dense problem.
-
 			//writing entries of A
 			sparsematrix_t& A = _algLoop->getSparseAMatrix();
 			_Ax= boost::numeric::bindings::begin_value (A);
 
+			if (_generateoutput){
+				double* a = new double[_dimSys*_dimSys];
+				memset(a, 0, _dimSys*_dimSys*sizeof(double));
 
-			double** a = new double*[_dimSys];
-			double* asdf = new double[_dimSys*_dimSys];
-			for(int i=0;i<_dimSys;i++){
-				a[i]=new double[_dimSys];
-			}
-
-			for(int i=0;i<_dimSys;i++){
-				for(int j=0;j<_dimSys;j++){
-					a[i][j]=0;
-					for(int k=_Ap[j];k<_Ap[j+1];k++)
-						if(i==_Ai[k])
-							a[i][j]=_Ax[k];
+				for(int i=0;i<_dimSys;i++){
+					for(int j=0;j<_dimSys;j++){
+						for(int k=_Ap[j];k<_Ap[j+1];k++)
+							if(i==_Ai[k])
+								a[i+j*_dimSys]=_Ax[k];
+					}
 				}
-			}
 
-			for(int i=0;i<_dimSys;i++){
-				for(int j=0;j<_dimSys;j++){
-					asdf[i+j*_dimSys]=a[i][j];
+				std::cout << std::endl;
+				std::cout << "We solve a linear system with coefficient matrix" << std::endl;
+				for (int i=0;i<_dimSys;i++){
+					for (int j=0;j<_dimSys;j++){
+						std::cout << a[i+j*_dimSys] << " ";
+					}
+					std::cout << std::endl;
 				}
-			}
 
-			//output routine
-			std::cout << std::endl;
-			std::cout << "We solve a linear system with coefficient matrix" << std::endl;
-			for (int i=0;i<_dimSys;i++){
-				for (int j=0;j<_dimSys;j++){
-					std::cout << asdf[i+j*_dimSys] << " ";
+				delete [] a;
+
+
+				std::cout << "and right hand side" << std::endl;
+				for (int i=0;i<_dimSys;i++){
+					std::cout << _b[i] << " ";
 				}
 				std::cout << std::endl;
 			}
-			std::cout << "and right hand side" << std::endl;
-			for (int i=0;i<_dimSys;i++){
-				std::cout << _b[i] << " ";
-			}
-			std::cout << std::endl;
-
-
-
-
-
-			dgesv_(&_dimSys,&dimRHS,asdf,&_dimSys,_ihelpArray,_b,&_dimSys,&irtrn);
-			_iterationStatus = DONE;
-			for(int i=0;i<_dimSys;i++){
-				delete [] a[i];
-			}
-			delete [] a;
-			delete [] asdf;
-
-			/*test for ccs-dense-conversion
-			// testSparse2.cpp : Defines the entry point for the console application.
-			//
-
-			#include "stdafx.h"
-
-
-			int _tmain(int argc, _TCHAR* argv[])
-			{
-				int _dimSys = 3;
-				int _Ap[4] = {0,3,5,6};
-				int _Ai[6] = { 0, 1, 2, 1, 2, 2 };
-				int _Ax[6] = { 5, 4, 3, 2, 1, 8 };
-
-				double** a = new double*[_dimSys];
-				for (int i = 0; i<_dimSys; i++){
-					a[i] = new double[_dimSys];
-				}
-
-				for (int i = 0; i<_dimSys; i++){
-					for (int j = 0; j<_dimSys; j++){
-						a[i][j] = 0;
-						for (int k = _Ap[j]; k<_Ap[j + 1]; k++)
-							if (i == _Ai[k])
-								a[i][j] += _Ax[k];
-					}
-				}
-
-				for (int i = 0; i < _dimSys; i++){
-					for (int j = 0; j < _dimSys; j++){
-						printf("a(%i,%i)=%e\n", i, j, a[i][j]);
-					}
-				}
-
-				for (int i = 0; i<_dimSys; i++){
-					delete[] a[i];
-				}
-				delete[] a;
-				return 0;
-			}
-			*/
-
-
-			//version with klu
-
-			/*
-			//testing, whether Ax is modified
-			double *Ax=NULL;
-			Ax = new double[_nonzeros];
-			for(int i=0;i<_nonzeros;i++) Ax[i]=_Ax[i];
-			*/
-
-
-			//writing entries of A
-			sparsematrix_t& A = _algLoop->getSparseAMatrix();
-			_Ax= boost::numeric::bindings::begin_value (A);
 
 			int ok = klu_refactor (_Ap, _Ai, _Ax, _kluSymbolic, _kluNumeric, _kluCommon) ;
 
@@ -363,18 +282,12 @@ void LinearSolver::solve()
 			ok=klu_solve (_kluSymbolic, _kluNumeric, _dimSys, 1, _b, _kluCommon) ;
 			if (ok!=1) throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving Sparse Solver KLU");
 
-			/*
-			//testing, whether Ax is modified
-			for(int i=0;i<_nonzeros;i++) if(Ax[i]!=_Ax[i]) std::cout << "Ax was modified" << std::endl;
-			if(Ax)
-			delete [] Ax;
-			*/
-
 		#else
 			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear system with klu not implemented");
 		#endif
 	}
 
+	//we need to revert the sign of y, because the sign of b was changed before.
 	if(_algLoop->isLinearTearing()){
 		for(int i=0; i<_dimSys; i++)
 			_y[i]=-_b[i];
@@ -382,19 +295,16 @@ void LinearSolver::solve()
 		memcpy(_y,_b,_dimSys*sizeof(double));
 	}
 
-
-	/*
-	//output routine
-	std::cout << "The solution of the linear system is given by" << std::endl;
-	for (int i=0;i<_dimSys;i++){
-		std::cout << _y[i] << " ";
+	if (_generateoutput){
+		std::cout << "The solution of the linear system is given by" << std::endl;
+		for (int i=0;i<_dimSys;i++){
+			std::cout << _y[i] << " ";
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
-	*/
-
 
 	_algLoop->setReal(_y);
-	if(_algLoop->isLinearTearing())		_algLoop->evaluate();//warum nur in diesem Fall??
+	if(_algLoop->isLinearTearing()) _algLoop->evaluate();//resets the right hand side to zero in the case of linear tearing. Otherwise, the b vector on the right hand side needs no update.
 }
 
 IAlgLoopSolver::ITERATIONSTATUS LinearSolver::getIterationStatus()
