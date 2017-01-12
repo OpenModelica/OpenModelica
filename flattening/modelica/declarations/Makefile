@@ -37,6 +37,9 @@ DiscreteDeclConnector.mo \
 DiscreteDeclRecord.mo \
 DiscreteDeclType.mo \
 DoubleDeclaration.mo \
+DoubleClassDeclaration1.mo \
+DoubleClassDeclaration2.mo \
+DoubleFuncDeclaration.mo \
 ErrorExternalModel.mo\
 ErrorRecursionLimit.mo \
 FloatingPoint.mo \

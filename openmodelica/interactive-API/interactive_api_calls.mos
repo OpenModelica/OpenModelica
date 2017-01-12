@@ -32,8 +32,8 @@ isShortDefinition(vector3D); getErrorString();
 isShortDefinition(C); getErrorString();
 isEnumeration(C); getErrorString();
 getEnumerationLiterals(C); getErrorString();
-isEnumeration(size); getErrorString();
-getEnumerationLiterals(size); getErrorString();
+isEnumeration(sizeE); getErrorString();
+getEnumerationLiterals(sizeE); getErrorString();
 isReplaceable(ReplaceableClass, "M1"); getErrorString();
 isReplaceable(RealSignal, "SignalType"); getErrorString();
 isProtectedClass(RealSignal, "SignalType"); getErrorString();
@@ -229,11 +229,11 @@ getMessagesStringInternal(unique = false); // not unique
 // {}
 // Evaluating: getErrorString()
 // ""
-// Evaluating: isEnumeration(size)
+// Evaluating: isEnumeration(sizeE)
 // true
 // Evaluating: getErrorString()
 // ""
-// Evaluating: getEnumerationLiterals(size)
+// Evaluating: getEnumerationLiterals(sizeE)
 // {"Small","Medium","Large"}
 // Evaluating: getErrorString()
 // ""
