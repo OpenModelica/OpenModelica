@@ -49,6 +49,7 @@ private:
       *_y_new,				//stores new solution
 	  *_b,                  ///< right hand side
 	  *_A,				///coefficients of linear system
-	  *_zeroVec;			///zero vector
+	  *_zeroVec,			///zero vector
+	  *_fNominal;
 };
 /** @} */ // end of solverLinearSolver

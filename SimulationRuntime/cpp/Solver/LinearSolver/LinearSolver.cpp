@@ -47,6 +47,7 @@ LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings
 	, _firstCall          (true)
 	, _scale			  (NULL)
 	, _generateoutput (false)
+    , _fNominal (NULL)
 {
 	_sparse = _algLoop->getUseSparseFormat();
 }
@@ -63,6 +64,7 @@ LinearSolver::~LinearSolver()
 	if (_jhelpArray)       delete[]  _jhelpArray;
 	if(_zeroVec)          delete []  _zeroVec;
 	if (_scale)            delete[]  _scale;
+    if (_fNominal)		  delete []    _fNominal;
 
 	#if defined(klu)
 		if(_sparse == true)
@@ -109,6 +111,7 @@ void LinearSolver::initialize()
 			if (_jhelpArray)       delete[]  _jhelpArray;
 			if(_zeroVec)         delete []  _zeroVec;
 			if (_scale)			 delete[]  _scale;
+			if (_fNominal)		 delete []    _fNominal;
 
 			_y                = new double[_dimSys];
 			_y0               = new double[_dimSys];
@@ -120,6 +123,7 @@ void LinearSolver::initialize()
 			_jhelpArray		  = new long int[_dimSys];
 			_zeroVec          = new double[_dimSys];
 			_scale			  = new double[_dimSys];
+			_fNominal          = new double[_dimSys];
 
 			_algLoop->getReal(_y);
 			_algLoop->getReal(_y0);
@@ -203,6 +207,28 @@ void LinearSolver::solve()
 		const double* Atemp = A.data().begin();
 
 		memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
+
+		for (int j = 0, idx = 0; j < _dimSys; j++){
+			for (int i = 0; i < _dimSys; i++, idx++){
+				_fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
+			}
+		}
+
+		for (int i=0;i<_dimSys;i++){
+			if (_fNominal[i]==0.0){
+				_fNominal[i]==1.0;// if the row contains only zeros, there is no need to scale that row.
+			}
+		}
+
+
+		for (int j = 0, idx = 0; j < _dimSys; j++)
+			for (int i = 0; i < _dimSys; i++, idx++)
+				_A[idx] /= _fNominal[i];
+
+		for (int i = 0; i < _dimSys; i++)
+			_b[i] /= _fNominal[i];
+
+
 
 		if(_generateoutput){
 			std::cout << std::endl;

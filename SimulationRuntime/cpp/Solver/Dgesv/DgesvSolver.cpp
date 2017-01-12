@@ -31,6 +31,7 @@ DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
 	, _zeroVec            (NULL)
 	, _iterationStatus    (CONTINUE)
 	, _firstCall          (true)
+    , _fNominal (NULL)
 {
 }
 
@@ -44,6 +45,7 @@ DgesvSolver::~DgesvSolver()
 	if(_A)              delete []  _A;
 	if(_ihelpArray)       delete []  _ihelpArray;
 	if(_zeroVec)          delete []  _zeroVec;
+    if (_fNominal)		  delete []    _fNominal;
 }
 
 void DgesvSolver::initialize()
@@ -70,6 +72,7 @@ void DgesvSolver::initialize()
 			if(_A)             delete []  _A;
 			if(_ihelpArray)      delete []  _ihelpArray;
 			if(_zeroVec)         delete []  _zeroVec;
+			if (_fNominal)		 delete []    _fNominal;
 
 			_y                = new double[_dimSys];
 			_y0               = new double[_dimSys];
@@ -79,6 +82,7 @@ void DgesvSolver::initialize()
 			_A              = new double[_dimSys*_dimSys];
 			_ihelpArray       = new long int[_dimSys];
 			_zeroVec          = new double[_dimSys];
+			_fNominal          = new double[_dimSys];
 
 			_algLoop->getReal(_y);
 			_algLoop->getReal(_y0);
@@ -119,6 +123,18 @@ void DgesvSolver::solve()
 	const double* Atemp = A.data().begin();
 
 	memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
+
+
+    for (int j = 0, idx = 0; j < _dimSys; j++)
+		for (int i = 0; i < _dimSys; i++, idx++)
+			_fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
+
+	for (int j = 0, idx = 0; j < _dimSys; j++)
+		for (int i = 0; i < _dimSys; i++, idx++)
+			_A[idx] /= _fNominal[i];
+
+	for (int i = 0; i < _dimSys; i++)
+        _b[i] /= _fNominal[i];
 
 	dgesv_(&_dimSys,&dimRHS,_A,&_dimSys,_ihelpArray,_b,&_dimSys,&irtrn);
 
