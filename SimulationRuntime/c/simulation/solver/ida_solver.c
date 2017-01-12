@@ -1338,13 +1338,24 @@ static int jacobianOwnNumIDA(long int Neq, double tt, double cj,
 /* Element function for sparse matrix set */
 static void setJacElementKluSparse(int row, int col, double value, int nth, SlsMat spJac)
 {
-  if (col > 0){
-    if (spJac->colptrs[col] == 0){
+  if (col > 0 && spJac->colptrs[col] == 0){
       spJac->colptrs[col] = nth;
-    }
   }
   spJac->rowvals[nth] = row;
   spJac->data[nth] = value;
+}
+
+/* finish sparse matrix, by fixing colprts */
+static void finishSparseColPtr(SlsMat mat)
+{
+  int i;
+  for(i=1; i<mat->N+1; ++i){
+    if (mat->colptrs[i] == 0){
+      mat->colptrs[i] = mat->colptrs[i-1];
+    }
+  }
+  /* finish matrix colptrs */
+  mat->colptrs[mat->N] = mat->NNZ;
 }
 
 /*
@@ -1447,8 +1458,8 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
       }
     }
   }
-  /* finish matrix colptrs */
-  Jac->colptrs[idaData->N] = idaData->NNZ;
+  finishSparseColPtr(Jac);
+
 
   unsetContext(data);
 
