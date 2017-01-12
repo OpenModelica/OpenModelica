@@ -52,12 +52,13 @@ protected import List;
 protected import NFSCodeFlattenImports;
 protected import NFSCodeFlattenRedeclare;
 
+import NFSCodeEnv.EnvTree;
+
 public type Env = NFSCodeEnv.Env;
 public type Item = NFSCodeEnv.Item;
 public type Extends = NFSCodeEnv.Extends;
 public type Frame = NFSCodeEnv.Frame;
 public type FrameType = NFSCodeEnv.FrameType;
-public type AvlTree = NFSCodeEnv.AvlTree;
 public type Import = Absyn.Import;
 
 public uniontype RedeclareReplaceStrategy
@@ -229,102 +230,85 @@ public constant SCode.Element BUILTIN_STATESELECT_ALWAYS = SCode.COMPONENT(
 // Environments for the builtin types:
 public constant Env BUILTIN_REAL_ENV = {NFSCodeEnv.FRAME(SOME("Real"),
   NFSCodeEnv.NORMAL_SCOPE(),
-  NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("nominal",
-      NFSCodeEnv.VAR(BUILTIN_REAL_NOMINAL, NONE()))), 4,
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("max",
-        NFSCodeEnv.VAR(BUILTIN_REAL_MAX, NONE()))), 3,
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("fixed",
-            NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 2,
-              SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("displayUnit",
-                NFSCodeEnv.VAR(BUILTIN_ATTR_DISPLAYUNIT, NONE()))), 1,
-                  NONE(), NONE())),
-                NONE())),
-            SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("min",
-              NFSCodeEnv.VAR(BUILTIN_REAL_MIN, NONE()))), 1,
-                NONE(), NONE())))),
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("start",
-        NFSCodeEnv.VAR(BUILTIN_REAL_START, NONE()))), 3,
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("quantity",
-            NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 1,
-              NONE(), NONE())),
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("stateSelect",
-            NFSCodeEnv.VAR(BUILTIN_ATTR_STATESELECT, NONE()))), 2,
-              NONE(),
-              SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("unit",
-                NFSCodeEnv.VAR(BUILTIN_ATTR_UNIT, NONE()))), 1,
-                  NONE(), NONE()))))))),
+  NFSCodeEnv.EnvTree.Tree.NODE("nominal",
+      NFSCodeEnv.VAR(BUILTIN_REAL_NOMINAL, NONE()), 3,
+      NFSCodeEnv.EnvTree.Tree.NODE("max",
+        NFSCodeEnv.VAR(BUILTIN_REAL_MAX, NONE()), 2,
+          NFSCodeEnv.EnvTree.Tree.NODE("fixed",
+            NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()), 1,
+              NFSCodeEnv.EnvTree.Tree.LEAF("displayUnit",
+                NFSCodeEnv.VAR(BUILTIN_ATTR_DISPLAYUNIT, NONE())),
+              NFSCodeEnv.EnvTree.Tree.EMPTY()),
+          NFSCodeEnv.EnvTree.Tree.LEAF("min",
+            NFSCodeEnv.VAR(BUILTIN_REAL_MIN, NONE()))),
+      NFSCodeEnv.EnvTree.Tree.NODE("start",
+        NFSCodeEnv.VAR(BUILTIN_REAL_START, NONE()), 2,
+          NFSCodeEnv.EnvTree.Tree.LEAF("quantity",
+            NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE())),
+          NFSCodeEnv.EnvTree.Tree.NODE("stateSelect",
+            NFSCodeEnv.VAR(BUILTIN_ATTR_STATESELECT, NONE()), 1,
+              NFSCodeEnv.EnvTree.Tree.EMPTY(),
+              NFSCodeEnv.EnvTree.Tree.LEAF("unit",
+                NFSCodeEnv.VAR(BUILTIN_ATTR_UNIT, NONE()))))),
   NFSCodeEnv.EXTENDS_TABLE({}, {}, NONE()), NFSCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
 
 public constant Env BUILTIN_INTEGER_ENV = {NFSCodeEnv.FRAME(SOME("Integer"),
   NFSCodeEnv.NORMAL_SCOPE(),
-  NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("quantity",
-      NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 3,
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("max",
-        NFSCodeEnv.VAR(BUILTIN_INTEGER_MAX, NONE()))), 2,
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("fixed",
-            NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 1,
-              NONE(), NONE())),
-            SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("min",
-              NFSCodeEnv.VAR(BUILTIN_INTEGER_MIN, NONE()))), 1,
-                NONE(),
-                NONE())))),
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("start",
-        NFSCodeEnv.VAR(BUILTIN_INTEGER_START, NONE()))), 1,
-          NONE(), NONE()))),
+  NFSCodeEnv.EnvTree.Tree.NODE("quantity",
+    NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()), 2,
+      NFSCodeEnv.EnvTree.Tree.NODE("max",
+        NFSCodeEnv.VAR(BUILTIN_INTEGER_MAX, NONE()), 1,
+          NFSCodeEnv.EnvTree.Tree.LEAF("fixed",
+            NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE())),
+            NFSCodeEnv.EnvTree.Tree.LEAF("min",
+              NFSCodeEnv.VAR(BUILTIN_INTEGER_MIN, NONE()))),
+      NFSCodeEnv.EnvTree.Tree.LEAF("start",
+        NFSCodeEnv.VAR(BUILTIN_INTEGER_START, NONE()))),
   NFSCodeEnv.EXTENDS_TABLE({}, {}, NONE()), NFSCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
 
 public constant Env BUILTIN_BOOLEAN_ENV = {NFSCodeEnv.FRAME(SOME("Boolean"),
   NFSCodeEnv.NORMAL_SCOPE(),
-  NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("quantity",
-      NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 2,
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("fixed",
-        NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 1,
-          NONE(), NONE())),
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("start",
-        NFSCodeEnv.VAR(BUILTIN_BOOLEAN_START, NONE()))), 1,
-          NONE(), NONE()))),
+  NFSCodeEnv.EnvTree.Tree.NODE("quantity",
+    NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()), 1,
+      NFSCodeEnv.EnvTree.Tree.LEAF("fixed",
+        NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE())),
+      NFSCodeEnv.EnvTree.Tree.LEAF("start",
+        NFSCodeEnv.VAR(BUILTIN_BOOLEAN_START, NONE()))),
   NFSCodeEnv.EXTENDS_TABLE({}, {}, NONE()), NFSCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
 
 public constant Env BUILTIN_STRING_ENV = {NFSCodeEnv.FRAME(SOME("String"),
   NFSCodeEnv.NORMAL_SCOPE(),
-  NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("quantity",
-      NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 2,
-      NONE(),
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("start",
-        NFSCodeEnv.VAR(BUILTIN_STRING_START, NONE()))), 1,
-          NONE(), NONE()))),
+  NFSCodeEnv.EnvTree.Tree.NODE("quantity",
+    NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()), 2,
+      NFSCodeEnv.EnvTree.Tree.EMPTY(),
+      NFSCodeEnv.EnvTree.Tree.LEAF("start",
+        NFSCodeEnv.VAR(BUILTIN_STRING_START, NONE()))),
   NFSCodeEnv.EXTENDS_TABLE({}, {}, NONE()), NFSCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
 
 public constant Env BUILTIN_STATESELECT_ENV = {NFSCodeEnv.FRAME(SOME("StateSelect"),
   NFSCodeEnv.NORMAL_SCOPE(),
-  NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("max",
-    NFSCodeEnv.VAR(BUILTIN_ENUM_MAX, NONE()))), 4,
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("default",
-        NFSCodeEnv.VAR(BUILTIN_STATESELECT_DEFAULT, NONE()))), 3,
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("avoid",
-            NFSCodeEnv.VAR(BUILTIN_STATESELECT_AVOID, NONE()))), 2,
-              SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("always",
-                NFSCodeEnv.VAR(BUILTIN_STATESELECT_ALWAYS, NONE()))), 1,
-                  NONE(), NONE())),
-              NONE())),
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("fixed",
-            NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 1,
-              NONE(), NONE())))),
-      SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("never",
-        NFSCodeEnv.VAR(BUILTIN_STATESELECT_NEVER, NONE()))), 3,
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("min",
-            NFSCodeEnv.VAR(BUILTIN_ENUM_MIN, NONE()))), 1,
-              NONE(), NONE())),
-          SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("quantity",
-            NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 2,
-              SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("prefer",
-                NFSCodeEnv.VAR(BUILTIN_STATESELECT_PREFER, NONE()))), 1,
-                  NONE(), NONE())),
-              SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE("start",
-                NFSCodeEnv.VAR(BUILTIN_ENUM_START, NONE()))), 1,
-                  NONE(), NONE()))))))),
+  NFSCodeEnv.EnvTree.Tree.NODE("max",
+    NFSCodeEnv.VAR(BUILTIN_ENUM_MAX, NONE()), 3,
+      NFSCodeEnv.EnvTree.Tree.NODE("default",
+        NFSCodeEnv.VAR(BUILTIN_STATESELECT_DEFAULT, NONE()), 2,
+          NFSCodeEnv.EnvTree.Tree.NODE("avoid",
+            NFSCodeEnv.VAR(BUILTIN_STATESELECT_AVOID, NONE()), 1,
+              NFSCodeEnv.EnvTree.Tree.LEAF("always",
+                NFSCodeEnv.VAR(BUILTIN_STATESELECT_ALWAYS, NONE())),
+              NFSCodeEnv.EnvTree.Tree.EMPTY()),
+          NFSCodeEnv.EnvTree.Tree.LEAF("fixed",
+            NFSCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))),
+      NFSCodeEnv.EnvTree.Tree.NODE("never",
+        NFSCodeEnv.VAR(BUILTIN_STATESELECT_NEVER, NONE()), 2,
+          NFSCodeEnv.EnvTree.Tree.LEAF("min",
+            NFSCodeEnv.VAR(BUILTIN_ENUM_MIN, NONE())),
+          NFSCodeEnv.EnvTree.Tree.NODE("quantity",
+            NFSCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()), 1,
+              NFSCodeEnv.EnvTree.Tree.LEAF("prefer",
+                NFSCodeEnv.VAR(BUILTIN_STATESELECT_PREFER, NONE())),
+              NFSCodeEnv.EnvTree.Tree.LEAF("start",
+                NFSCodeEnv.VAR(BUILTIN_ENUM_START, NONE()))))),
   NFSCodeEnv.EXTENDS_TABLE({}, {}, NONE()), NFSCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
-
 
 // The builtin types:
 public constant Item BUILTIN_REAL = NFSCodeEnv.CLASS(
@@ -533,10 +517,10 @@ public function lookupInClass
   output Item outItem;
   output Env outEnv;
 protected
-  AvlTree tree;
+  EnvTree.Tree tree;
 algorithm
   NFSCodeEnv.FRAME(clsAndVars = tree) :: _ := inEnv;
-  outItem := NFSCodeEnv.avlTreeGet(tree, inName);
+  outItem := EnvTree.get(tree, inName);
   (outItem, outEnv) := resolveAlias(outItem, inEnv);
 end lookupInClass;
 
@@ -554,12 +538,12 @@ algorithm
       Item item;
       Absyn.Path path;
       Env env;
-      AvlTree tree;
+      EnvTree.Tree tree;
 
     case (NFSCodeEnv.ALIAS(name = name, path = NONE()),
           NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
-        item = NFSCodeEnv.avlTreeGet(tree, name);
+        item = EnvTree.get(tree, name);
         (item, env) = resolveAlias(item, inEnv);
       then
         (item, env);
@@ -569,7 +553,7 @@ algorithm
         env = NFSCodeEnv.getEnvTopScope(inEnv);
         env = NFSCodeEnv.enterScopePath(env, path);
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _ = env;
-        item = NFSCodeEnv.avlTreeGet(tree, name);
+        item = EnvTree.get(tree, name);
         (item, env) = resolveAlias(item, env);
       then
         (item, env);

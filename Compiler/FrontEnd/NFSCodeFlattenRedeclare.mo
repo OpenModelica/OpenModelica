@@ -76,6 +76,8 @@ public type Item = NFSCodeEnv.Item;
 public type Extends = NFSCodeEnv.Extends;
 public type Prefix = NFInstTypes.Prefix;
 
+import NFSCodeEnv.EnvTree;
+
 public uniontype Replacement
   record REPLACED "an item got replaced"
     SCode.Ident name;
@@ -603,20 +605,20 @@ public function replaceElementInScope
 algorithm
   outEnv := match(inElementName, inElement, inEnv)
     local
-      NFSCodeEnv.AvlTree tree;
+      EnvTree.Tree tree;
       Item old_item, new_item;
       Env env;
       Replacements repl;
 
     case (_, _, (env as NFSCodeEnv.FRAME(clsAndVars = tree) :: _, repl))
       equation
-        old_item = NFSCodeEnv.avlTreeGet(tree, inElementName);
+        old_item = EnvTree.get(tree, inElementName);
         /*********************************************************************/
         // TODO: Check if this is actually needed
         /*********************************************************************/
         new_item = propagateItemPrefixes(old_item, inElement);
         new_item = NFSCodeEnv.linkItemUsage(old_item, new_item);
-        tree = NFSCodeEnv.avlTreeReplace(tree, inElementName, new_item);
+        tree = EnvTree.add(tree, inElementName, new_item, EnvTree.addConflictReplace);
         env = NFSCodeEnv.setEnvClsAndVars(tree, env);
         repl = REPLACED(inElementName, old_item, new_item, env)::repl;
         // traceReplaceElementInScope(inElementName, old_item, new_item, env);

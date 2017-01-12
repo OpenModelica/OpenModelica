@@ -427,6 +427,45 @@ algorithm
   end match;
 end fold;
 
+function foldCond<FT>
+  "Like fold, but if the fold function returns false it will not continue down
+   into the tree (but will still continue with other branches)."
+  input Tree tree;
+  input FoldFunc foldFunc;
+  input output FT value;
+
+  partial function FoldFunc
+    input Key key;
+    input Value value;
+    input output FT foldArg;
+          output Boolean cont;
+  end FoldFunc;
+algorithm
+  value := match tree
+    local
+      Boolean c;
+
+    case NODE()
+      algorithm
+        (value, c) := foldFunc(tree.key, tree.value, value);
+
+        if c then
+          value := foldCond(tree.left, foldFunc, value);
+          value := foldCond(tree.right, foldFunc, value);
+        end if;
+      then
+        value;
+
+    case LEAF()
+      algorithm
+        (value, c) := foldFunc(tree.key, tree.value, value);
+      then
+        value;
+
+    else value;
+  end match;
+end foldCond;
+
 function mapFold<FT>
   "Traverses the tree in depth-first pre-order and applies the given function to
    each node, constructing a new tree with the resulting nodes. mapFold also

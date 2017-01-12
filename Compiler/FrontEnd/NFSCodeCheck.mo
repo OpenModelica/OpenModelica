@@ -49,6 +49,8 @@ protected import Flags;
 protected import NFInstDump;
 protected import SCodeDump;
 
+import NFSCodeEnv.EnvTree;
+
 public function checkRecursiveShortDefinition
   input Absyn.TypeSpec inTypeSpec;
   input String inTypeName;
@@ -474,7 +476,7 @@ algorithm
       inComponentEnv)
     local
       String cls_name, ty_name;
-      NFSCodeEnv.AvlTree tree;
+      EnvTree.Tree tree;
       SCode.Element el;
 
     // No environment means one of the basic types.
@@ -492,7 +494,7 @@ algorithm
     case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
-        NFSCodeEnv.CLASS(cls = el) = NFSCodeEnv.avlTreeGet(tree, cls_name);
+        NFSCodeEnv.CLASS(cls = el) = EnvTree.get(tree, cls_name);
         true = SCode.isFunction(el);
       then
         ();

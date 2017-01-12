@@ -60,6 +60,7 @@ protected type Item = NFSCodeEnv.Item;
 protected type Extends = NFSCodeEnv.Extends;
 protected type FrameType = NFSCodeEnv.FrameType;
 protected type Import = Absyn.Import;
+protected import NFSCodeEnv.EnvTree;
 
 public function analyse
   "This is the entry point of the dependency analysis. The dependency analysis
@@ -992,7 +993,7 @@ protected function markAsUsedOnConstant
 algorithm
   _ := matchcontinue(inName, inAttr, inEnv, inInfo)
     local
-      NFSCodeEnv.AvlTree cls_and_vars;
+      EnvTree.Tree cls_and_vars;
       Util.StatefulBoolean is_used;
       SCode.Variability var;
 
@@ -1000,7 +1001,7 @@ algorithm
       equation
         true = SCode.isParameterOrConst(var);
         NFSCodeEnv.VAR(isUsed = SOME(is_used)) =
-          NFSCodeEnv.avlTreeGet(cls_and_vars, inName);
+          EnvTree.get(cls_and_vars, inName);
         Util.setStatefulBoolean(is_used, true);
       then
         ();
@@ -1017,14 +1018,14 @@ protected function markAsUsedOnRestriction
 algorithm
   _ := matchcontinue(inName, inRestriction, inEnv, inInfo)
     local
-      NFSCodeEnv.AvlTree cls_and_vars;
+      EnvTree.Tree cls_and_vars;
       Util.StatefulBoolean is_used;
 
     case (_, _, NFSCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
       equation
         true = markAsUsedOnRestriction2(inRestriction);
         NFSCodeEnv.VAR(isUsed = SOME(is_used)) =
-          NFSCodeEnv.avlTreeGet(cls_and_vars, inName);
+          EnvTree.get(cls_and_vars, inName);
         Util.setStatefulBoolean(is_used, true);
       then
         ();
@@ -1767,46 +1768,24 @@ protected function analyseClassExtends
   used."
   input Env inEnv;
 protected
-  NFSCodeEnv.AvlTree tree;
+  EnvTree.Tree tree;
 algorithm
   NFSCodeEnv.FRAME(clsAndVars = tree) :: _ := inEnv;
-  analyseAvlTree(SOME(tree), inEnv);
+  _ := EnvTree.foldCond(tree, analyseAvlValue, inEnv);
 end analyseClassExtends;
 
-protected function analyseAvlTree
-  "Helper function to analyseClassExtends. Goes through the nodes in an
-  AvlTree."
-  input Option<NFSCodeEnv.AvlTree> inTree;
-  input Env inEnv;
-algorithm
-  _ := match(inTree, inEnv)
-    local
-      Option<NFSCodeEnv.AvlTree> left, right;
-      NFSCodeEnv.AvlTreeValue value;
-
-    case (NONE(), _) then ();
-    case (SOME(NFSCodeEnv.AVLTREENODE(value = NONE())), _) then ();
-    case (SOME(NFSCodeEnv.AVLTREENODE(value = SOME(value), left = left, right = right)), _)
-      equation
-        analyseAvlTree(left, inEnv);
-        analyseAvlTree(right, inEnv);
-        analyseAvlValue(value, inEnv);
-      then
-        ();
-
-  end match;
-end analyseAvlTree;
-
 protected function analyseAvlValue
-  "Helper function to analyseClassExtends. Analyses a value in the AvlTree."
-  input NFSCodeEnv.AvlTreeValue inValue;
-  input Env inEnv;
+  "Helper function to analyseClassExtends. Analyses a value in the EnvTree."
+  input String key;
+  input Item value;
+  input output Env env;
+        output Boolean cont;
 algorithm
-  _ := matchcontinue(inValue, inEnv)
+  cont := matchcontinue(value, env)
     local
       String key_str;
       NFSCodeEnv.Frame cls_env;
-      Env env;
+      Env env2;
       SCode.Element cls;
       NFSCodeEnv.ClassType cls_ty;
       Util.StatefulBoolean is_used;
@@ -1814,22 +1793,21 @@ algorithm
     // Check if the current environment is not used, we can quit here if that's
     // the case.
     case (_, NFSCodeEnv.FRAME(name = SOME(_), isUsed = SOME(is_used)) :: _)
-      equation
-        false = Util.getStatefulBoolean(is_used);
+      algorithm
+        false := Util.getStatefulBoolean(is_used);
       then
-        ();
+        false;
 
-    case (NFSCodeEnv.AVLTREEVALUE(value = NFSCodeEnv.CLASS(cls = cls,
-        env = {cls_env}, classType = cls_ty)), _)
+    case (NFSCodeEnv.CLASS(cls = cls, env = {cls_env}, classType = cls_ty), _)
       equation
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
-        analyseClassExtendsDef(cls, cls_ty, env);
+        env2 = NFSCodeEnv.enterFrame(cls_env, env);
+        analyseClassExtendsDef(cls, cls_ty, env2);
         // Check all classes inside of this class too.
-        analyseClassExtends(env);
+        analyseClassExtends(env2);
       then
-        ();
+        true;
 
-    else ();
+    else true;
   end matchcontinue;
 end analyseAvlValue;
 
@@ -1888,7 +1866,7 @@ protected function collectUsedProgram
   output SCode.Program outProgram;
 protected
   Env env;
-  NFSCodeEnv.AvlTree cls_and_vars;
+  EnvTree.Tree cls_and_vars;
 algorithm
   env := NFSCodeEnv.buildInitialEnv();
   NFSCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _ := inEnv;
@@ -1902,7 +1880,7 @@ protected function collectUsedProgram2
   of the classes in the new program. Another alternative would have been to just
   traverse the environment and collect the used classes, which would have been a
   bit faster but would not have preserved the order of the program."
-  input NFSCodeEnv.AvlTree clsAndVars;
+  input EnvTree.Tree clsAndVars;
   input Env inEnv;
   input SCode.Program inProgram;
   input Absyn.Path inClassName;
@@ -1933,7 +1911,7 @@ algorithm
         (cls_el :: rest_prog, env);
 
     // Could not collect the class (i.e. it's not used), continue with the rest.
-    case (_, _, _ :: rest_prog, _, env)
+    case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
         (rest_prog, env) =
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
@@ -1948,7 +1926,7 @@ protected function collectUsedClass
   adds the class to the accumulated environment. Otherwise it just fails."
   input SCode.Element inClass;
   input Env inEnv;
-  input NFSCodeEnv.AvlTree inClsAndVars;
+  input EnvTree.Tree inClsAndVars;
   input Absyn.Path inClassName;
   input Env inAccumEnv;
   input Absyn.Path inAccumPath;
@@ -1979,7 +1957,7 @@ algorithm
         // TODO: Fix the usage of alias items in this case.
         /*********************************************************************/
         // Check if the class is used.
-        item = NFSCodeEnv.avlTreeGet(inClsAndVars, name);
+        item = EnvTree.get(inClsAndVars, name);
         (resolved_item, _) = NFSCodeLookup.resolveAlias(item, inEnv);
         true = checkClassUsed(resolved_item, cdef);
         // The class is used, recursively collect its contents.
@@ -2001,7 +1979,7 @@ algorithm
         // TODO! FIXME! add cc to the used classes!
         _ = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
         // Check if the class is used.
-        item = NFSCodeEnv.avlTreeGet(inClsAndVars, name);
+        item = EnvTree.get(inClsAndVars, name);
         true = checkClassUsed(item, cdef);
         // The class is used, recursively collect it's contents.
         {class_frame} = NFSCodeEnv.getItemEnv(item);
@@ -2113,7 +2091,7 @@ protected function collectUsedElements
   output Env outNewEnv;
 protected
   NFSCodeEnv.Frame empty_class_env;
-  NFSCodeEnv.AvlTree cls_and_vars;
+  EnvTree.Tree cls_and_vars;
   Boolean collect_constants;
 algorithm
   // Create a new class environment that preserves the imports and extends.
@@ -2133,7 +2111,7 @@ protected function collectUsedElements2
   elements and tries to collect them."
   input list<SCode.Element> inElements;
   input Env inEnclosingEnv;
-  input NFSCodeEnv.AvlTree inClsAndVars;
+  input EnvTree.Tree inClsAndVars;
   input list<SCode.Element> inAccumElements;
   input Env inAccumEnv;
   input Absyn.Path inClassName;
@@ -2159,7 +2137,7 @@ protected function collectUsedElement
   "Collects a class element."
   input SCode.Element inElement;
   input Env inEnclosingEnv;
-  input NFSCodeEnv.AvlTree inClsAndVars;
+  input EnvTree.Tree inClsAndVars;
   input Env inAccumEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
@@ -2191,7 +2169,7 @@ algorithm
     case (SCode.COMPONENT(name = name,
       attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, _, _)
       equation
-        item = NFSCodeEnv.avlTreeGet(inClsAndVars, name);
+        item = EnvTree.get(inClsAndVars, name);
         true = inCollectConstants or NFSCodeEnv.isItemUsed(item);
         env = NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
@@ -2221,7 +2199,7 @@ protected function removeUnusedRedeclares
 protected
   Option<String> name;
   NFSCodeEnv.FrameType ty;
-  NFSCodeEnv.AvlTree cls_and_vars;
+  EnvTree.Tree cls_and_vars;
   list<NFSCodeEnv.Extends> bcl;
   list<SCode.Element> re;
   Option<SCode.Element> cei;

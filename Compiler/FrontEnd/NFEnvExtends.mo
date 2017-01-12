@@ -136,8 +136,6 @@ protected import Util;
 
 public type Env = NFSCodeEnv.Env;
 
-protected type AvlTree = NFSCodeEnv.AvlTree;
-protected type AvlTreeValue = NFSCodeEnv.AvlTreeValue;
 protected type ClassType = NFSCodeEnv.ClassType;
 protected type Extends = NFSCodeEnv.Extends;
 protected type Frame = NFSCodeEnv.Frame;
@@ -146,6 +144,8 @@ protected type Import = Absyn.Import;
 protected type Item = NFSCodeEnv.Item;
 
 protected type ExtendsTableArray = array<ExtendsWrapper>;
+
+import NFSCodeEnv.EnvTree;
 
 public constant String BASECLASS_NOT_FOUND_ERROR = "$1";
 public constant String BASECLASS_INHERITED_ERROR = "$2";
@@ -244,57 +244,39 @@ protected
   list<SCode.Element> re;
   Option<SCode.Element> cei;
   Env env;
-  AvlTree tree;
+  EnvTree.Tree tree;
 algorithm
   // Qualify the extends in this scope.
   env := qualifyLocalScope(inEnv, inClassType, inExtendsTable);
 
   // Recurse down the tree.
   NFSCodeEnv.FRAME(clsAndVars = tree) :: _ := env;
-  SOME(tree) := qualify3(SOME(tree), env, inExtendsTable);
+  tree := EnvTree.map(tree,
+    function qualify3(inEnv = env, inExtendsTable = inExtendsTable));
   outEnv := NFSCodeEnv.setEnvClsAndVars(tree, env);
 end qualify2;
 
 protected function qualify3
-  input Option<AvlTree> inTree;
+  input String name;
+  input output Item item;
   input Env inEnv;
   input ExtendsTableArray inExtendsTable;
-  output Option<AvlTree> outTree;
 algorithm
-  outTree := match(inTree, inEnv, inExtendsTable)
+  item := match item
     local
-      String name;
       SCode.Element cls;
       Frame cls_env;
       ClassType cls_ty;
-      Integer h;
-      Option<AvlTree> left, right;
       Env env, rest_env;
-      Item item;
-      Option<AvlTreeValue> value;
 
-    // Empty leaf, do nothing.
-    case (NONE(), _, _) then inTree;
-
-    case (SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE(
-        name, NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _, _)
-      equation
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
-        cls_env :: rest_env = qualify2(env, cls_ty, inExtendsTable);
-        left = qualify3(left, rest_env, inExtendsTable);
-        right = qualify3(right, rest_env, inExtendsTable);
-        item = NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
-        value = SOME(NFSCodeEnv.AVLTREEVALUE(name, item));
+    case NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty)
+      algorithm
+        env := NFSCodeEnv.enterFrame(cls_env, inEnv);
+        cls_env :: rest_env := qualify2(env, cls_ty, inExtendsTable);
       then
-        SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
+        NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
 
-     case (SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right)), _, _)
-       equation
-         left = qualify3(left, inEnv, inExtendsTable);
-         right = qualify3(right, inEnv, inExtendsTable);
-       then
-         SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
-
+    else item;
   end match;
 end qualify3;
 
@@ -1117,7 +1099,7 @@ protected
   Env env, rest_env;
   Option<String> name;
   FrameType ty;
-  AvlTree tree;
+  EnvTree.Tree tree;
   list<Extends> bcl;
   list<SCode.Element> re;
   NFSCodeEnv.ImportTable imps;
@@ -1125,56 +1107,37 @@ protected
 algorithm
   NFSCodeEnv.FRAME(name, ty, tree,
     NFSCodeEnv.EXTENDS_TABLE(bcl, re, _), imps, iu) :: rest_env := inEnv;
-  SOME(tree) := update3(SOME(tree), inEnv);
+  tree := EnvTree.map(tree, function update3(inEnv = inEnv));
   env := NFSCodeEnv.FRAME(name, ty, tree,
     NFSCodeEnv.EXTENDS_TABLE(bcl, {}, NONE()), imps, iu) :: rest_env;
   outEnv := NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
 end update2;
 
 protected function update3
-  input Option<AvlTree> inTree;
+  input String name;
+  input output Item item;
   input Env inEnv;
-  output Option<AvlTree> outTree;
 algorithm
-  outTree := match(inTree, inEnv)
+  () := match item
     local
-      String name;
-      Integer h;
-      Option<AvlTree> left, right;
       Env rest_env, env;
       SCode.Element cls;
-      Frame cls_env;
-      Option<NFSCodeEnv.AvlTreeValue> value;
-      Item item;
       ClassType cls_ty;
+      Frame cls_env;
 
-    case (NONE(), _) then inTree;
-
-    case (SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE(
-        name, NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _)
-      equation
+    case NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty)
+      algorithm
         // Enter the class' frame and update the class extends in it.
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
-        (cls, env) = updateClassExtends(cls, env, cls_ty);
+        env := NFSCodeEnv.enterFrame(cls_env, inEnv);
+        (cls, env) := updateClassExtends(cls, env, cls_ty);
         // Call update2 on the class' environment to update the extends.
-        cls_env :: rest_env = update2(env);
-        // Recurse into left and right branch of the tree.
-        left = update3(left, rest_env);
-        right = update3(right, rest_env);
+        cls_env :: rest_env := update2(env);
         // Rebuild the class item with the updated information.
-        item = NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
-        value = SOME(NFSCodeEnv.AVLTREEVALUE(name, item));
+        item := NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
       then
-        SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
+        ();
 
-    case (SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right)), _)
-      equation
-        // Recurse into left and right branch of the tree.
-        left = update3(left, inEnv);
-        right = update3(right, inEnv);
-      then
-        SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
-
+    else ();
   end match;
 end update3;
 

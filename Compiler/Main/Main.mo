@@ -406,7 +406,7 @@ algorithm
       equation
         pnew = Parser.parse(inLib, "UTF-8");
         p = GlobalScriptUtil.getSymbolTableAST(inSymTab);
-        pnew = Interactive.updateProgram(pnew, p);
+        pnew = Interactive.mergeProgram(pnew, p);
         newst = GlobalScriptUtil.setSymbolTableAST(inSymTab, pnew);
       then
        newst;

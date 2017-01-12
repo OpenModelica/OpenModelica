@@ -8562,6 +8562,20 @@ algorithm
   end matchcontinue;
 end removeCf;
 
+public function mergeProgram
+  "Merges two programs into one."
+  input Absyn.Program newProgram;
+  input Absyn.Program oldProgram;
+  output Absyn.Program program;
+protected
+  list<Absyn.Class> cl1, cl2;
+  Absyn.Within w;
+algorithm
+  Absyn.PROGRAM(classes = cl1, within_ = w) := newProgram;
+  Absyn.PROGRAM(classes = cl2) := oldProgram;
+  program := Absyn.PROGRAM(listAppend(cl1, cl2), w);
+end mergeProgram;
+
 public function updateProgram
 " This function takes an old program (second argument), i.e. the old
    symboltable, and a new program (first argument), i.e. a new set of

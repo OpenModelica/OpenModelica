@@ -701,7 +701,7 @@ algorithm
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed"});
       then fail();
 
   end match;
