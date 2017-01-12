@@ -74,10 +74,8 @@ private:
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
-  QFile mCommunicationLogFile;
-  QTextStream mCommunicationLogFileTextStream;
-  QFile mCommandsMosFile;
-  QTextStream mCommandsLogFileTextStream;
+  FILE *mpCommunicationLogFile;
+  FILE *mpCommandsLogFile;
   double mTotalOMCCallsTime;
   QList<UnitConverion> mUnitConversionList;
   QMap<QString, QList<QString> > mDerivedUnitsMap;
