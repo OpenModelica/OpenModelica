@@ -117,14 +117,6 @@ import ZeroCrossings;
 
 protected constant String UNDERLINE = "========================================";
 
-public function appendLists
-  input list<SimCode.SimEqSystem> inEqn1;
-  input list<SimCode.SimEqSystem> inEqn2;
-  output list<SimCode.SimEqSystem> outEqn;
-algorithm
-  outEqn := listAppend(inEqn1, inEqn2);
-end appendLists;
-
 protected function compareEqSystems
   input SimCode.SimEqSystem eq1;
   input SimCode.SimEqSystem eq2;

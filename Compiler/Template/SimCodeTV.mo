@@ -793,11 +793,6 @@ package SimCodeFunction
 end SimCodeFunction;
 
 package SimCodeUtil
-  function appendLists
-    input list<SimCode.SimEqSystem> inEqn1;
-    input list<SimCode.SimEqSystem> inEqn2;
-    output list<SimCode.SimEqSystem> outEqn;
-  end appendLists;
 
   function functionInfo
     input SimCodeFunction.Function fn;
