@@ -423,7 +423,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.numberOfNoneZeros;
       flag = IDAKLU(idaData->ida_mem, idaData->N, idaData->NNZ);
       /* to add a cj identety matrix */
-      idaData->tmpJac = NewSparseMat(idaData->N, idaData->N, idaData->NNZ);
+      idaData->tmpJac = NewSparseMat(idaData->N, idaData->N, idaData->N);
     }
     if (checkIDAflag(flag)){
       throwStreamPrint(threadData, "##IDA## Setup of linear solver KLU failed!");
