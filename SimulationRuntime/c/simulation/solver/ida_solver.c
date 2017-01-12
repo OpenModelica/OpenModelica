@@ -1346,7 +1346,7 @@ static void setJacElementKluSparse(int row, int col, double value, int nth, SlsM
 }
 
 /* finish sparse matrix, by fixing colprts */
-static void finishSparseColPtr(SlsMat mat)
+static void finishSparseColPtr(SlsMat mat, int nnz)
 {
   int i;
   for(i=1; i<mat->N+1; ++i){
@@ -1355,7 +1355,7 @@ static void finishSparseColPtr(SlsMat mat)
     }
   }
   /* finish matrix colptrs */
-  mat->colptrs[mat->N] = mat->NNZ;
+  mat->colptrs[mat->N] = nnz;
 }
 
 /*
@@ -1458,7 +1458,7 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
       }
     }
   }
-  finishSparseColPtr(Jac);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
 
 
   unsetContext(data);
