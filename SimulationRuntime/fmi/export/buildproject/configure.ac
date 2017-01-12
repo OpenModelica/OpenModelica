@@ -183,10 +183,17 @@ fi
 
 AC_MSG_CHECKING([for static pthreads])
 OLDLIBS=$LIBS
-LIBS="$OLDLIBS -Wl,-Bstatic -lpthread -Wl,-Bdynamic"
-AC_LINK_IFELSE([AC_LANG_CALL([], [pthread_mutex_lock])],[AC_MSG_RESULT([OK (static)])],[
-  AC_MSG_RESULT([no])
-  LIBS="$OLDLIBS"
+NEWLIBS="$OLDLIBS -Wl,-Bstatic -lpthread -Wl,-Bdynamic"
+LIBS="$NEWLIBS -shared"
+PTHREAD_STATIC=0
+if echo $host_cpu | grep -q arm; then
+  AC_MSG_RESULT([not looking (we have problems detecting if libpthread.a can be statically linked on ARM platforms)])
+else
+  AC_LINK_IFELSE([AC_LANG_CALL([], [pthread_mutex_lock])],[LIBS="$NEWLIBS";PTHREAD_STATIC=1;AC_MSG_RESULT([OK (static)])],[AC_MSG_RESULT([no])])
+fi
+
+if ! test "$PTHREAD_STATIC" = 1; then
+  LIBS="$OLDLIBS -shared"
   AC_CHECK_LIB(pthread,[pthread_mutex_lock],[],[
     if test "$LIBTYPE_DYNAMIC" = 1; then
       AC_MSG_ERROR([pthreads not found and requested dynamic linking])
@@ -195,7 +202,7 @@ AC_LINK_IFELSE([AC_LANG_CALL([], [pthread_mutex_lock])],[AC_MSG_RESULT([OK (stat
       CPPFLAGS="$CPPFLAGS -DOMC_NO_THREADS"
     fi
   ])
-])
+fi
 
 AC_CHECK_LIB([m],[cos],[],[AC_MSG_ERROR([math library not found])])
 
