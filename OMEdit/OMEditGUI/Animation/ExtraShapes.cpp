@@ -682,9 +682,6 @@ DXFile::DXFile(std::string filename)
         (*facette)[1] = (i * 4) + 1;
         (*facette)[2] = (i * 4) + 2;
         this->addPrimitiveSet(facette);
-
-        //normal calculation
-        osg::Vec3f normal =  faces[i].calcNormals();
       }
       else
       {

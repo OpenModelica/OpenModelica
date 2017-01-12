@@ -258,6 +258,7 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/VisualizerMAT.cpp \
   Animation/VisualizerCSV.cpp \
   Animation/VisualizerFMU.cpp \
+  Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
   Animation/Shapes.cpp \
   Animation/TimeManager.cpp \
@@ -273,6 +274,7 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/VisualizerMAT.h \
   Animation/VisualizerCSV.h \
   Animation/VisualizerFMU.h \
+  Animation/FMUSettingsDialog.h \
   Animation/FMUWrapper.h \
   Animation/Shapes.h \
   Animation/TimeManager.h \

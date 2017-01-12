@@ -61,6 +61,7 @@ class VisualizerFMU : public VisualizerAbstract
   void updateVisAttributes(const double time) override;
   void updateScene(const double time = 0.0) override;
   void updateObjectAttributeFMU(ShapeObjectAttribute* attr, FMUWrapperAbstract* fmuWrapper);
+  void setSimulationSettings(double stepsize, Solver solver, bool iterateEvents);
  private:
   std::shared_ptr<fmi_import_context_t> mpContext;
   jm_callbacks mCallbacks;

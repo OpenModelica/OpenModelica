@@ -43,6 +43,8 @@
 #include <QComboBox>
 #include <QTimer>
 
+#include "FMUSettingsDialog.h"
+
 class VisualizerAbstract;
 class Label;
 
@@ -54,7 +56,6 @@ public:
   void stopRenderFrameTimer() {mRenderFrameTimer.stop();}
   void startRenderFrameTimer() {mRenderFrameTimer.start();}
   void openAnimationFile(QString fileName);
-  void openFMUSettingsDialog();
   virtual void createActions();
 private:
   QWidget* setupViewWidget();
@@ -83,7 +84,6 @@ protected:
   QComboBox *mpPerspectiveDropDownBox;
   QAction *mpRotateCameraLeftAction;
   QAction *mpRotateCameraRightAction;
-  QDialog *mpFMUSettingsDialog;
 
   void resetCamera();
   void cameraPositionIsometric();
@@ -91,6 +91,7 @@ protected:
   void cameraPositionFront();
   void cameraPositionTop();
   double computeDistanceToOrigin();
+  void openFMUSettingsDialog(VisualizerFMU *pVisualizerFMU);
 public slots:
   void renderFrame();
   void updateScene();
@@ -104,7 +105,6 @@ public slots:
   void setPerspective(int value);
   void rotateCameraLeft();
   void rotateCameraRight();
-  void saveSimSettings();
 };
 
 #endif // ABSTRACTANIMATIONWINDOW_H

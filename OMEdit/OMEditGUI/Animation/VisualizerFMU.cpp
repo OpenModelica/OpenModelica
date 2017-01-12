@@ -44,9 +44,9 @@ VisualizerFMU::VisualizerFMU(const std::string& modelFile, const std::string& pa
 }
  VisualizerFMU::~VisualizerFMU()
  {
-	 if (mpFMU){
-	   free(mpFMU);
-	 }
+   if (mpFMU){
+     free(mpFMU);
+   }
  }
 
 
@@ -92,7 +92,7 @@ void VisualizerFMU::allocateContext(const std::string& modelFile, const std::str
   mCallbacks.realloc = realloc;
   mCallbacks.free = free;
   mCallbacks.logger = jm_default_logger;
-  mCallbacks.log_level = jm_log_level_debug;  // jm_log_level_error;
+  mCallbacks.log_level = jm_log_level_error;  // jm_log_level_error;
   mCallbacks.context = 0;
   #ifdef FMILIB_GENERATE_BUILD_STAMP
     std::cout << "Library build stamp: \n" << fmilib_get_build_stamp() << std::endl;
@@ -183,7 +183,7 @@ double VisualizerFMU::simulateStep(const double time)
   bool zeroCrossingEvent = mpFMU->checkForTriggeredEvent();
 
   // Handle any events
-  if (mpSimSettings->getCallEventUpdate() || zeroCrossingEvent || mpFMU->itsEventTime())
+  if (mpSimSettings->getIterateEvents() && (mpSimSettings->getCallEventUpdate() || zeroCrossingEvent || mpFMU->itsEventTime()))
   {
     mpFMU->handleEvents(mpSimSettings->getIntermediateResults());
   }
@@ -327,3 +327,9 @@ void VisualizerFMU::updateObjectAttributeFMU(ShapeObjectAttribute* attr, FMUWrap
   }
 }
 
+void VisualizerFMU::setSimulationSettings(double stepsize, Solver solver, bool iterateEvents)
+{
+  mpSimSettings->setHdef(stepsize);
+  mpSimSettings->setSolver(solver);
+  mpSimSettings->setIterateEvents(iterateEvents);
+}

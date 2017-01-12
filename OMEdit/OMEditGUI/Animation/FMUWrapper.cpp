@@ -43,7 +43,8 @@ SimSettingsFMU::SimSettingsFMU()
                   _hdef(0.1),
                   _tend(0.1),
                   _relativeTolerance(0.001),
-                  _solver(Solver::EULER_FORWARD)
+                  _solver(Solver::EULER_FORWARD),
+                  mIterateEvents(true)
 {
 }
 
@@ -107,6 +108,15 @@ int SimSettingsFMU::getIntermediateResults()
   return _intermediateResults;
 }
 
+void SimSettingsFMU::setIterateEvents(bool iE)
+{
+  mIterateEvents = iE;
+}
+
+bool SimSettingsFMU::getIterateEvents()
+{
+  return mIterateEvents;
+}
 //-------------------------------
 // Abstract FMU class
 //-------------------------------
@@ -145,7 +155,7 @@ FMUWrapper_ME_1::~FMUWrapper_ME_1()
 
 void FMUWrapper_ME_1::fmi_get_real(unsigned int* valueRef, double* res)
 {
-	fmi1_import_get_real(mpFMU, valueRef, 1, res);
+  fmi1_import_get_real(mpFMU, valueRef, 1, res);
 }
 
 unsigned int FMUWrapper_ME_1::fmi_get_variable_by_name(const char* name)
@@ -321,7 +331,7 @@ FMUWrapper_ME_2::FMUWrapper_ME_2()
       mCallBackFunctions(),
       mFMUdata()
 {
-	mFMUdata.terminateSimulation = fmi2_false;
+  mFMUdata.terminateSimulation = fmi2_false;
 }
 
 FMUWrapper_ME_2::~FMUWrapper_ME_2()
@@ -342,7 +352,7 @@ FMUWrapper_ME_2::~FMUWrapper_ME_2()
 
 void FMUWrapper_ME_2::fmi_get_real(unsigned int* valueRef, double* res)
 {
-	fmi2_import_get_real(mpFMU, valueRef, 1, res);
+  fmi2_import_get_real(mpFMU, valueRef, 1, res);
 }
 
 void FMUWrapper_ME_2::load(const std::string& modelFile, const std::string& path, fmi_import_context_t* context)
@@ -403,7 +413,7 @@ void FMUWrapper_ME_2::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
   try
   {
     mFMUdata.fmiStatus2 = fmi2_import_enter_initialization_mode(mpFMU);
-	mFMUdata.fmiStatus2 = fmi2_import_exit_initialization_mode(mpFMU);
+  mFMUdata.fmiStatus2 = fmi2_import_exit_initialization_mode(mpFMU);
   }
   catch (std::exception &ex)
   {
@@ -480,7 +490,7 @@ void FMUWrapper_ME_2::updateNextTimeStep(const double hdef)
   double tlast = mFMUdata._tcur;
   mFMUdata._tcur += hdef;
   if (mFMUdata.eventInfo2.nextEventTimeDefined && (mFMUdata._tcur >= mFMUdata.eventInfo2.nextEventTime)) {
-	  mFMUdata._tcur = mFMUdata.eventInfo2.nextEventTime;
+    mFMUdata._tcur = mFMUdata.eventInfo2.nextEventTime;
   }
   mFMUdata._hcur = mFMUdata._tcur - tlast;
 }
@@ -488,11 +498,11 @@ void FMUWrapper_ME_2::updateNextTimeStep(const double hdef)
 void FMUWrapper_ME_2::handleEvents(const int intermediateResults)
 {
   //std::cout<<"Handle event at "<<std::to_string(mFMUdata._tcur)<<std::endl;
-	mFMUdata.fmiStatus2 = fmi2_import_enter_event_mode(mpFMU);
-	do_event_iteration(mpFMU, &mFMUdata.eventInfo2);
-	mFMUdata.fmiStatus2 = fmi2_import_enter_continuous_time_mode(mpFMU);
-	mFMUdata.fmiStatus2 = fmi2_import_get_continuous_states(mpFMU, mFMUdata._states, mFMUdata._nStates);
-	mFMUdata.fmiStatus2 = fmi2_import_get_event_indicators(mpFMU, mFMUdata._eventIndicators, mFMUdata._nEventIndicators);
+  mFMUdata.fmiStatus2 = fmi2_import_enter_event_mode(mpFMU);
+  do_event_iteration(mpFMU, &mFMUdata.eventInfo2);
+  mFMUdata.fmiStatus2 = fmi2_import_enter_continuous_time_mode(mpFMU);
+  mFMUdata.fmiStatus2 = fmi2_import_get_continuous_states(mpFMU, mFMUdata._states, mFMUdata._nStates);
+  mFMUdata.fmiStatus2 = fmi2_import_get_event_indicators(mpFMU, mFMUdata._eventIndicators, mFMUdata._nEventIndicators);
 }
 
 void FMUWrapper_ME_2::prepareSimulationStep(const double time)
