@@ -12,6 +12,11 @@ configure
 *.config
 *.o
 *.qm
+*.a
+*.so
+*.dll
+*.lib
+*.exe
 /OMEdit/OMEditGUI/Debugger/Parser/GDBMIOutput.tokens
 /OMEdit/OMEditGUI/Debugger/Parser/GDBMIOutputLexer.c
 /OMEdit/OMEditGUI/Debugger/Parser/GDBMIOutputLexer.h
