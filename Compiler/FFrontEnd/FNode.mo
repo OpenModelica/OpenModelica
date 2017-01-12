@@ -330,6 +330,7 @@ public function addChildRef
   input Ref inParentRef;
   input Name inName;
   input Ref inChildRef;
+  input Boolean checkDuplicate = false;
 protected
   Name n;
   Integer i;
@@ -339,7 +340,8 @@ protected
   Ref parent;
 algorithm
   FCore.N(n, i, p, c, d) := fromRef(inParentRef);
-  c := RefTree.add(c, inName, inChildRef, printElementConflictError);
+  c := RefTree.add(c, inName, inChildRef,
+    if checkDuplicate then printElementConflictError else RefTree.addConflictReplace);
   parent := updateRef(inParentRef, FCore.N(n, i, p, c, d));
   FGraphStream.edge(inName, fromRef(parent), fromRef(inChildRef));
 end addChildRef;
@@ -352,11 +354,14 @@ protected
   SourceInfo info1, info2;
   String name;
 algorithm
-  dummy := newRef;
-  //(name, info1) := SCode.elementNameInfo(FNode.getElementFromRef(newRef));
-  //info2 := SCode.elementInfo(FNode.getElementFromRef(oldRef));
-  //Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {name}, {info2, info1});
-  //fail();
+  if Config.acceptMetaModelicaGrammar() then
+    dummy := newRef;
+  else
+    (name, info1) := SCode.elementNameInfo(FNode.getElementFromRef(newRef));
+    info2 := SCode.elementInfo(FNode.getElementFromRef(oldRef));
+    Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {name}, {info2, info1});
+    fail();
+  end if;
 end printElementConflictError;
 
 public function addImportToRef

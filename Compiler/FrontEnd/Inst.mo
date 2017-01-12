@@ -2011,7 +2011,8 @@ algorithm
 
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, List.select(els, SCodeUtil.isRedeclareElement));
 
-        (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
+        (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre,
+          cdefelts, impl, SOME(mods), FGraph.isEmptyScope(env));
 
         //// fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " + if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
 
@@ -2849,7 +2850,7 @@ algorithm
 
         // Classes and imports are added to env.
         (outCache, outEnv, outIH) := InstUtil.addClassdefsToEnv(inCache, inEnv,
-          inIH, inPrefix, cdef_els, true, SOME(inMod));
+          inIH, inPrefix, cdef_els, true, SOME(inMod), FGraph.isEmptyScope(inEnv));
         // Inherited elements are added to env.
         (outCache, outEnv, outIH, emods, ext_comps) := InstExtends.instExtendsAndClassExtendsList(
           outCache, outEnv, outIH, inMod, inPrefix, extends_els, class_ext_els,

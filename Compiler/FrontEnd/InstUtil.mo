@@ -2196,13 +2196,14 @@ public function addClassdefsToEnv
   input list<SCode.Element> inClasses;
   input Boolean inImpl;
   input Option<DAE.Mod> inRedeclareMod;
+  input Boolean checkDuplicates = false;
   output FCore.Cache outCache = inCache;
   output FCore.Graph outEnv = inEnv;
   output InnerOuter.InstHierarchy outIH = inIH;
 algorithm
   for c in inClasses loop
     (outCache, outEnv, outIH) :=
-      addClassdefToEnv(outCache, outEnv, outIH, inPrefix, c, inImpl, inRedeclareMod);
+      addClassdefToEnv(outCache, outEnv, outIH, inPrefix, c, inImpl, inRedeclareMod, checkDuplicates);
   end for;
 end addClassdefsToEnv;
 
@@ -2216,6 +2217,7 @@ protected function addClassdefToEnv
   input SCode.Element inSCodeElement;
   input Boolean inBoolean;
   input Option<DAE.Mod> redeclareMod;
+  input Boolean checkDuplicates = false;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -2252,7 +2254,7 @@ algorithm
     case (cache,env,ih,pre,(sel1 as SCode.CLASS()),_)
       equation
         // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCode.className(cl));
-        env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD());
+        env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD(), checkDuplicates);
         ih = InnerOuter.addClassIfInner(sel1, pre, env_1, ih);
       then
         (cache,env_1,ih);

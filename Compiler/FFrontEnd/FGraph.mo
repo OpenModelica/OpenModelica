@@ -1085,6 +1085,7 @@ public function mkClassNode
   input SCode.Element inClass;
   input Prefix.Prefix inPrefix;
   input DAE.Mod inMod;
+  input Boolean checkDuplicate = false;
   output Graph outGraph;
 algorithm
   outGraph := matchcontinue (inGraph, inClass, inPrefix, inMod)
@@ -1105,7 +1106,8 @@ algorithm
     case (g, SCode.CLASS(), _, _)
       equation
         r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkClassNode(inClass, inPrefix, inMod, r, FCore.USERDEFINED(), g);
+        g = FGraphBuildEnv.mkClassNode(inClass, inPrefix, inMod, r,
+          FCore.USERDEFINED(), g, checkDuplicate);
       then
         g;
 

@@ -78,13 +78,15 @@ public function mkProgramGraph
 "builds nodes out of classes"
   input SCode.Program inProgram;
   input Kind inKind;
-  input Graph inGraph;
-  output Graph outGraph;
+  input output Graph graph;
 protected
   Ref topRef;
 algorithm
-  topRef := FGraph.top(inGraph);
-  outGraph := List.fold2(inProgram, mkClassGraph, topRef, inKind, inGraph);
+  topRef := FGraph.top(graph);
+
+  for cls in inProgram loop
+    graph := mkClassGraph(cls, topRef, inKind, graph, true);
+  end for;
 end mkProgramGraph;
 
 protected function mkClassGraph
@@ -93,6 +95,7 @@ protected function mkClassGraph
   input Ref inParentRef;
   input Kind inKind;
   input Graph inGraph;
+  input Boolean checkDuplicate = false;
   output Graph outGraph;
 algorithm
   outGraph := match(inClass, inParentRef, inKind, inGraph)
@@ -105,7 +108,8 @@ algorithm
     // class (we don't care here if is replaceable or not we can get that from the class)
     case (SCode.CLASS(), _, _, g)
       equation
-        g = mkClassNode(inClass, Prefix.NOPRE(), DAE.NOMOD(), inParentRef, inKind, g);
+        g = mkClassNode(inClass, Prefix.NOPRE(), DAE.NOMOD(), inParentRef,
+          inKind, g, checkDuplicate);
       then
         g;
 
@@ -119,6 +123,7 @@ public function mkClassNode
   input Ref inParentRef;
   input Kind inKind;
   input Graph inGraph;
+  input Boolean checkDuplicate = false;
   output Graph outGraph;
 algorithm
   outGraph := match(inClass, inPrefix, inMod, inParentRef, inKind, inGraph)
@@ -137,7 +142,7 @@ algorithm
         SCode.CLASS(name = name) = cls;
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, inPrefix, inMod, inKind, FCore.CLS_UNTYPED()));
         nr = FNode.toRef(n);
-        FNode.addChildRef(inParentRef, name, nr);
+        FNode.addChildRef(inParentRef, name, nr, checkDuplicate);
         // g = mkRefNode(FNode.refNodeName, {}, nr, g);
       then
         g;
