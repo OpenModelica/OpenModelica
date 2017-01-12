@@ -1948,17 +1948,7 @@ match var
  * before set_memory_state. Strings are not known, so we copy them, etc...
  */
 case var as VARIABLE(ty = T_STRING(__)) then
-    if not acceptMetaModelicaGrammar() then
-      // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
-      let &varCopy += 'String Variables not Allowed in ParModelica.'
-      let &varAssign +=
-        <<
-           String Variables not Allowed in ParModelica.
-        >>
-      ""
-    else
-      let &varAssign += 'How did you get here??'
-      ""
+  error(sourceInfo(), "String Variables not Allowed in ParModelica.")
 
 case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let instDimsInit = (instDims |> exp =>
