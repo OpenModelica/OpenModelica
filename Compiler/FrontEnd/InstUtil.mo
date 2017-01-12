@@ -8317,12 +8317,12 @@ algorithm
         //remove domain from the subModLst:
         subModLst = List.filterOnFalse(subModLst,isSubModDomainOrStart);
 
-        ghostL = (SCode.COMPONENT(stringAppend(name,".ghostL"), prefixes,
+        ghostL = (SCode.COMPONENT(stringAppend(name,"_ghostL"), prefixes,
               SCode.ATTR(arrayDims,connectorType,parallelism,
              variability, direction, Absyn.NONFIELD()), typeSpec,
              SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2),
              comment, condition, info),daeMod);
-        ghostR = (SCode.COMPONENT(stringAppend(name,".ghostR"), prefixes,
+        ghostR = (SCode.COMPONENT(stringAppend(name,"_ghostR"), prefixes,
              SCode.ATTR(arrayDims,connectorType,parallelism,
              variability, direction, Absyn.NONFIELD()), typeSpec,
              SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2),
@@ -8858,9 +8858,9 @@ algorithm
       equation
         true = List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual);
         exp = (if isBC and i == 1 then
-                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostL"), subscripts))  //left BC
+                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostL"), subscripts))  //left BC
               elseif isBC and i == N then
-                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostR"), subscripts))  //right BC
+                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostR"), subscripts))  //right BC
               else
                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts))  //no BC
               );
@@ -8875,12 +8875,12 @@ algorithm
         end if;
         //skip = true
         leftVar = (if i == 1 then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostL"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostL"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
         rightVar = (if i == N then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostR"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostR"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
                   );
@@ -8903,13 +8903,13 @@ algorithm
         end if;
         //skip = true
         leftVar = (if i == 1 then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostL"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostL"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
         actualVar = Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
         rightVar = (if i == N then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,".ghostR"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostR"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
                   );
