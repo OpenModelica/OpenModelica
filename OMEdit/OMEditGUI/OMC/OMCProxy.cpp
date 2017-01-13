@@ -34,6 +34,7 @@
 
 #include "meta/meta_modelica.h"
 #include "omc_config.h"
+#include "gc.h"
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
@@ -43,6 +44,7 @@ void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function
 int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
 void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
+void omc_System_initGarbageCollector(void *threadData);
 #ifdef WIN32
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
@@ -183,19 +185,11 @@ bool OMCProxy::initializeOMC()
   /* create the tmp path */
   QString& tmpPath = Utilities::tempDirectory();
   /* create a file to write OMEdit communication log */
-  mCommunicationLogFile.setFileName(QString("%1omeditcommunication.log").arg(tmpPath));
-  if (mCommunicationLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    mCommunicationLogFileTextStream.setDevice(&mCommunicationLogFile);
-    mCommunicationLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
-    mCommunicationLogFileTextStream.setGenerateByteOrderMark(false);
-  }
+  QString communicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
+  mpCommunicationLogFile = fopen(communicationLogFilePath.toStdString().c_str(), "w");
   /* create a file to write OMEdit commands */
-  mCommandsMosFile.setFileName(QString("%1omeditcommands.mos").arg(tmpPath));
-  if (mCommandsMosFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    mCommandsLogFileTextStream.setDevice(&mCommandsMosFile);
-    mCommandsLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
-    mCommandsLogFileTextStream.setGenerateByteOrderMark(false);
-  }
+  QString commandsLogFilePath = QString("%1omeditcommands.mos").arg(tmpPath);
+  mpCommandsLogFile = fopen(commandsLogFilePath.toStdString().c_str(), "w");
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
@@ -204,7 +198,8 @@ bool OMCProxy::initializeOMC()
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
   // initialize threadData
-  threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
+  omc_System_initGarbageCollector(NULL);
+  threadData_t *threadData = (threadData_t *) GC_malloc(sizeof(threadData_t));
   void *st = 0;
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, args);
@@ -237,14 +232,20 @@ bool OMCProxy::initializeOMC()
 }
 
 /*!
-  Stops the OpenModelica Compiler. Kill the process omc and also deletes the CORBA reference file.
-  \see startServer
-  */
+ * \brief OMCProxy::quitOMC
+ * Quits the OpenModelica Compiler.\n
+ * Closes the log files.
+ * \see startServer
+ */
 void OMCProxy::quitOMC()
 {
   sendCommand("quit()");
-  mCommunicationLogFile.close();
-  mCommandsMosFile.close();
+  if (mpCommunicationLogFile) {
+    fclose(mpCommunicationLogFile);
+  }
+  if (mpCommandsLogFile) {
+    fclose(mpCommandsLogFile);
+  }
 }
 
 /*!
@@ -331,15 +332,15 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
   mCurrentCommandIndex = mCommandsList.count();
   mpExpressionTextBox->setText("");
   // write the log to communication log file
-  if (mCommunicationLogFileTextStream.device()) {
-    mCommunicationLogFileTextStream << QString("%1 %2\n").arg(command).arg(commandTime->currentTime().toString("hh:mm:ss:zzz"));
+  if (mpCommunicationLogFile) {
+    fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
   }
   // write commands mos file
-  if (mCommandsLogFileTextStream.device()) {
+  if (mpCommandsLogFile) {
     if (command.compare("quit()") == 0) {
-      mCommandsLogFileTextStream << QString("%1;\n").arg(command);
+      fputs(QString("%1;\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
     } else {
-      mCommandsLogFileTextStream << QString("%1; getErrorString();\n").arg(command);
+      fputs(QString("%1; getErrorString();\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
     }
   }
 }
@@ -359,11 +360,10 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
   format.setFont(font);
   Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
   // write the log to communication log file
-  if (mCommunicationLogFileTextStream.device()) {
-    mCommunicationLogFileTextStream << QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz"));
+  if (mpCommunicationLogFile) {
+    fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
     mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-    mCommunicationLogFileTextStream << QString("%1 secs (%2 secs)\n\n").arg(QString::number((double)responseTime->elapsed() / 1000))
-                                       .arg(QString::number(mTotalOMCCallsTime));
+    fputs(QString("%1 secs (%2 secs)\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).toStdString().c_str(), mpCommunicationLogFile);
   }
 }
 

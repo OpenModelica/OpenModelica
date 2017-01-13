@@ -48,6 +48,8 @@
 CrashReportDialog::CrashReportDialog()
   : QDialog(0)
 {
+  // flush all streams before making a crash report so we get full logs.
+  fflush(NULL);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::crashReport));
   setAttribute(Qt::WA_DeleteOnClose);
   // set heading
