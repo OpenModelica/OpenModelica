@@ -49,6 +49,7 @@
 #include <QDesktopWidget>
 #include <QClipboard>
 #include <QTcpSocket>
+#include <QMessageBox>
 
 /*!
  * \class SimulationOutputTree
@@ -381,7 +382,7 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   mpSimulationOutputTextBrowser->insertPlainText(error);
   /* write the error link */
   if (!pSimulationMessage->mIndex.isEmpty()) {
-    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.json").path() + "?index=" + pSimulationMessage->mIndex + "\">Debug more</a><br />");
+    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + pSimulationMessage->mIndex + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");
   }
@@ -649,6 +650,8 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     }
     pTransformationsWidget->fetchEquationData(equationIndex);
   } else {
-    /* TODO: Display error-message */
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
+                          .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
+                          .arg(tr("Url is <b>%1</b>").arg(url.toString())), Helper::ok);
   }
 }

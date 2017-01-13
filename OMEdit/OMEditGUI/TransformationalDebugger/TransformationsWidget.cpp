@@ -881,6 +881,7 @@ void TransformationsWidget::loadTransformations()
     fetchEquations();
     hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
   }
+  fetchVariableData(mpTVariableTreeProxyModel->index(0, 0));
 }
 
 void TransformationsWidget::fetchDefinedInEquations(const OMVariable &variable)
