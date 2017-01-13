@@ -8,7 +8,7 @@ extension and specialization of the OpenModelica connection editor OMEdit.
 In the context of this work a MetaModel is composed of several sub-models including
 the interconnections between these sub-models. The standard way to store a MetaModel
 for a TLM based co-simulation is in XML format. The XML schema standard is accessible from
-`tlmModelDescription.xsd <https://github.com/OpenModelica/OMEdit/blob/master/OMEdit/OMEditGUI/Resources/XMLSchema/tlmModelDescription.xsd>`__
+`tlmModelDescription.xsd <https://github.com/OpenModelica/OMEdit/blob/master/OMEdit/OMEditGUI/Resources/XMLSchema/tlmModelDescription.xsd>`__.
 
 The full graphical functionality of the MetaModel editor for TLM Based co-simulation
 provides the following general functionalities:
@@ -121,7 +121,7 @@ When the external models have all been prepared, the next step is to load extern
 in OMEdit by selecting the **File > Load External Model(s)** from the menu.
 
 OMEdit starts loading the external model and will be shown in the **Libraries Browser**
-as shown below in :numref:`tlm-loaded-external-models-library-browser`
+as shown below in :numref:`tlm-loaded-external-models-library-browser`.
 
 .. figure :: media/tlm-loaded-external-models-library-browser.png
   :name: tlm-loaded-external-models-library-browser
@@ -151,11 +151,12 @@ Saving the MetaModel
 Adding Submodels
 ^^^^^^^^^^^^^^^^
 
-It is possible to build the double pendulum by drag-and-drop of each simulation model
-component (sub-model) from the **Libraries Browser** to the Diagram View.
-To place a component in the Diagram View of the double pendulum model, drag each external
-sub-model of the double pendulum(i.e. **Shaft1**, **Shaft2**, and **BEAST bearing** sub-model)
-from the **Libraries Browser** to the **Diagram View**.
+It is possible to build the double pendulum by drag-and-drop of each simulation
+model component (sub-model) from the **Libraries Browser** to the Diagram View.
+To place a component in the Diagram View of the double pendulum model, drag each
+external sub-model of the double pendulum (i.e. **Shaft1**, **Shaft2**, and
+**BEAST bearing** sub-model) from the **Libraries Browser** to the **Diagram
+View**.
 
 .. figure :: media/tlm-add-submodels.png
 
@@ -175,7 +176,7 @@ To retrieve list of TLM interface data for sub-models, do any of the following m
 - Right click the MetaModel in the **Library Browser** and choose **Fetch Interface Data** from the popup menu
   (see :numref:`tlm-library-browser-popup-menu`).
 
-:numref:`tlm-fetch-interface-progress` will appears in which you will be able to see the progress information
+:numref:`tlm-fetch-interface-progress` will appear in which you will be able to see the progress information
 of fetching the interface data.
 
 .. figure :: media/tlm-fetch-interface-progress.png
@@ -194,9 +195,10 @@ in the diagram view as shown below in :numref:`tlm-fetched-interface-points`.
 Connecting Submodels
 ^^^^^^^^^^^^^^^^^^^^
 
-When the sub-models and interface points have all been placed in the Diagram View
-, similar to :numref:`tlm-fetched-interface-points`, the next step is to connect the sub-models.
-Sub-models are connected using the **Connection Line Button** (|connect-mode|) from the toolbar.
+When the sub-models and interface points have all been placed in the Diagram
+View, similar to :numref:`tlm-fetched-interface-points`, the next step is to
+connect the sub-models. Sub-models are connected using the **Connection Line
+Button** (|connect-mode|) from the toolbar.
 
 .. |connect-mode| image:: media/omedit-icons/connect-mode.*
   :alt: Connection Line Icon
@@ -243,7 +245,7 @@ To change a parameter value of a connection, do any of the following methods:
 - Double-click on the connection you want to change its parameter
 - Right click on the connection and choose **Attributes** from the popup menu.
 
-The parameter dialog of that connection appears (See :numref:`tlm-submodels-connection-dialog`)
+The parameter dialog of that connection appears (see :numref:`tlm-submodels-connection-dialog`)
 in which you will be able to specify the connections attributes.
 
 Changing Co-Simulation Parameters
@@ -251,14 +253,14 @@ Changing Co-Simulation Parameters
 
 To change the co-simulation parameters, do any of the following methods:
 
-- Click Simulation Parameters button (|simulation-parameters|) from the toolbar (requires a MetaModel to be active in MetModel Widget)
+- Click Simulation Parameters button (|simulation-parameters|) from the toolbar (requires a MetaModel to be active in MetaModel Widget)
 
 .. |simulation-parameters| image:: media/omedit-icons/simulation-parameters.*
   :alt: MetaModel Simulation Parameters Icon
   :height: 14pt
 
 - Right click an empty location in the Diagram View of the  MetaModel Widget and choose **Simulation Parameters**
-  from the popup menu(see :numref:`tlm-change-cosimulation-parameters-popup-menu`)
+  from the popup menu (see :numref:`tlm-change-cosimulation-parameters-popup-menu`)
 
 .. figure :: media/tlm-change-cosimulation-parameters-popup-menu.png
   :name: tlm-change-cosimulation-parameters-popup-menu
