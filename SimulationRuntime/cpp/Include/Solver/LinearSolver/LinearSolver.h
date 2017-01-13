@@ -5,7 +5,7 @@
  */
 
 #if defined(klu)
-	#include <klu.h>
+	#include <../../../../build/include/omc/c/suitesparse/Include/klu.h>
 #endif
 
 class LinearSolver : public IAlgLoopSolver
@@ -55,6 +55,7 @@ private:
 	  *_b,                  ///< right hand side
 	  *_A,				///coefficients of linear system
 	  *_zeroVec,			///zero vector
+	  *_fNominal,// klu scales the matrix entries already
 	  *_scale;				//scaling parameter to prevent overflow in singular systems
   bool _sparse;
   bool _generateoutput;		//prints nothing, if set to false. Prints Matrix, right hand side, and solution of the linear system, if set to true.
@@ -66,8 +67,6 @@ private:
   int* _Ap;
   double* _Ax;
   int _nonzeros;
-#else
-	double *_fNominal;// klu scales the matrix entries already
 #endif
 
 };

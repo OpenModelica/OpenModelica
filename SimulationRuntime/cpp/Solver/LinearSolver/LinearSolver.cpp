@@ -11,11 +11,6 @@
 #include <Core/Utils/extension/logger.hpp>
 #include <Solver/LinearSolver/LinearSolver.h>
 
-#if defined(klu)
-	#include <klu.h>
-#endif
-
-#include <iostream>
 
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
@@ -137,7 +132,7 @@ void LinearSolver::initialize()
 			memset(_scale, 0, _dimSys*sizeof(double));
 
 			#if defined(klu)
-				if(_sparse == true)
+				if(_sparse)
 				{
 					_kluCommon = new klu_common;
 					ok=klu_defaults (_kluCommon);
@@ -156,22 +151,12 @@ void LinearSolver::initialize()
 
 					_Ax= boost::numeric::bindings::begin_value (A);
 
-					//testing, whether Ax is modified
-					double *Ax=0;
-					Ax = new double[_nonzeros];
-					for(int i=0;i<_nonzeros;i++) Ax[i]=_Ax[i];
-
 					memcpy(_Ap,Ti,sizeof(int)* (_dimSys + 1) );
 					memcpy(_Ai,Tj,sizeof(int)* (_nonzeros) );
 
 					_kluSymbolic = klu_analyze (_dimSys, _Ap, _Ai, _kluCommon);
 					_kluNumeric = klu_factor (_Ap, _Ai, _Ax, _kluSymbolic, _kluCommon);
 					if (_kluNumeric==NULL) throw ModelicaSimulationError(ALGLOOP_SOLVER,"error during numerical factorization with Sparse Solver KLU");
-
-					//testing, whether Ax is modified
-					for(int i=0;i<_nonzeros;i++) if(Ax[i]!=_Ax[i]) std::cout << "Ax was modified" << std::endl;
-					if(Ax)
-					delete [] Ax;
 				}
 			#endif
 		}
@@ -191,10 +176,6 @@ void LinearSolver::solve()
 
 	_iterationStatus = CONTINUE;
 
-	//use lapack
-	long int dimRHS  = 1; // Dimension of right hand side of linear system (=_b)
-	long int irtrn  = 0; // Return-flag of Fortran code
-
 	if(_algLoop->isLinearTearing())
 		_algLoop->setReal(_zeroVec); //if the system is linear tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
 
@@ -203,6 +184,10 @@ void LinearSolver::solve()
 
 	//if !_sparse, we use LAPACK routines, otherwise we use KLU to solve the linear system
 	if (!_sparse){
+		//use lapack
+		long int dimRHS  = 1; // Dimension of right hand side of linear system (=_b)
+		long int irtrn  = 0; // Return-flag of Fortran code
+
 		const matrix_t& A = _algLoop->getAMatrix();
 		const double* Atemp = A.data().begin();
 
@@ -264,6 +249,28 @@ void LinearSolver::solve()
 			_Ax= boost::numeric::bindings::begin_value (A);
 
 			if (_generateoutput){
+
+				std::cout << std::endl;
+
+				std::cout << "_Ap=(";
+				for (int i =0; i<_dimSys+1; i++){
+					std::cout << " " << _Ap[i];
+				}
+				std::cout << ")" << std::endl;
+
+				std::cout << "_Ai=(";
+				for (int i =0; i<_nonzeros; i++){
+					std::cout << " " << _Ai[i];
+				}
+				std::cout << ")" << std::endl;
+
+				std::cout << "_Ax=(";
+				for (int i =0; i<_nonzeros; i++){
+					std::cout << " " << _Ax[i];
+				}
+				std::cout << ")" << std::endl;
+
+
 				double* a = new double[_dimSys*_dimSys];
 				memset(a, 0, _dimSys*_dimSys*sizeof(double));
 
@@ -307,6 +314,7 @@ void LinearSolver::solve()
 
 			ok=klu_solve (_kluSymbolic, _kluNumeric, _dimSys, 1, _b, _kluCommon) ;
 			if (ok!=1) throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving Sparse Solver KLU");
+			_iterationStatus = DONE;
 
 		#else
 			throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear system with klu not implemented");
