@@ -390,15 +390,15 @@ bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation
             StringHandler::getTLMCausality(StringHandler::TLMInput)) {
         pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
         pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
-        pConnectionLineAnnotation->update();
-        pConnectionLineAnnotation->handleComponentMoved();
+        //pConnectionLineAnnotation->update();
+        //pConnectionLineAnnotation->handleComponentMoved();
     }
     else if(this->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
             StringHandler::getTLMCausality(StringHandler::TLMOutput)) {
         pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
         pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
-        pConnectionLineAnnotation->update();
-        pConnectionLineAnnotation->handleComponentMoved();
+        //pConnectionLineAnnotation->update();
+        //pConnectionLineAnnotation->handleComponentMoved();
     }
 
     return true;
@@ -440,9 +440,9 @@ bool MetaModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
     if(!(causality1 == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
          causality2 == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) &&
        !(causality1 == StringHandler::getTLMCausality(StringHandler::TLMInput) &&
-         causality2  != StringHandler::getTLMCausality(StringHandler::TLMOutput)) &&
+         causality2  == StringHandler::getTLMCausality(StringHandler::TLMOutput)) &&
        !(causality1 == StringHandler::getTLMCausality(StringHandler::TLMOutput) &&
-         causality2  != StringHandler::getTLMCausality(StringHandler::TLMInput))) {
+         causality2  == StringHandler::getTLMCausality(StringHandler::TLMInput))) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
                                                             "Cannot connect interface points of different causality ("+
                                                             causality1+" to "+causality2+")",

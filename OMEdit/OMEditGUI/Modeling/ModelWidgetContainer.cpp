@@ -4302,15 +4302,15 @@ void ModelWidget::getMetaModelConnections()
             StringHandler::getTLMCausality(StringHandler::TLMInput)) {
         pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
         pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
-        pConnectionLineAnnotation->update();
-        pConnectionLineAnnotation->handleComponentMoved();
+        //pConnectionLineAnnotation->update();
+        //pConnectionLineAnnotation->handleComponentMoved();
     }
     else if(pEditor->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
             StringHandler::getTLMCausality(StringHandler::TLMOutput)) {
         pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
         pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
-        pConnectionLineAnnotation->update();
-        pConnectionLineAnnotation->handleComponentMoved();
+        //pConnectionLineAnnotation->update();
+        //pConnectionLineAnnotation->handleComponentMoved();
     }
 
     mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
