@@ -34,6 +34,7 @@
 
 #include "meta/meta_modelica.h"
 #include "omc_config.h"
+#include "gc.h"
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
@@ -43,6 +44,7 @@ void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function
 int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
 void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
+void omc_System_initGarbageCollector(void *threadData);
 #ifdef WIN32
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
@@ -196,7 +198,8 @@ bool OMCProxy::initializeOMC()
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
   // initialize threadData
-  threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
+  omc_System_initGarbageCollector(NULL);
+  threadData_t *threadData = (threadData_t *) GC_malloc(sizeof(threadData_t));
   void *st = 0;
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, args);
