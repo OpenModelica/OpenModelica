@@ -2757,12 +2757,16 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
 
 void SystemImpl__initGarbageCollector(void)
 {
-  GC_init();
-  GC_register_displacement(0);
+  static init=0;
+  if (!init) {
+    GC_init();
+    GC_register_displacement(0);
 #ifdef RML_STYLE_TAGPTR
-  GC_register_displacement(3);
+    GC_register_displacement(3);
 #endif
-  GC_set_force_unmap_on_gcollect(1);
+    GC_set_force_unmap_on_gcollect(1);
+    init=1;
+  }
 }
 
 int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
