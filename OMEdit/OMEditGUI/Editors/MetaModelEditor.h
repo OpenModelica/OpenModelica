@@ -80,6 +80,7 @@ public:
   void updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile);
   void updateSubModelOrientation(QString name, QGenericMatrix<3,1,double> rot, QGenericMatrix<3,1,double> pos);
   bool createConnection(LineAnnotation *pConnectionLineAnnotation);
+  bool okToConnect(LineAnnotation *pConnectionLineAnnotation);
   void updateConnection(LineAnnotation *pConnectionLineAnnotation);
   void updateSimulationParams(QString startTime, QString stopTime);
   bool isSimulationParams();
@@ -107,6 +108,9 @@ public slots:
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   virtual void toggleCommentSelection() {}
   void alignInterfaces(QString fromSubModel, QString toSubModel, bool showError = true);
+  int getInterfaceDimensions(QString interfacePoint);
+  QString getInterfaceCausality(QString interfacePoint);
+  QString getInterfaceDomain(QString interfacePoint);
 };
 
 class MetaModelEditorPage;
