@@ -33,19 +33,24 @@ MetaModel,co-simulate it, and look at the results using OMEdit.
 Loading a MetaModel for Co-Simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will use the `Double pendulum <https://github.com/OpenModelica/OMEdit/blob/master/OMEdit/OMEditGUI/Resources/XMLSchema/tlmModelDescription.xsd>`__
-MetaModel which is a multibody system that consists of three sub-models: Two OpenModelica **Shaft**
-sub-models (**Shaft1** and **Shaft2**) and one **SKF/BEAST bearing** sub-model that together build a double pendulum.
-The **SKF/BEAST bearing** sub-model is a simplified model with only three balls to speed up the simulation.**Shaft1** is
-connected with a spherical joint to the world coordinate system. The end of **Shaft1** is connected via a TLM interface
-to the outer ring of the BEAST bearing model. The inner ring of the bearing model is connected via another TLM interface
-to **Shaft2**. Together they build the double pendulum with two **shafts**, one spherical OpenModelica joint, and one BEAST bearing.
+We will use the "Double pendulum" MetaModel which is a multibody system that
+consists of three sub-models: Two OpenModelica **Shaft** sub-models (**Shaft1**
+and **Shaft2**) and one **SKF/BEAST bearing** sub-model that together build a
+double pendulum. The **SKF/BEAST bearing** sub-model is a simplified model with
+only three balls to speed up the simulation.**Shaft1** is connected with a
+spherical joint to the world coordinate system. The end of **Shaft1** is
+connected via a TLM interface to the outer ring of the BEAST bearing model. The
+inner ring of the bearing model is connected via another TLM interface to
+**Shaft2**. Together they build the double pendulum with two **shafts**, one
+spherical OpenModelica joint, and one BEAST bearing.
 
-To load the double pendulum MetaModel , select **File > Open MetaModel** from the menu and select pendulum.xml.
+To load the double pendulum MetaModel, select **File > Open MetaModel** from the
+menu and select pendulum.xml.
 
-OMEdit starts loading the MetaModel and will be shown in the **Libraries Browser**.
-Double-clicking the MetaModel in the **Library Browser** will display the double pendulum MetaModel
-as shown below in :numref:`tlm-double-pendulum-metamodel-textview`
+OMEdit starts loading the MetaModel and will be shown in the **Libraries
+Browser**. Double-clicking the MetaModel in the **Library Browser** will display
+the double pendulum MetaModel as shown below in
+:numref:`tlm-double-pendulum-metamodel-textview`.
 
 .. figure :: media/tlm-double-pendulum-metamodel-textview.png
   :name: tlm-double-pendulum-metamodel-textview
