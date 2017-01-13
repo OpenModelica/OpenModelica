@@ -119,39 +119,30 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
       // origin x position
       bool hasExtent1X, hasExtent1Y, hasExtent2X, hasExtent2Y, hasRotation = false;
       mOriginIcon.setX(list.at(8).toFloat(&mHasOriginIconX));
-      if (!mHasOriginIconX) {
-        mOriginIcon.setX(mOriginDiagram.x());
-      }
       // origin y position
       mOriginIcon.setY(list.at(9).toFloat(&mHasOriginIconY));
-      if (!mHasOriginIconY) {
-        mOriginIcon.setY(mOriginDiagram.y());
-      }
       // extent1 x
       mExtent1Icon.setX(list.at(10).toFloat(&hasExtent1X));
-      if (!hasExtent1X) {
-        mExtent1Icon.setX(mExtent1Diagram.x());
-      }
       // extent1 y
       mExtent1Icon.setY(list.at(11).toFloat(&hasExtent1Y));
-      if (!hasExtent1Y) {
-        mExtent1Icon.setY(mExtent1Diagram.y());
-      }
       // extent1 x
       mExtent2Icon.setX(list.at(12).toFloat(&hasExtent2X));
-      if (!hasExtent2X) {
-        mExtent2Icon.setX(mExtent2Diagram.x());
-      }
       // extent1 y
       mExtent2Icon.setY(list.at(13).toFloat(&hasExtent2Y));
-      if (!hasExtent2Y) {
-        mExtent2Icon.setY(mExtent2Diagram.y());
-      }
       // rotate angle
       if (list.size() > 14) {
         mRotateAngleIcon = list.at(14).toFloat(&hasRotation);
       }
-      if (!hasRotation) {
+      /* Ticket:4215
+       * Only use transformation values when no iconTransformation value is available. Don't mix.
+       */
+      if (!mHasOriginIconX && !mHasOriginIconY && !hasExtent1X && !hasExtent1Y && !hasExtent2X && !hasExtent2Y && !hasRotation) {
+        mOriginIcon.setX(mOriginDiagram.x());
+        mOriginIcon.setY(mOriginDiagram.y());
+        mExtent1Icon.setX(mExtent1Diagram.x());
+        mExtent1Icon.setY(mExtent1Diagram.y());
+        mExtent2Icon.setX(mExtent2Diagram.x());
+        mExtent2Icon.setY(mExtent2Diagram.y());
         mRotateAngleIcon = mRotateAngleDiagram;
       }
     }
