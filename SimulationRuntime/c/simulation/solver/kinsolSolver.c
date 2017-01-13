@@ -126,6 +126,7 @@ static void nlsKinsolErrorPrint(int error_code, const char *module, const char *
 static void nlsKinsolInfoPrint(const char *module, const char *function, char *msg, void *userData);
 static int nlsSparseJac(N_Vector x, N_Vector fx, SlsMat Jac, void *userData, N_Vector tmp1, N_Vector tmp2);
 static int nlsDenseJac(long int N, N_Vector x, N_Vector fx, DlsMat Jac, void *userData, N_Vector tmp1, N_Vector tmp2);
+static void nlsKinsolJacSumSparse(SlsMat mat);
 
 int checkReturnFlag(int flag)
 {
@@ -373,13 +374,14 @@ static void setJacElementKluSparse(int row, int col, double value, int nth, SlsM
 static void finishSparseColPtr(SlsMat mat)
 {
   int i;
+  /* finish matrix colptrs */
+  mat->colptrs[mat->N] = mat->NNZ;
   for(i=1; i<mat->N+1; ++i){
     if (mat->colptrs[i] == 0){
+      warningStreamPrint(LOG_STDOUT, 0, "##KINSOL## Jac row %d singular. See LOG_NLS for more infomation.", i);
       mat->colptrs[i] = mat->colptrs[i-1];
     }
   }
-  /* finish matrix colptrs */
-  mat->colptrs[mat->N] = mat->NNZ;
 }
 
 /*
@@ -411,6 +413,9 @@ int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Ve
 
   long int i,j,ii;
   int nth = 0;
+
+  /* reset matrix */
+  SlsSetToZero(Jac);
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
@@ -450,10 +455,27 @@ int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Ve
 
   /* debug */
   if (ACTIVE_STREAM(LOG_NLS_JAC)){
-    infoStreamPrint(LOG_NLS_JAC, 0, "##KINSOL## Sparse Matrix.");
+    infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Sparse Matrix.");
     PrintSparseMat(Jac);
+    nlsKinsolJacSumSparse(Jac);
+    messageClose(LOG_NLS_JAC);
   }
   return 0;
+}
+
+static
+void nlsKinsolJacSumSparse(SlsMat mat)
+{
+  int i,j;
+  double sum;
+
+  for(i=0; i<mat->N; ++i){
+    sum = 0;
+    for(j=mat->colptrs[i]; j<mat->colptrs[i+1];++j){
+      sum += fabs(mat->data[mat->rowvals[j]]);
+    }
+    infoStreamPrint(LOG_NLS_JAC, 0, "row %d jac sum = %g", i, sum);
+  }
 }
 
 static
