@@ -385,9 +385,78 @@ bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation
     // check if interfaces are aligned
     bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
     pConnectionLineAnnotation->setAligned(aligned);
+
+    if(this->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
+            StringHandler::getTLMCausality(StringHandler::TLMInput)) {
+        pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
+        pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
+        pConnectionLineAnnotation->update();
+        pConnectionLineAnnotation->handleComponentMoved();
+    }
+    else if(this->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
+            StringHandler::getTLMCausality(StringHandler::TLMOutput)) {
+        pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
+        pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
+        pConnectionLineAnnotation->update();
+        pConnectionLineAnnotation->handleComponentMoved();
+    }
+
     return true;
   }
   return false;
+}
+
+/*!
+ * \brief MetaModelEditor::okToConnect
+ * Checks if a connection between two interfaces is legal
+ * \param pConnectionLineAnnotation
+ * \return
+ */
+bool MetaModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
+{
+    QString startComp = pConnectionLineAnnotation->getStartComponentName();
+    QString endComp = pConnectionLineAnnotation->getEndComponentName();
+
+    int dimensions1 = getInterfaceDimensions(startComp);
+    int dimensions2 = getInterfaceDimensions(endComp);
+    QString causality1 = getInterfaceCausality(startComp);
+    QString causality2 = getInterfaceCausality(endComp);
+    QString domain1 = getInterfaceDomain(startComp);
+    QString domain2 = getInterfaceDomain(endComp);
+
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+                                                          "Checking connection between "+
+                                                          startComp+" and " +endComp,
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+
+    if(dimensions1 != dimensions2) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+                                                              "Cannot connect interface points of different dimensions ("+
+                                                              QString::number(dimensions1)+" to "+
+                                                              QString::number(dimensions2)+")",
+                                                              Helper::scriptingKind, Helper::errorLevel));
+        return false;
+    }
+    if(!(causality1 == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
+         causality2 == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) &&
+       !(causality1 == StringHandler::getTLMCausality(StringHandler::TLMInput) &&
+         causality2  != StringHandler::getTLMCausality(StringHandler::TLMOutput)) &&
+       !(causality1 == StringHandler::getTLMCausality(StringHandler::TLMOutput) &&
+         causality2  != StringHandler::getTLMCausality(StringHandler::TLMInput))) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+                                                            "Cannot connect interface points of different causality ("+
+                                                            causality1+" to "+causality2+")",
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return false;
+    }
+    if(domain1 != domain2) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+                                                            "Cannot connect interface points of different domains ("+
+                                                            domain1+" to "+domain2+")",
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return false;
+    }
+    return true;
 }
 
 /*!
@@ -498,6 +567,9 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
           interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
+          interfacePoint.setAttribute("Dimensions", interfaceDataElement.attribute("Dimensions"));
+          interfacePoint.setAttribute("Domain", interfaceDataElement.attribute("Domain"));
+          interfacePoint.setAttribute("Causality", interfaceDataElement.attribute("Causality"));
           setPlainText(mXmlDocument.toString());
           // check if interface is aligned
           foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
@@ -514,11 +586,18 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
           interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
           interfacePoint.setAttribute("Angle321", interfaceDataElement.attribute("Angle321"));
+          interfacePoint.setAttribute("Dimensions", interfaceDataElement.attribute("Dimensions"));
+          interfacePoint.setAttribute("Causality", interfaceDataElement.attribute("Causality"));
+          interfacePoint.setAttribute("Domain", interfaceDataElement.attribute("Domain"));
           subModel.appendChild(interfacePoint);
           Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
-            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"), interfaceDataElement.attribute("Position", "0,0,0"),
-                                             interfaceDataElement.attribute("Angle321", "0,0,0"));
+            pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"),
+                                             interfaceDataElement.attribute("Position", "0,0,0"),
+                                             interfaceDataElement.attribute("Angle321", "0,0,0"),
+                                             interfaceDataElement.attribute("Dimensions", "3").toInt(),
+                                             interfaceDataElement.attribute("Causality", StringHandler::getTLMCausality(StringHandler::TLMBidirectional)),
+                                             interfaceDataElement.attribute("Domain", StringHandler::getTLMDomain(StringHandler::Mechanical)));
           }
         }
       }
@@ -601,6 +680,11 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
  */
 bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
 {
+  if(getInterfaceCausality(interface1) != StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
+      //Assume interface2 has same causality and dimensions, otherwise they could not be connected)
+      return true;      //Alignment is not relevant for non-bidirectional connections
+  }
+
   //Extract rotation and position vectors to Qt matrices
   QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
   QGenericMatrix<3,1,double> X1_C1_PHI_X1;  //Rotation of C1 relative to X1 expressed in X1
@@ -616,6 +700,15 @@ bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
   QGenericMatrix<3,1,double> X2_C2_R_X2;      //Position of C2 relative to X2 expressed in X2
   if (!getPositionAndRotationVectors(interface2,CG_X2_PHI_CG, X2_C2_PHI_X2,CG_X2_R_CG,X2_C2_R_X2)) {
     return false;
+  }
+
+  else if(getInterfaceCausality(interface1) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
+          getInterfaceDimensions(interface1) == 1) {
+      //Handle 1D- interfaces
+      //Assume interface2 has same causality and dimensions, otherwise they could not be connected)
+      //Only compare first element of interface position relative to external model,
+      //the model orientation should not matter for 1D connections
+      return fuzzyCompare(X1_C1_R_X1(0,0),X2_C2_R_X2(0,0));
   }
 
   QGenericMatrix<3,1,double> CG_C1_R_CG, CG_C1_PHI_CG, CG_C2_R_CG, CG_C2_PHI_CG;
@@ -883,6 +976,72 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
   }
+}
+
+/*!
+ * \brief MetaModelEditor::getInterfaceType
+ * Returns the type of specified interface (e.g. "3D", "Input"...)
+ * \param pConnectionLineAnnotation
+ * \return
+ */
+int MetaModelEditor::getInterfaceDimensions(QString interfacePoint)
+{
+    //Extract submodel and interface names
+    QString modelName = interfacePoint.split(".").at(0);
+    QString interfaceName = interfacePoint.split(".").at(1);
+
+    QDomElement subModelElement = getSubModelElement(modelName);
+    QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
+    while (!interfaceElement.isNull()) {
+      if (interfaceElement.attribute("Name").compare(interfaceName) == 0) {
+        return interfaceElement.attribute("Dimensions", "3").toInt();
+      }
+      interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
+    }
+    return 3;    //Backwards compatibility
+}
+
+QString MetaModelEditor::getInterfaceCausality(QString interfacePoint)
+{
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, "Checking causality for: "+interfacePoint,
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+    //Extract submodel and interface names
+    QString modelName = interfacePoint.split(".").at(0);
+    QString interfaceName = interfacePoint.split(".").at(1);
+
+    QDomElement subModelElement = getSubModelElement(modelName);
+    QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
+    while (!interfaceElement.isNull()) {
+      if (interfaceElement.attribute("Name").compare(interfaceName) == 0) {
+        return interfaceElement.attribute("Causality", StringHandler::getTLMCausality(StringHandler::TLMBidirectional));
+      }
+      interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
+    }
+    return StringHandler::getTLMCausality(StringHandler::TLMBidirectional);    //Backwards compatibility
+}
+
+/*!
+ * \brief MetaModelEditor::getInterfaceDomain
+ * Returns the physical domain of specified interface (e.g. "Mechanical", "Hydraulic"...)
+ * \param pConnectionLineAnnotation
+ * \return
+ */
+QString MetaModelEditor::getInterfaceDomain(QString interfacePoint)
+{
+    //Extract submodel and interface names
+    QString modelName = interfacePoint.split(".").at(0);
+    QString interfaceName = interfacePoint.split(".").at(1);
+
+    QDomElement subModelElement = getSubModelElement(modelName);
+    QDomElement interfaceElement = subModelElement.firstChildElement("InterfacePoint");
+    while (!interfaceElement.isNull()) {
+      if (interfaceElement.attribute("Name").compare(interfaceName) == 0) {
+        //Default to mechanical for backwards compatibility
+        return interfaceElement.attribute("Domain", StringHandler::getTLMDomain(StringHandler::Mechanical));
+      }
+      interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
+    }
+    return StringHandler::getTLMDomain(StringHandler::Mechanical);    //Backwards compatibility
 }
 
 /*!

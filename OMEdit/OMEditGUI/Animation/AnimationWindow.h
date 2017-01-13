@@ -43,6 +43,7 @@ class AnimationWindow : public AbstractAnimationWindow
 public:
   AnimationWindow(QWidget *pParent);
   ~AnimationWindow();
+
   void createActions() override;
 };
 

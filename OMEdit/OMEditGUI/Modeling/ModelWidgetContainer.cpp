@@ -1208,11 +1208,17 @@ void GraphicsView::addConnection(Component *pComponent)
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
         mpConnectionLineAnnotation->setEndComponentName(endComponentName);
         if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-          MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
-          pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(this, mpConnectionLineAnnotation, false, MainWindow::instance());
-          // if user cancels the array connection
-          if (!pMetaModelConnectionAttributes->exec()) {
-            removeCurrentConnection();
+          MetaModelEditor* editor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+          if(!editor->okToConnect(mpConnectionLineAnnotation)) {
+              removeCurrentConnection();
+          }
+          else {
+              MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
+              pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(this, mpConnectionLineAnnotation, false, MainWindow::instance());
+              // if user cancels the array connection
+              if (!pMetaModelConnectionAttributes->exec()) {
+                removeCurrentConnection();
+              }
           }
         } else {
           mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
@@ -4290,6 +4296,23 @@ void ModelWidget::getMetaModelConnections()
     bool aligned = pMetaModelEditor->interfacesAligned(pConnectionLineAnnotation->getStartComponentName(),
                                                        pConnectionLineAnnotation->getEndComponentName());
     pConnectionLineAnnotation->setAligned(aligned);
+
+    MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+    if(pEditor->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
+            StringHandler::getTLMCausality(StringHandler::TLMInput)) {
+        pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
+        pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
+        pConnectionLineAnnotation->update();
+        pConnectionLineAnnotation->handleComponentMoved();
+    }
+    else if(pEditor->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
+            StringHandler::getTLMCausality(StringHandler::TLMOutput)) {
+        pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
+        pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
+        pConnectionLineAnnotation->update();
+        pConnectionLineAnnotation->handleComponentMoved();
+    }
+
     mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
 }
