@@ -33,7 +33,7 @@ end Tearing3;
 "); getErrorString();
 
 setDebugFlags("dumpCSE"); getErrorString();
-setCommandLineOptions("--postOptModules+=wrapFunctionCalls,cseBinary --preOptModules-=comSubExp"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls,cseBinary --preOptModules-=comSubExp --preOptModules-=resolveLoops"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 // Result:

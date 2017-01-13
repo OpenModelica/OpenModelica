@@ -5,7 +5,7 @@
 // Simulation Results
 // Modelica Standard Library
 //
-setCommandLineOptions("--postOptModules-=wrapFunctionCalls"); getErrorString();
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls --preOptModules-=resolveLoops"); getErrorString();
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 timeoutSim := 600;

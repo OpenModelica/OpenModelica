@@ -63,23 +63,23 @@ val(res,1);
 // end SimulationResult;
 // ""
 // 0.0
-// 4.850964074876178e-014
+// 4.084932392345307e-014
 // true
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
 //     messages = "LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000010  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000015
-// LOG_LS            | info    | Start solving Linear System 13 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000004  time to set Matrix A and vector b.
+// LOG_LS            | info    | ###  0.000017  time to set Matrix A and vector b.
+// LOG_LS            | info    | Solve System: 0.000028
+// LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
+// LOG_LS            | info    | ###  0.000005  time to set Matrix A and vector b.
 // LOG_LS            | info    | Solve System: 0.000001
 // LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000000  time to set Matrix A and vector b.
+// LOG_LS            | info    | ###  0.000001  time to set Matrix A and vector b.
 // LOG_LS            | info    | Solve System: 0.000001
 // "
 // end SimulationResult;
 // ""
 // 0.0
-// 7.993970445251934e-014
+// 8.92569973198528e-014
 // endResult

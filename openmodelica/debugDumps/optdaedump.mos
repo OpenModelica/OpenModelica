@@ -1295,6 +1295,112 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// pre-optimization module resolveLoops (simulation):
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (8)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:STATE(1)()  type: Real 
+// 3: i2:VARIABLE()  type: Real 
+// 4: i1:VARIABLE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:STATE(1)()  type: Real 
+// 7: uL:VARIABLE()  type: Real 
+// 8: u1:VARIABLE()  type: Real 
+//
+//
+// Equations (8, 8)
+// ========================================
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: v0:VARIABLE()  = 0.0  type: Real 
+// 2: R1:PARAM()  = 1.0  type: Real 
+// 3: R2:PARAM()  = 2.0  type: Real 
+// 4: L:PARAM()  = 0.5  type: Real 
+// 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC  type: Real 
+// 2: u2:VARIABLE()  = uL  type: Real 
+// 3: v1:VARIABLE()  = uC  type: Real 
+// 4: v2:VARIABLE()  = uL  type: Real 
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // pre-optimization module evalFunc (simulation):
 //
 //
