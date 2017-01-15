@@ -1150,6 +1150,40 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
   return selectedAndEditable;
 }
 
+/*!
+ * \brief GraphicsView::connectorComponentAtPosition
+ * Returns the connector component at the position.
+ * \param position
+ * \return
+ */
+Component* GraphicsView::connectorComponentAtPosition(QPoint position)
+{
+  /* Ticket:4215
+   * Allow making connection from the connectors which are under some other shape or component.
+   * itemAt() only returns the top level item.
+   * Use items() to get all items at position and then return the first connector component from the list.
+   */
+  QList<QGraphicsItem*> graphicsItems = items(position);
+  foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
+    if (pGraphicsItem && pGraphicsItem->parentItem()) {
+      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
+      if (pComponent) {
+        Component *pRootComponent = pComponent->getRootParentComponent();
+        if (pRootComponent && !pRootComponent->isSelected()) {
+          if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
+              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
+               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel &&
+                pComponent->getComponentType() == Component::Port))) {
+            return pComponent;
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
@@ -1674,27 +1708,12 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     }
   }
   // if some item is clicked
-  if (itemAt(event->pos())) {
-    QGraphicsItem *pGraphicsItem = itemAt(event->pos());
-    if (pGraphicsItem && pGraphicsItem->parentItem()) {
-      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-      if (pComponent) {
-        Component *pRootComponent = pComponent->getRootParentComponent();
-        if (pRootComponent && !pRootComponent->isSelected()) {
-          if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
-              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
-               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel &&
-                pComponent->getComponentType() == Component::Port))) {
-            if (!isCreatingConnection()) {
-              mpClickedComponent = pComponent;
-            } else if (isCreatingConnection()) {
-              addConnection(pComponent);  // end the connection
-              eventConsumed = true; // consume the event so that connection line or end component will not become selected
-            }
-          }
-        }
-      }
+  if (Component *pComponent = connectorComponentAtPosition(event->pos())) {
+    if (!isCreatingConnection()) {
+      mpClickedComponent = pComponent;
+    } else if (isCreatingConnection()) {
+      addConnection(pComponent);  // end the connection
+      eventConsumed = true; // consume the event so that connection line or end component will not become selected
     }
   }
   if (!eventConsumed) {
@@ -1714,31 +1733,15 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
-  MainWindow *pMainWindow = MainWindow::instance();
   bool setCrossCursor = false;
-  if (itemAt(event->pos())) {
-    QGraphicsItem *pGraphicsItem = itemAt(event->pos());
-    if (pGraphicsItem && pGraphicsItem->parentItem()) {
-      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-      if (pComponent) {
-        Component *pRootComponent = pComponent->getRootParentComponent();
-        if (pRootComponent && !pRootComponent->isSelected()) {
-          if (pMainWindow->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
-              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
-               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel &&
-                pComponent->getComponentType() == Component::Port))) {
-            setCrossCursor = true;
-            /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
-           * Calling this function a second time restores the original widgets' cursors.
-           * So we only set the cursor if it is not already Qt::CrossCursor.
-           */
-            if (!QApplication::overrideCursor() || QApplication::overrideCursor()->shape() != Qt::CrossCursor) {
-              QApplication::setOverrideCursor(Qt::CrossCursor);
-            }
-          }
-        }
-      }
+  if (connectorComponentAtPosition(event->pos())) {
+    setCrossCursor = true;
+    /* If setOverrideCursor() has been called twice, calling restoreOverrideCursor() will activate the first cursor set.
+   * Calling this function a second time restores the original widgets' cursors.
+   * So we only set the cursor if it is not already Qt::CrossCursor.
+   */
+    if (!QApplication::overrideCursor() || QApplication::overrideCursor()->shape() != Qt::CrossCursor) {
+      QApplication::setOverrideCursor(Qt::CrossCursor);
     }
   }
   // if user mouse is not on connector then reset the cursor.
