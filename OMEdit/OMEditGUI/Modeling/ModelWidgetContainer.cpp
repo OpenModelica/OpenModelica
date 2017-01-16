@@ -4321,6 +4321,8 @@ void ModelWidget::getMetaModelSubModels()
                                                               Helper::errorLevel));
       }
     }
+    pComponentInfo->setPosition(subModel.attribute("Position"));
+    pComponentInfo->setAngle321(subModel.attribute("Angle321"));
     // add submodel as component to view.
     mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), pLibraryTreeItem, transformation, QPointF(0.0, 0.0), dialogAnnotation,
                                               pComponentInfo, false, true);
