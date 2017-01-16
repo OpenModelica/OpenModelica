@@ -211,8 +211,14 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnno
       QDomNodeList connections = pMetaModelEditor->getConnections();
       for (int i = 0; i < connections.size(); i++) {
         QDomElement connection = connections.at(i).toElement();
-        interfaces << connection.attribute("From") + "  ->  " + connection.attribute("To");
-        interfaces << connection.attribute("To") + "  ->  " + connection.attribute("From");
+        //Only align bidirectional connections
+        if(pMetaModelEditor->getInterfaceCausality(connection.attribute("From")) ==
+                StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
+           pMetaModelEditor->getInterfaceCausality(connection.attribute("To")) ==
+                StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
+            interfaces << connection.attribute("From") + "  ->  " + connection.attribute("To");
+            interfaces << connection.attribute("To") + "  ->  " + connection.attribute("From");
+        }
       }
     }
   }

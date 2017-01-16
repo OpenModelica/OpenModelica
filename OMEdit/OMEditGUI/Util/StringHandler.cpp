@@ -65,6 +65,42 @@ StringHandler::~StringHandler()
 
 }
 
+QString StringHandler::getTLMCausality(int causality)
+{
+    switch (causality)
+    {
+    case TLMBidirectional:
+        return "Bidirectional";
+    case TLMInput:
+        return "Input";
+    case TLMOutput:
+        return "Output";
+    default:
+        //Should never be reached
+        return "";
+    }
+}
+
+QString StringHandler::getTLMDomain(int domain)
+{
+    switch (domain)
+    {
+    case Mechanical:
+        return "Mechanical";
+    case Electric:
+        return "Electric";
+    case Hydraulic:
+        return "Hydraulic";
+    case Pneumatic:
+        return "Pneumatic";
+    case Magnetic:
+        return "Magnetic";
+    default:
+        //Should never be reahed
+        return "";
+    }
+}
+
 QString StringHandler::getSimulationTool(int tool)
 {
   switch (tool)
