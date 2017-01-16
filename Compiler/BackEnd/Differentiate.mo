@@ -86,18 +86,19 @@ constant Integer defaultMaxIter = 20;
 // =============================================================================
 
 public function differentiateEquationTime
-  "Differentiates an equation with respect to time."
+  "Differentiates an equation with respect to time.
+  Returns NONE() if it was not possible to calculate a derivative."
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Shared inShared;
-  output BackendDAE.Equation outEquation;
-  output BackendDAE.Shared outShared;
+  output Option<BackendDAE.Equation> outEquation;
+  output BackendDAE.Shared outShared = inShared;
 protected
-  String msg;
+  BackendDAE.DifferentiateInputData diffData;
+  BackendDAE.Equation eqn;
+  BackendDAE.Variables knvars;
   DAE.ElementSource source;
   DAE.FunctionTree funcs;
-  BackendDAE.DifferentiateInputData diffData;
-  BackendDAE.Variables knvars;
 algorithm
   try
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -106,16 +107,16 @@ algorithm
     funcs := BackendDAEUtil.getFunctions(inShared);
     knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
     diffData := BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), {}, {}, NONE());
-    (outEquation, funcs) := differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
+    (eqn, funcs) := differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
+    outEquation := SOME(eqn);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrEqnStr("### Result of differentiation\n --> ", outEquation, "\n");
+      BackendDump.debugStrEqnStr("### Result of differentiation\n --> ", eqn, "\n");
     end if;
   else
-    msg := "\nDifferentiate.differentiateEquationTime failed for " + BackendDump.equationString(inEquation) + "\n\n";
     source := BackendEquation.equationSource(inEquation);
-    Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, ElementSource.getElementSourceFileInfo(source));
-    fail();
+    Error.addSourceMessage(Error.INTERNAL_ERROR, {"\nDifferentiate.differentiateEquationTime failed for " + BackendDump.equationString(inEquation) + "\n\n"}, ElementSource.getElementSourceFileInfo(source));
+    outEquation := NONE();
   end try;
 end differentiateEquationTime;
 

@@ -721,34 +721,31 @@ protected function differentiateEqnsLst1
   input BackendDAE.Shared inShared;
   output Option<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> oEqTpl;
   output BackendDAE.Shared oshared;
+protected
+  BackendDAE.Equation eqn;
+  Option<BackendDAE.Equation> diffEqn;
 algorithm
-  (oEqTpl, oshared) := matchcontinue (eqIdx,vars,eqns,inShared)
-    local
-      Integer e;
-      BackendDAE.Equation eqn,eqn_1;
-      list<Integer> es;
-      BackendDAE.Shared shared;
-    case (e,_,_,_)
-      equation
-        eqn = BackendEquation.equationNth1(eqns, e);
-        true = BackendEquation.isDifferentiated(eqn);
-        if Flags.isSet(Flags.BLT_DUMP) then
-          BackendDump.debugStrEqnStr("Skip already differentiated equation\n",eqn,"\n");
-        end if;
-      then (SOME((e,NONE(),eqn)),inShared);
-    case (e,_,_,_)
-      equation
-        eqn = BackendEquation.equationNth1(eqns, e);
-          //if Flags.isSet(Flags.BLT_DUMP) then print("differentiate equation " + intString(e) + " " + BackendDump.equationString(eqn) + "\n"); end if;
-        (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, inShared);
-          //if Flags.isSet(Flags.BLT_DUMP) then print("differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n"); end if;
-        eqn = BackendEquation.markDifferentiated(eqn);
-      then
-        (SOME((e,SOME(eqn_1),eqn)),shared);
-     else
-     equation
-       then (NONE(),inShared);
-  end matchcontinue;
+  eqn := BackendEquation.equationNth1(eqns, eqIdx);
+
+  if BackendEquation.isDifferentiated(eqn) then
+    if Flags.isSet(Flags.BLT_DUMP) then
+      BackendDump.debugStrEqnStr("Skip already differentiated equation\n",eqn,"\n");
+    end if;
+    oEqTpl := SOME((eqIdx, NONE(), eqn));
+    oshared := inShared;
+  else
+    //if Flags.isSet(Flags.BLT_DUMP) then print("differentiate equation " + intString(eqIdx) + " " + BackendDump.equationString(eqn) + "\n"); end if;
+    (diffEqn, oshared) := Differentiate.differentiateEquationTime(eqn, vars, inShared);
+    //if Flags.isSet(Flags.BLT_DUMP) then print("differentiated equation " + intString(eqIdx) + " " + BackendDump.equationString(diffEqn) + "\n"); end if;
+    eqn := BackendEquation.markDifferentiated(eqn);
+
+    if isSome(diffEqn) then
+      oEqTpl := SOME((eqIdx, diffEqn, eqn));
+    else
+      oEqTpl := NONE();
+      oshared := inShared;
+    end if;
+  end if;
 end differentiateEqnsLst1;
 
 protected function replaceDifferentiatedEqns
