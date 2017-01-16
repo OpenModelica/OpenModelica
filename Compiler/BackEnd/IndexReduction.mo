@@ -98,69 +98,63 @@ public function pantelidesIndexReduction "author: Frenkel TUD 2012-04
   output Integer continueEqn;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2;
+  output array<Integer> oass1;
+  output array<Integer> oass2;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+protected
+  array<Integer> markarr;
+  Integer size, newsize;
+  list<list<Integer>> eqns_1, unassignedStates, unassignedEqns;
 algorithm
-  (changedEqns, continueEqn, osyst, oshared, outAssignments1, outAssignments2, outArg) := matchcontinue (inEqns)
-    local
-      list<Integer> changedeqns;
-      list<list<Integer>> eqns_1, unassignedStates, unassignedEqns;
-      Integer contiEqn, size, newsize;
-      array<Integer> ass1, ass2, markarr;
-      BackendDAE.StructurallySingularSystemHandlerArg arg;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
+  if listEmpty(inEqns) then
+    Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction called with empty list of equations!"});
+    if Flags.isSet(Flags.OPT_DAE_DUMP) then
+      print("Index reduction done.\n");
+    end if;
+    fail();
+  end if;
 
-    case _::_ equation
-      if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print("\n\nIndex reduction:\n");
-      end if;
+  try
+    if Flags.isSet(Flags.OPT_DAE_DUMP) then
+      print("\n\nIndex reduction:\n");
+    end if;
 
-      //  BackendDump.printEqSystem(inSystem);
-      //  BackendDump.dumpMatching(inAssignments1);
-      //  BackendDump.dumpMatching(inAssignments2);
-      //  syst = BackendDAEUtil.setEqSystMatching(inSystem, BackendDAE.MATCHING(inAssignments1, inAssignments2, {}));
-      //  dumpSystemGraphML(syst, inShared, NONE(), "ConstrainRevoluteJoint" + intString(listLength(List.flatten(inEqns))) + ".graphml");
-      // check by count vars of equations, if len(inEqns) > len(vars) stop because of structural singular system
-      ErrorExt.setCheckpoint("Pantelides");
-      (eqns_1, unassignedStates, unassignedEqns, _) = minimalStructurallySingularSystem(inEqns, inSystem, inShared, inAssignments1, inAssignments2, inArg);
-      size = BackendDAEUtil.systemSize(inSystem);
-      ErrorExt.delCheckpoint("Pantelides");
-      ErrorExt.setCheckpoint("Pantelides");
-      if Flags.isSet(Flags.BLT_DUMP) then
-        print("Reduce Index\n");
-      end if;
-      markarr = arrayCreate(size, -1);
-      (syst, shared, ass1, ass2, arg, _) = pantelidesIndexReduction1(unassignedStates, unassignedEqns, inEqns, eqns_1, inActualEqn, inSystem, inShared, inAssignments1, inAssignments2, 1, markarr, inArg, {});
-      ErrorExt.rollBack("Pantelides");
-      ErrorExt.setCheckpoint("Pantelides");
-      // get from inEqns indexes the scalar indexes
-      newsize = BackendDAEUtil.systemSize(syst);
-      changedeqns = if newsize>size then List.intRange2(size+1, newsize) else {};
-      (changedeqns, contiEqn) = getChangedEqnsAndLowest(newsize, ass2, changedeqns, size);
-      ErrorExt.delCheckpoint("Pantelides");
+    //  BackendDump.printEqSystem(inSystem);
+    //  BackendDump.dumpMatching(inAssignments1);
+    //  BackendDump.dumpMatching(inAssignments2);
+    //  syst = BackendDAEUtil.setEqSystMatching(inSystem, BackendDAE.MATCHING(inAssignments1, inAssignments2, {}));
+    //  dumpSystemGraphML(syst, inShared, NONE(), "ConstrainRevoluteJoint" + intString(listLength(List.flatten(inEqns))) + ".graphml");
+    // check by count vars of equations, if len(inEqns) > len(vars) stop because of structural singular system
+    ErrorExt.setCheckpoint("Pantelides");
+    (eqns_1, unassignedStates, unassignedEqns, _) := minimalStructurallySingularSystem(inEqns, inSystem, inShared, inAssignments1, inAssignments2, inArg);
+    size := BackendDAEUtil.systemSize(inSystem);
+    ErrorExt.delCheckpoint("Pantelides");
+    ErrorExt.setCheckpoint("Pantelides");
+    if Flags.isSet(Flags.BLT_DUMP) then
+      print("Reduce Index\n");
+    end if;
+    markarr := arrayCreate(size, -1);
+    (osyst, oshared, oass1, oass2, outArg, _) := pantelidesIndexReduction1(unassignedStates, unassignedEqns, inEqns, eqns_1, inActualEqn, inSystem, inShared, inAssignments1, inAssignments2, 1, markarr, inArg, {});
+    ErrorExt.rollBack("Pantelides");
+    ErrorExt.setCheckpoint("Pantelides");
 
-      if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print("Index reduction done.\n");
-      end if;
-    then (changedeqns, contiEqn, syst, shared, ass1, ass2, arg);
+    // get from inEqns indexes the scalar indexes
+    newsize := BackendDAEUtil.systemSize(osyst);
+    changedEqns := if newsize>size then List.intRange2(size+1, newsize) else {};
+    (changedEqns, continueEqn) := getChangedEqnsAndLowest(newsize, oass2, changedEqns, size);
+    ErrorExt.delCheckpoint("Pantelides");
 
-    case {} equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction called with empty list of equations!"});
-      if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print("Index reduction done.\n");
-      end if;
-    then fail();
-
-    case _::_ equation
-      ErrorExt.delCheckpoint("Pantelides");
-      Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed!"});
-            if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print("Index reduction done.\n");
-      end if;
-    then fail();
-  end matchcontinue;
+    if Flags.isSet(Flags.OPT_DAE_DUMP) then
+      print("Index reduction done.\n");
+    end if;
+  else
+    ErrorExt.delCheckpoint("Pantelides");
+    Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed!"});
+    if Flags.isSet(Flags.OPT_DAE_DUMP) then
+      print("Index reduction done.\n");
+    end if;
+    fail();
+  end try;
 end pantelidesIndexReduction;
 
 protected function getChangedEqnsAndLowest
@@ -592,21 +586,14 @@ protected function differentiateEqns
   output array<Integer> omapIncRowEqn;
   output list<tuple<list<Integer>,list<Integer>,list<Integer>>> oNotDiffableMSS;
 protected
-  Integer numEqs,numEqs1;
-  BackendDAE.EquationArray eqns_1,eqns;
-  list<Integer> changedVars,eqnslst,eqnslst1,assEqs;
-  BackendDAE.Variables v,v1;
-  BackendDAE.StateOrder so;
-  BackendDAE.ConstraintEquations orgEqnsLst;
+  BackendDAE.EqSystem syst;
+  BackendDAE.EquationArray eqns_1, eqns;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mt;
-  BackendDAE.EqSystem syst;
-  BackendDAE.Matching matching;
-  array<Integer> ass1,ass2,mapIncRowEqn;
-  array<list<Integer>> mapEqnIncRow;
-  BackendDAE.StateSets stateSets;
+  BackendDAE.Variables v, v1;
   DAE.FunctionTree funcs;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  Integer numEqs, numEqs1;
+  list<Integer> changedVars, eqnslst, eqnslst1, assEqs;
 algorithm
   if listEmpty(inEqnsTpl) then
     // not all equations are differentiated
@@ -623,14 +610,14 @@ algorithm
     syst := inSystem;
     BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, m=SOME(m), mT=SOME(mt)) := syst;
     numEqs := BackendDAEUtil.equationArraySize(eqns);
-    (v1,eqns_1,changedVars,orgEqnsLst) := replaceDifferentiatedEqns(inEqnsTpl,v,eqns,mt,imapIncRowEqn,{},inOrgEqnsLst);
+    (v1,eqns_1,changedVars,outOrgEqnsLst) := replaceDifferentiatedEqns(inEqnsTpl,v,eqns,mt,imapIncRowEqn,{},inOrgEqnsLst);
     numEqs1 := BackendDAEUtil.equationArraySize(eqns_1);
     eqnslst := if intGt(numEqs1,numEqs) then List.intRange2(numEqs+1,numEqs1) else {};
     // set the assignments for the changed vars and for the assigned equations to -1
     assEqs := List.map1r(changedVars,arrayGet,inAss1);
     assEqs := List.select1(assEqs,intGt,0);
-    ass2 := List.fold1r(assEqs,arrayUpdate,-1,inAss2);
-    ass1 := List.fold1r(changedVars,arrayUpdate,-1,inAss1);
+    outAss2 := List.fold1r(assEqs,arrayUpdate,-1,inAss2);
+    outAss1 := List.fold1r(changedVars,arrayUpdate,-1,inAss1);
     //get adjacent equations for the changed vars
     eqnslst1 := collectVarEqns(changedVars,mt,arrayLength(mt),arrayLength(m));
     syst.orderedVars := v1;
@@ -643,15 +630,10 @@ algorithm
         BackendDump.debuglst(eqnslst1,intString," ","\n");
       end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
-    (syst,mapEqnIncRow,mapIncRowEqn) :=
+    (syst,omapEqnIncRow,omapIncRowEqn) :=
       BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
     osyst := syst;
     oshared := inShared;
-    outAss1 := ass1;
-    outAss2 := ass2;
-    outOrgEqnsLst := orgEqnsLst;
-    omapEqnIncRow := mapEqnIncRow;
-    omapIncRowEqn := mapIncRowEqn;
     oNotDiffableMSS := iNotDiffableMSS;
   end if;
 end differentiateEqns;
@@ -3667,11 +3649,7 @@ algorithm
     local
       HashTableCrIntToExp.HashTable ht;
       BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> om,omT;
-      BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
-      BackendDAE.BaseClockPartitionKind partitionKind;
     case ({}, _)
       then (inSystem, iHt);
     case (_, syst)
