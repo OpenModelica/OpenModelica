@@ -117,6 +117,12 @@ public:
   QString getPosition() const {return mPosition;}
   void setAngle321(QString angle321) {mAngle321 = angle321;}
   QString getAngle321() const {return mAngle321;}
+  void setDimensions(int dimensions) {mDimensions = dimensions;}
+  int getDimensions() const {return mDimensions;}
+  void setTLMCausality(QString causality) {mTLMCausality = causality;}
+  QString getTLMCausality() const {return mTLMCausality;}
+  void setDomain(QString domain) {mDomain = domain;}
+  QString getDomain() const {return mDomain;}
   // operator overloading
   bool operator==(const ComponentInfo &componentInfo) const;
   bool operator!=(const ComponentInfo &componentInfo) const;
@@ -148,6 +154,9 @@ private:
   QString mGeometryFile;
   QString mPosition;
   QString mAngle321;
+  int mDimensions;
+  QString mTLMCausality;
+  QString mDomain;
 
   bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };
@@ -223,7 +232,7 @@ public:
   void shapeUpdated();
   void shapeDeleted();
   void renameComponentInConnections(QString newName);
-  void insertInterfacePoint(QString interfaceName, QString position, QString angle321);
+  void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
   void removeInterfacePoint(QString interfaceName);
 
   Transformation mTransformation;

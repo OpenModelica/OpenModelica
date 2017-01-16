@@ -1589,8 +1589,18 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   QMenu menu(mpGraphicsView);
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
     menu.addAction(mpShapeAttributesAction);
-    menu.addSeparator();
-    menu.addAction(mpAlignInterfacesAction);
+
+    //Only show align interfaces action for bidirectional connections
+    LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+    QString startName = pConnectionLineAnnotation->getStartComponentName();
+    QString endName = pConnectionLineAnnotation->getEndComponentName();
+    MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+    if(pEditor->getInterfaceCausality(startName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
+       pEditor->getInterfaceCausality(endName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
+        menu.addSeparator();
+        menu.addAction(mpAlignInterfacesAction);
+    }
+
     menu.addSeparator();
     menu.addAction(mpGraphicsView->getDeleteAction());
   } else {

@@ -40,6 +40,13 @@
        *
       </xs:documentation>
   </xs:annotation>
+  <xs:simpleType name="causalitytype">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Bidirectional" />
+      <xs:enumeration value="Input" />
+      <xs:enumeration value="Output" />
+    </xs:restriction>
+  </xs:simpleType>
   <xs:element name="Model">
     <xs:complexType>
       <xs:sequence>
@@ -96,6 +103,9 @@
           </xs:annotation>
           <xs:complexType>
             <xs:attribute name="Name" type="xs:string" use="required"/>
+            <xs:attribute name="Dimensions" type="xs:integer" use="optional"/>
+            <xs:attribute name="Domain" type="xs:string" use="optional"/>
+            <xs:attribute name="Causality" type="causalitytype" use="optional"/>
             <xs:attribute name="Position" type="xs:string" use="optional"/>
             <xs:attribute name="Angle321" type="xs:string" use="optional"/>
           </xs:complexType>
