@@ -224,6 +224,7 @@ private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
+  Component* connectorComponentAtPosition(QPoint position);
 signals:
   void mouseManhattanize();
   void mouseDelete();
