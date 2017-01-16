@@ -364,8 +364,8 @@ constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(96, "infoXmlOperations", fal
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
 constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(97, "hpcomDump", false,
   Util.gettext("Dumps additional information on the parallel execution with hpcom."));
-constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(98, "resolveLoops", false,
-  Util.gettext("Activates the resolveLoops module.\nDeprecated flag: Use --preOptModules+=resolveLoops instead."));
+constant DebugFlag RESOLVE_LOOPS_DUMP = DEBUG_FLAG(98, "resolveLoopsDump", false,
+  Util.gettext("Debug Output for ResolveLoops Module."));
 constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(99, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
 constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(100, "disableRecordConstructorOutput", false,
@@ -618,7 +618,7 @@ constant list<DebugFlag> allDebugFlags = {
   ADDITIONAL_GRAPHVIZ_DUMP,
   INFO_XML_OPERATIONS,
   HPCOM_DUMP,
-  RESOLVE_LOOPS,
+  RESOLVE_LOOPS_DUMP,
   DISABLE_WINDOWS_PATH_CHECK_WARNING,
   DISABLE_RECORD_CONSTRUCTOR_OUTPUT,
   DUMP_TRANSFORMED_MODELICA_MODEL,
@@ -757,6 +757,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "inlineArrayEqn",
     "removeSimpleEquations",
     "comSubExp",
+    "resolveLoops",
     "evalFunc",
     "encapsulateWhenConditions"
     }),
