@@ -162,20 +162,13 @@ protected function getChangedEqnsAndLowest
   input array<Integer> ass2;
   input list<Integer> iAcc;
   input Integer iLowest;
-  output list<Integer> oAcc;
-  output Integer oLowest;
+  output list<Integer> oAcc = iAcc;
+  output Integer oLowest = iLowest;
 algorithm
-  (oAcc,oLowest) := match (index,ass2,iAcc,iLowest)
-    local
-      list<Integer> acc;
-      Integer l;
-    case (0,_,_,_) then (iAcc,iLowest);
-    case (_,_,_,_)
-      equation
-        true = intGt(index,0);
-        (acc,l) = getChangedEqnsAndLowest(index-1,ass2,List.consOnTrue(intLt(ass2[index],1),index,iAcc),index);
-      then (acc,l);
-  end match;
+  for i in index:-1:1 loop
+    oAcc := List.consOnTrue(intLt(ass2[i], 1), i, oAcc);
+    oLowest := i;
+  end for;
 end getChangedEqnsAndLowest;
 
 protected function pantelidesIndexReduction1
@@ -201,8 +194,8 @@ protected function pantelidesIndexReduction1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
   output list<tuple<list<Integer>,list<Integer>,list<Integer>>> oNotDiffableMSS;
 algorithm
-  (osyst,oshared,outAssignments1,outAssignments2,outArg,oNotDiffableMSS):=
-  matchcontinue (unassignedStates,unassignedEqns,alleqns,iEqns,actualEqn,inSystem,inShared,inAssignments1,inAssignments2,mark,markarr,inArg,iNotDiffableMSS)
+  (osyst,oshared,outAssignments1,outAssignments2,outArg,oNotDiffableMSS) :=
+  matchcontinue (unassignedStates, unassignedEqns, alleqns, iEqns)
     local
       list<Integer> states,eqns,eqns_1,ueqns;
       list<list<Integer>> statelst,ueqnsrest,eqnsrest,eqnsrest_1;
@@ -211,12 +204,12 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       list<tuple<list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
-    case (_,_,_,{},_,_,_,_,_,_,_,_,_)
+    case (_, _, _, {})
       equation
         (syst,shared,ass1,ass2,arg) = handleundifferntiableMSSLst(iNotDiffableMSS,inSystem,inShared,inAssignments1,inAssignments2,inArg);
       then
         (syst,shared,ass1,ass2,arg,{});
-    case (states::statelst,ueqns::ueqnsrest,eqns::eqnsrest,eqns_1::eqnsrest_1,_,_,_,_,_,_,_,_,_)
+    case (states::statelst, ueqns::ueqnsrest, eqns::eqnsrest, eqns_1::eqnsrest_1)
       equation
         (syst,shared,ass1,ass2,arg,notDiffableMSS) =
          pantelidesIndexReductionMSS(states,ueqns,eqns,eqns_1,actualEqn,inSystem,inShared,inAssignments1,inAssignments2,mark,markarr,inArg,iNotDiffableMSS);
@@ -474,14 +467,14 @@ protected function unassignedContinuesEqns
   input tuple<list<Integer>,list<Integer>,list<Integer>> inFold;
   output tuple<list<Integer>,list<Integer>,list<Integer>> outFold;
 algorithm
-  outFold := matchcontinue(eindx,vars,inFold)
+  outFold := matchcontinue(inFold)
     local
       Integer vindx;
       list<Integer> unassignedEqns,eqnsLst,varlst,discEqns;
       list<BackendDAE.Var> vlst;
       Boolean b,ba;
       list<Boolean> blst;
-/*    case(_,_,(unassignedEqns,eqnsLst))
+/*    case((unassignedEqns,eqnsLst))
       equation
         vindx = ass2[eindx];
         true = intGt(vindx,0);
@@ -490,7 +483,7 @@ algorithm
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
       then
        ((unassignedEqns,eqnsLst));
-*/    case(_,_,(unassignedEqns,eqnsLst,discEqns))
+*/    case((unassignedEqns,eqnsLst,discEqns))
       equation
         vindx = ass2[eindx];
         ba = intLt(vindx,1);
@@ -505,7 +498,7 @@ algorithm
         discEqns = List.consOnTrue(b, eindx, discEqns);
       then
        ((unassignedEqns,eqnsLst,discEqns));
-    case(_,_,(unassignedEqns,eqnsLst,discEqns))
+    case((unassignedEqns,eqnsLst,discEqns))
       equation
         vindx = ass2[eindx];
         false = intGt(vindx,0);
@@ -625,10 +618,10 @@ algorithm
     eqnslst1 := List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
     eqnslst1 :=  List.uniqueIntN(listAppend(MSSSeqs,eqnslst1),numEqs1);
     eqnslst1 := listAppend(eqnslst1,eqnslst);
-      if Flags.isSet(Flags.BLT_DUMP) then
-        print("Update Incidence Matrix: ");
-        BackendDump.debuglst(eqnslst1,intString," ","\n");
-      end if;
+    if Flags.isSet(Flags.BLT_DUMP) then
+      print("Update Incidence Matrix: ");
+      BackendDump.debuglst(eqnslst1,intString," ","\n");
+    end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     (syst,omapEqnIncRow,omapIncRowEqn) :=
       BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
@@ -846,15 +839,13 @@ protected function statesWithUnusedDerivative
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := matchcontinue(state,mt,iAcc)
-    case(_,_,_)
+  oAcc := matchcontinue(state)
+    case(_)
       equation
-        List.map1AllValue(mt[state],intLt,true,0);
+        List.map1AllValue(mt[state], intLt, true, 0);
       then
         state::iAcc;
-    else
-      then
-        iAcc;
+    else iAcc;
   end matchcontinue;
 end statesWithUnusedDerivative;
 
@@ -1161,8 +1152,7 @@ protected function replaceFinalVarsGetExp
  input output BackendVarTransform.VariableReplacements repl;
  input output Boolean b;
 algorithm
-  (repl, b) :=
-  matchcontinue (inVar)
+  (repl, b) := matchcontinue (inVar)
     local
       BackendVarTransform.VariableReplacements repl1;
       DAE.ComponentRef cr;
@@ -1525,16 +1515,12 @@ protected
   Integer rang, nStateCandidates, nUnassignedEquations;
   list<BackendDAE.Var> stateCandidates;
 algorithm
-
   for tpl in iTplLst loop
-
     (_,_,nStateCandidates,nUnassignedEquations,stateCandidates,_,_,_) := tpl;
     rang := nStateCandidates - nUnassignedEquations;
     (_,stateCandidates) := List.split(stateCandidates, rang);
     dummyStates := listAppend(stateCandidates, dummyStates);
-
   end for;
-
 end reduceStateSets2;
 
 
@@ -1691,8 +1677,7 @@ protected function selectStates
   output HashTableCrIntToExp.HashTable oHt;
   output Integer oSetIndex;
 algorithm
-  (osyst,oshared,oHt,oSetIndex) :=
-  matchcontinue inSystem
+  (osyst,oshared,oHt,oSetIndex) := matchcontinue inSystem
     local
       list<BackendDAE.Equation> eqnslst;
       HashTableCrIntToExp.HashTable ht;
@@ -2257,29 +2242,22 @@ protected function getIncidenceMatrixSelectStates
   input BackendDAE.IncidenceMatrixT mT "input/output";
   input BackendDAE.IncidenceMatrix mo;
   input array<Integer> stateindexs;
+protected
+  list<Integer> row, negrow;
 algorithm
-  _ := match(nEqns,m,mT,mo,stateindexs)
-    local
-      list<Integer> row,negrow;
-    case (0,_,_,_,_) then ();
-    case (_,_,_,_,_)
-      equation
-        // get row
-        row = mo[nEqns];
-        // replace negative index with index from stateindexs
-        row = List.map1(row,replaceStateIndex,stateindexs);
-        // update m
-        arrayUpdate(m,nEqns,row);
-        // update mT
-        (row,negrow) = List.split1OnTrue(row, intGt, 0);
-        _ = List.fold1(row,Array.consToElement,nEqns,mT);
-        row = List.map(negrow,intAbs);
-        _ = List.fold1(row,Array.consToElement,-nEqns,mT);
-        // next
-        getIncidenceMatrixSelectStates(nEqns-1,m,mT,mo,stateindexs);
-      then
-        ();
-  end match;
+  for i in nEqns:-1:1 loop
+    // get row
+    row := mo[i];
+    // replace negative index with index from stateindexs
+    row := List.map1(row,replaceStateIndex,stateindexs);
+    // update m
+    arrayUpdate(m,i,row);
+    // update mT
+    (row, negrow) := List.split1OnTrue(row, intGt, 0);
+    _ := List.fold1(row,Array.consToElement,i,mT);
+    row := List.map(negrow,intAbs);
+    _ := List.fold1(row,Array.consToElement,-i,mT);
+  end for;
 end getIncidenceMatrixSelectStates;
 
 protected function replaceStateIndex
@@ -2314,8 +2292,7 @@ protected function getIncidenceMatrixLevelEquations
   input array<Integer> stateindexs;
   input DAE.FunctionTree functionTree;
 algorithm
-  _ :=
-    match (iEqns, vars, index, sindex, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree)
+  _ := match (iEqns)
     local
       list<BackendDAE.Equation> rest;
       AvlSetInt.Tree rowTree;
@@ -2323,11 +2300,10 @@ algorithm
       BackendDAE.Equation e;
       Integer i1,rowSize,size;
 
-    case ({}, _, _, _, _, _, _, _, _, _, _) then ();
+    case {} then ();
 
     // i < n
-    case (e::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
+    case e::rest equation
         // compute the row
         (rowTree,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY());
         row = AvlSetInt.listKeys(rowTree);
@@ -2348,8 +2324,7 @@ algorithm
         _ = List.fold1(row,Array.appendToElement,rowindxs,mT);
         // next equation
         getIncidenceMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree);
-      then
-        ();
+      then ();
   end match;
 end getIncidenceMatrixLevelEquations;
 
@@ -2383,12 +2358,12 @@ protected function partitionSystem1
   input Integer iNSystems;
   output Integer oNSystems;
 algorithm
-  oNSystems := matchcontinue(index,m,mT,rowmarkarr,collmarkarr,iNSystems)
+  oNSystems := matchcontinue(index)
     local
       list<Integer> rows;
       Integer nsystems;
-    case (0,_,_,_,_,_) then iNSystems-1;
-    case (_,_,_,_,_,_)
+    case 0 then iNSystems-1;
+    case _
       equation
         // if unmarked then increse nsystems
         false = intGt(rowmarkarr[index],0);
@@ -2397,12 +2372,10 @@ algorithm
         nsystems = partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
       then
         partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,nsystems);
-    else
-      equation
-        // if marked skipp it
-        true = intGt(rowmarkarr[index],0);
-      then
-        partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,iNSystems);
+    else equation
+      // if marked skip it
+      true = intGt(rowmarkarr[index],0);
+    then partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,iNSystems);
   end matchcontinue;
 end partitionSystem1;
 
@@ -2416,15 +2389,15 @@ protected function partitionSystemstraverseRows
   input Integer iNSystems;
   output Integer oNSystems;
 algorithm
-  oNSystems := matchcontinue(iRows,iQueue,m,mT,rowmarkarr,collmarkarr,iNSystems)
+  oNSystems := matchcontinue(iRows,iQueue)
     local
       list<Integer> rest,colls,rows;
       Integer r;
-    case ({},{},_,_,_,_,_) then iNSystems+1;
-    case ({},_,_,_,_,_,_)
+    case ({},{}) then iNSystems+1;
+    case ({},_)
       then
         partitionSystemstraverseRows(iQueue,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
-    case (r::rest,_,_,_,_,_,_)
+    case (r::rest,_)
       equation
         // if unmarked then add
         false = intGt(collmarkarr[r],0);
@@ -2437,7 +2410,7 @@ algorithm
         rows = listAppend(rows,iQueue);
       then
         partitionSystemstraverseRows(rest,rows,m,mT,rowmarkarr,collmarkarr,iNSystems);
-    case (r::rest,_,_,_,_,_,_)
+    case (r::rest,_)
       equation
         // if marked skipp it
         true = intGt(collmarkarr[r],0);
@@ -2452,12 +2425,12 @@ protected function partitionSystemSplitt
   input array<list<Integer>> systsarr;
   output array<list<Integer>> osystsarr;
 algorithm
-  osystsarr := match(index,rowmarkarr,systsarr)
+  osystsarr := match(index)
     local
       Integer i;
       array<list<Integer>> arr;
-    case (0,_,_) then systsarr;
-    case (_,_,_)
+    case (0) then systsarr;
+    case (_)
       equation
         i = rowmarkarr[index];
         arr = Array.consToElement(i, index, systsarr);
@@ -2507,8 +2480,8 @@ protected
   StateSets stateSets;
 algorithm
   try
-  for seteqns in iSets loop
-    if not listEmpty(List.select1r(seteqns,Matching.isUnAssigned,vec1)) then  // ignore sets without unassigned equations, because all assigned states already in dummy states
+    for seteqns in iSets loop
+      if not listEmpty(List.select1r(seteqns,Matching.isUnAssigned,vec1)) then  // ignore sets without unassigned equations, because all assigned states already in dummy states
         //  print("seteqns: " + intString(listLength(seteqns)) + "\n");
         //  print(stringDelimitList(List.map(seteqns,intString),", ") + "\n");
         unassigned := List.select1r(seteqns,Matching.isUnAssigned,vec1);
@@ -2559,10 +2532,10 @@ algorithm
         dummyStates := List.map(varlst,BackendVariable.varCref);
         outDummyStates := listAppend(outDummyStates,dummyStates);
         outDummyVars := listAppend(varlst, outDummyVars);
-    end if;
-  end for;
+      end if;
+    end for;
   else
-      Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.processComps4New failed!"});
+    Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.processComps4New failed!"});
     fail();
   end try;
 end processComps4New;
