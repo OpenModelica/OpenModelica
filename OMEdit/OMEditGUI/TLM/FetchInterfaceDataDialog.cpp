@@ -46,7 +46,7 @@
  * \param pLibraryTreeItem
  * \param pParent
  */
-FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
+FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, QString singleModel, QWidget *pParent)
   : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Fetch Interface Data")).append(" - ")
@@ -54,6 +54,7 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTree
   setAttribute(Qt::WA_DeleteOnClose);
   setMinimumWidth(550);
   mpLibraryTreeItem = pLibraryTreeItem;
+  mSingleModel = singleModel;
   // progress
   mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);

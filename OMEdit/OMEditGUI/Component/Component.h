@@ -197,6 +197,7 @@ public:
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
+  QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
   QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
@@ -253,6 +254,7 @@ private:
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
   QAction *mpParametersAction;
+  QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
   QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
@@ -339,6 +341,7 @@ public slots:
   void moveCtrlRight();
   void showParameters();
   void showAttributes();
+  void fetchInterfaceData();
   void openClass();
   void viewDocumentation();
   void showSubModelAttributes();

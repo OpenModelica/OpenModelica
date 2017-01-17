@@ -1458,6 +1458,11 @@ void Component::createActions()
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
+  // Fetch interfaces action
+  mpFetchInterfaceDataAction = new QAction(Helper::fetchInterfaceData, mpGraphicsView);
+  mpFetchInterfaceDataAction->setStatusTip(tr("Fetch interface data for this external model"));
+  connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
+  // Todo: Connect /robbr
   // Attributes Action
   mpAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpAttributesAction->setStatusTip(tr("Shows the component attributes"));
@@ -2371,6 +2376,11 @@ void Component::showAttributes()
   pComponentAttributes->exec();
 }
 
+void Component::fetchInterfaceData()
+{
+    MainWindow::instance()->fetchInterfaceData(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this->getName());
+}
+
 /*!
  * \brief Component::openClass
  * Slot that opens up the component Modelica class in a new tab/window.
@@ -2471,6 +2481,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(mpGraphicsView->getFlipVerticalAction());
         break;
       case LibraryTreeItem::MetaModel:
+        menu.addAction(pComponent->getFetchInterfaceDataAction());
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
     }
