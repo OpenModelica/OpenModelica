@@ -4352,6 +4352,18 @@ end getTempDeclMatchOutputName;
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
 
+/* public */ template daeExpAsLValue(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates code for an expression. Makes sure that the output is an lvalue (so you can take the address of it)."
+::=
+  let res1 = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+  if isCIdentifier(res1)
+    then res1
+  else
+    let tmp = tempDecl(expTypeFromExpArrayIf(exp),&varDecls)
+    let &preExp += '<%tmp%> = <%res1%>;<%\n%>'
+    tmp
+end daeExpAsLValue;
+
 
 template daeExternalCExp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
   "Like daeExp, but also converts the type to external C"
@@ -5750,20 +5762,20 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp, &varDecls, &auxFunction)
-    let arr_tp_str = '<%expTypeArray(ty)%>'
+    let arr_tp_str = expTypeArray(ty)
     let tvar = tempDecl(expTypeModelica(ty), &varDecls)
     let &preExp += '<%tvar%> = max_<%arr_tp_str%>(<%expVar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp, &varDecls, &auxFunction)
-    let arr_tp_str = '<%expTypeArray(ty)%>'
+    let arr_tp_str = expTypeArray(ty)
     let tvar = tempDecl(expTypeModelica(ty), &varDecls)
     let &preExp += '<%tvar%> = min_<%arr_tp_str%>(<%expVar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=CALL_ATTR(ty = ty)) then
-    let valExp = daeExp(val, context, &preExp, &varDecls, &auxFunction)
+    let valExp = daeExpAsLValue(val, context, &preExp, &varDecls, &auxFunction)
     let dimsExp = (dims |> dim =>
       daeExp(dim, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
     let ty_str = expTypeArray(ty)
@@ -5776,7 +5788,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let tvarc = tempDecl("int", &varDecls)
     let tvardata = tempDecl("void *", &varDecls)
     let nElts = tempDecl("int", &varDecls)
-    let val = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let val = daeExpAsLValue(exp, context, &preExp, &varDecls, &auxFunction)
     let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
     let dims =
       (getDimensionSizes(Expression.typeof(exp)) |> sz hasindex ix fromindex 1 =>
@@ -5802,14 +5814,14 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp, &varDecls, &auxFunction)
     let arrays_exp = (arrays |> array =>
-      daeExp(array, context, &preExp, &varDecls, &auxFunction) ;separator=", &")
+      daeExpAsLValue(array, context, &preExp, &varDecls, &auxFunction) ;separator=", &")
     let ty_str = expTypeArray(ty)
     let tvar = tempDecl(ty_str, &varDecls)
     let &preExp += 'cat_alloc_<%ty_str%>(<%dim_exp%>, &<%tvar%>, <%listLength(arrays)%>, &<%arrays_exp%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="promote"), expLst={A, n}) then
-    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(n, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
@@ -5817,36 +5829,36 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
     tvar
 
   case CALL(path=IDENT(name="transpose"), expLst={A}) then
-    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="symmetric"), expLst={A}) then
-    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'symmetric_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="skew"), expLst={A}) then
-    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'skew_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="cross"), expLst={v1, v2}) then
-    let var1 = daeExp(v1, context, &preExp, &varDecls, &auxFunction)
-    let var2 = daeExp(v2, context, &preExp, &varDecls, &auxFunction)
+    let var1 = daeExpAsLValue(v1, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExpAsLValue(v2, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = expTypeFromExpArray(v1)
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="identity"), expLst={A}) then
-    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = expTypeFromExpArray(A)
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
@@ -5856,7 +5868,7 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
     let arr_tp_str = expTypeFromExpArray(A)
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let params = (A.array |> e =>
-      '<%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>'
+      daeExp(e, context, &preExp, &varDecls, &auxFunction)
     ;separator=", ")
     let &preExp += 'diagonal_alloc_<%arr_tp_str%>(&<%tvar%>, <%listLength(A.array)%>, <%params%>);<%\n%>'
     tvar

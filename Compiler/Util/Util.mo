@@ -1711,7 +1711,7 @@ public function isCIdentifier
 protected
   Integer i;
 algorithm
-  (i,_) := System.regex(str, "^[][_A-Za-z0-9]*$", 0, true, false);
+  (i,_) := System.regex(str, "^[_A-Za-z][_A-Za-z0-9]*$", 0, true, false);
   b := i == 1;
 end isCIdentifier;
 
