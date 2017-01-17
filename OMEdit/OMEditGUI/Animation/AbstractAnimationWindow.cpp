@@ -31,22 +31,16 @@
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
-#include <osg/GraphicsContext>
-#include <osg/io_utils>
 #include <osg/MatrixTransform>
 #include <osg/Vec3>
 #include <osgDB/ReadFile>
-#include <osgGA/MultiTouchTrackballManipulator>
-#include <osg/Version>
-#include <osgViewer/View>
-#include <osgViewer/ViewerEventHandlers>
-#include <../../osgQt/OMEdit_GraphicsWindowQt.h>
 
 #include "AbstractAnimationWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
+#include "ViewerWidget.h"
 #include "Visualizer.h"
 #include "VisualizerMAT.h"
 #include "VisualizerCSV.h"
@@ -61,10 +55,9 @@
  */
 AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
   : QMainWindow(pParent),
-    osgViewer::CompositeViewer(),
+//    osgViewer::CompositeViewer(),
     mPathName(""),
     mFileName(""),
-    mpSceneView(new osgViewer::View()),
     mpVisualizer(nullptr),
     mpViewerWidget(nullptr),
     mpAnimationToolBar(new QToolBar(QString("Animation Toolbar"),this)),
@@ -82,19 +75,11 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpRotateCameraRightAction(nullptr)
 {
   // to distinguish this widget as a subwindow among the plotwindows
-  this->setObjectName(QString("animationWidget"));
-  // the osg threading model
-  setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
-  // disable the default setting of viewer.done() by pressing Escape.
-  setKeyEventSetsDone(0);
+  setObjectName(QString("animationWidget"));
   //the viewer widget
-  mpViewerWidget = setupViewWidget();
+  mpViewerWidget = new ViewerWidget(this);
   // we need to set the minimum height so that visualization window is still shown when we cascade windows.
   mpViewerWidget->setMinimumHeight(100);
-  // let render timer do a render frame at every tick
-  mRenderFrameTimer.setInterval(100);
-  QObject::connect(&mRenderFrameTimer, SIGNAL(timeout()), this, SLOT(renderFrame()));
-  mRenderFrameTimer.start();
   // toolbar icon size
   int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
   mpAnimationToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
@@ -168,54 +153,6 @@ void AbstractAnimationWindow::createActions()
 }
 
 /*!
- * \brief AbstractAnimationWindow::setupViewWidget
- * creates the widget for the osg viewer
- * \return the widget
- */
-QWidget* AbstractAnimationWindow::setupViewWidget()
-{
-  //desktop resolution
-  QRect rec = QApplication::desktop()->screenGeometry();
-  int height = rec.height();
-  int width = rec.width();
-  //int height = 1000;
-  //int width = 2000;
-  //get context
-  osg::ref_ptr<osg::DisplaySettings> ds = osg::DisplaySettings::instance().get();
-  osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
-  traits->windowName = "";
-  traits->windowDecoration = false;
-  traits->x = 0;
-  traits->y = 0;
-  traits->width = width;
-  traits->height = height;
-  traits->doubleBuffer = true;
-  traits->alpha = ds->getMinimumNumAlphaBits();
-  traits->stencil = ds->getMinimumNumStencilBits();
-  traits->sampleBuffers = ds->getMultiSamples();
-  traits->samples = ds->getNumMultiSamples();
-  osg::ref_ptr<osgQt::GraphicsWindowQt> gw = new osgQt::GraphicsWindowQt(traits.get());
-  //add a scene to viewer
-  addView(mpSceneView);
-  //get the viewer widget
-  osg::ref_ptr<osg::Camera> camera = mpSceneView->getCamera();
-  camera->setGraphicsContext(gw);
-  camera->setClearColor(osg::Vec4(0.95, 0.95, 0.95, 1.0));
-  //camera->setViewport(new osg::Viewport(0, 0, traits->width, traits->height));
-  camera->setViewport(new osg::Viewport(0, 0, width, height));
-  camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width/2) / static_cast<double>(traits->height/2), 1.0f, 10000.0f);
-  mpSceneView->addEventHandler(new osgViewer::StatsHandler());
-  // reverse the mouse wheel zooming
-  osgGA::MultiTouchTrackballManipulator *pMultiTouchTrackballManipulator = new osgGA::MultiTouchTrackballManipulator();
-  pMultiTouchTrackballManipulator->setWheelZoomFactor(-pMultiTouchTrackballManipulator->getWheelZoomFactor());
-  mpSceneView->setCameraManipulator(pMultiTouchTrackballManipulator);
-#if OSG_VERSION_GREATER_OR_EQUAL(3,4,0)
-  gw->setTouchEventsEnabled(true);
-#endif
-  return gw->getGLWidget();
-}
-
-/*!
  * \brief AbstractAnimationWindow::loadVisualization
  * loads the data and the xml scene description
  * \return
@@ -261,10 +198,10 @@ bool AbstractAnimationWindow::loadVisualization()
     mpVisualizer->setUpScene();
     mpVisualizer->initVisualization();
     //add scene for the chosen visualization
-    mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
+    mpViewerWidget->mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
   }
   //add window title
-  this->setWindowTitle(QString::fromStdString(mFileName));
+  setWindowTitle(QString::fromStdString(mFileName));
   //open settings dialog for FMU simulation
   if (visType == VisType::FMU) {
     openFMUSettingsDialog(dynamic_cast<VisualizerFMU*>(mpVisualizer));
@@ -278,7 +215,8 @@ bool AbstractAnimationWindow::loadVisualization()
  */
 void AbstractAnimationWindow::resetCamera()
 {
-  mpSceneView->home();
+  mpViewerWidget->mpSceneView->home();
+  mpViewerWidget->update();
 }
 
 /*!
@@ -292,7 +230,8 @@ void AbstractAnimationWindow::cameraPositionIsometric()
                                   -0.409, 0.816, -0.409, 0,
                                   0.57735,  0.57735, 0.57735, 0,
                                   0.57735*d, 0.57735*d, 0.57735*d, 1);
-  mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->update();
 }
 
 /*!
@@ -306,7 +245,8 @@ void AbstractAnimationWindow::cameraPositionSide()
                                   0, 1, 0, 0,
                                   0, 0, 1, 0,
                                   0, 0, d, 1);
-  mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->update();
 }
 
 /*!
@@ -320,7 +260,8 @@ void AbstractAnimationWindow::cameraPositionFront()
                                   1, 0, 0, 0,
                                   0, 1, 0, 0,
                                   0, d, 0, 1);
-  mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->update();
 }
 
 /*!
@@ -334,7 +275,8 @@ void AbstractAnimationWindow::cameraPositionTop()
                                    0, 1, 0, 0,
                                    1, 0, 0, 0,
                                    d, 0, 0, 1);
-  mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->update();
 }
 
 /*!
@@ -343,7 +285,7 @@ void AbstractAnimationWindow::cameraPositionTop()
  */
 double AbstractAnimationWindow::computeDistanceToOrigin()
 {
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->mpSceneView->getCameraManipulator();
   osg::Matrixd mat = manipulator->getMatrix();
   //assemble
 
@@ -372,15 +314,6 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFM
 }
 
 /*!
- * \brief AbstractAnimationWindow::renderFrame
- * renders the osg viewer
- */
-void AbstractAnimationWindow::renderFrame()
-{
-  frame();
-}
-
-/*!
  * \brief AbstractAnimationWindow::updateSceneFunction
  * updates the visualization objects
  */
@@ -400,6 +333,7 @@ void AbstractAnimationWindow::updateScene()
     }
     //update the scene
     mpVisualizer->sceneUpdate();
+    mpViewerWidget->update();
   }
 }
 
@@ -428,6 +362,7 @@ void AbstractAnimationWindow::initSlotFunction()
   mpAnimationSlider->setValue(0);
   mpAnimationSlider->blockSignals(state);
   mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
+  mpViewerWidget->update();
 }
 
 /*!
@@ -460,6 +395,7 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
   mpVisualizer->getTimeManager()->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
   mpVisualizer->updateScene(time);
+  mpViewerWidget->update();
 }
 
 /*!
@@ -484,6 +420,7 @@ void AbstractAnimationWindow::jumpToTimeSlotFunction()
     mpAnimationSlider->setValue(mpVisualizer->getTimeManager()->getTimeFraction());
     mpAnimationSlider->blockSignals(state);
     mpVisualizer->updateScene(value);
+    mpViewerWidget->update();
   }
 }
 
@@ -498,6 +435,7 @@ void AbstractAnimationWindow::setSpeedSlotFunction()
   double value = str.toFloat(&isFloat);
   if (isFloat && value > 0.0) {
     mpVisualizer->getTimeManager()->setSpeedUp(value);
+    mpViewerWidget->update();
   }
 }
 
@@ -529,9 +467,9 @@ void AbstractAnimationWindow::setPerspective(int value)
  */
 void AbstractAnimationWindow::rotateCameraLeft()
 {
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->mpSceneView->getCameraManipulator();
   osg::Matrixd mat = manipulator->getMatrix();
-  osg::Camera *pCamera = mpSceneView->getCamera();
+  osg::Camera *pCamera = mpViewerWidget->mpSceneView->getCamera();
 
   osg::Vec3d eye, center, up;
   pCamera->getViewMatrixAsLookAt(eye, center, up);
@@ -540,7 +478,8 @@ void AbstractAnimationWindow::rotateCameraLeft()
   osg::Matrixd rotMatrix;
   rotMatrix.makeRotate(3.1415/2.0, rotationAxis);
 
-  mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+  mpViewerWidget->update();
 }
 
 /*!
@@ -549,9 +488,9 @@ void AbstractAnimationWindow::rotateCameraLeft()
  */
 void AbstractAnimationWindow::rotateCameraRight()
 {
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpSceneView->getCameraManipulator();
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->mpSceneView->getCameraManipulator();
   osg::Matrixd mat = manipulator->getMatrix();
-  osg::Camera *pCamera = mpSceneView->getCamera();
+  osg::Camera *pCamera = mpViewerWidget->mpSceneView->getCamera();
 
   osg::Vec3d eye, center, up;
   pCamera->getViewMatrixAsLookAt(eye, center, up);
@@ -560,7 +499,6 @@ void AbstractAnimationWindow::rotateCameraRight()
   osg::Matrixd rotMatrix;
   rotMatrix.makeRotate(-3.1415/2.0, rotationAxis);
 
-  mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+  mpViewerWidget->update();
 }
-
-

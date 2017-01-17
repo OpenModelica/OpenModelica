@@ -251,6 +251,7 @@ HEADERS  += Util/Helper.h \
 CONFIG(osg) {
 
 SOURCES += Animation/AbstractAnimationWindow.cpp \
+  Animation/ViewerWidget.cpp \
   Animation/AnimationWindow.cpp \
   Animation/ThreeDViewer.cpp \
   Animation/ExtraShapes.cpp \
@@ -261,11 +262,11 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
   Animation/Shapes.cpp \
-  Animation/TimeManager.cpp \
-  ../../osgQt/GraphicsWindowQt.cpp \
+  Animation/TimeManager.cpp
 
 
 HEADERS += Animation/AbstractAnimationWindow.h \
+  Animation/ViewerWidget.h \
   Animation/AnimationWindow.h \
   Animation/ThreeDViewer.h \
   Animation/AnimationUtil.h \
@@ -278,9 +279,7 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/FMUWrapper.h \
   Animation/Shapes.h \
   Animation/TimeManager.h \
-  Animation/rapidxml.hpp \
-  ../../osgQt/OMEdit_GraphicsWindowQt.h \
-  ../../osgQt/Export
+  Animation/rapidxml.hpp
 }
 
 LIBS += -lqjson

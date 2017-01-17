@@ -34,8 +34,6 @@
 #ifndef ABSTRACTANIMATIONWINDOW_H
 #define ABSTRACTANIMATIONWINDOW_H
 
-#include <osgViewer/CompositeViewer>
-
 #include <QMainWindow>
 #include <QToolBar>
 #include <QSlider>
@@ -46,31 +44,26 @@
 #include "FMUSettingsDialog.h"
 
 class VisualizerAbstract;
+class ViewerWidget;
 class Label;
 
-class AbstractAnimationWindow : public QMainWindow, public osgViewer::CompositeViewer
+class AbstractAnimationWindow : public QMainWindow
 {
   Q_OBJECT
 public:
   AbstractAnimationWindow(QWidget *pParent);
-  void stopRenderFrameTimer() {mRenderFrameTimer.stop();}
-  void startRenderFrameTimer() {mRenderFrameTimer.start();}
   void openAnimationFile(QString fileName);
   virtual void createActions();
 private:
-  QWidget* setupViewWidget();
   bool loadVisualization();
 protected:
   //to be animated
   std::string mPathName;
   std::string mFileName;
-  //osg viewer scene
-  osgViewer::View* mpSceneView;
   //stores the data for the shapes, time management, functionality for updating the values(mat/fmu) etc.
   VisualizerAbstract* mpVisualizer;
   //widgets
-  QWidget* mpViewerWidget;
-  QTimer mRenderFrameTimer;
+  ViewerWidget *mpViewerWidget;
   QToolBar* mpAnimationToolBar;
   QAction *mpAnimationChooseFileAction;
   QAction *mpAnimationInitializeAction;
@@ -93,7 +86,6 @@ protected:
   double computeDistanceToOrigin();
   void openFMUSettingsDialog(VisualizerFMU *pVisualizerFMU);
 public slots:
-  void renderFrame();
   void updateScene();
   void chooseAnimationFileSlotFunction();
   void initSlotFunction();
