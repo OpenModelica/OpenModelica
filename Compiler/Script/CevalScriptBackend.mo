@@ -3143,7 +3143,13 @@ algorithm
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
       return;
     end if;
-    CevalScript.compileModel(filenameprefix, libs, workingDir=fmutmp+"/sources", makeVars={});
+    try
+      CevalScript.compileModel(filenameprefix, libs, workingDir=fmutmp+"/sources", makeVars={});
+    else
+      outValue := Values.STRING("");
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+      return;
+    end try;
   end for;
 
   System.removeDirectory(fmutmp);
