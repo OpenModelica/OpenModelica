@@ -7,7 +7,6 @@ loadModel(Modelica, {"3.2.1"}); getErrorString();
 
 loadFile("ElectricalCircuit3.mo"); getErrorString();
 setDebugFlags("backenddaeinfo,stateselection"); getErrorString();
-setCommandLineOptions("--preOptModules+=resolveLoops"); getErrorString();
 simulate(ElectricalCircuit3); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/ElectricalCircuit3.mat",
