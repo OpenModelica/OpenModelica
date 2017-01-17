@@ -266,7 +266,7 @@ algorithm
      (loopEqs,loopVars,nonLoopEqs,nonLoopVars);
     else
       equation
-        print("resolveLoops_cutNodes failed\n");
+        Error.addInternalError("function resolveLoops_cutNodes failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -297,7 +297,7 @@ protected
   BackendDAE.Equation eq;
   Boolean isSimple;
 algorithm
-  if BackendEquation.isEquation(inEq) then
+  if BackendEquation.isEquation(inEq) and not eqIsConst(inEq)/*simple assignments should not occur here, they cannot be improved any further*/ then
     (eq,(isSimple,_)) := BackendEquation.traverseExpsOfEquation(inEq,isAddOrSubExp,(true,vars));
     outEqs := if isSimple then eq::inEqs else inEqs;
   else
@@ -423,7 +423,7 @@ algorithm
         paths;
     else
       equation
-        print("resolveLoops_findLoops2 failed!\n");
+        Error.addInternalError("function resolveLoops_findLoops2 failed", sourceInfo());
       then
         fail();
   end match;
@@ -1042,7 +1042,7 @@ algorithm
         path;
     else
       equation
-        print("closePath failed\n");
+        Error.addInternalError("function ResolveLoops.closePathDirectly failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1076,7 +1076,7 @@ algorithm
         {};
     else
       equation
-        print("findPathByEnds failed!\n");
+        Error.addInternalError("function ResolveLoops.findPathByEnds failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1170,7 +1170,7 @@ algorithm
         eqPathsIn;
     else
       equation
-        print("getPathTillNextCrossEq failed!\n");
+        Error.addInternalError("function ResolveLoops.getPathTillNextCrossEq failed", sourceInfo());
         then
           fail();
   end matchcontinue;
