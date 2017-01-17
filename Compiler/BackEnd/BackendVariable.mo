@@ -2124,10 +2124,10 @@ public function daeVars "returns orderedVars"
   output BackendDAE.Variables vars = inEqSystem.orderedVars;
 end daeVars;
 
-public function daeKnVars
+public function daeGlobalKnownVars
   input BackendDAE.Shared inShared;
   output BackendDAE.Variables outGlobalKnownVars = inShared.globalKnownVars;
-end daeKnVars;
+end daeGlobalKnownVars;
 
 public function daeAliasVars
   input BackendDAE.Shared inShared;
@@ -2500,27 +2500,27 @@ algorithm
   outEqSystem := List.fold(inVars, addVarDAE, outEqSystem);
 end addVarsDAE;
 
-public function addKnVarDAE
+public function addGlobalKnownVarDAE
 "author: Frenkel TUD 2011-04
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
-  input BackendDAE.Var inVar;
+  input BackendDAE.Var inGlobalKnownVar;
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 algorithm
-  outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared, addVar(inVar, inShared.globalKnownVars));
-end addKnVarDAE;
+  outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared, addVar(inGlobalKnownVar, inShared.globalKnownVars));
+end addGlobalKnownVarDAE;
 
-public function addNewKnVarDAE
+public function addNewGlobalKnownVarDAE
 "author: Frenkel TUD 2011-04
   Add a variable to Variables of a BackendDAE.
   No Check if variable already exist. Use only for new variables"
-  input BackendDAE.Var inVar;
+  input BackendDAE.Var inGlobalKnownVar;
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 algorithm
-  outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared, addNewVar(inVar, inShared.globalKnownVars));
-end addNewKnVarDAE;
+  outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared, addNewVar(inGlobalKnownVar, inShared.globalKnownVars));
+end addNewGlobalKnownVarDAE;
 
 public function addAliasVarDAE
 "author: Frenkel TUD 2012-09

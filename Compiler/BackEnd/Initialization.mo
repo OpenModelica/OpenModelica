@@ -857,7 +857,7 @@ algorithm
     GC.free(secondary);
     outPrimaryParameters := listReverse(outPrimaryParameters);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
-    dae := BackendDAEUtil.setKnownVars(dae, otherVariables);
+    dae := BackendDAEUtil.setDAEGlobalKnownVars(dae, otherVariables);
 
     //BackendDump.dumpVarList(outPrimaryParameters, "outPrimaryParameters");
     //BackendDump.dumpVarList(outAllPrimaryParameters, "outAllPrimaryParameters");

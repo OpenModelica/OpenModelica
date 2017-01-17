@@ -582,7 +582,7 @@ algorithm
         eqn = BackendEquation.equationNth1(eqns,pos);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        globalKnownVars = BackendVariable.daeKnVars(shared);
+        globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
         (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,globalKnownVars,true,false));
         (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,globalKnownVars,true,false));
         cr = BackendVariable.varCref(var);
@@ -601,7 +601,7 @@ algorithm
         eqn = BackendEquation.equationNth1(eqns,pos);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        globalKnownVars = BackendVariable.daeKnVars(shared);
+        globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
         (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,globalKnownVars,false,false));
         (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,globalKnownVars,false,false));
         cr = BackendVariable.varCref(var);
@@ -5209,7 +5209,7 @@ algorithm
   tmpv := BackendVariable.makeVar(cref);
   //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
-  shared := BackendVariable.addKnVarDAE(tmpv, inDAE.shared);
+  shared := BackendVariable.addGlobalKnownVarDAE(tmpv, inDAE.shared);
 
   for syst in inDAE.eqs loop
    (syst_, shared) := symEulerUpdateSyst(syst, b, shared);

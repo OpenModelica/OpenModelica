@@ -363,7 +363,7 @@ algorithm
       list<DAE.Exp> explst;
       String s;
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) equation
-      ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeKnVars(inShared), {}));
+      ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
       s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
     then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
@@ -983,7 +983,7 @@ algorithm
         v1 = BackendVariable.setVarStartValue(v1,DAE.RCONST(r));
         // ToDo: merge source of var and equation
         (vars1,_) = BackendVariable.removeVar(indx, vars);
-        shared = BackendVariable.addKnVarDAE(v1,ishared);
+        shared = BackendVariable.addGlobalKnownVarDAE(v1,ishared);
         (vars2,eqns,shared) = changeConstantLinearSystemVars(varlst,rlst,slst,vindxs,vars1,eqns,shared);
       then (vars2,eqns,shared);
   end match;
@@ -1799,12 +1799,12 @@ end createLinearModelMatrixes;
 
 protected function generateGenericJacobian "author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
-  input list<BackendDAE.Var> inDiffVars;
+  input list<BackendDAE.Var> inDiffVars "independent vars";
   input BackendDAE.Variables inStateVars;
   input BackendDAE.Variables inInputVars;
-  input BackendDAE.Variables inParameterVars;
-  input BackendDAE.Variables inDifferentiatedVars;
-  input list<BackendDAE.Var> inVars;
+  input BackendDAE.Variables inParameterVars "globalKnownVars";
+  input BackendDAE.Variables inDifferentiatedVars "resVars";
+  input list<BackendDAE.Var> inVars "dependent vars = resVars + other vars";
   input String inName;
   input Boolean onlySparsePattern;
   output Option<BackendDAE.SymbolicJacobian> outJacobian;
@@ -1832,12 +1832,12 @@ end generateGenericJacobian;
 
 protected function createJacobian "author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
-  input list<BackendDAE.Var> inDiffVars;
+  input list<BackendDAE.Var> inDiffVars "independent vars";
   input BackendDAE.Variables inStateVars;
   input BackendDAE.Variables inInputVars;
-  input BackendDAE.Variables inParameterVars;
-  input BackendDAE.Variables inDifferentiatedVars;
-  input list<BackendDAE.Var> inVars;
+  input BackendDAE.Variables inParameterVars "globalKnownVars";
+  input BackendDAE.Variables inDifferentiatedVars "resVars";
+  input list<BackendDAE.Var> inVars "dependent vars = resVars + other vars";
   input String inName;
   output BackendDAE.SymbolicJacobian outJacobian;
   output DAE.FunctionTree outFunctionTree;
@@ -1845,13 +1845,13 @@ algorithm
   (outJacobian, outFunctionTree) :=
   matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inName)
     local
-      BackendDAE.BackendDAE backendDAE, reduceDAE;
+      BackendDAE.BackendDAE backendDAE, reducedDAE;
 
       list<DAE.ComponentRef> comref_vars, comref_seedVars, comref_differentiatedVars;
 
       BackendDAE.Shared shared;
-      BackendDAE.Variables  globalKnownVars, knvars1;
-      list<BackendDAE.Var> diffedVars, diffVarsTmp, seedlst, knvarsTmp;
+      BackendDAE.Variables  globalKnownVars, globalKnownVars1;
+      list<BackendDAE.Var> diffedVars "resVars", diffVarsTmp, seedlst, globalKnownVarsTmp;
 
       DAE.FunctionTree funcs;
 
@@ -1860,21 +1860,21 @@ algorithm
         diffedVars = BackendVariable.varList(inDifferentiatedVars);
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
-        reduceDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
+        reducedDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
 
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, inName);
 
         // Differentiate the ODE system w.r.t states for jacobian
-        (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reduceDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reducedDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
 
-        knvars1 = BackendVariable.daeKnVars(shared);
-        knvarsTmp = BackendVariable.varList(knvars1);
+        globalKnownVars1 = BackendVariable.daeGlobalKnownVars(shared);
+        globalKnownVarsTmp = BackendVariable.varList(globalKnownVars1);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know temp vars(" + intString(listLength(knvarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
+          print("analytical Jacobians -> sorted know temp vars(" + intString(listLength(globalKnownVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
 
         (backendDAE as BackendDAE.DAE(shared=shared)) = optimizeJacobianMatrix(backendDAE,comref_differentiatedVars,comref_vars);
@@ -1882,21 +1882,20 @@ algorithm
           print("analytical Jacobians -> generated Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
 
-        globalKnownVars = BackendVariable.daeKnVars(shared);
+        globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
         diffVarsTmp = BackendVariable.varList(globalKnownVars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> sorted know diff vars(" + intString(listLength(diffVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
-        (_,knvarsTmp,_) = List.intersection1OnTrue(diffVarsTmp, knvarsTmp, BackendVariable.varEqual);
+        (_,globalKnownVarsTmp,_) = List.intersection1OnTrue(diffVarsTmp, globalKnownVarsTmp, BackendVariable.varEqual);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know vars(" + intString(listLength(knvarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
+          print("analytical Jacobians -> sorted know vars(" + intString(listLength(globalKnownVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
-        globalKnownVars = BackendVariable.listVar1(knvarsTmp);
-        backendDAE = BackendDAEUtil.setKnownVars(backendDAE, globalKnownVars);
+        globalKnownVars = BackendVariable.listVar1(globalKnownVarsTmp);
+        backendDAE = BackendDAEUtil.setDAEGlobalKnownVars(backendDAE, globalKnownVars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated optimized jacobians: " + realString(clock()) + "\n");
         end if;
-
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), funcs);
     else
@@ -1973,18 +1972,18 @@ algorithm
 end optimizeJacobianMatrix;
 
 protected function generateSymbolicJacobian "author: lochel"
-  input BackendDAE.BackendDAE inBackendDAE;
-  input list<BackendDAE.Var> inVars "wrt";
-  input BackendDAE.Variables indiffedVars "unknowns?";
-  input BackendDAE.Variables inseedVars;
+  input BackendDAE.BackendDAE inBackendDAE "reducedDAE (variables and equations needed to calculate resVars)";
+  input list<BackendDAE.Var> inVars "independent vars";
+  input BackendDAE.Variables inDiffedVars "resVars";
+  input BackendDAE.Variables inSeedVars;
   input BackendDAE.Variables inStateVars;
   input BackendDAE.Variables inInputVars;
-  input BackendDAE.Variables inParamVars;
+  input BackendDAE.Variables inParamVars "globalKnownVars";
   input String inMatrixName;
   output BackendDAE.BackendDAE outJacobian;
   output DAE.FunctionTree outFunctions;
 algorithm
-  (outJacobian,outFunctions) := matchcontinue(inBackendDAE, inVars, indiffedVars, inseedVars, inStateVars, inInputVars, inParamVars, inMatrixName)
+  (outJacobian,outFunctions) := matchcontinue(inBackendDAE, inVars, inDiffedVars, inSeedVars, inStateVars, inInputVars, inParamVars, inMatrixName)
     local
       BackendDAE.BackendDAE bDAE;
       DAE.FunctionTree functions;
@@ -1996,7 +1995,7 @@ algorithm
       BackendDAE.Variables stateVars;
       BackendDAE.Variables inputVars;
       BackendDAE.Variables paramVars;
-      BackendDAE.Variables diffedVars;
+      BackendDAE.Variables diffedVars "resVars";
       BackendDAE.BackendDAE jacobian;
 
       // BackendDAE
@@ -2006,7 +2005,7 @@ algorithm
       BackendDAE.EquationArray removedEqs, jacRemovedEqs; // Removed equations a=b
       // end BackendDAE
 
-      list<BackendDAE.Var> diffVars, derivedVariables, diffvars, diffedVarLst;
+      list<BackendDAE.Var> diffVars "independent vars", derivedVariables, diffedVarLst;
       list<BackendDAE.Equation> eqns, derivedEquations;
 
       list<list<BackendDAE.Equation>> derivedEquationslst;
@@ -2048,7 +2047,7 @@ algorithm
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> before derive all equation: " + realString(clock()) + "\n");
       end if;
-      (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
+      (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, functions);
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> after derive all equation: " + realString(clock()) + "\n");
       end if;
@@ -2062,18 +2061,18 @@ algorithm
 
       // all variables for new equation system
       // d(ordered vars)/d(dummyVar)
-      diffvars = BackendVariable.varList(orderedVars);
-      derivedVariables = createAllDiffedVars(diffvars, x, diffedVars, 0, matrixName, {});
+      diffVars = BackendVariable.varList(orderedVars);
+      derivedVariables = createAllDiffedVars(diffVars, x, diffedVars, 0, matrixName, {});
 
       jacOrderedVars = BackendVariable.listVar1(derivedVariables);
       // known vars: all variable from original system + seed
       size = BackendVariable.varsSize(orderedVars) +
              BackendVariable.varsSize(globalKnownVars) +
-             BackendVariable.varsSize(inseedVars);
+             BackendVariable.varsSize(inSeedVars);
       jacKnownVars = BackendVariable.emptyVarsSized(size);
       jacKnownVars = BackendVariable.addVariables(orderedVars, jacKnownVars);
       jacKnownVars = BackendVariable.addVariables(globalKnownVars, jacKnownVars);
-      jacKnownVars = BackendVariable.addVariables(inseedVars, jacKnownVars);
+      jacKnownVars = BackendVariable.addVariables(inSeedVars, jacKnownVars);
       (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars, BackendVariable.setVarDirectionTpl, (DAE.INPUT()));
       jacOrderedEqs = BackendEquation.listEquation(derivedEquations);
 
@@ -2165,55 +2164,46 @@ protected function deriveAll "author: lochel"
   input list<Integer> ass2;
   input DAE.ComponentRef inDiffCref;
   input BackendDAE.DifferentiateInputData inDiffData;
-  input list<BackendDAE.Equation> inDerivedEquations;
   input DAE.FunctionTree inFunctions;
-  output list<BackendDAE.Equation> outDerivedEquations;
-  output DAE.FunctionTree outFunctions;
+  output list<BackendDAE.Equation> outDerivedEquations = {};
+  output DAE.FunctionTree outFunctions = inFunctions;
+protected
+  BackendDAE.Variables allVars;
+  list<BackendDAE.Equation> currDerivedEquations;
+  list<BackendDAE.Var> solvedvars;
+  list<Integer> ass2_1 = ass2, solvedfor;
+  Boolean b;
 algorithm
-  (outDerivedEquations, outFunctions) :=
-  matchcontinue(inEquations, ass2, inDiffCref, inDiffData, inDerivedEquations, inFunctions)
-    local
-      BackendDAE.Equation currEquation;
-      DAE.FunctionTree functions;
-      list<BackendDAE.Equation> restEquations, derivedEquations, currDerivedEquations;
-      BackendDAE.Variables allVars;
-      list<BackendDAE.Var> solvedvars;
-      list<Integer> ass2_1,solvedfor;
-      Boolean b;
-
-    case({}, _, _, _, _, _) then (listReverse(inDerivedEquations), inFunctions);
-
-    case(currEquation::restEquations, _, _, BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)), _, _)
-      equation
+  try
+    BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)) := inDiffData;
+    for currEquation in inEquations loop
       if Flags.isSet(Flags.JAC_DUMP_EQN) then
-        print("Derive Equation! Left on Stack: " + intString(listLength(restEquations)) + "\n");
+        print("Derive Equation!\n");
         BackendDump.printEquationList({currEquation});
         print("\n");
       end if;
 
       // filter discrete equataions
-      (solvedfor,ass2_1) = List.split(ass2, BackendEquation.equationSize(currEquation));
-      solvedvars = List.map1r(solvedfor,BackendVariable.getVarAt, allVars);
-      b = List.mapAllValueBool(solvedvars, BackendVariable.isVarDiscrete, true);
-      b = b or BackendEquation.isWhenEquation(currEquation);
+      (solvedfor,ass2_1) := List.split(ass2_1, BackendEquation.equationSize(currEquation));
+      solvedvars := List.map1r(solvedfor,BackendVariable.getVarAt, allVars);
+      b := List.mapAllValueBool(solvedvars, BackendVariable.isVarDiscrete, true);
+      b := b or BackendEquation.isWhenEquation(currEquation);
 
-      (currDerivedEquations, functions) = deriveAllHelper(b, currEquation, inDiffCref, inDiffData, inFunctions);
-      derivedEquations = listAppend(currDerivedEquations, inDerivedEquations);
+      (currDerivedEquations, outFunctions) := deriveAllHelper(b, currEquation, inDiffCref, inDiffData, outFunctions);
+      outDerivedEquations := listAppend(currDerivedEquations, outDerivedEquations);
 
       if Flags.isSet(Flags.JAC_DUMP_EQN) then
         BackendDump.printEquationList(currDerivedEquations);
         print("\n");
       end if;
-      (derivedEquations, functions) = deriveAll(restEquations, ass2_1, inDiffCref, inDiffData, derivedEquations, functions);
-     then
-       (derivedEquations, functions);
+    end for;
 
-    else
-     equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.deriveAll failed"});
-    then fail();
+    outDerivedEquations := listReverse(outDerivedEquations);
 
-  end matchcontinue;
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.deriveAll failed"});
+    fail();
+  end try;
 end deriveAll;
 
 protected function deriveAllHelper "author: wbraun"
@@ -2495,24 +2485,24 @@ algorithm
       Boolean mixedSystem, linear;
 
       Boolean debug = false, onlySparsePattern = true;
-      BackendDAE.TearingSet strictTearingset, causalTearingSet;
-      Option<BackendDAE.TearingSet> optCausalTearingSet;
+      BackendDAE.TearingSet strictTearingset, casualTearingSet;
+      Option<BackendDAE.TearingSet> optCasualTearingSet;
 
       // generate symbolic jacobian for a torn system
-      case (BackendDAE.TORNSYSTEM(strictTearingset, optCausalTearingSet, linear=linear, mixedSystem=mixedSystem), _, _, _)
+      case (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear=linear, mixedSystem=mixedSystem), _, _, _)
         equation
           // generate generic jacobian backend dae
           (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);
           strictTearingset.jac = jacobian;
 
-          if isSome(optCausalTearingSet) then
-            causalTearingSet = Util.getOption(optCausalTearingSet);
-            (jacobianCausal, shared) = calculateTearingSetJacobian(inVars, inEqns, causalTearingSet, shared, linear);
-            causalTearingSet.jac = jacobianCausal;
-            optCausalTearingSet = SOME(causalTearingSet);
+          if isSome(optCasualTearingSet) then
+            casualTearingSet = Util.getOption(optCasualTearingSet);
+            (jacobianCausal, shared) = calculateTearingSetJacobian(inVars, inEqns, casualTearingSet, shared, linear);
+            casualTearingSet.jac = jacobianCausal;
+            optCasualTearingSet = SOME(casualTearingSet);
           end if;
 
-      then (BackendDAE.TORNSYSTEM(strictTearingset, optCausalTearingSet, linear, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), shared);
 
       // do not touch linear and constant systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);

@@ -899,7 +899,7 @@ algorithm
 
   systOut := List.fold(vars, BackendVariable.addVarDAE, systIn);
   systOut := BackendEquation.equationsAddDAE(wrappedEqs, systOut);
-  sharedOut := List.fold(knowns, BackendVariable.addNewKnVarDAE, sharedIn);
+  sharedOut := List.fold(knowns, BackendVariable.addNewGlobalKnownVarDAE, sharedIn);
   if (not listEmpty(wrappedEqs)) then
     sharedOut := wrapAddTimeEventHack({timeEvent}, sharedOut);
   end if;
@@ -927,7 +927,7 @@ algorithm
   AUTOMATA_EQS(vars, knowns, eqs) := automataEqs;
   systOut := List.fold(vars, BackendVariable.addVarDAE, systIn);
   systOut := BackendEquation.equationsAddDAE(eqs, systOut);
-  sharedOut := List.fold(knowns, BackendVariable.addNewKnVarDAE, sharedIn);
+  sharedOut := List.fold(knowns, BackendVariable.addNewGlobalKnownVarDAE, sharedIn);
 end updateBackendDAE_DontUseYet;
 
 protected function findInitialState "

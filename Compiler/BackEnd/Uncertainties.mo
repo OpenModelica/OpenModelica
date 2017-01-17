@@ -1678,9 +1678,9 @@ algorithm
       dae = setDaeEqns(dae,BackendEquation.listEquation(eqnLst),false);
       //dae = setDaeSimpleEqns(dae,listEquation(listAppend(equationList(reqns),seqns)));
       dae = replaceDAElow(dae,repl,NONE(),false);
-      (vars_1,kvars_1) = moveVariables(BackendVariable.daeVars(syst),BackendVariable.daeKnVars(shared),movedvars_1);
+      (vars_1,kvars_1) = moveVariables(BackendVariable.daeVars(syst),BackendVariable.daeGlobalKnownVars(shared),movedvars_1);
       dae = setDaeVars(dae,vars_1);
-      dae = BackendDAEUtil.setKnownVars(dae, kvars_1);
+      dae = BackendDAEUtil.setDAEGlobalKnownVars(dae, kvars_1);
 
       dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
       dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
@@ -2375,7 +2375,7 @@ algorithm
         removed_vars_table=addCrefsToHashTable(removed_vars, removed_vars_table);
         (vars,globalKnownVars)=moveVariables(vars, globalKnownVars, removed_vars_table);
         dae = setDaeVars(dae, vars);
-        dae = BackendDAEUtil.setKnownVars(dae, globalKnownVars);
+        dae = BackendDAEUtil.setDAEGlobalKnownVars(dae, globalKnownVars);
         dae = setDaeEqns(dae, BackendEquation.listEquation(listAppend(simple_eqns, other_eqns)),false);
 
         dae = BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());

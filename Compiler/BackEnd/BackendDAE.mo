@@ -741,9 +741,9 @@ type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, Spa
 public
 type SymbolicJacobian = tuple<BackendDAE,               // symbolic equation system
                               String,                   // Matrix name
-                              list<Var>,                // diff vars
-                              list<Var>,                // result diffed equation
-                              list<Var>                 // all diffed equation
+                              list<Var>,                // diff vars (independent vars)
+                              list<Var>,                // diffed vars (residual vars)
+                              list<Var>                 // all diffed vars (residual vars + dependent vars)
                               >;
 
 public

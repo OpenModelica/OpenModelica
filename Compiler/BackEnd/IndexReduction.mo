@@ -971,7 +971,7 @@ algorithm
     // 1th try to replace final parameter
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(_), mT=SOME(_)))
       equation
-        ((eqns, eqnslst as _::_, _)) = List.fold1( inEqns, replaceFinalVars, BackendVariable.daeKnVars(inShared),
+        ((eqns, eqnslst as _::_, _)) = List.fold1( inEqns, replaceFinalVars, BackendVariable.daeGlobalKnownVars(inShared),
                                                    (syst.orderedEqs, {}, BackendVarTransform.emptyReplacements()));
         syst.orderedEqs = eqns;
         // unassign changed equations and assigned vars
@@ -1806,7 +1806,7 @@ algorithm
         // get orgequations of that level
         (eqnslst1,orgEqnsLst) = removeFirstOrgEqns(iOrgEqnsLst);
         // replace final parameter
-        (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeKnVars(inShared),false,BackendVarTransform.emptyReplacements()));
+        (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeGlobalKnownVars(inShared),false,BackendVarTransform.emptyReplacements()));
         // replace all der(x) with dx
         (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDerStatesStatesExp,so));
         // force inline

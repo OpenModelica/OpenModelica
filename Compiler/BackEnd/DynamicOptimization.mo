@@ -454,7 +454,7 @@ algorithm
       BackendDAE.Variables vars;
 
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
-      vars := BackendVariable.daeKnVars(outShared);
+      vars := BackendVariable.daeGlobalKnownVars(outShared);
 
       ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
       if listEmpty(idercr) then
@@ -463,16 +463,16 @@ algorithm
       // der(u) -> u has der
       varLst := BackendVariable.setVarsKind(varLst, BackendDAE.OPT_INPUT_WITH_DER());
       for v in varLst loop
-        outShared := BackendVariable.addKnVarDAE(v, outShared);
+        outShared := BackendVariable.addGlobalKnownVarDAE(v, outShared);
       end for;
       //  der(u) -> new input var
       varLst := List.map(idercr, BackendVariable.makeVar);
       varLst := List.map1(varLst, BackendVariable.setVarDirection, DAE.INPUT());
       for v in varLst loop
         v := BackendVariable.setVarKind(v,BackendDAE.OPT_INPUT_DER());
-        outShared := BackendVariable.addKnVarDAE(v, outShared);
+        outShared := BackendVariable.addGlobalKnownVarDAE(v, outShared);
       end for;
-      _ := BackendVariable.daeKnVars(outShared);
+      _ := BackendVariable.daeGlobalKnownVars(outShared);
        //BackendDump.printVariables(vars);
     then (isyst, true);
 
@@ -725,7 +725,7 @@ algorithm
       var := BackendVariable.mergeAliasVars(var, var_, false, globalKnownVars);
       var := BackendVariable.setVarKind(var, BackendDAE.OPT_LOOP_INPUT(cr_var));
     end if;
-    oshared := BackendVariable.addKnVarDAE(var, oshared);
+    oshared := BackendVariable.addGlobalKnownVarDAE(var, oshared);
     oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
   end for;
 

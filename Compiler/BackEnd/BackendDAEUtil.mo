@@ -8418,18 +8418,18 @@ algorithm
   outDAE := BackendDAE.DAE(systs, shared);
 end setAliasVars;
 
-public function setKnownVars "author: lochel"
+public function setDAEGlobalKnownVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
-  input BackendDAE.Variables inKnownVars;
+  input BackendDAE.Variables inGlobalKnownVars;
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  shared := setSharedGlobalKnownVars(shared, inKnownVars);
+  shared := setSharedGlobalKnownVars(shared, inGlobalKnownVars);
   outDAE := BackendDAE.DAE(systs, shared);
-end setKnownVars;
+end setDAEGlobalKnownVars;
 
 public function setFunctionTree "author: lochel"
   input BackendDAE.BackendDAE inDAE;

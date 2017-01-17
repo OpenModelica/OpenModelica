@@ -217,7 +217,7 @@ algorithm
   end for;
 
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
-  outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
+  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, BackendVariable.listVar(knownVarList));
 end fixAliasVars;
 
 protected function fixKnownVars "author: lochel
@@ -257,7 +257,7 @@ algorithm
     dae.eqs := eqs::dae.eqs;
   end if;
 
-  dae := BackendDAEUtil.setKnownVars(dae, BackendVariable.listVar(knownVarList));
+  dae := BackendDAEUtil.setDAEGlobalKnownVars(dae, BackendVariable.listVar(knownVarList));
 end fixKnownVars;
 
 protected function fixAliasAndKnownVarsCausal "author: lochel
@@ -302,7 +302,7 @@ algorithm
     end if;
   end for;
   //BackendDump.dumpVarList(knownVarList, "knownVarList out");
-  outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
+  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, BackendVariable.listVar(knownVarList));
 end fixAliasAndKnownVarsCausal;
 
 protected function fixAliasVarsCausal2
@@ -1817,7 +1817,7 @@ algorithm
         // alias
         (negated, cra) = aliasExp(exp);
         // get Variables
-        globalKnownVars = BackendVariable.daeKnVars(shared);
+        globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
         (vars2, ilst2) = BackendVariable.getVar(cra, globalKnownVars);
         // add to Simple Equations List
         (seqns, index, mT) = generateSimpleContainters({var}, false, {i}, false, false, vars2, negated, ilst2, true, false, eqnAttributes, seqns, index, mT);
@@ -2408,7 +2408,7 @@ algorithm
        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
-       (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
+       (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addGlobalKnownVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
        repl = if replaceable_ and constExp and replaceble1 then BackendVarTransform.addReplacement(iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator)) else iRepl;
@@ -2431,7 +2431,7 @@ algorithm
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        exp = if Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)) then DAE.RCONST(0.0) else DAE.ICONST(0);
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
-       (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
+       (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addGlobalKnownVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
        repl = if replaceable_ and constExp and replaceble1 then BackendVarTransform.addReplacement(iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator)) else iRepl;

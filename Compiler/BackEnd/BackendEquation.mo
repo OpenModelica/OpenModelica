@@ -2414,7 +2414,7 @@ algorithm
     eqnVars := equationVars(eqn, ivars);
     b := listEmpty(eqnVars) and not Expression.expHasCref(y, DAE.crefTime);
     if b then
-      knowVars := BackendVariable.daeKnVars(oshared);
+      knowVars := BackendVariable.daeGlobalKnownVars(oshared);
       eqnKnVars := equationVars(eqn, knowVars);
       (inputsKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isInput);
        b := listEmpty(inputsKnVars);
@@ -2428,7 +2428,7 @@ algorithm
       else
         tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
         tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
-        oshared := BackendVariable.addKnVarDAE(tmpvar, oshared);
+        oshared := BackendVariable.addGlobalKnownVarDAE(tmpvar, oshared);
         para := true;
       end if;
     else
