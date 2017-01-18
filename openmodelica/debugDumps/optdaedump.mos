@@ -1616,6 +1616,34 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // Index reduction:
+//
+// pantelidesIndexReduction (unspecified partition)
+// ========================================
+//
+// Variables (8)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:STATE(1)()  type: Real 
+// 3: i2:VARIABLE()  type: Real 
+// 4: i1:VARIABLE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:STATE(1)()  type: Real 
+// 7: uL:VARIABLE()  type: Real 
+// 8: u1:VARIABLE()  type: Real 
+//
+//
+// Equations (8, 8)
+// ========================================
+// 1/1 (1): der(uC) = -sin(time)   [dynamic]
+// 2/2 (1): u1 = R1 * i1   [dynamic]
+// 3/3 (1): u1 = uC - uL   [dynamic]
+// 4/4 (1): uL = R2 * i2   [dynamic]
+// 5/5 (1): uL = L * der(iL)   [dynamic]
+// 6/6 (1): iC = C * der(uC)   [dynamic]
+// 7/7 (1): i0 = i1 + iC   [dynamic]
+// 8/8 (1): i1 = i2 + iL   [dynamic]
+//
+//
 // Index reduction done.
 //
 // created initial system:
