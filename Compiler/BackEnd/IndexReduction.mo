@@ -145,6 +145,7 @@ algorithm
     ErrorExt.delCheckpoint("Pantelides");
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
+      BackendDump.dumpEqSystemShort(osyst, "pantelidesIndexReduction");
       print("Index reduction done.\n");
     end if;
   else

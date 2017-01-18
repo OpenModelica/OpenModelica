@@ -607,6 +607,16 @@ algorithm
   print("\n");
 end dumpEqSystem;
 
+public function dumpEqSystemShort
+  input BackendDAE.EqSystem inEqSystem;
+  input String heading;
+algorithm
+  print("\n" + heading + " (" + partitionKindString(inEqSystem.partitionKind) + ")\n" + UNDERLINE + "\n");
+  dumpVariables(inEqSystem.orderedVars, "Variables");
+  dumpEquationArray(inEqSystem.orderedEqs, "Equations");
+  print("\n");
+end dumpEqSystemShort;
+
 public function dumpEqSystems
   input BackendDAE.EqSystems inEqSystems;
   input String heading;
