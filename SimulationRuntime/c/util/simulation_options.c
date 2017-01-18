@@ -85,6 +85,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NEWTON_STRATEGY */       "newton",
   /* FLAG_NLS */                   "nls",
   /* FLAG_NLS_INFO */              "nlsInfo",
+  /* FLAG_NLS_MAX_DENSITY */       "nlssMaxDensity",
+  /* FLAG_NLS_MIN_SIZE */          "nlssMinSize",
   /* FLAG_NLS_LS */                "nlsLS",
   /* FLAG_NOEMIT */                "noemit",
   /* FLAG_NOEQUIDISTANT_GRID */    "noEquidistantTimeGrid",
@@ -166,6 +168,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */              "outputs detailed information about solving process of non-linear systems into csv files.",
+  /* FLAG_NLS_MAX_DENSITY */       "[double (default 0.2)] value specifies the maximum density for using a non-linear sparse solver",
+  /* FLAG_NLS_MIN_SIZE */          "[int (default 10001)] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NLS_LS */                "value specifies the linear solver used by the non-linear solver",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
   /* FLAG_NOEQUIDISTANT_GRID */    "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl is used.",
@@ -337,6 +341,12 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * kinsol\n"
   "  * newton\n"
   "  * mixed",
+  /* FLAG_NLS_MAX_DENSITY */
+  "  Value specifies the maximum density for using a non-linear sparse solver.\n"
+  "  The value is a Double with default value 0.2.",
+  /* FLAG_NLS_MIN_SIZE */
+  "  Value specifies the minimum system size for using a non-linear sparse solver.\n"
+  "  The value is an Integer with default value 10001.",
   /* FLAG_NLS_INFO */
   "  Outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */
@@ -457,6 +467,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NEWTON_XTOL */           FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */       FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,
+  /* FLAG_NLS_MAX_DENSITY */       FLAG_TYPE_OPTION,
+  /* FLAG_NLS_MIN_SIZE */          FLAG_TYPE_OPTION,
   /* FLAG_NLS_INFO */              FLAG_TYPE_FLAG,
   /* FLAG_NLS_LS */                FLAG_TYPE_OPTION,
   /* FLAG_NOEMIT */                FLAG_TYPE_FLAG,

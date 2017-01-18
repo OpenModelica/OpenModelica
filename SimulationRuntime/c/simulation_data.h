@@ -269,7 +269,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   int (*initialAnalyticalJacobian)(void*, threadData_t*);
   modelica_integer jacobianIndex;
 
-  SPARSE_PATTERN sparsePattern;       /* sparse pattern if no jacobian is available */
+  SPARSE_PATTERN sparsePattern;        /* sparse pattern if no jacobian is available */
   modelica_boolean isPatternAvailable;
 
   void (*residualFunc)(void**, const double*, double*, const int*);
@@ -289,15 +289,15 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   modelica_real residualError;         /* not used */
   modelica_boolean solved;             /* 1: solved in current step - else not */
-  modelica_real lastTimeSolved;         /* save last successful solved point in time */
+  modelica_real lastTimeSolved;        /* save last successful solved point in time */
 
   /* statistics */
-  unsigned long numberOfCall;           /* number of solving calls of this system */
-  unsigned long numberOfFEval;          /* number of function evaluations of this system */
-  unsigned long numberOfIterations;     /* number of iteration of non-linear solvers of this system */
-  double totalTime;                     /* save the totalTime */
-  rtclock_t totalTimeClock;             /* time clock for the totalTime  */
-  void* csvData;                        /* information to save csv data */
+  unsigned long numberOfCall;          /* number of solving calls of this system */
+  unsigned long numberOfFEval;         /* number of function evaluations of this system */
+  unsigned long numberOfIterations;    /* number of iteration of non-linear solvers of this system */
+  double totalTime;                    /* save the totalTime */
+  rtclock_t totalTimeClock;            /* time clock for the totalTime  */
+  void* csvData;                       /* information to save csv data */
 } NONLINEAR_SYSTEM_DATA;
 #else
 typedef void* NONLINEAR_SYSTEM_DATA;

@@ -46,6 +46,7 @@
 #include "nonlinearSolverHomotopy.h"
 #include "simulation/simulation_info_json.h"
 #include "simulation/simulation_runtime.h"
+#include "simulation/solver/model_help.h"
 
 /* for try and catch simulationJumpBuffer */
 #include "meta/meta_modelica.h"
@@ -338,7 +339,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int i,j;
-  int size;
+  int size, nnz;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataNewtonAndHybrid *mixedSolverData;
 
@@ -362,6 +363,19 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
         nonlinsys[i].jacobianIndex = -1;
       }
     }
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+    if (nonlinsys[i].isPatternAvailable)
+    {
+      nnz = nonlinsys[i].sparsePattern.numberOfNoneZeros;
+
+      if(nnz/(double)(size*size)<=nonlinearSparseSolverMaxDensity && size >= nonlinearSparseSolverMinSize)
+      {
+        data->simulationInfo->nlsMethod = NLS_KINSOL;
+        infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d,\nbecause density of %.2f remains under threshold of %.2f and size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.", i, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity, size, nonlinearSparseSolverMinSize);
+      }
+    }
+#endif
 
     /* allocate system data */
     nonlinsys[i].nlsx = (double*) malloc(size*sizeof(double));
@@ -394,6 +408,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       }
     }
 #endif
+
     /* allocate solver data */
     switch(data->simulationInfo->nlsMethod)
     {

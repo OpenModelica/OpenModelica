@@ -77,6 +77,8 @@ extern "C" {
 extern int maxEventIterations;
 extern double linearSparseSolverMaxDensity;
 extern int linearSparseSolverMinSize;
+extern double nonlinearSparseSolverMaxDensity;
+extern int nonlinearSparseSolverMinSize;
 extern double newtonXTol;
 extern double newtonFTol;
 extern const size_t SIZERINGBUFFER;
