@@ -67,11 +67,7 @@ class ViewerWidget : public QGLWidget
 
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
-
-  osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> mpGraphicsWindow;
-  osg::ref_ptr<Viewer> mpViewer;
-  //osg viewer scene
-  osgViewer::View* mpSceneView;
+  osgViewer::View* getSceneView() {return mpSceneView;}
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent);
   virtual void paintGL();
@@ -84,8 +80,12 @@ protected:
   virtual void wheelEvent(QWheelEvent *event);
   virtual bool event(QEvent* event);
 private:
-  virtual void onResize(int width, int height);
   osgGA::EventQueue* getEventQueue() const;
+
+  osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> mpGraphicsWindow;
+  osg::ref_ptr<Viewer> mpViewer;
+  //osg viewer scene
+  osgViewer::View* mpSceneView;
 };
 
 #endif // VIEWERWIDGET_H

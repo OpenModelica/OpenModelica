@@ -56,6 +56,15 @@ void Viewer::setUpThreading()
   }
 }
 
+/*!
+ * \class ViewerWidget
+ * \brief Viewer widget for OpenSceneGraph animations.
+ */
+/*!
+ * \brief ViewerWidget::ViewerWidget
+ * \param parent
+ * \param flags
+ */
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
 ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   : QOpenGLWidget(parent, flags)
@@ -100,6 +109,11 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   setMouseTracking(true);
 }
 
+/*!
+ * \brief ViewerWidget::paintEvent
+ * Reimplementation of the paintEvent.\n
+ * \sa ViewerWidget::paintGL()
+ */
 void ViewerWidget::paintEvent(QPaintEvent* /* paintEvent */)
 {
   makeCurrent();
@@ -110,18 +124,33 @@ void ViewerWidget::paintEvent(QPaintEvent* /* paintEvent */)
   doneCurrent();
 }
 
+/*!
+ * \brief ViewerWidget::paintGL
+ * Renders the animation frame.
+ * \sa ViewerWidget::paintEvent()
+ */
 void ViewerWidget::paintGL()
 {
   mpViewer->frame();
 }
 
+/*!
+ * \brief ViewerWidget::resizeGL
+ * Resizes the graphics window.
+ * \param width
+ * \param height
+ */
 void ViewerWidget::resizeGL(int width, int height)
 {
   getEventQueue()->windowResize(x(), y(), width, height);
   mpGraphicsWindow->resized(x(), y(), width, height);
-  onResize(width, height);
 }
 
+/*!
+ * \brief ViewerWidget::keyPressEvent
+ * Passes the QWidget::keyPressEvent() to Graphics Window.
+ * \param event
+ */
 void ViewerWidget::keyPressEvent(QKeyEvent *event)
 {
   QString keyString = event->text();
@@ -129,6 +158,11 @@ void ViewerWidget::keyPressEvent(QKeyEvent *event)
   getEventQueue()->keyPress(osgGA::GUIEventAdapter::KeySymbol(*keyData));
 }
 
+/*!
+ * \brief ViewerWidget::keyReleaseEvent
+ * Passes the QWidget::keyReleaseEvent() to Graphics Window.
+ * \param event
+ */
 void ViewerWidget::keyReleaseEvent(QKeyEvent *event)
 {
   QString keyString = event->text();
@@ -136,11 +170,21 @@ void ViewerWidget::keyReleaseEvent(QKeyEvent *event)
   getEventQueue()->keyRelease(osgGA::GUIEventAdapter::KeySymbol(*keyData));
 }
 
+/*!
+ * \brief ViewerWidget::mouseMoveEvent
+ * Passes the QWidget::mouseMoveEvent() to Graphics Window.
+ * \param event
+ */
 void ViewerWidget::mouseMoveEvent(QMouseEvent *event)
 {
   getEventQueue()->mouseMotion(static_cast<float>(event->x()), static_cast<float>(event->y()));
 }
 
+/*!
+ * \brief ViewerWidget::mousePressEvent
+ * Passes the QWidget::mousePressEvent() to Graphics Window.
+ * \param event
+ */
 void ViewerWidget::mousePressEvent(QMouseEvent *event)
 {
   // 1 = left mouse button
@@ -163,6 +207,11 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
   getEventQueue()->mouseButtonPress(static_cast<float>(event->x()), static_cast<float>(event->y()), button);
 }
 
+/*!
+ * \brief ViewerWidget::mouseReleaseEvent
+ * Passes the QWidget::mouseReleaseEvent() to Graphics Window.
+ * \param event
+ */
 void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
 {
   // 1 = left mouse button
@@ -185,6 +234,11 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
   getEventQueue()->mouseButtonRelease(static_cast<float>(event->x()), static_cast<float>(event->y()), button);
 }
 
+/*!
+ * \brief ViewerWidget::wheelEvent
+ * Passes the QWidget::wheelEvent() to Graphics Window.
+ * \param event
+ */
 void ViewerWidget::wheelEvent(QWheelEvent *event)
 {
   event->accept();
@@ -193,6 +247,12 @@ void ViewerWidget::wheelEvent(QWheelEvent *event)
   getEventQueue()->mouseScroll(motion);
 }
 
+/*!
+ * \brief ViewerWidget::event
+ * Repaint the Graphics window on each user interaction.
+ * \param event
+ * \return
+ */
 bool ViewerWidget::event(QEvent *event)
 {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
@@ -219,14 +279,10 @@ bool ViewerWidget::event(QEvent *event)
   return handled;
 }
 
-void ViewerWidget::onResize(int width, int height)
-{
-  std::vector<osg::Camera*> cameras;
-  mpViewer->getCameras(cameras);
-
-  /*! @todo Handle the resize case */
-}
-
+/*!
+ * \brief ViewerWidget::getEventQueue
+ * \return
+ */
 osgGA::EventQueue* ViewerWidget::getEventQueue() const
 {
   osgGA::EventQueue* eventQueue = mpGraphicsWindow->getEventQueue();

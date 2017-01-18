@@ -198,7 +198,7 @@ bool AbstractAnimationWindow::loadVisualization()
     mpVisualizer->setUpScene();
     mpVisualizer->initVisualization();
     //add scene for the chosen visualization
-    mpViewerWidget->mpSceneView->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
+    mpViewerWidget->getSceneView()->setSceneData(mpVisualizer->getOMVisScene()->getScene().getRootNode());
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
@@ -215,7 +215,7 @@ bool AbstractAnimationWindow::loadVisualization()
  */
 void AbstractAnimationWindow::resetCamera()
 {
-  mpViewerWidget->mpSceneView->home();
+  mpViewerWidget->getSceneView()->home();
   mpViewerWidget->update();
 }
 
@@ -230,7 +230,7 @@ void AbstractAnimationWindow::cameraPositionIsometric()
                                   -0.409, 0.816, -0.409, 0,
                                   0.57735,  0.57735, 0.57735, 0,
                                   0.57735*d, 0.57735*d, 0.57735*d, 1);
-  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
   mpViewerWidget->update();
 }
 
@@ -245,7 +245,7 @@ void AbstractAnimationWindow::cameraPositionSide()
                                   0, 1, 0, 0,
                                   0, 0, 1, 0,
                                   0, 0, d, 1);
-  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
   mpViewerWidget->update();
 }
 
@@ -260,7 +260,7 @@ void AbstractAnimationWindow::cameraPositionFront()
                                   1, 0, 0, 0,
                                   0, 1, 0, 0,
                                   0, d, 0, 1);
-  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
   mpViewerWidget->update();
 }
 
@@ -275,7 +275,7 @@ void AbstractAnimationWindow::cameraPositionTop()
                                    0, 1, 0, 0,
                                    1, 0, 0, 0,
                                    d, 0, 0, 1);
-  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat);
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat);
   mpViewerWidget->update();
 }
 
@@ -285,7 +285,7 @@ void AbstractAnimationWindow::cameraPositionTop()
  */
 double AbstractAnimationWindow::computeDistanceToOrigin()
 {
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->mpSceneView->getCameraManipulator();
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
   osg::Matrixd mat = manipulator->getMatrix();
   //assemble
 
@@ -467,9 +467,9 @@ void AbstractAnimationWindow::setPerspective(int value)
  */
 void AbstractAnimationWindow::rotateCameraLeft()
 {
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->mpSceneView->getCameraManipulator();
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
   osg::Matrixd mat = manipulator->getMatrix();
-  osg::Camera *pCamera = mpViewerWidget->mpSceneView->getCamera();
+  osg::Camera *pCamera = mpViewerWidget->getSceneView()->getCamera();
 
   osg::Vec3d eye, center, up;
   pCamera->getViewMatrixAsLookAt(eye, center, up);
@@ -478,7 +478,7 @@ void AbstractAnimationWindow::rotateCameraLeft()
   osg::Matrixd rotMatrix;
   rotMatrix.makeRotate(3.1415/2.0, rotationAxis);
 
-  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat*rotMatrix);
   mpViewerWidget->update();
 }
 
@@ -488,9 +488,9 @@ void AbstractAnimationWindow::rotateCameraLeft()
  */
 void AbstractAnimationWindow::rotateCameraRight()
 {
-  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->mpSceneView->getCameraManipulator();
+  osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
   osg::Matrixd mat = manipulator->getMatrix();
-  osg::Camera *pCamera = mpViewerWidget->mpSceneView->getCamera();
+  osg::Camera *pCamera = mpViewerWidget->getSceneView()->getCamera();
 
   osg::Vec3d eye, center, up;
   pCamera->getViewMatrixAsLookAt(eye, center, up);
@@ -499,6 +499,6 @@ void AbstractAnimationWindow::rotateCameraRight()
   osg::Matrixd rotMatrix;
   rotMatrix.makeRotate(-3.1415/2.0, rotationAxis);
 
-  mpViewerWidget->mpSceneView->getCameraManipulator()->setByMatrix(mat*rotMatrix);
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat*rotMatrix);
   mpViewerWidget->update();
 }
