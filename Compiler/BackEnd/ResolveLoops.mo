@@ -86,8 +86,8 @@ algorithm
   (outEqSys, outSysIdx) := matchcontinue(inEqSys)
     local
       Integer numSimpEqs, numVars, numSimpVars;
-      array<Integer> eqMapArr,varMapArr;
-      list<Integer> eqMapping, varMapping, nonLoopVarIdcs, nonLoopEqIdcs, loopEqIdcs, loopVarIdcs, eqCrossLst, varCrossLst;
+      array<Integer> eqMapArr,varMapArr,nonLoopEqMark;
+      list<Integer> eqMapping, varMapping, eqCrossLst, varCrossLst;
       list<list<Integer>> partitions, loops;
       list<tuple<Boolean,String>> varAtts,eqAtts;
       BackendDAE.Variables vars,simpVars;
@@ -135,7 +135,7 @@ algorithm
       // cut the deadends (vars and eqs outside of the loops)
       m_cut = arrayCopy(m);
       mT_cut = arrayCopy(mT);
-      (_,_,nonLoopEqIdcs,_) = resolveLoops_cutNodes(m_cut,mT_cut); // this is pretty memory intensive
+      (_,nonLoopEqMark) = resolveLoops_cutNodes(m_cut,mT_cut); // this is pretty memory intensive
 
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
@@ -144,7 +144,7 @@ algorithm
       end if;
 
       // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
-      eqs = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapArr,varMapArr,eqs,vars,nonLoopEqIdcs);
+      eqs = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapArr,varMapArr,eqs,vars,nonLoopEqMark);
       syst.orderedEqs = eqs;
         //BackendDump.dumpEquationList(eqLst,"the complete DAE after resolving");
 
@@ -179,25 +179,25 @@ protected function resolveLoops_resolvePartitions "author:Waurich TUD 2014-02
   input array<Integer> varMap;
   input BackendDAE.EquationArray daeEqs;
   input BackendDAE.Variables daeVars;
-  input list<Integer> nonLoopEqs;
+  input array<Integer> nonLoopEqMark;
   output BackendDAE.EquationArray daeEqsOut;
 algorithm
-  daeEqsOut := matchcontinue(partitionsIn,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqs)
+  daeEqsOut := matchcontinue(partitionsIn,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqMark)
     local
       list<Integer> partition, eqCrossLst, varCrossLst;
       list<list<Integer>> rest, loops;
       BackendDAE.EquationArray eqs;
     case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation
-        (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
+        partition = List.filter1OnTrue(partition,arrayIsZeroAt,nonLoopEqMark);  //the eqs that are loops
         true = listEmpty(partition);
-        eqs = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqs);
+        eqs = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqMark);
     then
       eqs;
     case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation
         // search the partitions for loops
-        (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
+        partition = List.filter1OnTrue(partition,arrayIsZeroAt,nonLoopEqMark);  //the eqs that are loops
         //print("\nanalyse the partition "+stringDelimitList(List.map(partition,intString),",")+"\n");
         (loops,eqCrossLst,varCrossLst) = resolveLoops_findLoops({partition},mIn,mTIn);
         loops = List.filterOnFalse(loops,listEmpty);
@@ -208,7 +208,7 @@ algorithm
         //print("the loops that will be resolved: \n"+stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+"\n");
         // resolve the loops
         (eqs,_) = resolveLoops_resolveAndReplace(loops,eqCrossLst,varCrossLst,mIn,mTIn,eqMap,varMap,daeEqs,daeVars,{});
-        eqs = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,eqs,daeVars,nonLoopEqs);
+        eqs = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,eqs,daeVars,nonLoopEqMark);
       then
         eqs;
     case({},_,_,_,_,_,_,_,_,_)
@@ -222,41 +222,65 @@ protected function resolveLoops_cutNodes "author: Waurich TUD 2014-01
   cut the deadend nodes from the partitions"
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrix mTIn;
-  output list<Integer> loopEqsOut;
-  output list<Integer> loopVarsOut;
-  output list<Integer> nonLoopVarsOut;
-  output list<Integer> nonLoopEqsOut;
+  output array<Integer> deadEndVarsMark;
+  output array<Integer> deadEndEqsMark;
 algorithm
-  (loopEqsOut,loopVarsOut,nonLoopVarsOut,nonLoopEqsOut) := matchcontinue(mIn,mTIn)
+  (deadEndVarsMark,deadEndEqsMark) := matchcontinue(mIn,mTIn)
    local
-     Integer numVars, numEqs;
-     list<Integer> partition, loopVars, loopEqs, nonLoopVars, nonLoopEqs, eqCrossLst, varCrossLst;
+     Integer numVars, numEqs, idx;
+     list<Integer>  loopVars, loopEqs, eqs, nonLoopVars, nonLoopEqs, eqCrossLst, varCrossLst;
      list<list<Integer>>  restPartitions, loopVarLst;
      list<BackendDAE.Equation> eqLst;
      list<BackendDAE.Var> varLst;
    case(_,_)
-     equation
-       // get the deadEnd equations and variables
-       numVars = arrayLength(mTIn);
-       nonLoopVars = List.filter2OnTrue(List.intRange(numVars),arrayEntryLengthIs,mTIn,1);
-       (nonLoopEqs,nonLoopVars) = getDeadEndsInBipartiteGraph(nonLoopVars,mIn,mTIn,{},nonLoopVars);
+     algorithm
+       // get the outer deadEnd variables
+       numVars := arrayLength(mTIn);
+       numEqs := arrayLength(mIn);
+       nonLoopVars := List.filter2OnTrue(List.intRange(numVars),arrayEntryLengthIs,mTIn,1);
+         //print("nonLoopVars: \n"+stringDelimitList(List.map(nonLoopVars,intString)," / ")+"\n");
 
-       // get the eqs inside and outside the loop
-       numEqs = arrayLength(mIn);
-       (nonLoopEqs,loopEqs,_) = List.intersection1OnTrue(List.intRange(numEqs),nonLoopEqs,intEq);
+       deadEndVarsMark := arrayCreate(numVars,0);
+       deadEndEqsMark := arrayCreate(numVars,0);
 
-       loopVarLst = List.map1(loopEqs,Array.getIndexFirst,mIn);
-       loopVars = List.flatten(loopVarLst);
-       loopVars = List.unique(loopVars);
-       (nonLoopVars,loopVars,_) = List.intersection1OnTrue(loopVars,nonLoopVars,intEq);
+       for idx in nonLoopVars loop
+         arrayUpdate(deadEndVarsMark,idx,1);
+       end for;
 
-       // remove nonLoopNodes from the incidenceMatrix
-       List.map2_0(nonLoopVars,Array.updateIndexFirst,{},mTIn);
-       List.map2_0(nonLoopEqs,Array.updateIndexFirst,{},mIn);
-       List.map2_0(loopVars,arrayGetDeleteInLst,nonLoopEqs,mTIn);
-       List.map2_0(loopEqs,arrayGetDeleteInLst,nonLoopVars,mIn);
-   then
-     (loopEqs,loopVars,nonLoopEqs,nonLoopVars);
+       for idx in nonLoopVars loop
+         // DFS
+         markDeadEndsInBipartiteGraph(idx,mIn,mTIn,deadEndEqsMark,deadEndVarsMark);
+       end for;
+
+       idx := 1;
+       while idx <= numVars loop
+         // non-loop var
+         if arrayGet(deadEndVarsMark,idx) == 1 then
+           arrayUpdate(mTIn,idx,{});
+         //loop var
+         else
+           loopEqs := arrayGet(mTIn,idx);
+           loopEqs := List.filter1OnTrue(loopEqs,arrayIsZeroAt,deadEndEqsMark);  //the loop equations
+           arrayUpdate(mTIn,idx,loopEqs);
+         end if;
+         idx := idx+1;
+       end while;
+
+        idx := 1;
+        while idx <= numEqs loop
+         // non-loop eq
+         if arrayGet(deadEndEqsMark,idx) == 1 then
+           arrayUpdate(mIn,idx,{});
+         //loop eq
+         else
+           loopVars := arrayGet(mIn,idx);
+           loopVars := List.filter1OnTrue(loopVars,arrayIsZeroAt,deadEndVarsMark);  //the loop vars
+           arrayUpdate(mIn,idx,loopVars);
+         end if;
+         idx := idx+1;
+       end while;
+
+   then (deadEndVarsMark,deadEndEqsMark);
     else
       equation
         Error.addInternalError("function resolveLoops_cutNodes failed", sourceInfo());
@@ -751,56 +775,46 @@ algorithm
   end match;
 end eqIsConst;
 
-protected function getDeadEndsInBipartiteGraph "author:Waurich TUD 2014-01
-  gets the deadEndNodes of a bipartiteGraph. update the incidencematrix"
-  input list<Integer> checkSecNodes;  //checks all these secondary nodes (vars)
+protected function arrayIsZeroAt
+  input Integer pos;
+  input array<Integer> arr;
+  output Boolean isZero;
+algorithm
+  isZero := intEq(0,arr[pos]);
+end arrayIsZeroAt;
+
+protected function markDeadEndsInBipartiteGraph "author:Waurich TUD 2017-01
+creates marking arrays for the equations and variables.
+if the node is a non-loop not its marked with 1, otherwise with0
+update the incidencematrix.
+"
+  input Integer varIdx;  //deadEnd
   input BackendDAE.IncidenceMatrix mIn;  // the rows correspond to the primary nodes
   input BackendDAE.IncidenceMatrixT mTIn;
-  input list<Integer> primNodesIn;
-  input list<Integer> secNodesIn;
-  output list<Integer> primNodesOut;
-  output list<Integer> secNodesOut;
-algorithm
-  (primNodesOut,secNodesOut) := match(checkSecNodes,mIn,mTIn,primNodesIn,secNodesIn)
-    local
-      Integer secNode;
-      list<Integer> restSecNodes, adjPrimNodes, adjSecNodes, nonLoopVars, nonLoopEqs;
-      list<list<Integer>> adjSecNodesLst;
-      case(secNode::restSecNodes,_,_,_,_)
-        equation
-          adjPrimNodes = arrayGet(mTIn,secNode);
-          (_,adjPrimNodes,_) = List.intersection1OnTrue(adjPrimNodes,primNodesIn,intEq);
-          adjPrimNodes = List.filter2OnTrue(adjPrimNodes,isNoCrossNode,mIn,secNodesIn);
-          adjSecNodesLst = List.map1(adjPrimNodes,Array.getIndexFirst,mIn);
-          adjSecNodes = List.flatten(adjSecNodesLst);
-          (_,adjSecNodes,_) = List.intersection1OnTrue(adjSecNodes,secNodesIn,intEq);
-          adjSecNodes = List.filter2OnTrue(adjSecNodes,arrayEntryLengthIs,mTIn,2);
-          restSecNodes = listAppend(restSecNodes,adjSecNodes);
-          adjPrimNodes = listAppend(adjPrimNodes,primNodesIn);
-          adjSecNodes = listAppend(adjSecNodes,secNodesIn);
-          (adjPrimNodes,adjSecNodes) = getDeadEndsInBipartiteGraph(restSecNodes,mIn,mTIn,adjPrimNodes,adjSecNodes);
-        then
-          (adjPrimNodes,adjSecNodes);
-      case({},_,_,_,_)
-        equation
-        then
-        (primNodesIn,secNodesIn);
-  end match;
-end getDeadEndsInBipartiteGraph;
-
-protected function isNoCrossNode "author:Waurich TUD 2014-01
-  checks if the indexed node leads to only one or less other nodes (except doNotConcern)."
-  input Integer idx;
-  input array<list<Integer>> arr;
-  input list<Integer> doNotConsider;
-  output Boolean noCrossNode;
+  input array<Integer> deadEndEqs; //marks all equations which are not in a loop with 1, otherwise 0
+  input array<Integer> deadEndVars; //marks all variables which are not in a loop with 1, otherwise 0
 protected
-  list<Integer> entry;
+  Integer eqIdx, nextVarIdx;
+  list<Integer> adjEqs, adjVars;
 algorithm
-  entry := arrayGet(arr,idx);
-  (_,entry,_) := List.intersection1OnTrue(entry,doNotConsider,intEq);
-  noCrossNode := intLe(listLength(entry),1);
-end isNoCrossNode;
+    //print("check var "+intString(varIdx)+"\n");
+  adjEqs := arrayGet(mTIn,varIdx);
+  adjEqs := List.filter1OnTrue(adjEqs,arrayIsZeroAt,deadEndEqs);  //the eqs that are not yet marked
+    //print("adjEqs: \n"+stringDelimitList(List.map(adjEqs,intString)," / ")+"\n");
+  if listLength(adjEqs) == 1 then  // the var is a dead end var
+    eqIdx := listHead(adjEqs);
+    arrayUpdate(deadEndVars,varIdx,1);
+    adjVars := arrayGet(mIn,eqIdx);
+    adjVars := List.filter1OnTrue(adjVars,arrayIsZeroAt,deadEndVars);  //the vars that are not yet marked
+      //print("check eqIdx "+intString(eqIdx)+"\n");
+    if listLength(adjVars) == 1 then //the adjacent equation is a dead end eq
+      nextVarIdx := listHead(adjVars);
+      arrayUpdate(deadEndEqs,eqIdx,1);
+        //print("check nextVarIdx: \n"+stringDelimitList(List.map({nextVarIdx},intString)," / ")+"\n");
+      markDeadEndsInBipartiteGraph(nextVarIdx,mIn,mTIn,deadEndEqs,deadEndVars);  //recursion
+    end if;
+  end if;
+end markDeadEndsInBipartiteGraph;
 
 protected function arrayGetDeleteInLst "deletes all entries given in delEntries from the indexed list<Integer> of the array"
   input Integer idx;
