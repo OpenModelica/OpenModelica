@@ -952,10 +952,6 @@ QString OMCProxy::getComponentModifierValue(QString className, QString name)
   */
 bool OMCProxy::setComponentModifierValue(QString className, QString modifierName, QString modifierValue)
 {
-  modifierValue = StringHandler::removeFirstLastQuotes(modifierValue);
-  if (StringHandler::containsSpace(modifierValue)) {
-    modifierValue = QString("\"%1\"").arg(modifierValue);
-  }
   QString expression;
   if (modifierValue.isEmpty()) {
     expression = QString("setComponentModifierValue(%1, %2, $Code(()))").arg(className).arg(modifierName);
@@ -1020,10 +1016,6 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
 
 bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
 {
-  modifierValue = StringHandler::removeFirstLastQuotes(modifierValue);
-  if (StringHandler::containsSpace(modifierValue)) {
-    modifierValue = QString("\"%1\"").arg(modifierValue);
-  }
   QString expression;
   if (modifierValue.isEmpty()) {
     expression = QString("setExtendsModifierValue(%1, %2, %3, $Code(()))").arg(className).arg(extendsClassName).arg(modifierName);
