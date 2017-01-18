@@ -64,9 +64,33 @@ extern void debugMatrixPermutedDouble(int logName, char* matrixName, double* mat
 extern void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int m);
 extern void debugVectorDouble(int logName, char* vectorName, double* vector, int n);
 extern void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int n);
-extern void debugString(int logName, char* message);
-extern void debugInt(int logName, char* message, int value);
-extern void debugDouble(int logName, char* message, double value);
+
+static inline void debugString(int logName, char* message)
+{
+  if(ACTIVE_STREAM(logName))
+  {
+    infoStreamPrint(logName, 1, "%s", message);
+    messageClose(logName);
+  }
+}
+
+static inline void debugInt(int logName, char* message, int value)
+{
+  if(ACTIVE_STREAM(logName))
+  {
+    infoStreamPrint(logName, 1, "%s %d", message, value);
+    messageClose(logName);
+  }
+}
+
+static inline void debugDouble(int logName, char* message, double value)
+{
+  if(ACTIVE_STREAM(logName))
+  {
+    infoStreamPrint(logName, 1, "%s %18.10e", message, value);
+    messageClose(logName);
+  }
+}
 
 #ifdef __cplusplus
 }

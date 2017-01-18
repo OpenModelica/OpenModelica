@@ -208,7 +208,7 @@ for flag in $TRY_FLAGS; do
   AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
 done
 OLD_CFLAGS="$CFLAGS"
-for flag in -Wno-parentheses-equality -Wno-unused-variable; do
+for flag in -Wno-parentheses-equality -Wno-unused-variable -Werror=implicit-function-declaration; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"],[])
 done

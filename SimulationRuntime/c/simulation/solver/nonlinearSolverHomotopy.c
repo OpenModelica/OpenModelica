@@ -497,33 +497,6 @@ void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int
 }
 
 
-void debugString(int logName, char* message)
-{
-  if(ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s", message);
-    messageClose(logName);
-  }
-}
-
-void debugInt(int logName, char* message, int value)
-{
-  if(ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s %d", message, value);
-    messageClose(logName);
-  }
-}
-
-void debugDouble(int logName, char* message, double value)
-{
-  if(ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s %18.10e", message, value);
-    messageClose(logName);
-  }
-}
-
 /* Prototypes for linear algebra functions
  *  \author bbachmann
  */
