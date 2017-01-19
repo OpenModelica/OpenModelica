@@ -58,6 +58,7 @@ for t in me cs; do
 
   cp "$DIR/$1_cc.csv" "$1-$a-$t.csv" || exit 1
   cp "$1_res.csv" "$DIR/$1_ref.csv" || exit 1
+  cp "ReadMe.txt" "$DIR/"
 done
 done
 for a in source arm-linux-gnueabi; do
@@ -73,6 +74,7 @@ for t in me cs; do
   cp "$1.fmu" "$DIR/"
   cp "$DIR/$DIR/$1_cc.csv" "$1-$a-$t.csv"
   cp "$1_res.mat" "$DIR/$1_ref.mat"
+  cp "ReadMe.txt" "$DIR/"
   echo CMD > "$DIR/$1_cc.bat"
 done
 done
