@@ -365,6 +365,7 @@ template ModelStructureOutputs(FmiOutputs fmiOutputs)
  "Generates Model Structure Outputs."
 ::=
 match fmiOutputs
+case FMIOUTPUTS(fmiUnknownsList={}) then ""
 case FMIOUTPUTS(__) then
   <<
   <Outputs>
@@ -377,43 +378,35 @@ template ModelStructureDerivatives(FmiDerivatives fmiDerivatives)
  "Generates Model Structure Derivatives."
 ::=
 match fmiDerivatives
+case FMIDERIVATIVES(fmiUnknownsList={}) then ""
 case FMIDERIVATIVES(__) then
-  if intGt(listLength(fmiUnknownsList), 0) then
   <<
   <Derivatives>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
   </Derivatives>
   >>
-  else
-  // don't generate the element if model has none
-  <<>>
 end ModelStructureDerivatives;
 
 template ModelStructureDiscreteStates(FmiDiscreteStates fmiDiscreteStates)
  "Generates Model Structure DiscreteStates."
 ::=
 match fmiDiscreteStates
+  // don't generate if model has no discrete states for FMI 2.0 compatibility
+case FMIDISCRETESTATES(fmiUnknownsList={}) then ""
 case FMIDISCRETESTATES(__) then
-  if intGt(listLength(fmiUnknownsList), 0) then
   <<
   <DiscreteStates>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
   </DiscreteStates>
   >>
-  else
-  // don't generate if model has no discrete states for FMI 2.0 compatibility
-  <<>>
 end ModelStructureDiscreteStates;
 
 template ModelStructureInitialUnknowns(FmiInitialUnknowns fmiInitialUnknowns)
  "Generates Model Structure InitialUnknowns."
 ::=
 match fmiInitialUnknowns
+case FMIINITIALUNKNOWNS(fmiUnknownsList={}) then ""
 case FMIINITIALUNKNOWNS(__) then
-  if listEmpty(fmiUnknownsList)
-  then
-  ''
-  else
   <<
   <InitialUnknowns>
     <%ModelStructureUnknowns(fmiUnknownsList)%>
