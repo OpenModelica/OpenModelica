@@ -39,6 +39,126 @@ translateModel(SamplingWithClocks); getErrorString();
 // end SamplingWithClocks;
 // "
 // ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (4 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): y = $getPart(time)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: w:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): w = $getPart(x)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): z = $getPart(x)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = $getPart(time)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (2)
+// ========================================
+// 1: Clock(0.1)[1]
+// 2: Clock(0.1)[3]
+//
+//
+// Sub clocks (4)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+// 2: factor(1/1) shift(0/1)  event(false)
+// 3: factor(2/1) shift(0/1)  event(false)
+// 4: factor(1/3) shift(0/1)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
 //
 // ########################################
 // clock partitioning (4 partitions)

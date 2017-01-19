@@ -41,6 +41,51 @@ translateModel(WhenClocks); getErrorString();
 // end WhenClocks;
 // "
 // ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (1 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (0)
+// ========================================
+//
+//
+// Equations (0, 0)
+// ========================================
+//
+//
+// Simple Equations (1, 0)
+// ========================================
+// 1/1 (0): algorithm
+//   Modelica.Utilities.Streams.print("Clocked at " + String(time, 0, true, 6), "");
+//    [dynamic]
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.1)[1]
+//
+//
+// Sub clocks (1)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
 //
 // ########################################
 // clock partitioning (1 partitions)

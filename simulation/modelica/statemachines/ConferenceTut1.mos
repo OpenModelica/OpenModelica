@@ -12,5 +12,5 @@ val(i,30.0);
 // Result:
 // true
 // true
-// 5
+// 5.0
 // endResult
