@@ -472,7 +472,7 @@ void nlsKinsolJacSumSparse(SlsMat mat)
   for(i=0; i<mat->N; ++i){
     sum = 0;
     for(j=mat->colptrs[i]; j<mat->colptrs[i+1];++j){
-      sum += fabs(mat->data[mat->rowvals[j]]);
+      sum += fabs(mat->data[j]);
     }
     infoStreamPrint(LOG_NLS_JAC, 0, "row %d jac sum = %g", i, sum);
   }
