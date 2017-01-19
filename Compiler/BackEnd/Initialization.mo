@@ -2524,6 +2524,8 @@ algorithm
     _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);
     _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.removedEqs, replaceHomotopyWithSimplified1, false);
   end for;
+  outDAE.eqs := list(BackendDAEUtil.clearEqSyst(eqs) for eqs in outDAE.eqs);
+  outDAE := BackendDAEUtil.transformBackendDAE(outDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
 end replaceHomotopyWithSimplified;
 
 protected function replaceHomotopyWithSimplified1
