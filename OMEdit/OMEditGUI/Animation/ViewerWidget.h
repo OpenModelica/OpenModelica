@@ -38,11 +38,15 @@
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 
+/*!
+ * \note We need to create two files with same class name since Qt meta object compiler doesn't handle ifdef.
+ * OpenGLWidget.h uses QOpenGLWidget and GLWidget.h uses QGLWidget
+ */
 #include <QtGlobal>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
-#include <QOpenGLWidget>
+#include "OpenGLWidget.h"
 #else
-#include <QGLWidget>
+#include "GLWidget.h"
 #endif
 
 /*!
@@ -56,15 +60,9 @@ public:
   virtual void setUpThreading();
 };
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
-class ViewerWidget : public QOpenGLWidget
+class ViewerWidget : public GLWidget
 {
-#else
-class ViewerWidget : public QGLWidget
-{
-#endif
   Q_OBJECT
-
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
   osgViewer::View* getSceneView() {return mpSceneView;}

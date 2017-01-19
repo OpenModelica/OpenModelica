@@ -65,15 +65,9 @@ void Viewer::setUpThreading()
  * \param parent
  * \param flags
  */
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
 ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
-  : QOpenGLWidget(parent, flags)
+  : GLWidget(parent, flags)
 {
-#else
-ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
-  : QGLWidget(parent, nullptr, flags)
-{
-#endif
   mpGraphicsWindow = new osgViewer::GraphicsWindowEmbedded(x(), y(), width(), height());
   mpViewer = new Viewer;
   mpSceneView = new osgViewer::View();
@@ -255,11 +249,7 @@ void ViewerWidget::wheelEvent(QWheelEvent *event)
  */
 bool ViewerWidget::event(QEvent *event)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
-  bool handled = QOpenGLWidget::event(event);
-#else
-  bool handled = QGLWidget::event(event);
-#endif
+  bool handled = GLWidget::event(event);
   // This ensures that the OSG widget is always going to be repainted after the
   // user performed some interaction. Doing this in the event handler ensures
   // that we don't forget about some event and prevents duplicate code.

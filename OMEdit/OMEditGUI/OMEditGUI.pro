@@ -250,6 +250,14 @@ HEADERS  += Util/Helper.h \
 
 CONFIG(osg) {
 
+#    CONFIG += opengl
+#  }
+
+greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+  SOURCES += Animation/OpenGLWidget.cpp
+} else {
+  SOURCES += Animation/GLWidget.cpp
+}
 SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/ViewerWidget.cpp \
   Animation/AnimationWindow.cpp \
@@ -264,7 +272,11 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/Shapes.cpp \
   Animation/TimeManager.cpp
 
-
+greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+  HEADERS += Animation/OpenGLWidget.h
+} else {
+  HEADERS += Animation/GLWidget.h
+}
 HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/ViewerWidget.h \
   Animation/AnimationWindow.h \
