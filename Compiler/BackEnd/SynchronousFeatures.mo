@@ -83,6 +83,34 @@ algorithm
   end match;
 end clockPartitioning;
 
+public function synchronousFeatures
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs, contSysts, clockedSysts;
+  BackendDAE.Shared shared;
+algorithm
+  (clockedSysts, contSysts) := List.splitOnTrue(inDAE.eqs, BackendDAEUtil.isClockedSyst);
+
+  if listLength(clockedSysts) > 0 then
+    shared := inDAE.shared;
+
+    (clockedSysts, shared) := treatClockedStates(clockedSysts, shared);
+
+    systs := listAppend(contSysts, clockedSysts);
+    outDAE := BackendDAE.DAE(systs, shared);
+
+    if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+      print("synchronous features post-phase: synchronousFeatures\n\n");
+      BackendDump.dumpEqSystems(systs, "clock partitioning");
+      BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
+      BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
+    end if;
+  else
+    outDAE := inDAE;
+  end if;
+end synchronousFeatures;
+
 public function contPartitioning
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -124,8 +152,6 @@ algorithm
 
   (clockedSysts, shared) := subClockPartitioning1(clockedSysts, shared, holdComps);
 
-  (clockedSysts, shared) := treatClockedStates(clockedSysts, shared);
-
   unpartRemEqs := createBoolClockWhenClauses(shared, unpartRemEqs);
   shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
 
@@ -133,6 +159,7 @@ algorithm
   outDAE := BackendDAE.DAE(systs, shared);
 
   if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+    print("synchronous features pre-phase: synchronousFeatures\n\n");
     BackendDump.dumpEqSystems(systs, "clock partitioning");
     BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
     BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");

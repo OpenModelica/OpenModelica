@@ -6802,6 +6802,12 @@ algorithm
   dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
   execStat("matching and sorting (n="+String(daeSize(dae))+")");
 
+  // synchronous features post-phase
+  dae := SynchronousFeatures.synchronousFeatures(dae);
+  if Flags.isSet(Flags.OPT_DAE_DUMP) then
+    BackendDump.dumpBackendDAE(dae, "synchronousFeatures");
+  end if;
+
   dae := BackendDAEOptimize.removeUnusedFunctions(dae);
   execStat("remove unused functions");
 
