@@ -1,8 +1,22 @@
 // status: correct
 // Note: Requires PATH to include cross-compilers for darwin, mingw, armhf
 
-loadModel(Modelica);
-loadString("model FmuExportCrossCompile
+if not loadModel(Modelica) then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+if not loadFile("RoomHeating_OM.mo") then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+if not loadFile("WaterTank.mo") then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+if not loadString("model FmuExportCrossCompile
   parameter Real e=0.7;
   parameter Real g=9.81;
   Real h(start=1, fixed=true);
@@ -17,11 +31,13 @@ equation
     reinit(v, v_new);
   end when;
   annotation(experiment(StopTime=0.45, Interval=0.001)); // Why StopTime=0.5 before fun things happen? fmuChecker can't deal with bouncingball events as it always does the event one time step after
-end FmuExportCrossCompile;");
-
-simulate(FmuExportCrossCompile, method="euler");
+end FmuExportCrossCompile;") then
+  print(getErrorString());
+  exit(1);
+end if;
 getErrorString();
-buildModelFMU(FmuExportCrossCompile, version="2.0", fmuType="me_cs", platforms={
+
+platforms := if true then {
   "i386-apple-darwin15",
   "x86_64-apple-darwin15",
   "arm-linux-gnueabihf",
@@ -29,5 +45,34 @@ buildModelFMU(FmuExportCrossCompile, version="2.0", fmuType="me_cs", platforms={
   "i686-linux-gnu",
   "x86_64-w64-mingw32",
   "i686-w64-mingw32"
-});
-getErrorString();
+} else {
+  "arm-linux-gnueabihf",
+  "x86_64-linux-gnu",
+  "i686-linux-gnu",
+  "x86_64-w64-mingw32",
+  "i686-w64-mingw32"
+};
+
+for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","WaterTank.TestSingleWaterTank"} loop
+  c2 := stringReplace(c, ".", "_");
+  print(c2+"
+");
+  writeFile("test.mos", "
+  res := buildModel("+c+", method=\"euler\", outputFormat=\"csv\", fileNamePrefix=c2); getErrorString();
+  print(getErrorString()+\"
+\");
+  b := buildModelFMU("+c+", fileNamePrefix=c2, version=\"2.0\", fmuType=\"me_cs\", platforms=platforms);
+  print(getErrorString()+\"
+\");
+  if b==\"\" then
+    print(\"buildModelFMU failed
+\");
+    exit(1);
+  end if;
+  ");
+  r := runScript("test.mos");
+  if r=="Failed" then
+    exit(1);
+  end if;
+  print(r);
+end for;
