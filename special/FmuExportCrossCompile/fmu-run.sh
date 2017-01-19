@@ -53,7 +53,9 @@ for t in me cs; do
   esac
   CMD=`echo $CMD -c , -f -n 2000 -d -k $t -e "$DIR/$1_cc.log" -o "$DIR/$1_cc.csv" "$DIR/$1.fmu"`
   cp "$1.fmu" "$DIR/" || exit 1
+  cp "$1_ref.opt" "$DIR/" || exit 1
   echo CMD > "$DIR/$1_cc.bat" || exit 1
+  cp "$DIR/$1_cc.bat" "$DIR/$1_cc.sh" || exit 1
   bash -c "$CMD" || exit 1
 
   cp "$DIR/$1_cc.csv" "$1-$a-$t.csv" || exit 1
@@ -71,11 +73,12 @@ for t in me cs; do
   DIR="./Test_FMUs/FMI_2.0/$d/$a/OpenModelica/$VERSION/$1"
   mkdir -p "$DIR"
   CMD=`echo fmuCheck.$a -c , -f -n 2000 -d -k $t -e "$DIR/$1_cc.log" -o "$DIR/$1_cc.csv" "$DIR/$1.fmu"`
-  cp "$1.fmu" "$DIR/"
-  cp "$DIR/$DIR/$1_cc.csv" "$1-$a-$t.csv"
-  cp "$1_res.mat" "$DIR/$1_ref.mat"
-  cp "ReadMe.txt" "$DIR/"
-  echo CMD > "$DIR/$1_cc.bat"
+  cp "$1.fmu" "$DIR/" || exit 1
+  cp "$1_ref.opt" "$DIR/" || exit 1
+  cp "$DIR/$1_cc.csv" "$1-$a-$t.csv" || exit 1
+  cp "$1_res.csv" "$DIR/$1_ref.csv" || exit 1
+  cp "ReadMe.txt" "$DIR/" || exit 1
+  echo "$CMD" > "$DIR/$1_cc.bat" || exit 1
 done
 done
 
