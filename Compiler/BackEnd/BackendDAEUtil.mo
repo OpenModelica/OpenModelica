@@ -7215,9 +7215,10 @@ protected
   list<tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String>> allIndexReductionMethods;
   String strIndexReductionMethod;
 algorithm
- allIndexReductionMethods := {(IndexReduction.pantelidesIndexReduction,"Pantelides",IndexReduction.noStateDeselection,"uode"),
-                              (IndexReduction.pantelidesIndexReduction,"Pantelides",IndexReduction.dynamicStateSelection,"dynamicStateSelection"),
-                              (IndexReduction.pantelidesIndexReduction,"Pantelides",IndexReduction.dynamicStateSelection,"dummyDerivatives")};
+ allIndexReductionMethods := {(IndexReduction.failIfIndexReduction, "none", IndexReduction.noStateDeselection, "none"),
+                              (IndexReduction.pantelidesIndexReduction, "Pantelides", IndexReduction.noStateDeselection, "uode"),
+                              (IndexReduction.pantelidesIndexReduction, "Pantelides", IndexReduction.dynamicStateSelection, "dynamicStateSelection"),
+                              (IndexReduction.pantelidesIndexReduction, "Pantelides", IndexReduction.dynamicStateSelection, "dummyDerivatives")};
  strIndexReductionMethod := getIndexReductionMethodString();
  strIndexReductionMethod := Util.getOptionOrDefault(ostrIndexReductionMethod,strIndexReductionMethod);
  IndexReductionMethod := selectIndexReductionMethod(strIndexReductionMethod,allIndexReductionMethods);

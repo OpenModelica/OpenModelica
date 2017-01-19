@@ -216,7 +216,7 @@ algorithm
     // simplify system
     initOptModules := BackendDAEUtil.getInitOptModules(NONE());
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
-    daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
+    daeHandler := BackendDAEUtil.getIndexReductionMethod(SOME("none"));
     initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
 
     if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then

@@ -158,6 +158,23 @@ algorithm
   end try;
 end pantelidesIndexReduction;
 
+public function failIfIndexReduction "author: lochel
+  This function is used as dummy index reduction function if no index reduction
+  should be performed.
+  This function fails if it is called."
+  input list<list<Integer>> inEqns;
+  output list<Integer> changedEqns = {};
+  input output Integer inActualEqn;
+  input output BackendDAE.EqSystem inSystem;
+  input output BackendDAE.Shared inShared;
+  input output array<Integer> inAssignments1;
+  input output array<Integer> inAssignments2;
+  input output BackendDAE.StructurallySingularSystemHandlerArg inArg;
+algorithm
+  Error.addCompilerError("Structural singular system detected, but no index reduction method has been selected.");
+  fail();
+end failIfIndexReduction;
+
 protected function getChangedEqnsAndLowest
   input Integer index;
   input array<Integer> ass2;
