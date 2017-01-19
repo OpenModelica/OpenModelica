@@ -7142,7 +7142,7 @@ algorithm
       (systs, shared) := filterEmptySystems(systs, shared);
       outDAE := BackendDAE.DAE(systs, shared);
       if debug then execStat("postOpt " + moduleStr); end if;
-      outDAE := causalizeDAE(outDAE, NONE(), inMatchingAlgorithm, inDAEHandler, false);
+      outDAE := causalizeDAE(outDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), inMatchingAlgorithm, inDAEHandler, false);
       execStat("postOpt " + (if debug then "causalize " else "") + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print("\npost-optimization module " + moduleStr + ":\n\n");
