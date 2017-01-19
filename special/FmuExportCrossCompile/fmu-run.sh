@@ -44,7 +44,7 @@ for t in me cs; do
     CMD="WINEARCH=win64 WINEPREFIX=~/.wine64 wine $WINE64"
     ;;
   darwin64)
-    CMD=dyld64 $(DARWIN64)
+    CMD="dyld64 $DARWIN64"
     ;;
   *)
     echo Unknown arch $a
