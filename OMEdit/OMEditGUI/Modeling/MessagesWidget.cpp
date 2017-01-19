@@ -39,6 +39,7 @@
 #include "Options/OptionsDialog.h"
 
 #include <QMenu>
+#include <QMessageBox>
 
 /*!
  * \class MessageItem
@@ -288,20 +289,24 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
   }
   // find the class that has the error
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
-  /* the error could be in P.M but we get P as error class in this case we see if current class has the same file as P
-   * and also contains the line number. If we have correct current class then no need to show root parent class i.e., P.
-   */
-  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
-  if (pModelWidget /* Might be NULL */ && (pModelWidget->getLibraryTreeItem()->getFileName().compare(pLibraryTreeItem->getFileName()) == 0) &&
-      pModelWidget->getLibraryTreeItem()->inRange(lineNumber)) {
-    pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-  }
   if (pLibraryTreeItem) {
+    /* the error could be in P.M but we get P as error class in this case we see if current class has the same file as P
+     * and also contains the line number. If we have correct current class then no need to show root parent class i.e., P.
+     */
+    ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+    if (pModelWidget /* Might be NULL */ && (pModelWidget->getLibraryTreeItem()->getFileName().compare(pLibraryTreeItem->getFileName()) == 0) &&
+        pModelWidget->getLibraryTreeItem()->inRange(lineNumber)) {
+      pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    }
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
       pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
       pLibraryTreeItem->getModelWidget()->getEditor()->goToLineNumber(lineNumber);
     }
+  } else {
+    QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             GUIMessages::getMessage(GUIMessages::CLASS_NOT_FOUND)
+                             .arg(className), Helper::ok);
   }
 }
 
