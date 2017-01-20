@@ -14,6 +14,7 @@ ComponentAsTypeError.mo \
 cond4.mo \
 conn1.mo \
 conn2.mo \
+conn4.mo \
 const3.mo \
 const13.mo \
 DuplicateMod1.mo \
@@ -24,6 +25,7 @@ DuplicateMod5.mo \
 eq1.mo \
 eq10.mo \
 extends3.mo \
+ih1.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNested1.mo \
@@ -64,7 +66,6 @@ bindings4.mo \
 builtinmod.mo \
 compfunc.mo \
 conn3.mo \
-conn4.mo \
 conn5.mo \
 conn8.mo \
 const1.mo \
@@ -112,7 +113,6 @@ func3.mo \
 func6.mo \
 func7.mo \
 func9.mo \
-ih1.mo \
 ih2.mo \
 ih3.mo \
 ImportConflict1.mo \
