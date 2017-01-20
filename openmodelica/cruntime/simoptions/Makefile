@@ -2,13 +2,14 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
+nlssMaxDensity \
+nlssMinSize.mos \
 testOutputIntervalDASSL.mos \
 testOutputIntervalDASSLsteps.mos \
 testOutputIntervalDASSLstepsnoEquidistant.mos \
 testOutputIntervalEuler.mos \
 testOutputIntervalIDAstepsnoEquidistant.mos \
 testOutputIntervalRK.mos \
-nlssMinSize.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
