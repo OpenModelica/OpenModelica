@@ -75,7 +75,7 @@ for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","Water
   if r=="Failed" then
     exit(1);
   end if;
-  writeFile(c+"_ref.opt", "StartTime, "+String(start)+"
+  writeFile(c2+"_ref.opt", "StartTime, "+String(start)+"
 StopTime, "+String(stop)+"
 StepSize, "+String((stop-start)/2000)+"
 RelTol, "+String(tolerance)+"
