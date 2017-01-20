@@ -38,8 +38,10 @@ encapsulated package NFBinding
 
 public
 import DAE;
+import NFExpression.Expression;
 import NFInstNode.InstNode;
 import SCode;
+import Type = NFType;
 
 protected
 import Dump;
@@ -65,8 +67,8 @@ uniontype Binding
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
-    DAE.Exp bindingExp;
-    DAE.Type bindingType;
+    Expression bindingExp;
+    Type bindingType;
     DAE.Const variability;
     Integer propagatedDims;
     SourceInfo info;
@@ -118,7 +120,7 @@ public
 
   function typedExp
     input Binding binding;
-    output Option<DAE.Exp> exp;
+    output Option<Expression> exp;
   algorithm
     exp := match binding
       case TYPED_BINDING() then SOME(binding.bindingExp);
@@ -159,7 +161,7 @@ public
       case UNBOUND() then "";
       case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
       case UNTYPED_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
-      case TYPED_BINDING() then prefix + ExpressionDump.printExpStr(binding.bindingExp);
+      case TYPED_BINDING() then prefix + Expression.toString(binding.bindingExp);
     end match;
   end toString;
 

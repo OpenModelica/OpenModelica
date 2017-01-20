@@ -31,7 +31,9 @@
 
 encapsulated package NFEquation
 
-import DAE;
+import Absyn;
+import NFExpression.Expression;
+import Type = NFType;
 
 public uniontype Equation
   record UNTYPED_EQUALITY
@@ -41,9 +43,9 @@ public uniontype Equation
   end UNTYPED_EQUALITY;
 
   record EQUALITY
-    DAE.Exp lhs "The left hand side expression.";
-    DAE.Exp rhs "The right hand side expression.";
-    DAE.Type ty;
+    Expression lhs "The left hand side expression.";
+    Expression rhs "The right hand side expression.";
+    Type ty;
     SourceInfo info;
   end EQUALITY;
 
@@ -54,12 +56,12 @@ public uniontype Equation
   end UNTYPED_CONNECT;
 
   record CONNECT
-    DAE.ComponentRef lhs "The left hand side component.";
+    Expression lhs "The left hand side component.";
     //NFConnect2.Face lhsFace "The face of the lhs component, inside or outside.";
-    DAE.Type lhsType     "The type of the lhs component.";
-    DAE.ComponentRef rhs "The right hand side component.";
+    Type lhsType     "The type of the lhs component.";
+    Expression rhs "The right hand side component.";
     //NFConnect2.Face rhsFace "The face of the rhs component, inside or outside.";
-    DAE.Type rhsType     "The type of the rhs component.";
+    Type rhsType     "The type of the rhs component.";
     //Prefix prefix;
     SourceInfo info;
   end CONNECT;
@@ -74,8 +76,8 @@ public uniontype Equation
   record FOR
     String name           "The name of the iterator variable.";
     Integer index         "The index of the iterator variable.";
-    DAE.Type indexType    "The type of the index/iterator variable.";
-    Option<DAE.Exp> range "The range expression to loop over.";
+    Type indexType    "The type of the index/iterator variable.";
+    Option<Expression> range "The range expression to loop over.";
     list<Equation> body   "The body of the for loop.";
     SourceInfo info;
   end FOR;
@@ -86,7 +88,7 @@ public uniontype Equation
   end UNTYPED_IF;
 
   record IF
-    list<tuple<DAE.Exp, list<Equation>>> branches
+    list<tuple<Expression, list<Equation>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
     SourceInfo info;
   end IF;
@@ -97,7 +99,7 @@ public uniontype Equation
   end UNTYPED_WHEN;
 
   record WHEN
-    list<tuple<DAE.Exp, list<Equation>>> branches
+    list<tuple<Expression, list<Equation>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
     SourceInfo info;
   end WHEN;
@@ -110,9 +112,9 @@ public uniontype Equation
   end UNTYPED_ASSERT;
 
   record ASSERT
-    DAE.Exp condition "The assert condition.";
-    DAE.Exp message "The message to display if the assert fails.";
-    DAE.Exp level "Error or warning";
+    Expression condition "The assert condition.";
+    Expression message "The message to display if the assert fails.";
+    Expression level "Error or warning";
     SourceInfo info;
   end ASSERT;
 
@@ -122,7 +124,7 @@ public uniontype Equation
   end UNTYPED_TERMINATE;
 
   record TERMINATE
-    DAE.Exp message "The message to display if the terminate triggers.";
+    Expression message "The message to display if the terminate triggers.";
     SourceInfo info;
   end TERMINATE;
 
@@ -133,8 +135,8 @@ public uniontype Equation
   end UNTYPED_REINIT;
 
   record REINIT
-    DAE.ComponentRef cref "The variable to reinitialize.";
-    DAE.Exp reinitExp "The new value of the variable.";
+    Expression cref "The variable to reinitialize.";
+    Expression reinitExp "The new value of the variable.";
     SourceInfo info;
   end REINIT;
 
@@ -144,7 +146,7 @@ public uniontype Equation
   end UNTYPED_NORETCALL;
 
   record NORETCALL
-    DAE.Exp exp;
+    Expression exp;
     SourceInfo info;
   end NORETCALL;
 end Equation;

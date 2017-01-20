@@ -33,11 +33,12 @@ encapsulated package NFComponent
 
 import DAE;
 import NFBinding.Binding;
-import NFDimension.Dimension;
+import Dimension = NFDimension;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import SCode.Element;
 import SCode;
+import Type = NFType;
 
 protected
 import NFInstUtil;
@@ -96,7 +97,7 @@ uniontype Component
 
   record TYPED_COMPONENT
     InstNode classInst;
-    DAE.Type ty;
+    Type ty;
     Binding binding;
     Component.Attributes attributes;
   end TYPED_COMPONENT;
@@ -159,7 +160,7 @@ uniontype Component
 
   function getType
     input Component component;
-    output DAE.Type ty;
+    output Type ty;
   algorithm
     ty := match component
       case TYPED_COMPONENT() then component.ty;
@@ -167,7 +168,7 @@ uniontype Component
   end getType;
 
   function setType
-    input DAE.Type ty;
+    input Type ty;
     input output Component component;
   algorithm
     component := match component
@@ -187,9 +188,9 @@ uniontype Component
   algorithm
     () := match component
       local
-        DAE.Type ty;
+        Type ty;
 
-      case TYPED_COMPONENT(ty = DAE.Type.T_ARRAY(ty = ty))
+      case TYPED_COMPONENT(ty = Type.ARRAY(elementType = ty))
         algorithm
           component.ty := ty;
         then
@@ -235,6 +236,36 @@ uniontype Component
     end match;
   end attr2DaeAttr;
 
+  function direction
+    input Component component;
+    output DAE.VarDirection direction;
+  algorithm
+    direction := match component
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
+      else DAE.VarDirection.BIDIR();
+    end match;
+  end direction;
+
+  function isInput
+    input Component component;
+    output Boolean isInput;
+  algorithm
+    isInput := match direction(component)
+      case DAE.VarDirection.INPUT() then true;
+      else false;
+    end match;
+  end isInput;
+
+  function isOutput
+    input Component component;
+    output Boolean isOutput;
+  algorithm
+    isOutput := match direction(component)
+      case DAE.VarDirection.OUTPUT() then true;
+      else false;
+    end match;
+  end isOutput;
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

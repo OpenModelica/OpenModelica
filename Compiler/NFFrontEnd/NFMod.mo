@@ -208,6 +208,19 @@ public
     end match;
   end binding;
 
+  function setBinding
+    input Binding binding;
+    input output Modifier modifier;
+  algorithm
+    () := match modifier
+      case MODIFIER()
+        algorithm
+          modifier.binding := binding;
+        then
+          ();
+    end match;
+  end setBinding;
+
   function merge
     input Modifier outerMod;
     input Modifier innerMod;

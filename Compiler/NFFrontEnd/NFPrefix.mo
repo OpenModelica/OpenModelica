@@ -35,7 +35,9 @@ encapsulated package NFPrefix
   description:
 "
 
-import DAE.{ComponentRef, Subscript, Type};
+import DAE;
+import Subscript = NFSubscript;
+import Type = NFType;
 
 protected
 import ExpressionDump;
@@ -45,8 +47,8 @@ public
 uniontype Prefix
   record PREFIX
     String name;
-    list<DAE.Subscript> subscripts;
-    DAE.Type ty;
+    list<Subscript> subscripts;
+    Type ty;
     Prefix restPrefix;
   end PREFIX;
 
@@ -54,8 +56,8 @@ uniontype Prefix
 
   function add
     input String name;
-    input list<DAE.Subscript> subscripts;
-    input DAE.Type ty;
+    input list<Subscript> subscripts;
+    input Type ty;
     input output Prefix prefix;
   algorithm
     prefix := PREFIX(name, subscripts, ty, prefix);
@@ -65,11 +67,24 @@ uniontype Prefix
     input String name;
     input output Prefix prefix;
   algorithm
-    prefix := add(name, {}, DAE.T_UNKNOWN_DEFAULT, prefix);
+    prefix := add(name, {}, Type.UNKNOWN(), prefix);
   end addClass;
 
+  function addSubscript
+    input Subscript subscript;
+    input output Prefix prefix;
+  algorithm
+    () := match prefix
+      case PREFIX()
+        algorithm
+          prefix.subscripts := subscript :: prefix.subscripts;
+        then
+          ();
+    end match;
+  end addSubscript;
+
   function setSubscripts
-    input list<DAE.Subscript> subscripts;
+    input list<Subscript> subscripts;
     input output Prefix prefix;
   algorithm
     _ := match prefix
@@ -83,10 +98,10 @@ uniontype Prefix
 
   function allSubscripts
     input Prefix prefix;
-    output list<list<DAE.Subscript>> subscripts = {};
+    output list<list<Subscript>> subscripts = {};
   protected
     Prefix rest_pre = prefix;
-    list<DAE.Subscript> subs;
+    list<Subscript> subs;
   algorithm
     while not isEmpty(rest_pre) loop
       PREFIX(subscripts = subs, restPrefix = rest_pre) := rest_pre;
@@ -109,12 +124,14 @@ uniontype Prefix
     output DAE.ComponentRef cref;
   protected
     String name;
-    list<DAE.Subscript> subs;
-    DAE.Type ty;
+    list<Subscript> subs;
+    list<DAE.Subscript> dsubs;
+    Type ty;
     Prefix rest_pre;
   algorithm
     PREFIX(name, subs, ty, rest_pre) := prefix;
-    cref := DAE.CREF_IDENT(name, ty, subs);
+    dsubs := list(Subscript.toDAE(sub) for sub in subs);
+    cref := DAE.CREF_IDENT(name, Type.toDAE(ty), dsubs);
     cref := prefixCref(cref, rest_pre);
   end toCref;
 
@@ -123,60 +140,17 @@ uniontype Prefix
     input Prefix prefix;
   protected
     String name;
-    list<DAE.Subscript> subs;
-    DAE.Type ty;
+    list<Subscript> subs;
+    list<DAE.Subscript> dsubs;
+    Type ty;
     Prefix rest_pre = prefix;
   algorithm
     while not isEmpty(rest_pre) loop
       PREFIX(name, subs, ty, rest_pre) := rest_pre;
-      cref := DAE.CREF_QUAL(name, ty, subs, cref);
+      dsubs := list(Subscript.toDAE(sub) for sub in subs);
+      cref := DAE.CREF_QUAL(name, Type.toDAE(ty), dsubs, cref);
     end while;
   end prefixCref;
-
-  function prefixExp
-    input output DAE.Exp exp;
-    input Prefix prefix;
-    //input list<DAE.Exp> inEqSubscripts;
-  algorithm
-    exp := match exp
-      local
-        DAE.ComponentRef cref;
-        DAE.Type ty;
-        DAE.Exp e1, e2;
-        DAE.Operator op;
-
-      case DAE.CREF()
-        algorithm
-          exp.componentRef := prefixCref(exp.componentRef, prefix);
-        then
-          exp;
-
-      case DAE.BINARY(e1, op, e2)
-        algorithm
-          e1 := prefixExp(e1, prefix);
-          e2 := prefixExp(e2, prefix);
-          //op = Expression.unliftOperatorX(op, listLength(inEqSubscripts));
-        then
-          DAE.BINARY(e1, op, e2);
-
-      case DAE.ARRAY()
-        algorithm
-          e1 := prefixArrayElements(exp, prefix);
-          //e1 = DAE.ASUB(e1, inEqSubscripts);
-        then
-          e1;
-
-      case DAE.CAST(ty, e1)
-        algorithm
-          e1 := prefixExp(e1, prefix);
-          ty := Types.arrayElementType(ty);
-          e1 := DAE.CAST(ty, e1);
-        then
-          e1;
-
-      else exp;
-    end match;
-  end prefixExp;
 
   function toString
     input Prefix prefix;
@@ -184,44 +158,18 @@ uniontype Prefix
   protected
     Prefix rest_pre = prefix;
     String name;
-    list<DAE.Subscript> subs;
+    list<Subscript> subs;
     list<String> parts = {};
   algorithm
     while not isEmpty(rest_pre) loop
       PREFIX(name = name, subscripts = subs, restPrefix = rest_pre) := rest_pre;
-      name := name + List.toString(subs, ExpressionDump.printSubscriptStr,
-        "", "[", ", ", "]", false);
+      name := name + List.toString(subs, Subscript.toString, "", "[", ", ", "]", false);
       parts := name :: parts;
     end while;
 
     string := stringDelimitList(parts, ".");
   end toString;
 
-protected
-  function prefixArrayElements
-    input output DAE.Exp array;
-    input Prefix prefix;
-  algorithm
-    _ := match array
-      local
-        DAE.Type ty;
-        Boolean scalar;
-        list<DAE.Exp> expl;
-
-      case DAE.ARRAY(ty = DAE.T_ARRAY(ty = DAE.T_ARRAY()))
-        algorithm
-          array.array := list(prefixArrayElements(e, prefix) for e in array.array);
-        then
-          ();
-
-      case DAE.ARRAY()
-        algorithm
-          array.array := list(prefixExp(e, prefix) for e in array.array);
-        then
-          ();
-
-    end match;
-  end prefixArrayElements;
 end Prefix;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -29,39 +29,105 @@
  *
  */
 
-
-encapsulated package NFDimension
-" file:        NFMod.mo
-  package:     NFMod
-  description: A type for dimensions in NFInst.
-"
-
-public
-import Absyn;
-import DAE;
-
+encapsulated uniontype NFDimension
 protected
-import List;
+  import Dimension = NFDimension;
 
 public
-uniontype Dimension
-  record UNTYPED_DIM
+  import Absyn.Exp;
+  import Absyn.Path;
+  import Dump;
+  import NFExpression.Expression;
+
+  record UNTYPED
     Absyn.Exp dimension;
     Boolean isProcessing;
-  end UNTYPED_DIM;
+  end UNTYPED;
 
-  record TYPED_DIM
-    DAE.Dimension dimension;
-  end TYPED_DIM;
+  record INTEGER
+    Integer size;
+  end INTEGER;
 
-public
-  function dimension
-    input Dimension inDim;
-    output DAE.Dimension outDim;
+  record BOOLEAN
+  end BOOLEAN;
+
+  record ENUM
+    Absyn.Path enumTypeName;
+    list<String> literals;
+  end ENUM;
+
+  record EXP
+    Expression exp;
+  end EXP;
+
+  record UNKNOWN
+  end UNKNOWN;
+
+  function toDAE
+    input Dimension dim;
+    output DAE.Dimension daeDim;
   algorithm
-    TYPED_DIM(dimension = outDim) := inDim;
-  end dimension;
-end Dimension;
+    daeDim := match dim
+      case INTEGER() then DAE.DIM_INTEGER(dim.size);
+      case BOOLEAN() then DAE.DIM_BOOLEAN();
+      case ENUM()
+        then DAE.DIM_ENUM(dim.enumTypeName, dim.literals, listLength(dim.literals));
+      case EXP() then DAE.DIM_EXP(Expression.toDAE(dim.exp));
+      case UNKNOWN() then DAE.DIM_UNKNOWN();
+    end match;
+  end toDAE;
+
+  function size
+    input Dimension dim;
+    output Integer size;
+  algorithm
+    size := match dim
+      case INTEGER() then dim.size;
+      case BOOLEAN() then 2;
+      case ENUM() then listLength(dim.literals);
+    end match;
+  end size;
+
+  function isEqual
+    input Dimension dim1;
+    input Dimension dim2;
+    output Boolean isEqual;
+  algorithm
+    isEqual := match (dim1, dim2)
+      case (UNKNOWN(), _) then true;
+      case (_, UNKNOWN()) then true;
+      case (EXP(), _) then true;
+      case (_, EXP()) then true;
+      else Dimension.size(dim1) == Dimension.size(dim2);
+    end match;
+  end isEqual;
+
+  function isEqualKnown
+    input Dimension dim1;
+    input Dimension dim2;
+    output Boolean isEqual;
+  algorithm
+    isEqual := match (dim1, dim2)
+      case (UNKNOWN(), _) then false;
+      case (_, UNKNOWN()) then false;
+      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      else Dimension.size(dim1) == Dimension.size(dim2);
+    end match;
+  end isEqualKnown;
+
+  function toString
+    input Dimension dim;
+    output String str;
+  algorithm
+    str := match dim
+      case INTEGER() then String(dim.size);
+      case BOOLEAN() then "Boolean";
+      case ENUM() then Absyn.pathString(dim.enumTypeName);
+      case EXP() then Expression.toString(dim.exp);
+      case UNKNOWN() then ":";
+      case UNTYPED() then Dump.printExpStr(dim.dimension);
+    end match;
+  end toString;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;

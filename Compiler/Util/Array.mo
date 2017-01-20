@@ -800,5 +800,27 @@ algorithm
   end for;
 end isEqual;
 
+function exist<T>
+  "Returns true if a certain element exists in the given array as indicated by
+   the given predicate function."
+  input array<T> arr;
+  input PredFunc pred;
+  output Boolean exists;
+
+  partial function PredFunc
+    input T element;
+    output Boolean matches;
+  end PredFunc;
+algorithm
+  for e in arr loop
+    if pred(e) then
+      exists := true;
+      return;
+    end if;
+  end for;
+
+  exists := false;
+end exist;
+
 annotation(__OpenModelica_Interface="util");
 end Array;

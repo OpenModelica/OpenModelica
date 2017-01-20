@@ -37,6 +37,7 @@ import NFMod.Modifier;
 import NFPrefix.Prefix;
 import SCode;
 import Absyn;
+import Type = NFType;
 
 public
 uniontype InstNodeType
@@ -479,9 +480,9 @@ uniontype InstNode
           match it
             case InstNodeType.NORMAL_CLASS()
               algorithm
-                pre := Prefix.addClass(node.name, pre);
+                pre := prefix(node.parentScope, pre);
               then
-                prefix(node.parentScope, pre);
+                Prefix.addClass(node.name, pre);
 
             case InstNodeType.BASE_CLASS()
               then prefix(it.parent, pre);
@@ -493,9 +494,9 @@ uniontype InstNode
 
       case COMPONENT_NODE()
         algorithm
-          pre := Prefix.add(node.name, {}, DAE.T_UNKNOWN_DEFAULT, pre);
+          pre := prefix(node.parent, pre);
         then
-          prefix(node.parent, pre);
+          Prefix.add(node.name, {}, Type.UNKNOWN(), pre);
 
       else pre;
     end match;
@@ -517,6 +518,26 @@ uniontype InstNode
       else Absyn.joinPaths(path(parent), p);
     end match;
   end path;
+
+  function isInput
+    input InstNode node;
+    output Boolean isInput;
+  algorithm
+    isInput := match node
+      case COMPONENT_NODE() then Component.isInput(node.component[1]);
+      else false;
+    end match;
+  end isInput;
+
+  function isOutput
+    input InstNode node;
+    output Boolean isOutput;
+  algorithm
+    isOutput := match node
+      case COMPONENT_NODE() then Component.isOutput(node.component[1]);
+      else false;
+    end match;
+  end isOutput;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

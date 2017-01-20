@@ -43,7 +43,7 @@ import SCode;
 import Builtin = NFBuiltin;
 import NFBinding.Binding;
 import NFComponent.Component;
-import NFDimension.Dimension;
+import Dimension = NFDimension;
 import NFClass.ClassTree;
 import NFClass.Class;
 import NFInstNode.InstNode;
@@ -926,12 +926,12 @@ algorithm
       DAE.Exp dim_exp;
       DAE.Dimension dim;
 
-    case Absyn.NOSUB() then Dimension.TYPED_DIM(DAE.Dimension.DIM_UNKNOWN());
+    case Absyn.NOSUB() then Dimension.UNKNOWN();
     case Absyn.SUBSCRIPT(subscript = exp)
       algorithm
         exp := instExp(exp, scope);
       then
-        Dimension.UNTYPED_DIM(exp, false);
+        Dimension.UNTYPED(exp, false);
 
   end match;
 end instDimension;

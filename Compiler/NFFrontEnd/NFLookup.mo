@@ -47,6 +47,7 @@ import NFInstNode.InstNode;
 import NFLookupState.LookupState;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
+import NFType;
 
 constant NFInst.InstNode REAL_TYPE = NFInstNode.CLASS_NODE("Real",
   NFBuiltin.BUILTIN_REAL,
@@ -70,7 +71,7 @@ constant NFInstNode.InstNode BUILTIN_TIME =
     NFBuiltin.BUILTIN_TIME,
     listArray({NFComponent.TYPED_COMPONENT(
         REAL_TYPE,
-        DAE.T_REAL_DEFAULT,
+        NFType.REAL(),
         NFBinding.UNBOUND(),
         NFComponent.INPUT_ATTR)}),
     NFInstNode.EMPTY_NODE());

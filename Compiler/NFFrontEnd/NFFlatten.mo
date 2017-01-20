@@ -43,14 +43,15 @@ import NFBinding.Binding;
 import NFClass.Class;
 import NFComponent.Component;
 import NFEquation.Equation;
+import NFExpression.Expression;
 import NFInstNode.InstNode;
+import NFMod.Modifier;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
 
 import ComponentReference;
 import DAE;
 import Error;
-import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
 import List;
@@ -58,6 +59,11 @@ import SCode;
 import System;
 import Util;
 import ElementSource;
+
+import DAEExpression = Expression;
+import Dimension = NFDimension;
+import Subscript = NFSubscript;
+import Type = NFType;
 
 protected
 import DAEUtil;
@@ -131,7 +137,7 @@ function flattenComponent
 protected
   Component c = InstNode.component(component);
   Prefix new_pre;
-  DAE.Type ty;
+  Type ty;
 algorithm
   _ := match c
     case Component.TYPED_COMPONENT()
@@ -140,8 +146,8 @@ algorithm
         new_pre := Prefix.add(InstNode.name(component), {}, ty, prefix);
 
         elements := match ty
-          case DAE.T_ARRAY()
-            then flattenArray(Component.unliftType(c), ty.dims, new_pre, flattenScalar, elements);
+          case Type.ARRAY()
+            then flattenArray(Component.unliftType(c), ty.dimensions, new_pre, flattenScalar, elements);
           else flattenScalar(c, new_pre, elements);
         end match;
       then
@@ -158,17 +164,17 @@ end flattenComponent;
 
 function flattenArray<ElementT>
   input ElementT element;
-  input list<DAE.Dimension> dimensions;
+  input list<Dimension> dimensions;
   input Prefix prefix;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
-  input list<DAE.Subscript> subscripts = {};
+  input list<Subscript> subscripts = {};
 protected
-  DAE.Dimension dim;
-  list<DAE.Dimension> rest_dims;
+  Dimension dim;
+  list<Dimension> rest_dims;
   Prefix sub_pre;
-  Option<DAE.Exp> oe;
-  DAE.Exp e;
+  Option<Expression> oe;
+  Expression e;
   Integer i;
 algorithm
   if listEmpty(dimensions) then
@@ -176,64 +182,82 @@ algorithm
     elements := scalarFunc(element, sub_pre, elements);
   else
     dim :: rest_dims := dimensions;
-    elements := matchcontinue dim
-      case DAE.DIM_INTEGER()
-        then flattenArrayIntDim(element, dim.integer, rest_dims, prefix,
-            subscripts, scalarFunc, elements);
-      case DAE.DIM_ENUM()
+
+    elements := match dim
+      case Dimension.INTEGER()
+        then flattenArrayIntDim(element, dim.size, rest_dims, prefix,
+          subscripts, scalarFunc, elements);
+
+      case Dimension.BOOLEAN()
+        then flattenArrayBoolDim(element, rest_dims, prefix, subscripts,
+          scalarFunc, elements);
+
+      case Dimension.ENUM()
         then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
-            rest_dims, prefix, subscripts, scalarFunc, elements);
-      case DAE.DIM_EXP(e)
-        algorithm
-          SOME(DAE.ICONST(i)) := DAEUtil.evaluateExp(e, elements);
-        then flattenArrayIntDim(element, i, rest_dims, prefix,
-                                           subscripts, scalarFunc, elements);
+          rest_dims, prefix, subscripts, scalarFunc, elements);
+
       else
         algorithm
-          print("Unknown dimension " + ExpressionDump.dimensionString(dim) +
-            " in NFFlatten.flattenArray\n");
+          assert(false, getInstanceName() + " got unknown dimension.");
         then
           fail();
-    end matchcontinue;
+
+    end match;
   end if;
 end flattenArray;
 
 function flattenArrayIntDim<ElementT>
   input ElementT element;
   input Integer dimSize;
-  input list<DAE.Dimension> restDims;
+  input list<Dimension> restDims;
   input Prefix prefix;
-  input list<DAE.Subscript> subscripts;
+  input list<Subscript> subscripts;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
 protected
-  list<DAE.Subscript> subs;
+  list<Subscript> subs;
 algorithm
   for i in 1:dimSize loop
-    subs := DAE.INDEX(DAE.ICONST(i)) :: subscripts;
+    subs := Subscript.INDEX(Expression.INTEGER(i)) :: subscripts;
     elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
   end for;
 end flattenArrayIntDim;
+
+function flattenArrayBoolDim<ElementT>
+  input ElementT element;
+  input list<Dimension> restDims;
+  input Prefix prefix;
+  input list<Subscript> subscripts;
+  input ExpandScalarFunc scalarFunc;
+  input output list<DAE.Element> elements;
+protected
+  list<Subscript> subs;
+algorithm
+  subs := Subscript.INDEX(Expression.BOOLEAN(false)) :: subscripts;
+  elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
+  subs := Subscript.INDEX(Expression.BOOLEAN(true)) :: subscripts;
+  elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
+end flattenArrayBoolDim;
 
 function flattenArrayEnumDim<ElementT>
   input ElementT element;
   input Absyn.Path typeName;
   input list<String> literals;
-  input list<DAE.Dimension> restDims;
+  input list<Dimension> restDims;
   input Prefix prefix;
-  input list<DAE.Subscript> subscripts;
+  input list<Subscript> subscripts;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
 protected
   Integer i = 1;
-  DAE.Exp enum_exp;
-  list<DAE.Subscript> subs;
+  Expression enum_exp;
+  list<Subscript> subs;
 algorithm
   for l in literals loop
-    enum_exp := DAE.ENUM_LITERAL(Absyn.suffixPath(typeName, l), i);
+    enum_exp := Expression.ENUM(Absyn.suffixPath(typeName, l), i);
     i := i + 1;
 
-    subs := DAE.INDEX(enum_exp) :: subscripts;
+    subs := Subscript.INDEX(enum_exp) :: subscripts;
     elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
   end for;
 end flattenArrayEnumDim;
@@ -252,6 +276,7 @@ algorithm
       list<DAE.Dimension> dims;
       Option<DAE.Exp> binding_exp;
       SourceInfo info;
+      Option<DAE.VariableAttributes> var_attr;
 
     case Component.TYPED_COMPONENT()
       algorithm
@@ -264,6 +289,7 @@ algorithm
               cref := Prefix.toCref(prefix);
               binding_exp := flattenBinding(component.binding, prefix);
               attr := component.attributes;
+              var_attr := makeVarAttributes(i.attributes, component.ty);
 
               var := DAE.VAR(
                 cref,
@@ -271,12 +297,12 @@ algorithm
                 attr.direction,
                 DAE.NON_PARALLEL(),
                 attr.visibility,
-                component.ty,
+                Type.toDAE(component.ty),
                 binding_exp,
                 {},
                 attr.connectorType,
                 ElementSource.createElementSource(info),
-                NONE(),
+                var_attr,
                 NONE(),
                 Absyn.NOT_INNER_OUTER());
             then
@@ -303,24 +329,21 @@ function flattenBinding
 algorithm
   bindingExp := match binding
     local
-      list<DAE.Subscript> subs;
+      list<Subscript> subs;
       DAE.Exp e;
 
     case Binding.UNBOUND() then NONE();
 
-    case Binding.TYPED_BINDING(propagatedDims = -1)
-      then SOME(binding.bindingExp);
-
     case Binding.TYPED_BINDING()
       algorithm
-        // TODO: Implement this in a saner way.
-        subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)),
-          binding.propagatedDims);
-        // try Expression.applyExpSubscripts directly as Expression.subscriptExp
-        // does not work for indexing expressions containing functions
-        e := Expression.applyExpSubscripts(binding.bindingExp, subs);
+        if binding.propagatedDims <= 0 then
+          bindingExp := SOME(Expression.toDAE(binding.bindingExp));
+        else
+          subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)), binding.propagatedDims);
+          bindingExp := SOME(Expression.toDAE(Expression.subscript(binding.bindingExp, subs)));
+        end if;
       then
-        SOME(e);
+        bindingExp;
 
     else
       algorithm
@@ -336,7 +359,8 @@ function flattenEquation
   input output list<DAE.Element> elements = {};
 protected
   list<DAE.Element> els = {}, els1, els2;
-  DAE.Exp e;
+  Expression e;
+  DAE.Exp de;
   Option<DAE.Exp> oe;
   list<DAE.Exp> range;
 algorithm
@@ -347,8 +371,8 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        lhs := ExpressionSimplify.simplify(eq.lhs);
-        rhs := ExpressionSimplify.simplify(eq.rhs);
+        lhs := Expression.toDAE(eq.lhs);
+        rhs := Expression.toDAE(eq.rhs);
       then
         DAE.EQUATION(lhs, rhs, ElementSource.createElementSource(eq.info)) :: elements;
 
@@ -362,19 +386,19 @@ algorithm
         // deal with the range
         if isSome(eq.range) then
           SOME(e) := eq.range;
-          SOME(e) := DAEUtil.evaluateExp(e, elements);
-          range := match (e)
+          SOME(de) := DAEUtil.evaluateExp(Expression.toDAE(e), elements);
+          range := match (de)
                     case DAE.ARRAY(array = range) then range;
                     case DAE.RANGE(_, DAE.ICONST(is), SOME(DAE.ICONST(step)), DAE.ICONST(ie))
-                      then List.map(ExpressionSimplify.simplifyRange(is, step, ie), Expression.makeIntegerExp);
+                      then List.map(ExpressionSimplify.simplifyRange(is, step, ie), DAEExpression.makeIntegerExp);
                     case DAE.RANGE(_, DAE.ICONST(is), _, DAE.ICONST(ie))
                       then if is <= ie
-                           then List.map(ExpressionSimplify.simplifyRange(is, 1, ie), Expression.makeIntegerExp)
-                           else List.map(ExpressionSimplify.simplifyRange(is, -1, ie), Expression.makeIntegerExp);
+                           then List.map(ExpressionSimplify.simplifyRange(is, 1, ie), DAEExpression.makeIntegerExp)
+                           else List.map(ExpressionSimplify.simplifyRange(is, -1, ie), DAEExpression.makeIntegerExp);
                   end match;
           // replace index in elements
           for i in range loop
-            els := DAEUtil.replaceCrefInDAEElements(els1, DAE.CREF_IDENT(eq.name, eq.indexType, {}), i);
+            els := DAEUtil.replaceCrefInDAEElements(els1, DAE.CREF_IDENT(eq.name, Type.toDAE(eq.indexType), {}), i);
             elements := listAppend(els, elements);
           end for;
         end if;
@@ -382,24 +406,26 @@ algorithm
         elements;
 
     case Equation.WHEN()
-      then
-        flattenWhenEquation(eq.branches, eq.info) :: elements;
+      then flattenWhenEquation(eq.branches, eq.info) :: elements;
 
     case Equation.ASSERT()
-      then
-        DAE.ASSERT(eq.condition, eq.message, eq.level, ElementSource.createElementSource(eq.info)) :: elements;
+      then DAE.ASSERT(
+        Expression.toDAE(eq.condition),
+        Expression.toDAE(eq.message),
+        Expression.toDAE(eq.level),
+        ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.TERMINATE()
       then
-        DAE.TERMINATE(eq.message, ElementSource.createElementSource(eq.info)) :: elements;
+        DAE.TERMINATE(Expression.toDAE(eq.message), ElementSource.createElementSource(eq.info)) :: elements;
 
-    case Equation.REINIT()
-      then
-        DAE.REINIT(eq.cref, eq.reinitExp, ElementSource.createElementSource(eq.info)) :: elements;
+    //case Equation.REINIT()
+    //  then
+    //    DAE.REINIT(eq.cref, eq.reinitExp, ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.NORETCALL()
       then
-        DAE.NORETCALL(eq.exp, ElementSource.createElementSource(eq.info)) :: elements;
+        DAE.NORETCALL(Expression.toDAE(eq.exp), ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.CONNECT()
       algorithm
@@ -427,7 +453,11 @@ algorithm
       DAE.Exp lhs, rhs;
 
     case Equation.EQUALITY()
-      then DAE.INITIALEQUATION(eq.lhs, eq.rhs, ElementSource.createElementSource(eq.info)) :: elements;
+      algorithm
+        lhs := Expression.toDAE(eq.lhs);
+        rhs := Expression.toDAE(eq.rhs);
+      then
+        DAE.INITIALEQUATION(lhs, rhs, ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.IF()
       then flattenIfEquation(eq.branches, eq.info, true) :: elements;
@@ -444,14 +474,15 @@ algorithm
 end flattenInitialEquations;
 
 function flattenIfEquation
-  input list<tuple<DAE.Exp, list<Equation>>> ifBranches;
+  input list<tuple<Expression, list<Equation>>> ifBranches;
   input SourceInfo info;
   input Boolean isInitial;
   output DAE.Element ifEquation;
 protected
-  list<DAE.Exp> conditions = {};
+  list<Expression> conditions = {};
   list<DAE.Element> branch, else_branch;
   list<list<DAE.Element>> branches = {};
+  list<DAE.Exp> dconds;
 algorithm
   for b in ifBranches loop
     conditions := Util.tuple21(b) :: conditions;
@@ -459,7 +490,7 @@ algorithm
   end for;
 
   // Transform the last branch to an else-branch if its condition is true.
-  if Expression.isConstTrue(listHead(conditions)) then
+  if Expression.isTrue(listHead(conditions)) then
     conditions := listRest(conditions);
     else_branch := listHead(branches);
     branches := listRest(branches);
@@ -469,33 +500,36 @@ algorithm
 
   conditions := listReverse(conditions);
   branches := listReverse(branches);
+  dconds := list(Expression.toDAE(c) for c in conditions);
 
   if isInitial then
-    ifEquation := DAE.INITIAL_IF_EQUATION(conditions, branches, else_branch, ElementSource.createElementSource(info));
+    ifEquation := DAE.INITIAL_IF_EQUATION(dconds, branches, else_branch,
+      ElementSource.createElementSource(info));
   else
-    ifEquation := DAE.IF_EQUATION(conditions, branches, else_branch, ElementSource.createElementSource(info));
+    ifEquation := DAE.IF_EQUATION(dconds, branches, else_branch,
+      ElementSource.createElementSource(info));
   end if;
 end flattenIfEquation;
 
 function flattenWhenEquation
-  input list<tuple<DAE.Exp, list<Equation>>> whenBranches;
+  input list<tuple<Expression, list<Equation>>> whenBranches;
   input SourceInfo info;
   output DAE.Element whenEquation;
 protected
   DAE.Exp cond1,cond2;
   list<DAE.Element> els1, els2;
-  tuple<DAE.Exp, list<Equation>> head;
-  list<tuple<DAE.Exp, list<Equation>>> rest;
+  tuple<Expression, list<Equation>> head;
+  list<tuple<Expression, list<Equation>>> rest;
   Option<DAE.Element> owhenEquation = NONE();
 algorithm
 
   head::rest := whenBranches;
-  cond1 := Util.tuple21(head);
+  cond1 := Expression.toDAE(Util.tuple21(head));
   els1 := flattenEquations(Util.tuple22(head));
   rest := listReverse(rest);
 
   for b in rest loop
-    cond2 := Util.tuple21(b);
+    cond2 := Expression.toDAE(Util.tuple21(b));
     els2 := flattenEquations(Util.tuple22(b));
     whenEquation := DAE.WHEN_EQUATION(cond2, els2, owhenEquation, ElementSource.createElementSource(info));
     owhenEquation := SOME(whenEquation);
@@ -512,7 +546,8 @@ function flattenStatement
   input output list<DAE.Statement> stmts = {};
 protected
   list<DAE.Statement> sts;
-  DAE.Exp e;
+  Expression e;
+  DAE.Exp de;
   Option<DAE.Exp> oe;
   list<DAE.Exp> range;
 algorithm
@@ -524,9 +559,11 @@ algorithm
 
     case Statement.ASSIGNMENT()
       algorithm
-        lhs := ExpressionSimplify.simplify(alg.lhs);
-        rhs := ExpressionSimplify.simplify(alg.rhs);
-        ty := Expression.typeof(lhs);
+        //lhs := ExpressionSimplify.simplify(alg.lhs);
+        //rhs := ExpressionSimplify.simplify(alg.rhs);
+        lhs := Expression.toDAE(alg.lhs);
+        rhs := Expression.toDAE(alg.rhs);
+        ty := DAEExpression.typeof(lhs);
       then
         DAE.STMT_ASSIGN(ty, lhs, rhs, ElementSource.createElementSource(alg.info)) :: stmts;
 
@@ -540,44 +577,51 @@ algorithm
         sts := flattenStatements(alg.body);
         if isSome(alg.range) then
           SOME(e) := alg.range;
+          de := Expression.toDAE(e);
         else
-          e := DAE.SCONST("NO RANGE GIVEN TODO FIXME");
+          de := DAE.SCONST("NO RANGE GIVEN TODO FIXME");
         end if;
       then
-        DAE.STMT_FOR(alg.indexType, false, alg.name, alg.index, e, sts, ElementSource.createElementSource(alg.info)) :: stmts;
+        DAE.STMT_FOR(alg.indexType, false, alg.name, alg.index, de, sts, ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.IF()
       then flattenIfStatement(alg.branches, alg.info) :: stmts;
 
     case Statement.WHEN()
-      then
-        flattenWhenStatement(alg.branches, alg.info) :: stmts;
+      then flattenWhenStatement(alg.branches, alg.info) :: stmts;
 
     case Statement.ASSERT()
       then
-        DAE.STMT_ASSERT(alg.condition, alg.message, alg.level, ElementSource.createElementSource(alg.info)) :: stmts;
+        DAE.STMT_ASSERT(
+          Expression.toDAE(alg.condition),
+          Expression.toDAE(alg.message),
+          Expression.toDAE(alg.level),
+          ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.TERMINATE()
       then
-        DAE.STMT_TERMINATE(alg.message, ElementSource.createElementSource(alg.info)) :: stmts;
-
-    case Statement.REINIT()
-      then
-        DAE.STMT_REINIT(
-          Expression.makeCrefExp(alg.cref, ComponentReference.crefType(alg.cref)),
-          alg.reinitExp,
+        DAE.STMT_TERMINATE(Expression.toDAE(alg.message),
           ElementSource.createElementSource(alg.info)) :: stmts;
+
+    //case Statement.REINIT()
+    //  then
+    //    DAE.STMT_REINIT(
+    //      Expression.toDAE(Expression.makeCrefExp(alg.cref, ComponentReference.crefType(alg.cref))),
+    //      Expression.toDAE(alg.reinitExp),
+    //      ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.NORETCALL()
       then
-        DAE.STMT_NORETCALL(alg.exp, ElementSource.createElementSource(alg.info)) :: stmts;
+        DAE.STMT_NORETCALL(Expression.toDAE(alg.exp),
+          ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.WHILE()
       algorithm
         // flatten the list of statements
         sts := flattenStatements(alg.body);
       then
-        DAE.STMT_WHILE(alg.condition, sts, ElementSource.createElementSource(alg.info)) :: stmts;
+        DAE.STMT_WHILE(Expression.toDAE(alg.condition), sts,
+          ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.RETURN()
       then
@@ -640,24 +684,23 @@ algorithm
 end flattenInitialAlgorithms;
 
 function flattenIfStatement
-  input list<tuple<DAE.Exp, list<Statement>>> ifBranches;
+  input list<tuple<Expression, list<Statement>>> ifBranches;
   input SourceInfo info;
   output DAE.Statement ifStatement;
 protected
-  DAE.Exp cond1,cond2;
+  DAE.Exp cond1, cond2;
   list<DAE.Statement> stmts1, stmts2;
-  tuple<DAE.Exp, list<Statement>> head;
-  list<tuple<DAE.Exp, list<Statement>>> rest;
+  tuple<Expression, list<Statement>> head;
+  list<tuple<Expression, list<Statement>>> rest;
   DAE.Else elseStatement = DAE.NOELSE();
 algorithm
-
-  head::rest := ifBranches;
-  cond1 := Util.tuple21(head);
+  head :: rest := ifBranches;
+  cond1 := Expression.toDAE(Util.tuple21(head));
   stmts1 := flattenStatements(Util.tuple22(head));
   rest := listReverse(rest);
 
   for b in rest loop
-    cond2 := Util.tuple21(b);
+    cond2 := Expression.toDAE(Util.tuple21(b));
     stmts2 := flattenStatements(Util.tuple22(b));
     elseStatement := DAE.ELSEIF(cond2, stmts2, elseStatement);
   end for;
@@ -667,24 +710,24 @@ algorithm
 end flattenIfStatement;
 
 function flattenWhenStatement
-  input list<tuple<DAE.Exp, list<Statement>>> whenBranches;
+  input list<tuple<Expression, list<Statement>>> whenBranches;
   input SourceInfo info;
   output DAE.Statement whenStatement;
 protected
   DAE.Exp cond1,cond2;
   list<DAE.Statement> stmts1, stmts2;
-  tuple<DAE.Exp, list<Statement>> head;
-  list<tuple<DAE.Exp, list<Statement>>> rest;
+  tuple<Expression, list<Statement>> head;
+  list<tuple<Expression, list<Statement>>> rest;
   Option<DAE.Statement> owhenStatement = NONE();
 algorithm
 
-  head::rest := whenBranches;
-  cond1 := Util.tuple21(head);
+  head :: rest := whenBranches;
+  cond1 := Expression.toDAE(Util.tuple21(head));
   stmts1 := flattenStatements(Util.tuple22(head));
   rest := listReverse(rest);
 
   for b in rest loop
-    cond2 := Util.tuple21(b);
+  cond2 := Expression.toDAE(Util.tuple21(b));
     stmts2 := flattenStatements(Util.tuple22(b));
     whenStatement := DAE.STMT_WHEN(cond2, {}, false, stmts2, owhenStatement, ElementSource.createElementSource(info));
     owhenStatement := SOME(whenStatement);
@@ -693,6 +736,163 @@ algorithm
   whenStatement := DAE.STMT_WHEN(cond1, {}, false, stmts1, owhenStatement, ElementSource.createElementSource(info));
 
 end flattenWhenStatement;
+
+function makeVarAttributes
+  input list<Modifier> mods;
+  input Type ty;
+  output Option<DAE.VariableAttributes> attributes;
+algorithm
+  if listEmpty(mods) then
+    attributes := NONE();
+    return;
+  end if;
+
+  attributes := match ty
+    case Type.REAL() then makeRealVarAttributes(mods);
+    case Type.INTEGER() then makeIntVarAttributes(mods);
+    case Type.BOOLEAN() then makeBoolVarAttributes(mods);
+    case Type.STRING() then makeStringVarAttributes(mods);
+    else NONE();
+  end match;
+end makeVarAttributes;
+
+function makeRealVarAttributes
+  input list<Modifier> mods;
+  output Option<DAE.VariableAttributes> attributes;
+protected
+  Option<DAE.Exp> quantity = NONE(), unit = NONE(), displayUnit = NONE();
+  Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
+algorithm
+  for m in mods loop
+    () := match Modifier.name(m)
+      case "quantity"    algorithm quantity := makeVarAttribute(m); then ();
+      case "unit"        algorithm unit := makeVarAttribute(m); then ();
+      case "displayUnit" algorithm displayUnit := makeVarAttribute(m); then ();
+      case "min"         algorithm min := makeVarAttribute(m); then ();
+      case "max"         algorithm max := makeVarAttribute(m); then ();
+      case "start"       algorithm start := makeVarAttribute(m); then ();
+      case "fixed"       algorithm fixed := makeVarAttribute(m); then ();
+      case "nominal"     algorithm nominal := makeVarAttribute(m); then ();
+
+      // The attributes should already be type checked, so we shouldn't get any
+      // unknown attributes here.
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown type attribute " +
+            Modifier.name(m));
+        then
+          fail();
+    end match;
+  end for;
+
+  attributes := SOME(DAE.VariableAttributes.VAR_ATTR_REAL(
+    quantity, unit, displayUnit, min, max, start, fixed, nominal,
+    NONE(), NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
+end makeRealVarAttributes;
+
+function makeIntVarAttributes
+  input list<Modifier> mods;
+  output Option<DAE.VariableAttributes> attributes;
+protected
+  Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE();
+algorithm
+  for m in mods loop
+    () := match Modifier.name(m)
+      case "quantity" algorithm quantity := makeVarAttribute(m); then ();
+      case "min"      algorithm min := makeVarAttribute(m); then ();
+      case "max"      algorithm max := makeVarAttribute(m); then ();
+      case "start"    algorithm start := makeVarAttribute(m); then ();
+      case "fixed"    algorithm fixed := makeVarAttribute(m); then ();
+
+      // The attributes should already be type checked, so we shouldn't get any
+      // unknown attributes here.
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown type attribute " +
+            Modifier.name(m));
+        then
+          fail();
+    end match;
+  end for;
+
+  attributes := SOME(DAE.VariableAttributes.VAR_ATTR_INT(
+    quantity, min, max, start, fixed,
+    NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
+end makeIntVarAttributes;
+
+function makeBoolVarAttributes
+  input list<Modifier> mods;
+  output Option<DAE.VariableAttributes> attributes;
+protected
+  Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
+algorithm
+  for m in mods loop
+    () := match Modifier.name(m)
+      case "quantity" algorithm quantity := makeVarAttribute(m); then ();
+      case "start"    algorithm start := makeVarAttribute(m); then ();
+      case "fixed"    algorithm fixed := makeVarAttribute(m); then ();
+
+      // The attributes should already be type checked, so we shouldn't get any
+      // unknown attributes here.
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown type attribute " +
+            Modifier.name(m));
+        then
+          fail();
+    end match;
+  end for;
+
+  attributes := SOME(DAE.VariableAttributes.VAR_ATTR_BOOL(
+    quantity, start, fixed, NONE(), NONE(), NONE(), NONE()));
+end makeBoolVarAttributes;
+
+function makeStringVarAttributes
+  input list<Modifier> mods;
+  output Option<DAE.VariableAttributes> attributes;
+protected
+  Option<DAE.Exp> quantity = NONE(), start = NONE();
+algorithm
+  for m in mods loop
+    () := match Modifier.name(m)
+      case "quantity" algorithm quantity := makeVarAttribute(m); then ();
+      case "start"    algorithm start := makeVarAttribute(m); then ();
+
+      // The attributes should already be type checked, so we shouldn't get any
+      // unknown attributes here.
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown type attribute " +
+            Modifier.name(m));
+        then
+          fail();
+    end match;
+  end for;
+
+  attributes := SOME(DAE.VariableAttributes.VAR_ATTR_STRING(
+    quantity, start, NONE(), NONE(), NONE(), NONE()));
+end makeStringVarAttributes;
+
+function makeVarAttribute
+  input Modifier mod;
+  output Option<DAE.Exp> attribute;
+algorithm
+  attribute := match mod
+    local
+      Expression exp;
+
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(bindingExp = exp))
+      then SOME(Expression.toDAE(exp));
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got untyped binding");
+      then
+        fail();
+
+  end match;
+end makeVarAttribute;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

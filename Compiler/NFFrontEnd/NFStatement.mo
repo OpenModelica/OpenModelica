@@ -31,7 +31,9 @@
 
 encapsulated package NFStatement
 
+import Absyn;
 import DAE;
+import NFExpression.Expression;
 
 public uniontype Statement
   record UNTYPED_ASSIGNMENT
@@ -41,8 +43,8 @@ public uniontype Statement
   end UNTYPED_ASSIGNMENT;
 
   record ASSIGNMENT
-    DAE.Exp lhs "The asignee";
-    DAE.Exp rhs "The expression";
+    Expression lhs "The asignee";
+    Expression rhs "The expression";
     SourceInfo info;
   end ASSIGNMENT;
 
@@ -63,7 +65,7 @@ public uniontype Statement
     String name "The name of the iterator variable.";
     Integer index "The index of the scope of the iterator variable.";
     DAE.Type indexType "The type of the index/iterator variable.";
-    Option<DAE.Exp> range "The range expression to loop over.";
+    Option<Expression> range "The range expression to loop over.";
     list<Statement> body "The body of the for loop.";
     SourceInfo info;
   end FOR;
@@ -74,7 +76,7 @@ public uniontype Statement
   end UNTYPED_IF;
 
   record IF
-    list<tuple<DAE.Exp, list<Statement>>> branches
+    list<tuple<Expression, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
     SourceInfo info;
   end IF;
@@ -85,7 +87,7 @@ public uniontype Statement
   end UNTYPED_WHEN;
 
   record WHEN
-    list<tuple<DAE.Exp, list<Statement>>> branches
+    list<tuple<Expression, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
     SourceInfo info;
   end WHEN;
@@ -98,9 +100,9 @@ public uniontype Statement
   end UNTYPED_ASSERT;
 
   record ASSERT
-    DAE.Exp condition "The assert condition.";
-    DAE.Exp message "The message to display if the assert fails.";
-    DAE.Exp level;
+    Expression condition "The assert condition.";
+    Expression message "The message to display if the assert fails.";
+    Expression level;
     SourceInfo info;
   end ASSERT;
 
@@ -110,7 +112,7 @@ public uniontype Statement
   end UNTYPED_TERMINATE;
 
   record TERMINATE
-    DAE.Exp message "The message to display if the terminate triggers.";
+    Expression message "The message to display if the terminate triggers.";
     SourceInfo info;
   end TERMINATE;
 
@@ -121,8 +123,8 @@ public uniontype Statement
   end UNTYPED_REINIT;
 
   record REINIT
-    DAE.ComponentRef cref "The variable to reinitialize.";
-    DAE.Exp reinitExp "The new value of the variable.";
+    Expression cref "The variable to reinitialize.";
+    Expression reinitExp "The new value of the variable.";
     SourceInfo info;
   end REINIT;
 
@@ -132,7 +134,7 @@ public uniontype Statement
   end UNTYPED_NORETCALL;
 
   record NORETCALL
-    DAE.Exp exp;
+    Expression exp;
     SourceInfo info;
   end NORETCALL;
 
@@ -143,7 +145,7 @@ public uniontype Statement
   end UNTYPED_WHILE;
 
   record WHILE
-    DAE.Exp condition;
+    Expression condition;
     list<Statement> body;
     SourceInfo info;
   end WHILE;

@@ -41,18 +41,19 @@ encapsulated package NFRecord
 import NFBinding.Binding;
 import NFClass.Class;
 import NFComponent.Component;
-import NFDimension.Dimension;
+import Dimension = NFDimension;
 import NFEquation.Equation;
+import NFExpression.Expression;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
+import Type = NFType;
 
 protected
 import ClassInf;
 import ComponentReference;
 import Error;
-import Expression;
 import Inst = NFInst;
 import InstUtil;
 import List;
@@ -68,56 +69,59 @@ function typeRecordCall
   input Absyn.FunctionArgs functionArgs;
   input Prefix prefix;
   input InstNode classNode;
-  input DAE.Type classType;
+  input Type classType;
   input SCode.Element cls;
   input InstNode component;
   input SourceInfo info;
-  output DAE.Exp typedExp;
-  output DAE.Type ty;
+  output Expression typedExp;
+  output Type ty;
   output DAE.Const variability;
 protected
   String fn_name;
   Absyn.Path fn, fn_1;
   InstNode fakeComponent;
   DAE.CallAttributes ca;
-  DAE.Type resultType;
+  Type resultType;
   list<DAE.FuncArg> funcArg;
   DAE.FunctionAttributes functionAttributes;
   DAE.TypeSource source;
   list<DAE.Var> vars;
   list<Absyn.Exp> args;
-  list<DAE.Exp> dargs;
-  list<DAE.Type> dargsType;
+  list<Expression> dargs;
+  list<Type> dargsType;
   list<DAE.Const> dargsVariability;
   DAE.FunctionBuiltin isBuiltin;
   Boolean builtin;
   DAE.InlineType inlineType;
 algorithm
 
-  fn := Absyn.crefToPath(functionName);
+  typedExp := Expression.INTEGER(0);
+  ty := Type.INTEGER();
+  variability := DAE.C_VAR();
+  //fn := Absyn.crefToPath(functionName);
 
-  DAE.T_COMPLEX(varLst = vars) := classType;
-  functionAttributes := InstUtil.getFunctionAttributes(cls, vars);
-  ty := Types.makeFunctionType(fn, vars, functionAttributes);
+  //DAE.T_COMPLEX(varLst = vars) := classType;
+  //functionAttributes := InstUtil.getFunctionAttributes(cls, vars);
+  //ty := Types.makeFunctionType(fn, vars, functionAttributes);
 
-  DAE.T_FUNCTION(funcResultType = resultType) := ty;
+  //DAE.T_FUNCTION(funcResultType = resultType) := ty;
 
-  Absyn.FUNCTIONARGS(args = args) := functionArgs;
-  (dargs, dargsType, dargsVariability) := Typing.typeExps(args, component, info);
-  variability := List.fold(dargsVariability, Types.constAnd, DAE.C_CONST());
+  //Absyn.FUNCTIONARGS(args = args) := functionArgs;
+  //(dargs, dargsType, dargsVariability) := Typing.typeExps(args, component, info);
+  //variability := List.fold(dargsVariability, Types.constAnd, DAE.C_CONST());
 
-  (isBuiltin,builtin,fn_1) := Static.isBuiltinFunc(fn, ty);
-  inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
+  //(isBuiltin,builtin,fn_1) := Static.isBuiltinFunc(fn, ty);
+  //inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
 
-  ca := DAE.CALL_ATTR(
-          resultType,
-          Types.isTuple(resultType),
-          builtin,
-          functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
-          functionAttributes.isFunctionPointer,
-          inlineType,DAE.NO_TAIL());
+  //ca := DAE.CALL_ATTR(
+  //        resultType,
+  //        Types.isTuple(resultType),
+  //        builtin,
+  //        functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
+  //        functionAttributes.isFunctionPointer,
+  //        inlineType,DAE.NO_TAIL());
 
-  typedExp := DAE.CALL(fn_1, dargs, ca);
+  //typedExp := Expression.CALL(fn_1, dargs, ca);
 
 end typeRecordCall;
 

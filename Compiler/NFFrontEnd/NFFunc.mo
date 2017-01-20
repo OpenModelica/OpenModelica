@@ -41,18 +41,20 @@ encapsulated package NFFunc
 import NFBinding.Binding;
 import NFClass.Class;
 import NFComponent.Component;
-import NFDimension.Dimension;
+import Dimension = NFDimension;
 import NFEquation.Equation;
+import NFExpression.Expression;
+import NFExpression.CallAttributes;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
+import Type = NFType;
 
 protected
 import ClassInf;
 import ComponentReference;
 import Error;
-import Expression;
 import ExpressionDump;
 import Inst = NFInst;
 import InstUtil;
@@ -69,9 +71,9 @@ public
 public uniontype FunctionSlot
   record SLOT
     String name "the name of the slot";
-    Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> arg "the argument given by the function call";
+    Option<tuple<Expression, Type, DAE.Const>> arg "the argument given by the function call";
     Option<Binding> default "the default value from binding of the input component in the function";
-    Option<tuple<DAE.Type, DAE.Const>> expected "the actual type of the input component, what we expect to get";
+    Option<tuple<Type, DAE.Const>> expected "the actual type of the input component, what we expect to get";
     Boolean isFilled;
   end SLOT;
 end FunctionSlot;
@@ -82,17 +84,17 @@ function typeFunctionCall
   input Absyn.FunctionArgs functionArgs;
   input InstNode scope;
   input SourceInfo info;
-  output DAE.Exp typedExp;
-  output DAE.Type ty;
+  output Expression typedExp;
+  output Type ty;
   output DAE.Const variability;
 protected
   String fn_name;
   Absyn.Path fn, fn_1;
   InstNode fakeComponent;
   InstNode classNode;
-  list<DAE.Exp> arguments;
+  list<Expression> arguments;
   DAE.CallAttributes ca;
-  DAE.Type classType, resultType;
+  Type classType, resultType;
   list<DAE.FuncArg> funcArg;
   DAE.FunctionAttributes functionAttributes;
   DAE.TypeSource source;
@@ -213,20 +215,20 @@ function typeNormalFunction
   input Absyn.FunctionArgs functionArgs;
   input Prefix prefix;
   input InstNode classNode;
-  input DAE.Type classType;
+  input Type classType;
   input SCode.Element cls;
   input InstNode scope;
   input SourceInfo info;
-  output DAE.Exp typedExp;
-  output DAE.Type ty;
+  output Expression typedExp;
+  output Type ty;
   output DAE.Const variability;
 protected
   String fn_name, argName;
   Absyn.Path fn, fn_1;
-  InstNode fakeComponent;
+  InstNode fakeComponent, ty_node;
   Component c;
-  DAE.CallAttributes ca;
-  DAE.Type resultType;
+  NFExpression.CallAttributes ca;
+  Type resultType;
   list<DAE.FuncArg> funcArg;
   DAE.FunctionAttributes functionAttributes;
   DAE.TypeSource source;
@@ -234,17 +236,17 @@ protected
   Absyn.Exp arg;
   list<Absyn.Exp> args;
   list<Absyn.NamedArg> nargs;
-  list<DAE.Exp> dargs, dnargs; // dae args, dae named args
-  list<DAE.Type> dargstys = {}, dnargstys = {}; // dae args types, dae named args types
+  list<Expression> dargs, dnargs; // dae args, dae named args
+  list<Type> dargstys = {}, dnargstys = {}; // dae args types, dae named args types
   list<DAE.Const> dargsvrs = {}, dnargsvrs = {}; // dae args variability, dae named args variability
   list<String> dnargsnames = {}; // the named args names
   DAE.FunctionBuiltin isBuiltin;
   Boolean builtin;
   DAE.InlineType inlineType;
   list<InstNode> inputs;
-  list<DAE.Exp> dargs;
-  DAE.Exp darg;
-  DAE.Type dty;
+  list<Expression> dargs;
+  Expression darg;
+  Type dty;
   DAE.Const dvr;
   list<FunctionSlot> slots = {}, tslots = {};
   FunctionSlot s;
@@ -253,9 +255,9 @@ protected
   Binding b;
   Option<Binding> ob;
   String sname "the name of the slot";
-  Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
   Option<Binding> sdefault "the default value from binding of the input component in the function";
-  Option<tuple<DAE.Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
+  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
 
 algorithm
 
@@ -303,35 +305,34 @@ algorithm
 
   (dargs, variability) := argsFromSlots(slots);
 
-  DAE.T_COMPLEX(varLst = vars) := classType;
-  functionAttributes := InstUtil.getFunctionAttributes(cls, vars);
-  ty := Types.makeFunctionType(fn, vars, functionAttributes);
+  Type.COMPLEX(cls = ty_node) := classType;
+  functionAttributes := getFunctionAttributes(ty_node);
+  ty := makeFunctionType(ty_node, functionAttributes);
 
-  DAE.T_FUNCTION(funcResultType = resultType) := ty;
+  Type.FUNCTION(resultType = resultType) := ty;
 
-  (isBuiltin,builtin,fn_1) := Static.isBuiltinFunc(fn, ty);
+  (isBuiltin, builtin, fn) := isBuiltinFunc(fn, functionAttributes);
   inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
 
-  ca := DAE.CALL_ATTR(
+  ca := CallAttributes.CALL_ATTR(
           resultType,
-          Types.isTuple(resultType),
+          Type.isTuple(resultType),
           builtin,
           functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
           functionAttributes.isFunctionPointer,
           inlineType,DAE.NO_TAIL());
 
-  typedExp := DAE.CALL(fn_1, dargs, ca);
-
+  typedExp := Expression.CALL(fn, dargs, ca);
 end typeNormalFunction;
 
 function argsFromSlots
   input list<FunctionSlot> slots;
-  output list<DAE.Exp> args = {};
+  output list<Expression> args = {};
   output DAE.Const c = DAE.C_CONST();
 protected
   Integer d;
-  DAE.Exp arg;
-  Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
+  Expression arg;
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
   Option<Binding> sdefault "the default value from binding of the input component in the function";
   DAE.Const const;
 algorithm
@@ -360,13 +361,13 @@ protected
   String str1, str2, s1, s2, s3, s4, s5;
   Boolean b, found = false;
   String sname "the name of the slot";
-  Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
   Option<Binding> sdefault "the default value from binding of the input component in the function";
-  Option<tuple<DAE.Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
+  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
   Boolean sisFilled;
-  DAE.Exp expActual;
+  Expression expActual;
   DAE.Const vrActual, vrExpected;
-  DAE.Type tyActual, tyExpected;
+  Type tyActual, tyExpected;
   Integer position = 0;
 algorithm
   for s in slots loop
@@ -384,20 +385,20 @@ algorithm
 
     // check the typing
     try
-      _ := Types.matchType(expActual, tyActual, tyExpected, true);
+      //_ := Types.matchType(expActual, tyActual, tyExpected, true);
     else
       s1 := intString(position);
       s2 := Absyn.pathStringNoQual(fn);
-      s3 := ExpressionDump.printExpStr(expActual);
-      s4 := Types.unparseTypeNoAttr(tyActual);
-      s5 := Types.unparseTypeNoAttr(tyExpected);
+      s3 := Expression.toString(expActual);
+      s4 := Type.toString(tyActual);
+      s5 := Type.toString(tyExpected);
       Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,sname,s3,s4,s5}, info);
       fail();
     end try;
 
     // fail if the variability is wrong
     if not Types.constEqualOrHigher(vrActual, vrExpected) then
-      str1 := ExpressionDump.printExpStr(expActual);
+      str1 := Expression.toString(expActual);
       str2 := DAEUtil.constStrFriendly(vrExpected);
       Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY, {sname, str1, str2}, info);
     end if;
@@ -407,7 +408,7 @@ end typeCheckFunctionSlots;
 function fillNamedSlot
   input list<FunctionSlot> islots;
   input String name;
-  input tuple<DAE.Exp, DAE.Type, DAE.Const> arg;
+  input tuple<Expression, Type, DAE.Const> arg;
   input Absyn.Path fn;
   input Prefix prefix;
   input SourceInfo info;
@@ -416,9 +417,9 @@ protected
   String str;
   Boolean b, found = false;
   String sname "the name of the slot";
-  Option<tuple<DAE.Exp, DAE.Type, DAE.Const>> sarg "the argument given by the function call";
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
   Option<Binding> sdefault "the default value from binding of the input component in the function";
-  Option<tuple<DAE.Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
+  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
   Boolean sisFilled;
 algorithm
   for s in islots loop
@@ -542,8 +543,8 @@ protected function typeSpecialBuiltinFunctionCall
   input Absyn.FunctionArgs functionArgs;
   input InstNode scope;
   input SourceInfo info;
-  output DAE.Exp typedExp;
-  output DAE.Type ty;
+  output Expression typedExp;
+  output Type ty;
   output DAE.Const variability;
 protected
    String fnName;
@@ -553,18 +554,18 @@ algorithm
     local
       Absyn.ComponentRef acref;
       Absyn.Exp aexp1, aexp2;
-      DAE.Exp dexp1, dexp2;
+      Expression dexp1, dexp2;
       list<Absyn.Exp>  afargs;
       list<Absyn.NamedArg> anamed_args;
       Absyn.Path call_path;
-      list<DAE.Exp> pos_args, args;
-      list<tuple<String, DAE.Exp>> named_args;
+      list<Expression> pos_args, args;
+      list<tuple<String, Expression>> named_args;
       list<InstNode> inputs, outputs;
       Absyn.ForIterators iters;
       DAE.Dimensions d1, d2;
       DAE.TypeSource src1, src2;
-      DAE.Type el_ty;
-      list<DAE.Type> tys;
+      Type el_ty;
+      list<Type> tys;
       list<DAE.Const> vrs;
 
     // TODO FIXME: String might be overloaded, we need to handle this better! See Static.mo
@@ -573,9 +574,9 @@ algorithm
         call_path := Absyn.crefToPath(functionName);
         (args, tys, vrs) := Typing.typeExps(afargs, scope, info);
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
-        ty := DAE.T_STRING_DEFAULT;
+        ty := Type.STRING();
       then
-        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, args, NFExpression.callAttrBuiltinOther), ty, vr);
 
     // TODO FIXME: check that the input is an enumeration
     case (Absyn.CREF_IDENT(name = "Integer"), Absyn.FUNCTIONARGS(args = afargs))
@@ -583,9 +584,9 @@ algorithm
         call_path := Absyn.crefToPath(functionName);
         (args, tys, vrs) := Typing.typeExps(afargs, scope, info);
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
-        ty := DAE.T_INTEGER_DEFAULT;
+        ty := Type.INTEGER();
       then
-        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, args, NFExpression.callAttrBuiltinOther), ty, vr);
 
     // TODO FIXME! handle all the Modelica 3.3 operators here, see isSpecialBuiltinFunctionName
 
@@ -610,12 +611,12 @@ protected function typeBuiltinFunctionCall
   input Absyn.FunctionArgs functionArgs;
   input Prefix prefix;
   input InstNode classNode;
-  input DAE.Type classType;
+  input Type classType;
   input SCode.Element cls;
   input InstNode scope;
   input SourceInfo info;
-  output DAE.Exp typedExp;
-  output DAE.Type ty;
+  output Expression typedExp;
+  output Type ty;
   output DAE.Const variability;
 protected
    String fnName;
@@ -625,17 +626,17 @@ algorithm
     local
       Absyn.ComponentRef acref;
       Absyn.Exp aexp1, aexp2;
-      DAE.Exp dexp1, dexp2;
+      Expression dexp1, dexp2;
       list<Absyn.Exp>  afargs;
       list<Absyn.NamedArg> anamed_args;
       Absyn.Path call_path;
-      list<DAE.Exp> pos_args, args;
-      list<tuple<String, DAE.Exp>> named_args;
+      list<Expression> pos_args, args;
+      list<tuple<String, Expression>> named_args;
       list<InstNode> inputs, outputs;
       Absyn.ForIterators iters;
-      DAE.Dimension d1, d2;
+      Dimension d1, d2;
       DAE.TypeSource src1, src2;
-      DAE.Type el_ty, ty1, ty2;
+      Type el_ty, ty1, ty2;
 
     // size(arr, dim)
     case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
@@ -644,22 +645,22 @@ algorithm
         (dexp2, ty2, vr2) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
-        ty := DAE.T_INTEGER_DEFAULT;
+        ty := Type.INTEGER();
         // the variability does not actually depend on the variability of "arr" but on the variability of the dimensions of "arr"
         vr := Types.constAnd(vr1, vr2);
       then
-        (DAE.SIZE(dexp1, SOME(dexp2)), ty, vr);
+        (Expression.SIZE(dexp1, SOME(dexp2)), ty, vr);
 
     // size(arr)
     case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
-        ty := DAE.T_INTEGER_DEFAULT;
+        ty := Type.INTEGER();
         // the variability does not actually depend on the variability of "arr" but on the variability of the dimensions of "arr"
         vr := vr1;
       then
-        (DAE.SIZE(dexp1, NONE()), ty, vr);
+        (Expression.SIZE(dexp1, NONE()), ty, vr);
 
     case (Absyn.CREF_IDENT(name = "smooth"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
       algorithm
@@ -668,10 +669,10 @@ algorithm
         (dexp2, ty2, vr2) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
-        ty := DAE.T_REAL_DEFAULT;
+        ty := Type.REAL();
         vr := vr1;
       then
-        (DAE.CALL(call_path, {dexp1,dexp2}, DAE.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, {dexp1,dexp2}, NFExpression.callAttrBuiltinOther), ty, vr);
 
     case (Absyn.CREF_IDENT(name = "rooted"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
@@ -679,18 +680,18 @@ algorithm
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
-        ty := DAE.T_BOOL_DEFAULT;
+        ty := Type.BOOLEAN();
         vr := vr1;
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther), ty, vr);
 
     case (Absyn.CREF_IDENT(name = "transpose"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
 
         // transpose the type.
-        DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}, src1), {d2}, src2) := ty1;
-        ty := DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d2}, src1), {d1}, src2);
+        Type.ARRAY(elementType = el_ty, dimensions = {d1, d2}) := ty1;
+        ty := Type.ARRAY(el_ty, {d2, d1});
 
         // create the typed transpose expression
         typedExp := Expression.makePureBuiltinCall("transpose", {dexp1}, ty);
@@ -704,10 +705,10 @@ algorithm
         true := listMember(fnName, {"min", "max"});
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
 
-        true := Types.isArray(ty1);
-        dexp1 := Expression.matrixToArray(dexp1);
-        el_ty := Types.arrayElementType(ty1);
-        false := Types.isString(el_ty);
+        true := Type.isArray(ty1);
+        //dexp1 := Expression.matrixToArray(dexp1);
+        el_ty := Type.arrayElementType(ty1);
+        false := Type.isString(el_ty);
 
         ty := el_ty;
         vr := vr1;
@@ -722,11 +723,11 @@ algorithm
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
         (dexp2, ty2, vr2) := Typing.typeExp(aexp2, scope, info);
 
-        ty := Types.scalarSuperType(ty1, ty2);
-        (dexp1, _) := Types.matchType(dexp1, ty1, ty, true);
-        (dexp2, _) := Types.matchType(dexp2, ty2, ty, true);
+        ty := Type.scalarSuperType(ty1, ty2);
+        //(dexp1, _) := Types.matchType(dexp1, ty1, ty, true);
+        //(dexp2, _) := Types.matchType(dexp2, ty2, ty, true);
         vr := Types.constAnd(vr1, vr2);
-        false := Types.isString(ty);
+        false := Type.isString(ty);
         typedExp := Expression.makePureBuiltinCall(fnName, {dexp1, dexp2}, ty);
       then
         (typedExp, ty, vr);
@@ -734,9 +735,8 @@ algorithm
     case (Absyn.CREF_IDENT(name = "diagonal"), Absyn.FUNCTIONARGS(args = aexp1::_))
       algorithm
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
-        DAE.T_ARRAY(dims = {d1}, ty = el_ty) := ty1;
-
-        ty := DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}, DAE.emptyTypeSource), {d1}, DAE.emptyTypeSource);
+        Type.ARRAY(elementType = el_ty, dimensions = {d1}) := ty1;
+        ty := Type.ARRAY(el_ty, {d1, d1});
         typedExp := Expression.makePureBuiltinCall("diagonal", {dexp1}, ty);
         vr := vr1;
       then
@@ -757,49 +757,49 @@ algorithm
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "pre"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "noEvent"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "sum"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "assert"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "change"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "array"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "array"), Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters))
       equation
@@ -807,7 +807,7 @@ algorithm
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
         (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "sum"), Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters))
       equation
@@ -815,7 +815,7 @@ algorithm
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
         (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "min"), Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters))
       equation
@@ -823,7 +823,7 @@ algorithm
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
         (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "max"), Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters))
       equation
@@ -831,7 +831,7 @@ algorithm
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
         (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "product"), Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters))
       equation
@@ -839,49 +839,49 @@ algorithm
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
         (dexp1, globals) = Typing.typeExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "cat"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "actualStream"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "inStream"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "String"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "Integer"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "Real"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
     */
 
     // TODO! FIXME!
@@ -896,14 +896,14 @@ algorithm
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
 
     case (Absyn.CREF_IDENT(name = "abs"), Absyn.FUNCTIONARGS(args = afargs))
       equation
         call_path = Absyn.crefToPath(functionName);
         (pos_args, globals) = Typing.typeExps(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+        DAE.CALL(call_path, pos_args, NFExpression.callAttrBuiltinOther);
     */
 
     // hopefully all the other ones have a complete entry in ModelicaBuiltin.mo
@@ -915,6 +915,162 @@ algorithm
 
  end matchcontinue;
 end typeBuiltinFunctionCall;
+
+function getFunctionAttributes
+  input InstNode funcNode;
+  output DAE.FunctionAttributes attr;
+protected
+  SCode.Element def;
+  array<InstNode> params;
+  SCode.Restriction res;
+  SCode.FunctionRestriction fres;
+algorithm
+  def := InstNode.definition(funcNode);
+  res := SCode.getClassRestriction(def);
+
+  assert(SCode.isFunctionRestriction(res),
+    getInstanceName() + " got non-function restriction");
+  assert(InstNode.isClass(funcNode),
+    getInstanceName() + " got non-class node");
+
+  SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
+  Class.INSTANCED_CLASS(components = params) := InstNode.getClass(funcNode);
+
+  attr := matchcontinue fres
+    local
+      Boolean is_impure, is_om_pure, has_out_params;
+      String name;
+      list<String> in_params, out_params;
+      DAE.InlineType inline_ty;
+      DAE.FunctionBuiltin builtin;
+
+    case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(is_impure)
+      algorithm
+        in_params := list(InstNode.name(p) for p guard InstNode.isInput(p) in params);
+        out_params := list(InstNode.name(p) for p guard InstNode.isOutput(p) in params);
+        name := SCode.isBuiltinFunction(def, in_params, out_params);
+        inline_ty := InstUtil.isInlineFunc(def);
+        is_om_pure := not SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_Impure");
+        is_impure := if is_impure then true else SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
+      then
+        DAE.FUNCTION_ATTRIBUTES(inline_ty, is_om_pure, is_impure, false,
+          DAE.FUNCTION_BUILTIN(SOME(name)), DAE.FP_NON_PARALLEL());
+
+    // Parallel function: there are some builtin functions.
+    case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
+      algorithm
+        in_params := list(InstNode.name(p) for p guard InstNode.isInput(p) in params);
+        out_params := list(InstNode.name(p) for p guard InstNode.isOutput(p) in params);
+        name := SCode.isBuiltinFunction(def, in_params, out_params);
+        inline_ty := InstUtil.isInlineFunc(def);
+        is_om_pure := not SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_Impure");
+      then
+        DAE.FUNCTION_ATTRIBUTES(inline_ty, is_om_pure, false, false,
+          DAE.FUNCTION_BUILTIN(SOME(name)), DAE.FP_PARALLEL_FUNCTION());
+
+    // Parallel function: non-builtin.
+    case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
+      algorithm
+        inline_ty := InstUtil.isInlineFunc(def);
+        builtin := if SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_BuiltinPtr") then
+          DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        is_om_pure := not SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_Impure");
+      then
+        DAE.FUNCTION_ATTRIBUTES(inline_ty, is_om_pure, false, false,
+          builtin, DAE.FP_PARALLEL_FUNCTION());
+
+    // Kernel functions: never builtin and never inlined.
+    case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
+      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, false,
+        DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION());
+
+    else
+      algorithm
+        inline_ty := InstUtil.isInlineFunc(def);
+        builtin := if SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_BuiltinPtr") then
+          DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        is_om_pure := not SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_Impure");
+
+        // In Modelica 3.2 and before, external functions with side-effects are not marked.
+        is_impure := SCode.isRestrictionImpure(res,
+            Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
+            Array.exist(params, InstNode.isOutput)) or
+          SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
+      then
+        DAE.FUNCTION_ATTRIBUTES(inline_ty, is_om_pure, is_impure, false,
+          builtin, DAE.FP_NON_PARALLEL());
+
+  end matchcontinue;
+end getFunctionAttributes;
+
+function makeFunctionType
+  input InstNode funcNode;
+  input DAE.FunctionAttributes attributes;
+  output Type funcType;
+protected
+  array<InstNode> params;
+  list<Component> in_params, out_params;
+  Type ret_ty;
+  Component c;
+algorithm
+  Class.INSTANCED_CLASS(components = params) := InstNode.getClass(funcNode);
+  in_params := list(InstNode.component(p) for p guard InstNode.isInput(p) in params);
+  out_params := list(InstNode.component(p) for p guard InstNode.isInput(p) in params);
+
+  ret_ty := match out_params
+    case {} then Type.NORETCALL();
+    case {c} then Component.getType(c);
+    else
+      algorithm
+        assert(false, getInstanceName() + ": IMPLEMENT ME");
+      then
+        fail();
+  end match;
+
+  funcType := Type.FUNCTION(ret_ty, attributes);
+end makeFunctionType;
+
+function isBuiltinFunc
+  input Absyn.Path funcName;
+  input DAE.FunctionAttributes funcAttr;
+  output DAE.FunctionBuiltin builtin;
+  output Boolean isBuiltin;
+  output Absyn.Path newName;
+algorithm
+  (builtin, isBuiltin, newName) := matchcontinue (funcName, funcAttr)
+    local
+      String id;
+
+    case (_, DAE.FUNCTION_ATTRIBUTES(isBuiltin = builtin as DAE.FUNCTION_BUILTIN()))
+      then (builtin, true, Absyn.makeNotFullyQualified(funcName));
+
+    case (_, DAE.FUNCTION_ATTRIBUTES(isBuiltin = builtin as DAE.FUNCTION_BUILTIN_PTR()))
+      then (builtin, true, Absyn.makeNotFullyQualified(funcName));
+
+    case (Absyn.IDENT(name = id), _)
+      algorithm
+        Static.elabBuiltinHandler(id);
+      then
+        (DAE.FUNCTION_BUILTIN(SOME(id)), true, funcName);
+
+    case (Absyn.QUALIFIED("OpenModelicaInternal", Absyn.IDENT(name = id)), _)
+      algorithm
+        Static.elabBuiltinHandlerInternal(id);
+      then
+        (DAE.FUNCTION_BUILTIN(SOME(id)), true, funcName);
+
+    case (Absyn.FULLYQUALIFIED(), _)
+      algorithm
+        (builtin, isBuiltin, _) := isBuiltinFunc(funcName.path, funcAttr);
+      then
+        (builtin, isBuiltin, funcName.path);
+
+    case (Absyn.QUALIFIED("Connection", Absyn.IDENT("isRoot")), _)
+      then (DAE.FUNCTION_BUILTIN(NONE()), true, funcName);
+
+    else (DAE.FUNCTION_NOT_BUILTIN(), false, funcName);
+  end matchcontinue;
+end isBuiltinFunc;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFunc;
