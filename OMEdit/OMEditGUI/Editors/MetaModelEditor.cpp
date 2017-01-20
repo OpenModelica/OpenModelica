@@ -244,6 +244,9 @@ void MetaModelEditor::setMetaModelName(QString name)
 bool MetaModelEditor::addSubModel(QString name, QString modelFile, QString startCommand, QString visible, QString origin,
                                   QString extent, QString rotation)
 {
+  Component* pComp = mpModelWidget->getDiagramGraphicsView()->getComponentObject(name);
+  name = name.remove(".");
+  pComp->getComponentInfo()->setName(name);
   QDomElement subModels = getSubModelsElement();
   if (!subModels.isNull()) {
     QDomElement subModel = mXmlDocument.createElement("SubModel");
