@@ -63,7 +63,7 @@ for t in me cs; do
   cp "ReadMe.txt" "$DIR/"
 done
 done
-for a in source arm-linux-gnueabi; do
+for a in c-code arm-linux-gnueabi; do
 for t in me cs; do
   if test "$t" = "me"; then
     d="ModelExchange"
