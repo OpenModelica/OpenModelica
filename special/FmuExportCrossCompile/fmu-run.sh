@@ -78,7 +78,6 @@ for t in me cs; do
   cp "$1_ref.opt" "$DIR/" || exit 1
   cp "$1_res.csv" "$DIR/$1_ref.csv" || exit 1
   cp "$1_res.csv" "$DIR/$1_cc.csv" || exit 1
-  touch "$DIR/$1_cc.log" || exit 1
   cp "ReadMe.txt" "$DIR/" || exit 1
   echo "$CMD" > "$DIR/$1_cc.bat" || exit 1
 done
