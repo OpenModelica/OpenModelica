@@ -230,10 +230,11 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
     }
 #endif
 
-    infoStreamPrint(LOG_INIT, 1, "homotopy process");
+    infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
     for(step=0; step<numLambdaSteps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(numLambdaSteps-1);
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
 
       if(data->simulationInfo->lambda > 1.0) {
         data->simulationInfo->lambda = 1.0;
@@ -244,7 +245,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
       else
         data->callback->functionInitialEquations(data, threadData);
 
-      infoStreamPrint(LOG_INIT, 0, "lambda = %g done", data->simulationInfo->lambda);
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
 
       if(ACTIVE_STREAM(LOG_INIT))
       {
