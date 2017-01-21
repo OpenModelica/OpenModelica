@@ -75,6 +75,12 @@ void printUsage()
     printf("    --auto-scale=[true|false]  Use auto scale while plotting.\n");
 }
 
+void printShortUsage()
+{
+  printf("Usage: OMPlot [OPTIONS] [--filename=NAME] [variable names]\n");
+  printf("       For detailed usage information, use 'OMPlot --help'.\n");
+}
+
 int main(int argc, char *argv[])
 {
     // read the arguments
@@ -158,11 +164,43 @@ int main(int argc, char *argv[])
           vars.append(argv[i]);
         }
     }
+
     if (filename.length() == 0) {
-      fprintf(stderr, "Error: No filename given\n");
-      printUsage();
+      QStringList nameFilter = (QStringList() << "*.mat" << "*.csv");
+
+      QDir directory(".");
+      QStringList resultFiles = directory.entryList(nameFilter);
+      int count = resultFiles.count();
+
+      if(count == 0)
+      {
+        fprintf(stderr, "Error: No filename specified.\n");
+        printShortUsage();
+        return 1;
+      }
+      else if(count == 1)
+      {
+        filename = resultFiles.at(0);
+        fprintf(stdout, "WARN:  No filename specified, so the following filename is assumed:\n       '%s'\n", filename.toUtf8().constData());
+      }
+      else
+      {
+        fprintf(stdout, "Info:  This directory contains following result files:\n");
+        for(int i=0;i<count;i++)
+          fprintf(stderr, "       * '%s'\n", resultFiles.at(i).toUtf8().constData());
+
+        fprintf(stderr, "Error: No filename specified.\n");
+        printShortUsage();
+        return 1;
+      }
+    }
+
+    if (vars.count() == 0) {
+      fprintf(stderr, "Error: No variables specified.\n");
+      printShortUsage();
       return 1;
     }
+
     // Hack to get the expected format of PlotApplication. Yes, this is totally crazy :)
     arguments.append(argv[0]);
     arguments.append(filename);
