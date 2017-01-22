@@ -1017,12 +1017,12 @@ Functions for FMI2 for Co-Simulation
 ****************************************************/
 fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], const fmi2Real value[]) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2SetRealInputDerivatives", ~0);
 }
 
-fmi2Status fmi2GetRealOutputDerivatives (fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], fmi2Real value[]) {
+fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], fmi2Real value[]) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2GetRealOutputDerivatives", ~0);
 }
 
 fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2Real communicationStepSize, fmi2Boolean noSetFMUStatePriorToCurrentPoint) {
@@ -1190,32 +1190,32 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
 fmi2Status fmi2CancelStep(fmi2Component c) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2CancelStep", ~0);
 }
 
 fmi2Status fmi2GetStatus(fmi2Component c, const fmi2StatusKind s, fmi2Status* value) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2GetStatus", ~0);
 }
 
 fmi2Status fmi2GetRealStatus(fmi2Component c, const fmi2StatusKind s, fmi2Real* value) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2GetRealStatus", ~0);
 }
 
 fmi2Status fmi2GetIntegerStatus(fmi2Component c, const fmi2StatusKind s, fmi2Integer* value) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2GetIntegerStatus", ~0);
 }
 
 fmi2Status fmi2GetBooleanStatus(fmi2Component c, const fmi2StatusKind s, fmi2Boolean* value) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2GetBooleanStatus", ~0);
 }
 
 fmi2Status fmi2GetStringStatus(fmi2Component c, const fmi2StatusKind s, fmi2String* value) {
   // TODO Write code here
-  return fmi2OK;
+  return unsupportedFunction(c, "fmi2GetStringStatus", ~0);
 }
 
 // ---------------------------------------------------------------------------
