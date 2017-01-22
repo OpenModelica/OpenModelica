@@ -3825,9 +3825,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
-   <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
-   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
+   <%updateAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
    <%updateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
 
    <%LinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -3872,10 +3872,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
-   <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
 
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
-   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
+   <%updateAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
    <%updateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
 
    <%NonLinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -3918,7 +3918,7 @@ match simCode
 end queryDensity;
 
 
-template updateAlgloop(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eqn,Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template updateAlgloop(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Integer clockIndex, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -3954,6 +3954,7 @@ match simCode
 
         void <%modelname%>Algloop<%ls.index%>::evaluate()
         {
+          <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
           <%varDecls%>
           //prebody
           <%prebody%>
@@ -5938,7 +5939,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Text method
   >>
 end functionInitialEquations;
 
-template initAlgloop(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template initAlgloop(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Integer clockIndex, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -5951,6 +5952,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <<
      void <%modelname%>Algloop<%nls.index%>::initialize()
      {
+       <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
        <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
        // Don't update the equations once before start of simulation
        // evaluate();
@@ -5963,6 +5965,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
         void <%modelname%>Algloop<%ls.index%>::initialize()
         {
+          <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
           <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
         }
         >>
@@ -5990,7 +5993,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    void <%modelname%>Algloop<%ls.index%>::initialize()
    {
-    <%initAlgloopEquation(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+     <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
+     <%initAlgloopEquation(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
    }
    >>
 end initAlgloop;
