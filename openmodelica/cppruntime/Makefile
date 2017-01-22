@@ -17,7 +17,8 @@ functionPointerTest.mos \
 recordTupleReturnTest.mos \
 RefArrayDim2.mos \
 solveTest.mos \
-testMatrixIO.mos
+testMatrixIO.mos \
+trapezoidTest.mos
 
 FAILINGTESTFILES= \
 ClockInterval.mos \

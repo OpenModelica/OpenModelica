@@ -1,0 +1,52 @@
+// name: trapezoidTest
+// keywords: events common subexpressions
+// status: correct
+// teardown_command: rm -f *TrapezoidTest*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica); getErrorString();
+
+loadString("
+model TrapezoidTest
+  Modelica.Blocks.Sources.Trapezoid trapezoid(
+    offset=1,
+    period=10,
+    amplitude=4,
+    rising=1,
+    width=4,
+    falling=1,
+    startTime=2)
+    annotation (Placement(visible = true, transformation(extent = {{-50, 34}, {-30, 54}}, rotation = 0)));
+equation
+  annotation(experiment(StopTime=20));
+end TrapezoidTest;
+");
+getErrorString();
+
+simulate(TrapezoidTest);
+val(trapezoid.y, 0.0);
+val(trapezoid.y, 5.0);
+val(trapezoid.y, 10.0);
+val(trapezoid.y, 15.0);
+val(trapezoid.y, 20.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TrapezoidTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TrapezoidTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 1.0
+// 5.0
+// 1.0
+// 5.0
+// 1.0
+// ""
+// endResult
