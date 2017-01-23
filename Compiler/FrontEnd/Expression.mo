@@ -9431,7 +9431,7 @@ algorithm
     case (DAE.CALL(expLst = {}),_) then false;
 
     // general case for arguments
-    case (DAE.CALL(expLst = args),(cr as DAE.CREF()))
+    case (DAE.CALL(expLst = args), cr)
       equation
         res = List.map1BoolOr(args, expContains, cr);
       then

@@ -1094,7 +1094,6 @@ algorithm
       DAE.Operator op;
       Integer numEqual, alg_indx, itmp, numMathFunctions, oldNumRelations;
       list<Integer> eqs;
-      Boolean b1, b2;
       DAE.Exp startvalue, stepvalue;
       Option<DAE.Exp> stepvalueopt;
       Integer istart, istep;
@@ -1172,8 +1171,7 @@ algorithm
       (e_2, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1));
       if intGt(DoubleEndedList.length(relations), oldNumRelations) then
         e_1 := DAE.LBINARY(e_1, op, e_2);
-        b1 := Expression.expContains(e1, iterator);
-        if if b1 then true else Expression.expContains(e2, iterator) then
+        if Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator) then
           (explst, itmp) := replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
           zc_lst := createZeroCrossings(explst, {alg_indx});
           ZeroCrossings.add_list(zeroCrossings, zc_lst);
