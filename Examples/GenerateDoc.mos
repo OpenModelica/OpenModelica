@@ -354,11 +354,16 @@ for filepath in sorted(glob.glob('*.html')):
           a['href'] = linkreplace(a['href'],filepath)
         except:
           pass
-        for img in soup.findAll('img'):
-          try:
-            img['src'] = linkreplace(img['src'],filepath)
-          except:
-            pass
+      for a in soup.findAll('link'):
+        try:
+          a['href'] = linkreplace(a['href'],filepath)
+        except:
+          pass
+      for img in soup.findAll('img'):
+        try:
+          img['src'] = linkreplace(img['src'],filepath)
+        except:
+          pass
     with open(filepath,'w') as html_file:
       html_file.write(str(soup))
   else:
