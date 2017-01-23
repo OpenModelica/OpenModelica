@@ -262,7 +262,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         pComponentInfo->setStartCommand("StartTLMBeast");
       } else if (fileInfo.suffix().compare("hmf") == 0) {
         pComponentInfo->setStartCommand("StartTLMHopsan");
-      } else if (fileInfo.suffix().compare("in") == 0) {
+      } else if (fileInfo.suffix().compare("fmu") == 0) {
         pComponentInfo->setStartCommand("StartTLMFmiWrapper");
       } else if (fileInfo.suffix().compare("slx") == 0) {
         pComponentInfo->setStartCommand("StartTLMSimulink");
