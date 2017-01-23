@@ -437,6 +437,9 @@
     <message>
         <location filename="../../notebook.cpp" line="965"/>
         <location filename="../../notebook.cpp" line="1176"/>
+        <location filename="../../notebook.cpp" line="1317"/>
+        <location filename="../../notebook.cpp" line="1352"/>
+        <location filename="../../notebook.cpp" line="1387"/>
         <source>&amp;Other...</source>
         <translation>&amp;andere...</translation>
     </message>
@@ -734,17 +737,17 @@
     <message>
         <location filename="../../notebook.cpp" line="1178"/>
         <source>Select font color</source>
-        <translation type="unfinished"></translation>
+        <translation>Schriftfarbe auswählen</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="1209"/>
         <source>C&amp;hoose Font...</source>
-        <translation type="unfinished"></translation>
+        <translation>Schrift&amp;art auswählen...</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="1211"/>
         <source>Select font</source>
-        <translation type="unfinished"></translation>
+        <translation>Schriftart auswählen</translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="1221"/>
@@ -985,6 +988,14 @@
         <location filename="../../notebook.h" line="400"/>
         <source>Cells cannot be moved inside or outside another hierarchy.</source>
         <translation>Zellen können nicht in eine andere Ebene verschoben werden.</translation>
+    </message>
+</context>
+<context>
+    <name>IAEX::OtherDlg</name>
+    <message>
+        <location filename="../../otherdlg.h" line="69"/>
+        <source>Enter value (</source>
+        <translation>Wert eingeben (</translation>
     </message>
 </context>
 <context>

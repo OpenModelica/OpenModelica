@@ -1314,7 +1314,7 @@ void NotebookWindow::createFormatMenu()
 
 
   borderMenu->addSeparator();
-  borderOther = new QAction( "&Other...", this );
+  borderOther = new QAction( tr("&Other..."), this );
   borderOther->setWhatsThis("Other");
   borderOther->setCheckable( true );
   borderMenu->addAction( borderOther );
@@ -1349,7 +1349,7 @@ void NotebookWindow::createFormatMenu()
 
 
   marginMenu->addSeparator();
-  marginOther = new QAction( "&Other...", this );
+  marginOther = new QAction( tr("&Other..."), this );
   marginOther->setWhatsThis("Other");
   marginOther->setCheckable( true );
   marginMenu->addAction( marginOther );
@@ -1384,7 +1384,7 @@ void NotebookWindow::createFormatMenu()
 
 
   paddingMenu->addSeparator();
-  paddingOther = new QAction( "&Other...", this );
+  paddingOther = new QAction( tr("&Other..."), this );
   paddingOther->setWhatsThis("Other");
   paddingOther->setCheckable( true );
   paddingMenu->addAction( paddingOther );
