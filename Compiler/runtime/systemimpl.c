@@ -33,6 +33,7 @@ extern "C" {
 #endif
 
 #include "systemimpl.h"
+#include "is_utf8.h"
 
 /*
  * Common includes
@@ -2236,15 +2237,36 @@ char* SystemImpl__iconv__ascii(const char * str)
   return buf;
 }
 
+static int isUtf8Encoding(const char *str)
+{
+  return strcasecmp(str, "UTF-8") || strcasecmp(str, "UTF8");
+}
+
 extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
 {
-  char *in_str,*res;
+  char *in_str,*res=NULL;
   size_t sz,out_sz,buflen;
   iconv_t ic;
   int count;
   char *buf;
   sz = strlen(str);
-  buflen = sz*8;
+  if (isUtf8Encoding(from) && isUtf8Encoding(to))
+  {
+    is_utf8(str, sz, &res, &count);
+    if (res==NULL) {
+      /* Converting from UTF-8 to UTF-8 and the sequence is already UTF-8... */
+      return str;
+    }
+    /* Converting from UTF-8, but is not valid UTF-8. Just quit early. */
+    if (printError) {
+      char *ignore = SystemImpl__iconv__ascii(str);
+      const char *tokens[4] = {res,from,to,ignore};
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
+      omc_alloc_interface.free_uncollectable(ignore);
+    }
+    return (char*) "";
+  }
+  buflen = sz*4;
   /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
   ic = iconv_open(to, from);
   if (ic == (iconv_t) -1) {
@@ -2257,7 +2279,13 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
     return (char*) "";
   }
   buf = (char*) omc_alloc_interface.malloc_atomic(buflen);
-  assert(buf != 0);
+  if (0 == buf) {
+    if (printError) {
+      /* Make the error message small so we perhaps have a chance to recover */
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv() ran out of memory"),NULL,0);
+    }
+    return (char*) "";
+  }
   *buf = 0;
   in_str = (char*) str;
   out_sz = buflen-1;

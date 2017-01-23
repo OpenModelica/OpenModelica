@@ -1,7 +1,7 @@
 Upstream Author: Open Source Modelica Consortium
                  http://www.openmodelica.org
 
-Copyright: OpenModelica as a whole is licensed under the OSMC Public 
+Copyright: OpenModelica as a whole is licensed under the OSMC Public
 License:
 
 --- Start of Definition of OSMC Public License ---
@@ -282,6 +282,8 @@ Additional software statically linked by OpenModelica:
 online http://opensource.org/licenses/BSD-3-Clause, or in the
 OpenModelica source distribution if the sources were used.
 
+[BSD-2-Clause] https://opensource.org/licenses/BSD-2-Clause
+
 [BSD-1] Like [BSD] but only requires the text reproduced if distributed as source code.
 
 [LGPL 2.1] Full text might be in the file '/usr/share/common-licenses/LGPL-2.1',
@@ -297,6 +299,7 @@ or online http://opensource.org/licenses/LGPL-2.1.
                            2006-2011 The University of Colorado Denver
 [BSD] TinyMT Copyright (c) 2011, 2013 Mutsuo Saito, Makoto Matsumoto, Hiroshima University and The University of Tokyo
 [BSD] csv-compare Tubes.cs Copyright (c) 2013, ITI GmbH Dresden
+[BSD-2-Clause] is_utf8 Copyright (c) 2013, Palard Julien
 [BSD-1] Copyright (c) 2005-2013, Troy D. Hanson http://troydhanson.github.com/uthash/
 [LGPL 2.1] lpsolve55
 [LGPL 2.1+] Copyright (C) 2008  Robert Gamble libcsv.c
