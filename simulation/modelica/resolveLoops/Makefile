@@ -3,6 +3,10 @@ TEST = ../../../rtest -v
 FAILINGTESTFILES = 
 
 TESTFILES = \
+Circuit1x.mos \
+Circuit2x.mos \
+Circuit3x.mos \
+Circuit4x.mos \
 ElectricalCircuit1.mos \
 ElectricalCircuit2.mos \
 ElectricalCircuit3.mos \
