@@ -86,7 +86,7 @@ public:
   bool isSimulationParams();
   QString getSimulationStartTime();
   QString getSimulationStopTime();
-  void addInterfacesData(QDomElement interfaces);
+  void addInterfacesData(QDomElement interfaces, QString singleModel=QString());
   bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName);

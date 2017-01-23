@@ -269,7 +269,6 @@ void MainWindow::setUpMainWindow()
 #if !defined(WITHOUT_OSG)
   // create an object of ThreeDViewer
   mpThreeDViewer = new ThreeDViewer(this);
-  mpThreeDViewer->stopRenderFrameTimer();
   // Create ThreeDViewer dock
   mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer Browser"), this);
   mpThreeDViewerDockWidget->setObjectName("3DViewer");
@@ -277,7 +276,6 @@ void MainWindow::setUpMainWindow()
   mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
   addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
   mpThreeDViewerDockWidget->hide();
-  connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
 #endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
@@ -825,7 +823,7 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
  * \param pLibraryTreeItem
  * Fetches the interface data for TLM co-simulation.
  */
-void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
+void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
 {
   /* if MetaModel text is changed manually by user then validate it before fetaching the interface data. */
   if (pLibraryTreeItem->getModelWidget()) {
@@ -838,7 +836,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), message, Helper::ok);
   } else {
     if (pLibraryTreeItem->isSaved()) {
-      fetchInterfaceDataHelper(pLibraryTreeItem);
+      fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
     } else {
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
@@ -851,7 +849,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem)
       switch (answer) {
         case QMessageBox::Yes:
           if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
-            fetchInterfaceDataHelper(pLibraryTreeItem);
+            fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
           }
           break;
         case QMessageBox::No:
@@ -2230,6 +2228,9 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
     return;
   }
 
+  FetchInterfaceDataDialog *pDialog = qobject_cast<FetchInterfaceDataDialog*>(sender());
+  QString singleModel = pDialog->getSingleModel();
+
   QFileInfo fileInfo(pLibraryTreeItem->getFileName());
   QFile file(fileInfo.absoluteDir().absolutePath()+ "/interfaceData.xml");
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -2247,7 +2248,7 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     }
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    pMetaModelEditor->addInterfacesData(interfaces);
+    pMetaModelEditor->addInterfacesData(interfaces, singleModel);
   }
 }
 
@@ -2307,22 +2308,6 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
       }
     }
   }
-}
-
-/*!
- * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
- * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
- * \param visible
- */
-void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
-{
-#if !defined(WITHOUT_OSG)
-  if (visible) {
-    mpThreeDViewer->startRenderFrameTimer();
-  } else {
-    mpThreeDViewer->stopRenderFrameTimer();
-  }
-#endif
 }
 
 /*!
@@ -3210,7 +3195,7 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
  * \param pLibraryTreeItem
  * Helper function for fetching the interface data.
  */
-void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem)
+void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
@@ -3218,7 +3203,7 @@ void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem)
       return;
     }
   }
-  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeItem, this);
+  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeItem, singleModel, this);
   connect(pFetchInterfaceDataDialog, SIGNAL(readInterfaceData(LibraryTreeItem*)), SLOT(readInterfaceData(LibraryTreeItem*)));
   pFetchInterfaceDataDialog->exec();
 }

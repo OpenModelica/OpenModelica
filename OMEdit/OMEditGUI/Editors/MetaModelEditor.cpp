@@ -244,6 +244,9 @@ void MetaModelEditor::setMetaModelName(QString name)
 bool MetaModelEditor::addSubModel(QString name, QString modelFile, QString startCommand, QString visible, QString origin,
                                   QString extent, QString rotation)
 {
+  Component* pComp = mpModelWidget->getDiagramGraphicsView()->getComponentObject(name);
+  name = name.remove(".");
+  pComp->getComponentInfo()->setName(name);
   QDomElement subModels = getSubModelsElement();
   if (!subModels.isNull()) {
     QDomElement subModel = mXmlDocument.createElement("SubModel");
@@ -537,7 +540,7 @@ QString MetaModelEditor::getSimulationStopTime()
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces
  */
-void MetaModelEditor::addInterfacesData(QDomElement interfaces)
+void MetaModelEditor::addInterfacesData(QDomElement interfaces, QString singleModel)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -545,7 +548,8 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
     QDomElement interfaceDataElement = interfaces.firstChildElement();
     while (!interfaceDataElement.isNull()) {
       subModel = subModelList.at(i).toElement();
-      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0) {
+      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0 &&
+          (subModel.attribute("Name") == singleModel || singleModel.isEmpty())) {
         QDomElement interfacePoint;
         // update interface point
         if (existInterfaceData(subModel.attribute("Name"), interfaceDataElement)) {
@@ -592,6 +596,9 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces)
 
     //Now remove all elements in sub model that does not exist in fetched interfaces (i.e. has been externally removed)
     subModel = subModelList.at(i).toElement();
+    if(subModel.attribute("Name") != singleModel && !singleModel.isEmpty()){
+        continue;   //Ignore other models if single model is specified
+    }
     Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
     QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
     while (!subModelInterfaceDataElement.isNull()) {

@@ -182,7 +182,7 @@ public:
   void exportModelFMU(LibraryTreeItem *pLibraryTreeItem);
   void exportModelXML(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
-  void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem);
+  void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
   void TLMSimulate(LibraryTreeItem *pLibraryTreeItem);
   void exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem);
   void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
@@ -431,7 +431,6 @@ public slots:
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
-  void threeDViewerDockWidgetVisibilityChanged(bool visible);
   void autoSave();
   void switchToWelcomePerspectiveSlot();
   void switchToModelingPerspectiveSlot();
@@ -450,7 +449,7 @@ private:
   void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
-  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem);
+  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);

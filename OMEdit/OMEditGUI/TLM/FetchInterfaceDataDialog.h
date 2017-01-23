@@ -49,10 +49,12 @@ class FetchInterfaceDataDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
+  FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString(), QWidget *pParent = 0);
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
+  QString getSingleModel() {return mSingleModel;}
 private:
   LibraryTreeItem *mpLibraryTreeItem;
+  QString mSingleModel;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;

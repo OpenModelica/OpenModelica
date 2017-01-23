@@ -58,7 +58,12 @@ void FetchInterfaceDataThread::run()
   connect(mpManagerProcess, SIGNAL(readyReadStandardError()), SLOT(readManagerStandardError()));
   connect(mpManagerProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
   QStringList args;
-  args << "-r" << fileInfo.absoluteFilePath();
+  args << "-r";
+  QString singleModel = mpFetchInterfaceDataDialog->getSingleModel();
+  if(!singleModel.isEmpty()) {
+      args << "-s" << singleModel;
+  }
+  args << fileInfo.absoluteFilePath();
   TLMPage *pTLMPage = OptionsDialog::instance()->getTLMPage();
   QProcessEnvironment environment;
 #ifdef WIN32

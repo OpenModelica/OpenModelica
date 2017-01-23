@@ -250,7 +250,16 @@ HEADERS  += Util/Helper.h \
 
 CONFIG(osg) {
 
+#    CONFIG += opengl
+#  }
+
+greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+  SOURCES += Animation/OpenGLWidget.cpp
+} else {
+  SOURCES += Animation/GLWidget.cpp
+}
 SOURCES += Animation/AbstractAnimationWindow.cpp \
+  Animation/ViewerWidget.cpp \
   Animation/AnimationWindow.cpp \
   Animation/ThreeDViewer.cpp \
   Animation/ExtraShapes.cpp \
@@ -261,11 +270,15 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
   Animation/Shapes.cpp \
-  Animation/TimeManager.cpp \
-  ../../osgQt/GraphicsWindowQt.cpp \
+  Animation/TimeManager.cpp
 
-
+greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+  HEADERS += Animation/OpenGLWidget.h
+} else {
+  HEADERS += Animation/GLWidget.h
+}
 HEADERS += Animation/AbstractAnimationWindow.h \
+  Animation/ViewerWidget.h \
   Animation/AnimationWindow.h \
   Animation/ThreeDViewer.h \
   Animation/AnimationUtil.h \
@@ -278,9 +291,7 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/FMUWrapper.h \
   Animation/Shapes.h \
   Animation/TimeManager.h \
-  Animation/rapidxml.hpp \
-  ../../osgQt/OMEdit_GraphicsWindowQt.h \
-  ../../osgQt/Export
+  Animation/rapidxml.hpp
 }
 
 LIBS += -lqjson
