@@ -5,6 +5,7 @@ arrfunc.mo \
 bindings1.mo \
 bindings2.mo \
 bindings3.mo \
+bindings4.mo \
 bindings5.mo \
 bindings7.mo \
 builtinmod2.mo \
@@ -23,6 +24,7 @@ DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
 eq1.mo \
+eq7.mo \
 eq10.mo \
 extends3.mo \
 ih1.mo \
@@ -62,7 +64,6 @@ usertype6.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-bindings4.mo \
 builtinmod.mo \
 compfunc.mo \
 conn3.mo \
@@ -100,7 +101,6 @@ eq3.mo \
 eq4.mo \
 eq5.mo \
 eq6.mo \
-eq7.mo \
 eq8.mo \
 eq9.mo \
 expconn4.mo \
