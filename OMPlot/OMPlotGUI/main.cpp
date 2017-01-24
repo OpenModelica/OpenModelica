@@ -51,9 +51,13 @@ using namespace OMPlot;
   else {fprintf(stderr, "%s does not describe a boolean value\n", argv[i]);} \
 }
 
-void printUsage()
+void printUsage(bool shortDescription)
 {
-    printf("Usage: OMPlot [OPTIONS] [--filename=NAME] [variable names]\n");
+  printf("Usage: OMPlot [OPTIONS] [variable names]\n");
+  if (shortDescription)
+    printf("       For detailed usage information, use 'OMPlot --help'.\n");
+  else
+  {
     printf("OPTIONS\n");
     printf("    --auto-scale=[true|false]  Use auto scale while plotting.\n");
     printf("    --curve-style=STYLE        Sets the STYLE of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7\n");
@@ -73,12 +77,7 @@ void printUsage()
     printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
     printf("    --ylabel=LABEL             Use LABEL as the label of the y-axis\n");
     printf("    --yrange=LEFT:RIGHT        Sets the initial range of the y-axis to LEFT:RIGHT\n");
-}
-
-void printShortUsage()
-{
-  printf("Usage: OMPlot [OPTIONS] [--filename=NAME] [variable names]\n");
-  printf("       For detailed usage information, use 'OMPlot --help'.\n");
+  }
 }
 
 int main(int argc, char *argv[])
@@ -109,7 +108,7 @@ int main(int argc, char *argv[])
         if (strncmp(argv[i], "--filename=", 11) == 0) {
           filename = argv[i]+11;
         } else if (strcmp(argv[i], "--help") == 0) {
-          printUsage();
+          printUsage(false);
           return 1;
         } else if (strncmp(argv[i], "--title=", 8) == 0) {
           title = argv[i]+8;
@@ -175,7 +174,7 @@ int main(int argc, char *argv[])
       if(count == 0)
       {
         fprintf(stderr, "Error: No filename specified.\n");
-        printShortUsage();
+        printUsage(true);
         return 1;
       }
       else if(count == 1)
@@ -190,14 +189,14 @@ int main(int argc, char *argv[])
           fprintf(stderr, "       * '%s'\n", resultFiles.at(i).toUtf8().constData());
 
         fprintf(stderr, "Error: No filename specified.\n");
-        printShortUsage();
+        printUsage(true);
         return 1;
       }
     }
 
     if (vars.count() == 0) {
       fprintf(stderr, "Error: No variables specified.\n");
-      printShortUsage();
+      printUsage(true);
       return 1;
     }
 
