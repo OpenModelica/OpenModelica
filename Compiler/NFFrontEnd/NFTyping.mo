@@ -47,6 +47,7 @@ import NFExpression.Expression;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
+import NFPrefix.PrefixType;
 import NFStatement.Statement;
 import NFType.Type;
 import Operator = NFOperator;
@@ -68,25 +69,15 @@ public
 function typeClass
   input output InstNode classNode;
         output Type ty;
-protected
-  Component top_inst;
 algorithm
-  (classNode, ty) := typeClassNode(classNode, classNode);
+  (classNode, ty) := typeComponents(classNode);
+  classNode := typeComponentBindings(classNode);
+  classNode := typeSections(classNode);
 end typeClass;
-
-function typeClassNode
-  input output InstNode classNode;
-  input InstNode scope;
-        output Type ty;
-algorithm
-  (classNode, ty) := typeComponents(classNode, scope);
-  (classNode) := typeComponentBindings(classNode);
-  (classNode) := typeSections(classNode, scope);
-end typeClassNode;
 
 function typeComponents
   input output InstNode classNode;
-  input InstNode scope;
+  input InstNode scope = classNode;
         output Type ty;
 protected
   Class cls;
@@ -101,7 +92,7 @@ algorithm
           if InstNode.isComponent(components[i]) then
             components[i] := typeComponent(components[i]);
           else
-            components[i] := typeClassNode(components[i], components[i]);
+            components[i] := typeComponents(components[i]);
           end if;
         end for;
       then
@@ -144,7 +135,7 @@ algorithm
           dims[i] := typeDimension(dims[i], parent, info);
         end for;
 
-        (node, ty) := typeClassNode(c.classInst, component);
+        (node, ty) := typeComponents(c.classInst, component);
         ty := Type.liftArrayLeftList(ty, arrayList(dims));
         component := InstNode.updateComponent(Component.setType(ty, c), component);
       then
@@ -198,10 +189,10 @@ end typeDimension;
 
 function typeComponentBindings
   input output InstNode classNode;
+  input InstNode scope = classNode;
 protected
   Class cls;
   array<InstNode> components;
-  InstNode scope;
 algorithm
   cls := InstNode.getClass(classNode);
 
@@ -210,7 +201,7 @@ algorithm
       algorithm
         for i in 1:arrayLength(components) loop
           if InstNode.isComponent(components[i]) then
-            components[i] := typeComponentBinding(components[i], classNode);
+            typeComponentBinding(components[i], scope);
           else
             components[i] := typeComponentBindings(components[i]);
           end if;
@@ -230,7 +221,7 @@ algorithm
 end typeComponentBindings;
 
 function typeComponentBinding
-  input output InstNode component;
+  input InstNode component;
   input InstNode scope;
 protected
   Component c = InstNode.component(component);
@@ -251,8 +242,10 @@ algorithm
 
         if not referenceEq(binding, c.binding) then
           c.binding := binding;
-          component := InstNode.updateComponent(c, component);
+          InstNode.updateComponent(c, component);
         end if;
+
+        typeComponentBindings(c.classInst, component);
       then
         ();
 
@@ -297,23 +290,32 @@ end typeBinding;
 
 function typeSections
   input output InstNode classNode;
-  input InstNode scope;
+  input InstNode scope = classNode;
 protected
   Class cls, typed_cls;
-  array<Component> components;
+  array<InstNode> components;
   list<Equation> eq, ieq;
   list<list<Statement>> alg, ialg;
 algorithm
   cls := InstNode.getClass(classNode);
 
   _ := match cls
-    case Class.INSTANCED_CLASS()
+    case Class.INSTANCED_CLASS(components = components)
       algorithm
         eq := typeEquations(cls.equations, scope);
         ieq := typeEquations(cls.initialEquations, scope);
         alg := typeAlgorithms(cls.algorithms, scope);
         ialg := typeAlgorithms(cls.initialAlgorithms, scope);
         typed_cls := Class.setSections(eq, ieq, alg, ialg, cls);
+
+        for i in 1:arrayLength(components) loop
+          if InstNode.isComponent(components[i]) then
+            typeSections(InstNode.classScope(components[i]), components[i]);
+          else
+            components[i] := typeSections(components[i]);
+          end if;
+        end for;
+
         classNode := InstNode.updateClass(typed_cls, classNode);
       then
         ();
@@ -938,40 +940,57 @@ protected
   Component comp;
 algorithm
   (node, prefix) := Lookup.lookupComponent(untypedCref, scope, info);
+
   node := typeComponent(node);
   comp := InstNode.component(node);
 
-  ty := Component.getType(comp);
-  variability := DAE.C_VAR();
-
-  prefix := appendCrefPrefix(untypedCref, prefix);
+  prefix := Prefix.fromCref(untypedCref, prefix);
+  prefix := updateCrefPrefix(untypedCref, node, prefix);
   typedCref := Expression.CREF(node, prefix);
 
-  //Component.TYPED_COMPONENT(ty = ty, attributes = attr) := ComponentNode.component(node);
-  //Component.ATTRIBUTES(variability = vr) := attr;
-  //variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
+  Component.TYPED_COMPONENT(ty = ty, attributes = attr) := comp;
+  Component.ATTRIBUTES(variability = vr) := attr;
+  variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
 end typeCref;
 
-function appendCrefPrefix
+function updateCrefPrefix
   input Absyn.ComponentRef cref;
+  input InstNode component;
   input output Prefix prefix;
 algorithm
-  prefix := match cref
-    case Absyn.CREF_IDENT()
-      then Prefix.add(cref.name, {}, Type.UNKNOWN(), prefix);
-
-    case Absyn.CREF_QUAL()
+  prefix := match (cref, prefix)
+    case (Absyn.ComponentRef.CREF_IDENT(), Prefix.PREFIX(prefixTy = PrefixType.CREF))
       algorithm
-        prefix := Prefix.add(cref.name, {}, Type.UNKNOWN(), prefix);
+        prefix.ty := Component.getType(InstNode.component(component));
       then
-        appendCrefPrefix(cref.componentRef, prefix);
+        prefix;
 
-    case Absyn.CREF_FULLYQUALIFIED()
-      then appendCrefPrefix(cref.componentRef, prefix);
+    case (Absyn.ComponentRef.CREF_QUAL(), Prefix.PREFIX(prefixTy = PrefixType.CREF))
+      algorithm
+        prefix.ty := Component.getType(InstNode.component(component));
+        prefix.restPrefix := updateCrefPrefix(cref.componentRef,
+          InstNode.parent(component), prefix.restPrefix);
+      then
+        prefix;
 
-    else prefix;
+    case (Absyn.ComponentRef.CREF_IDENT(), Prefix.PREFIX())
+      algorithm
+        prefix.prefixTy := PrefixType.CREF;
+      then
+        prefix;
+
+    case (Absyn.ComponentRef.CREF_QUAL(), Prefix.PREFIX())
+      algorithm
+        prefix.prefixTy := PrefixType.CREF;
+        prefix.restPrefix := updateCrefPrefix(cref.componentRef, component, prefix.restPrefix);
+      then
+        prefix;
+
+    case (Absyn.ComponentRef.CREF_FULLYQUALIFIED(), _)
+      then updateCrefPrefix(cref.componentRef, component, prefix);
+
   end match;
-end appendCrefPrefix;
+end updateCrefPrefix;
 
 public function variabilityToConst "translates SCode.Variability to DAE.Const"
   input SCode.Variability variability;

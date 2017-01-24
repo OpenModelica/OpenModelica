@@ -482,7 +482,7 @@ uniontype InstNode
               algorithm
                 pre := prefix(node.parentScope, pre);
               then
-                Prefix.addClass(node.name, pre);
+                Prefix.addNode(node, pre);
 
             case InstNodeType.BASE_CLASS()
               then prefix(it.parent, pre);
@@ -496,7 +496,7 @@ uniontype InstNode
         algorithm
           pre := prefix(node.parent, pre);
         then
-          Prefix.add(node.name, {}, Type.UNKNOWN(), pre);
+          Prefix.addNode(node, pre);
 
       else pre;
     end match;

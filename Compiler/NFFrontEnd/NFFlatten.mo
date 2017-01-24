@@ -114,8 +114,8 @@ algorithm
           end if;
         end for;
 
-        elements := flattenEquations(instance.equations, elements);
-        elements := flattenInitialEquations(instance.initialEquations, elements);
+        elements := flattenEquations(instance.equations, prefix, elements);
+        elements := flattenInitialEquations(instance.initialEquations, prefix, elements);
         elements := flattenAlgorithms(instance.algorithms, elements);
         elements := flattenInitialAlgorithms(instance.initialAlgorithms, elements);
       then
@@ -143,7 +143,7 @@ algorithm
     case Component.TYPED_COMPONENT()
       algorithm
         ty := Component.getType(c);
-        new_pre := Prefix.add(InstNode.name(component), {}, ty, prefix);
+        new_pre := Prefix.addNode(component, prefix);
 
         elements := match ty
           case Type.ARRAY()
@@ -356,6 +356,7 @@ end flattenBinding;
 
 function flattenEquation
   input Equation eq;
+  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 protected
   list<DAE.Element> els = {}, els1, els2;
@@ -371,18 +372,19 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        lhs := Expression.toDAE(eq.lhs);
-        rhs := Expression.toDAE(eq.rhs);
+        lhs := Expression.toDAE(applyExpPrefix(prefix, eq.lhs));
+        rhs := Expression.toDAE(applyExpPrefix(prefix, eq.rhs));
       then
         DAE.EQUATION(lhs, rhs, ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, eq.info, false) :: elements;
+      then flattenIfEquation(eq.branches, prefix, eq.info, false) :: elements;
 
     case Equation.FOR()
       algorithm
         // flatten the equations
-        els1 := List.flatten(List.map1(eq.body, flattenEquation, {}));
+        els1 := List.fold1(eq.body, flattenEquation, prefix, {});
+
         // deal with the range
         if isSome(eq.range) then
           SOME(e) := eq.range;
@@ -406,7 +408,7 @@ algorithm
         elements;
 
     case Equation.WHEN()
-      then flattenWhenEquation(eq.branches, eq.info) :: elements;
+      then flattenWhenEquation(eq.branches, prefix, eq.info) :: elements;
 
     case Equation.ASSERT()
       then DAE.ASSERT(
@@ -439,13 +441,15 @@ end flattenEquation;
 
 function flattenEquations
   input list<Equation> equations;
+  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
-  elements := List.fold(equations, flattenEquation, elements);
+  elements := List.fold1(equations, flattenEquation, prefix, elements);
 end flattenEquations;
 
 function flattenInitialEquation
   input Equation eq;
+  input Prefix prefix;
   input output list<DAE.Element> elements;
 algorithm
   elements := match eq
@@ -454,13 +458,13 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        lhs := Expression.toDAE(eq.lhs);
-        rhs := Expression.toDAE(eq.rhs);
+        lhs := Expression.toDAE(applyExpPrefix(prefix, eq.lhs));
+        rhs := Expression.toDAE(applyExpPrefix(prefix, eq.rhs));
       then
         DAE.INITIALEQUATION(lhs, rhs, ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, eq.info, true) :: elements;
+      then flattenIfEquation(eq.branches, prefix, eq.info, true) :: elements;
 
     else elements;
   end match;
@@ -468,13 +472,15 @@ end flattenInitialEquation;
 
 function flattenInitialEquations
   input list<Equation> equations;
+  input Prefix prefix;
   input output list<DAE.Element> elements = {};
 algorithm
-  elements := List.fold(equations, flattenInitialEquation, elements);
+  elements := List.fold1(equations, flattenInitialEquation, prefix, elements);
 end flattenInitialEquations;
 
 function flattenIfEquation
   input list<tuple<Expression, list<Equation>>> ifBranches;
+  input Prefix prefix;
   input SourceInfo info;
   input Boolean isInitial;
   output DAE.Element ifEquation;
@@ -486,7 +492,7 @@ protected
 algorithm
   for b in ifBranches loop
     conditions := Util.tuple21(b) :: conditions;
-    branches := flattenEquations(Util.tuple22(b)) :: branches;
+    branches := flattenEquations(Util.tuple22(b), prefix) :: branches;
   end for;
 
   // Transform the last branch to an else-branch if its condition is true.
@@ -513,6 +519,7 @@ end flattenIfEquation;
 
 function flattenWhenEquation
   input list<tuple<Expression, list<Equation>>> whenBranches;
+  input Prefix prefix;
   input SourceInfo info;
   output DAE.Element whenEquation;
 protected
@@ -525,12 +532,12 @@ algorithm
 
   head::rest := whenBranches;
   cond1 := Expression.toDAE(Util.tuple21(head));
-  els1 := flattenEquations(Util.tuple22(head));
+  els1 := flattenEquations(Util.tuple22(head), prefix);
   rest := listReverse(rest);
 
   for b in rest loop
     cond2 := Expression.toDAE(Util.tuple21(b));
-    els2 := flattenEquations(Util.tuple22(b));
+    els2 := flattenEquations(Util.tuple22(b), prefix);
     whenEquation := DAE.WHEN_EQUATION(cond2, els2, owhenEquation, ElementSource.createElementSource(info));
     owhenEquation := SOME(whenEquation);
   end for;
@@ -736,6 +743,21 @@ algorithm
   whenStatement := DAE.STMT_WHEN(cond1, {}, false, stmts1, owhenStatement, ElementSource.createElementSource(info));
 
 end flattenWhenStatement;
+
+function applyExpPrefix
+  input Prefix prefix;
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.CREF()
+      algorithm
+        exp.prefix := Prefix.transferSubscripts(prefix, exp.prefix);
+      then
+        exp;
+
+    else exp;
+  end match;
+end applyExpPrefix;
 
 function makeVarAttributes
   input list<Modifier> mods;

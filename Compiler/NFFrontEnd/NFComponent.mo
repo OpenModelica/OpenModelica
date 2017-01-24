@@ -164,6 +164,7 @@ uniontype Component
   algorithm
     ty := match component
       case TYPED_COMPONENT() then component.ty;
+      else Type.UNKNOWN();
     end match;
   end getType;
 
