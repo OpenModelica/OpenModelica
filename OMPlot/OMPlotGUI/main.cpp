@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    if (vars.count() == 0) {
+    if (vars.count() == 0 && plottype != "plotAll") {
       fprintf(stderr, "Error: No variables specified.\n");
       printUsage(true);
       return 1;
