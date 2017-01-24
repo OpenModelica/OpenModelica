@@ -204,6 +204,17 @@ void AbstractAnimationWindow::createActions()
 }
 
 /*!
+ * \brief AbstractAnimationWindow::clearView
+ */
+void AbstractAnimationWindow::clearView()
+{
+  if (mpViewerWidget) {
+    mpViewerWidget->getSceneView()->setSceneData(0);
+    mpViewerWidget->update();
+  }
+}
+
+/*!
  * \brief AbstractAnimationWindow::loadVisualization
  * loads the data and the xml scene description
  * \return

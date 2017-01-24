@@ -4669,13 +4669,12 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   pModelSwitcherLayout->setContentsMargins(0, 0, 0, 0);
   pModelSwitcherLayout->addWidget(mpRecentModelsList, 0, 0);
   mpModelSwitcherDialog->setLayout(pModelSwitcherLayout);
+  mpLastActiveSubWindow = 0;
   // install QApplication event filter to handle the ctrl+tab and ctrl+shift+tab
   QApplication::instance()->installEventFilter(this);
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(currentModelWidgetChanged(QMdiSubWindow*)));
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), MainWindow::instance(), SLOT(updateModelSwitcherMenu(QMdiSubWindow*)));
-#if !defined(WITHOUT_OSG)
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(updateThreeDViewer(QMdiSubWindow*)));
-#endif
   // add actions
   connect(MainWindow::instance()->getSaveAction(), SIGNAL(triggered()), SLOT(saveModelWidget()));
   connect(MainWindow::instance()->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
@@ -4977,6 +4976,32 @@ void ModelWidgetContainer::changeRecentModelsListSelection(bool moveDown)
   }
 }
 
+#if !defined(WITHOUT_OSG)
+/*!
+ * \brief ModelWidgetContainer::updateThreeDViewer
+ * Updates the ThreeDViewer with the visualization of the current ModelWidget.
+ * \param pModelWidget
+ */
+void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
+{
+  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    // write dummy csv file for 3d view
+    QFileInfo fileInfo(pModelWidget->getLibraryTreeItem()->getFileName());
+    QString resultFileName = QString("%1/%2.csv").arg(Utilities::tempDirectory()).arg(fileInfo.baseName());
+    QString visualXMLFileName = QString("%1/%2_visual.xml").arg(Utilities::tempDirectory()).arg(fileInfo.baseName());
+    // write dummy csv file and visualization file
+    if (pModelWidget->writeCoSimulationResultFile(resultFileName) && pModelWidget->writeVisualXMLFile(visualXMLFileName)) {
+      MainWindow::instance()->getThreeDViewerDockWidget()->show();
+      MainWindow::instance()->getThreeDViewer()->openAnimationFile(resultFileName);
+    } else {
+      MainWindow::instance()->getThreeDViewer()->clearView();
+    }
+  } else {
+    MainWindow::instance()->getThreeDViewer()->clearView();
+  }
+}
+#endif
+
 /*!
  * \brief ModelWidgetContainer::loadPreviousViewType
  * Opens the ModelWidget using the previous view type used by user.
@@ -5126,7 +5151,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
 }
 
-#if !defined(WITHOUT_OSG)
 /*!
  * \brief ModelWidgetContainer::updateThreeDViewer
  * Updates the ThreeDViewer when subWindowActivated(QMdiSubWindow*) signal of ModelWidgetContainer is raised.
@@ -5134,25 +5158,21 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
  */
 void ModelWidgetContainer::updateThreeDViewer(QMdiSubWindow *pSubWindow)
 {
+#if !defined(WITHOUT_OSG)
   if (!pSubWindow) {
     return;
   }
-  ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
-  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-    // write dummy csv file for 3d view
-    QFileInfo fileInfo(pModelWidget->getLibraryTreeItem()->getFileName());
-    QString resultFileName = QString("%1/%2.csv").arg(Utilities::tempDirectory()).arg(fileInfo.baseName());
-    QString visualXMLFileName = QString("%1/%2_visual.xml").arg(Utilities::tempDirectory()).arg(fileInfo.baseName());
-    // write dummy csv file and visualization file
-    if (pModelWidget->writeCoSimulationResultFile(resultFileName) && pModelWidget->writeVisualXMLFile(visualXMLFileName)) {
-      MainWindow::instance()->getThreeDViewerDockWidget()->show();
-      MainWindow::instance()->getThreeDViewer()->openAnimationFile(resultFileName);
-    } else {
-      //MainWindow::instance()->getThreeDViewer()->
-    }
+  /* if the same sub window is activated again then just return */
+  if (mpLastActiveSubWindow == pSubWindow) {
+    return;
   }
-}
+  mpLastActiveSubWindow = pSubWindow;
+  ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
+  updateThreeDViewer(pModelWidget);
+#else
+  Q_UNUSED(pSubWindow);
 #endif
+}
 
 /*!
  * \brief ModelWidgetContainer::saveModelWidget

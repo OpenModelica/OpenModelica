@@ -461,18 +461,20 @@ public:
   bool isShowGridLines() {return mShowGridLines;}
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
+#if !defined(WITHOUT_OSG)
+  void updateThreeDViewer(ModelWidget *pModelWidget);
+#endif
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
+  QMdiSubWindow *mpLastActiveSubWindow;
   void loadPreviousViewType(ModelWidget *pModelWidget);
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
-#if !defined(WITHOUT_OSG)
   void updateThreeDViewer(QMdiSubWindow *pSubWindow);
-#endif
   void saveModelWidget();
   void saveAsModelWidget();
   void saveTotalModelWidget();
