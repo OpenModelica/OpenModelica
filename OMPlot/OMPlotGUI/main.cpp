@@ -46,9 +46,15 @@
 using namespace OMPlot;
 
 #define CONSUME_BOOL_ARG(i,n,var) { \
-  if (0 == strcmp("true",argv[i]+n)) var = true; \
-  else if (0 == strcmp("false",argv[i]+n)) var = false; \
-  else {fprintf(stderr, "%s does not describe a boolean value\n", argv[i]);} \
+  if (0 == strcmp("true", argv[i]+n)) \
+    var = true; \
+  else if (0 == strcmp("false", argv[i]+n)) \
+    var = false; \
+  else \
+  { \
+    fprintf(stderr, "Error: %s does not describe a boolean value\n", argv[i]); \
+    return 1; \
+  } \
 }
 
 void printUsage(bool shortDescription)
