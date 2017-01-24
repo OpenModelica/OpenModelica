@@ -55,24 +55,24 @@ void printUsage()
 {
     printf("Usage: OMPlot [OPTIONS] [--filename=NAME] [variable names]\n");
     printf("OPTIONS\n");
-    printf("    --title=TITLE              Sets the TITLE of the plot window\n");
+    printf("    --auto-scale=[true|false]  Use auto scale while plotting.\n");
+    printf("    --curve-style=STYLE        Sets the STYLE of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7\n");
+    printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
+    printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
     printf("    --grid=GRID                Sets the GRID of the plot i.e simple, detailed, none\n");
+    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
     printf("    --logx=[true|false]        Use log scale for the x-axis\n");
     printf("    --logy=[true|false]        Use log scale for the y-axis\n");
-    printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
-    printf("    --ylabel=LABEL             Use LABEL as the label of the y-axis\n");
+    printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");
     printf("    --plot                     Create a normal plot\n");
     printf("    --plotAll                  Create a normal plot containing every variable in the result-file\n");
     printf("    --plotParametric           Create a parametric plot (plot variables as functions of each other)\n");
+    printf("    --title=TITLE              Sets the TITLE of the plot window\n");
+    printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
     printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
+    printf("    --ylabel=LABEL             Use LABEL as the label of the y-axis\n");
     printf("    --yrange=LEFT:RIGHT        Sets the initial range of the y-axis to LEFT:RIGHT\n");
-    printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");
-    printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
-    printf("    --curve-style=STYLE        Sets the STYLE of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7\n");
-    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
-    printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
-    printf("    --auto-scale=[true|false]  Use auto scale while plotting.\n");
 }
 
 void printShortUsage()
