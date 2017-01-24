@@ -291,7 +291,7 @@ algorithm
         // generate the enumeration type
         path = FGraph.getGraphName(env_3);
         ts = Types.mkTypeSource(SOME(path));
-        t = DAE.T_ENUMERATION(NONE(), path, names, types, {}, ts);
+        t = DAE.T_ENUMERATION(NONE(), path, names, types, {});
         env_3 = FGraph.mkTypeNode(env_3, id, t);
       then
         (cache,t,env_3);
@@ -3059,7 +3059,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexType = t),ys)
       then checkSubscripts(t,ys);
 
-    case(t as DAE.T_UNKNOWN(_), _) then t;
+    case(t as DAE.T_UNKNOWN(), _) then t;
 
     case (DAE.T_METAARRAY(), {DAE.INDEX()}) then inType.ty;
     case (DAE.T_METAARRAY(), {_}) then inType;
@@ -3416,8 +3416,7 @@ algorithm
     case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l)
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
-      then
-        DAE.SLICE(DAE.ARRAY(DAE.T_ENUMERATION(NONE(), enum_name, l, {}, {}, DAE.emptyTypeSource), true, expl));
+      then DAE.SLICE(DAE.ARRAY(DAE.T_ENUMERATION(NONE(), enum_name, l, {}, {}), true, expl));
   end match;
 end makeDimensionSubscript;
 
@@ -3541,7 +3540,7 @@ algorithm
   varlst := Types.boxVarLst(varlst);
   // for v in varlst loop print(Types.unparseType(v.ty)+"\n"); end for;
   ts := Types.mkTypeSource(SOME(path));
-  typeVarsType := list(DAE.T_METAPOLYMORPHIC(tv,{}) for tv in typeVars);
+  typeVarsType := list(DAE.T_METAPOLYMORPHIC(tv) for tv in typeVars);
   ftype := DAE.T_METARECORD(utPath,typeVarsType,index,varlst,singleton,ts);
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + Types.unparseType(ftype) +"\n");
 end buildMetaRecordType;

@@ -364,7 +364,7 @@ algorithm
       list<DAE.Var> vars;
       Absyn.Path p,pname;
 
-    case (cache,env,DAE.T_ENUMERATION(names = names, literalVarLst = vars, source = {p}),_,ClassInf.ENUMERATION(pname))
+    case (cache,env,DAE.T_ENUMERATION(names = names, literalVarLst = vars, path=p),_,ClassInf.ENUMERATION(pname))
       equation
         (cache,env_1) = updateEnumerationEnvironment1(cache,env,Absyn.pathString(pname),names,vars,p);
       then
@@ -5507,11 +5507,7 @@ algorithm
       then DAE.T_CLOCK(v);
 
     case (p,ClassInf.TYPE_ENUM(),_,_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_ENUMERATION(NONE(), p, {}, {}, {}, ts);
+      then DAE.T_ENUMERATION(NONE(), p, {}, {}, {});
 
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
     case (p,(ClassInf.FUNCTION()),vl,_,_,cl)
@@ -5654,11 +5650,7 @@ algorithm
       then DAE.T_CLOCK(v);
 
     case (p,ClassInf.TYPE_ENUM(),_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_ENUMERATION(NONE(), p,{},{},{}, ts);
+      then DAE.T_ENUMERATION(NONE(), p,{},{},{});
 
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
     case (p,(ClassInf.FUNCTION()),vl,_,cl)

@@ -2476,7 +2476,7 @@ algorithm
         (cache,newval,st);
 
     // not in CF list, we have a symbol table, generate function and update symtab
-    case (cache,env,(DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,
+    case (cache,env,(DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty=ty, builtin = false))),vallst,_,
           SOME(syt as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(),a,b,c,cf,lf)), msg, _) guard (bIsCompleteFunction and Flags.isSet(Flags.GEN)) // yeha! we have a symboltable!
       algorithm
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
@@ -2523,7 +2523,7 @@ algorithm
 
         syt := GlobalScript.SYMBOLTABLE(
                 p, a, b, c,
-                GlobalScript.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF,
+                GlobalScript.CFunction(funcpath,ty,funcHandle,buildTime,f)::newCF,
                 lf);
 
         if Flags.isSet(Flags.DYN_LOAD) then

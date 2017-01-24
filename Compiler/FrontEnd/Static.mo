@@ -858,8 +858,8 @@ algorithm
 
     // Make sure the operands have correct types.
     exp1 := Types.matchType(exp1, ty1, ty, true);
-    ty := DAE.T_METALIST(ty, DAE.emptyTypeSource);
-    exp2 := Types.matchType(exp2, ty, DAE.T_METALIST(ty2, DAE.emptyTypeSource), true);
+    ty := DAE.T_METALIST(ty);
+    exp2 := Types.matchType(exp2, ty, DAE.T_METALIST(ty2), true);
 
     outExp := DAE.CONS(exp1, exp2);
     outProperties := DAE.PROP(ty, Types.constAnd(c1, c2));
@@ -900,7 +900,7 @@ algorithm
     expl := Types.matchTypes(expl, types, ty, true);
 
     outExp := DAE.LIST(expl);
-    outProperties := DAE.PROP(DAE.T_METALIST(ty, DAE.emptyTypeSource), c);
+    outProperties := DAE.PROP(DAE.T_METALIST(ty), c);
   end if;
 end elabExp_List;
 
@@ -1077,7 +1077,7 @@ algorithm
           inExpList, inImplicit, inST, inDoVect, inPrefix, inInfo);
         types := list(Types.getPropType(p) for p in props);
         (expl, ty) := Types.listMatchSuperType(expl, types, true);
-        outProperties := DAE.PROP(DAE.T_METALIST(ty, DAE.emptyTypeSource), c);
+        outProperties := DAE.PROP(DAE.T_METALIST(ty), c);
       then
         (outCache, DAE.LIST(expl), outProperties, outST);
 
@@ -1690,7 +1690,7 @@ algorithm
       algorithm
         enum_start := Absyn.suffixPath(enum_path, listHead(enum_lits));
         enum_end := Absyn.suffixPath(enum_path, List.last(enum_lits));
-        range_ty := DAE.T_ENUMERATION(NONE(), enum_path, enum_lits, {}, {}, DAE.emptyTypeSource);
+        range_ty := DAE.T_ENUMERATION(NONE(), enum_path, enum_lits, {}, {});
         range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.ENUM_LITERAL(enum_start, 1), NONE(),
@@ -2300,7 +2300,7 @@ algorithm
         (cache,es_1,props) = elabTuple(cache,env,es,impl,false,pre,info,false);
         (types,consts) = splitProps(props);
       then
-        (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE(DAE.T_TUPLE(types,NONE(),DAE.emptyTypeSource),DAE.TUPLE_CONST(consts)));
+        (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE(DAE.T_TUPLE(types,NONE()),DAE.TUPLE_CONST(consts)));
 
     // array-related expressions
     case (cache,env,Absyn.RANGE(start = start,step = NONE(),stop = stop),impl,pre,_)
@@ -3746,7 +3746,7 @@ algorithm
     (arg, ty) := Types.matchType(arg, ty, DAE.T_METABOXED_DEFAULT, true);
     c := Types.propAllConst(prop);
     outExp := DAE.META_OPTION(SOME(arg));
-    outProperties := DAE.PROP(DAE.T_METAOPTION(ty, DAE.emptyTypeSource), c);
+    outProperties := DAE.PROP(DAE.T_METAOPTION(ty), c);
   end if;
 end elabBuiltinSome;
 
@@ -3773,8 +3773,7 @@ algorithm
       {"NONE", ""}, inInfo);
   else
     outExp := DAE.META_OPTION(NONE());
-    outProperties := DAE.PROP(DAE.T_METAOPTION(DAE.T_UNKNOWN_DEFAULT,
-      DAE.emptyTypeSource), DAE.C_CONST());
+    outProperties := DAE.PROP(DAE.T_METAOPTION(DAE.T_UNKNOWN_DEFAULT), DAE.C_CONST());
   end if;
 end elabBuiltinNone;
 
@@ -8231,7 +8230,7 @@ algorithm
         str := "Failed to match types:\n    actual:   " +
           Types.unparseType(Types.getPropType(prop)) +
           "\n    expected: " +
-          Types.unparseType(DAE.T_TUPLE(tys, NONE(), DAE.emptyTypeSource));
+          Types.unparseType(DAE.T_TUPLE(tys, NONE()));
         fn_str := Absyn.pathString(fq_path);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
       then
@@ -10921,9 +10920,8 @@ algorithm
       list<DAE.Var> v, al;
       DAE.TypeSource ts;
 
-    case DAE.T_ENUMERATION(index = SOME(_), path = p, names = n, literalVarLst = v, attributeLst = al, source = ts)
-      then
-        DAE.T_ENUMERATION(NONE(), p, n, v, al, ts);
+    case DAE.T_ENUMERATION(index = SOME(_), path = p, names = n, literalVarLst = v, attributeLst = al)
+      then DAE.T_ENUMERATION(NONE(), p, n, v, al);
 
     else inType;
   end matchcontinue;
@@ -10961,7 +10959,7 @@ protected
 algorithm
   enum_lit_expl := Expression.makeEnumLiterals(enumTypeName, enumLiterals);
   sz := listLength(enumLiterals);
-  ety := DAE.T_ARRAY(DAE.T_ENUMERATION(NONE(), enumTypeName, enumLiterals, {}, {}, DAE.emptyTypeSource),
+  ety := DAE.T_ARRAY(DAE.T_ENUMERATION(NONE(), enumTypeName, enumLiterals, {}, {}),
                      {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)});
   enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
   enumArrayType := ety;
@@ -13203,10 +13201,10 @@ algorithm
     tys2 := list(Types.boxIfUnboxedType(ty) for ty in types);
     (exps2, tys2) := Types.matchTypeTuple(exps, types, tys2, false);
     exp := DAE.META_TUPLE(exps2);
-    prop := DAE.PROP(DAE.T_METATUPLE(tys2, DAE.emptyTypeSource), c);
+    prop := DAE.PROP(DAE.T_METATUPLE(tys2), c);
   else
     exp := DAE.TUPLE(exps);
-    prop := DAE.PROP_TUPLE(DAE.T_TUPLE(types, NONE(), DAE.emptyTypeSource), DAE.TUPLE_CONST(consts));
+    prop := DAE.PROP_TUPLE(DAE.T_TUPLE(types, NONE()), DAE.TUPLE_CONST(consts));
   end if;
 end fixTupleMetaModelica;
 

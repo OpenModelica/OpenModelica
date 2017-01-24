@@ -543,11 +543,11 @@ protected
   list<DAE.Exp> expList = {};
 algorithm
   for i in 1:ix-1 loop
-    expList := DAE.CREF(DAE.WILD(),DAE.T_UNKNOWN({}))::expList;
+    expList := DAE.CREF(DAE.WILD(),DAE.T_UNKNOWN_DEFAULT)::expList;
   end for;
   expList := cref::expList;
   for i in ix+1:length loop
-    expList := DAE.CREF(DAE.WILD(),DAE.T_UNKNOWN({}))::expList;
+    expList := DAE.CREF(DAE.WILD(),DAE.T_UNKNOWN_DEFAULT)::expList;
   end for;
   outCref := DAE.TUPLE(listReverse(expList));
 end createCrefForTsub;

@@ -356,7 +356,7 @@ public uniontype Element
 
 end Element;
 
-public constant Type T_ASSERTIONLEVEL = T_ENUMERATION(NONE(), Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")), {"error","warning"}, {}, {}, emptyTypeSource);
+public constant Type T_ASSERTIONLEVEL = T_ENUMERATION(NONE(), Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")), {"error","warning"}, {}, {});
 public constant Exp ASSERTIONLEVEL_ERROR = ENUM_LITERAL(Absyn.QUALIFIED("AssertionLevel",Absyn.IDENT("error")),1);
 public constant Exp ASSERTIONLEVEL_WARNING = ENUM_LITERAL(Absyn.QUALIFIED("AssertionLevel",Absyn.IDENT("warning")),2);
 
@@ -827,19 +827,19 @@ constant Type T_INTEGER_DEFAULT     = T_INTEGER({});
 constant Type T_STRING_DEFAULT      = T_STRING({});
 constant Type T_BOOL_DEFAULT        = T_BOOL({});
 constant Type T_CLOCK_DEFAULT       = T_CLOCK({});
-constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
-constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
-constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
-constant Type T_STRING_BOXED        = T_METABOXED(T_STRING_DEFAULT, emptyTypeSource);
-constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT, emptyTypeSource);
-constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT, emptyTypeSource);
-constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT, emptyTypeSource);
-constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT, emptyTypeSource);
-constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(), emptyTypeSource);
-constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN(emptyTypeSource);
+constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {});
+constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT);
+constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT);
+constant Type T_STRING_BOXED        = T_METABOXED(T_STRING_DEFAULT);
+constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT);
+constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT);
+constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT);
+constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT);
+constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(),emptyTypeSource);
+constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN();
 constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
 constant Type T_FUNCTION_DEFAULT    = T_FUNCTION({},T_ANYTYPE_DEFAULT,FUNCTION_ATTRIBUTES_DEFAULT,emptyTypeSource);
-constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
+constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT);
 constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
 constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
 
@@ -889,7 +889,6 @@ public uniontype Type "models the different front-end and back-end types"
     list<String> names "names" ;
     list<Var> literalVarLst;
     list<Var> attributeLst;
-    TypeSource source;
   end T_ENUMERATION;
 
   record T_ARRAY
@@ -906,7 +905,6 @@ public uniontype Type "models the different front-end and back-end types"
   end T_NORETCALL;
 
   record T_UNKNOWN "Used when type is not yet determined"
-    TypeSource source;
   end T_UNKNOWN;
 
   record T_COMPLEX
@@ -933,7 +931,6 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
     Type functionType "the type of the function";
-    TypeSource source;
   end T_FUNCTION_REFERENCE_VAR;
 
   record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
@@ -945,7 +942,6 @@ public uniontype Type "models the different front-end and back-end types"
   record T_TUPLE
     list<Type> types "For functions returning multiple values.";
     Option<list<String>> names "For tuples elements that have names (function outputs)";
-    TypeSource source;
   end T_TUPLE;
 
   record T_CODE
@@ -961,17 +957,14 @@ public uniontype Type "models the different front-end and back-end types"
   // MetaModelica extensions
   record T_METALIST "MetaModelica list type"
     Type ty "listType";
-    TypeSource source;
   end T_METALIST;
 
   record T_METATUPLE "MetaModelica tuple type"
     list<Type> types;
-    TypeSource source;
   end T_METATUPLE;
 
   record T_METAOPTION "MetaModelica option type"
     Type ty;
-    TypeSource source;
   end T_METAOPTION;
 
   record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
@@ -996,22 +989,18 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_METAARRAY
     Type ty;
-    TypeSource source;
   end T_METAARRAY;
 
   record T_METABOXED "Used for MetaModelica generic types"
     Type ty;
-    TypeSource source;
   end T_METABOXED;
 
   record T_METAPOLYMORPHIC
     String name;
-    TypeSource source;
   end T_METAPOLYMORPHIC;
 
   record T_METATYPE "this type contains all the meta types"
     Type ty;
-    TypeSource source;
   end T_METATYPE;
 
 end Type;

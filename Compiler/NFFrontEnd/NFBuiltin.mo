@@ -240,8 +240,7 @@ public constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defau
 public constant DAE.Type BUILTIN_TYPE_STATE_SELECT = DAE.T_ENUMERATION(
   NONE(),
   Absyn.IDENT("StateSelect"),
-  {"never", "avoid", "default", "prefer", "always"}, {}, {},
-  DAE.emptyTypeSource
+  {"never", "avoid", "default", "prefer", "always"}, {}, {}
 );
 
 annotation(__OpenModelica_Interface="frontend");

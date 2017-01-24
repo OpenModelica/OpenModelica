@@ -3068,11 +3068,11 @@ algorithm
       list<DAE.Exp> exps;
       list<DAE.Type> tys,tys2;
       list<Absyn.Path> source;
-    case (DAE.META_TUPLE(exps),DAE.T_METATUPLE(types=tys,source=source))
+    case (DAE.META_TUPLE(exps),DAE.T_METATUPLE(types=tys))
       equation
         tys2 = List.map(tys, Types.unboxedType);
         (exps,tys2) = Types.matchTypeTuple(exps, tys, tys2, false);
-      then (DAE.TUPLE(exps),DAE.T_TUPLE(tys2,NONE(),source));
+      then (DAE.TUPLE(exps),DAE.T_TUPLE(tys2,NONE()));
     else (inExp,inType);
   end match;
 end makeTupleFromMetaTuple;

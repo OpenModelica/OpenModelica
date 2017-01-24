@@ -1144,14 +1144,13 @@ algorithm
     Integer fillValue "The amount of elements to add";
     DAE.Type propType;
     list<DAE.Type> lst,lst2;
-    DAE.TypeSource ts;
     list<DAE.TupleConst> tupleConst,tupleConst2;
     DAE.Const tconst;
     Option<list<String>> names;
 
   case (Absyn.TUPLE(aexpl),
         DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types=typeList,names=names)),
-        DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types=lst,source=ts),
+        DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types=lst),
                        tupleConst = DAE.TUPLE_CONST(tupleConst)))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
@@ -1162,9 +1161,9 @@ algorithm
       lst2 = listAppend(lst,lst2);
       tupleConst2 = listAppend(tupleConst,tupleConst2);
     then
-      (Absyn.TUPLE(aexpl2),DAE.PROP_TUPLE(DAE.T_TUPLE(lst2,names,ts),DAE.TUPLE_CONST(tupleConst2)));
+      (Absyn.TUPLE(aexpl2),DAE.PROP_TUPLE(DAE.T_TUPLE(lst2,names),DAE.TUPLE_CONST(tupleConst2)));
 
-  case(_, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(typeList,names,_)), DAE.PROP(propType,tconst))
+  case(_, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(typeList,names)), DAE.PROP(propType,tconst))
     equation
       fillValue = (listLength(typeList)-1);
       aexpl2 = List.fill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
@@ -1174,7 +1173,7 @@ algorithm
       lst = propType::lst2;
       tupleConst = DAE.SINGLE_CONST(tconst)::tupleConst2;
     then
-      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,names,DAE.emptyTypeSource),DAE.TUPLE_CONST(tupleConst)));
+      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,names),DAE.TUPLE_CONST(tupleConst)));
 
   case (_, _, _) guard(not Types.isPropTuple(propCall))
     then (inExp,propTuple);

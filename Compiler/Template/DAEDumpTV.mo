@@ -926,27 +926,22 @@ package DAE
 
     record T_INTEGER
       list<Var> varLst;
-      TypeSource source;
     end T_INTEGER;
 
     record T_REAL
       list<Var> varLst;
-      TypeSource source;
     end T_REAL;
 
     record T_STRING
       list<Var> varLst;
-      TypeSource source;
     end T_STRING;
 
     record T_BOOL
       list<Var> varLst;
-      TypeSource source;
     end T_BOOL;
 
     record T_CLOCK
       list<Var> varLst;
-      TypeSource source;
     end T_CLOCK;
 
     record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
@@ -955,7 +950,6 @@ package DAE
       list<String> names "names" ;
       list<Var> literalVarLst;
       list<Var> attributeLst;
-      TypeSource source;
     end T_ENUMERATION;
 
     record T_ARRAY
@@ -965,7 +959,6 @@ package DAE
          In general Inst generates 1 and all the others generates 2"
       Type ty "Type";
       Dimensions dims "dims";
-      TypeSource source;
     end T_ARRAY;
 
     record T_NORETCALL "For functions not returning any values."
@@ -973,7 +966,6 @@ package DAE
     end T_NORETCALL;
 
     record T_UNKNOWN "Used when type is not yet determined"
-      TypeSource source;
     end T_UNKNOWN;
 
     record T_COMPLEX
@@ -1000,7 +992,6 @@ package DAE
 
     record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
       Type functionType "the type of the function";
-      TypeSource source;
     end T_FUNCTION_REFERENCE_VAR;
 
     record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
@@ -1011,7 +1002,6 @@ package DAE
 
     record T_TUPLE
       list<Type> types "For functions returning multiple values.";
-      TypeSource source;
     end T_TUPLE;
 
     record T_CODE
@@ -1021,23 +1011,19 @@ package DAE
 
     record T_ANYTYPE
       Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
-      TypeSource source;
     end T_ANYTYPE;
 
     // MetaModelica extensions
     record T_METALIST "MetaModelica list type"
       Type ty "listType";
-      TypeSource source;
     end T_METALIST;
 
     record T_METATUPLE "MetaModelica tuple type"
       list<Type> types;
-      TypeSource source;
     end T_METATUPLE;
 
     record T_METAOPTION "MetaModelica option type"
       Type ty;
-      TypeSource source;
     end T_METAOPTION;
 
     record T_METAUNIONTYPE "MetaModelica Uniontype"
@@ -1058,22 +1044,18 @@ package DAE
 
     record T_METAARRAY
       Type ty;
-      TypeSource source;
     end T_METAARRAY;
 
     record T_METABOXED "Used for MetaModelica generic types"
       Type ty;
-      TypeSource source;
     end T_METABOXED;
 
     record T_METAPOLYMORPHIC
       String name;
-      TypeSource source;
     end T_METAPOLYMORPHIC;
 
     record T_METATYPE "this type contains all the meta types"
       Type ty;
-      TypeSource source;
     end T_METATYPE;
 
   end Type;

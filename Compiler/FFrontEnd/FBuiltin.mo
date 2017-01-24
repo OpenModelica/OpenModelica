@@ -300,7 +300,7 @@ protected constant DAE.Type int2bool =
 
 protected constant DAE.Type enumeration2int =
           DAE.T_FUNCTION(
-            {DAE.FUNCARG("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+            {DAE.FUNCARG("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);

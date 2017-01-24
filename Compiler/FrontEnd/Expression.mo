@@ -2147,11 +2147,10 @@ algorithm
         sizeOf(ty);
 
     case DAE.T_METATYPE(ty=ty)
-      then
-        sizeOf(ty);
+      then sizeOf(ty);
 
     // 0 for T_UNKNOWN as it can only appear in tuples for WILD()??!!
-    case DAE.T_UNKNOWN(_) then 0;
+    case DAE.T_UNKNOWN() then 0;
 
     // for all other consider it just 1 variable
     else 1;
@@ -2248,7 +2247,7 @@ algorithm
     case (DAE.SCONST()) then DAE.T_STRING_DEFAULT;
     case (DAE.BCONST()) then DAE.T_BOOL_DEFAULT;
     case (DAE.CLKCONST()) then DAE.T_CLOCK_DEFAULT;
-    case (DAE.ENUM_LITERAL(name = p, index=i)) then DAE.T_ENUMERATION(SOME(i), p, {}, {}, {}, DAE.emptyTypeSource);
+    case (DAE.ENUM_LITERAL(name = p, index=i)) then DAE.T_ENUMERATION(SOME(i), p, {}, {}, {});
     case (DAE.CREF(ty = tp)) then tp;
     case (DAE.BINARY(operator = op)) then typeofOp(op);
     case (DAE.UNARY(operator = op)) then typeofOp(op);
@@ -2294,29 +2293,22 @@ algorithm
     case (DAE.SIZE(_,SOME(_))) then DAE.T_INTEGER_DEFAULT;
 
     // MetaModelica extension
-    case (DAE.LIST()) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT, DAE.emptyTypeSource);
-    case (DAE.CONS()) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT, DAE.emptyTypeSource);
+    case (DAE.LIST()) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT);
+    case (DAE.CONS()) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT);
     case (DAE.META_TUPLE(exps))
       equation
          tys = List.map(exps, typeof);
       then
-        DAE.T_METATYPE(DAE.T_METATUPLE(tys, DAE.emptyTypeSource), DAE.emptyTypeSource);
+        DAE.T_METATYPE(DAE.T_METATUPLE(tys));
     case (DAE.TUPLE(exps))
       equation
          tys = List.map(exps, typeof);
-      then
-        DAE.T_TUPLE(tys, NONE(), DAE.emptyTypeSource);
-    case (DAE.META_OPTION(_))then DAE.T_METATYPE(DAE.T_NONE_DEFAULT, DAE.emptyTypeSource);
+      then DAE.T_TUPLE(tys, NONE());
+    case (DAE.META_OPTION()) then DAE.T_METATYPE(DAE.T_NONE_DEFAULT);
     case (DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars))
-      equation
-
-      then
-        DAE.T_METATYPE(DAE.T_METARECORD(p, typeVars, i, {}, false, DAE.emptyTypeSource), DAE.emptyTypeSource);
+      then DAE.T_METATYPE(DAE.T_METARECORD(p, typeVars, i, {}, false, DAE.emptyTypeSource));
     case (DAE.BOX(e))
-      equation
-         ty = typeof(e);
-      then
-        DAE.T_METATYPE(DAE.T_METABOXED(ty, DAE.emptyTypeSource), DAE.emptyTypeSource);
+      then DAE.T_METATYPE(DAE.T_METABOXED(typeof(e)));
     case (DAE.MATCHEXPRESSION(et=tp))
       then tp;
     case (DAE.UNBOX(ty = tp)) then tp;
@@ -4373,7 +4365,7 @@ input DAE.Type inTp;
 output DAE.Type outTp;
 algorithm
   outTp := match(inTp)
-    case (DAE.T_UNKNOWN(_)) then DAE.T_REAL_DEFAULT;
+    case DAE.T_UNKNOWN() then DAE.T_REAL_DEFAULT;
     else inTp;
   end match;
 end checkIfOther;

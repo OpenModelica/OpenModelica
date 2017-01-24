@@ -1089,7 +1089,7 @@ algorithm
         (cache,fq_class) = makeFullyQualifiedIdent(cache,env_2, n);
         eqConstraint = InstUtil.equalityConstraint(env_2, els, info);
         // DAEUtil.addComponentType(dae1, fq_class);
-        ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, {fq_class});
+        ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys);
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
         bc = if isSome(bc) then bc else SOME(ty2);
         ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
@@ -2374,7 +2374,7 @@ algorithm
         instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets,info);
         ty = listHead(tys);
         ty = Types.boxIfUnboxedType(ty);
-        bc = SOME(DAE.T_METALIST(ty,DAE.emptyTypeSource));
+        bc = SOME(DAE.T_METALIST(ty));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
@@ -2388,7 +2388,7 @@ algorithm
         (cache,_,ih,{ty},csets,oDA) =
         instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets,info);
         ty = Types.boxIfUnboxedType(ty);
-        bc = SOME(DAE.T_METAOPTION(ty,DAE.emptyTypeSource));
+        bc = SOME(DAE.T_METAOPTION(ty));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
@@ -2401,7 +2401,7 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets,info);
         tys = List.map(tys, Types.boxIfUnboxedType);
-        bc = SOME(DAE.T_METATUPLE(tys,DAE.emptyTypeSource));
+        bc = SOME(DAE.T_METATUPLE(tys));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
@@ -2414,7 +2414,7 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets,info);
         ty = Types.boxIfUnboxedType(ty);
-        bc = SOME(DAE.T_METAARRAY(ty,DAE.emptyTypeSource));
+        bc = SOME(DAE.T_METAARRAY(ty));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
@@ -2426,7 +2426,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,_,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{}, inSets,info);
-        bc = SOME(DAE.T_METAPOLYMORPHIC(className,DAE.emptyTypeSource));
+        bc = SOME(DAE.T_METAPOLYMORPHIC(className));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 

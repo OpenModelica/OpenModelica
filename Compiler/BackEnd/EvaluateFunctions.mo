@@ -616,7 +616,7 @@ algorithm
   case(DAE.TUPLE(PR = eLst))
     algorithm
       then List.fold(List.map(eLst,hasUnknownType),boolOr,false);
-  case(DAE.CREF(ty=DAE.T_UNKNOWN(_)))
+  case(DAE.CREF(ty=DAE.T_UNKNOWN()))
     then true;
   else
     then false;
@@ -877,7 +877,7 @@ algorithm
         newOutputVars = List.filterOnTrue(updatedVarOutputs,DAEUtil.isOutputVar);
         outputVarTypes = List.map(newOutputVars,DAEUtil.getVariableType);
         outputVarNames = List.map(newOutputVars,DAEUtil.varName);
-        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,SOME(outputVarNames),DAE.emptyTypeSource));
+        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,SOME(outputVarNames)));
         DAE.CALL_ATTR(ty = singleOutputType) = attr1;
         singleOutputType = if not listEmpty(newOutputVars) then listHead(outputVarTypes) else singleOutputType;//if the function is evaluated completely
         attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
@@ -1581,7 +1581,7 @@ algorithm
       //print("the out types1: "+Types.unparseType(outType)+"\n");
       outTypeLst = list(DAEUtil.getVariableType(o) for o in outputs);
       outNames = list(DAEUtil.varName(o) for o in outputs);
-      outType = if intEq(listLength(outTypeLst),1) then listHead(outTypeLst) else DAE.T_TUPLE(outTypeLst,SOME(outNames),DAE.emptyTypeSource);
+      outType = if intEq(listLength(outTypeLst),1) then listHead(outTypeLst) else DAE.T_TUPLE(outTypeLst,SOME(outNames));
       outType = DAE.T_FUNCTION(inputs,outType,atts,source);
       //print("the out types2: "+Types.unparseType(outType)+"\n");
     then

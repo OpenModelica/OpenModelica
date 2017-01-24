@@ -74,27 +74,27 @@ public constant DAE.Type stateSelectType =
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
           DAE.TYPES_VAR("never",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("avoid",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("default",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("prefer",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("always",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
-          },{},DAE.emptyTypeSource);
+             DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),DAE.UNBOUND(),NONE())
+          },{});
 
 public constant DAE.Type uncertaintyType =
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"given","sought","refine"},
           {
            DAE.TYPES_VAR("given",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine"},{},{}),DAE.UNBOUND(),NONE()),
            DAE.TYPES_VAR("sought",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine"},{},{}),DAE.UNBOUND(),NONE()),
            DAE.TYPES_VAR("refine",DAE.dummyAttrParam,
-             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
-          },{},DAE.emptyTypeSource);
+             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{}),DAE.UNBOUND(),NONE())
+          },{});
 
 public constant DAE.Type distributionType =
   DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("Distribution")),

@@ -719,7 +719,6 @@ package DAE
     end T_NORETCALL;
 
     record T_UNKNOWN
-      TypeSource source;
     end T_UNKNOWN;
 
     record T_COMPLEX
