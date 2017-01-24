@@ -192,11 +192,21 @@ int main(int argc, char *argv[])
       {
         fprintf(stdout, "Info:  This directory contains following result files:\n");
         for(int i=0;i<count;i++)
-          fprintf(stderr, "       * '%s'\n", resultFiles.at(i).toUtf8().constData());
+          fprintf(stdout, "         %d. %s\n", i+1, resultFiles.at(i).toUtf8().constData());
+        fprintf(stdout, "         0. another file\n");
 
-        fprintf(stderr, "Error: No filename specified.\n");
-        printUsage(true);
-        return 1;
+        int choise;
+        fprintf(stdout, "       Make your choice: ");
+        scanf("%d", &choise);
+        if(choise > 0 && choise <= count)
+          filename = resultFiles.at(choise-1);
+        else
+        {
+          if(choise != 0)
+            fprintf(stderr, "Error: Invalid index specified.\n");
+          printUsage(true);
+          return 1;
+        }
       }
     }
 
