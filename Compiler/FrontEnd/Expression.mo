@@ -9317,161 +9317,137 @@ algorithm
 end expStructuralEqualListLst;
 
 public function expContains
-"Returns true if first expression contains the
-  second one as a sub expression. Only component
-  references or der(componentReference) can be
-  checked so far."
+"Returns true if first expression contains the second one as a sub expression.
+Only constants, component references or der(componentReference) can be checked
+so far."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp1,inExp2)
+  outBoolean := matchcontinue (inExp1, inExp2)
     local
-      Integer i;
-      DAE.Exp cr,c1,c2,e1,e2,e,c,t,f,cref;
-      String s,str,s1,s2;
-      Boolean res,res1,res2,res3;
-      list<DAE.Exp> explist,args;
+      Boolean b1, b2;
+      Boolean res;
+      ComponentRef cr1, cr2;
+      DAE.Exp e1, e2, e, c, t, f;
+      Integer i1, i2;
+      list<DAE.Exp> expLst;
       list<list<DAE.Exp>> expl;
-      ComponentRef cr1,cr2;
-      Operator op;
-      Absyn.Path fcn;
+      Real r1, r2;
+      String str, s1, s2;
 
-    case (DAE.ICONST(),_) then false;
-    case (DAE.RCONST(),_) then false;
-    case (DAE.SCONST(),_) then false;
-    case (DAE.BCONST(),_) then false;
+    case (DAE.ICONST(i1), DAE.ICONST(i2)) then i1 == i2;
+    case (DAE.ICONST(), _) then false;
+
+    case (DAE.RCONST(r1), DAE.RCONST(r2)) then r1 == r2;
+    case (DAE.RCONST(), _) then false;
+
+    case (DAE.SCONST(s1), DAE.SCONST(s2)) then s1 == s2;
+    case (DAE.SCONST(), _) then false;
+
+    case (DAE.BCONST(b1), DAE.BCONST(b2)) then b1 == b2;
+    case (DAE.BCONST(), _) then true;
+
     case (DAE.ENUM_LITERAL(), _) then false;
-    case (DAE.ARRAY(array = explist),cr)
-      equation
-        res = List.map1BoolOr(explist, expContains, cr);
-      then
-        res;
 
-    case (DAE.MATRIX(matrix = expl),cr)
-      equation
-        res = List.map1ListBoolOr(expl, expContains, cr);
-      then
-        res;
+    case (DAE.ARRAY(array=expLst), _) equation
+      res = List.map1BoolOr(expLst, expContains, inExp2);
+    then res;
 
-    case ((DAE.CREF(componentRef = cr1)), cref as (DAE.CREF(componentRef = cr2)))
-      equation
-        res = ComponentReference.crefEqual(cr1, cr2);
-        if not res then
-          explist = List.map(ComponentReference.crefSubs(cr1), getSubscriptExp);
-          res = List.map1BoolOr(explist, expContains, cref);
-        end if;
-      then
-        res;
+    case (DAE.MATRIX(matrix=expl), _) equation
+      res = List.map1ListBoolOr(expl, expContains, inExp2);
+    then res;
+
+    case (DAE.CREF(componentRef=cr1), DAE.CREF(componentRef=cr2)) equation
+      res = ComponentReference.crefEqual(cr1, cr2);
+      if not res then
+        expLst = List.map(ComponentReference.crefSubs(cr1), getSubscriptExp);
+        res = List.map1BoolOr(expLst, expContains, inExp2);
+      end if;
+    then res;
 
     case ((DAE.CREF()), _) then false;
 
-    case (DAE.BINARY(exp1 = e1,exp2 = e2),cr)
-      equation
-        res1 = expContains(e1, cr);
-        res = if res1 then true else expContains(e2, cr);
-      then
-        res;
+    case (DAE.BINARY(exp1=e1, exp2=e2), _) equation
+      res = expContains(e1, inExp2);
+      res = if res then true else expContains(e2, inExp2);
+    then res;
 
-    case (DAE.UNARY(exp = e),cr)
-      equation
-        res = expContains(e, cr);
-      then
-        res;
+    case (DAE.UNARY(exp=e), _) equation
+      res = expContains(e, inExp2);
+    then res;
 
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2),cr)
-      equation
-        res1 = expContains(e1, cr);
-        res = if res1 then true else expContains(e2, cr);
-      then
-        res;
+    case (DAE.LBINARY(exp1=e1, exp2=e2), _) equation
+      res = expContains(e1, inExp2);
+      res = if res then true else expContains(e2, inExp2);
+    then res;
 
-    case (DAE.LUNARY(exp = e),cr )
-      equation
-        res = expContains(e, cr);
-      then
-        res;
+    case (DAE.LUNARY(exp=e), _) equation
+      res = expContains(e, inExp2);
+    then res;
 
-    case (DAE.RELATION(exp1 = e1,exp2 = e2),cr)
-      equation
-        res1 = expContains(e1, cr);
-        res = if res1 then true else expContains(e2, cr);
-      then
-        res;
+    case (DAE.RELATION(exp1=e1, exp2=e2), _) equation
+      res = expContains(e1, inExp2);
+      res = if res then true else expContains(e2, inExp2);
+    then res;
 
-    case (DAE.IFEXP(expCond = c,expThen = t,expElse = f),cr)
-      equation
-        res = expContains(c, cr);
-        res = if res then true else expContains(t, cr);
-        res = if res then true else expContains(f, cr);
-      then
-        res;
+    case (DAE.IFEXP(expCond=c, expThen=t, expElse=f), _) equation
+      res = expContains(c, inExp2);
+      res = if res then true else expContains(t, inExp2);
+      res = if res then true else expContains(f, inExp2);
+    then res;
 
-    case(DAE.CALL(path=Absyn.IDENT(name="der"),expLst={DAE.CREF(cr1,_)}),
-         DAE.CALL(path=Absyn.IDENT(name="der"),expLst={DAE.CREF(cr2,_)}))
-      equation
-        res = ComponentReference.crefEqual(cr1,cr2);
-      then res;
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(cr1)}),
+          DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(cr2)})) equation
+      res = ComponentReference.crefEqual(cr1, cr2);
+    then res;
 
     // pre(v) does not contain variable v
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {_}),_) then false;
-
-    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {_}),_) then false;
+    case (DAE.CALL(path=Absyn.IDENT(name="pre")), _) then false;
+    case (DAE.CALL(path=Absyn.IDENT(name="previous")), _) then false;
 
     // special rule for no arguments
-    case (DAE.CALL(expLst = {}),_) then false;
+    case (DAE.CALL(expLst={}), _)
+     then false;
 
     // general case for arguments
-    case (DAE.CALL(expLst = args), cr)
-      equation
-        res = List.map1BoolOr(args, expContains, cr);
-      then
-        res;
+    case (DAE.CALL(expLst=expLst), _) equation
+      res = List.map1BoolOr(expLst, expContains, inExp2);
+    then res;
 
-    case (DAE.PARTEVALFUNCTION(expList = args),(cr as DAE.CREF()))
-      equation
-        res = List.map1BoolOr(args, expContains, cr);
-      then
-        res;
+    case (DAE.PARTEVALFUNCTION(expList=expLst), DAE.CREF()) equation
+      res = List.map1BoolOr(expLst, expContains, inExp2);
+    then res;
 
-    /*/ record constructors
-    case (DAE.RECORD(exps = args),(cr as DAE.CREF()))
-      equation
-        res = List.map1BoolOr(args, expContains, cr);
-      then
-        res; */
+    /* record constructors
+    case (DAE.RECORD(exps=expLst), DAE.CREF()) equation
+      res = List.map1BoolOr(expLst, expContains, inExp2);
+    then res; */
 
-    case (DAE.CAST(ty = DAE.T_REAL(),exp = DAE.ICONST()),_ ) then false;
+    case (DAE.CAST(ty=DAE.T_REAL(), exp=DAE.ICONST()), _)
+    then false;
 
-    case (DAE.CAST(ty = DAE.T_REAL(),exp = e),cr )
-      equation
-        res = expContains(e, cr);
-      then
-        res;
+    case (DAE.CAST(ty=DAE.T_REAL(), exp=e), _) equation
+      res = expContains(e, inExp2);
+    then res;
 
-    case (DAE.ASUB(exp = e,sub = explist),cr)
-      equation
-        res = List.map1BoolOr(explist, expContains, cr);
-        res = if res then true else expContains(e, cr);
-      then
-        res;
+    case (DAE.ASUB(exp=e, sub=expLst), _) equation
+      res = List.map1BoolOr(expLst, expContains, inExp2);
+      res = if res then true else expContains(e, inExp2);
+    then res;
 
-    case (DAE.REDUCTION(expr = e), cr)
-      equation
-        res = expContains(e, cr);
-      then
-        res;
+    case (DAE.REDUCTION(expr=e), _) equation
+      res = expContains(e, inExp2);
+    then res;
 
-    case (_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Expression.expContains failed\n");
-        s1 = ExpressionDump.printExpStr(inExp1);
-        s2 = ExpressionDump.printExpStr(inExp2);
-        str = stringAppendList({"exp = ", s1," subexp = ", s2});
-        Debug.traceln(str);
-      then
-        fail();
+    else equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      Debug.trace("- Expression.expContains failed\n");
+      s1 = ExpressionDump.printExpStr(inExp1);
+      s2 = ExpressionDump.printExpStr(inExp2);
+      str = stringAppendList({"exp = ", s1," subexp = ", s2});
+      Debug.traceln(str);
+    then fail();
   end matchcontinue;
 end expContains;
 

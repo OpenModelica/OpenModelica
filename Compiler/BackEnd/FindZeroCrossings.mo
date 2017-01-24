@@ -1167,8 +1167,8 @@ algorithm
         BackendDump.debugExpStr(inExp, "\n");
       end if;
       oldNumRelations := DoubleEndedList.length(relations);
-      (e_1, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
-      (e_2, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1));
+      (e_1, (_, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+      (e_2, (_, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1));
       if intGt(DoubleEndedList.length(relations), oldNumRelations) then
         e_1 := DAE.LBINARY(e_1, op, e_2);
         if Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator) then
