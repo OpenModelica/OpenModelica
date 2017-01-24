@@ -37,6 +37,7 @@ import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFStatement.Statement;
 import SCode.Element;
+import Type = NFType;
 import Array;
 import Error;
 
@@ -109,12 +110,12 @@ uniontype Class
   end INSTANCED_CLASS;
 
   record PARTIAL_BUILTIN
-    String name;
+    Type ty;
     Modifier modifier;
   end PARTIAL_BUILTIN;
 
   record INSTANCED_BUILTIN
-    String name;
+    Type ty;
     list<Modifier> attributes;
   end INSTANCED_BUILTIN;
 

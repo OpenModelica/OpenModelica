@@ -100,11 +100,10 @@ algorithm
 
     case Class.INSTANCED_BUILTIN()
       algorithm
-        ty := makeBuiltinType(cls, scope);
-        cls.attributes := typeTypeAttributes(cls.attributes, ty, scope);
+        cls.attributes := typeTypeAttributes(cls.attributes, cls.ty, scope);
         classNode := InstNode.updateClass(cls, classNode);
       then
-        ty;
+        cls.ty;
 
     else
       algorithm
@@ -611,29 +610,6 @@ end typeStatement;
 //  //ty := DAE.T_COMPLEX(s, varLst, NONE(), {p});
 //  ty := Type.COMPLEX();
 //end makeComplexType;
-
-function makeBuiltinType
-  input Class classInst;
-  input InstNode scope;
-  output Type ty;
-algorithm
-  ty := match classInst
-    local
-      String name;
-
-    case Class.INSTANCED_BUILTIN(name = name)
-      then
-        match name
-          case "Real" then Type.REAL();
-          case "Integer" then Type.INTEGER();
-          case "Boolean" then Type.BOOLEAN();
-          case "String" then Type.STRING();
-          else Type.UNKNOWN();
-        end match;
-
-    else Type.UNKNOWN();
-  end match;
-end makeBuiltinType;
 
 function typeTypeAttributes
   input output list<Modifier> attributes;

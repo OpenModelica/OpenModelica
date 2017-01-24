@@ -47,23 +47,23 @@ import NFInstNode.InstNode;
 import NFLookupState.LookupState;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
-import NFType;
+import Type = NFType;
 
 constant NFInst.InstNode REAL_TYPE = NFInstNode.CLASS_NODE("Real",
   NFBuiltin.BUILTIN_REAL,
-  listArray({NFClass.PARTIAL_BUILTIN("Real", Modifier.NOMOD())}),
+  listArray({NFClass.PARTIAL_BUILTIN(Type.REAL(), Modifier.NOMOD())}),
   NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
 constant NFInst.InstNode INT_TYPE = NFInstNode.CLASS_NODE("Integer",
   NFBuiltin.BUILTIN_INTEGER,
-  listArray({NFClass.PARTIAL_BUILTIN("Integer", Modifier.NOMOD())}),
+  listArray({NFClass.PARTIAL_BUILTIN(Type.INTEGER(), Modifier.NOMOD())}),
   NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
 constant NFInst.InstNode BOOL_TYPE = NFInstNode.CLASS_NODE("Boolean",
   NFBuiltin.BUILTIN_BOOLEAN,
-  listArray({NFClass.PARTIAL_BUILTIN("Boolean", Modifier.NOMOD())}),
+  listArray({NFClass.PARTIAL_BUILTIN(Type.BOOLEAN(), Modifier.NOMOD())}),
   NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
 constant NFInst.InstNode STRING_TYPE = NFInstNode.CLASS_NODE("String",
   NFBuiltin.BUILTIN_STRING,
-  listArray({NFClass.PARTIAL_BUILTIN("String", Modifier.NOMOD())}),
+  listArray({NFClass.PARTIAL_BUILTIN(Type.STRING(), Modifier.NOMOD())}),
   NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
 
 constant NFInstNode.InstNode BUILTIN_TIME =

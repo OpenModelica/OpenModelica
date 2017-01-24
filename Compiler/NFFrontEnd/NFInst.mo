@@ -52,6 +52,7 @@ import NFMod.Modifier;
 import NFMod.ModifierScope;
 import NFEquation.Equation;
 import NFStatement.Statement;
+import Type = NFType;
 
 protected
 import Array;
@@ -717,7 +718,7 @@ protected
   list<Modifier> type_mods, inst_type_mods;
   Binding binding;
   InstNode n, cur_scope, par;
-  String name;
+  Type ty;
 algorithm
   () := match InstNode.getClass(node)
     // A normal class.
@@ -752,7 +753,7 @@ algorithm
         // Clone the node, since each component needs a unique type.
         node := InstNode.clone(node);
         c := InstNode.getClass(node);
-        Class.PARTIAL_BUILTIN(name = name, modifier = mod) := c;
+        Class.PARTIAL_BUILTIN(ty = ty, modifier = mod) := c;
 
         // Merge any outer modifiers on the class with the class' own modifier.
         type_mod := Modifier.merge(modifier, mod);
@@ -780,7 +781,7 @@ algorithm
           end for;
         end if;
 
-        c := Class.INSTANCED_BUILTIN(name, inst_type_mods);
+        c := Class.INSTANCED_BUILTIN(ty, inst_type_mods);
         node := InstNode.updateClass(c, node);
       then
         ();

@@ -546,8 +546,6 @@ algorithm
 
 end flattenWhenEquation;
 
-
-
 function flattenStatement
   input Statement alg;
   input output list<DAE.Statement> stmts = {};
