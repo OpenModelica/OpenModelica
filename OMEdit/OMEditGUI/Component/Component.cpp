@@ -2561,6 +2561,12 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
       }
     }
+#if !defined(WITHOUT_OSG)
+    // if subModel selection is changed in MetaModel
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+      MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
+    }
+#endif
   } else if (change == QGraphicsItem::ItemPositionHasChanged) {
     emit transformChange();
   }

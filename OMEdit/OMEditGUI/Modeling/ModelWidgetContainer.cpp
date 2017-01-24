@@ -3593,6 +3593,8 @@ bool ModelWidget::writeVisualXMLFile(QString fileName)
     colorsList.append(QColor(Qt::darkCyan));
     colorsList.append(QColor(Qt::darkMagenta));
     colorsList.append(QColor(Qt::darkYellow));
+    // selected color
+    QColor selectedColor(255, 192, 203); // pink
     int i = 0;
 
     foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
@@ -3677,9 +3679,15 @@ bool ModelWidget::writeVisualXMLFile(QString fileName)
             visualFile << "    <height><exp>0.0</exp></height>\n";
             visualFile << "    <extra><exp>0.0</exp></extra>\n";
             visualFile << "    <color>\n";
-            visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).red() << "</exp>\n";
-            visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).green() << "</exp>\n";
-            visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).blue() << "</exp>\n";
+            if (pSubModelComponent->isSelected()) {
+              visualFile << "      <exp>" << selectedColor.red() << "</exp>\n";
+              visualFile << "      <exp>" << selectedColor.green() << "</exp>\n";
+              visualFile << "      <exp>" << selectedColor.blue() << "</exp>\n";
+            } else {
+              visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).red() << "</exp>\n";
+              visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).green() << "</exp>\n";
+              visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).blue() << "</exp>\n";
+            }
             visualFile << "    </color>\n";
             visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
             visualFile << "  </shape>\n";
