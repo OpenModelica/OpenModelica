@@ -368,7 +368,7 @@ algorithm
   // Cref to initial state of governing flat state machine
   DAE.SM_COMP(componentRef=crefInitialState) := initialStateComp;
   preRef := ComponentReference.crefPrefixString(SMS_PRE, crefInitialState);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nTransitions)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nTransitions)});
   cref := qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
   DAE.EQUATION(lhsExp, rhsExp, elemSource) := inSmeqs;
   DAE.CREF(lhsRef, ty) := lhsExp;
@@ -580,7 +580,7 @@ algorithm
   activeResetExp := DAE.CREF(qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef), DAE.T_BOOL_DEFAULT);
 
   nStates := arrayLength(enclosingFlatSMComps);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)});
   // smOf.fsm_of_a.activeResetStates[i]
   activeResetStatesExp := DAE.CREF(qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef), DAE.T_BOOL_DEFAULT);
 
@@ -682,7 +682,7 @@ algorithm
   activeResetExp := DAE.CREF(qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef), DAE.T_BOOL_DEFAULT);
 
   nStates := arrayLength(enclosingFlatSMComps);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)});
   // smOf.fsm_of_a.activeResetStates[i]
   activeResetStatesExp := DAE.CREF(qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef), DAE.T_BOOL_DEFAULT);
 
@@ -960,8 +960,8 @@ algorithm
 
     // == Create equation for SMS_PRE.initStateRef.reset ==
     nStates := arrayLength(enclosingFlatSMComps);
-    tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
-    tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+    tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)});
+    tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)});
     enclosingActiveResetStateRef := qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(posOfEnclosingSMComp))}, enclosingPreRef);
     enclosingActiveResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, enclosingPreRef);
     enclosingActiveStateRef := qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, enclosingPreRef);
@@ -1238,8 +1238,8 @@ algorithm
   // parameter Transition t[:] "Array of transition data sorted in priority";
   nTransitions := listLength(t);
   tDims := {DAE.DIM_INTEGER(nTransitions)};
-  tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,tDims, DAE.emptyTypeSource);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,tDims, DAE.emptyTypeSource);
+  tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,tDims);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,tDims);
   tFromRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
   tToRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
   tImmediateRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
@@ -1350,7 +1350,7 @@ algorithm
   vars := nextResetVar :: vars;
   // ***** arrays with size nStates *****
   nStatesDims := {DAE.DIM_INTEGER(nStates)};
-  nStatesArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,nStatesDims, DAE.emptyTypeSource);
+  nStatesArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,nStatesDims);
   //output Boolean activeResetStates[nStates]
   activeResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
   activeResetStatesVars := arrayCreate(nStates, defaultBoolVar);
@@ -1814,7 +1814,7 @@ algorithm
   cond2 := DAE.CALL(Absyn.IDENT("sample"),
     {DAE.RCONST(Flags.getConfigReal(Flags.DEFAULT_CLOCK_PERIOD)),
      DAE.RCONST(Flags.getConfigReal(Flags.DEFAULT_CLOCK_PERIOD))}, DAE.callAttrBuiltinImpureBool);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(2)});
 
   if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
     // Extract transition conditions

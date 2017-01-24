@@ -1178,9 +1178,6 @@ algorithm
         // Add the component to the DAE.
         dae2 = InstDAE.daeDeclare(cache, env, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);
-        if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-          dae2 = DAEUtil.addComponentTypeOpt(dae2, Types.getClassnameOpt(ty));
-        end if;
         store = UnitAbsynBuilder.instAddStore(store, ty, cr);
 
         // The remaining work is done in instScalar2.

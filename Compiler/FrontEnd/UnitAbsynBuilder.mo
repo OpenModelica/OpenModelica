@@ -699,7 +699,7 @@ algorithm
       String unitStr;
       UnitAbsyn.Unit unit; Integer indx;
       DAE.TypeSource ts;
-      list<DAE.Var> vs;
+      list<DAE.Var> varLst;
       Option<UnitAbsyn.UnitCheckResult> res;
       UnitAbsyn.InstStore store;
       DAE.Type tp;
@@ -707,21 +707,24 @@ algorithm
     case(UnitAbsyn.NOSTORE(),_,_)
       then istore;
 
-    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_)
-      equation
-        unit = str2unit(unitStr,NONE());
-        unit = if 0 == stringCompare(unitStr,"") then UnitAbsyn.UNSPECIFIED() else unit;
-        (st,indx) = add(unit,st);
-        ht = BaseHashTable.add((cr,indx),ht);
-      then UnitAbsyn.INSTSTORE(st,ht,res);
-    case(store,DAE.T_REAL(_::vs,ts),_)
-     then instAddStore(store,DAE.T_REAL(vs,ts),cr);
-
-      /* No unit available. */
-    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = {}),_)
-      equation
-        (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
-        ht = BaseHashTable.add((cr,indx),ht);
+    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = varLst),_)
+      algorithm
+        for v in varLst loop
+          _ := match v
+            case DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))
+              algorithm
+                unit := str2unit(unitStr,NONE());
+                unit := if 0 == stringCompare(unitStr,"") then UnitAbsyn.UNSPECIFIED() else unit;
+                (st,indx) := add(unit,st);
+                ht := BaseHashTable.add((cr,indx),ht);
+                outStore := UnitAbsyn.INSTSTORE(st,ht,res);
+                return;
+              then ();
+            else ();
+          end match;
+        end for;
+        (st,indx) := add(UnitAbsyn.UNSPECIFIED(),st);
+        ht := BaseHashTable.add((cr,indx),ht);
       then UnitAbsyn.INSTSTORE(st,ht,res);
 
     case(store,DAE.T_SUBTYPE_BASIC(complexType=tp),_)
@@ -1282,10 +1285,15 @@ algorithm
       DAE.TypeSource ts;
       DAE.Type tp;
 
-    case(DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str)))::_))
-      then str;
-    case(DAE.T_REAL(_::varLst,ts)) then getUnitStr(DAE.T_REAL(varLst,ts));
-    case(DAE.T_REAL({},_)) then "";
+    case DAE.T_REAL(varLst = varLst)
+      algorithm
+        for v in varLst loop
+          _ := match v
+            case DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str))) algorithm return; then ();
+            else ();
+          end match;
+        end for;
+      then "";
     case(DAE.T_INTEGER()) then "";
     case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
     case(tp) equation print("getUnitStr for type "+Types.unparseType(tp)+" failed\n"); then fail();

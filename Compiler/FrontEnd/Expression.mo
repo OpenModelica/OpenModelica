@@ -525,13 +525,13 @@ algorithm
       list<DAE.Dimension> dims;
       DAE.TypeSource ts;
 
-    case(DAE.T_ARRAY(elt_tp,dims,ts),_)
+    case(DAE.T_ARRAY(elt_tp,dims),_)
       equation
         dims = n::dims;
       then
-        DAE.T_ARRAY(elt_tp,dims,ts);
+        DAE.T_ARRAY(elt_tp,dims);
 
-    else DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
+    else DAE.T_ARRAY(tp,{n});
 
   end match;
 end liftArrayR;
@@ -1045,8 +1045,8 @@ algorithm
 
     case (DAE.T_ARRAY(ty = tp,dims = {_}))
       then tp;
-    case (DAE.T_ARRAY(ty = tp,dims = (_ :: ds),source = ts))
-      then DAE.T_ARRAY(tp,ds,ts);
+    case (DAE.T_ARRAY(ty = tp,dims = (_ :: ds)))
+      then DAE.T_ARRAY(tp,ds);
     case (DAE.T_METATYPE(ty = tp))
       then Types.simplifyType(unliftArray(tp));
     case (DAE.T_METAARRAY(ty = tp))
@@ -1136,13 +1136,13 @@ algorithm
       DAE.Dimension dim;
       DAE.TypeSource ts;
 
-    case (DAE.T_ARRAY(ty,dims,ts),dim)
+    case (DAE.T_ARRAY(ty,dims),dim)
       equation
         ty_1 = liftArrayRight(ty, dim);
       then
-        DAE.T_ARRAY(ty_1,dims,ts);
+        DAE.T_ARRAY(ty_1,dims);
 
-    else DAE.T_ARRAY(inType,{inDimension},DAE.emptyTypeSource);
+    else DAE.T_ARRAY(inType,{inDimension});
 
   end match;
 end liftArrayRight;
@@ -1162,9 +1162,9 @@ algorithm
       DAE.Dimension dim;
       DAE.TypeSource ts;
 
-    case (DAE.T_ARRAY(ty,dims,ts),dim) then DAE.T_ARRAY(ty,dim::dims,ts);
+    case (DAE.T_ARRAY(ty,dims),dim) then DAE.T_ARRAY(ty,dim::dims);
 
-    else DAE.T_ARRAY(inType,{inDimension},DAE.emptyTypeSource);
+    else DAE.T_ARRAY(inType,{inDimension});
 
   end match;
 end liftArrayLeft;
@@ -1182,13 +1182,13 @@ algorithm
 
     case (_, {}) then inType;
 
-    case (DAE.T_ARRAY(ty, dims, ts), _)
+    case (DAE.T_ARRAY(ty, dims), _)
       equation
         dims = listAppend(inDimensions, dims);
       then
-        DAE.T_ARRAY(ty, dims, ts);
+        DAE.T_ARRAY(ty, dims);
 
-    else DAE.T_ARRAY(inType, inDimensions, DAE.emptyTypeSource);
+    else DAE.T_ARRAY(inType, inDimensions);
 
   end match;
 end liftArrayLeftList;
@@ -1446,14 +1446,14 @@ algorithm
       DAE.TypeSource ts;
 
     case (_, DAE.ARRAY(
-        DAE.T_ARRAY(ty = ty, dims = DAE.DIM_INTEGER(dim) :: dims, source  = ts),
+        DAE.T_ARRAY(ty = ty, dims = DAE.DIM_INTEGER(dim) :: dims),
         scalar = scalar,
         array = expl))
       equation
         dim = dim + 1;
         dims = DAE.DIM_INTEGER(dim) :: dims;
       then
-        DAE.ARRAY(DAE.T_ARRAY(ty, dims, ts), scalar, head :: expl);
+        DAE.ARRAY(DAE.T_ARRAY(ty, dims), scalar, head :: expl);
 
     else
       equation
@@ -1477,8 +1477,8 @@ algorithm
       DAE.Dimensions rest_dims;
       DAE.TypeSource ts;
 
-    case (DAE.T_ARRAY(ty = ty, dims = _ :: rest_dims, source = ts), _)
-      then DAE.T_ARRAY(ty, dimension :: rest_dims, ts);
+    case (DAE.T_ARRAY(ty = ty, dims = _ :: rest_dims), _)
+      then DAE.T_ARRAY(ty, dimension :: rest_dims);
   end match;
 end arrayDimensionSetFirst;
 
@@ -1691,13 +1691,12 @@ algorithm
       list<list<DAE.Exp>> mat;
       DAE.Type ty, el_ty;
       DAE.Dimensions dims;
-      DAE.TypeSource src;
       Boolean sc;
 
     case DAE.ARRAY(array = expl) then expl;
-    case DAE.MATRIX(ty = DAE.T_ARRAY(el_ty, _ :: dims, src), matrix = mat)
+    case DAE.MATRIX(ty = DAE.T_ARRAY(el_ty, _ :: dims), matrix = mat)
       equation
-        ty = DAE.T_ARRAY(el_ty, dims, src);
+        ty = DAE.T_ARRAY(el_ty, dims);
         sc = Types.basicType(el_ty);
       then
         List.map2(mat, makeArray, ty, sc);
@@ -2265,10 +2264,10 @@ algorithm
     case (DAE.RANGE(start=DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2),ty = tp as DAE.T_INTEGER()))
       equation
         i = intMax(0,i2-i1+1);
-      then DAE.T_ARRAY(tp, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource);
+      then DAE.T_ARRAY(tp, {DAE.DIM_INTEGER(i)});
     case (DAE.RANGE(start=DAE.ICONST(1),step=NONE(),stop=e,ty = tp as DAE.T_INTEGER()))
-      then DAE.T_ARRAY(tp, {DAE.DIM_EXP(e)}, DAE.emptyTypeSource);
-    case (DAE.RANGE(ty = tp)) then DAE.T_ARRAY(tp, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
+      then DAE.T_ARRAY(tp, {DAE.DIM_EXP(e)});
+    case (DAE.RANGE(ty = tp)) then DAE.T_ARRAY(tp, {DAE.DIM_UNKNOWN()});
     case (DAE.CAST(ty = tp)) then tp;
     case (DAE.ASUB(exp = e,sub=explist))
       equation
@@ -2291,7 +2290,7 @@ algorithm
       then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
       then Types.simplifyType(ty);
-    case (DAE.SIZE(_,NONE())) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
+    case (DAE.SIZE(_,NONE())) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()});
     case (DAE.SIZE(_,SOME(_))) then DAE.T_INTEGER_DEFAULT;
 
     // MetaModelica extension
@@ -2344,11 +2343,11 @@ algorithm
       Type ty,ty1;
       DAE.Dimensions dims;
       DAE.TypeSource source;
-    case (DAE.T_ARRAY(ty=ty,dims=dims,source=source))
+    case DAE.T_ARRAY(ty=ty,dims=dims)
       equation
         _ = typeofRelation(ty);
       then
-        DAE.T_ARRAY(ty,dims,source);
+        DAE.T_ARRAY(ty,dims);
     else DAE.T_BOOL_DEFAULT;
   end match;
 end typeofRelation;
@@ -3631,7 +3630,7 @@ protected
   Integer i;
 algorithm
   i := listLength(inExpLst);
-  outExp := DAE.ARRAY(DAE.T_ARRAY(et, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource), true, inExpLst);
+  outExp := DAE.ARRAY(DAE.T_ARRAY(et, {DAE.DIM_INTEGER(i)}), true, inExpLst);
 end makeScalarArray;
 
 public function makeRealArray
@@ -4590,8 +4589,8 @@ algorithm
         eLst = List.fill(e,i);
         scalar = listEmpty(dims);
       then
-        (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims,DAE.emptyTypeSource),scalar,eLst),
-         DAE.T_ARRAY(ty,{d},DAE.emptyTypeSource));
+        (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims),scalar,eLst),
+         DAE.T_ARRAY(ty,{d}));
   end match;
 end makeZeroExpression;
 
@@ -4620,8 +4619,8 @@ algorithm
         eLst = List.fill(e,i);
         scalar = listEmpty(dims);
       then
-        (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims,DAE.emptyTypeSource),scalar,eLst),
-         DAE.T_ARRAY(ty,{d},DAE.emptyTypeSource));
+        (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims),scalar,eLst),
+         DAE.T_ARRAY(ty,{d}));
   end match;
 end makeOneExpression;
 
@@ -4682,7 +4681,7 @@ algorithm
       i = dimensionSize(d);
       true = i == listLength(inList);
     then
-      DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),false,inList);
+      DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)}),false,inList);
 
   case(_, {d}, _)
     equation
@@ -4731,7 +4730,7 @@ algorithm
           fail();
         else
           (explst, restexps) = List.split(inList,i);
-          arrexp = DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),false,explst);
+          arrexp = DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)}),false,explst);
           restarr = listToArray3(restexps,d,inType);
         end if;
       then
@@ -4779,7 +4778,7 @@ algorithm
         i = dimensionSize(d);
         expl = List.fill(inExp, i);
       then
-        DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),true,expl);
+        DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)}),true,expl);
 
     case(d::dims,_)
       equation
@@ -4844,11 +4843,11 @@ algorithm
       DAE.Dimensions dims1, dims2;
       DAE.TypeSource ts;
 
-    case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1, source = ts), DAE.T_ARRAY(dims = dim2 :: _))
+    case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1), DAE.T_ARRAY(dims = dim2 :: _))
       equation
         dim1 = dimensionsAdd(dim1, dim2);
       then
-        DAE.T_ARRAY(et, dim1 :: dims1, ts);
+        DAE.T_ARRAY(et, dim1 :: dims1);
   end match;
 end concatArrayType;
 
@@ -6049,10 +6048,10 @@ algorithm
       list<DAE.Var> vars;
       DAE.EqualityConstraint ec;
 
-    case DAE.T_ARRAY(ty, dims, src)
+    case DAE.T_ARRAY(ty, dims)
       equation
         (_, arg, changed) = traverseExpTypeDims2(dims, inFunc, inArg);
-        ty = if changed then DAE.T_ARRAY(ty, dims, src) else inType;
+        ty = if changed then DAE.T_ARRAY(ty, dims) else inType;
       then
         (ty, arg);
 
@@ -8166,7 +8165,7 @@ algorithm b := matchcontinue(t1,t2)
   case(DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2))
        then equalTypesComplexVars(vars1,vars2);
 
-  case(DAE.T_ARRAY(ty1,ad1,_),DAE.T_ARRAY(ty2,ad2,_))
+  case(DAE.T_ARRAY(ty1,ad1),DAE.T_ARRAY(ty2,ad2))
     equation
       li1 = List.map(ad1, dimensionSize);
       li2 = List.map(ad2, dimensionSize);
@@ -10812,7 +10811,7 @@ algorithm
 
     case (_ :: rest_dims, _, _)
       equation
-        ty = DAE.T_ARRAY(inElementType, inDimensions, DAE.emptyTypeSource);
+        ty = DAE.T_ARRAY(inElementType, inDimensions);
       then
         makePromotedTypes(rest_dims, inElementType, ty :: inAccumTypes);
 
@@ -11053,28 +11052,27 @@ algorithm
       DAE.Type ty, row_ty;
       DAE.Dimension dim1, dim2;
       DAE.Dimensions rest_dims;
-      DAE.TypeSource ty_src;
       list<Exp> expl;
       list<list<Exp>> matrix;
       Integer i;
 
     // Empty array, just transpose the type.
-    case DAE.ARRAY(DAE.T_ARRAY(ty, dim1 :: dim2 :: rest_dims, ty_src), _, {})
-      then (DAE.ARRAY(DAE.T_ARRAY(ty, dim2 :: dim1 :: rest_dims, ty_src), false, {}), true);
+    case DAE.ARRAY(DAE.T_ARRAY(ty, dim1 :: dim2 :: rest_dims), _, {})
+      then (DAE.ARRAY(DAE.T_ARRAY(ty, dim2 :: dim1 :: rest_dims), false, {}), true);
 
-    case DAE.ARRAY(DAE.T_ARRAY(ty, dim1 :: dim2 :: rest_dims, ty_src), _, expl)
+    case DAE.ARRAY(DAE.T_ARRAY(ty, dim1 :: dim2 :: rest_dims), _, expl)
       equation
-        row_ty = DAE.T_ARRAY(ty, dim1 :: rest_dims, ty_src);
+        row_ty = DAE.T_ARRAY(ty, dim1 :: rest_dims);
         matrix = List.map(expl, getArrayOrMatrixContents);
         matrix = List.transposeList(matrix);
         expl = List.map2(matrix, makeArray, row_ty, true);
       then
-        (DAE.ARRAY(DAE.T_ARRAY(ty, dim2 :: dim1 :: rest_dims, ty_src), false, expl), true);
+        (DAE.ARRAY(DAE.T_ARRAY(ty, dim2 :: dim1 :: rest_dims), false, expl), true);
 
-    case DAE.MATRIX (matrix=matrix,ty=DAE.T_ARRAY(ty, {dim1, dim2}, ty_src))
+    case DAE.MATRIX (matrix=matrix,ty=DAE.T_ARRAY(ty, {dim1, dim2}))
       equation
         matrix = List.transposeList(matrix);
-        ty = DAE.T_ARRAY(ty, {dim2, dim1}, ty_src);
+        ty = DAE.T_ARRAY(ty, {dim2, dim1});
         i = listLength(matrix);
       then
         (DAE.MATRIX(ty,i,matrix), true);

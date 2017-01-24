@@ -69,51 +69,11 @@ protected import Util;
 
 // Predefined DAE.Types
 // Real arrays
-protected constant DAE.Type T_REAL_ARRAY_DEFAULT   = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()},   DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_REAL_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_DEFAULT   = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()});
+protected constant DAE.Type T_REAL_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(1)});
 
 // Integer arrays
-protected constant DAE.Type T_INT_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_INT_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
-
-// Boolean array
-protected constant DAE.Type T_BOOL_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_BOOL_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
-
-// String arrays
-protected constant DAE.Type T_STRING_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
-protected constant DAE.Type T_STRING_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
-
-protected constant DAE.Type T_UNKNOWN_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(1)});
 
 protected constant SCode.Prefixes commonPrefixes =
   SCode.PREFIXES(

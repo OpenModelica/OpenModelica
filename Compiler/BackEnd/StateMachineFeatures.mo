@@ -357,7 +357,7 @@ algorithm
   FLAT_AUTOMATON(initialState, states, sms) := flatA;
   preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
   nStates := arrayLength(states);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)});
 
   SMS(vars=varsAdd, knowns=knownsAdd, eqs=eqsAdd) := sms;
   // Add var, knowns, eqs of flat automaton to equation system
@@ -638,7 +638,7 @@ protected
   DAE.Type ty;
 algorithm
   DAE.CREF(componentRef=componentRef, ty=ty) := varCRefToCheck;
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(n)});
   callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
   attrDynamic := BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC;
 
@@ -1030,8 +1030,8 @@ algorithm
 
   // parameter Transition t[:] "Array of transition data sorted in priority";
   nTransitions := listLength(t);
-  tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nTransitions)}, DAE.emptyTypeSource);
-  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nTransitions)}, DAE.emptyTypeSource);
+  tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nTransitions)});
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nTransitions)});
   tFromRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
   tToRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
   tImmediateRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());

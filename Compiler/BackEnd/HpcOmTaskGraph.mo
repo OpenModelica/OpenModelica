@@ -1053,15 +1053,15 @@ protected
   DAE.Type ty;
 algorithm
   oUnsolvedVars := match(iVarType, iVarIdx, iUnsolvedVars)
-    case(DAE.T_INTEGER(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+    case(DAE.T_INTEGER(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         intVarIdc = varIdx::intVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
-    case(DAE.T_REAL(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+    case(DAE.T_REAL(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         realVarIdc = (varIdx,derived)::realVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
-    case(DAE.T_BOOL(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+    case(DAE.T_BOOL(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         boolVarIdc = varIdx::boolVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
@@ -1071,7 +1071,7 @@ algorithm
       equation
         stringVarIdc = varIdx::stringVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
-    case(DAE.T_STRING(_,_),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
+    case(DAE.T_STRING(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       equation
         stringVarIdc = varIdx::stringVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));

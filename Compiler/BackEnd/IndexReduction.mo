@@ -1618,14 +1618,14 @@ algorithm
     expcrdset := List.map(expcrset,makeder);
     expcrA := Expression.crefExp(crA);
     expcrA := DAE.CAST(tp,expcrA);
-    tyExpCrStates := DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource);
-    op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}, DAE.emptyTypeSource)) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
+    tyExpCrStates := DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)});
+    op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)})) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
     mulAstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrstates));
     (mulAstates,_) := Expression.extendArrExp(mulAstates,false);
     mulAdstates := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrdstates));
     (mulAdstates,_) := Expression.extendArrExp(mulAdstates,false);
-    expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listHead(expcrset);
-    expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listHead(expcrdset);
+    expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}),true,expcrset) else listHead(expcrset);
+    expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}),true,expcrdset) else listHead(expcrdset);
     source := DAE.SOURCE(SOURCEINFO("stateselection",false,0,0,0,0,0.0),{},Prefix.NOCOMPPRE(),{},{},{},{});
     // set.x = set.A*set.statecandidates
     eqn := if b then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
@@ -4055,22 +4055,22 @@ protected
 algorithm
 //  set := ComponentReference.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
   set := ComponentReference.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
-  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
+  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}) else DAE.T_REAL_DEFAULT;
   crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
   oSetVars := BackendVariable.generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
-  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource)
-                            else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource);
-  realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource)
-                                else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCandidates)}, DAE.emptyTypeSource);
+  tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)})
+                            else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nCandidates)});
+  realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)})
+                                else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCandidates)});
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
   oAVars := BackendVariable.generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,1,nCandidates,{});
-  tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
+  tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}) else DAE.T_REAL_DEFAULT;
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
   oJVars := BackendVariable.generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);

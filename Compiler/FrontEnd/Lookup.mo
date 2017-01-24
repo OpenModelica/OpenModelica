@@ -153,10 +153,10 @@ algorithm
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")),_)
       equation
         t = DAE.T_FUNCTION({
-              DAE.FUNCARG("roots", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
-              DAE.FUNCARG("nodes", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
+              DAE.FUNCARG("roots", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
+              DAE.FUNCARG("nodes", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
               DAE.FUNCARG("message", DAE.T_STRING_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())},
-              DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource),
+              DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}),
               DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
       then
         (cache, t, env);
@@ -299,28 +299,28 @@ algorithm
     // Real Type
     case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Real")))))
       equation
-        t = DAE.T_REAL({}, DAE.emptyTypeSource);
+        t = DAE.T_REAL_DEFAULT;
       then
         (cache,t,env_1);
 
     // Integer Type
     case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Integer")))))
       equation
-        t = DAE.T_INTEGER({}, DAE.emptyTypeSource);
+        t = DAE.T_INTEGER_DEFAULT;
       then
         (cache,t,env_1);
 
     // Boolean Type
     case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Boolean")))))
       equation
-        t = DAE.T_BOOL({}, DAE.emptyTypeSource);
+        t = DAE.T_BOOL_DEFAULT;
       then
         (cache,t,env_1);
 
     // String Type
     case (cache,env_1,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="String")))))
       equation
-        t = DAE.T_STRING({}, DAE.emptyTypeSource);
+        t = DAE.T_STRING_DEFAULT;
       then
         (cache,t,env_1);
 
@@ -2393,8 +2393,13 @@ algorithm
       // MetaModelica partial functions.
       case _
         algorithm
-          DAE.TYPES_VAR(ty = ty as DAE.T_FUNCTION(__)) := FNode.refInstVar(r);
-          ty := Types.setTypeSource(ty, Types.mkTypeSource(SOME(Absyn.IDENT(inFuncName))));
+          DAE.TYPES_VAR(ty = ty) := FNode.refInstVar(r);
+          ty := match ty
+            case DAE.T_FUNCTION()
+              algorithm
+                ty.source := Types.mkTypeSource(SOME(Absyn.IDENT(inFuncName)));
+              then ty;
+          end match;
         then
           (inCache, {ty});
 
@@ -2980,36 +2985,36 @@ algorithm
     // empty case
     case (t,{}) then t;
 
-    case (DAE.T_ARRAY(dims = {dim},ty = t,source = ts),(DAE.WHOLEDIM() :: ys))
+    case (DAE.T_ARRAY(dims = {dim},ty = t),(DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        DAE.T_ARRAY(t_1,{dim},ts);
+        DAE.T_ARRAY(t_1,{dim});
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
+    case (DAE.T_ARRAY(dims = {dim}, ty = t),
           DAE.SLICE(exp = e as DAE.RANGE()) :: ys)
       algorithm
         t_1 := checkSubscripts(t, ys);
         dim_int := Expression.rangeSize(e);
       then
-        DAE.T_ARRAY(t_1, {DAE.DIM_INTEGER(dim_int)}, ts);
+        DAE.T_ARRAY(t_1, {DAE.DIM_INTEGER(dim_int)});
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
+    case (DAE.T_ARRAY(dims = {dim}, ty = t),
           (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
       equation
         _ = Expression.dimensionSize(dim);
         t_1 = checkSubscripts(t, ys);
         dim_int = listLength(se) "FIXME: Check range IMPLEMENTED 2007-05-18 BZ" ;
       then
-        DAE.T_ARRAY(t_1,{DAE.DIM_INTEGER(dim_int)},ts);
+        DAE.T_ARRAY(t_1,{DAE.DIM_INTEGER(dim_int)});
 
-    case (DAE.T_ARRAY(dims = {_}, ty = t, source = ts),
+    case (DAE.T_ARRAY(dims = {_}, ty = t),
           (DAE.SLICE(exp = e) :: ys))
       equation
         DAE.T_ARRAY(dims={dim}) = Expression.typeof(e);
         t_1 = checkSubscripts(t, ys);
       then
-        DAE.T_ARRAY(t_1, {dim}, ts);
+        DAE.T_ARRAY(t_1, {dim});
 
     case (DAE.T_ARRAY(dims = {dim}, ty = t),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
@@ -3397,7 +3402,7 @@ algorithm
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
       then DAE.SLICE(DAE.RANGE(
-        DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(inDim.integer)}, DAE.emptyTypeSource),
+        DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(inDim.integer)}),
         DAE.ICONST(1), NONE(), DAE.ICONST(inDim.integer)));
 
     // Array with boolean dimension.

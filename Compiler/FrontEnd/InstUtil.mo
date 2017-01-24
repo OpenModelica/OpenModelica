@@ -326,9 +326,8 @@ algorithm
     local
       String name;
       Absyn.Path path1, path2;
-    case (_,_)
+    case (DAE.T_COMPLEX(source={path1}),_)
       equation
-        {path1} = Types.getTypeSource(ty);
         name = Absyn.pathLastIdent(path1);
         path2 = Absyn.stripLast(path1);
         "$Code" = Absyn.pathLastIdent(path2);
@@ -3265,9 +3264,8 @@ algorithm
     case (dim :: xs, tty)
       equation
         ty_1 = makeArrayType(xs, tty);
-        ts = Types.getTypeSource(tty);
       then
-        DAE.T_ARRAY(ty_1, {dim}, ts);
+        DAE.T_ARRAY(ty_1, {dim});
 
     else
       equation
@@ -4653,23 +4651,20 @@ public function setFullyQualifiedTypename
   input Absyn.Path path;
   output DAE.Type resType;
 algorithm
-  resType := matchcontinue (inType,path)
+  resType := match inType
     local
       Absyn.Path newPath;
       DAE.Type tp;
 
-    case (tp,_)
-      equation
-        {} = Types.getTypeSource(tp);
-      then
-        tp;
+    case DAE.T_FUNCTION(source={}) then inType;
 
-    case (tp,newPath)
+    case resType as DAE.T_FUNCTION()
       equation
-        tp = Types.setTypeSource(tp, Types.mkTypeSource(SOME(newPath)));
-      then
-        tp;
-  end matchcontinue;
+        resType.source = Types.mkTypeSource(SOME(path));
+      then resType;
+
+    else inType;
+  end match;
 end setFullyQualifiedTypename;
 
 public function isInlineFunc
@@ -5496,40 +5491,20 @@ algorithm
       SourceInfo info;
 
     case (p,ClassInf.TYPE_INTEGER(),v,_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_INTEGER(v, ts);
+      then DAE.T_INTEGER(v);
 
     case (p,ClassInf.TYPE_REAL(),v,_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_REAL(v, ts);
+      then DAE.T_REAL(v);
 
     case (p,ClassInf.TYPE_STRING(),v,_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_STRING(v, ts);
+      then DAE.T_STRING(v);
 
     case (p,ClassInf.TYPE_BOOL(),v,_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_BOOL(v, ts);
+      then DAE.T_BOOL(v);
 
     // BTH
     case (p,ClassInf.TYPE_CLOCK(),v,_,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_CLOCK(v, ts);
+      then DAE.T_CLOCK(v);
 
     case (p,ClassInf.TYPE_ENUM(),_,_,_,_)
       equation
@@ -5663,38 +5638,20 @@ algorithm
     case (p,ClassInf.TYPE_INTEGER(),v,_,_)
       equation
         somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_INTEGER(v, ts);
+      then DAE.T_INTEGER(v);
 
     case (p,ClassInf.TYPE_REAL(),v,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_REAL(v, ts);
+      then DAE.T_REAL(v);
 
     case (p,ClassInf.TYPE_STRING(),v,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_STRING(v, ts);
+      then DAE.T_STRING(v);
 
     case (p,ClassInf.TYPE_BOOL(),v,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_BOOL(v, ts);
+      then DAE.T_BOOL(v);
 
     // BTH
     case (p,ClassInf.TYPE_CLOCK(),v,_,_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_CLOCK(v, ts);
+      then DAE.T_CLOCK(v);
 
     case (p,ClassInf.TYPE_ENUM(),_,_,_)
       equation

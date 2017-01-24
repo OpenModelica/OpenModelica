@@ -340,48 +340,48 @@ protected
  * The types are a bit hard to read, but they are simply 1 through 9-dimensional
  * arrays of the basic types. */
 constant list<DAE.Type> intarrtypes = {
-  DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
+  DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}), // 1-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 2-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 3-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 4-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 5-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 6-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 7-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 8-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}) // 9-dim
 };
 constant list<DAE.Type> realarrtypes = {
-  DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
+  DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}), // 1-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 2-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 3-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 4-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 5-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 6-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 7-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 8-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}) // 9-dim
 };
 constant list<DAE.Type> boolarrtypes = {
-  DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
+  DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}), // 1-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 2-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 3-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 4-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 5-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 6-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 7-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 8-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}) // 9-dim
 };
 constant list<DAE.Type> stringarrtypes = {
-  DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
+  DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}), // 1-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 2-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 3-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 4-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 5-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 6-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 7-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}), // 8-dim
+  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}),{DAE.DIM_UNKNOWN()}) // 9-dim
 };
 /* Simply a list of 9 of that basic type; used to match with the array types */
 constant list<DAE.Type> inttypes = {
@@ -744,7 +744,7 @@ algorithm
         resultName = Util.getTempVariableIndex();
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType2,{}),newType2);
         (cache,exp,_,resType) = binaryUserdef(cache,env,op,inExp1,cr,inType1,newType2,impl,st,pre,info);
-        resType = DAE.T_ARRAY(resType,{dim2},{});
+        resType = DAE.T_ARRAY(resType,{dim2});
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp2,NONE(),newType2)::{});
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
@@ -782,7 +782,7 @@ algorithm
         (cache,zeroTypes) = getOperatorFuncsOrEmpty(cache,env,{ty},"'0'",info,{});
         (cache,zeroConstructor) = getZeroConstructor(cache,env,List.filterMap(zeroTypes,getZeroConstructorExpression),impl,st,info);
 
-        resType = DAE.T_ARRAY(resType,{dim1_1},{});
+        resType = DAE.T_ARRAY(resType,{dim1_1});
         iter = DAE.REDUCTIONITER(iterName1,cr,NONE(),newType1);
         iter1 = DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1);
         iter2 = DAE.REDUCTIONITER(iterName2,inExp2,NONE(),newType2);
@@ -856,7 +856,7 @@ algorithm
         cr1 = DAE.CREF(DAE.CREF_IDENT(iterName1,newType1,{}),newType1);
         cr2 = DAE.CREF(DAE.CREF_IDENT(iterName2,newType2,{}),newType2);
         (cache,exp,_,resType) = binaryUserdef(cache,env,op,cr1,cr2,newType1,newType2,impl,st,pre,info);
-        resType = DAE.T_ARRAY(resType,{dim2},{});
+        resType = DAE.T_ARRAY(resType,{dim2});
         iter1 = DAE.REDUCTIONITER(iterName1,inExp1,NONE(),newType1);
         iter2 = DAE.REDUCTIONITER(iterName2,inExp2,NONE(),newType2);
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.THREAD(),resType,NONE(),foldName,resultName,NONE()),exp,iter1::iter2::{});
@@ -895,15 +895,15 @@ protected
       int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.T_INTEGER_DEFAULT),
       real_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT);
     constant DAE.Type
-      int_vector = DAE.T_ARRAY(int_scalar,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),
-      int_matrix = DAE.T_ARRAY(int_vector,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),
-      real_vector = DAE.T_ARRAY(real_scalar,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),
-      real_matrix = DAE.T_ARRAY(real_vector,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
+      int_vector = DAE.T_ARRAY(int_scalar,{DAE.DIM_UNKNOWN()}),
+      int_matrix = DAE.T_ARRAY(int_vector,{DAE.DIM_UNKNOWN()}),
+      real_vector = DAE.T_ARRAY(real_scalar,{DAE.DIM_UNKNOWN()}),
+      real_matrix = DAE.T_ARRAY(real_vector,{DAE.DIM_UNKNOWN()});
     constant list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>>
       // ADD
       addIntArrays = list((DAE.ADD_ARR(int_vector), {at,at},at) for at in intarrtypes),
       addRealArrays = list((DAE.ADD_ARR(real_vector), {at,at},at) for at in realarrtypes),
-      addStringArrays = list((DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,at},at) for at in stringarrtypes),
+      addStringArrays = list((DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()})), {at,at},at) for at in stringarrtypes),
       addScalars = {
         (DAE.ADD(int_scalar), {int_scalar,int_scalar},int_scalar),
         (DAE.ADD(real_scalar), {real_scalar,real_scalar},real_scalar),
@@ -913,7 +913,7 @@ protected
       // ADD_EW
       addIntArrayScalars = list((DAE.ADD_ARRAY_SCALAR(int_vector), {at,rhs},at) threaded for at in intarrtypes, rhs in inttypes),
       addRealArrayScalars = list((DAE.ADD_ARRAY_SCALAR(real_vector), {at,rhs},at) threaded for at in realarrtypes, rhs in realtypes),
-      addStringArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)), {at,rhs},at) threaded for at in stringarrtypes, rhs in stringtypes),
+      addStringArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()})), {at,rhs},at) threaded for at in stringarrtypes, rhs in stringtypes),
       addEwTypes = listAppend(addIntArrayScalars, listAppend(addRealArrayScalars, listAppend(addStringArrayScalars, addTypes))),
       // SUB
       subIntArrays = list((DAE.SUB_ARR(int_vector), {at,at},at) for at in intarrtypes),
@@ -1012,14 +1012,14 @@ algorithm
 
     case Absyn.POW_EW()
       equation
-        realarrs = operatorReturn(DAE.POW_ARR2(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
+        realarrs = operatorReturn(DAE.POW_ARR2(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.POW(DAE.T_REAL_DEFAULT),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
+        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
           realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
+        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
           realarrtypes, realtypes, realarrtypes);
         types = List.flatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -1152,9 +1152,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UMINUS(DAE.T_REAL_DEFAULT),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes);
         types = List.flatten({scalars,intarrs,realarrs});
       then types;

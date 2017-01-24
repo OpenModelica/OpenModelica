@@ -437,16 +437,16 @@ algorithm
     // simplify identity
     case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)})
       equation
-        matrix = list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
-      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
+        matrix = list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}),true,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
+      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
 
     case DAE.CALL(path = Absyn.IDENT(name = "diagonal"), expLst = {DAE.ARRAY(array=expl,ty=tp)})
       equation
         n = listLength(expl);
         tp = Types.arrayElementType(tp);
         zero = Expression.makeConstZero(tp);
-        matrix = list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,list(if i==j then listGet(expl,i) else zero for i in 1:n)) for j in 1:n);
-      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
+        matrix = list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)}),true,list(if i==j then listGet(expl,i) else zero for i in 1:n)) for j in 1:n);
+      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),false,matrix);
 
     // arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e
     case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
@@ -1364,11 +1364,11 @@ algorithm
         e = simplifyScalar(e,tp);
       then e;
 
-    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=es as (e::_),attr=DAE.CALL_ATTR(ty=DAE.T_ARRAY(tp,_,source)))
+    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=es as (e::_),attr=DAE.CALL_ATTR(ty=DAE.T_ARRAY(tp,_)))
       equation
         false = Types.isArray(Expression.typeof(e));
         i = listLength(es);
-        tp = DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(i)},source);
+        tp = DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(i)});
       then DAE.ARRAY(tp,true,es);
 
     case DAE.CALL(path=Absyn.IDENT("vector"),expLst=(e as DAE.ARRAY(scalar=true))::{},attr=DAE.CALL_ATTR())
@@ -1483,20 +1483,20 @@ algorithm
 
     case (_,{},_,true) then listReverse(acc);
 
-    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts)) ::
+    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp)) ::
             DAE.ARRAY(array=es2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
       equation
         esn = listAppend(es1,es2);
         ndim = Expression.addDimensions(dim1,dim2);
-        etp = DAE.T_ARRAY(etp,ndim::dims,ts);
+        etp = DAE.T_ARRAY(etp,ndim::dims);
         e = DAE.ARRAY(etp,sc,esn);
       then simplifyCat2(dim,e::es,acc,true);
 
-    case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.T_ARRAY(dims=dim11::dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,ty=DAE.T_ARRAY(dims=_::dim2::_))::es,_,_)
+    case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.T_ARRAY(dims=dim11::dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,ty=DAE.T_ARRAY(dims=_::dim2::_))::es,_,_)
       equation
         mss = List.threadMap(ms1,ms2,listAppend);
         ndim = Expression.addDimensions(dim1,dim2);
-        etp = DAE.T_ARRAY(etp,dim11::ndim::dims,ts);
+        etp = DAE.T_ARRAY(etp,dim11::ndim::dims);
         e = DAE.MATRIX(etp,i,mss);
       then simplifyCat2(dim,e::es,acc,true);
 
@@ -1822,7 +1822,7 @@ algorithm
         t = Types.unliftArray(t);
         expl = List.map1(crefs,Expression.makeCrefExp,t);
         dim = listLength(expl);
-        exp = simplifyCref2(DAE.ARRAY(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(dim)},DAE.emptyTypeSource),true,expl),ssl);
+        exp = simplifyCref2(DAE.ARRAY(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(dim)}),true,expl),ssl);
       then
         exp;
 
@@ -1834,7 +1834,7 @@ algorithm
         t := Types.unliftArray(t);
         expl := list(Expression.makeCrefExp(cr, t) for cr in crefs);
         dim := listLength(expl);
-        exp := DAE.ARRAY(DAE.T_ARRAY(t, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource), true, expl);
+        exp := DAE.ARRAY(DAE.T_ARRAY(t, {DAE.DIM_INTEGER(dim)}), true, expl);
       then
         simplifyCref2(exp, ssl);
 
@@ -2477,35 +2477,35 @@ algorithm
         Expression.arrayFill(dims, zero);
 
     // Matrix-vector multiplication, c[n] = a[n, m] * b[m].
-    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, _}, tp), array = expl1),
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, _}), array = expl1),
           DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_})))
       equation
         // c[i] = a[i, :] * b for i in 1:n
         expl1 = List.map1(expl1, simplifyScalarProduct, inMatrix2);
-        ty = DAE.T_ARRAY(ty, {n}, tp);
+        ty = DAE.T_ARRAY(ty, {n});
       then
         DAE.ARRAY(ty, true, expl1);
 
     // Vector-matrix multiplication, c[m] = a[n] * b[n, m].
     case (DAE.ARRAY(ty = DAE.T_ARRAY(dims = {_})),
-          DAE.ARRAY(ty = DAE.T_ARRAY(ty, {m, _}, tp), array = expl2))
+          DAE.ARRAY(ty = DAE.T_ARRAY(ty, {m, _}), array = expl2))
       equation
         // c[i] = a * b[:, i] for i in 1:m
         expl1 = List.map1r(expl2, simplifyScalarProduct, inMatrix1);
-        ty = DAE.T_ARRAY(ty, {m}, tp);
+        ty = DAE.T_ARRAY(ty, {m});
       then
         DAE.ARRAY(ty, true, expl1);
 
     // Matrix-matrix multiplication, c[n, p] = a[n, m] * b[m, p].
-    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, _}, tp), array = expl1),
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, _}), array = expl1),
           DAE.ARRAY(ty = DAE.T_ARRAY(dims = {p, _}), array = expl2))
       equation
         // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p
         matrix = List.map1(expl1, simplifyMatrixProduct3, expl2);
-        row_ty = DAE.T_ARRAY(ty, {p}, tp);
+        row_ty = DAE.T_ARRAY(ty, {p});
         expl1 = List.map2(matrix, Expression.makeArray, row_ty, true);
       then
-        DAE.ARRAY(DAE.T_ARRAY(ty, {n, p}, tp), false, expl1);
+        DAE.ARRAY(DAE.T_ARRAY(ty, {n, p}), false, expl1);
 
   end matchcontinue;
 end simplifyMatrixProduct2;

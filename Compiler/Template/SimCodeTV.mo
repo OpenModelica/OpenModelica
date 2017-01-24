@@ -1976,29 +1976,22 @@ package DAE
     end VALBOUND;
   end Binding;
 
-
-  type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
-
   uniontype Type "models the different front-end and back-end types"
 
     record T_INTEGER
       list<Var> varLst;
-      TypeSource source;
     end T_INTEGER;
 
     record T_REAL
       list<Var> varLst;
-      TypeSource source;
     end T_REAL;
 
     record T_STRING
       list<Var> varLst;
-      TypeSource source;
     end T_STRING;
 
     record T_BOOL
       list<Var> varLst;
-      TypeSource source;
     end T_BOOL;
 
     record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
@@ -2007,7 +2000,6 @@ package DAE
       list<String> names "names" ;
       list<Var> literalVarLst;
       list<Var> attributeLst;
-      TypeSource source;
     end T_ENUMERATION;
 
     record T_ARRAY
@@ -2017,22 +2009,18 @@ package DAE
          In general Inst generates 1 and all the others generates 2"
       Type ty "Type";
       Dimensions dims "dims";
-      TypeSource source;
     end T_ARRAY;
 
     record T_NORETCALL "For functions not returning any values."
-      TypeSource source;
     end T_NORETCALL;
 
     record T_UNKNOWN "Used when type is not yet determined"
-      TypeSource source;
     end T_UNKNOWN;
 
     record T_COMPLEX
       ClassInf.State complexClassType "The type of. a class" ;
       list<Var> varLst "The variables of a complex type" ;
       EqualityConstraint equalityConstraint;
-      TypeSource source;
     end T_COMPLEX;
 
     record T_SUBTYPE_BASIC
@@ -2040,7 +2028,6 @@ package DAE
       list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
       Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
       EqualityConstraint equalityConstraint;
-      TypeSource source;
     end T_SUBTYPE_BASIC;
 
     record T_FUNCTION
@@ -2052,7 +2039,6 @@ package DAE
 
     record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
       Type functionType "the type of the function";
-      TypeSource source;
     end T_FUNCTION_REFERENCE_VAR;
 
     record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
@@ -2064,39 +2050,32 @@ package DAE
     record T_TUPLE
       list<Type> types "For functions returning multiple values.";
       Option<list<String>> names "For tuples elements that have names (function outputs)";
-      TypeSource source;
     end T_TUPLE;
 
     record T_CODE
       CodeType ty;
-      TypeSource source;
     end T_CODE;
 
     record T_ANYTYPE
       Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
-      TypeSource source;
     end T_ANYTYPE;
 
     // MetaModelica extensions
     record T_METALIST "MetaModelica list type"
       Type ty "listType";
-      TypeSource source;
     end T_METALIST;
 
     record T_METATUPLE "MetaModelica tuple type"
       list<Type> types;
-      TypeSource source;
     end T_METATUPLE;
 
     record T_METAOPTION "MetaModelica option type"
       Type ty;
-      TypeSource source;
     end T_METAOPTION;
 
     record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-      TypeSource source;
     end T_METAUNIONTYPE;
 
     record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
@@ -2111,25 +2090,23 @@ package DAE
 
     record T_METAARRAY
       Type ty;
-      TypeSource source;
     end T_METAARRAY;
 
     record T_METABOXED "Used for MetaModelica generic types"
       Type ty;
-      TypeSource source;
     end T_METABOXED;
 
     record T_METAPOLYMORPHIC
       String name;
-      TypeSource source;
     end T_METAPOLYMORPHIC;
 
     record T_METATYPE "this type contains all the meta types"
       Type ty;
-      TypeSource source;
     end T_METATYPE;
 
   end Type;
+
+  type TypeSource = list<Absyn.Path>;
 
   type Dimensions = list<Dimension> "a list of dimensions";
 

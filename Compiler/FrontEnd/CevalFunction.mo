@@ -1938,14 +1938,14 @@ algorithm
         dim = Expression.intDimension(dim_int);
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        (cache, DAE.T_ARRAY(ty, {dim}), st);
 
     // If the variable is not an input, set the dimension size to 0 (dynamic size).
     case (ty, DAE.DIM_UNKNOWN() :: rest_dims, bind_dims, _, _, st)
       equation
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource), st);
+        (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}), st);
 
     case (ty, DAE.DIM_INTEGER(dim_int) :: rest_dims, bind_dims, _, _, st)
       equation
@@ -1953,7 +1953,7 @@ algorithm
         bind_dims = List.stripFirst(bind_dims);
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        (cache, DAE.T_ARRAY(ty, {dim}), st);
 
     case (ty, DAE.DIM_BOOLEAN() :: rest_dims, bind_dims, _, _, st)
       equation
@@ -1961,7 +1961,7 @@ algorithm
         bind_dims = List.stripFirst(bind_dims);
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        (cache, DAE.T_ARRAY(ty, {dim}), st);
 
     case (ty, DAE.DIM_ENUM(size = dim_int) :: rest_dims, bind_dims, _, _, st)
       equation
@@ -1969,7 +1969,7 @@ algorithm
         bind_dims = List.stripFirst(bind_dims);
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        (cache, DAE.T_ARRAY(ty, {dim}), st);
 
     case (ty, DAE.DIM_EXP(exp = dim_exp) :: rest_dims, bind_dims, _, _, st)
       equation
@@ -1979,7 +1979,7 @@ algorithm
         bind_dims = List.stripFirst(bind_dims);
         (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
+        (cache, DAE.T_ARRAY(ty, {dim}), st);
 
     case (_, _ :: _, _, _, _, _)
       equation

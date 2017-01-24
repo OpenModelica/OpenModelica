@@ -323,7 +323,7 @@ public
       case Type.CLOCK() then DAE.T_CLOCK_DEFAULT;
       case Type.ARRAY()
         then DAE.T_ARRAY(toDAE(ty.elementType),
-          list(Dimension.toDAE(d) for d in ty.dimensions), DAE.emptyTypeSource);
+          list(Dimension.toDAE(d) for d in ty.dimensions));
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX() then DAE.T_COMPLEX_DEFAULT;

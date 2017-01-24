@@ -3342,9 +3342,9 @@ algorithm
       (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
       beqs = listReverse(beqs);
       simJac = List.map1(jac, jacToSimjac, inVars);
-	  if (Config.simCodeTarget()=="Cpp") then
-		simJac = List.sort(simJac,simJacCSRToCSC);
-	  end if;
+    if (Config.simCodeTarget()=="Cpp") then
+    simJac = List.sort(simJac,simJacCSRToCSC);
+    end if;
 
     then ({SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac, {}, NONE(), sources, 0), NONE())}, iuniqueEqIndex+1, itempvars);
 
@@ -5880,7 +5880,7 @@ algorithm
       // create the lhs tmp var
       ty = Expression.typeof(e1);
       (basety,dims) = Types.flattenArrayType(ty);
-      ty = DAE.T_ARRAY(basety, dims, Types.getTypeSource(basety));
+      ty = DAE.T_ARRAY(basety, dims);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
 
       lhse = DAE.CREF(left,ty);

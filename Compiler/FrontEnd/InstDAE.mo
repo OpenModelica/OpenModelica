@@ -318,9 +318,9 @@ algorithm
       equation
         finst_dims = List.flatten(inst_dims);
         path = ComponentReference.crefToPath(vn);
-        ty = Types.setTypeSource(tty,Types.mkTypeSource(SOME(path)));
+        tty.source = Types.mkTypeSource(SOME(path));
       then
-        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,tty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // MetaModelica extension
     case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)

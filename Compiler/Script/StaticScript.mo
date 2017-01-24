@@ -379,14 +379,14 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
-         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
+         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF()},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
-         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
+         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
@@ -437,7 +437,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeListSize = listLength(excludeList);
       then
         (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList)},
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList)},
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
@@ -447,7 +447,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeListSize = listLength(excludeList);
       then
         (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),DAE.SCONST(str)},
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.SCONST(str)},
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
@@ -458,7 +458,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeListSize = listLength(excludeList);
       then
         (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),
         DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT)},
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
@@ -470,7 +470,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         excludeListSize = listLength(excludeList);
       then
         (cache,Expression.makePureBuiltinCall("checkExamplePackages",
-        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)},DAE.emptyTypeSource),false,excludeList),
+        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),
          DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),DAE.SCONST(str)},
         DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 

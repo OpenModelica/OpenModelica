@@ -857,7 +857,7 @@ public function isVarNonDiscreteAlg
 algorithm
   result := match (var)
     /* Real non discrete variable */
-    case (BackendDAE.VAR(varType = DAE.T_REAL(_,_))) equation
+    case (BackendDAE.VAR(varType = DAE.T_REAL())) equation
       then (isVarAlg(var) and not isVarDiscreteRealAlg(var)) or isOptInputVar(var);
 
     else false;
@@ -882,7 +882,7 @@ public function isVarDiscreteRealAlg
 algorithm
   result := match (var)
     /* Real discrete variable */
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL(_,_))) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), varType = DAE.T_REAL())) then true;
     else false;
   end match;
 end isVarDiscreteRealAlg;

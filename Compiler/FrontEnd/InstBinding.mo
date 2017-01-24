@@ -473,11 +473,10 @@ algorithm
         DAE.T_COMPLEX(varLst = _::DAE.TYPES_VAR(ty=DAE.T_ARRAY(dims={DAE.DIM_INTEGER(paramDim)}))::_) = ty;
 
         crName = ComponentReference.crefPrependIdent(cr,"name",{},DAE.T_STRING_DEFAULT);
-        crParams = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
-        _ = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
+        crParams = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
         name = Expression.makeCrefExp(crName,DAE.T_STRING_DEFAULT);
-        params = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
-        paramNames = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
+        params = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
+        paramNames = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
       then
          SOME(DAE.DISTRIBUTION(name, params, paramNames));
 

@@ -736,7 +736,7 @@ algorithm
         (outCache, expl, props) := elabExpList(inCache, inEnv, es, inImplicit,
           inST, inDoVect, inPrefix, inInfo);
         (expl, DAE.PROP(ty, c)) := elabArray(expl, props, inPrefix, inInfo); // type-checking the array
-        arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(listLength(expl))}, DAE.emptyTypeSource);
+        arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(listLength(expl))});
         exp := DAE.ARRAY(Types.simplifyType(arr_ty), not Types.isArray(ty), expl);
         MetaUtil.checkArrayType(ty);
         exp := elabMatrixToMatrixExp(exp);
@@ -789,8 +789,8 @@ algorithm
 
   outExp := elabMatrixToMatrixExp(outExp);
   ty := Types.unliftArray(Types.unliftArray(ty)); // All elts promoted to matrix, therefore unlifting.
-  ty := DAE.T_ARRAY(ty, {dim2}, DAE.emptyTypeSource);
-  ty := DAE.T_ARRAY(ty, {dim1}, DAE.emptyTypeSource);
+  ty := DAE.T_ARRAY(ty, {dim2});
+  ty := DAE.T_ARRAY(ty, {dim1});
   outProperties := DAE.PROP(ty, c);
 end elabExp_Matrix;
 
@@ -1527,8 +1527,7 @@ algorithm
       // Return some dummy variables, and let elabCallReduction handle the error
       // reporting since we don't know how many subscripts were used here.
       range := DAE.ICONST(0);
-      outProperties := DAE.PROP(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(0)},
-        DAE.emptyTypeSource), DAE.C_UNKNOWN());
+      outProperties := DAE.PROP(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(0)}), DAE.C_UNKNOWN());
     end if;
 
     ranges := range :: ranges;
@@ -1718,7 +1717,7 @@ algorithm
 
   // Set the properties of the range expression.
   outProperties := DAE.PROP(
-    DAE.T_ARRAY(range_ty, {inDimension}, DAE.emptyTypeSource),
+    DAE.T_ARRAY(range_ty, {inDimension}),
     range_const
   );
 end deduceReductionIterationRange2;
@@ -2110,11 +2109,11 @@ algorithm
 
     case DAE.T_UNKNOWN() then expType;
 
-    case DAE.T_ARRAY(dims = {dim}, ty = ty, source = ts)
+    case DAE.T_ARRAY(dims = {dim}, ty = ty)
       algorithm
         ty := constructArrayType(ty, expType);
       then
-        DAE.T_ARRAY(ty, {dim}, ts);
+        DAE.T_ARRAY(ty, {dim});
   end match;
 end constructArrayType;
 
@@ -2333,7 +2332,7 @@ algorithm
         at = Types.simplifyType(t);
         a = Types.isArray(t);
       then
-        (cache,DAE.ARRAY(at,a,es_1),DAE.PROP(DAE.T_ARRAY(t, {DAE.DIM_INTEGER(l)},DAE.emptyTypeSource),const));
+        (cache,DAE.ARRAY(at,a,es_1),DAE.PROP(DAE.T_ARRAY(t, {DAE.DIM_INTEGER(l)}),const));
 
     case (cache,env,Absyn.MATRIX(matrix = ess),impl,pre,_)
       equation
@@ -2347,7 +2346,7 @@ algorithm
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1);
       then
-        (cache,mexp,DAE.PROP(DAE.T_ARRAY(DAE.T_ARRAY(t_2, {dim2}, DAE.emptyTypeSource), {dim1}, DAE.emptyTypeSource),c));
+        (cache,mexp,DAE.PROP(DAE.T_ARRAY(DAE.T_ARRAY(t_2, {dim2}), {dim1}),c));
 
     case (_,_,e,_,pre,_)
       equation
@@ -2457,7 +2456,7 @@ algorithm
       FCore.Cache cache;
 
     case (_, DAE.C_VAR())
-      then (inCache, DAE.T_ARRAY(inType, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource));
+      then (inCache, DAE.T_ARRAY(inType, {DAE.DIM_UNKNOWN()}));
 
     // No step value.
     case (NONE(), _)
@@ -2466,7 +2465,7 @@ algorithm
         (cache, stop_val) = Ceval.ceval(cache, inEnv, inStop, inImpl);
         dim = elabRangeSize(start_val, NONE(), stop_val);
       then
-        (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource));
+        (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}));
 
     // Some step value.
     case (SOME(step_exp), _)
@@ -2476,10 +2475,10 @@ algorithm
         (cache, stop_val) = Ceval.ceval(cache, inEnv, inStop, inImpl);
         dim = elabRangeSize(start_val, SOME(step_val), stop_val);
       then
-        (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource));
+        (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}));
 
     // Ceval failed in previous cases, return an array of unknown size.
-    else (inCache, DAE.T_ARRAY(inType, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource));
+    else (inCache, DAE.T_ARRAY(inType, {DAE.DIM_UNKNOWN()}));
   end matchcontinue;
 end elabRangeType;
 
@@ -2966,11 +2965,11 @@ protected
   list<DAE.Exp> expl, expl1, expl2;
   DAE.TypeSource ts;
 algorithm
-  DAE.ARRAY(DAE.T_ARRAY(ety, dim1 :: dim_rest, ts), at, expl1) := inArray1;
+  DAE.ARRAY(DAE.T_ARRAY(ety, dim1 :: dim_rest), at, expl1) := inArray1;
   DAE.ARRAY(ty = DAE.T_ARRAY(dims = dim2 :: _), array = expl2) := inArray2;
   expl := listAppend(expl1, expl2);
   dim := Expression.dimensionsAdd(dim1, dim2);
-  outExp := DAE.ARRAY(DAE.T_ARRAY(ety, dim :: dim_rest, ts), at, expl);
+  outExp := DAE.ARRAY(DAE.T_ARRAY(ety, dim :: dim_rest), at, expl);
 end elabMatrixCatOne2;
 
 protected function promoteExp
@@ -3298,7 +3297,7 @@ algorithm
       equation
         dim_expl = List.map(inDimensions, Expression.dimensionSizeExp);
         dim_int = listLength(dim_expl);
-        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim_int)});
         exp = DAE.ARRAY(ty, true, dim_expl);
         prop = DAE.PROP(ty, DAE.C_CONST());
       then
@@ -3311,7 +3310,7 @@ algorithm
         b = Types.dimensionsKnown(inArrayType);
         cnst = Types.boolConstSize(b);
         exp = DAE.SIZE(inArrayExp,NONE());
-        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()} , DAE.emptyTypeSource);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()});
         prop = DAE.PROP(ty, cnst);
       then
         (exp, prop);
@@ -3586,7 +3585,7 @@ algorithm
         true = intLt(v, 0); // fill with 0 then!
         v = 0;
         arraylist = List.fill(s, v);
-        sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
+        sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3595,7 +3594,7 @@ algorithm
     case (cache,_,s,sty,{Values.INTEGER(integer = v)},c1,_,_,_)
       equation
         arraylist = List.fill(s, v);
-        sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
+        sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3605,7 +3604,7 @@ algorithm
       equation
         (cache,exp,DAE.PROP(ty,_)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre,inDims,inInfo);
         arraylist = List.fill(exp, v);
-        sty2 = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
+        sty2 = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)});
         at = Types.simplifyType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3652,7 +3651,7 @@ algorithm
       equation
         (cache,exp_1,DAE.PROP(DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2}, ty = eltp)), c),_)
           = elabExpInExpression(cache,env, matexp, impl,NONE(),true,pre,info);
-        newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
+        newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}), {d2});
         tp = Types.simplifyType(newtp);
         exp = Expression.makePureBuiltinCall("symmetric", {exp_1}, tp);
         prop = DAE.PROP(newtp,c);
@@ -3915,14 +3914,13 @@ protected
   DAE.Type ty, el_ty;
   DAE.Const c;
   DAE.Dimension d1, d2;
-  DAE.TypeSource src1, src2;
 algorithm
   {aexp} := inPosArgs;
   (outCache, exp, DAE.PROP(ty, c), _) :=
     elabExpInExpression(inCache, inEnv, aexp, inImpl, NONE(), true, inPrefix, inInfo);
   // Transpose the type.
-  DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}, src1), {d2}, src2) := ty;
-  ty := DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d2}, src1), {d1}, src2);
+  DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d1}), {d2}) := ty;
+  ty := DAE.T_ARRAY(DAE.T_ARRAY(el_ty, {d2}), {d1});
   outProperties := DAE.PROP(ty, c);
   // Simplify the type and make a call to transpose.
   ty := Types.simplifyType(ty);
@@ -4311,7 +4309,7 @@ algorithm
     NONE(), true, inPrefix, inInfo);
   (_, DAE.PROP(ty, c)) := elabBuiltinArray2(expl, props, inPrefix, inInfo);
   len := listLength(expl);
-  arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource);
+  arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)});
   outProperties := DAE.PROP(arr_ty, c);
   arr_ty := Types.simplifyType(arr_ty);
   outExp := DAE.ARRAY(arr_ty, Types.isArray(ty), expl);
@@ -5751,7 +5749,7 @@ algorithm
     listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
   DAE.PROP(DAE.T_ARRAY(dims = {dim}, ty = arr_ty), c) := prop;
 
-  ty := DAE.T_ARRAY(DAE.T_ARRAY(arr_ty, {dim}, DAE.emptyTypeSource), {dim}, DAE.emptyTypeSource);
+  ty := DAE.T_ARRAY(DAE.T_ARRAY(arr_ty, {dim}), {dim});
   outProperties := DAE.PROP(ty, c);
   ty := Types.simplifyType(ty);
 
@@ -6265,7 +6263,7 @@ algorithm
         dim = listLength(lst);
         (cache,exp2,_,_) = elabExpInExpression(cache, env, aexp2, false, NONE(), false, pre, info);
         exp3 = DAE.SCONST("");
-        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)});
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
@@ -6278,7 +6276,7 @@ algorithm
         dim = listLength(lst);
         (cache,exp2,_,_) = elabExpInExpression(cache, env, aexp2, false, NONE(), false, pre, info);
         (cache,exp3,_,_) = elabExpInExpression(cache, env, aexp2, false, NONE(), false, pre, info);
-        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)});
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
@@ -6291,7 +6289,7 @@ algorithm
         dim = listLength(lst);
         (cache,exp2,_,_) = elabExpInExpression(cache, env, aexp2, false,NONE(), false,pre,info);
         (cache,exp3,_,_) = elabExpInExpression(cache, env, aexp2, false,NONE(), false,pre,info);
-        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+        ty = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(dim)});
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
@@ -6700,14 +6698,14 @@ algorithm
       then (inArg, inProperties);
 
     // n-dimensional array
-    case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim1 :: dim2 :: _, ts), scalar = scalar, array = expl)
+    case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim1 :: dim2 :: _), scalar = scalar, array = expl)
       algorithm
         expl := List.map1(expl, elabBuiltinMatrix3, inInfo);
         ty := Types.arrayElementType(inType);
         ty := Types.liftArrayListDims(ty, {dim1, dim2});
         props := Types.setPropType(inProperties, ty);
       then
-        (DAE.ARRAY(DAE.T_ARRAY(ety, {dim1, dim2}, ts), scalar, expl), props);
+        (DAE.ARRAY(DAE.T_ARRAY(ety, {dim1, dim2}), scalar, expl), props);
 
   end match;
 end elabBuiltinMatrix2;
@@ -6728,19 +6726,19 @@ algorithm
       list<list<DAE.Exp>> matrix_expl;
       DAE.TypeSource ts;
 
-    case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim :: _, ts),scalar = scalar, array = expl)
+    case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim :: _),scalar = scalar, array = expl)
       algorithm
         expl := list(arrayScalar(e, 3, "matrix", inInfo) for e in expl);
       then
-        DAE.ARRAY(DAE.T_ARRAY(ety, {dim}, ts), scalar, expl);
+        DAE.ARRAY(DAE.T_ARRAY(ety, {dim}), scalar, expl);
 
-    case DAE.MATRIX(ty = DAE.T_ARRAY(ety, dim :: dims, ts), matrix = matrix_expl)
+    case DAE.MATRIX(ty = DAE.T_ARRAY(ety, dim :: dims), matrix = matrix_expl)
       algorithm
-        ety2 := DAE.T_ARRAY(ety, dims, ts);
+        ety2 := DAE.T_ARRAY(ety, dims);
         expl := list(Expression.makeArray(e, ety2, true) for e in matrix_expl);
         expl := list(arrayScalar(e, 3, "matrix", inInfo) for e in expl);
       then
-        DAE.ARRAY(DAE.T_ARRAY(ety, {dim}, ts), true, expl);
+        DAE.ARRAY(DAE.T_ARRAY(ety, {dim}), true, expl);
 
   end match;
 end elabBuiltinMatrix3;
@@ -8240,9 +8238,8 @@ algorithm
         (outCache, NONE());
 
     // MetaRecord failure (args).
-    else
+    case DAE.T_METARECORD(source = {fq_path})
       algorithm
-        {fq_path} := Types.getTypeSource(inType);
         str := "Failed to elaborate arguments " + Dump.printExpStr(Absyn.TUPLE(inPosArgs));
         fn_str := Absyn.pathString(fq_path);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
@@ -8892,7 +8889,7 @@ algorithm
         expl := vectorizeCallScalar2(exp.path, exp.expLst, exp.attr, slots, dim);
         e_type := Expression.unliftArray(ty);
         scalar := Expression.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
-        arr_type := DAE.T_ARRAY(e_type, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+        arr_type := DAE.T_ARRAY(e_type, {DAE.DIM_INTEGER(dim)});
         new_exp := DAE.ARRAY(arr_type,scalar,expl);
       then
         new_exp;
@@ -8965,11 +8962,11 @@ algorithm
       String name;
       DAE.Type tty;
 
-    case DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(
+    case tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(
         isBuiltin = DAE.FUNCTION_BUILTIN(SOME(name))))
       algorithm
         fn := Absyn.IDENT(name);
-        tty := Types.setTypeSource(inType, Types.mkTypeSource(SOME(fn)));
+        tty.source := Types.mkTypeSource(SOME(fn));
       then
         (fn, tty);
 
@@ -9426,19 +9423,19 @@ algorithm
       FCore.Graph env;
 
     // Array type, evaluate the dimension.
-    case DAE.T_ARRAY(ty, {dim}, ts)
+    case DAE.T_ARRAY(ty, {dim})
       algorithm
         (_, Values.INTEGER(n), _) := Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Absyn.NO_MSG(), 0);
         ty := evaluateFuncArgTypeDims(ty, inEnv, inCache);
       then
-        DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(n)}, ts);
+        DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(n)});
 
     // Previous case failed, keep the dimension but evaluate the rest of the type.
-    case DAE.T_ARRAY(ty, {dim}, ts)
+    case DAE.T_ARRAY(ty, {dim})
       algorithm
         ty := evaluateFuncArgTypeDims(ty, inEnv, inCache);
       then
-        DAE.T_ARRAY(ty, {dim}, ts);
+        DAE.T_ARRAY(ty, {dim});
 
     case ty as DAE.T_TUPLE()
       algorithm
@@ -10659,7 +10656,7 @@ algorithm
     case (cache, _, Absyn.CREF_IDENT(name = "Boolean"), _, _)
       equation
         exp = Expression.makeScalarArray({DAE.BCONST(false), DAE.BCONST(true)}, DAE.T_BOOL_DEFAULT);
-        t = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+        t = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(2)});
       then
         (cache, SOME((exp, DAE.PROP(t, DAE.C_CONST()), DAE.dummyAttrConst)));
 
@@ -10728,25 +10725,31 @@ algorithm
 
     // MetaModelica Partial Function
     case (cache, env, c, _, _)
-      equation
+      algorithm
         // true = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
-        path = Absyn.crefToPath(c);
+        path := Absyn.crefToPath(c);
         // call the lookup function that removes errors when it fails!
-        (cache, {t}) = lookupFunctionsInEnvNoError(cache, env, path, info);
-        (isBuiltin,isBuiltinFn,path) = isBuiltinFunc(path,t);
-        isBuiltinFnOrInlineBuiltin = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
-        tySource = Types.getTypeSource(t);
+        (cache, {t}) := lookupFunctionsInEnvNoError(cache, env, path, info);
+        (isBuiltin,isBuiltinFn,path) := isBuiltinFunc(path,t);
+        isBuiltinFnOrInlineBuiltin := not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         // some builtin functions store {} there
-        tySource = if isBuiltinFn then Types.mkTypeSource(SOME(path)) else tySource;
-        tt = Types.setTypeSource(t, tySource);
-        origt = tt;
-        {fpath} = Types.getTypeSource(t);
-        t = Types.makeFunctionPolymorphicReference(t);
-        c = Absyn.pathToCref(fpath);
-        expCref = ComponentReference.toExpCref(c);
-        exp = Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt,tySource));
+        (t,tySource) := match t
+          case DAE.T_FUNCTION(source={}) guard not isBuiltinFn
+            algorithm
+              tySource := Types.mkTypeSource(SOME(path));
+              t.source := tySource;
+            then (t,tySource);
+          case DAE.T_FUNCTION() then (t, t.source);
+        end match;
+        tt := t;
+        origt := tt;
+        {fpath} := tySource;
+        t := Types.makeFunctionPolymorphicReference(t);
+        c := Absyn.pathToCref(fpath);
+        expCref := ComponentReference.toExpCref(c);
+        exp := Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt,tySource));
         // This is not done by lookup - only elabCall. So we should do it here.
-        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
+        (cache,Util.SUCCESS()) := instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then
         (cache,SOME((exp,DAE.PROP(t,DAE.C_VAR()),DAE.dummyAttrConst /* RO */)));
 
@@ -10959,8 +10962,7 @@ algorithm
   enum_lit_expl := Expression.makeEnumLiterals(enumTypeName, enumLiterals);
   sz := listLength(enumLiterals);
   ety := DAE.T_ARRAY(DAE.T_ENUMERATION(NONE(), enumTypeName, enumLiterals, {}, {}, DAE.emptyTypeSource),
-                     {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)},
-                     DAE.emptyTypeSource);
+                     {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)});
   enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
   enumArrayType := ety;
 end makeEnumerationArray;
@@ -11439,7 +11441,7 @@ algorithm
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
         ety = Expression.arrayEltType(ety);
-        exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
+        exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst), scalar, expl1);
     then exp2;
   end match;
 end mergeQualWithRest;
@@ -11585,7 +11587,7 @@ algorithm
   outExp := DAE.ARRAY(DAE.T_INTEGER_DEFAULT, false, expl);
   (dims, scalar) := extractDimensionOfChild(outExp);
   ty := Expression.arrayEltType(inType);
-  outExp := DAE.ARRAY(DAE.T_ARRAY(ty, dims, DAE.emptyTypeSource), scalar, expl);
+  outExp := DAE.ARRAY(DAE.T_ARRAY(ty, dims), scalar, expl);
 end flattenSubscript3;
 
 protected function removeDoubleEmptyArrays
@@ -11645,12 +11647,12 @@ algorithm
     case(DAE.ICONST(integer=0),DAE.ARRAY(DAE.T_ARRAY(dims = arrDim) ,_,_),_ ,ety)
       equation
         ety = Expression.arrayEltType(ety);
-      then DAE.ARRAY(DAE.T_ARRAY(ety, DAE.DIM_INTEGER(0)::arrDim, DAE.emptyTypeSource),true,{});
+      then DAE.ARRAY(DAE.T_ARRAY(ety, DAE.DIM_INTEGER(0)::arrDim),true,{});
 
     case(DAE.ICONST(integer=0),_,_ ,ety)
       equation
         ety = Expression.arrayEltType(ety);
-      then DAE.ARRAY(DAE.T_ARRAY(ety,{DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource),true,{});
+      then DAE.ARRAY(DAE.T_ARRAY(ety,{DAE.DIM_INTEGER(0)}),true,{});
 
     case(exp1,DAE.ARRAY(_,_,{}),id ,ety)
       equation
@@ -11698,7 +11700,7 @@ algorithm
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
         ety = Expression.arrayEltType(ety);
-        exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
+        exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst), scalar, expl1);
       then exp2;
   end match;
 end applySubscript2;
@@ -11735,7 +11737,7 @@ algorithm
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
         ety = Expression.arrayEltType(ety);
-        exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
+        exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst), scalar, expl1);
       then exp2;
   end match;
 end applySubscript3;
@@ -12416,17 +12418,17 @@ algorithm
       then
         t_1;
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),(DAE.SLICE() :: subs))
+    case (DAE.T_ARRAY(dims = {dim}, ty = t),(DAE.SLICE() :: subs))
       equation
         t_1 = subscriptType(t, subs);
       then
-        DAE.T_ARRAY(t_1,{dim},ts);
+        DAE.T_ARRAY(t_1,{dim});
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),(DAE.WHOLEDIM() :: subs))
+    case (DAE.T_ARRAY(dims = {dim}, ty = t),(DAE.WHOLEDIM() :: subs))
       equation
         t_1 = subscriptType(t, subs);
       then
-        DAE.T_ARRAY(t_1,{dim},ts);
+        DAE.T_ARRAY(t_1,{dim});
 
     case (t,_)
       equation
@@ -12722,12 +12724,12 @@ algorithm
       equation
         es_1 = List.map5(es,elabCodeExp,cache,env,DAE.C_VARIABLENAME(),st,info);
         i = listLength(es);
-        et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource);
+        et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(i)});
       then DAE.ARRAY(et,false,es_1);
 
     case (_,DAE.C_VARIABLENAMES())
       equation
-        et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
+        et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)});
         dexp = elabCodeExp(exp,cache,env,DAE.C_VARIABLENAME(),st,info);
       then DAE.ARRAY(et,false,{dexp});
 

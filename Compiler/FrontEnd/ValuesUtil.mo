@@ -121,7 +121,7 @@ algorithm
     case(Values.ARRAY(valLst,int_dims)) equation
       eltTp=valueExpType(listHead(valLst));
       dims = List.map(int_dims, Expression.intDimension);
-    then DAE.T_ARRAY(eltTp,dims,DAE.emptyTypeSource);
+    then DAE.T_ARRAY(eltTp,dims);
 
     case(Values.RECORD(path,valLst,nameLst,_)) equation
       eltTps = List.map(valLst,valueExpType);
@@ -978,7 +978,7 @@ algorithm
     case ({},_)
       equation
         dims = List.map(inDims, Expression.intDimension);
-      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims, DAE.emptyTypeSource),false,{});
+      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims),false,{});
 
     // Matrix
     case(Values.ARRAY(valueLst=v::xs)::xs2,dim::int_dims)

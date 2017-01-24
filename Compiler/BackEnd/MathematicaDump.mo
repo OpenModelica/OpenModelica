@@ -387,19 +387,19 @@ algorithm
       then
         s_5;
         /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
-    case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = DAE.ICONST(integer = ival)),_,_)
+    case (DAE.CAST(ty =  DAE.T_REAL(),exp = DAE.ICONST(integer = ival)),_,_)
       equation
         res = intString(ival);
       then
         res;
         /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
-    case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.ICONST(integer = ival))),_,_)
+    case (DAE.CAST(ty =  DAE.T_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.ICONST(integer = ival))),_,_)
       equation
         res = intString(ival);
         res2 = stringAppend("-", res);
       then
         res2;
-    case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = e),_,_)
+    case (DAE.CAST(ty =  DAE.T_REAL(),exp = e),_,_)
       equation
         s = printExpMmaStr(e,vars,knvars);
       then

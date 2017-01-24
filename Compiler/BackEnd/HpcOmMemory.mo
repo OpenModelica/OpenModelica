@@ -2671,7 +2671,7 @@ import Util;
     oVarName := match(iVar)
       case(BackendDAE.VAR(varName=iVarName, varKind=BackendDAE.STATE(index=1)))
         equation
-          tmpVarName = DAE.CREF_QUAL(DAE.derivativeNamePrefix,DAE.T_REAL({},{}),{},iVarName);
+          tmpVarName = DAE.CREF_QUAL(DAE.derivativeNamePrefix,DAE.T_REAL({}),{},iVarName);
         then tmpVarName;
       case(BackendDAE.VAR(varName=iVarName,varKind=varKind))
         equation

@@ -822,11 +822,11 @@ public type TypeSource = list<Absyn.Path> "the class(es) where the type originat
 public constant TypeSource emptyTypeSource = {} "an empty origin for the type";
 
 // default constants that can be used
-constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
-constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
-constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
-constant Type T_BOOL_DEFAULT        = T_BOOL({}, emptyTypeSource);
-constant Type T_CLOCK_DEFAULT       = T_CLOCK({}, emptyTypeSource);
+constant Type T_REAL_DEFAULT        = T_REAL({});
+constant Type T_INTEGER_DEFAULT     = T_INTEGER({});
+constant Type T_STRING_DEFAULT      = T_STRING({});
+constant Type T_BOOL_DEFAULT        = T_BOOL({});
+constant Type T_CLOCK_DEFAULT       = T_CLOCK({});
 constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
 constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
 constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
@@ -855,37 +855,32 @@ constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("So
 constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},{},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo")::{});
 
 // Arrays of unknown dimension, eg. Real[:]
-public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
-public constant Type T_ARRAY_INT_NODIM     = T_ARRAY(T_INTEGER_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
-public constant Type T_ARRAY_BOOL_NODIM    = T_ARRAY(T_BOOL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
-public constant Type T_ARRAY_STRING_NODIM  = T_ARRAY(T_STRING_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
+public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()});
+public constant Type T_ARRAY_INT_NODIM     = T_ARRAY(T_INTEGER_DEFAULT,{DIM_UNKNOWN()});
+public constant Type T_ARRAY_BOOL_NODIM    = T_ARRAY(T_BOOL_DEFAULT,{DIM_UNKNOWN()});
+public constant Type T_ARRAY_STRING_NODIM  = T_ARRAY(T_STRING_DEFAULT,{DIM_UNKNOWN()});
 
 
 public uniontype Type "models the different front-end and back-end types"
 
   record T_INTEGER
     list<Var> varLst;
-    TypeSource source;
   end T_INTEGER;
 
   record T_REAL
     list<Var> varLst;
-    TypeSource source;
   end T_REAL;
 
   record T_STRING
     list<Var> varLst;
-    TypeSource source;
   end T_STRING;
 
   record T_BOOL
     list<Var> varLst;
-    TypeSource source;
   end T_BOOL;
 
   record T_CLOCK
     list<Var> varLst; // BTH Since Clock type has no attributes, this is not really needed, but at the moment kept for unified treatment of fundamental types
-    TypeSource source;
   end T_CLOCK;
 
   record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
@@ -904,7 +899,6 @@ public uniontype Type "models the different front-end and back-end types"
        In general Inst generates 1 and all the others generates 2"
     Type ty "Type";
     Dimensions dims "dims";
-    TypeSource source;
   end T_ARRAY;
 
   record T_NORETCALL "For functions not returning any values."

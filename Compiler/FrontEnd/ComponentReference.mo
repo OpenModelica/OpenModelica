@@ -1522,18 +1522,18 @@ algorithm
 
     case({},_) then false;
 
-    case((DAE.WHOLEDIM())::_,DAE.T_ARRAY(_,_,_)) then true;
+    case((DAE.WHOLEDIM())::_,DAE.T_ARRAY()) then true;
 
-    case((DAE.SLICE(es1))::_, DAE.T_ARRAY(_,ad,_))
+    case((DAE.SLICE(es1))::_, DAE.T_ARRAY(dims=ad))
       equation
         true = containWholeDim3(es1,ad);
       then
         true;
 
-    case(_::ssl,DAE.T_ARRAY(tty,ad,ts))
+    case(_::ssl,DAE.T_ARRAY(tty,ad))
       equation
         ad = List.stripFirst(ad);
-        b = containWholeDim2(ssl,DAE.T_ARRAY(tty,ad,ts));
+        b = containWholeDim2(ssl,DAE.T_ARRAY(tty,ad));
       then
         b;
 
@@ -1762,7 +1762,7 @@ algorithm
   if listEmpty(dims) then
     outType := ty;
   else
-    outType := DAE.T_ARRAY(ty, dims, Types.getTypeSource(ty));
+    outType := DAE.T_ARRAY(ty, dims);
   end if;
 end crefTypeFull;
 
@@ -3125,11 +3125,11 @@ algorithm
         List.map1Flat(crefs,expandCref_impl,true);
 
     // A array record ident cref without subscripts. Expand record true
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), {}),true)
+    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(), {}),true)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_COMPLEX(), dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayType(ty);
-        correctTy = DAE.T_ARRAY(basety,dims,source);
+        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD()), dims) = Types.flattenArrayType(ty);
+        correctTy = DAE.T_ARRAY(basety,dims);
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
         crefs = expandCref2(id, correctTy, subs, dims);
@@ -3137,46 +3137,46 @@ algorithm
         expandCrefLst(crefs,varLst,{});
 
     // A array type cref (possibly record but no expansion of records) without subscripts.
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), {}),_)
+    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(), {}),_)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
         (basety, dims) = Types.flattenArrayType(ty);
-        correctTy = DAE.T_ARRAY(basety,dims,source);
+        correctTy = DAE.T_ARRAY(basety,dims);
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
       then
         expandCref2(id, correctTy, subs, dims);
 
     // A array complex cref with subscripts. Expand record true
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), subs),true)
+    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(), subs),true)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_COMPLEX(), dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
-        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims) = Types.flattenArrayType(ty);
-        correctTy = DAE.T_ARRAY(basety,dims,source);
+        (basety as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD()), dims) = Types.flattenArrayType(ty);
+        correctTy = DAE.T_ARRAY(basety,dims);
         // Use the subscripts to generate only the wanted elements.
          crefs = expandCref2(id, correctTy, subs, dims);
       then
         expandCrefLst(crefs,varLst,{});
 
     // A array type cref (possibly record but no expansion of records) with subscripts.
-    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(source=source), subs),_)
+    case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(), subs),_)
       equation
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
         (basety, dims) = Types.flattenArrayType(ty);
-        correctTy = DAE.T_ARRAY(basety,dims,source);
+        correctTy = DAE.T_ARRAY(basety,dims);
         // Use the subscripts to generate only the wanted elements.
       then
         expandCref2(id, correctTy, subs, dims);
 
 
     // A qualified cref with array type.
-    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(source=source), subs, cref),_)
+    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(), subs, cref),_)
       equation
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
         // Flatten T_ARRAY(T_ARRAY(T_..., dim2,src), dim1,src) types to one level T_ARRAY(simpletype, alldims, src)
         (basety, dims) = Types.flattenArrayType(ty);
-        correctTy = DAE.T_ARRAY(basety,dims,source);
+        correctTy = DAE.T_ARRAY(basety,dims);
         // Create a simple identifier for the head of the cref and expand it.
         cref = DAE.CREF_IDENT(id, correctTy, subs);
         crefs2 = expandCref_impl(cref,false);
