@@ -1712,7 +1712,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%contextSystem(context)%><%cref(crefPrefixPrevious(arg.componentRef), useFlatArrayNotation)%>'
 
   case CALL(path=IDENT(name="firstTick")) then
-    '<%contextSystem(context)%>_clockStart[clockIndex - 1]'
+    '(<%contextSystem(context)%>_clockStart[clockIndex - 1] || <%contextSystem(context)%>_clockSubactive[clockIndex - 1])'
 
   case CALL(path=IDENT(name="interval")) then
     '<%contextSystem(context)%>_clockInterval[clockIndex - 1]'

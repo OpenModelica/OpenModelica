@@ -227,6 +227,8 @@ algorithm
               // introduce states to delay derivatives; see MLS 3.3, section 16.8.2 Solver Methods
               exp2 := DAE.CALL(Absyn.IDENT(name = "previous"), {exp2}, DAE.callAttrBuiltinImpureReal);
             end if;
+            exp2 := DAE.IFEXP(DAE.CALL(Absyn.IDENT(name = "firstTick"), {}, DAE.callAttrBuiltinImpureBool),
+                              DAE.RCONST(0), exp2);
             eq := BackendDAE.EQUATION(exp, exp2, var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
             lstEqs := eq :: lstEqs;
           end for;
