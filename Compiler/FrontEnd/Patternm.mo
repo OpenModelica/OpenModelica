@@ -475,7 +475,9 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       algorithm
-        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,typeVars=typeVars,knownSingleton = knownSingleton,source = {fqPath}),_) :=
+        (cache,t,_) :=
+          Lookup.lookupType(cache, env, callPath, NONE());
+        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,typeVars=typeVars,knownSingleton = knownSingleton,path = fqPath),_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
         validUniontype(utPath1,utPath2,info,lhs);
 
@@ -522,7 +524,7 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
-        (cache,DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), source = {fqPath}),_) =
+        (cache,DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), path = fqPath),_) =
           Lookup.lookupType(cache, env, callPath, NONE());
         true = Absyn.pathEqual(fqPath,utPath2);
 
@@ -2787,7 +2789,7 @@ algorithm
     case (DAE.PAT_AS(id=id,attr=attr),DAE.PAT_CALL(index=index,typeVars=typeVars,fields=fields,knownSingleton=knownSingleton,name=name))
       equation
          path = Absyn.stripLast(name);
-         ty = DAE.T_METARECORD(path,typeVars,index,fields,knownSingleton,{name});
+         ty = DAE.T_METARECORD(name,path,typeVars,index,fields,knownSingleton);
          env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then env;
     else env;

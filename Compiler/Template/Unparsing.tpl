@@ -25,7 +25,7 @@ template programExternalHeaderFromTypes(list<DAE.Type> tys)
   #ifdef __cplusplus
   extern "C" {
   #endif
-  <%tys |> ty as T_METARECORD(source=path::_) =>
+  <%tys |> ty as T_METARECORD(__) =>
       let fieldsStr=(ty.fields |> var as TYPES_VAR(__) => '"<%var.name%>"'; separator=",")
       let omcname='<%stringReplace(stringReplace(Absyn.pathString(path,"$",false),"_","__"), "$", "_")%>'
       let nElts = listLength(ty.fields)

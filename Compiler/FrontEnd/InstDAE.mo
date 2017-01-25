@@ -318,7 +318,7 @@ algorithm
       equation
         finst_dims = List.flatten(inst_dims);
         path = ComponentReference.crefToPath(vn);
-        tty.source = Types.mkTypeSource(SOME(path));
+        tty.path = path;
       then
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,tty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 

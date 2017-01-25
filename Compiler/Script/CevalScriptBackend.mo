@@ -57,7 +57,6 @@ import BackendDAEUtil;
 import BackendDAEOptimize;
 import BackendEquation;
 import BackendVariable;
-import Builtin;
 import CevalScript;
 import CheckModel;
 import ClassInf;
@@ -71,6 +70,7 @@ import Dump;
 import ExecStat;
 import Expression;
 import ExpressionDump;
+import FBuiltin;
 import Figaro;
 import FindZeroCrossings;
 import Flags;
@@ -2832,7 +2832,7 @@ algorithm
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
 
-       (_,scode_builtin) = Builtin.getInitialFunctions();
+       (_,scode_builtin) = FBuiltin.getInitialFunctions();
        scodeP = listAppend(scode_builtin, scodeP);
 
        // nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);

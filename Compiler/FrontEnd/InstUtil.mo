@@ -4656,11 +4656,9 @@ algorithm
       Absyn.Path newPath;
       DAE.Type tp;
 
-    case DAE.T_FUNCTION(source={}) then inType;
-
     case resType as DAE.T_FUNCTION()
       equation
-        resType.source = Types.mkTypeSource(SOME(path));
+        resType.path = path;
       then resType;
 
     else inType;

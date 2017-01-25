@@ -62,7 +62,6 @@ import SimCode;
 // protected imports
 protected
 import BaseHashSet;
-import Builtin;
 import CevalScriptBackend;
 import CevalFunction;
 import ClassInf;
@@ -76,6 +75,7 @@ import Dump;
 import DynLoad;
 import Expression;
 import ExpressionDump;
+import FBuiltin;
 import Flags;
 import FGraph;
 import FLookup;
@@ -1396,7 +1396,7 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(_),_},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        (ip,_) = Builtin.getInitialFunctions();
+        (ip,_) = FBuiltin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
         paths = Interactive.getTopClassnames(p);
         paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
@@ -1406,7 +1406,7 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected),Values.BOOL(includeConstants)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        (ip,_) = Builtin.getInitialFunctions();
+        (ip,_) = FBuiltin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
         paths = Interactive.getClassnamesInPath(path, p, showProtected, includeConstants);
         paths = if b then List.map1r(paths,Absyn.joinPaths,path) else paths;
@@ -1417,7 +1417,7 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected),Values.BOOL(includeConstants)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        (ip,_) = Builtin.getInitialFunctions();
+        (ip,_) = FBuiltin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
         (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,includeConstants,{});
         paths = listReverse(paths);
@@ -1428,7 +1428,7 @@ algorithm
 
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected),Values.BOOL(includeConstants)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        (ip,_) = Builtin.getInitialFunctions();
+        (ip,_) = FBuiltin.getInitialFunctions();
         p = if builtin then Interactive.updateProgram(p,ip) else p;
         (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,includeConstants,{});
         paths = listReverse(paths);

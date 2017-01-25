@@ -39,27 +39,30 @@ encapsulated package NFSCodeEnv
   and redeclares, and fully qualifying class names.
 "
 
-public import Absyn;
-public import SCode;
-public import Util;
+import Absyn;
+import SCode;
+import Util;
 
-protected import NFEnvExtends;
-protected import Error;
-protected import List;
-protected import SCodeDump;
-protected import NFSCodeFlattenRedeclare;
-protected import NFSCodeLookup;
-protected import NFSCodeCheck;
-protected import SCodeUtil;
-protected import System;
-protected import Builtin;
+protected
 
-public type Import = Absyn.Import;
+import Error;
+import FBuiltin;
+import List;
+import SCodeDump;
+import NFEnvExtends;
+import NFSCodeFlattenRedeclare;
+import NFSCodeLookup;
+import NFSCodeCheck;
+import SCodeUtil;
+import System;
 
-public constant Integer tmpTickIndex = 2;
-public constant Integer extendsTickIndex = 3;
+public
 
-public uniontype ImportTable
+type Import = Absyn.Import;
+constant Integer tmpTickIndex = 2;
+constant Integer extendsTickIndex = 3;
+
+uniontype ImportTable
   record IMPORT_TABLE
     // Imports should not be inherited, but removing them from the environment
     // when doing lookup through extends causes problems for the lookup later
@@ -72,7 +75,7 @@ public uniontype ImportTable
   end IMPORT_TABLE;
 end ImportTable;
 
-public uniontype Redeclaration
+uniontype Redeclaration
   "This uniontype stores a redeclare modifier (which might be derived from an
   element redeclare). The RAW_MODIFIER stores a 'raw' modifier, i.e. the raw
   element stored in the SCode representation. These are processed when they are
@@ -88,7 +91,7 @@ public uniontype Redeclaration
   end PROCESSED_MODIFIER;
 end Redeclaration;
 
-public uniontype Extends
+uniontype Extends
   record EXTENDS
     Absyn.Path baseClass;
     list<Redeclaration> redeclareModifiers;
@@ -97,7 +100,7 @@ public uniontype Extends
   end EXTENDS;
 end Extends;
 
-public uniontype ExtendsTable
+uniontype ExtendsTable
   record EXTENDS_TABLE
     list<Extends> baseClasses;
     list<SCode.Element> redeclaredElements;
@@ -105,13 +108,13 @@ public uniontype ExtendsTable
   end EXTENDS_TABLE;
 end ExtendsTable;
 
-public uniontype FrameType
+uniontype FrameType
   record NORMAL_SCOPE end NORMAL_SCOPE;
   record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
   record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
 end FrameType;
 
-public uniontype Frame
+uniontype Frame
   record FRAME
     Option<String> name;
     FrameType frameType;
@@ -122,14 +125,14 @@ public uniontype Frame
   end FRAME;
 end Frame;
 
-public uniontype ClassType
+uniontype ClassType
   record USERDEFINED end USERDEFINED;
   record BUILTIN end BUILTIN;
   record CLASS_EXTENDS end CLASS_EXTENDS;
   record BASIC_TYPE end BASIC_TYPE;
 end ClassType;
 
-public uniontype Item
+uniontype Item
   record VAR
     SCode.Element var;
     Option<Util.StatefulBoolean> isUsed "Used by SCodeDependency.";
@@ -1776,7 +1779,7 @@ algorithm
   outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, SOME(is_used))};
 
   // add the builtin classes from ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
-  (_,p) := Builtin.getInitialFunctions();
+  (_,p) := FBuiltin.getInitialFunctions();
   outInitialEnv := extendEnvWithClasses(p, outInitialEnv);
 end buildInitialEnv;
 

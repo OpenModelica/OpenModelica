@@ -1169,8 +1169,7 @@ algorithm
         true = index >= 0;
         vars = valuesToVars(vl, ids);
         utPath = Absyn.stripLast(cname);
-      then
-        DAE.T_METARECORD(utPath, {} /* typeVar? */, index, vars, false /*We simply do not know...*/,{cname});
+      then DAE.T_METARECORD(cname, utPath, {} /* typeVar? */, index, vars, false /*We simply do not know...*/);
 
         // MetaModelica list type
     case Values.LIST(vl)
@@ -1565,7 +1564,7 @@ algorithm
     case (DAE.T_METAPOLYMORPHIC(name = l1),DAE.T_METAPOLYMORPHIC(name = l2)) then l1 == l2;
     case (DAE.T_UNKNOWN(),_) then true;
     case (_,DAE.T_UNKNOWN()) then true;
-    case (DAE.T_NORETCALL(_),DAE.T_NORETCALL(_)) then true;
+    case (DAE.T_NORETCALL(),DAE.T_NORETCALL()) then true;
 
     // MM Function Reference
     case (DAE.T_FUNCTION(funcArg = farg1,funcResultType = t1),DAE.T_FUNCTION(funcArg = farg2,funcResultType = t2))
@@ -1587,7 +1586,7 @@ algorithm
     case (DAE.T_FUNCTION_REFERENCE_VAR(functionType = t1),DAE.T_FUNCTION_REFERENCE_VAR(functionType = t2))
       then subtype(t1,t2);
 
-    case(DAE.T_METARECORD(source={p1}),DAE.T_METARECORD(source={p2}))
+    case (DAE.T_METARECORD(path=p1),DAE.T_METARECORD(path=p2))
       then Absyn.pathEqual(p1,p2);
 
     case (DAE.T_METAUNIONTYPE(source = {p1}),DAE.T_METARECORD(utPath=p2))
@@ -2227,9 +2226,9 @@ algorithm
       then
         res;
 
-    case (DAE.T_FUNCTION(funcArg = params, funcResultType = restype, source = ts))
+    case (DAE.T_FUNCTION(funcArg = params, funcResultType = restype, path=path))
       equation
-        funcstr = stringDelimitList(list(Absyn.pathString(pt) for pt in ts), ", ");
+        funcstr = Absyn.pathString(path);
         paramstrs = List.map(params, unparseParam);
         paramstr = stringDelimitList(paramstrs, ", ");
         restypestr = unparseType(restype);
@@ -2297,7 +2296,7 @@ algorithm
         res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
       then res;
 */
-    case (DAE.T_METARECORD(source = {p}))
+    case DAE.T_METARECORD(path=p)
       equation
         res = Absyn.pathStringNoQual(p);
       then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
@@ -2470,7 +2469,7 @@ algorithm
         s1 = printParamsStr(params);
         s2 = printTypeStr(restype);
         str = stringAppendList({"function(", s1,") => ",s2});
-        str = str + printTypeSourceStr(inType.source);
+        str = str + Absyn.pathString(inType.path);
       then
         str;
 
@@ -2549,11 +2548,7 @@ algorithm
         str;
 
     case (DAE.T_NORETCALL())
-      equation
-        str = "()";
-        str = str + printTypeSourceStr(inType.source);
-      then
-        str;
+      then "()";
 
     // MetaType
     case (DAE.T_METATYPE(ty = t))
@@ -2566,8 +2561,7 @@ algorithm
     // Uniontype, Metarecord
     case (t as DAE.T_METARECORD())
       equation
-        {path} = t.source;
-        s1 = Absyn.pathStringNoQual(path);
+        s1 = Absyn.pathStringNoQual(t.path);
         str = "#" + s1 + "#";
       then
         str;
@@ -2846,7 +2840,7 @@ algorithm
   outvl := getOutputVars(vl);
   fargs := makeFargsList(invl);
   rettype := makeReturnType(outvl);
-  outType := DAE.T_FUNCTION(fargs,rettype,functionAttributes,{p});
+  outType := DAE.T_FUNCTION(fargs,rettype,functionAttributes,p);
 end makeFunctionType;
 
 public function extendsFunctionTypeArgs
@@ -2858,7 +2852,7 @@ public function extendsFunctionTypeArgs
   input list<Boolean> inBooltLst;
   output DAE.Type outType;
 protected
-  DAE.TypeSource tysrc;
+  Absyn.Path tysrc;
   list<DAE.FuncArg> fargs, fargs1, newfargs;
   DAE.Type rettype;
   DAE.FunctionAttributes functionAttributes;
@@ -2888,7 +2882,7 @@ algorithm
       Option<list<String>> namesOpt;
 
 
-    case {} then DAE.T_NORETCALL(DAE.emptyTypeSource);
+    case {} then DAE.T_NORETCALL();
 
     case {element}
       equation
@@ -3348,7 +3342,7 @@ algorithm
       list<DAE.Type> tys;
       list<DAE.Var> vl;
 
-    case {} then DAE.T_NORETCALL(DAE.emptyTypeSource);
+    case {} then DAE.T_NORETCALL();
 
     case {var}
       equation
@@ -6039,6 +6033,7 @@ algorithm
       list<DAE.VarParallelism> ps;
       list<Option<DAE.Exp>> oe;
       list<Absyn.Path> paths;
+      Absyn.Path path;
       Boolean knownSingleton;
       DAE.EvaluateSingletonType singletonType;
 
@@ -6086,13 +6081,13 @@ algorithm
         t1.types = List.map3(t1.types, fixPolymorphicRestype2, prefix, bindings, info);
       then t1;
 
-    case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1),_,_,_)
+    case (DAE.T_FUNCTION(args1,ty1,functionAttributes,path),_,_,_)
       equation
         tys1 = List.map(args1, funcArgType);
         tys1 = List.map3(tys1, fixPolymorphicRestype2, prefix, bindings, info);
         ty1 = fixPolymorphicRestype2(ty1,prefix,bindings,info);
         args1 = List.threadMap(args1,tys1,setFuncArgType);
-        ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1);
+        ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes,path);
       then ty1;
 
     // Add Uniontype, Function reference(?)
@@ -6251,14 +6246,14 @@ algorithm
       Absyn.Path path;
       DAE.FunctionAttributes functionAttributes;
 
-    case (DAE.T_FUNCTION(funcArgs1,resType1,functionAttributes,{path}))
+    case (DAE.T_FUNCTION(funcArgs1,resType1,functionAttributes,path))
       equation
         funcArgTypes1 = List.map(funcArgs1, funcArgType);
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(funcArgTypes1);
         (_,funcArgTypes2) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, false);
         funcArgs2 = List.threadMap(funcArgs1,funcArgTypes2,setFuncArgType);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
-        ty2 = DAE.T_FUNCTION(funcArgs2,resType2,functionAttributes,{path});
+        ty2 = DAE.T_FUNCTION(funcArgs2,resType2,functionAttributes,path);
       then ty2;
 
     /* Maybe add this case when standard Modelica gets function references?
@@ -6423,14 +6418,14 @@ Solves by doing iterations until a valid state is found (or no change is
 possible)."
   input InstTypes.PolymorphicBindings bindings;
   input SourceInfo info;
-  input list<Absyn.Path> pathLst;
+  input Absyn.Path path;
   output InstTypes.PolymorphicBindings solvedBindings;
 protected
   InstTypes.PolymorphicBindings unsolvedBindings;
 algorithm
   // print("solvePoly " + polymorphicBindingsStr(bindings) + "\n");
   (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(bindings, {}, {});
-  checkValidBindings(bindings, solvedBindings, unsolvedBindings, info, pathLst);
+  checkValidBindings(bindings, solvedBindings, unsolvedBindings, info, path);
   // print("solved poly " + polymorphicBindingsStr(solvedBindings) + "\n");
 end solvePolymorphicBindings;
 
@@ -6440,13 +6435,13 @@ protected function checkValidBindings
   input InstTypes.PolymorphicBindings solvedBindings;
   input InstTypes.PolymorphicBindings unsolvedBindings;
   input SourceInfo info;
-  input list<Absyn.Path> pathLst;
+  input Absyn.Path path;
 protected
   String bindingsStr, solvedBindingsStr, unsolvedBindingsStr, pathStr;
   list<DAE.Type> tys;
 algorithm
   if not listEmpty(unsolvedBindings) then
-    pathStr := stringDelimitList(list(Absyn.pathString(p) for p in pathLst), ", ");
+    pathStr := Absyn.pathString(path);
     bindingsStr := polymorphicBindingsStr(bindings);
     solvedBindingsStr := polymorphicBindingsStr(solvedBindings);
     unsolvedBindingsStr := polymorphicBindingsStr(unsolvedBindings);
@@ -6532,7 +6527,7 @@ algorithm
       list<String> names1;
       list<DAE.FuncArg> args1,args2;
       DAE.FunctionAttributes functionAttributes1,functionAttributes2;
-      DAE.TypeSource ts1;
+      Absyn.Path path;
       Boolean fromOtherFunction;
       list<DAE.Const> cs1;
       list<DAE.VarParallelism> ps1;
@@ -6587,7 +6582,7 @@ algorithm
         ty1 = DAE.T_METATUPLE(tys1);
       then (ty1::rest,solvedBindings);
 
-    case (DAE.T_FUNCTION(args1,ty1,functionAttributes1,ts1)::_,DAE.T_FUNCTION(args2,ty2,_,_)::rest,solvedBindings)
+    case (DAE.T_FUNCTION(args1,ty1,functionAttributes1,path)::_,DAE.T_FUNCTION(args2,ty2,_,_)::rest,solvedBindings)
       equation
         tys1 = List.map(args1, funcArgType);
         tys2 = List.map(args2, funcArgType);
@@ -6595,7 +6590,7 @@ algorithm
         tys1 = List.map(tys1, boxIfUnboxedType);
         args1 = List.threadMap(args1,tys1,setFuncArgType);
         args1 = List.map(args1,clearDefaultBinding);
-        ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes1,ts1);
+        ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes1,path);
       then (ty1::rest,solvedBindings);
 
     case (tys1,ty::tys2,solvedBindings)
@@ -6675,7 +6670,7 @@ algorithm
       list<String> names;
       list<DAE.Const> cs;
       list<DAE.VarParallelism> ps;
-      DAE.TypeSource ts;
+      Absyn.Path path;
       list<Option<DAE.Exp>> oe;
       DAE.FunctionAttributes functionAttributes;
       DAE.Type ty,resType;
@@ -6711,7 +6706,7 @@ algorithm
         ty = DAE.T_TUPLE(tys,ity.names);
       then ty;
 
-    case (DAE.T_FUNCTION(args,resType,functionAttributes,ts),solvedBindings)
+    case (DAE.T_FUNCTION(args,resType,functionAttributes,path),solvedBindings)
       equation
         tys = List.map(args, funcArgType);
         tys = replaceSolvedBindings(resType::tys,solvedBindings,false);
@@ -6719,7 +6714,7 @@ algorithm
         ty::tys = List.map(tys, boxIfUnboxedType);
         args = List.threadMap(args,tys,setFuncArgType);
         ty = makeRegularTupleFromMetaTupleOnTrue(isTuple(resType),ty);
-        ty = DAE.T_FUNCTION(args,ty,functionAttributes,ts);
+        ty = DAE.T_FUNCTION(args,ty,functionAttributes,path);
       then ty;
 
     case (DAE.T_METAPOLYMORPHIC(name = id),solvedBindings)
@@ -6806,7 +6801,7 @@ algorithm
       then inBindings;
 
     // MM Function Reference. sjoelund
-    case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}))
+    case (DAE.T_FUNCTION(farg1,ty1,_,path1),DAE.T_FUNCTION(farg2,ty2,_,_))
       algorithm
         if Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1) then // Don't rename the result type for recursive calls...
           tList1 := List.map(farg1, funcArgType);
@@ -7284,14 +7279,14 @@ algorithm
       list<Option<DAE.Exp>> oe1;
       Type ty1;
       DAE.FunctionAttributes functionAttributes;
-      DAE.TypeSource ts;
+      Absyn.Path path;
 
-    case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts))
+    case (DAE.T_FUNCTION(args1,ty1,functionAttributes,path))
       equation
         tys1 = List.mapMap(args1, funcArgType, unboxedType);
         ty1 = unboxedType(ty1);
         args1 = List.threadMap(args1,tys1,setFuncArgType);
-      then (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts));
+      then (DAE.T_FUNCTION(args1,ty1,functionAttributes,path));
   end match;
 end unboxedFunctionType;
 

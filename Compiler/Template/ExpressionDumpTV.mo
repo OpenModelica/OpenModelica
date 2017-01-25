@@ -715,7 +715,6 @@ package DAE
     end T_ARRAY;
 
     record T_NORETCALL
-      TypeSource source;
     end T_NORETCALL;
 
     record T_UNKNOWN
@@ -775,11 +774,11 @@ package DAE
     end T_METAUNIONTYPE;
 
     record T_METARECORD
+      Absyn.Path path;
       Absyn.Path utPath;
       Integer index;
       list<Var> fields;
       Boolean knownSingleton;
-      TypeSource source;
     end T_METARECORD;
 
     record T_METAARRAY

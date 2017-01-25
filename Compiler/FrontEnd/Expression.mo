@@ -2306,7 +2306,7 @@ algorithm
       then DAE.T_TUPLE(tys, NONE());
     case (DAE.META_OPTION()) then DAE.T_METATYPE(DAE.T_NONE_DEFAULT);
     case (DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars))
-      then DAE.T_METATYPE(DAE.T_METARECORD(p, typeVars, i, {}, false, DAE.emptyTypeSource));
+      then DAE.T_METATYPE(DAE.T_METARECORD(p, Absyn.stripLast(p), typeVars, i, {}, false));
     case (DAE.BOX(e))
       then DAE.T_METATYPE(DAE.T_METABOXED(typeof(e)));
     case (DAE.MATCHEXPRESSION(et=tp))

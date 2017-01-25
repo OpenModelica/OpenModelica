@@ -835,15 +835,14 @@ constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT);
 constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT);
 constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT);
 constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT);
-constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(),emptyTypeSource);
+constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE());
 constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN();
-constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
-constant Type T_FUNCTION_DEFAULT    = T_FUNCTION({},T_ANYTYPE_DEFAULT,FUNCTION_ATTRIBUTES_DEFAULT,emptyTypeSource);
+constant Type T_NORETCALL_DEFAULT   = T_NORETCALL();
 constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT);
 constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
 constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
 
-constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), {}, 1, {
+constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), Absyn.IDENT("SourceInfo"), {}, 1, {
     TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("isReadOnly", dummyAttrVar, T_BOOL_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("lineNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
@@ -851,7 +850,7 @@ constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("So
     TYPES_VAR("lineNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("columnNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("lastModification", dummyAttrVar, T_REAL_DEFAULT, UNBOUND(), NONE())
-  }, true, emptyTypeSource);
+  }, true);
 constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},{},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo")::{});
 
 // Arrays of unknown dimension, eg. Real[:]
@@ -901,7 +900,6 @@ public uniontype Type "models the different front-end and back-end types"
   end T_ARRAY;
 
   record T_NORETCALL "For functions not returning any values."
-    TypeSource source;
   end T_NORETCALL;
 
   record T_UNKNOWN "Used when type is not yet determined"
@@ -926,7 +924,7 @@ public uniontype Type "models the different front-end and back-end types"
     list<FuncArg> funcArg "funcArg" ;
     Type funcResultType "Only single-result" ;
     FunctionAttributes functionAttributes;
-    TypeSource source;
+    Absyn.Path path;
   end T_FUNCTION;
 
   record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
@@ -951,7 +949,6 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_ANYTYPE
     Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
-    TypeSource source;
   end T_ANYTYPE;
 
   // MetaModelica extensions
@@ -977,6 +974,7 @@ public uniontype Type "models the different front-end and back-end types"
   end T_METAUNIONTYPE;
 
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+    Absyn.Path path "the path to the record";
     Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
     // If the metarecord constructor was added to the FunctionTree, this would
     // not be needed. They are used to create the datatype in the runtime...
@@ -984,7 +982,6 @@ public uniontype Type "models the different front-end and back-end types"
     Integer index; //The index in the uniontype
     list<Var> fields;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-    TypeSource source;
   end T_METARECORD;
 
   record T_METAARRAY

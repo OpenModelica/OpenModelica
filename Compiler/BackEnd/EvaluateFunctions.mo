@@ -1572,20 +1572,18 @@ algorithm
     local
       DAE.FunctionAttributes atts;
       DAE.TypeSource source;
-      DAE.Type outType;
+      DAE.Type ty;
       list<DAE.Type> outTypeLst;
       list<DAE.FuncArg> inputs;
       list<String> outNames;
-  case(DAE.T_FUNCTION(funcArg = inputs, funcResultType = outType, functionAttributes = atts, source = source),_,_)
+  case(ty as DAE.T_FUNCTION(),_,_)
     equation
       //print("the out types1: "+Types.unparseType(outType)+"\n");
       outTypeLst = list(DAEUtil.getVariableType(o) for o in outputs);
       outNames = list(DAEUtil.varName(o) for o in outputs);
-      outType = if intEq(listLength(outTypeLst),1) then listHead(outTypeLst) else DAE.T_TUPLE(outTypeLst,SOME(outNames));
-      outType = DAE.T_FUNCTION(inputs,outType,atts,source);
+      ty.funcResultType = if intEq(listLength(outTypeLst),1) then listHead(outTypeLst) else DAE.T_TUPLE(outTypeLst,SOME(outNames));
       //print("the out types2: "+Types.unparseType(outType)+"\n");
-    then
-      outType;
+    then ty;
   else
     then typIn;
   end matchcontinue;

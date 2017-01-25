@@ -833,7 +833,7 @@ algorithm
           path = Absyn.makeFullyQualified(path);
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
-          funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
+          funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
           func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
@@ -842,7 +842,7 @@ algorithm
           path = Absyn.pathSetLastIdent(path, Absyn.makeIdentPathFromString(name));
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
           fargs = Types.makeFargsList(inputs);
-          funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
+          funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
           func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
@@ -902,7 +902,7 @@ algorithm
 
         fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
         fargs = Types.makeFargsList(inputs);
-        funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
+        funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
         func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
 
         cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
@@ -934,7 +934,7 @@ algorithm
     local
       Absyn.Path path;
       DAE.Type ty;
-    case (DAE.T_FUNCTION(funcResultType=ty,source={path}),_)
+    case (DAE.T_FUNCTION(funcResultType=ty,path=path),_)
       equation
         (_,(_,_,true)) = Types.traverseType(ty,(path,info,true),checkExtObjOutputWork);
       then ();

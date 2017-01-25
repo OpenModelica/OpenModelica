@@ -1962,7 +1962,7 @@ algorithm
         ty2 := if isSome(defaultBinding) then typeB else inType;
         (exp,typeA,bindings) := Types.matchTypePolymorphicWithError(inExp, inType,typeA,SOME(path),{},info);
         (_,typeB,bindings) := Types.matchTypePolymorphicWithError(DAE.CREF(DAE.CREF_IDENT("$result",DAE.T_ANYTYPE_DEFAULT,{}),DAE.T_ANYTYPE_DEFAULT),ty2,typeB,SOME(path),bindings,info);
-        bindings := Types.solvePolymorphicBindings(bindings, info, {path});
+        bindings := Types.solvePolymorphicBindings(bindings, info, path);
         typeA := Types.fixPolymorphicRestype(typeA, bindings, info);
         typeB := Types.fixPolymorphicRestype(typeB, bindings, info);
         resType := Types.fixPolymorphicRestype(resType, bindings, info);
@@ -2003,7 +2003,7 @@ algorithm
 
     case {DAE.T_FUNCTION(funcArg={DAE.FUNCARG(ty = typeA, const = DAE.C_VAR()),
                                   DAE.FUNCARG(ty = typeB, const = DAE.C_VAR(), defaultBinding=SOME(e))},
-                         funcResultType = resType, source = {path})}
+                         funcResultType = resType, path = path)}
       algorithm
         v := Ceval.cevalSimple(e);
       then
@@ -2011,7 +2011,7 @@ algorithm
 
     case {DAE.T_FUNCTION(funcArg={DAE.FUNCARG(ty = typeA, const = DAE.C_VAR()),
                                   DAE.FUNCARG(ty = typeB, const = DAE.C_VAR(), defaultBinding=NONE())},
-                         funcResultType = resType, source = {path})}
+                         funcResultType = resType, path = path)}
       then (typeA, typeB, resType, NONE(), path);
 
     else
@@ -4593,7 +4593,7 @@ algorithm
        DAE.FUNCARG("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
       DAE.T_REAL_DEFAULT,
       DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+      Absyn.IDENT("delay"));
   else
     ty := DAE.T_FUNCTION(
       {DAE.FUNCARG("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -4601,7 +4601,7 @@ algorithm
        DAE.FUNCARG("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
       DAE.T_REAL_DEFAULT,
       DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      DAE.emptyTypeSource);
+      Absyn.IDENT("delay"));
   end if;
 
   (outCache, SOME((outExp, outProperties))) := elabCallArgs3(inCache, inEnv, {ty},
@@ -4788,7 +4788,7 @@ algorithm
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("previous"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("previous"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -4827,7 +4827,7 @@ algorithm
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("hold"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("hold"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -4873,7 +4873,7 @@ algorithm
                  DAE.FUNCARG("interval",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("sample"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
 
@@ -4892,7 +4892,7 @@ algorithm
                  DAE.FUNCARG("c",ty2,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERRED_CLOCK())))},
                 ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("sample"));
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
           args, nargs, impl, NONE(), pre, info);
@@ -4909,7 +4909,7 @@ algorithm
                  DAE.FUNCARG("c",DAE.T_CLOCK_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),SOME(DAE.CLKCONST(DAE.INFERRED_CLOCK())))},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("sample"));
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
           args, nargs, impl, NONE(), pre, info);
@@ -4956,7 +4956,7 @@ algorithm
                  DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                 ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("subSample"));
         // Pretend that subSample(x) was subSample(x,0) since "0" is the default value if no argument given
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("subSample"),
                listReverse(afactor :: args), nargs, impl, NONE(), pre, info);
@@ -4978,7 +4978,7 @@ algorithm
                  DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("subSample"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("subSample"), {au, afactor}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5020,7 +5020,7 @@ algorithm
                  DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                 ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("superSample"));
         // Pretend that superSample(x) was superSample(x,0) since "0" is the default value if no argument given
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("superSample"),
                listReverse(afactor :: args), nargs, impl, NONE(), pre, info);
@@ -5042,7 +5042,7 @@ algorithm
                  DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("superSample"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("superSample"), {au, afactor}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5092,7 +5092,7 @@ algorithm
                  DAE.FUNCARG("resolution",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("shiftSample"));
         // Pretend that shiftSample(u,shiftCounter) was shiftSample(u,shiftCounter,1) (resolution=1 is default value)
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
@@ -5121,7 +5121,7 @@ algorithm
                  DAE.FUNCARG("resolution",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("shiftSample"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5171,7 +5171,7 @@ algorithm
                  DAE.FUNCARG("resolution",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("backSample"));
         // Pretend that backSample(u,backCounter) was backSample(u,backCounter,1) (resolution=1 is default value)
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
@@ -5200,7 +5200,7 @@ algorithm
                  DAE.FUNCARG("resolution",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("backSample"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5239,7 +5239,7 @@ algorithm
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("noClock"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("noClock"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5275,7 +5275,7 @@ algorithm
                 {},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("firstTick"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
 
@@ -5287,7 +5287,7 @@ algorithm
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("firstTick"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5324,7 +5324,7 @@ algorithm
                 {},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("interval"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
 
@@ -5336,7 +5336,7 @@ algorithm
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("interval"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5412,7 +5412,7 @@ algorithm
                  DAE.FUNCARG("priority",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),SOME(DAE.ICONST(1)))},
                  DAE.T_NORETCALL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("transition"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("transition"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5561,7 +5561,7 @@ algorithm
                 {DAE.FUNCARG("state",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                  DAE.T_NORETCALL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("initialState"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("initialState"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5607,7 +5607,7 @@ algorithm
                 {DAE.FUNCARG("state",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
                  DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("activeState"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("activeState"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5644,7 +5644,7 @@ algorithm
                 {},
                  DAE.T_INTEGER_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("ticksInState"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("ticksInState"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -5681,7 +5681,7 @@ algorithm
                 {},
                  DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                DAE.emptyTypeSource);
+                Absyn.IDENT("timeInState"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("timeInState"), args, nargs, impl, NONE(), pre, info);
       then (cache, call, prop);
   end match;
@@ -7644,7 +7644,7 @@ algorithm
         (cache,func) = InstFunction.getRecordConstructorFunction(cache,env,fn);
 
         DAE.RECORD_CONSTRUCTOR(path,tp1,_) = func;
-        DAE.T_FUNCTION(fargs, outtype, _, {path}) = tp1;
+        DAE.T_FUNCTION(fargs, outtype, _, path) = tp1;
 
 
         slots = makeEmptySlots(fargs);
@@ -7705,7 +7705,7 @@ algorithm
 
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
-        (cache,t as DAE.T_METARECORD(source={_}),_) = Lookup.lookupType(cache, env, fn, NONE());
+        (cache,t as DAE.T_METARECORD(),_) = Lookup.lookupType(cache, env, fn, NONE());
         Util.setStatefulBoolean(stopElab,true);
         (cache,expProps) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
       then
@@ -8179,7 +8179,7 @@ algorithm
       list<DAE.Exp> args;
       InstTypes.PolymorphicBindings bindings;
 
-    case DAE.T_METARECORD(source = {fq_path})
+    case DAE.T_METARECORD(path=fq_path)
       algorithm
         DAE.TYPES_VAR(name = str) := List.find(inType.fields, Types.varHasMetaRecordType);
         fn_str := Absyn.pathString(fq_path);
@@ -8188,7 +8188,7 @@ algorithm
       then
         (inCache, NONE());
 
-    case DAE.T_METARECORD(source = {_})
+    case DAE.T_METARECORD()
       algorithm
         false := listLength(inType.fields) == listLength(inPosArgs) + listLength(inNamedArgs);
         fn_str := Types.unparseType(inType);
@@ -8196,7 +8196,7 @@ algorithm
       then
         (inCache, NONE());
 
-    case DAE.T_METARECORD(source = {fq_path})
+    case DAE.T_METARECORD(path = fq_path)
       algorithm
         field_names := list(Types.getVarName(var) for var in inType.fields);
         tys := list(Types.getVarType(var) for var in inType.fields);
@@ -8210,7 +8210,7 @@ algorithm
         true := List.fold(slots, slotAnd, true);
         args := slotListArgs(slots);
         if not listEmpty(bindings) then
-          bindings := Types.solvePolymorphicBindings(bindings, inInfo, inType.source);
+          bindings := Types.solvePolymorphicBindings(bindings, inInfo, inType.path);
           typeVars := list(Types.fixPolymorphicRestype(tv, bindings, inInfo) for tv in inType.typeVars);
           ty.typeVars := typeVars;
           prop := getProperties(ty, ty_const);
@@ -8222,7 +8222,7 @@ algorithm
         (outCache, SOME((DAE.METARECORDCALL(fq_path, args, field_names, inType.index, inType.typeVars), prop)));
 
     // MetaRecord failure.
-    case DAE.T_METARECORD(source = {fq_path})
+    case DAE.T_METARECORD(path = fq_path)
       algorithm
         (outCache, _, prop) := elabExpInExpression(inCache, inEnv,
           Absyn.TUPLE(inPosArgs), false, inST, false, inPrefix, inInfo);
@@ -8237,7 +8237,7 @@ algorithm
         (outCache, NONE());
 
     // MetaRecord failure (args).
-    case DAE.T_METARECORD(source = {fq_path})
+    case DAE.T_METARECORD(path = fq_path)
       algorithm
         str := "Failed to elaborate arguments " + Dump.printExpStr(Absyn.TUPLE(inPosArgs));
         fn_str := Absyn.pathString(fq_path);
@@ -8288,7 +8288,7 @@ algorithm
       list<DAE.Type> rest;
       Util.Status status1,status2;
 
-    case (DAE.T_FUNCTION(source = {name}) :: rest, Util.SUCCESS())
+    case (DAE.T_FUNCTION(path = name) :: rest, Util.SUCCESS())
       algorithm
         (outCache,status) := instantiateDaeFunction(inCache, env, name, builtin, clOpt, printErrorMsg);
       then
@@ -8964,12 +8964,10 @@ algorithm
     case tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(
         isBuiltin = DAE.FUNCTION_BUILTIN(SOME(name))))
       algorithm
-        fn := Absyn.IDENT(name);
-        tty.source := Types.mkTypeSource(SOME(fn));
-      then
-        (fn, tty);
+        tty.path := Absyn.IDENT(name);
+      then (tty.path, tty);
 
-    case DAE.T_FUNCTION(source = {fn}) then (fn,inType);
+    case DAE.T_FUNCTION(path = fn) then (fn,inType);
     else (inPath, inType);
 
   end match;
@@ -9003,7 +9001,6 @@ protected
   DAE.FunctionAttributes func_attr;
   list<Slot> slots;
   InstTypes.PolymorphicBindings pb;
-  DAE.TypeSource ts;
   Absyn.Path path;
   Boolean success = false;
   list<DAE.Type> rest_tys = inTypes;
@@ -9012,11 +9009,10 @@ algorithm
     func_ty :: rest_tys := rest_tys;
 
     DAE.T_FUNCTION(funcArg = params, funcResultType = res_ty,
-      functionAttributes = func_attr, source = ts) := func_ty;
+      functionAttributes = func_attr, path = path) := func_ty;
 
     try
       slots := makeEmptySlots(params);
-      path := if listEmpty(ts) then Absyn.IDENT("builtinFunction") else listHead(ts);
       (outCache, outArgs, outSlots, outConsts, pb) := elabInputArgs(inCache, inEnv,
         inPosArgs, inNamedArgs, slots, inOnlyOneFunction, inCheckTypes, inImplicit,
         isExternalObject, inST, inPrefix, inInfo, func_ty, path);
@@ -9024,11 +9020,11 @@ algorithm
       // Check the sanity of function parameters whose types are dependent on other parameters.
       // e.g. input Integer i; input Integer a[i]; // type of 'a' depends on the value 'i'.
       (params, res_ty) := applyArgTypesToFuncType(outSlots, params, res_ty, inEnv, inCheckTypes, inInfo);
-      pb := Types.solvePolymorphicBindings(pb, inInfo, ts);
+      pb := Types.solvePolymorphicBindings(pb, inInfo, path);
 
       outDimensions := slotsVectorizable(outSlots, inInfo);
       outResultType := Types.fixPolymorphicRestype(res_ty, pb, inInfo);
-      outFunctionType := DAE.T_FUNCTION(params, outResultType, func_attr, ts);
+      outFunctionType := DAE.T_FUNCTION(params, outResultType, func_attr, path);
 
       // Only created when not checking types for error msg.
       outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes);
@@ -10732,21 +10728,14 @@ algorithm
         (isBuiltin,isBuiltinFn,path) := isBuiltinFunc(path,t);
         isBuiltinFnOrInlineBuiltin := not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         // some builtin functions store {} there
-        (t,tySource) := match t
-          case DAE.T_FUNCTION(source={}) guard not isBuiltinFn
-            algorithm
-              tySource := Types.mkTypeSource(SOME(path));
-              t.source := tySource;
-            then (t,tySource);
-          case DAE.T_FUNCTION() then (t, t.source);
+        fpath := match t
+          case DAE.T_FUNCTION() then t.path;
         end match;
-        tt := t;
-        origt := tt;
-        {fpath} := tySource;
+        origt := t;
         t := Types.makeFunctionPolymorphicReference(t);
         c := Absyn.pathToCref(fpath);
         expCref := ComponentReference.toExpCref(c);
-        exp := Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt,tySource));
+        exp := Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt,{fpath}));
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) := instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then

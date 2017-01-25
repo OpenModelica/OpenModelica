@@ -59,7 +59,6 @@ public import Settings;
 public import Values;
 
 // protected imports
-protected import Builtin;
 protected import Ceval;
 protected import CevalScript;
 protected import ClassInf;
@@ -74,6 +73,7 @@ protected import Error;
 protected import ErrorExt;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import FBuiltin;
 protected import Flags;
 protected import FGraph;
 protected import GlobalScriptDump;
@@ -15845,7 +15845,7 @@ algorithm
   try
     outClass := getPathedClassInProgramWork(inPath, inProgram, enclOnErr);
   else
-    (p, _) := Builtin.getInitialFunctions();
+    (p, _) := FBuiltin.getInitialFunctions();
     outClass := getPathedClassInProgramWork(inPath, p, enclOnErr);
   end try;
 end getPathedClassInProgram;

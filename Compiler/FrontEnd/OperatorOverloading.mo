@@ -419,7 +419,7 @@ algorithm
         tuple<DAE.Exp,Option<DAE.Type>> tpl;
 
     // Matching types. Yay.
-    case ((DAE.T_FUNCTION(source={path},funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::DAE.FUNCARG(ty=ty2)::restArgs))::types, _, _, _, _, acc)
+    case ((DAE.T_FUNCTION(path=path,funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::DAE.FUNCARG(ty=ty2)::restArgs))::types, _, _, _, _, acc)
       equation
         (lhs,_) = Types.matchType(inLhs,lhsType,ty1,false);
         (rhs,_) = Types.matchType(inRhs,rhsType,ty2,false);
@@ -539,7 +539,7 @@ algorithm
         list<DAE.Exp> acc;
 
     // Matching types. Yay.
-    case (DAE.T_FUNCTION(source={path},funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::restArgs)::types, _, _, acc)
+    case (DAE.T_FUNCTION(path=path,funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::restArgs)::types, _, _, acc)
       equation
         (exp,_) = Types.matchType(inExp,inType,ty1,false);
         daeExp = makeCallFillRestDefaults(path,{exp},restArgs,Types.makeCallAttr(ty,attr));
@@ -1436,12 +1436,12 @@ algorithm
       Absyn.Path p;
       Boolean b;
     case (DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE()),_,_) then false;
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::DAE.FUNCARG(ty=ty2,defaultBinding=NONE())::_,source={_}),_,_)
+    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::DAE.FUNCARG(ty=ty2,defaultBinding=NONE())::_),_,_)
       equation
         b = Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty1),opType) or Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty2),opType);
         checkOperatorFunctionOneOutputError(b,opType,ty,info);
       then b;
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::_,source={_}),_,_)
+    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::_),_,_)
       equation
         b = Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty1),opType);
         checkOperatorFunctionOneOutputError(b,opType,ty,info);
@@ -1532,7 +1532,7 @@ algorithm
       list<DAE.FuncArg> args;
       Absyn.Path path;
       DAE.FunctionAttributes attr;
-    case DAE.T_FUNCTION(funcArg=args,functionAttributes=attr,source={path})
+    case DAE.T_FUNCTION(funcArg=args,functionAttributes=attr,path=path)
       equation
         result = makeCallFillRestDefaults(path,{},args,Types.makeCallAttr(ty,attr));
       then result;

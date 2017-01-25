@@ -2034,7 +2034,7 @@ package DAE
       list<FuncArg> funcArg;
       Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
-      TypeSource source;
+      Absyn.Path path;
     end T_FUNCTION;
 
     record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
@@ -2079,13 +2079,13 @@ package DAE
     end T_METAUNIONTYPE;
 
     record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+      Absyn.Path path;
       Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
       // If the metarecord constructor was added to the FunctionTree, this would
       // not be needed. They are used to create the datatype in the runtime...
       Integer index; //The index in the uniontype
       list<Var> fields;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-      TypeSource source;
     end T_METARECORD;
 
     record T_METAARRAY

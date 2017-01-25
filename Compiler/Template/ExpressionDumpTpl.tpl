@@ -395,7 +395,7 @@ match ty
     let ty_str = dumpType(ty)
     'Option<<%ty_str%>>'
   case T_METAUNIONTYPE(source = {p}) then AbsynDumpTpl.dumpPath(p)
-  case T_METARECORD(source = {p}) then AbsynDumpTpl.dumpPath(p)
+  case T_METARECORD(__) then AbsynDumpTpl.dumpPath(path)
   case T_METAARRAY(__) then
     let ty_str = dumpType(ty)
     'array<<%ty_str%>>'

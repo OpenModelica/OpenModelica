@@ -1487,7 +1487,7 @@ algorithm
       then addUnusedFunction(path, inFunctions, inUsedFunctions);
 
     case DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(functionType =
-        DAE.T_FUNCTION(source = {path})))
+        DAE.T_FUNCTION(path=path)))
       then addUnusedFunction(path, inFunctions, inUsedFunctions);
 
     // If it's a cref, check the cref's dimensions for function calls.

@@ -85,6 +85,8 @@ type SMNodeTable = HashTableSM1.HashTable;
 type SMNodeToFlatSMGroupTable = HashTableCG.HashTable;
 
 constant String SMS_PRE = "smOf" "prefix for flat State Machine names";
+
+protected
 constant Boolean DEBUG_SMDUMP = false "enable verbose stdout debug information during elaboration";
 
 public function createSMNodeToFlatSMGroupTable "
@@ -641,6 +643,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstStateMachineUtil.isInFlatSM failed: Hash table lookup failed for " + DAEDump.dumpElementsStr({inElement}));
+        BaseHashTable.dumpHashTableStatistics(smNodeToFlatSMGroup);
       then fail();
   end match;
 

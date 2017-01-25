@@ -1561,10 +1561,10 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), accRecDecls, rt)
     then (accRecDecls, rt);
 
-    case (DAE.T_METARECORD(source = {Absyn.QUALIFIED(name="SourceInfo")}), accRecDecls, rt)
+    case (DAE.T_METARECORD(path = Absyn.QUALIFIED(name="SourceInfo")), accRecDecls, rt)
       then (accRecDecls, rt);
 
-    case (DAE.T_METARECORD( fields = varlst, source = {path}), accRecDecls, rt)
+    case (DAE.T_METARECORD(fields = varlst, path=path), accRecDecls, rt)
       equation
         sname = Absyn.pathStringUnquoteReplaceDot(path, "_");
         if not listMember(sname, rt) then

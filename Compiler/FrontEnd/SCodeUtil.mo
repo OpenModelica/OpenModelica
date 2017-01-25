@@ -48,9 +48,9 @@ public import Absyn;
 public import SCode;
 
 protected
-import Builtin;
 import Debug;
 import Error;
+import FBuiltin;
 import Flags;
 import Inst;
 import List;
@@ -2722,7 +2722,7 @@ algorithm
 
     else
       equation
-        (_,sp) = Builtin.getInitialFunctions();
+        (_,sp) = FBuiltin.getInitialFunctions();
       then SCode.getElementWithPath(sp, inPath);
   end matchcontinue;
 end getElementWithPathCheckBuiltin;

@@ -145,7 +145,7 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
       equation
-        t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+        t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, inPath);
       then
         (cache, t, env);
 
@@ -157,7 +157,7 @@ algorithm
               DAE.FUNCARG("nodes", DAE.T_ARRAY(DAE.T_ANYTYPE_DEFAULT, {DAE.DIM_UNKNOWN()}), DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()),
               DAE.FUNCARG("message", DAE.T_STRING_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())},
               DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}),
-              DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+              DAE.FUNCTION_ATTRIBUTES_DEFAULT, inPath);
       then
         (cache, t, env);
 
@@ -208,7 +208,7 @@ algorithm
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,"rooted",_)
       equation
-        t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+        t = DAE.T_FUNCTION({DAE.FUNCARG("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, Absyn.IDENT("rooted"));
       then
         (cache, t, env);
 
@@ -2195,12 +2195,12 @@ algorithm
               {DAE.FUNCARG("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
               DAE.T_INTEGER_DEFAULT,
               DAE.FUNCTION_ATTRIBUTES_DEFAULT,
-              DAE.emptyTypeSource),
+              Absyn.IDENT("cardinality")),
             DAE.T_FUNCTION(
               {DAE.FUNCARG("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
               DAE.T_INTEGER_DEFAULT,
               DAE.FUNCTION_ATTRIBUTES_DEFAULT,
-              DAE.emptyTypeSource)};
+              Absyn.IDENT("cardinality"))};
 
   end match;
 end createGenericBuiltinFunctions;
@@ -2397,7 +2397,7 @@ algorithm
           ty := match ty
             case DAE.T_FUNCTION()
               algorithm
-                ty.source := Types.mkTypeSource(SOME(Absyn.IDENT(inFuncName)));
+                ty.path := Absyn.IDENT(inFuncName);
               then ty;
           end match;
         then
@@ -3539,9 +3539,8 @@ algorithm
     {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
   // for v in varlst loop print(Types.unparseType(v.ty)+"\n"); end for;
-  ts := Types.mkTypeSource(SOME(path));
   typeVarsType := list(DAE.T_METAPOLYMORPHIC(tv) for tv in typeVars);
-  ftype := DAE.T_METARECORD(utPath,typeVarsType,index,varlst,singleton,ts);
+  ftype := DAE.T_METARECORD(path,utPath,typeVarsType,index,varlst,singleton);
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + Types.unparseType(ftype) +"\n");
 end buildMetaRecordType;
 

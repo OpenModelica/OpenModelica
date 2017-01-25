@@ -3014,7 +3014,7 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
  "Generates code for a function reference and a closure."
 ::=
   match exp
-  case PARTEVALFUNCTION(ty=T_FUNCTION_REFERENCE_VAR(functionType = t), origType=T_FUNCTION_REFERENCE_VAR(functionType=t_orig as T_FUNCTION(source={name}))) then
+  case PARTEVALFUNCTION(ty=T_FUNCTION_REFERENCE_VAR(functionType = t), origType=T_FUNCTION_REFERENCE_VAR(functionType=t_orig as T_FUNCTION(path=name))) then
     let funcName = '<%underscorePath(name)%>'
     let closureArgs = (expList |> e => ', <%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>')
     functionClosure(funcName, closureArgs, t, t_orig, context, &extraFuncsDecl)

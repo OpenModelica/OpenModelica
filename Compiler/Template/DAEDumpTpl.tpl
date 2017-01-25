@@ -315,7 +315,7 @@ template dumpType(Type ty, Text &attributes)
     case T_METAARRAY(__) then 'array<<%dumpType(ty, attributes)%>>'
     case T_METAPOLYMORPHIC(__) then 'polymorphic<<%name%>>'
     case T_METAUNIONTYPE(source = {p}) then AbsynDumpTpl.dumpPathNoQual(p)
-    case T_METARECORD(source = {p}) then AbsynDumpTpl.dumpPathNoQual(p)
+    case T_METARECORD(__) then AbsynDumpTpl.dumpPathNoQual(path)
     case T_METABOXED(__) then '#<%dumpType(ty, attributes)%>'
     case T_METAOPTION(ty = DAE.T_UNKNOWN(__)) then 'Option<Any>'
     case T_METAOPTION(__) then 'Option<<%dumpType(ty, &attributes)%>>'
@@ -350,7 +350,7 @@ template dumpFunctionType(Type ty)
 match ty
   case T_FUNCTION(__) then
     let args_str = (funcArg |> arg => dumpFuncArg(arg) ;separator=", ")
-    let src_str = (source |> src => AbsynDumpTpl.dumpPath(src) ;separator=", ")
+    let src_str = AbsynDumpTpl.dumpPath(path)
     let &attr = buffer ""
     let res_str = dumpType(funcResultType, &attr)
     '<%src_str%><function>(<%args_str%>) => <%res_str%>'

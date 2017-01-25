@@ -5441,10 +5441,10 @@ public function collectFunctionRefVarPaths
   input list<Absyn.Path> acc;
   output list<Absyn.Path> outAcc;
 algorithm
-  outAcc := match(inElem,acc)
+  outAcc := match inElem
     local
       Absyn.Path path;
-    case (DAE.VAR(ty = DAE.T_FUNCTION(source = {path})),_)
+    case DAE.VAR(ty = DAE.T_FUNCTION(path = path))
       then path::acc;
     else acc;
   end match;
@@ -6143,71 +6143,71 @@ algorithm
   obnd := NONE();
   for i in iels loop
     obnd := match i
-	    case DAE.VAR(componentRef = cr, binding = obnd)
-	      algorithm
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+      case DAE.VAR(componentRef = cr, binding = obnd)
+        algorithm
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
             return;
-	        end if;
-	      then
-	        obnd;
+          end if;
+        then
+          obnd;
 
-	    case DAE.DEFINE(componentRef = cr, exp = e)
-	      algorithm
-	        obnd := SOME(e);
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
-	          return;
-	        end if;
-	      then
-	        obnd;
+      case DAE.DEFINE(componentRef = cr, exp = e)
+        algorithm
+          obnd := SOME(e);
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+          end if;
+        then
+          obnd;
 
-	    case DAE.INITIALDEFINE(componentRef = cr, exp = e)
-	      algorithm
-	        obnd := SOME(e);
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
-	          return;
-	        end if;
-	      then
-	        obnd;
+      case DAE.INITIALDEFINE(componentRef = cr, exp = e)
+        algorithm
+          obnd := SOME(e);
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+          end if;
+        then
+          obnd;
 
-	    case DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)
-	      algorithm
-	        obnd := SOME(e);
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
-	          return;
-	        end if;
-	      then
-	        obnd;
+      case DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)
+        algorithm
+          obnd := SOME(e);
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+          end if;
+        then
+          obnd;
 
-	    case DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))
-	      algorithm
-	        obnd := SOME(e);
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
-	          return;
-	        end if;
-	      then
-	        obnd;
+      case DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))
+        algorithm
+          obnd := SOME(e);
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+          end if;
+        then
+          obnd;
 
-	    case DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)
-	      algorithm
-	        obnd := SOME(e);
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
-	          return;
-	        end if;
-	      then
-	        obnd;
+      case DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)
+        algorithm
+          obnd := SOME(e);
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+          end if;
+        then
+          obnd;
 
-	    case DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))
-	      algorithm
-	        obnd := SOME(e);
-	        if ComponentReference.crefEqualNoStringCompare(icr, cr) then
-	          return;
-	        end if;
-	      then
-	        obnd;
+      case DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))
+        algorithm
+          obnd := SOME(e);
+          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+            return;
+          end if;
+        then
+          obnd;
 
-	    else obnd;
+      else obnd;
 
-	  end match;
+    end match;
   end for;
 end getVarBinding;
 
@@ -6262,18 +6262,18 @@ algorithm
 
   // not constant
   try
-	  e := iexp;
-	  crefs := Expression.getAllCrefs(e);
-	  oexps := List.map1(crefs, evaluateCref, iels);
-	  for c in crefs loop
-	    SOME(ee)::oexps := oexps;
-	    e := Expression.replaceCrefBottomUp(e, c, ee);
-	    (e, _) := ExpressionSimplify.simplify(e);
-	  end for;
-	  oexp := SOME(e);
-	else
-	  oexp := NONE();
-	end try;
+    e := iexp;
+    crefs := Expression.getAllCrefs(e);
+    oexps := List.map1(crefs, evaluateCref, iels);
+    for c in crefs loop
+      SOME(ee)::oexps := oexps;
+      e := Expression.replaceCrefBottomUp(e, c, ee);
+      (e, _) := ExpressionSimplify.simplify(e);
+    end for;
+    oexp := SOME(e);
+  else
+    oexp := NONE();
+  end try;
 end evaluateExp;
 
 public function replaceCrefInDAEElements

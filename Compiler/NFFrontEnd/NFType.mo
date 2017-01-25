@@ -348,7 +348,7 @@ public
       case Type.TUPLE()
         then DAE.T_TUPLE(list(toDAE(t) for t in ty.types), ty.names);
       case Type.FUNCTION()
-        then DAE.T_FUNCTION({}, toDAE(ty.resultType), ty.attributes, DAE.emptyTypeSource);
+        then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType), ty.attributes, Absyn.IDENT("TODO:FIXME"));
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX() then DAE.T_COMPLEX_DEFAULT;
