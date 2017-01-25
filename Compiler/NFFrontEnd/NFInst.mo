@@ -41,9 +41,10 @@ import Absyn;
 import SCode;
 
 import Builtin = NFBuiltin;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFComponent.Component;
 import Dimension = NFDimension;
+import Expression = NFExpression;
 import NFClass.ClassTree;
 import NFClass.Class;
 import NFInstNode.InstNode;
@@ -286,18 +287,65 @@ algorithm
   cls := match definition
     local
       SCode.ClassDef cdef;
-      ClassTree.Tree classes;
+      ClassTree.Tree class_tree;
       list<SCode.Element> elements;
+      Type ty;
+      array<InstNode> comps;
 
     case SCode.CLASS(classDef = cdef as SCode.PARTS())
       algorithm
-        (classes, elements) := makeScope(cdef.elementLst, scope);
+        (class_tree, elements) := makeScope(cdef.elementLst, scope);
       then
-        Class.PARTIAL_CLASS(classes, elements, Modifier.NOMOD());
+        Class.PARTIAL_CLASS(class_tree, elements, Modifier.NOMOD());
+
+    case SCode.CLASS(classDef = cdef as SCode.ENUMERATION())
+      algorithm
+        ty := makeEnumerationType(cdef.enumLst, scope);
+        (class_tree, comps) := makeEnumerationScope(cdef.enumLst, ty, scope);
+      then
+        Class.PARTIAL_BUILTIN(ty, class_tree, comps, Modifier.NOMOD());
 
     else Class.PARTIAL_CLASS(ClassTree.new(), {}, Modifier.NOMOD());
   end match;
 end partialInstClass2;
+
+function makeEnumerationType
+  input list<SCode.Enum> literals;
+  input InstNode scope;
+  output Type ty;
+protected
+  list<String> lits;
+  Absyn.Path path;
+algorithm
+  path := InstNode.path(scope);
+  lits := list(e.literal for e in literals);
+  ty := Type.ENUMERATION(path, lits);
+end makeEnumerationType;
+
+function makeEnumerationScope
+  input list<SCode.Enum> literals;
+  input Type enumType;
+  input InstNode enumClass;
+  output ClassTree.Tree scope;
+  output array<InstNode> literalNodes;
+protected
+  list<InstNode> lit_nodes = {};
+  SCode.Element enum_def = InstNode.definition(enumClass);
+  SourceInfo info = SCode.elementInfo(enum_def);
+  Binding binding;
+  Component comp;
+  Integer index = 1;
+algorithm
+  for lit in literals loop
+    binding := Binding.TYPED_BINDING(Expression.ENUM_LITERAL(enumType, index),
+      enumType, DAE.C_CONST(), 0, info);
+    comp := Component.TYPED_COMPONENT(enumClass, enumType, binding, NFComponent.CONST_ATTR);
+    lit_nodes := InstNode.fromComponent(lit.literal, comp, enum_def, enumClass) :: lit_nodes;
+  end for;
+
+  scope := addComponentsToScope(lit_nodes, ClassTree.new());
+  literalNodes := listArray(lit_nodes);
+end makeEnumerationScope;
 
 function expandClass
   input output InstNode node;
@@ -384,14 +432,6 @@ algorithm
         end if;
       then
         node;
-
-     // transform SCode.ENUMERATION into a normal class
-     case SCode.CLASS(name=name, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info)
-       algorithm
-         cls := SCodeUtil.expandEnumeration(name, enumLst, prefixes, cmt, info);
-         node := InstNode.setDefinition(cls, node);
-       then
-         expandClass2(node);
 
     else
       algorithm
@@ -719,6 +759,7 @@ protected
   Binding binding;
   InstNode n, cur_scope, par;
   Type ty;
+  ClassTree.Tree tree;
 algorithm
   () := match InstNode.getClass(node)
     // A normal class.
@@ -753,7 +794,9 @@ algorithm
         // Clone the node, since each component needs a unique type.
         node := InstNode.clone(node);
         c := InstNode.getClass(node);
-        Class.PARTIAL_BUILTIN(ty = ty, modifier = mod) := c;
+
+        Class.PARTIAL_BUILTIN(ty = ty, elements = tree,
+          components = components, modifier = mod) := c;
 
         // Merge any outer modifiers on the class with the class' own modifier.
         type_mod := Modifier.merge(modifier, mod);
@@ -781,7 +824,7 @@ algorithm
           end for;
         end if;
 
-        c := Class.INSTANCED_BUILTIN(ty, inst_type_mods);
+        c := Class.INSTANCED_BUILTIN(ty, tree, components, inst_type_mods);
         node := InstNode.updateClass(c, node);
       then
         ();

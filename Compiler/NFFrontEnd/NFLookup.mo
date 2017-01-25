@@ -36,6 +36,7 @@ encapsulated package NFLookup
 "
 
 import Absyn;
+import Binding = NFBinding;
 import Dump;
 import Error;
 import Global;
@@ -44,35 +45,39 @@ import NFComponent.Component;
 import NFClass.ClassTree;
 import NFClass.Class;
 import NFInstNode.InstNode;
+import NFInstNode.InstNodeType;
 import NFLookupState.LookupState;
 import NFMod.Modifier;
 import NFPrefix.Prefix;
 import Type = NFType;
 
-constant NFInst.InstNode REAL_TYPE = NFInstNode.CLASS_NODE("Real",
+constant InstNode REAL_TYPE = InstNode.CLASS_NODE("Real",
   NFBuiltin.BUILTIN_REAL,
-  listArray({NFClass.PARTIAL_BUILTIN(Type.REAL(), Modifier.NOMOD())}),
-  NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
-constant NFInst.InstNode INT_TYPE = NFInstNode.CLASS_NODE("Integer",
-  NFBuiltin.BUILTIN_INTEGER,
-  listArray({NFClass.PARTIAL_BUILTIN(Type.INTEGER(), Modifier.NOMOD())}),
-  NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
-constant NFInst.InstNode BOOL_TYPE = NFInstNode.CLASS_NODE("Boolean",
-  NFBuiltin.BUILTIN_BOOLEAN,
-  listArray({NFClass.PARTIAL_BUILTIN(Type.BOOLEAN(), Modifier.NOMOD())}),
-  NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
-constant NFInst.InstNode STRING_TYPE = NFInstNode.CLASS_NODE("String",
-  NFBuiltin.BUILTIN_STRING,
-  listArray({NFClass.PARTIAL_BUILTIN(Type.STRING(), Modifier.NOMOD())}),
-  NFInstNode.EMPTY_NODE(), NFInstNode.NORMAL_CLASS());
+  listArray({Class.PARTIAL_BUILTIN(Type.REAL(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant NFInstNode.InstNode BUILTIN_TIME =
-  NFInstNode.COMPONENT_NODE("time",
+constant InstNode INT_TYPE = InstNode.CLASS_NODE("Integer",
+  NFBuiltin.BUILTIN_INTEGER,
+  listArray({Class.PARTIAL_BUILTIN(Type.INTEGER(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
+constant InstNode BOOL_TYPE = InstNode.CLASS_NODE("Boolean",
+  NFBuiltin.BUILTIN_BOOLEAN,
+  listArray({Class.PARTIAL_BUILTIN(Type.BOOLEAN(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
+constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
+  NFBuiltin.BUILTIN_STRING,
+  listArray({NFClass.PARTIAL_BUILTIN(Type.STRING(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
+constant InstNode BUILTIN_TIME =
+  InstNode.COMPONENT_NODE("time",
     NFBuiltin.BUILTIN_TIME,
-    listArray({NFComponent.TYPED_COMPONENT(
+    listArray({Component.TYPED_COMPONENT(
         REAL_TYPE,
-        NFType.REAL(),
-        NFBinding.UNBOUND(),
+        Type.REAL(),
+        Binding.UNBOUND(),
         NFComponent.INPUT_ATTR)}),
     NFInstNode.EMPTY_NODE());
 

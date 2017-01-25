@@ -42,7 +42,7 @@ encapsulated package NFMod
 public
 import Absyn;
 import BaseAvlTree;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFComponent.Component;
 import NFInstNode.InstNode;
 import SCode;

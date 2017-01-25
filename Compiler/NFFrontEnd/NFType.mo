@@ -54,6 +54,8 @@ public
   end CLOCK;
 
   record ENUMERATION
+    Absyn.Path typePath;
+    list<String> literals;
   end ENUMERATION;
 
   record ARRAY
@@ -340,6 +342,7 @@ public
       case Type.REAL() then DAE.T_REAL_DEFAULT;
       case Type.STRING() then DAE.T_STRING_DEFAULT;
       case Type.BOOLEAN() then DAE.T_BOOL_DEFAULT;
+      case Type.ENUMERATION() then DAE.T_ENUMERATION(NONE(), ty.typePath, ty.literals, {}, {});
       case Type.CLOCK() then DAE.T_CLOCK_DEFAULT;
       case Type.ENUMERATION() then DAE.T_ENUMERATION_DEFAULT;
       case Type.ARRAY()

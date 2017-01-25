@@ -32,7 +32,8 @@
 encapsulated package NFComponent
 
 import DAE;
-import NFBinding.Binding;
+import Binding = NFBinding;
+import NFClass.Class;
 import Dimension = NFDimension;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
@@ -45,6 +46,15 @@ import NFInstUtil;
 
 public
 constant Component.Attributes DEFAULT_ATTR =
+  Component.Attributes.ATTRIBUTES(
+     DAE.NON_CONNECTOR(),
+     DAE.NON_PARALLEL(),
+     DAE.VARIABLE(),
+     DAE.BIDIR(),
+     DAE.NOT_INNER_OUTER(),
+     DAE.PUBLIC());
+
+constant Component.Attributes CONST_ATTR =
   Component.Attributes.ATTRIBUTES(
      DAE.NON_CONNECTOR(),
      DAE.NON_PARALLEL(),
@@ -164,6 +174,7 @@ uniontype Component
   algorithm
     ty := match component
       case TYPED_COMPONENT() then component.ty;
+      case UNTYPED_COMPONENT() then Class.getType(InstNode.getClass(component.classInst));
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -213,7 +224,7 @@ uniontype Component
 
   function getBinding
     input Component component;
-    output NFBinding.Binding b;
+    output Binding b;
   algorithm
     b := match component
       case UNTYPED_COMPONENT() then component.binding;

@@ -73,7 +73,7 @@ uniontype Prefix
       prefix := PREFIX(InstNode.name(node), {}, Type.UNKNOWN(), prefix, PrefixType.CLASS);
     else
       prefix := PREFIX(InstNode.name(node), {},
-        Component.getType(InstNode.component(node)), prefix, PrefixType.COMPONENT);
+        InstNode.getType(node), prefix, PrefixType.COMPONENT);
     end if;
   end addNode;
 

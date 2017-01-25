@@ -29,26 +29,20 @@
  *
  */
 
-
-encapsulated package NFBinding
-" file:        NFMod.mo
-  package:     NFMod
-  description: A type for bindings in NFInst.
-"
-
+encapsulated uniontype NFBinding
 public
-import DAE;
-import NFExpression.Expression;
-import NFInstNode.InstNode;
-import SCode;
-import Type = NFType;
+  import DAE;
+  import NFExpression.Expression;
+  import NFInstNode.InstNode;
+  import SCode;
+  import Type = NFType;
 
 protected
-import Dump;
-import ExpressionDump;
+  import Dump;
+  import ExpressionDump;
+  import Binding = NFBinding;
 
 public
-uniontype Binding
   record UNBOUND end UNBOUND;
 
   record RAW_BINDING
@@ -164,8 +158,6 @@ public
       case TYPED_BINDING() then prefix + Expression.toString(binding.bindingExp);
     end match;
   end toString;
-
-end Binding;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

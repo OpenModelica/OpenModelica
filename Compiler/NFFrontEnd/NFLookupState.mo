@@ -289,28 +289,28 @@ uniontype LookupState
     LookupState entry_ty;
     SCode.Element el;
   algorithm
-    el := InstNode.definition(node);
     // Check that the element is allowed to be accessed given its visibility.
-    checkProtection(el, currentState);
+    checkProtection(node, currentState);
     // Check that we're allowed to look in the current scope.
     //checkPackageLikeAccess(inCurrentState, el, inEnv);
     // Get the state for the found element, and check that the transition to the
     // new state is valid.
-    entry_ty := elementState(el);
-    nextState := next2(entry_ty, currentState, el);
+    entry_ty := nodeState(node);
+    nextState := next2(entry_ty, currentState, node);
   end next;
 
   function checkProtection
     "Checks if a found element is protected during lookup, and prints an error if
      the element was not the first part of a name while being protected.
      I.e. P.a is allowed if P is protected, but not e.g. a.P or a.P.b."
-    input SCode.Element element;
+    input InstNode node;
     input LookupState currentState;
   algorithm
     () := match currentState
       local
         String name;
         SourceInfo info;
+        SCode.Element element;
 
       // The first part of a name is allowed to be protected, it's only
       // accessing a protected element via dot-notation that's illegal.
@@ -318,6 +318,8 @@ uniontype LookupState
 
       else
         algorithm
+          element := InstNode.definition(node);
+
           // A protected element generates an error.
           if SCode.isElementProtected(element) then
             (name, info) := SCode.elementNameInfo(element);
@@ -334,7 +336,11 @@ uniontype LookupState
     input InstNode node;
     output LookupState state;
   algorithm
-    state := elementState(InstNode.definition(node));
+    if InstNode.isComponent(node) then
+      state := STATE_COMP();
+    else
+      state := elementState(InstNode.definition(node));
+    end if;
   end nodeState;
 
   function elementState
@@ -343,10 +349,14 @@ uniontype LookupState
     output LookupState state;
   algorithm
     state := match element
-      case SCode.COMPONENT() then STATE_COMP();
       case SCode.CLASS(restriction = SCode.R_PACKAGE()) then STATE_PACKAGE();
       case SCode.CLASS(restriction = SCode.R_FUNCTION()) then STATE_FUNC();
       case SCode.CLASS() then STATE_CLASS();
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown element.");
+        then
+          fail();
     end match;
   end elementState;
 
@@ -377,7 +387,7 @@ uniontype LookupState
     "
     input LookupState elementState;
     input LookupState currentState;
-    input SCode.Element element;
+    input InstNode node;
     output LookupState nextState;
   algorithm
     nextState := match (elementState, currentState)
@@ -430,7 +440,7 @@ uniontype LookupState
       else
         algorithm
           assert(false, getInstanceName() + " failed on unknown transition for element "
-            + SCode.elementName(element));
+            + InstNode.name(node));
         then
           fail();
 

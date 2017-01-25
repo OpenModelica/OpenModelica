@@ -38,7 +38,7 @@ encapsulated package NFTyping
   Functions used by NFInst for typing.
 "
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFComponent.Component;
 import Dimension = NFDimension;
 import NFEquation.Equation;
@@ -623,6 +623,7 @@ algorithm
     case Type.INTEGER() then checkIntAttributes(attributes);
     case Type.BOOLEAN() then checkBoolAttributes(attributes);
     case Type.STRING() then checkStringAttributes(attributes);
+    case Type.ENUMERATION() then checkEnumAttributes(attributes);
     else
       algorithm
         assert(false, getInstanceName() + " got unknown type");
@@ -671,6 +672,13 @@ algorithm
   // TODO: Check that the attributes are valid String attributes and that their
   // bindings have the correct types.
 end checkStringAttributes;
+
+function checkEnumAttributes
+  input list<Modifier> attributes;
+algorithm
+  // TODO: Check that the attributes are valid enumeration attributes and that their
+  // bindings have the correct types.
+end checkEnumAttributes;
 
 function typeExp
   input Absyn.Exp untypedExp;
@@ -937,13 +945,13 @@ algorithm
   prefix := match (cref, prefix)
     case (Absyn.ComponentRef.CREF_IDENT(), Prefix.PREFIX(prefixTy = PrefixType.CREF))
       algorithm
-        prefix.ty := Component.getType(InstNode.component(component));
+        prefix.ty := InstNode.getType(component);
       then
         prefix;
 
     case (Absyn.ComponentRef.CREF_QUAL(), Prefix.PREFIX(prefixTy = PrefixType.CREF))
       algorithm
-        prefix.ty := Component.getType(InstNode.component(component));
+        prefix.ty := InstNode.getType(component);
         prefix.restPrefix := updateCrefPrefix(cref.componentRef,
           InstNode.parent(component), prefix.restPrefix);
       then

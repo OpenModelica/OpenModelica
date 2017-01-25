@@ -38,7 +38,7 @@ encapsulated package NFFunc
   Functions used by NFInst for handling functions.
 "
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFClass.Class;
 import NFComponent.Component;
 import Dimension = NFDimension;

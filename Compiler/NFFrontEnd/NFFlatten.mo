@@ -39,7 +39,7 @@ encapsulated package NFFlatten
 "
 
 import Inst = NFInst;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFClass.Class;
 import NFComponent.Component;
 import NFEquation.Equation;
@@ -192,9 +192,9 @@ algorithm
         then flattenArrayBoolDim(element, rest_dims, prefix, subscripts,
           scalarFunc, elements);
 
-      case Dimension.ENUM()
-        then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
-          rest_dims, prefix, subscripts, scalarFunc, elements);
+      //case Dimension.ENUM()
+      //  then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
+      //    rest_dims, prefix, subscripts, scalarFunc, elements);
 
       else
         algorithm
@@ -239,28 +239,28 @@ algorithm
   elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
 end flattenArrayBoolDim;
 
-function flattenArrayEnumDim<ElementT>
-  input ElementT element;
-  input Absyn.Path typeName;
-  input list<String> literals;
-  input list<Dimension> restDims;
-  input Prefix prefix;
-  input list<Subscript> subscripts;
-  input ExpandScalarFunc scalarFunc;
-  input output list<DAE.Element> elements;
-protected
-  Integer i = 1;
-  Expression enum_exp;
-  list<Subscript> subs;
-algorithm
-  for l in literals loop
-    enum_exp := Expression.ENUM(Absyn.suffixPath(typeName, l), i);
-    i := i + 1;
-
-    subs := Subscript.INDEX(enum_exp) :: subscripts;
-    elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
-  end for;
-end flattenArrayEnumDim;
+//function flattenArrayEnumDim<ElementT>
+//  input ElementT element;
+//  input Absyn.Path typeName;
+//  input list<String> literals;
+//  input list<Dimension> restDims;
+//  input Prefix prefix;
+//  input list<Subscript> subscripts;
+//  input ExpandScalarFunc scalarFunc;
+//  input output list<DAE.Element> elements;
+//protected
+//  Integer i = 1;
+//  Expression enum_exp;
+//  list<Subscript> subs;
+//algorithm
+//  for l in literals loop
+//    enum_exp := Expression.ENUM_LITERAL(Absyn.suffixPath(typeName, l), i);
+//    i := i + 1;
+//
+//    subs := Subscript.INDEX(enum_exp) :: subscripts;
+//    elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
+//  end for;
+//end flattenArrayEnumDim;
 
 function flattenScalar
   input Component component;

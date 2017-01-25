@@ -111,11 +111,15 @@ uniontype Class
 
   record PARTIAL_BUILTIN
     Type ty;
+    ClassTree.Tree elements;
+    array<InstNode> components;
     Modifier modifier;
   end PARTIAL_BUILTIN;
 
   record INSTANCED_BUILTIN
     Type ty;
+    ClassTree.Tree elements;
+    array<InstNode> components;
     list<Modifier> attributes;
   end INSTANCED_BUILTIN;
 
@@ -197,6 +201,8 @@ uniontype Class
     components := match cls
       case EXPANDED_CLASS() then cls.components;
       case INSTANCED_CLASS() then cls.components;
+      case PARTIAL_BUILTIN() then cls.components;
+      case INSTANCED_BUILTIN() then cls.components;
     end match;
   end components;
 
@@ -284,6 +290,8 @@ uniontype Class
     scope := match cls
       case EXPANDED_CLASS() then cls.elements;
       case INSTANCED_CLASS() then cls.elements;
+      case PARTIAL_BUILTIN() then cls.elements;
+      case INSTANCED_BUILTIN() then cls.elements;
     end match;
 
     element := ClassTree.get(scope, name);
@@ -418,6 +426,18 @@ uniontype Class
           ();
     end match;
   end updateExtends;
+
+  function getType
+    input Class cls;
+    output Type ty;
+  algorithm
+    ty := match cls
+      case PARTIAL_BUILTIN() then cls.ty;
+      case INSTANCED_BUILTIN() then cls.ty;
+      else Type.UNKNOWN();
+    end match;
+  end getType;
+
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

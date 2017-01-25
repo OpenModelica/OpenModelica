@@ -38,7 +38,7 @@ encapsulated package NFRecord
   Functions used by NFInst for handling records.
 "
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFClass.Class;
 import NFComponent.Component;
 import Dimension = NFDimension;

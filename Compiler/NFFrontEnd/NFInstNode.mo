@@ -123,6 +123,19 @@ uniontype InstNode
     node := COMPONENT_NODE(name, definition, c, parent);
   end newComponent;
 
+  function fromComponent
+    input String name;
+    input Component component;
+    input SCode.Element definition;
+    input InstNode parent;
+    output InstNode node;
+  protected
+    array<Component> c;
+  algorithm
+    c := arrayCreate(1, component);
+    node := COMPONENT_NODE(name, definition, c, parent);
+  end fromComponent;
+
   function isClass
     input InstNode node;
     output Boolean isClass;
@@ -401,6 +414,21 @@ uniontype InstNode
       else Absyn.dummyInfo;
     end match;
   end info;
+
+  function getType
+    input InstNode node;
+    output Type ty;
+  algorithm
+    ty := match node
+      case CLASS_NODE() then
+        if Class.isBuiltin(node.cls[1]) then
+          Class.getType(node.cls[1])
+        else
+          Type.COMPLEX(node);
+
+      case COMPONENT_NODE() then Component.getType(node.component[1]);
+    end match;
+  end getType;
 
   function clone
     input InstNode node;

@@ -82,10 +82,10 @@ uniontype Expression
     Boolean value;
   end BOOLEAN;
 
-  record ENUM
-    Absyn.Path name;
+  record ENUM_LITERAL
+    Type ty;
     Integer index;
-  end ENUM;
+  end ENUM_LITERAL;
 
   record CREF
     InstNode component;
@@ -518,7 +518,7 @@ uniontype Expression
     i := match exp
       case INTEGER() then exp.value;
       case BOOLEAN() then if exp.value then 1 else 0;
-      case ENUM() then exp.index;
+      case ENUM_LITERAL() then exp.index;
     end match;
   end toInteger;
 
@@ -535,7 +535,9 @@ uniontype Expression
       case STRING() then exp.value;
       case BOOLEAN() then String(exp.value);
 
-      case ENUM() then Absyn.pathString(exp.name);
+      case ENUM_LITERAL(ty = t as Type.ENUMERATION())
+        then Absyn.pathString(t.typePath) + "." + listGet(t.literals, exp.index);
+
       case CREF() then Prefix.toString(exp.prefix);
       case ARRAY() then "{" + stringDelimitList(List.map(exp.elements, toString), ", ") + "}";
 
@@ -574,11 +576,15 @@ uniontype Expression
     output DAE.Exp dexp;
   algorithm
     dexp := match exp
+      local
+        Absyn.Path path;
+
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
       case STRING() then DAE.SCONST(exp.value);
       case BOOLEAN() then DAE.BCONST(exp.value);
-      case ENUM() then DAE.ENUM_LITERAL(exp.name, exp.index);
+      case ENUM_LITERAL(ty = Type.ENUMERATION(typePath = path))
+        then DAE.ENUM_LITERAL(path, exp.index);
 
       case CREF()
         then DAE.CREF(Prefix.toCref(exp.prefix), DAE.T_UNKNOWN_DEFAULT);
