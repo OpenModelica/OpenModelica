@@ -180,42 +180,65 @@ algorithm
         BackendDAE.SubPartition subPartition;
         String solverMethod;
         BackendDAE.EqSystem syst;
-        list<BackendDAE.Equation> lstEqs;
+        list<BackendDAE.Equation> lstEqs = {};
         BackendDAE.Equation eq;
         list<DAE.ComponentRef> derVars = {};
+        BackendDAE.Var var;
+        DAE.Exp exp, exp2;
       case syst as BackendDAE.EQSYSTEM(orderedEqs = eqs)
         algorithm
           BackendDAE.CLOCKED_PARTITION(idx) := syst.partitionKind;
           subPartition := shared.partitionsInfo.subPartitions[idx];
           solverMethod := BackendDump.optionString(subPartition.clock.solver);
+          // check solverMethod
           if stringLength(solverMethod) > 7 and substring(solverMethod, 1, 8) == "Explicit" then
             if solverMethod <> "ExplicitEuler" then
               Error.addCompilerWarning("Solving clocked continuous equations with " +
                                        "ExplicitEuler instead of specified " + solverMethod + ". "
-                                       + "Supporting ExplicitEuler and ImplicitEuler.");
+                                       + "Supporting ImplicitEuler, SemiImplicitEuler and ExplicitEuler.");
+              solverMethod := "ExplicitEuler";
             end if;
-            for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
-              eq := BackendEquation.equationNth1(eqs, i);
-              (_, derVars) := BackendEquation.traverseExpsOfEquation(eq, getDerVars1, derVars);
-            end for;
+          elseif stringLength(solverMethod) > 0 and solverMethod <> "ImplicitEuler"
+              and solverMethod <> "SemiImplicitEuler" then
+            Error.addCompilerWarning("Solving clocked continuous equations with " +
+                                     "ImplicitEuler instead of specified " + solverMethod + ". "
+                                     + "Supporting ImplicitEuler, SemiImplicitEuler and ExplicitEuler.");
+            solverMethod := "ImplicitEuler";
+          end if;
+          // replace der(x) with $DER.x and collect derVars x
+          for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+            eq := BackendEquation.equationNth1(eqs, i);
+            (eq, derVars) := BackendEquation.traverseExpsOfEquation(eq, getDerVars1, derVars);
+            lstEqs := eq :: lstEqs;
+          end for;
+          // add all $DER.x as additional variables
+          for derVar in derVars loop
+            var := listGet(BackendVariable.getVar(derVar, syst.orderedVars), 1);
+            var := BackendDAE.VAR(ComponentReference.crefPrefixDer(derVar), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), var.varType, NONE(), var.arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+            syst.orderedVars := BackendVariable.addVar(var, syst.orderedVars);
+          end for;
+          // add defining equations for $DER.x, depending on solverMethod
+          for derVar in derVars loop
+            var := listGet(BackendVariable.getVar(derVar, syst.orderedVars), 1);
+            exp := DAE.CALL(Absyn.IDENT(name = "der"), {DAE.CREF(derVar, var.varType)}, DAE.callAttrBuiltinImpureReal);
+            exp := applyEulerMethod(exp, {});
+            exp2 := DAE.CREF(ComponentReference.crefPrefixDer(derVar), var.varType);
+            if solverMethod == "ExplicitEuler" then
+              // introduce states to delay derivatives; see MLS 3.3, section 16.8.2 Solver Methods
+              exp2 := DAE.CALL(Absyn.IDENT(name = "previous"), {exp2}, DAE.callAttrBuiltinImpureReal);
+            end if;
+            eq := BackendDAE.EQUATION(exp, exp2, var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+            lstEqs := eq :: lstEqs;
+          end for;
+          syst.orderedEqs := BackendEquation.listEquation(listReverse(lstEqs));
+          if solverMethod == "SemiImplicitEuler" then
+            // access previous values of clocked continuous states
             for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
               eq := BackendEquation.equationNth1(eqs, i);
               (eq, _) := BackendEquation.traverseExpsOfEquation(eq, shiftDerVars1, derVars);
               eqs := BackendEquation.setAtIndex(eqs, i, eq);
             end for;
-          elseif stringLength(solverMethod) > 0 and solverMethod <> "ImplicitEuler" then
-            Error.addCompilerWarning("Solving clocked continuous equations with " +
-                                     "ImplicitEuler instead of specified " + solverMethod + ". "
-                                     + "Supporting ExplicitEuler and ImplicitEuler.");
           end if;
-          lstEqs := {};
-          derVars := {};
-          for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
-            eq := BackendEquation.equationNth1(eqs, i);
-            (eq, derVars) := BackendEquation.traverseExpsOfEquation(eq, applyEulerMethod1, derVars);
-            lstEqs := eq::lstEqs;
-          end for;
-          syst.orderedEqs := BackendEquation.listEquation(listReverse(lstEqs));
           shared := markClockedStates(syst, shared, derVars);
         then syst;
     end match;
@@ -234,20 +257,25 @@ algorithm
 end getDerVars1;
 
 protected function getDerVars
-"Get all crefs that appear in a der() operator.
+"Get all crefs that appear in a der() operator and replace der(x) with $DER.x.
  author: rfranke"
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inDerVars;
-  output DAE.Exp outExp = inExp;
-  output list<DAE.ComponentRef> outDerVars;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outDerVars = inDerVars;
 algorithm
-  outDerVars := match inExp
+  outExp := match inExp
     local
       DAE.ComponentRef x;
+      DAE.Type ty;
     case DAE.CALL(path = Absyn.IDENT(name = "der"),
-                  expLst = {DAE.CREF(componentRef = x)})
-      then x :: inDerVars;
-    else inDerVars;
+                  expLst = {DAE.CREF(componentRef = x, ty = ty)})
+      algorithm
+        if not ComponentReference.crefInLst(x, outDerVars) then
+          outDerVars := x :: outDerVars;
+        end if;
+      then DAE.CREF(ComponentReference.crefPrefixDer(x), ty);
+    else inExp;
   end match;
 end getDerVars;
 
