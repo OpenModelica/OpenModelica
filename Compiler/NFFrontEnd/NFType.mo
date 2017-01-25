@@ -32,6 +32,7 @@
 encapsulated uniontype NFType
 protected
   import Type = NFType;
+  import List;
 
 public
   import Dimension = NFDimension;
@@ -192,6 +193,7 @@ public
     isNumeric := match ty
       case REAL() then true;
       case INTEGER() then true;
+      case FUNCTION() then isBasicNumeric(ty.resultType);
       else false;
     end match;
   end isBasicNumeric;
@@ -308,7 +310,25 @@ public
     input Type ty;
     output String str;
   algorithm
-    str := "IMPLEMENT ME";
+    str := match ty
+      case Type.INTEGER() then "Integer";
+      case Type.REAL() then "Real";
+      case Type.STRING() then "String";
+      case Type.BOOLEAN() then "Boolean";
+      case Type.ENUMERATION() then "enumeration()";
+      case Type.CLOCK() then "Clock";
+      case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
+      case Type.TUPLE() then "tuple(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
+      case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
+      case Type.NORETCALL() then "noretcall()";
+      case Type.UNKNOWN() then "unknown()";
+      case Type.COMPLEX() then "complex()";
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown type: " + anyString(ty));
+        then
+          fail();
+    end match;
   end toString;
 
   function toDAE
@@ -321,9 +341,14 @@ public
       case Type.STRING() then DAE.T_STRING_DEFAULT;
       case Type.BOOLEAN() then DAE.T_BOOL_DEFAULT;
       case Type.CLOCK() then DAE.T_CLOCK_DEFAULT;
+      case Type.ENUMERATION() then DAE.T_ENUMERATION_DEFAULT;
       case Type.ARRAY()
         then DAE.T_ARRAY(toDAE(ty.elementType),
           list(Dimension.toDAE(d) for d in ty.dimensions));
+      case Type.TUPLE()
+        then DAE.T_TUPLE(list(toDAE(t) for t in ty.types), ty.names);
+      case Type.FUNCTION()
+        then DAE.T_FUNCTION({}, toDAE(ty.resultType), ty.attributes, DAE.emptyTypeSource);
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX() then DAE.T_COMPLEX_DEFAULT;

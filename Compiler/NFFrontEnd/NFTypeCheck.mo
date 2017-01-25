@@ -1420,7 +1420,7 @@ function matchTypes
 algorithm
   // Return true if the references are the same.
   if referenceEq(actualType, expectedType) then
-  compatibleType := actualType;
+    compatibleType := actualType;
     return;
   end if;
 
@@ -1429,7 +1429,15 @@ algorithm
     // If the types are not of the same kind we might need to type cast the
     // expression to make it compatible.
     (expression, compatibleType, compatible) :=
-      matchTypes_cast(actualType, expectedType, expression, allowUnknown);
+      match (actualType, expectedType)
+        case (Type.FUNCTION(), Type.FUNCTION())
+          then matchTypes(actualType.resultType, expectedType.resultType, expression, allowUnknown);
+        case (Type.FUNCTION(), _)
+          then matchTypes(actualType.resultType, expectedType, expression, allowUnknown);
+        case (_, Type.FUNCTION())
+          then matchTypes(actualType, expectedType.resultType, expression, allowUnknown);
+        else matchTypes_cast(actualType, expectedType, expression, allowUnknown);
+      end match;
     return;
   end if;
 
@@ -1473,6 +1481,13 @@ algorithm
             compatible := false;
           end if;
         end if;
+      then
+        compatibleType;
+
+    case Type.FUNCTION()
+      algorithm
+        (expression, compatibleType, compatible) :=
+          matchTypes_cast(actualType.resultType, expectedType, expression, allowUnknown);
       then
         compatibleType;
 

@@ -40,6 +40,8 @@ import Type = NFType;
 
 protected
 import Util;
+import Absyn;
+import List;
 
 public
 uniontype CallAttributes
@@ -146,6 +148,11 @@ uniontype Expression
     Expression trueBranch;
     Expression falseBranch;
   end IF;
+
+  record CAST
+    Type ty;
+    Expression exp;
+  end CAST;
 
   record UNBOX "MetaModelica value unboxing (similar to a cast)"
     Expression exp;
@@ -343,6 +350,15 @@ uniontype Expression
         then
           compare(exp1.exp, e1);
 
+      case CAST()
+        algorithm
+          e1 := match exp2
+                  case CAST(exp = e1) then e1;
+                  case e1 then e1;
+                end match;
+        then
+          compare(exp1.exp, e1);
+
       else
         algorithm
           assert(false, getInstanceName() + " got unknown expression.");
@@ -407,6 +423,10 @@ uniontype Expression
       case REAL() then Type.REAL();
       case STRING() then Type.STRING();
       case BOOLEAN() then Type.BOOLEAN();
+      case CAST(ty, _)
+        algorithm
+          ty := if listMember(ty, {Type.INTEGER(), Type.REAL(), Type.STRING(), Type.BOOLEAN()}) then ty else Type.UNKNOWN();
+        then ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -431,6 +451,10 @@ uniontype Expression
           t := Type.setArrayElementType(t, ty);
         then
           ARRAY(t, el);
+
+      case (_, Type.REAL())
+        then
+          CAST(Type.REAL(), exp);
 
     end match;
   end typeCastElements;
@@ -501,12 +525,46 @@ uniontype Expression
   function toString
     input Expression exp;
     output String str;
+  protected
+    Expression e;
+    Type t;
   algorithm
     str := match exp
       case INTEGER() then String(exp.value);
       case REAL() then String(exp.value);
       case STRING() then exp.value;
       case BOOLEAN() then String(exp.value);
+
+      case ENUM() then Absyn.pathString(exp.name);
+      case CREF() then Prefix.toString(exp.prefix);
+      case ARRAY() then "{" + stringDelimitList(List.map(exp.elements, toString), ", ") + "}";
+
+      case RANGE() then toString(exp.start) +
+                        (
+                        if isSome(exp.step)
+                        then ":" + toString(Util.getOption(exp.step))
+                        else ""
+                        ) + ":" + toString(exp.stop);
+      case CALL() then Absyn.pathString(exp.path) + "(" + stringDelimitList(List.map(exp.arguments, toString), ", ") + ")";
+      case SIZE() then "size(" + toString(exp.exp) +
+                        (
+                        if isSome(exp.dimIndex)
+                        then ", " + toString(Util.getOption(exp.dimIndex))
+                        else ""
+                        ) + ")";
+      case BINARY() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
+      case UNARY() then "(" + Operator.symbol(exp.operator) + " " + toString(exp.exp) + ")";
+      case LBINARY() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
+      case LUNARY() then "(" + Operator.symbol(exp.operator) + " " + toString(exp.exp) + ")";
+
+      case RELATION() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
+      case IF() then "if" + toString(exp.condition) + " then " + toString(exp.trueBranch) + " else " + toString(exp.falseBranch);
+
+      case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
+
+      case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
+
+
       else "NFExpression.toString: IMPLEMENT ME";
     end match;
   end toString;
@@ -520,6 +578,7 @@ uniontype Expression
       case REAL() then DAE.RCONST(exp.value);
       case STRING() then DAE.SCONST(exp.value);
       case BOOLEAN() then DAE.BCONST(exp.value);
+      case ENUM() then DAE.ENUM_LITERAL(exp.name, exp.index);
 
       case CREF()
         then DAE.CREF(Prefix.toCref(exp.prefix), DAE.T_UNKNOWN_DEFAULT);
@@ -528,11 +587,46 @@ uniontype Expression
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
           list(toDAE(e) for e in exp.elements));
 
+      case RANGE()
+        then DAE.RANGE(
+               Type.toDAE(exp.ty),
+               toDAE(exp.start),
+               if isSome(exp.step)
+               then SOME(toDAE(Util.getOption(exp.step)))
+               else NONE(),
+               toDAE(exp.stop));
+
+      case CALL()
+        then DAE.CALL(exp.path, List.map(exp.arguments, toDAE), toDAECallAtributes(exp.attr));
+
+      case SIZE()
+        then DAE.SIZE(toDAE(exp.exp),
+               if isSome(exp.dimIndex)
+               then SOME(toDAE(Util.getOption(exp.dimIndex)))
+               else NONE());
+
       case BINARY()
         then DAE.BINARY(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2));
 
       case UNARY()
         then DAE.UNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
+
+      case LBINARY()
+        then DAE.LBINARY(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2));
+
+      case LUNARY()
+        then DAE.LUNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
+
+      case RELATION()
+        then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), 0, NONE());
+
+      case IF()
+        then DAE.IFEXP(toDAE(exp.condition), toDAE(exp.trueBranch), toDAE(exp.falseBranch));
+
+      case CAST() then DAE.CAST(Type.toDAE(exp.ty), toDAE(exp.exp));
+
+      case UNBOX()
+        then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
       else
         algorithm
@@ -542,6 +636,22 @@ uniontype Expression
 
     end match;
   end toDAE;
+
+  function toDAECallAtributes
+    input CallAttributes attr;
+    output DAE.CallAttributes fattr;
+  protected
+    Type ty "The type of the return value, if several return values this is undefined";
+    Boolean tuple_ "tuple";
+    Boolean builtin "builtin Function call";
+    Boolean isImpure "if the function has prefix *impure* is true, else false";
+    Boolean isFunctionPointerCall;
+    DAE.InlineType inlineType;
+    DAE.TailCall tailCall "Input variables of the function if the call is tail-recursive";
+  algorithm
+    CALL_ATTR(ty, tuple_, builtin, isImpure, isFunctionPointerCall, inlineType, tailCall) := attr;
+    fattr := DAE.CALL_ATTR(Type.toDAE(ty), tuple_, builtin, isImpure, isFunctionPointerCall, inlineType, tailCall);
+  end toDAECallAtributes;
 
   function makeBuiltinCall
     "Create a CALL with the given data for a call to a builtin function."

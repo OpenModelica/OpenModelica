@@ -375,5 +375,11 @@ public
     symbol := spacing + symbol + spacing;
   end symbol;
 
+  function toString
+    input Operator op;
+  algorithm
+    symbol(op);
+  end toString;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;
