@@ -82,8 +82,11 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mExactStep = false;
   mModelFile = "";
   mGeometryFile = "";
-  mPosition = "";
-  mAngle321 = "";
+  mPosition = "0,0,0";
+  mAngle321 = "0,0,0";
+  mDimensions = 3;
+  mTLMCausality = StringHandler::getTLMCausality(StringHandler::TLMBidirectional);
+  mDomain = StringHandler::getTLMDomain(StringHandler::Mechanical);
 }
 
 /*!
@@ -131,6 +134,9 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mGeometryFile = pComponentInfo->getGeometryFile();
   mPosition = pComponentInfo->getPosition();
   mAngle321 = pComponentInfo->getAngle321();
+  mDimensions = pComponentInfo->getDimensions();
+  mTLMCausality = pComponentInfo->getTLMCausality();
+  mDomain = pComponentInfo->getDomain();
 }
 
 /*!
@@ -1319,7 +1325,7 @@ void Component::drawInterfacePoints()
           pComponentInfo->setAngle321(interfacePoint.attribute("Angle321", "0,0,0"));
           pComponentInfo->setDimensions(interfacePoint.attribute("Dimensions", "3").toInt());
           pComponentInfo->setTLMCausality(interfacePoint.attribute("Causality",
-                                                       StringHandler::getTLMCausality(StringHandler::TLMBidirectional)));
+                                                                   StringHandler::getTLMCausality(StringHandler::TLMBidirectional)));
           pComponentInfo->setDomain(interfacePoint.attribute("Domain",
                                                              StringHandler::getTLMDomain(StringHandler::Mechanical)));
           mComponentsList.append(new Component(pComponentInfo, this));

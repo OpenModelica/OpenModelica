@@ -32,7 +32,6 @@
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
-#include "Component/ComponentProperties.h"
 #include "Modeling/Commands.h"
 
 #include <QMessageBox>
@@ -232,33 +231,32 @@ void MetaModelEditor::setMetaModelName(QString name)
 /*!
  * \brief MetaModelEditor::addSubModel
  * Adds a SubModel tag with Annotation tag as child of it.
- * \param name
- * \param modelFile
- * \param startCommand
- * \param visible
- * \param origin
- * \param extent
- * \param rotation
+ * \param pComponent
  * \return
  */
-bool MetaModelEditor::addSubModel(QString name, QString modelFile, QString startCommand, QString visible, QString origin,
-                                  QString extent, QString rotation)
+bool MetaModelEditor::addSubModel(Component *pComponent)
 {
-  Component* pComp = mpModelWidget->getDiagramGraphicsView()->getComponentObject(name);
-  name = name.remove(".");
-  pComp->getComponentInfo()->setName(name);
+  pComponent->getComponentInfo()->setName(pComponent->getName().remove("."));
   QDomElement subModels = getSubModelsElement();
   if (!subModels.isNull()) {
     QDomElement subModel = mXmlDocument.createElement("SubModel");
-    subModel.setAttribute("Name", name);
-    subModel.setAttribute("ModelFile", modelFile);
-    subModel.setAttribute("StartCommand", startCommand);
+    subModel.setAttribute("Name", pComponent->getName());
+    subModel.setAttribute("ModelFile", pComponent->getComponentInfo()->getModelFile());
+    subModel.setAttribute("StartCommand", pComponent->getComponentInfo()->getStartCommand());
+    subModel.setAttribute("Position", pComponent->getComponentInfo()->getPosition());
+    subModel.setAttribute("Angle321", pComponent->getComponentInfo()->getAngle321());
+    if (pComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+      subModel.removeAttribute("GeometryFile");
+    } else {
+      QFileInfo geometryFileInfo(pComponent->getComponentInfo()->getGeometryFile());
+      subModel.setAttribute("GeometryFile", geometryFileInfo.fileName());
+    }
     // create Annotation Element
     QDomElement annotation = mXmlDocument.createElement("Annotation");
-    annotation.setAttribute("Visible", visible);
-    annotation.setAttribute("Origin", origin);
-    annotation.setAttribute("Extent", extent);
-    annotation.setAttribute("Rotation", rotation);
+    annotation.setAttribute("Visible", pComponent->mTransformation.getVisible() ? "true" : "false");
+    annotation.setAttribute("Origin", pComponent->getTransformationOrigin());
+    annotation.setAttribute("Extent", pComponent->getTransformationExtent());
+    annotation.setAttribute("Rotation", QString::number(pComponent->mTransformation.getRotateAngle()));
     subModel.appendChild(annotation);
     subModels.appendChild(subModel);
     setPlainText(mXmlDocument.toString());
@@ -552,7 +550,7 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces, QString singleMo
           (subModel.attribute("Name") == singleModel || singleModel.isEmpty())) {
         QDomElement interfacePoint;
         // update interface point
-        if (existInterfaceData(subModel.attribute("Name"), interfaceDataElement)) {
+        if (existInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("Name"))) {
           interfacePoint = getInterfacePoint(subModel.attribute("Name"), interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Name", interfaceDataElement.attribute("Name"));
           interfacePoint.setAttribute("Position", interfaceDataElement.attribute("Position"));
@@ -661,6 +659,26 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces, QString singleMo
     }
   }
 
+  setPlainText(mXmlDocument.toString());
+}
+
+/*!
+ * \brief MetaModelEditor::addInterface
+ * Adds the interface to submodel.
+ * \param pInterfaceComponent
+ * \param subModel
+ */
+void MetaModelEditor::addInterface(Component *pInterfaceComponent, QString subModel)
+{
+  QDomElement subModelElement = getSubModelElement(subModel);
+  QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
+  interfacePoint.setAttribute("Name", pInterfaceComponent->getName());
+  interfacePoint.setAttribute("Position", pInterfaceComponent->getComponentInfo()->getPosition());
+  interfacePoint.setAttribute("Angle321", pInterfaceComponent->getComponentInfo()->getAngle321());
+  interfacePoint.setAttribute("Dimensions", pInterfaceComponent->getComponentInfo()->getDimensions());
+  interfacePoint.setAttribute("Causality", pInterfaceComponent->getComponentInfo()->getTLMCausality());
+  interfacePoint.setAttribute("Domain", pInterfaceComponent->getComponentInfo()->getDomain());
+  subModelElement.appendChild(interfacePoint);
   setPlainText(mXmlDocument.toString());
 }
 
@@ -787,13 +805,13 @@ bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSub
 }
 
 /*!
- * \brief MetaModelEditor::existInterfaceData
+ * \brief MetaModelEditor::existInterfacePoint
  * Checks whether the interface already exists in MetaModel or not.
  * \param subModelName
- * \param interfaceElement
+ * \param interfaceName
  * \return
  */
-bool MetaModelEditor::existInterfaceData(QString subModelName, QDomElement interfaceDataElement)
+bool MetaModelEditor::existInterfacePoint(QString subModelName, QString interfaceName)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -803,7 +821,7 @@ bool MetaModelEditor::existInterfaceData(QString subModelName, QDomElement inter
       for (int j = 0 ; j < subModelChildren.size() ; j++) {
         QDomElement interfaceElement = subModelChildren.at(j).toElement();
         if (interfaceElement.tagName().compare("InterfacePoint") == 0 &&
-            interfaceElement.attribute("Name").compare(interfaceDataElement.attribute("Name")) == 0) {
+            interfaceElement.attribute("Name").compare(interfaceName) == 0) {
           return true;
         }
       }
@@ -866,6 +884,7 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGen
     if (interfaceElement.attribute("Name").compare(interfaceName) == 0) {
       x_c_r_x_str = interfaceElement.attribute("Position");
       x_c_phi_x_str = interfaceElement.attribute("Angle321");
+      break;
     }
     interfaceElement = interfaceElement.nextSiblingElement("InterfacePoint");
   }

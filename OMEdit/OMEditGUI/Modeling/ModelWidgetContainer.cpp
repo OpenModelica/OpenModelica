@@ -433,12 +433,16 @@ void GraphicsView::addComponentToClass(Component *pComponent)
       }
     }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    QString visible = pComponent->mTransformation.getVisible() ? "true" : "false";
     // add SubModel Element
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->addSubModel(pComponent->getName(), pComponent->getComponentInfo()->getModelFile(),
-                                  pComponent->getComponentInfo()->getStartCommand(), visible, pComponent->getTransformationOrigin(),
-                                  pComponent->getTransformationExtent(), QString::number(pComponent->mTransformation.getRotateAngle()));
+    pMetaModelEditor->addSubModel(pComponent);
+    /* We need to iterate over Component childrens
+     * because if user deletes a submodel for which interfaces are already fetched
+     * then undoing the delete operation reaches here and we should add the interfaces back.
+     */
+    foreach (Component *pInterfaceComponent, pComponent->getComponentsList()) {
+      pMetaModelEditor->addInterface(pInterfaceComponent, pComponent->getName());
+    }
   }
 }
 
@@ -449,8 +453,6 @@ void GraphicsView::addComponentToClass(Component *pComponent)
  */
 void GraphicsView::deleteComponent(Component *pComponent)
 {
-  pComponent->setSelected(false);
-  mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
   // First Remove the Connector associated to this component
   int i = 0;
   while(i != mConnectionsList.size()) {
@@ -468,6 +470,8 @@ void GraphicsView::deleteComponent(Component *pComponent)
       ++i;
     }
   }
+  pComponent->setSelected(false);
+  mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
 }
 
 /*!
@@ -3238,6 +3242,10 @@ void ModelWidget::updateModelText()
   setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+  // update the ThreeDViewer Browser
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+    MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(this);
+  }
 }
 
 /*!
@@ -3316,9 +3324,13 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
     foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
       foreach (Component *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
         QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
-        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
-          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
-              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
+        /*!
+         * \note Don't check for connection.
+         * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.
+         */
+//        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
+//          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
+//              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
             // Comma between interfaces
             if (nActiveInterfaces > 0) {
               resultFile << ",";
@@ -3328,8 +3340,8 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
                        << name << ".A(2,1)\",\"" << name << ".A(2,2)\",\"" << name << ".A(2,3)\",\""
                        << name << ".A(3,1)\",\"" << name << ".A(3,2)\",\"" << name << ".A(3,3)\""; // Transformation matrix
             nActiveInterfaces++;
-          }
-        }
+//          }
+//        }
       }
     }
     // write just single data for result file
@@ -3337,62 +3349,66 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
     nActiveInterfaces = 0;
     foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
       foreach (Component *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
-        QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
-        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
-          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
-              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
-            // Comma between interfaces
-            if (nActiveInterfaces > 0) {
-              resultFile << ",";
-            }
-
-            // get the submodel position
-            double values[] = {0.0, 0.0, 0.0};
-            QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
-            QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
-            if (subModelPositionList.size() > 2) {
-              cX_R_cG_cG(0, 0) = subModelPositionList.at(0).toDouble();
-              cX_R_cG_cG(0, 1) = subModelPositionList.at(1).toDouble();
-              cX_R_cG_cG(0, 2) = subModelPositionList.at(2).toDouble();
-            }
-            // get the submodel angle
-            double subModelPhi[3] = {0.0, 0.0, 0.0};
-            QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
-            if (subModelAngleList.size() > 2) {
-              subModelPhi[0] = subModelAngleList.at(0).toDouble();
-              subModelPhi[1] = subModelAngleList.at(1).toDouble();
-              subModelPhi[2] = subModelAngleList.at(2).toDouble();
-            }
-            QGenericMatrix<3, 3, double> cX_A_cG = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(subModelPhi));
-            // get the interface position
-            QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
-            QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
-            if (interfacePositionList.size() > 2) {
-              ci_R_cX_cX(0, 0) = interfacePositionList.at(0).toDouble();
-              ci_R_cX_cX(0, 1) = interfacePositionList.at(1).toDouble();
-              ci_R_cX_cX(0, 2) = interfacePositionList.at(2).toDouble();
-            }
-            // get the interface angle
-            double interfacePhi[3] = {0.0, 0.0, 0.0};
-            QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
-            if (interfaceAngleList.size() > 2) {
-              interfacePhi[0] = interfaceAngleList.at(0).toDouble();
-              interfacePhi[1] = interfaceAngleList.at(1).toDouble();
-              interfacePhi[2] = interfaceAngleList.at(2).toDouble();
-            }
-            QGenericMatrix<3, 3, double> ci_A_cX = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(interfacePhi));
-
-            QGenericMatrix<3, 1, double> ci_R_cG_cG = cX_R_cG_cG + ci_R_cX_cX*cX_A_cG;
-            QGenericMatrix<3, 3, double> ci_A_cG =  ci_A_cX*cX_A_cG;
-
-            // write data
-            resultFile << ci_R_cG_cG(0, 0) << "," << ci_R_cG_cG(0, 1) << "," << ci_R_cG_cG(0, 2) << ","; // Position vector
-            resultFile << ci_A_cG(0, 0) << "," << ci_A_cG(0, 1) << "," << ci_A_cG(0, 2) << ","
-                       << ci_A_cG(1, 0) << "," << ci_A_cG(1, 1) << "," << ci_A_cG(1, 2) << ","
-                       << ci_A_cG(2, 0) << "," << ci_A_cG(2, 1) << "," << ci_A_cG(2, 2); // Transformation matrix
-            nActiveInterfaces++;
-          }
+        /*!
+         * \note Don't check for connection.
+         * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.
+         */
+        //        QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
+        //        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
+        //          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
+        //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
+        // Comma between interfaces
+        if (nActiveInterfaces > 0) {
+          resultFile << ",";
         }
+
+        // get the submodel position
+        double values[] = {0.0, 0.0, 0.0};
+        QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
+        QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+        if (subModelPositionList.size() > 2) {
+          cX_R_cG_cG(0, 0) = subModelPositionList.at(0).toDouble();
+          cX_R_cG_cG(0, 1) = subModelPositionList.at(1).toDouble();
+          cX_R_cG_cG(0, 2) = subModelPositionList.at(2).toDouble();
+        }
+        // get the submodel angle
+        double subModelPhi[3] = {0.0, 0.0, 0.0};
+        QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+        if (subModelAngleList.size() > 2) {
+          subModelPhi[0] = subModelAngleList.at(0).toDouble();
+          subModelPhi[1] = subModelAngleList.at(1).toDouble();
+          subModelPhi[2] = subModelAngleList.at(2).toDouble();
+        }
+        QGenericMatrix<3, 3, double> cX_A_cG = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(subModelPhi));
+        // get the interface position
+        QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
+        QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+        if (interfacePositionList.size() > 2) {
+          ci_R_cX_cX(0, 0) = interfacePositionList.at(0).toDouble();
+          ci_R_cX_cX(0, 1) = interfacePositionList.at(1).toDouble();
+          ci_R_cX_cX(0, 2) = interfacePositionList.at(2).toDouble();
+        }
+        // get the interface angle
+        double interfacePhi[3] = {0.0, 0.0, 0.0};
+        QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+        if (interfaceAngleList.size() > 2) {
+          interfacePhi[0] = interfaceAngleList.at(0).toDouble();
+          interfacePhi[1] = interfaceAngleList.at(1).toDouble();
+          interfacePhi[2] = interfaceAngleList.at(2).toDouble();
+        }
+        QGenericMatrix<3, 3, double> ci_A_cX = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(interfacePhi));
+
+        QGenericMatrix<3, 1, double> ci_R_cG_cG = cX_R_cG_cG + ci_R_cX_cX*cX_A_cG;
+        QGenericMatrix<3, 3, double> ci_A_cG =  ci_A_cX*cX_A_cG;
+
+        // write data
+        resultFile << ci_R_cG_cG(0, 0) << "," << ci_R_cG_cG(0, 1) << "," << ci_R_cG_cG(0, 2) << ","; // Position vector
+        resultFile << ci_A_cG(0, 0) << "," << ci_A_cG(0, 1) << "," << ci_A_cG(0, 2) << ","
+                   << ci_A_cG(1, 0) << "," << ci_A_cG(1, 1) << "," << ci_A_cG(1, 2) << ","
+                   << ci_A_cG(2, 0) << "," << ci_A_cG(2, 1) << "," << ci_A_cG(2, 2); // Transformation matrix
+        nActiveInterfaces++;
+        //          }
+        //        }
       }
     }
     file.close();
@@ -3410,9 +3426,10 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
  * \brief ModelWidget::writeVisualXMLFile
  * Writes the visual xml file for 3d visualization.
  * \param fileName
+ * \param canWriteVisualXMLFile
  * \return
  */
-bool ModelWidget::writeVisualXMLFile(QString fileName)
+bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile)
 {
   // this function is only for meta-models
   if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::MetaModel) {
@@ -3423,14 +3440,15 @@ bool ModelWidget::writeVisualXMLFile(QString fileName)
     QFile::remove(fileName);
   }
   // can we write visual xml file.
-  bool canWriteVisualXMLFile = false;
-  foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
-    if (!pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
-      canWriteVisualXMLFile = true;
-    }
-  }
   if (!canWriteVisualXMLFile) {
-    return false;
+    foreach (Component *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+      if (!pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
+        canWriteVisualXMLFile = true;
+      }
+    }
+    if (!canWriteVisualXMLFile) {
+      return false;
+    }
   }
   // write the visual xml file.
   QFile file(fileName);
@@ -3608,95 +3626,99 @@ bool ModelWidget::writeVisualXMLFile(QString fileName)
           break;
         }
         QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
-        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
-          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
-              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
-            // get the angle
-            double phi[3] = {0.0, 0.0, 0.0};
-            QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
-            if (angleList.size() > 2) {
-              phi[0] = -angleList.at(0).toDouble();
-              phi[1] = -angleList.at(1).toDouble();
-              phi[2] = -angleList.at(2).toDouble();
-            }
-            QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
-            // get the position
-            double position[3] = {0.0, 0.0, 0.0};
-            QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
-            if (positionList.size() > 2) {
-              position[0] = positionList.at(0).toDouble();
-              position[1] = positionList.at(1).toDouble();
-              position[2] = positionList.at(2).toDouble();
-            }
-            QGenericMatrix<3, 1, double> r_shape;
-            r_shape(0, 0) = -position[0];
-            r_shape(0, 1) = -position[1];
-            r_shape(0, 2) = -position[2];
-            r_shape = r_shape*(T);
-            double lengthDirArr[3] = {1.0, 0.0, 0.0};
-            QGenericMatrix<3, 1, double> lengthDir(lengthDirArr);
-            lengthDir = lengthDir*(T);
-            double widthDirArr[3] = {0.0, 1.0, 0.0};
-            QGenericMatrix<3, 1, double> widthDir(widthDirArr);
-            widthDir = widthDir*(T);
-
-            visualFile << "  <shape>\n";
-            visualFile << "    <ident>" << name << "</ident>\n";
-            visualFile << "    <type>file://" << pSubModelComponent->getComponentInfo()->getGeometryFile() << "</type>\n";
-            visualFile << "    <T>\n";
-            visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
-            visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
-            visualFile << "    </T>\n";
-            visualFile << "    <r>\n";
-            visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
-            visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
-            visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
-            visualFile << "    </r>\n";
-            visualFile << "    <r_shape>\n";
-            visualFile << "      <exp>" << r_shape(0, 0) << "</exp>\n";
-            visualFile << "      <exp>" << r_shape(0, 1) << "</exp>\n";
-            visualFile << "      <exp>" << r_shape(0, 2) << "</exp>\n";
-            visualFile << "    </r_shape>\n";
-            visualFile << "    <lengthDir>\n";
-            visualFile << "      <exp>" << lengthDir(0, 0) << "</exp>\n";
-            visualFile << "      <exp>" << lengthDir(0, 1) << "</exp>\n";
-            visualFile << "      <exp>" << lengthDir(0, 2) << "</exp>\n";
-            visualFile << "    </lengthDir>\n";
-            visualFile << "    <widthDir>\n";
-            visualFile << "      <exp>" << widthDir(0, 0) << "</exp>\n";
-            visualFile << "      <exp>" << widthDir(0, 1) << "</exp>\n";
-            visualFile << "      <exp>" << widthDir(0, 2) << "</exp>\n";
-            visualFile << "    </widthDir>\n";
-            visualFile << "    <length><exp>0.0</exp></length>\n";
-            visualFile << "    <width><exp>0.0</exp></width>\n";
-            visualFile << "    <height><exp>0.0</exp></height>\n";
-            visualFile << "    <extra><exp>0.0</exp></extra>\n";
-            visualFile << "    <color>\n";
-            if (pSubModelComponent->isSelected()) {
-              visualFile << "      <exp>" << selectedColor.red() << "</exp>\n";
-              visualFile << "      <exp>" << selectedColor.green() << "</exp>\n";
-              visualFile << "      <exp>" << selectedColor.blue() << "</exp>\n";
-            } else {
-              visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).red() << "</exp>\n";
-              visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).green() << "</exp>\n";
-              visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).blue() << "</exp>\n";
-            }
-            visualFile << "    </color>\n";
-            visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
-            visualFile << "  </shape>\n";
-            // set the visited flag to true.
-            visited = true;
-            i++;
-            break;
-          }
+        /*!
+         * \note Don't check for connection.
+         * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.
+         */
+//        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
+//          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
+//              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
+        // get the angle
+        double phi[3] = {0.0, 0.0, 0.0};
+        QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+        if (angleList.size() > 2) {
+          phi[0] = -angleList.at(0).toDouble();
+          phi[1] = -angleList.at(1).toDouble();
+          phi[2] = -angleList.at(2).toDouble();
         }
+        QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
+        // get the position
+        double position[3] = {0.0, 0.0, 0.0};
+        QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+        if (positionList.size() > 2) {
+          position[0] = positionList.at(0).toDouble();
+          position[1] = positionList.at(1).toDouble();
+          position[2] = positionList.at(2).toDouble();
+        }
+        QGenericMatrix<3, 1, double> r_shape;
+        r_shape(0, 0) = -position[0];
+        r_shape(0, 1) = -position[1];
+        r_shape(0, 2) = -position[2];
+        r_shape = r_shape*(T);
+        double lengthDirArr[3] = {1.0, 0.0, 0.0};
+        QGenericMatrix<3, 1, double> lengthDir(lengthDirArr);
+        lengthDir = lengthDir*(T);
+        double widthDirArr[3] = {0.0, 1.0, 0.0};
+        QGenericMatrix<3, 1, double> widthDir(widthDirArr);
+        widthDir = widthDir*(T);
+
+        visualFile << "  <shape>\n";
+        visualFile << "    <ident>" << name << "</ident>\n";
+        visualFile << "    <type>file://" << pSubModelComponent->getComponentInfo()->getGeometryFile() << "</type>\n";
+        visualFile << "    <T>\n";
+        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "    </T>\n";
+        visualFile << "    <r>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "    </r>\n";
+        visualFile << "    <r_shape>\n";
+        visualFile << "      <exp>" << r_shape(0, 0) << "</exp>\n";
+        visualFile << "      <exp>" << r_shape(0, 1) << "</exp>\n";
+        visualFile << "      <exp>" << r_shape(0, 2) << "</exp>\n";
+        visualFile << "    </r_shape>\n";
+        visualFile << "    <lengthDir>\n";
+        visualFile << "      <exp>" << lengthDir(0, 0) << "</exp>\n";
+        visualFile << "      <exp>" << lengthDir(0, 1) << "</exp>\n";
+        visualFile << "      <exp>" << lengthDir(0, 2) << "</exp>\n";
+        visualFile << "    </lengthDir>\n";
+        visualFile << "    <widthDir>\n";
+        visualFile << "      <exp>" << widthDir(0, 0) << "</exp>\n";
+        visualFile << "      <exp>" << widthDir(0, 1) << "</exp>\n";
+        visualFile << "      <exp>" << widthDir(0, 2) << "</exp>\n";
+        visualFile << "    </widthDir>\n";
+        visualFile << "    <length><exp>0.0</exp></length>\n";
+        visualFile << "    <width><exp>0.0</exp></width>\n";
+        visualFile << "    <height><exp>0.0</exp></height>\n";
+        visualFile << "    <extra><exp>0.0</exp></extra>\n";
+        visualFile << "    <color>\n";
+        if (pSubModelComponent->isSelected()) {
+          visualFile << "      <exp>" << selectedColor.red() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.green() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.blue() << "</exp>\n";
+        } else {
+          visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).red() << "</exp>\n";
+          visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).green() << "</exp>\n";
+          visualFile << "      <exp>" << colorsList.at(i % colorsList.size()).blue() << "</exp>\n";
+        }
+        visualFile << "    </color>\n";
+        visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+        visualFile << "  </shape>\n";
+        // set the visited flag to true.
+        visited = true;
+        i++;
+        break;
+//          }
+//        }
       }
     }
 
@@ -4994,11 +5016,17 @@ void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
 {
   if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
     // write dummy csv file for 3d view
-    QFileInfo fileInfo(pModelWidget->getLibraryTreeItem()->getFileName());
-    QString resultFileName = QString("%1/%2.csv").arg(Utilities::tempDirectory()).arg(fileInfo.baseName());
-    QString visualXMLFileName = QString("%1/%2_visual.xml").arg(Utilities::tempDirectory()).arg(fileInfo.baseName());
+    QString fileName;
+    if (pModelWidget->getLibraryTreeItem()->getFileName().isEmpty()) {
+      fileName = pModelWidget->getLibraryTreeItem()->getName();
+    } else {
+      QFileInfo fileInfo(pModelWidget->getLibraryTreeItem()->getFileName());
+      fileName = fileInfo.baseName();
+    }
+    QString resultFileName = QString("%1/%2.csv").arg(Utilities::tempDirectory()).arg(fileName);
+    QString visualXMLFileName = QString("%1/%2_visual.xml").arg(Utilities::tempDirectory()).arg(fileName);
     // write dummy csv file and visualization file
-    if (pModelWidget->writeCoSimulationResultFile(resultFileName) && pModelWidget->writeVisualXMLFile(visualXMLFileName)) {
+    if (pModelWidget->writeCoSimulationResultFile(resultFileName) && pModelWidget->writeVisualXMLFile(visualXMLFileName, true)) {
       MainWindow::instance()->getThreeDViewerDockWidget()->show();
       MainWindow::instance()->getThreeDViewer()->openAnimationFile(resultFileName);
     } else {

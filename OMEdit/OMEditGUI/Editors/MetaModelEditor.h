@@ -35,6 +35,7 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
+#include "Component/Component.h"
 
 #include <QDomDocument>
 #include <QSyntaxHighlighter>
@@ -73,8 +74,7 @@ public:
   QDomNodeList getConnections();
   QDomElement getSubModelElement(QString name);
   void setMetaModelName(QString name);
-  bool addSubModel(QString name, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
-                   QString rotation);
+  bool addSubModel(Component *pComponent);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile);
@@ -87,6 +87,7 @@ public:
   QString getSimulationStartTime();
   QString getSimulationStopTime();
   void addInterfacesData(QDomElement interfaces, QString singleModel=QString());
+  void addInterface(Component *pInterfaceComponent, QString subModel);
   bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName);
@@ -96,7 +97,7 @@ private:
   bool mForceSetPlainText;
   XMLDocument mXmlDocument;
 
-  bool existInterfaceData(QString subModelName, QDomElement interfaceDataElement);
+  bool existInterfacePoint(QString subModelName, QString interfaceName);
   bool getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG, QGenericMatrix<3,1,double> &X_C_PHI_X,
                                      QGenericMatrix<3,1,double> &CG_X_R_CG, QGenericMatrix<3,1,double> &X_C_R_X);
   bool fuzzyCompare(double p1, double p2);

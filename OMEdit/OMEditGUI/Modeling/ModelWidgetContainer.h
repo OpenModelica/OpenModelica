@@ -378,7 +378,7 @@ public:
   void updateDynamicResults(QString resultFileName);
   QString getResultFileName() {return mResultFileName;}
   bool writeCoSimulationResultFile(QString fileName);
-  bool writeVisualXMLFile(QString fileName);
+  bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
