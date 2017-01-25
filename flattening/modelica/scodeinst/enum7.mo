@@ -1,17 +1,21 @@
-// name: enum1.mo
+// name: enum7.mo
 // keywords:
 // status: correct
 // cflags: -d=newInst
 //
 
-
 model M
   type E = enumeration(one, two, three);
-  E e = E.one;
+
+  type E2
+    extends E;
+  end E2;
+
+  E2 e = E2.one;
 end M;
 
 // Result:
 // class M
-//   enumeration(one, two, three) e = E.one;
+//   enumeration(one, two, three) e = E2.one;
 // end M;
 // endResult

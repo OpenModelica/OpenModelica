@@ -23,6 +23,11 @@ DuplicateMod2.mo \
 DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
+enum1.mo \
+enum2.mo \
+enum4.mo \
+enum5.mo \
+enum7.mo \
 eq1.mo \
 eq7.mo \
 eq10.mo \
@@ -90,11 +95,7 @@ dim14.mo \
 dim16.mo \
 dim18.mo \
 dim1.mo \
-enum1.mo \
-enum2.mo \
 enum3.mo \
-enum4.mo \
-enum5.mo \
 enum6.mo \
 eq2.mo \
 eq3.mo \
