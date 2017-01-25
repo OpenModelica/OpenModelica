@@ -1028,7 +1028,7 @@ package DAE
     record T_METAUNIONTYPE "MetaModelica Uniontype"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-      TypeSource source;
+      Absyn.Path path;
     end T_METAUNIONTYPE;
 
     record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"

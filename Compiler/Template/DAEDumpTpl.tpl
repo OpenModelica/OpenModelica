@@ -314,7 +314,7 @@ template dumpType(Type ty, Text &attributes)
     case T_METALIST(__) then 'list<<%dumpType(ty, attributes)%>>'
     case T_METAARRAY(__) then 'array<<%dumpType(ty, attributes)%>>'
     case T_METAPOLYMORPHIC(__) then 'polymorphic<<%name%>>'
-    case T_METAUNIONTYPE(source = {p}) then AbsynDumpTpl.dumpPathNoQual(p)
+    case T_METAUNIONTYPE(__) then AbsynDumpTpl.dumpPathNoQual(path)
     case T_METARECORD(__) then AbsynDumpTpl.dumpPathNoQual(path)
     case T_METABOXED(__) then '#<%dumpType(ty, attributes)%>'
     case T_METAOPTION(ty = DAE.T_UNKNOWN(__)) then 'Option<Any>'

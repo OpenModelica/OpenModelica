@@ -770,7 +770,7 @@ package DAE
     record T_METAUNIONTYPE
       list<Absyn.Path> paths;
       Boolean knownSingleton;
-      TypeSource source;
+      Absyn.Path path;
     end T_METAUNIONTYPE;
 
     record T_METARECORD

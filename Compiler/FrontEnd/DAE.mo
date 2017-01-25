@@ -851,7 +851,7 @@ constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("So
     TYPES_VAR("columnNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
     TYPES_VAR("lastModification", dummyAttrVar, T_REAL_DEFAULT, UNBOUND(), NONE())
   }, true);
-constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},{},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo")::{});
+constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},{},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo"));
 
 // Arrays of unknown dimension, eg. Real[:]
 public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()});
@@ -934,7 +934,6 @@ public uniontype Type "models the different front-end and back-end types"
   record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
     Boolean builtin;
     Type functionType "type of the non-boxptr function";
-    TypeSource source;
   end T_FUNCTION_REFERENCE_FUNC;
 
   record T_TUPLE
@@ -944,7 +943,6 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_CODE
     CodeType ty;
-    TypeSource source;
   end T_CODE;
 
   record T_ANYTYPE
@@ -970,7 +968,7 @@ public uniontype Type "models the different front-end and back-end types"
     list<Type> typeVars;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
     EvaluateSingletonType singletonType;
-    TypeSource source;
+    Absyn.Path path;
   end T_METAUNIONTYPE;
 
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"

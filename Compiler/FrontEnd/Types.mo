@@ -1204,16 +1204,16 @@ algorithm
     case Values.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
 
     case Values.CODE(A=Absyn.C_TYPENAME())
-      then DAE.T_CODE(DAE.C_TYPENAME(), {});
+      then DAE.T_CODE(DAE.C_TYPENAME());
 
     case Values.CODE(A=Absyn.C_VARIABLENAME())
-      then DAE.T_CODE(DAE.C_VARIABLENAME(), {});
+      then DAE.T_CODE(DAE.C_VARIABLENAME());
 
     case Values.CODE(A=Absyn.C_EXPRESSION())
-      then DAE.T_CODE(DAE.C_EXPRESSION(), {});
+      then DAE.T_CODE(DAE.C_EXPRESSION());
 
     case Values.CODE(A=Absyn.C_MODIFICATION())
-      then DAE.T_CODE(DAE.C_MODIFICATION(), {});
+      then DAE.T_CODE(DAE.C_MODIFICATION());
 
     case (v)
       equation
@@ -1589,19 +1589,19 @@ algorithm
     case (DAE.T_METARECORD(path=p1),DAE.T_METARECORD(path=p2))
       then Absyn.pathEqual(p1,p2);
 
-    case (DAE.T_METAUNIONTYPE(source = {p1}),DAE.T_METARECORD(utPath=p2))
+    case (DAE.T_METAUNIONTYPE(path = p1),DAE.T_METARECORD(utPath=p2))
       then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // If the record is the only one in the uniontype, of course their types match
-    case (DAE.T_METARECORD(knownSingleton=b1,utPath = p1),DAE.T_METAUNIONTYPE(knownSingleton=b2,source={p2}))
+    case (DAE.T_METARECORD(knownSingleton=b1,utPath = p1),DAE.T_METAUNIONTYPE(knownSingleton=b2,path=p2))
       then if Absyn.pathEqual(p1,p2) and (b1 or b2) /*Values.mo loses knownSingleton information */ then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // <uniontype> = <uniontype>
-    case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_METAUNIONTYPE(source = {p2}))
+    case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_METAUNIONTYPE(path = p2))
       then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
-    case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
+    case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
       then Absyn.pathEqual(p1,p2); // TODO: Remove?
-    case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(source = {p1}))
+    case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(path = p1))
       then Absyn.pathEqual(p1,p2); // TODO: Remove?
 
     case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2)) then valueEq(c1,c2);
@@ -2281,9 +2281,9 @@ algorithm
         res;
 
      // MetaModelica uniontype
-    case (DAE.T_METAUNIONTYPE(source = {p}))
+    case DAE.T_METAUNIONTYPE()
       equation
-        res = Absyn.pathStringNoQual(p);
+        res = Absyn.pathStringNoQual(inType.path);
       then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica uniontype (but we know which record in the UT it is)
@@ -2296,9 +2296,9 @@ algorithm
         res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
       then res;
 */
-    case DAE.T_METARECORD(path=p)
+    case DAE.T_METARECORD()
       equation
-        res = Absyn.pathStringNoQual(p);
+        res = Absyn.pathStringNoQual(inType.path);
       then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica boxed type
@@ -2567,18 +2567,17 @@ algorithm
         str;
     case (t as DAE.T_METAUNIONTYPE())
       equation
-        {path} = t.source;
-        s1 = Absyn.pathStringNoQual(path);
+        s1 = Absyn.pathStringNoQual(t.path);
         str = "#" + s1 + "#";
       then
         str;
 
     // Code
-    case (DAE.T_CODE(DAE.C_EXPRESSION(),_)) then "$Code(Expression)";
-    case (DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION(),_)) then "$Code(ExpressionOrModification)";
-    case (DAE.T_CODE(DAE.C_TYPENAME(),_)) then "$Code(TypeName)";
-    case (DAE.T_CODE(DAE.C_VARIABLENAME(),_)) then "$Code(VariableName)";
-    case (DAE.T_CODE(DAE.C_VARIABLENAMES(),_)) then "$Code(VariableName[:])";
+    case (DAE.T_CODE(DAE.C_EXPRESSION())) then "$Code(Expression)";
+    case (DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION())) then "$Code(ExpressionOrModification)";
+    case (DAE.T_CODE(DAE.C_TYPENAME())) then "$Code(TypeName)";
+    case (DAE.T_CODE(DAE.C_VARIABLENAME())) then "$Code(VariableName)";
+    case (DAE.T_CODE(DAE.C_VARIABLENAMES())) then "$Code(VariableName[:])";
 
     // All the other ones we don't handle
     else
@@ -5750,7 +5749,7 @@ algorithm
         tp = superType(t1,t2);
       then DAE.T_METAARRAY(tp);
 
-    case (t1 as DAE.T_METAUNIONTYPE(source = {path1}), DAE.T_METARECORD(utPath=path2))
+    case (t1 as DAE.T_METAUNIONTYPE(path = path1), DAE.T_METARECORD(utPath=path2))
       equation
         true = Absyn.pathEqual(path1,path2);
       then t1;
@@ -5758,7 +5757,7 @@ algorithm
     case (DAE.T_METARECORD(knownSingleton=false,utPath = path1), DAE.T_METARECORD(knownSingleton=false,utPath=path2))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then DAE.T_METAUNIONTYPE({},inType1.typeVars,false,DAE.NOT_SINGLETON(),{path1});
+      then DAE.T_METAUNIONTYPE({},inType1.typeVars,false,DAE.NOT_SINGLETON(),path1);
 
     case (DAE.T_INTEGER(),DAE.T_REAL())
       then DAE.T_REAL_DEFAULT;
@@ -6068,7 +6067,7 @@ algorithm
       equation
         tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
         tys = List.map(tys, boxIfUnboxedType);
-      then DAE.T_METAUNIONTYPE(ty.paths,tys,ty.knownSingleton,ty.singletonType,ty.source);
+      then DAE.T_METAUNIONTYPE(ty.paths,tys,ty.knownSingleton,ty.singletonType,ty.path);
 
     case (DAE.T_METATUPLE(types = tys),_,_,_)
       equation
@@ -6790,9 +6789,9 @@ algorithm
     case (DAE.T_TUPLE(types = tList1),DAE.T_TUPLE(types = tList2))
       then subtypePolymorphicList(tList1,tList2,envPath,inBindings);
 
-    case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}))
+    case (DAE.T_METAUNIONTYPE(),DAE.T_METAUNIONTYPE())
       equation
-        true = Absyn.pathEqual(path1,path2);
+        true = Absyn.pathEqual(actual.path, expected.path);
       then subtypePolymorphicList(actual.typeVars, expected.typeVars, envPath, inBindings);
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path1)),DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path2)))
@@ -8055,7 +8054,7 @@ algorithm
     local
       Boolean b;
       Absyn.Path p;
-    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},inTy.typeVars,b,if b then DAE.EVAL_SINGLETON_KNOWN_TYPE(inTy) else DAE.NOT_SINGLETON(),{p});
+    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},inTy.typeVars,b,if b then DAE.EVAL_SINGLETON_KNOWN_TYPE(inTy) else DAE.NOT_SINGLETON(),p);
     else inTy;
   end match;
 end getUniontypeIfMetarecord;
@@ -8074,7 +8073,7 @@ protected function getUniontypeIfMetarecordTraverse
   output Integer odummy = dummy;
 algorithm
   oty := match ty
-    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.typeVars,ty.knownSingleton,if ty.knownSingleton then DAE.EVAL_SINGLETON_KNOWN_TYPE(ty) else DAE.NOT_SINGLETON(),{ty.utPath});
+    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.typeVars,ty.knownSingleton,if ty.knownSingleton then DAE.EVAL_SINGLETON_KNOWN_TYPE(ty) else DAE.NOT_SINGLETON(),ty.utPath);
     else ty;
   end match;
 end getUniontypeIfMetarecordTraverse;
@@ -8482,9 +8481,9 @@ algorithm
         outCompatible := inType1.name == name;
       then inType1;
 
-    case DAE.T_METAUNIONTYPE(source = {p1})
+    case DAE.T_METAUNIONTYPE(path = p1)
       algorithm
-        DAE.T_METAUNIONTYPE(source = {p2}) := inType2;
+        DAE.T_METAUNIONTYPE(path = p2) := inType2;
         outCompatible := Absyn.pathEqual(p1, p2);
       then inType1;
 
@@ -8602,15 +8601,15 @@ algorithm
     // instead of UNIONTYPE(Absyn.Path), but e.g. a function returning an
     // Absyn.PATH has the type UNIONTYPE(Absyn.PATH). So we'll just pretend that
     // metarecords actually have uniontype type.
-    case (DAE.T_METARECORD(), DAE.T_METAUNIONTYPE(source = {path}))
+    case (DAE.T_METARECORD(), DAE.T_METAUNIONTYPE())
       algorithm
-        outCompatible := Absyn.pathEqual(ty1.utPath, path);
+        outCompatible := Absyn.pathEqual(ty1.utPath, ty2.path);
       then
         ty2;
 
-    case (DAE.T_METAUNIONTYPE(source = {path}), DAE.T_METARECORD())
+    case (DAE.T_METAUNIONTYPE(), DAE.T_METARECORD())
       algorithm
-        outCompatible := Absyn.pathEqual(path, ty2.utPath);
+        outCompatible := Absyn.pathEqual(ty1.path, ty2.utPath);
       then
         ty1;
 

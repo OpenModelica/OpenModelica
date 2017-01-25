@@ -2044,7 +2044,6 @@ package DAE
     record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
       Boolean builtin;
       Type functionType "type of the non-boxptr function";
-      TypeSource source;
     end T_FUNCTION_REFERENCE_FUNC;
 
     record T_TUPLE
@@ -3128,6 +3127,11 @@ package ComponentReference
     input DAE.Ident ident;
     output DAE.ComponentRef outCrefIdent;
   end makeUntypedCrefIdent;
+
+  function crefToPathIgnoreSubs
+    input DAE.ComponentRef inComponentRef;
+    output Absyn.Path outPath;
+  end crefToPathIgnoreSubs;
 
 end ComponentReference;
 

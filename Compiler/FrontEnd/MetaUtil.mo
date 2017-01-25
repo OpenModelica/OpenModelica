@@ -317,9 +317,8 @@ algorithm
           singletonType := DAE.NOT_SINGLETON();
         end if;
         typeVarsTypes := list(DAE.T_METAPOLYMORPHIC(tv) for tv in typeVars);
-        ts := Types.mkTypeSource(SOME(p));
       then
-        SOME(DAE.T_METAUNIONTYPE(paths,typeVarsTypes,b,singletonType,ts));
+        SOME(DAE.T_METAUNIONTYPE(paths,typeVarsTypes,b,singletonType,p));
 
     else NONE();
   end match;

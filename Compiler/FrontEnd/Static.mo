@@ -2126,10 +2126,10 @@ protected function elabCodeType
 algorithm
   outType := match inCode
     case Absyn.C_TYPENAME()
-      then DAE.T_CODE(DAE.C_TYPENAME(),DAE.emptyTypeSource);
+      then DAE.T_CODE(DAE.C_TYPENAME());
 
     case Absyn.C_VARIABLENAME()
-      then DAE.T_CODE(DAE.C_VARIABLENAME(),DAE.emptyTypeSource);
+      then DAE.T_CODE(DAE.C_VARIABLENAME());
 
     case Absyn.C_EQUATIONSECTION()
       then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(),DAE.emptyTypeSource);
@@ -10221,7 +10221,7 @@ algorithm
       InstTypes.PolymorphicBindings polymorphicBindings;
       String s1,s2,s3,s4,s5;
 
-    case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct,_),par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct),par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,st,info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info);
@@ -10735,7 +10735,7 @@ algorithm
         t := Types.makeFunctionPolymorphicReference(t);
         c := Absyn.pathToCref(fpath);
         expCref := ComponentReference.toExpCref(c);
-        exp := Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt,{fpath}));
+        exp := Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt));
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) := instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then

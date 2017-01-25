@@ -334,11 +334,11 @@ algorithm
         path2 = Absyn.stripLast(path2);
         "OpenModelica" = Absyn.pathLastIdent(path2);
       then Util.assoc(name,{
-        ("Expression",    DAE.T_CODE(DAE.C_EXPRESSION(),DAE.emptyTypeSource)),
-        ("ExpressionOrModification",    DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION(),DAE.emptyTypeSource)),
-        ("TypeName",      DAE.T_CODE(DAE.C_TYPENAME(),DAE.emptyTypeSource)),
-        ("VariableName",  DAE.T_CODE(DAE.C_VARIABLENAME(),DAE.emptyTypeSource)),
-        ("VariableNames", DAE.T_CODE(DAE.C_VARIABLENAMES(),DAE.emptyTypeSource))
+        ("Expression",    DAE.T_CODE(DAE.C_EXPRESSION())),
+        ("ExpressionOrModification",    DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION())),
+        ("TypeName",      DAE.T_CODE(DAE.C_TYPENAME())),
+        ("VariableName",  DAE.T_CODE(DAE.C_VARIABLENAME())),
+        ("VariableNames", DAE.T_CODE(DAE.C_VARIABLENAMES()))
         });
     case (_,false) then ty;
     case (_,true) then Types.makeFunctionPolymorphicReference(ty);
