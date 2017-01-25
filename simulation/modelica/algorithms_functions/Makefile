@@ -31,6 +31,7 @@ LocalVariableInit.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos \
 SimplePeriodicSampler.mos \
 SumSeriesWhile.mos \
+TestCrossFunction.mos \
 ticket-3477.mos \
 TupleReturn.mos \
 val.mos \
