@@ -2301,7 +2301,8 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
 {
   if (visible) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    if (pModelWidget && pModelWidget->getLibraryTreeItem() &&
+        pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
       if (pModelWidget->validateText(&pLibraryTreeItem)) {
         mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
