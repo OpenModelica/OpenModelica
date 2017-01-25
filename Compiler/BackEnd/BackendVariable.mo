@@ -1460,8 +1460,8 @@ algorithm
       BackendDAE.VarKind varKind;
 
     case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) equation
-      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path), source=typeLst) = inType;
-      source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, path::typeLst, {}, {});
+      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
+      source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
       outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), {}, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
@@ -1540,8 +1540,8 @@ algorithm
       BackendDAE.VarKind varKind;
 
     case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) equation
-      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path), source=typeLst) = inType;
-      source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, path::typeLst, {}, {});
+      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
+      source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
       outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), inArryDim, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;

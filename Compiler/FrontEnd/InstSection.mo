@@ -3142,11 +3142,11 @@ algorithm
       then
         DAE.T_ARRAY(ty, dims);
 
-    case DAE.T_COMPLEX(ci_state, vars, ec, source)
+    case DAE.T_COMPLEX(ci_state, vars, ec)
       equation
         vars = List.sort(vars, connectorCompGt);
       then
-        DAE.T_COMPLEX(ci_state, vars, ec, source);
+        DAE.T_COMPLEX(ci_state, vars, ec);
 
     else inType;
 

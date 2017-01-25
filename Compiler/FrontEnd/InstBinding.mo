@@ -118,8 +118,7 @@ public constant DAE.Type distributionType =
                     DAE.UNBOUND(), // binding
                     NONE())
                 },
-                NONE(),
-                {});
+                NONE());
 
 protected function instBinding
 "This function investigates a modification and extracts the

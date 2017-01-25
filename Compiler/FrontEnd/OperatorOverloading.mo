@@ -1556,7 +1556,7 @@ function getRecordPath
   input DAE.Type inType1;
   output Absyn.Path outPath;
 algorithm
-  DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = outPath :: _) :=
+  DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(outPath)) :=
     Types.arrayElementType(inType1);
 end getRecordPath;
 

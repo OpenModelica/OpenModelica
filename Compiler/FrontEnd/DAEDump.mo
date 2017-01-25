@@ -2470,7 +2470,7 @@ algorithm
       DAE.Type bc_tp, ty;
       list<DAE.Dimension> dims;
 
-    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path})
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path))
       equation
         name = Absyn.pathStringNoQual(path);
       then
@@ -2478,7 +2478,7 @@ algorithm
 
     case DAE.T_ARRAY(ty = ty)
       equation
-        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path}) =
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) =
           Types.arrayElementType(ty);
         dims = Types.getDimensions(tp);
         name = Absyn.pathStringNoQual(path);

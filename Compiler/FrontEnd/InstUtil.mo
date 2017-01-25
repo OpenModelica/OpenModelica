@@ -326,7 +326,7 @@ algorithm
     local
       String name;
       Absyn.Path path1, path2;
-    case (DAE.T_COMPLEX(source={path1}),_)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.State.TYPE(path=path1)),_)
       equation
         name = Absyn.pathLastIdent(path1);
         path2 = Absyn.stripLast(path1);
@@ -5559,10 +5559,7 @@ algorithm
     case (p,st,l,NONE(),equalityConstraint,_)
       equation
         failure(ClassInf.META_UNIONTYPE(_) = st);
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_COMPLEX(st,l,equalityConstraint,ts);
+      then DAE.T_COMPLEX(st,l,equalityConstraint);
 
     // extending
     case (p,st,l,SOME(bc),equalityConstraint,_)
@@ -5666,11 +5663,7 @@ algorithm
 
     // not extending basic type!
     case (p,st,l,NONE(),_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_COMPLEX(st,l,NONE(),ts); // adrpo: TODO! check equalityConstraint!
+      then DAE.T_COMPLEX(st,l,NONE()); // adrpo: TODO! check equalityConstraint!
 
     case (p,st,l,SOME(bc),_)
       equation

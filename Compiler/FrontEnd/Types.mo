@@ -451,11 +451,11 @@ algorithm
       then
         tty;
 
-    case (DAE.T_COMPLEX(CIS, vars, ec, ts))
+    case (DAE.T_COMPLEX(CIS, vars, ec))
       equation
         vars = List.map(vars, convertFromExpToTypesVar);
       then
-        DAE.T_COMPLEX(CIS, vars, ec, ts);
+        DAE.T_COMPLEX(CIS, vars, ec);
 
     case (DAE.T_SUBTYPE_BASIC(CIS, vars, ty, ec, ts))
       equation
@@ -1160,8 +1160,7 @@ algorithm
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation
         vars = valuesToVars(vl, ids);
-      then
-        DAE.T_COMPLEX(ClassInf.RECORD(cname),vars,NONE(),{cname});
+      then DAE.T_COMPLEX(ClassInf.RECORD(cname),vars,NONE());
 
       // MetaModelica Uniontype
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
@@ -1599,10 +1598,10 @@ algorithm
     // <uniontype> = <uniontype>
     case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_METAUNIONTYPE(path = p2))
       then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
-    case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
+    /*case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
       then Absyn.pathEqual(p1,p2); // TODO: Remove?
     case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(path = p1))
-      then Absyn.pathEqual(p1,p2); // TODO: Remove?
+      then Absyn.pathEqual(p1,p2); // TODO: Remove?*/
 
     case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2)) then valueEq(c1,c2);
 
@@ -2190,7 +2189,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),varLst = vs, source = {path}))
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path),varLst = vs))
       equation
         name = Absyn.pathStringNoQual(path);
         vars = List.map(vs, unparseVar);
@@ -2199,7 +2198,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_, b),varLst = vs, source = {path}))
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path, b),varLst = vs))
       equation
         name = Absyn.pathStringNoQual(path);
         vars = List.map(vs, unparseVar);
@@ -3871,24 +3870,24 @@ algorithm
     case (DAE.T_ENUMERATION()) then inType;
 
     // for metamodelica we need this for some reson!
-    case (DAE.T_COMPLEX(CIS, varLst, ec, ts))
+    case (DAE.T_COMPLEX(CIS, varLst, ec))
       equation
         true = Config.acceptMetaModelicaGrammar();
         varLst = list(simplifyVar(v) for v in varLst);
       then
-        DAE.T_COMPLEX(CIS, varLst, ec, ts);
+        DAE.T_COMPLEX(CIS, varLst, ec);
 
     // do this for records too, otherwise:
     // frame.R = Modelica.Mechanics.MultiBody.Frames.Orientation({const_matrix);
     // does not get expanded into the component equations.
-    case (DAE.T_COMPLEX(CIS as ClassInf.RECORD(_), varLst, ec, ts))
+    case (DAE.T_COMPLEX(CIS as ClassInf.RECORD(), varLst, ec))
       equation
         varLst = list(simplifyVar(v) for v in varLst);
       then
-        DAE.T_COMPLEX(CIS, varLst, ec, ts);
+        DAE.T_COMPLEX(CIS, varLst, ec);
 
     // otherwise just return the same!
-    case (DAE.T_COMPLEX(_, _, _, _)) then inType;
+    case DAE.T_COMPLEX() then inType;
 
     case (DAE.T_METABOXED(ty = t))
       equation
@@ -4769,7 +4768,7 @@ algorithm
         (e, t2);
 
     case (DAE.CALL(path = path1, expLst = elist),
-          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path2}),
+          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path2), varLst = v),
           DAE.T_METABOXED(ty = t2),
           _)
       equation
@@ -4784,7 +4783,7 @@ algorithm
       then (e_1,t2);
 
     case (DAE.RECORD(path = path1, exps = elist),
-          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path2}),
+          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path2), varLst = v),
           DAE.T_METABOXED(ty = t2),
           _)
       equation
@@ -4799,7 +4798,7 @@ algorithm
       then (e_1,t2);
 
     case (DAE.CREF(cref,_),
-          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path}),
+          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = v),
           DAE.T_METABOXED(ty = t2),_)
       equation
         true = subtype(t1,t2);
@@ -4817,7 +4816,7 @@ algorithm
       then (e_1,t2);
 
     case (e,
-          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),
+          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()),
           DAE.T_METABOXED(),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

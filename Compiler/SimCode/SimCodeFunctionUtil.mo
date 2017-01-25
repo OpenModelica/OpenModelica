@@ -1543,7 +1543,7 @@ algorithm
       Integer index;
       SimCodeFunction.RecordDeclaration recDecl;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst, source = {_}), accRecDecls, rt)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst), accRecDecls, rt)
       equation
         sname = Absyn.pathStringUnquoteReplaceDot(name, "_");
         if not listMember(sname, rt) then

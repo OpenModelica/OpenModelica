@@ -971,7 +971,6 @@ package DAE
       ClassInf.State complexClassType "The type of a class" ;
       list<Var> varLst "The variables of a complex type" ;
       EqualityConstraint equalityConstraint;
-      TypeSource source;
     end T_COMPLEX;
 
     record T_SUBTYPE_BASIC

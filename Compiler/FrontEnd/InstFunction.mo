@@ -822,7 +822,7 @@ algorithm
             UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
             {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
-          DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src) = recType;
+          DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo) = recType;
 
           vars = Types.filterRecordComponents(vars, SCode.elementInfo(recordCl));
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
@@ -831,7 +831,7 @@ algorithm
           vars = listAppend(inputs,locals);
 
           path = Absyn.makeFullyQualified(path);
-          fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
+          fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
           func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
@@ -840,7 +840,7 @@ algorithm
 
           // add the instance record constructor too!
           path = Absyn.pathSetLastIdent(path, Absyn.makeIdentPathFromString(name));
-          fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
+          fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
           func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
@@ -882,7 +882,7 @@ algorithm
       list<DAE.FuncArg> fargs;
 
     // try to instantiate class
-    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), _, _, _), _)
+    case (cache, _, DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)), _)
       equation
         path = Absyn.makeFullyQualified(path);
         (cache, _) = getRecordConstructorFunction(cache, inEnv, path);
@@ -890,7 +890,7 @@ algorithm
         cache;
 
     // if previous stuff didn't work, try to use the ty directly
-    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src), _)
+    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo), _)
       equation
         path = Absyn.makeFullyQualified(path);
 
@@ -900,7 +900,7 @@ algorithm
         locals = List.map(locals,Types.setVarProtected);
         vars = listAppend(inputs,locals);
 
-        fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
+        fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo);
         fargs = Types.makeFargsList(inputs);
         funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
         func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);

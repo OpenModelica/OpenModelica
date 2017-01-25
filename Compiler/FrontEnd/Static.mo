@@ -2132,19 +2132,19 @@ algorithm
       then DAE.T_CODE(DAE.C_VARIABLENAME());
 
     case Absyn.C_EQUATIONSECTION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(),DAE.emptyTypeSource);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE());
 
     case Absyn.C_ALGORITHMSECTION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE(),DAE.emptyTypeSource);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE());
 
     case Absyn.C_ELEMENT()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(),DAE.emptyTypeSource);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE());
 
     case Absyn.C_EXPRESSION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE(),DAE.emptyTypeSource);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE());
 
     case Absyn.C_MODIFICATION()
-      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE(),DAE.emptyTypeSource);
+      then DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE());
   end match;
 end elabCodeType;
 
@@ -9837,7 +9837,7 @@ algorithm
   end for;
 
   vars := listReverse(vars);
-  outType := DAE.T_COMPLEX(complexClassType, vars, NONE(), DAE.emptyTypeSource);
+  outType := DAE.T_COMPLEX(complexClassType, vars, NONE());
 end complexTypeFromSlots;
 
 protected function slotListArgs

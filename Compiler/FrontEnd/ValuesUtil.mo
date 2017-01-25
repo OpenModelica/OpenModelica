@@ -126,7 +126,7 @@ algorithm
     case(Values.RECORD(path,valLst,nameLst,_)) equation
       eltTps = List.map(valLst,valueExpType);
       varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
-    then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(),DAE.emptyTypeSource);
+    then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE());
 
     case _
       equation
@@ -883,7 +883,7 @@ algorithm
         expl = List.map(vallist,valueExp);
         tpl = List.map(expl,Expression.typeof);
         varlst = List.threadMap(namelst,tpl,Expression.makeVar);
-        t = DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(),DAE.emptyTypeSource);
+        t = DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE());
       then DAE.RECORD(path,expl,namelst,t);
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
