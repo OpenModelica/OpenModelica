@@ -20,13 +20,10 @@ val(hydr.left.p,1.01);
 // record SimulationResult
 //     resultFile = "PRVSystem_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.2, numberOfIntervals = 119999, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'PRVSystem', options = '', outputFormat = 'mat', variableFilter = 'hydr.left.p|hydr.x', cflags = '', simflags = '-noEventEmit'",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.999988
-// |                 | |       | hydr.x >= 0.0 and hydr.x <= 0.015
-// assert            | warning | Variable violating min/max constraint: 0.0 <= hydr.x <= 0.015, has value: -7.71624e-24
-// "
+//     messages = ""
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// 1.877009969621289e-06
-// 10009615.61970502
+// 1.888990295012324e-06
+// 10009941.55056878
 // endResult
