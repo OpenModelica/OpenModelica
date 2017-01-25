@@ -3131,7 +3131,6 @@ algorithm
     local
       DAE.Type ty;
       DAE.Dimensions dims;
-      DAE.TypeSource source;
       ClassInf.State ci_state;
       list<DAE.Var> vars;
       DAE.EqualityConstraint ec;

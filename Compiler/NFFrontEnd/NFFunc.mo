@@ -97,7 +97,6 @@ protected
   Type classType, resultType;
   list<DAE.FuncArg> funcArg;
   DAE.FunctionAttributes functionAttributes;
-  DAE.TypeSource source;
   Prefix prefix;
   SCode.Element cls;
   list<DAE.Var> vars;
@@ -231,7 +230,6 @@ protected
   Type resultType;
   list<DAE.FuncArg> funcArg;
   DAE.FunctionAttributes functionAttributes;
-  DAE.TypeSource source;
   list<DAE.Var> vars;
   Absyn.Exp arg;
   list<Absyn.Exp> args;
@@ -563,7 +561,6 @@ algorithm
       list<InstNode> inputs, outputs;
       Absyn.ForIterators iters;
       DAE.Dimensions d1, d2;
-      DAE.TypeSource src1, src2;
       Type el_ty;
       list<Type> tys;
       list<DAE.Const> vrs;
@@ -635,7 +632,6 @@ algorithm
       list<InstNode> inputs, outputs;
       Absyn.ForIterators iters;
       Dimension d1, d2;
-      DAE.TypeSource src1, src2;
       Type el_ty, ty1, ty2;
 
     // size(arr, dim)

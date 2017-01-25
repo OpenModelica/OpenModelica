@@ -1518,7 +1518,6 @@ algorithm
       DAE.Type tty;
       DAE.Dimensions ad;
       DAE.Exp es1;
-      DAE.TypeSource ts;
 
     case({},_) then false;
 
@@ -3108,7 +3107,6 @@ algorithm
     local
       DAE.Ident id;
       DAE.Type ty, basety,correctTy;
-      DAE.TypeSource source;
       list<DAE.Dimension> dims;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cref;

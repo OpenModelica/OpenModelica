@@ -1258,7 +1258,6 @@ protected function prefixArrayDimensions
 algorithm
   (oty,otpl) := match (oty,tpl)
     local
-      DAE.TypeSource ts;
       FCore.Cache cache;
       FCore.Graph env;
       InnerOuter.InstHierarchy ih;

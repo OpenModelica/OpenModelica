@@ -799,7 +799,6 @@ algorithm
       list<DAE.Var> vars, inputs, locals;
       list<DAE.FuncArg> fargs;
       DAE.EqualityConstraint eqCo;
-      DAE.TypeSource src;
       String name, newName;
 
       case(_, _, _)
@@ -873,7 +872,6 @@ algorithm
       list<DAE.Var> vars, inputs, locals;
       DAE.Type ty,recType,fixedTy,funcTy;
       DAE.EqualityConstraint eqCo;
-      DAE.TypeSource src;
       FCore.Cache cache;
       Absyn.Path path;
       SCode.Element recordCl;

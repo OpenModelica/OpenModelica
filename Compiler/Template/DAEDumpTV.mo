@@ -978,7 +978,6 @@ package DAE
       list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
       Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
       EqualityConstraint equalityConstraint;
-      TypeSource source;
     end T_SUBTYPE_BASIC;
 
     record T_FUNCTION

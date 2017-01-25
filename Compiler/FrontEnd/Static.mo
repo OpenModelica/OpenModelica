@@ -2105,7 +2105,6 @@ algorithm
       DAE.Type ty;
       DAE.Dimension dim;
       Option<Absyn.Path> path;
-      DAE.TypeSource ts;
 
     case DAE.T_UNKNOWN() then expType;
 
@@ -2963,7 +2962,6 @@ protected
   DAE.Dimension dim, dim1, dim2;
   DAE.Dimensions dim_rest;
   list<DAE.Exp> expl, expl1, expl2;
-  DAE.TypeSource ts;
 algorithm
   DAE.ARRAY(DAE.T_ARRAY(ety, dim1 :: dim_rest), at, expl1) := inArray1;
   DAE.ARRAY(ty = DAE.T_ARRAY(dims = dim2 :: _), array = expl2) := inArray2;
@@ -6676,7 +6674,6 @@ algorithm
       DAE.Type ety;
       DAE.Dimension dim1, dim2;
       Boolean scalar;
-      DAE.TypeSource ts;
 
     // Scalar
     case _ guard(Types.isSimpleType(inType))
@@ -6723,7 +6720,6 @@ algorithm
       DAE.Dimension dim;
       DAE.Dimensions dims;
       list<list<DAE.Exp>> matrix_expl;
-      DAE.TypeSource ts;
 
     case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim :: _),scalar = scalar, array = expl)
       algorithm
@@ -7486,7 +7482,6 @@ algorithm
     local
       tuple<FCore.Cache,FCore.Graph> tpl;
       DAE.Dimensions dims;
-      DAE.TypeSource source;
     case (DAE.T_ARRAY(),tpl)
       algorithm
         (dims,tpl) := List.mapFold(oty.dims,elabCallArgsEvaluateArrayLength3,tpl);
@@ -9411,7 +9406,6 @@ algorithm
   outType := matchcontinue inType
     local
       DAE.Type ty;
-      DAE.TypeSource ts;
       Integer n;
       DAE.Dimension dim;
       list<DAE.Type> tys;
@@ -9452,7 +9446,6 @@ protected function createActualFunctype
 algorithm
   outTp := match(outTp, checkTypes)
     local
-      DAE.TypeSource ts;
       list<DAE.FuncArg> slotParams,params;
       DAE.Type restype;
       DAE.FunctionAttributes functionAttributes;
@@ -10615,7 +10608,6 @@ algorithm
     local
       DAE.ComponentRef c_1;
       DAE.Const const,const1,const2,constCref,constSubs;
-      DAE.TypeSource tySource;
       DAE.Type t,origt, sub_ty;
       DAE.Type tt;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
@@ -10907,7 +10899,6 @@ algorithm
       Absyn.Path p;
       list<String> n;
       list<DAE.Var> v, al;
-      DAE.TypeSource ts;
 
     case DAE.T_ENUMERATION(index = SOME(_), path = p, names = n, literalVarLst = v, attributeLst = al)
       then DAE.T_ENUMERATION(NONE(), p, n, v, al);
@@ -12395,7 +12386,6 @@ algorithm
       DAE.Type t,t_1;
       list<DAE.Subscript> subs;
       DAE.Dimension dim;
-      DAE.TypeSource ts;
 
     case (t,{}) then t;
 

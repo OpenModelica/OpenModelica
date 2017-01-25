@@ -3255,7 +3255,6 @@ algorithm
       DAE.Type ty,ty_1;
       Integer i;
       DAE.Dimensions xs;
-      DAE.TypeSource ts;
       DAE.Type tty;
       DAE.Dimension dim;
 
@@ -5484,7 +5483,6 @@ algorithm
       ClassInf.State classState;
       DAE.EqualityConstraint equalityConstraint;
       DAE.FunctionAttributes funcattr;
-      DAE.TypeSource ts;
       String pstr;
       SourceInfo info;
 
@@ -5534,9 +5532,7 @@ algorithm
       equation
         classState = arrayTTypeToClassInfState(arrayType);
         resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-        resType = DAE.T_SUBTYPE_BASIC(inState,{},resType,inEqualityConstraint,ts);
+        resType = DAE.T_SUBTYPE_BASIC(inState,{},resType,inEqualityConstraint);
       then
         resType;
 
@@ -5565,10 +5561,7 @@ algorithm
     case (p,st,l,SOME(bc),equalityConstraint,_)
       equation
         failure(ClassInf.META_UNIONTYPE(_) = st);
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_SUBTYPE_BASIC(st,l,bc,equalityConstraint,ts);
+      then DAE.T_SUBTYPE_BASIC(st,l,bc,equalityConstraint);
   end matchcontinue;
 end mktype;
 
@@ -5617,7 +5610,6 @@ algorithm
       SCode.Element cl;
       DAE.Type bc;
       DAE.FunctionAttributes funcattr;
-      DAE.TypeSource ts;
 
     case (_,ci,_,SOME(tp),_)
       equation
@@ -5666,11 +5658,7 @@ algorithm
       then DAE.T_COMPLEX(st,l,NONE()); // adrpo: TODO! check equalityConstraint!
 
     case (p,st,l,SOME(bc),_)
-      equation
-        somep = getOptPath(p);
-        ts = Types.mkTypeSource(somep);
-      then
-        DAE.T_SUBTYPE_BASIC(st,l,bc,NONE(),ts);
+      then DAE.T_SUBTYPE_BASIC(st,l,bc,NONE());
 
     else
       equation

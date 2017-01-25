@@ -1053,7 +1053,6 @@ algorithm
       Real r1;
       array<array<DAE.Exp>> marr;
       String name;
-      DAE.TypeSource source;
 
     // If the argument to min/max is an array, try to flatten it.
     case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.ARRAY()},
@@ -1479,7 +1478,6 @@ algorithm
       Integer i1,i2,i;
       list<list<DAE.Exp>> ms1,ms2,mss;
       Boolean sc;
-      DAE.TypeSource ts;
 
     case (_,{},_,true) then listReverse(acc);
 
@@ -2457,7 +2455,6 @@ algorithm
       DAE.Dimension n, m, p;
       list<DAE.Exp> expl1, expl2;
       DAE.Type ty, row_ty;
-      DAE.TypeSource tp;
       list<list<DAE.Exp>> matrix;
       DAE.Exp zero;
       list<DAE.Dimension> dims;

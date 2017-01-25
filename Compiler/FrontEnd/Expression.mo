@@ -523,7 +523,6 @@ algorithm
     local
       Type elt_tp;
       list<DAE.Dimension> dims;
-      DAE.TypeSource ts;
 
     case(DAE.T_ARRAY(elt_tp,dims),_)
       equation
@@ -1041,7 +1040,6 @@ algorithm
       Type tp,t;
       DAE.Dimension d;
       DAE.Dimensions ds;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(ty = tp,dims = {_}))
       then tp;
@@ -1134,7 +1132,6 @@ algorithm
       Type ty_1,ty;
       DAE.Dimensions dims;
       DAE.Dimension dim;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(ty,dims),dim)
       equation
@@ -1160,7 +1157,6 @@ algorithm
       Type ty;
       DAE.Dimensions dims;
       DAE.Dimension dim;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(ty,dims),dim) then DAE.T_ARRAY(ty,dim::dims);
 
@@ -1178,7 +1174,6 @@ algorithm
     local
       Type ty;
       DAE.Dimensions dims;
-      DAE.TypeSource ts;
 
     case (_, {}) then inType;
 
@@ -1443,7 +1438,6 @@ algorithm
       list<DAE.Exp> expl;
       Integer dim;
       DAE.Dimensions dims;
-      DAE.TypeSource ts;
 
     case (_, DAE.ARRAY(
         DAE.T_ARRAY(ty = ty, dims = DAE.DIM_INTEGER(dim) :: dims),
@@ -1475,7 +1469,6 @@ algorithm
     local
       DAE.Type ty;
       DAE.Dimensions rest_dims;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(ty = ty, dims = _ :: rest_dims), _)
       then DAE.T_ARRAY(ty, dimension :: rest_dims);
@@ -2334,7 +2327,6 @@ algorithm
     local
       Type ty,ty1;
       DAE.Dimensions dims;
-      DAE.TypeSource source;
     case DAE.T_ARRAY(ty=ty,dims=dims)
       equation
         _ = typeofRelation(ty);
@@ -4833,7 +4825,6 @@ algorithm
       DAE.Type et;
       DAE.Dimension dim1, dim2;
       DAE.Dimensions dims1, dims2;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1), DAE.T_ARRAY(dims = dim2 :: _))
       equation
@@ -6033,7 +6024,6 @@ algorithm
     local
       DAE.Type ty, new_ty;
       list<DAE.Dimension> dims, new_dims;
-      DAE.TypeSource src;
       ArgT arg;
       Boolean changed;
       ClassInf.State state;
@@ -6047,10 +6037,10 @@ algorithm
       then
         (ty, arg);
 
-    case DAE.T_SUBTYPE_BASIC(state, vars, ty, ec, src)
+    case DAE.T_SUBTYPE_BASIC(state, vars, ty, ec)
       equation
         (new_ty, arg) = traverseExpTypeDims(ty, inFunc, inArg);
-        ty = if referenceEq(new_ty, ty) then inType else DAE.T_SUBTYPE_BASIC(state, vars, ty, ec, src);
+        ty = if referenceEq(new_ty, ty) then inType else DAE.T_SUBTYPE_BASIC(state, vars, ty, ec);
       then
         (ty, arg);
 

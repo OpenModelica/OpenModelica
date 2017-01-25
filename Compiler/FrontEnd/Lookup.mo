@@ -262,7 +262,6 @@ algorithm
       list<String> names;
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
-      DAE.TypeSource ts;
       DAE.Mod mod;
 
     // Record constructors
@@ -290,7 +289,6 @@ algorithm
         Types.checkEnumDuplicateLiterals(names, c.info);
         // generate the enumeration type
         path = FGraph.getGraphName(env_3);
-        ts = Types.mkTypeSource(SOME(path));
         t = DAE.T_ENUMERATION(NONE(), path, names, types, {});
         env_3 = FGraph.mkTypeNode(env_3, id, t);
       then
@@ -2975,7 +2973,6 @@ algorithm
     local
       DAE.Type t,t_1;
       DAE.Dimension dim;
-      DAE.TypeSource ts;
       DAE.Subscript sub;
       list<DAE.Subscript> ys,s;
       Integer sz,ind,dim_int,step;
@@ -3522,7 +3519,6 @@ protected
   list<DAE.Var> varlst;
   list<SCode.Element> els;
   Boolean singleton;
-  DAE.TypeSource ts;
   FCore.Cache cache;
   list<DAE.Type> typeVarsType;
   list<String> typeVars;

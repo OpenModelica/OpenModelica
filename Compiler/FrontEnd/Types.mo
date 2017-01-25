@@ -427,7 +427,6 @@ algorithm
       Type at;
       DAE.Dimensions ad;
       DAE.Dimension dim;
-      DAE.TypeSource ts;
       Integer ll;
       list<DAE.Var> vars;
       ClassInf.State CIS;
@@ -457,12 +456,11 @@ algorithm
       then
         DAE.T_COMPLEX(CIS, vars, ec);
 
-    case (DAE.T_SUBTYPE_BASIC(CIS, vars, ty, ec, ts))
+    case DAE.T_SUBTYPE_BASIC(CIS, vars, ty, ec)
       equation
         vars = List.map(vars, convertFromExpToTypesVar);
         ty = expTypetoTypesType(ty);
-      then
-        DAE.T_SUBTYPE_BASIC(CIS, vars, ty, ec, ts);
+      then DAE.T_SUBTYPE_BASIC(CIS, vars, ty, ec);
 
     case (DAE.T_METABOXED(ty))
       equation
@@ -903,7 +901,6 @@ algorithm
       DAE.Dimension d;
       DAE.Dimensions dims;
       Type tp;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(dims = d::dims, ty = tp))
       equation
@@ -939,7 +936,6 @@ algorithm
       DAE.Dimensions dims;
       Integer i;
       Type tp;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(dims = d::dims,ty = tp))
       equation
@@ -981,7 +977,6 @@ algorithm
       DAE.Dimensions dims;
       Integer i;
       Type tp;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(dims = dims,ty = tp))
       then product(Expression.dimensionSize(d) for d in dims) * getDimensionProduct(tp);
@@ -1052,7 +1047,6 @@ algorithm
     local
       DAE.Dimension dim;
       DAE.Type ty;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(dims = {_}, ty = ty), _, 1)
       then DAE.T_ARRAY(ty, {inDim});
@@ -1412,7 +1406,6 @@ algorithm
       list<DAE.FuncArg> farg1,farg2;
       DAE.CodeType c1,c2;
       DAE.Exp e1,e2;
-      DAE.TypeSource ts;
 
     case (DAE.T_ANYTYPE(), _) then true;
     case (_, DAE.T_ANYTYPE()) then true;
@@ -1948,7 +1941,6 @@ algorithm
     local
       list<DAE.Dimension> dims, dims_;
       DAE.Type ty;
-      DAE.TypeSource src;
 
     case DAE.T_ARRAY(ty=DAE.T_ARRAY())
       algorithm
@@ -1991,7 +1983,6 @@ algorithm
     local
       Type ty_1,ty;
       DAE.Dimension dim;
-      DAE.TypeSource ts;
       DAE.Dimension d;
       ClassInf.State ci;
       list<DAE.Var> varlst;
@@ -2004,12 +1995,11 @@ algorithm
       then
         DAE.T_ARRAY(ty_1, {dim});
 
-    case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec,ts),d)
+    case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec),d)
       equation
         false = listEmpty(getDimensions(ty));
         ty_1 = liftArrayRight(ty,d);
-      then
-        DAE.T_SUBTYPE_BASIC(ci,varlst,ty_1,ec,ts);
+      then DAE.T_SUBTYPE_BASIC(ci,varlst,ty_1,ec);
 
     case (tty,d)
       then
@@ -2076,7 +2066,6 @@ algorithm
     local
       DAE.Type ty;
       DAE.Dimensions dims;
-      DAE.TypeSource src;
 
     case (DAE.T_ARRAY(ty, dims), _)
       equation
@@ -2140,7 +2129,6 @@ algorithm
       Absyn.Path path,p;
       list<DAE.Type> tys;
       DAE.CodeType codeType;
-      DAE.TypeSource ts;
       Boolean b;
 
     case (DAE.T_INTEGER(varLst = {})) then "Integer";
@@ -2418,7 +2406,6 @@ algorithm
       list<DAE.Type> tys;
       String s1,s2,compType;
       Absyn.Path path;
-      DAE.TypeSource ts;
 
     case (DAE.T_INTEGER(varLst = vars))
       then List.toString(vars, printVarStr, "Integer", "(", ", ", ")", false);
@@ -2600,7 +2587,6 @@ algorithm
       ClassInf.State st;
       Absyn.Path connectorName;
       list<DAE.Var> vars;
-      DAE.TypeSource ts;
       list<String> varNames;
       Boolean isExpandable;
       String isExpandableStr;
@@ -2931,16 +2917,13 @@ algorithm
       list<String> names, attr_names;
       list<DAE.Var> vars, attrs;
       Type ty;
-      DAE.TypeSource ts;
 
     case (_, DAE.T_ENUMERATION(index = NONE(), path = p, names = names, literalVarLst = vars, attributeLst = attrs))
       equation
         vars = makeEnumerationType1(p, vars, names, 1);
         attr_names = List.map(vars, getVarName);
         attrs = makeEnumerationType1(p, attrs, attr_names, 1);
-        ts = {inPath};
-      then
-        (DAE.T_ENUMERATION(NONE(), p, names, vars, attrs));
+      then (DAE.T_ENUMERATION(NONE(), p, names, vars, attrs));
 
     case (_, DAE.T_ARRAY(ty = ty))
       then makeEnumerationType(inPath, ty);
@@ -3829,7 +3812,6 @@ algorithm
       list<DAE.Var> varLst;
       ClassInf.State CIS;
       DAE.EqualityConstraint ec;
-      DAE.TypeSource ts;
 
     case (DAE.T_FUNCTION()) then DAE.T_FUNCTION_REFERENCE_VAR(inType);
 
@@ -4315,7 +4297,6 @@ algorithm
   outTy := matchcontinue(inTy, last)
     local
       DAE.Type ty, t;
-      DAE.TypeSource ts;
       DAE.Dimensions dims;
       DAE.Dimension dim;
       ClassInf.State ci;
@@ -4323,25 +4304,20 @@ algorithm
       EqualityConstraint eqc;
 
     // subtype basic crap
-    case (DAE.T_SUBTYPE_BASIC(ci, vl, ty, eqc, ts), _)
+    case (DAE.T_SUBTYPE_BASIC(ci, vl, ty, eqc), _)
       equation
         ty = unflattenArrayType(ty);
-      then
-        DAE.T_SUBTYPE_BASIC(ci, vl, ty, eqc, ts);
+      then DAE.T_SUBTYPE_BASIC(ci, vl, ty, eqc);
 
     // already in the way we want it
     case (DAE.T_ARRAY(t, {dim}), _)
       equation
         t = unflattenArrayType(t);
-      then
-        DAE.T_ARRAY(t, {dim});
+      then DAE.T_ARRAY(t, {dim});
 
     // we might get here via true!
     case (DAE.T_ARRAY(t, {}), true)
-      equation
-        t = unflattenArrayType(t);
-      then
-        t;
+      then unflattenArrayType(t);
 
     // the usual case
     case (DAE.T_ARRAY(t, dim::dims), _)
@@ -4391,7 +4367,6 @@ algorithm
       list<DAE.MatchCase> cases;
       DAE.MatchType matchTy;
       list<DAE.Element> localDecls;
-      DAE.TypeSource ts,ts1,ts2;
       list<DAE.Var> els1,els2;
       Absyn.Path p1,p2,tp;
       list<list<String>> aliases;
@@ -4974,7 +4949,6 @@ algorithm
       list<list<DAE.Exp>> rest;
       DAE.Type t;
       Type t1,t2;
-      DAE.TypeSource ts2;
       DAE.Exp e;
 
     case ({},_,_,_) then ({},DAE.T_UNKNOWN_DEFAULT);
@@ -5028,7 +5002,6 @@ algorithm
       Boolean havereal;
       list<DAE.Var> v;
       Type tt;
-      DAE.TypeSource  ts2, ts;
 
     case (DAE.PROP(DAE.T_SUBTYPE_BASIC(complexType = t1),c1),DAE.PROP(t2,c2),havereal)
       then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
@@ -6026,7 +5999,6 @@ algorithm
       list<String> names1;
       list<DAE.FuncArg> args1;
       DAE.FunctionAttributes functionAttributes;
-      DAE.TypeSource ts1;
       list<DAE.Const> cs;
       list<DAE.VarParallelism> ps;
       list<Option<DAE.Exp>> oe;
@@ -6276,7 +6248,6 @@ protected function makeFunctionPolymorphicReferenceResType
 algorithm
   outType := matchcontinue (inType)
     local
-      DAE.TypeSource ts;
       DAE.Exp e;
       Type ty,ty1,ty2;
       list<DAE.Type> tys, dummyBoxedTypeList;
@@ -7025,7 +6996,6 @@ algorithm
       list<DAE.Type> tys;
       Type tyInner;
       DAE.Dimensions ad;
-      DAE.TypeSource ts;
       String str;
       Integer index;
       list<DAE.Var> vars;
@@ -7462,7 +7432,6 @@ algorithm
     local
       DAE.Dimension ad;
       Type ty1;
-      DAE.TypeSource ts;
 
     case (DAE.T_ARRAY(ty1,{_}),1) then DAE.T_ARRAY(ty1,{DAE.DIM_UNKNOWN()});
     case (DAE.T_ARRAY(ty1,{ad}),_)
@@ -7662,34 +7631,6 @@ algorithm
   end match;
 end isUnknownType;
 
-public function mkTypeSource
-  input Option<Absyn.Path> inPathOpt;
-  output DAE.TypeSource source;
-algorithm
-  source := match(inPathOpt)
-    local Absyn.Path p;
-    case (SOME(p)) then {p};
-    case (NONE())  then DAE.emptyTypeSource;
-  end match;
-end mkTypeSource;
-
-public function printTypeSourceStr
-  input DAE.TypeSource tySource;
-  output String str;
-algorithm
-  str := matchcontinue(tySource)
-    local DAE.TypeSource ts; String s;
-    // no type source
-    case ({}) then "";
-    // yeha, we have some
-    case (ts)
-      equation
-        s = " origin: " + stringDelimitList(list(Absyn.pathString(t) for t in ts), ", ");
-      then
-        s;
-  end matchcontinue;
-end printTypeSourceStr;
-
 public function isOverdeterminedType
   "Returns true if the given type is overdetermined, i.e. a type or record with
    an equalityConstraint function, otherwise false."
@@ -7750,7 +7691,6 @@ algorithm
   (oty1,oty2) := match (ty1,ty2)
     local
       DAE.Type inner1,inner2;
-      DAE.TypeSource ts1,ts2;
       DAE.Dimension d1,d2;
     case (DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()}),DAE.T_ARRAY(ty=inner2,dims={_}))
       equation
@@ -7897,7 +7837,6 @@ algorithm
   (outType, outVars) := match(inType)
     local
       list<DAE.Var> vars, sub_vars;
-      DAE.TypeSource src;
       DAE.Type ty;
       DAE.Dimensions dims;
       ClassInf.State state;
@@ -7916,11 +7855,11 @@ algorithm
       then
         (DAE.T_ARRAY(ty, dims), vars);
 
-    case DAE.T_SUBTYPE_BASIC(state, sub_vars, ty, ec, src)
+    case DAE.T_SUBTYPE_BASIC(state, sub_vars, ty, ec)
       equation
         (ty, vars) = stripTypeVars(ty);
       then
-        (DAE.T_SUBTYPE_BASIC(state, sub_vars, ty, ec, src), vars);
+        (DAE.T_SUBTYPE_BASIC(state, sub_vars, ty, ec), vars);
 
     else (inType, {});
 

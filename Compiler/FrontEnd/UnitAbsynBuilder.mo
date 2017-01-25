@@ -698,7 +698,6 @@ algorithm
       HashTable.HashTable ht;
       String unitStr;
       UnitAbsyn.Unit unit; Integer indx;
-      DAE.TypeSource ts;
       list<DAE.Var> varLst;
       Option<UnitAbsyn.UnitCheckResult> res;
       UnitAbsyn.InstStore store;
@@ -1282,7 +1281,6 @@ algorithm
   str := matchcontinue(itp)
     local
       list<DAE.Var> varLst;
-      DAE.TypeSource ts;
       DAE.Type tp;
 
     case DAE.T_REAL(varLst = varLst)

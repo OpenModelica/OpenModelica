@@ -2105,8 +2105,6 @@ package DAE
 
   end Type;
 
-  type TypeSource = list<Absyn.Path>;
-
   type Dimensions = list<Dimension> "a list of dimensions";
 
   uniontype Dimension

@@ -316,7 +316,6 @@ algorithm
       Option<DAE.Distribution> distribution_value;
       FCore.Graph env;
       DAE.Mod mod;
-      DAE.TypeSource ts;
       list<Integer> index_list;
       DAE.Type enumtype;
       FCore.Cache cache;

@@ -299,7 +299,6 @@ algorithm
       list<Absyn.Path> paths;
       list<DAE.Type> typeVarsTypes;
       list<String> names, typeVars;
-      DAE.TypeSource ts;
       DAE.EvaluateSingletonType singletonType;
       SCode.Element c;
       FCore.Graph env_1;

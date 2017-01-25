@@ -1571,7 +1571,6 @@ algorithm
   typOut := matchcontinue(typIn,outputs,originOutputs)
     local
       DAE.FunctionAttributes atts;
-      DAE.TypeSource source;
       DAE.Type ty;
       list<DAE.Type> outTypeLst;
       list<DAE.FuncArg> inputs;

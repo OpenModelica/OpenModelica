@@ -818,9 +818,6 @@ type EqualityConstraint = Option<tuple<Absyn.Path, Integer, InlineType>>
   "contains the path to the equalityConstraint function,
    the dimension of the output and the inline type of the function";
 
-public type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
-public constant TypeSource emptyTypeSource = {} "an empty origin for the type";
-
 // default constants that can be used
 constant Type T_REAL_DEFAULT        = T_REAL({});
 constant Type T_INTEGER_DEFAULT     = T_INTEGER({});
@@ -916,7 +913,6 @@ public uniontype Type "models the different front-end and back-end types"
     list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
     Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
     EqualityConstraint equalityConstraint;
-    TypeSource source;
   end T_SUBTYPE_BASIC;
 
   record T_FUNCTION

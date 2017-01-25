@@ -84,7 +84,6 @@ protected
   Type resultType;
   list<DAE.FuncArg> funcArg;
   DAE.FunctionAttributes functionAttributes;
-  DAE.TypeSource source;
   list<DAE.Var> vars;
   list<Absyn.Exp> args;
   list<Expression> dargs;
