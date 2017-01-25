@@ -829,7 +829,16 @@ algorithm
   end match;
 end isWildCref;
 
-protected function isSkipCase "outline all skip cases"
+protected function isSkipCase "outline all skip cases
+  This contains amongst others
+    * MLS 3.3 rev1, section 3.7.1
+      Numeric Functions and Conversion Functions
+    * MLS 3.3 rev1, section 3.7.1.1
+      Event Triggering Mathematical Functions
+    * MLS 3.3 rev1, section 3.7.2
+      Derivative and Special Purpose Operators with Function Syntax
+    * MLS 3.3 rev1, section 3.7.3
+      Event-Related Operators with Function Syntax"
   input DAE.Exp inCall;
   input DAE.FunctionTree functionTree;
   output Boolean outB;
@@ -838,36 +847,50 @@ algorithm
     local
       Absyn.Path path;
     case DAE.ASUB() then true;
+    case DAE.CALL(path=Absyn.IDENT("$_initialGuess"))  then true;
+    case DAE.CALL(path=Absyn.IDENT("$_old")) then true;
+    case DAE.CALL(path=Absyn.IDENT("$_round")) then true;
+    case DAE.CALL(path=Absyn.IDENT("$_start")) then true;
     case DAE.CALL(path=Absyn.IDENT("$getPart")) then true;
+    case DAE.CALL(path=Absyn.IDENT("abs")) then true;
+    case DAE.CALL(path=Absyn.IDENT("actualStream")) then true;
+    case DAE.CALL(path=Absyn.IDENT("backSample")) then true;
+    case DAE.CALL(path=Absyn.IDENT("cardinality")) then true;
+    case DAE.CALL(path=Absyn.IDENT("ceil")) then true;
+    case DAE.CALL(path=Absyn.IDENT("change")) then true;
+    case DAE.CALL(path=Absyn.IDENT("Clock")) then true;
+    case DAE.CALL(path=Absyn.IDENT("delay")) then true;
+    case DAE.CALL(path=Absyn.IDENT("der")) then true;
+    case DAE.CALL(path=Absyn.IDENT("div")) then true;
+    case DAE.CALL(path=Absyn.IDENT("edge")) then true;
+    case DAE.CALL(path=Absyn.IDENT("firstTick")) then true;
+    case DAE.CALL(path=Absyn.IDENT("floor")) then true;
+    case DAE.CALL(path=Absyn.IDENT("getInstanceName")) then true;
+    case DAE.CALL(path=Absyn.IDENT("hold")) then true;
+    case DAE.CALL(path=Absyn.IDENT("homotopy")) then true;
+    case DAE.CALL(path=Absyn.IDENT("initial")) then true;
+    case DAE.CALL(path=Absyn.IDENT("inStream")) then true;
+    case DAE.CALL(path=Absyn.IDENT("integer")) then true;
+    case DAE.CALL(path=Absyn.IDENT("Integer")) then true;
+    case DAE.CALL(path=Absyn.IDENT("interval")) then true;
+    case DAE.CALL(path=Absyn.IDENT("mod")) then true;
+    case DAE.CALL(path=Absyn.IDENT("noClock")) then true;
+    case DAE.CALL(path=Absyn.IDENT("noEvent")) then true;
     case DAE.CALL(path=Absyn.IDENT("pre")) then true;
     case DAE.CALL(path=Absyn.IDENT("previous")) then true;
-    case DAE.CALL(path=Absyn.IDENT("change")) then true;
-    case DAE.CALL(path=Absyn.IDENT("delay")) then true;
-    case DAE.CALL(path=Absyn.IDENT("edge")) then true;
-    case DAE.CALL(path=Absyn.IDENT("$_start")) then true;
-    case DAE.CALL(path=Absyn.IDENT("$_initialGuess"))  then true;
-    case DAE.CALL(path=Absyn.IDENT("initial")) then true;
-    case DAE.CALL(path=Absyn.IDENT("$_round")) then true;
-    case DAE.CALL(path=Absyn.IDENT("$_old")) then true;
-    case DAE.CALL(path=Absyn.IDENT("der")) then true;
-    case DAE.CALL(path=Absyn.IDENT("smooth")) then true;
-    case DAE.CALL(path=Absyn.IDENT("noEvent")) then true;
-    case DAE.CALL(path=Absyn.IDENT("semiLinear")) then true;
-    case DAE.CALL(path=Absyn.IDENT("homotopy")) then true;
     case DAE.CALL(path=Absyn.IDENT("reinit")) then true;
-    case DAE.CALL(path=Absyn.IDENT("integer")) then true;
-    case DAE.CALL(path=Absyn.IDENT("String")) then true;
-    case DAE.CALL(path=Absyn.IDENT("firstTick")) then true;
-    case DAE.CALL(path=Absyn.IDENT("interval")) then true;
-    case DAE.CALL(path=Absyn.IDENT("Clock")) then true;
+    case DAE.CALL(path=Absyn.IDENT("rem")) then true;
     case DAE.CALL(path=Absyn.IDENT("sample")) then true;
-    case DAE.CALL(path=Absyn.IDENT("hold")) then true;
+    case DAE.CALL(path=Absyn.IDENT("semiLinear")) then true;
+    case DAE.CALL(path=Absyn.IDENT("shiftSample")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sign")) then true;
+    case DAE.CALL(path=Absyn.IDENT("smooth")) then true;
+    case DAE.CALL(path=Absyn.IDENT("spatialDistribution")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sqrt")) then true;
+    case DAE.CALL(path=Absyn.IDENT("String")) then true;
     case DAE.CALL(path=Absyn.IDENT("subSample")) then true;
     case DAE.CALL(path=Absyn.IDENT("superSample")) then true;
-    case DAE.CALL(path=Absyn.IDENT("shiftSample")) then true;
-    case DAE.CALL(path=Absyn.IDENT("backSample")) then true;
-    case DAE.CALL(path=Absyn.IDENT("noClock")) then true;
-    case DAE.CALL(path=Absyn.IDENT("sign")) then true;
+    case DAE.CALL(path=Absyn.IDENT("terminal")) then true;
     case DAE.CALL() guard(Expression.isImpureCall(inCall) or isCallRecordConstructor(inCall, functionTree)) then true;
     case DAE.CALL() guard(Flags.getConfigBool(Flags.WFC_ADVANCED)) then isSkipCase_advanced(inCall);
     else false;
@@ -875,20 +898,27 @@ algorithm
 end isSkipCase;
 
 protected function isSkipCase_advanced
+"This contains
+  * MLS 3.3 rev1, section 3.7.1.2
+    Built-in Mathematical Functions and External Built-in Functions "
   input DAE.Exp inCall;
   output Boolean outB;
 algorithm
   outB := match(inCall)
     local
       Absyn.Path path;
-    case DAE.CALL(path=Absyn.IDENT("abs")) then true;
-    case DAE.CALL(path=Absyn.IDENT("sin")) then true;
+    case DAE.CALL(path=Absyn.IDENT("acos")) then true;
+    case DAE.CALL(path=Absyn.IDENT("asin")) then true;
+    case DAE.CALL(path=Absyn.IDENT("atan")) then true;
+    case DAE.CALL(path=Absyn.IDENT("atan2")) then true;
     case DAE.CALL(path=Absyn.IDENT("cos")) then true;
-    case DAE.CALL(path=Absyn.IDENT("log")) then true;
-    case DAE.CALL(path=Absyn.IDENT("exp")) then true;
-    case DAE.CALL(path=Absyn.IDENT("tan")) then true;
-    case DAE.CALL(path=Absyn.IDENT("sinh")) then true;
     case DAE.CALL(path=Absyn.IDENT("cosh")) then true;
+    case DAE.CALL(path=Absyn.IDENT("exp")) then true;
+    case DAE.CALL(path=Absyn.IDENT("log")) then true;
+    case DAE.CALL(path=Absyn.IDENT("log10")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sin")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sinh")) then true;
+    case DAE.CALL(path=Absyn.IDENT("tan")) then true;
     case DAE.CALL(path=Absyn.IDENT("tanh")) then true;
     else false;
   end match;
