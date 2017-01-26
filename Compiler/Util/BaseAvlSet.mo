@@ -222,10 +222,13 @@ function printTreeStr
 protected
   Tree left, right;
 algorithm
-  NODE(left = left, right = right) := inTree;
-  outString := printTreeStr2(left, true, "") +
+  outString := match inTree
+    case EMPTY() then "EMPTY()";
+    case LEAF() then printNodeStr(inTree);
+    case NODE(left = left, right = right) then printTreeStr2(left, true, "") +
                printNodeStr(inTree) + "\n" +
                printTreeStr2(right, false, "");
+  end match;
 end printTreeStr;
 
 replaceable function setTreeLeftRight

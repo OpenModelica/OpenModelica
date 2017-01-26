@@ -65,6 +65,7 @@ import ElementSource;
 import Expression;
 import ExpressionDump;
 import Error;
+import ErrorExt;
 import Flags;
 import FGraph;
 import Inst;
@@ -1284,7 +1285,7 @@ protected function checkDefUsePattern
   output DAE.Pattern outPat;
   output tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> outTpl=inTpl;
 algorithm
-  outPat := matchcontinue (inPat,inTpl)
+  outPat := match (inPat,inTpl)
     local
       AvlSetString.Tree localsTree,useTree;
       String name;
@@ -1294,7 +1295,6 @@ algorithm
       tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> extra;
     case ((DAE.PAT_AS(id=name,pat=pat),extra as (localsTree,useTree,info)))
       equation
-        // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
         else
@@ -1303,7 +1303,6 @@ algorithm
       then pat;
     case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),extra as (localsTree,useTree,info)))
       equation
-        // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
         else
@@ -1314,7 +1313,7 @@ algorithm
       algorithm
         (pat,_) := simplifyPattern(inPat,1);
       then pat;
-  end matchcontinue;
+  end match;
 end checkDefUsePattern;
 
 protected function useLocalCref
@@ -2959,7 +2958,9 @@ algorithm
     case DAE.STMT_FOR(ty,b,id,index,exp,body,source)
       equation
         // Loops repeat, so check for usage in the whole loop before removing any dead stores.
+        ErrorExt.setCheckpoint(getInstanceName());
         (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree);
+        ErrorExt.rollBack(getInstanceName());
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree, useTree);
         (_,useTree) = Expression.traverseExpBottomUp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
@@ -2969,7 +2970,9 @@ algorithm
     case DAE.STMT_WHILE(exp=exp,statementLst=body,source=source)
       equation
         // Loops repeat, so check for usage in the whole loop before removing any dead stores.
+        ErrorExt.setCheckpoint(getInstanceName());
         (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree);
+        ErrorExt.rollBack(getInstanceName());
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body, localsTree, useTree);
         (_,useTree) = Expression.traverseExpBottomUp(exp, useLocalCref, useTree);
         // The loop might not be entered just like if. The following should not remove all previous uses:
