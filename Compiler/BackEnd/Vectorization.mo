@@ -320,7 +320,7 @@ algorithm
             //print("We have to check the terms:\n");
             //print("terms1: "+stringDelimitList(List.map(terms1,ExpressionDump.printExpStr),"| ")+"\n");
             //print("terms2: "+stringDelimitList(List.map(terms2,ExpressionDump.printExpStr),"| ")+"\n");
-          (commTerms,terms1,terms2) = List.intersection1OnTrue(terms1,terms2,expEqualNoCrefSubs);
+          (_,terms1,terms2) = List.intersection1OnTrue(terms1,terms2,expEqualNoCrefSubs);
           res =  listEmpty(terms1) and listEmpty(terms2);
             //print("is it the same: "+boolString(res)+"\n");
         else
@@ -693,8 +693,8 @@ case(eq::rest,_)
       //get similar equations
       (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
         //BackendDump.dumpEquationList(similarEqs,"simEqs");
-      cref1 := Expression.expCref(lhs);
-      cref2 := Expression.expCref(rhs);
+      _ := Expression.expCref(lhs);
+      _ := Expression.expCref(rhs);
       // update crefs in equation
       iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
       //lhs := BackendArrayVarTransform.replaceSubExp(Expression.crefExp(cref1),DAE.INDEX(iterator));
@@ -803,7 +803,7 @@ algorithm
       true := not List.exist1(constCrefs,ComponentReference.crefEqual,cref);//dont substitute array-vars which are constant in the for-equations
       crefMinMax1 := {};
       for refCrefMinMax in crefMinMax0 loop
-        (refCref,min,max) := refCrefMinMax;
+        (refCref,min,_) := refCrefMinMax;
          // if the cref fits the refCref, update the iterator
         if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
           iterator1 := ExpressionSimplify.simplify(DAE.BINARY(iterator,DAE.ADD(DAE.T_INTEGER_DEFAULT),DAE.ICONST(min-1)));
@@ -904,7 +904,7 @@ algorithm
     tplLst = List.append_reverse(tplLst,tplLstFoldIn);
   then (tplLst,varLst);
 
-  case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,tailCrefs1),_,_)
+  case((cref0,idx0,tailCrefs0)::rest,_,(cref1,_,_),_,_)
     equation
       // this cref is not the same, continue
     false = ComponentReference.crefEqual(cref0,cref1);
@@ -946,7 +946,7 @@ protected function dispatchLoopEquations
   input tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tplIn; //classEqs,mixEqs,nonArrEqs
   output tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>> tplOut;//classEqs,mixEqs,nonArrEqs
 algorithm
-  tplOut := matchcontinue(eqIn,arrayCrefs,tplIn)
+  tplOut := match(eqIn,arrayCrefs,tplIn)
     local
       list<BackendDAE.Equation> classEqs,mixEqs,nonArrEqs;
       list<DAE.ComponentRef> crefs, arrCrefs, nonArrCrefs;
@@ -963,7 +963,7 @@ algorithm
           mixEqs = eqIn::mixEqs;
         end if;
       then (classEqs,mixEqs,nonArrEqs);
-  end matchcontinue;
+  end match;
 end dispatchLoopEquations;
 
 
@@ -1036,7 +1036,7 @@ algorithm
         //print("expOut: "+ExpressionDump.printExpStr(exp)+"\n");
   then (exp,boolOr(b1,b2));
 
-  case(DAE.UNARY(operator=op, exp=exp),_)
+  case(DAE.UNARY(exp=exp),_)
     equation
       (exp,b) = reduceLoopExpressions(exp,maxSub);
   then (exp,b);
@@ -1058,12 +1058,12 @@ algorithm
       DAE.ComponentRef cref0,cref1;
       DAE.Exp repl, exp1, exp2;
       DAE.Operator op;
-   case(DAE.BINARY(exp1=exp1, operator=op,exp2=exp2),(cref0,repl))
+   case(DAE.BINARY(exp1=exp1, operator=op,exp2=exp2),(_,_))
      equation
        (exp1,_) = insertSUMexp(exp1,tplIn);
        (exp2,_) = insertSUMexp(exp2,tplIn);
      then(DAE.BINARY(exp1,op,exp2),tplIn);
-   case(DAE.UNARY(operator=op,exp=exp1),(cref0,repl))
+   case(DAE.UNARY(operator=op,exp=exp1),(_,_))
      equation
        (exp1,_) = insertSUMexp(exp1,tplIn);
      then(DAE.UNARY(op,exp1),tplIn);

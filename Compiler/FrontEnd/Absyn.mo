@@ -5826,7 +5826,7 @@ algorithm
     case (_, MODIFICATION(modification=NONE())) then newmod;
     case (MODIFICATION(modification=NONE()), _) then newmod;
     // mod1
-    case (MODIFICATION(modification=SOME(CLASSMOD(args1,eq1))), arg2 as MODIFICATION(modification=SOME(CLASSMOD(args2,eq2))))
+    case (MODIFICATION(modification=SOME(CLASSMOD(args1,_))), arg2 as MODIFICATION(modification=SOME(CLASSMOD(args2,eq2))))
       algorithm
         // Delete all items from args2 that are not in args1
         res := {};

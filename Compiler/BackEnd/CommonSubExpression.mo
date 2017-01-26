@@ -1009,7 +1009,7 @@ algorithm
     then (value, inIndex + 1);
 
     // record types
-    case DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)) equation
+    case DAE.T_COMPLEX( complexClassType=ClassInf.RECORD(_)) equation
       str = inPrefix + intString(inIndex);
       cr = DAE.CREF_IDENT(str, inType, {});       //inType?
       // crefs = ComponentReference.expandCref(cr, true);
@@ -1772,7 +1772,7 @@ algorithm
       DAE.Type ty;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
-  case({}, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
+  case({}, _, _, syst as BackendDAE.EQSYSTEM(orderedEqs=_))
     equation
     then (BackendDAEUtil.clearEqSyst(syst));
 
@@ -1821,7 +1821,7 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
       {eq1, eq2} = BackendEquation.getEqns({eqIdx1, eqIdx2}, eqs);
       var = BackendVariable.getVarAt(vars, sharedVar);
       varExp = BackendVariable.varExp(var);
-      ty = Expression.typeof(varExp);
+      _ = Expression.typeof(varExp);
       BackendDAE.EQUATION(exp=lhs1, scalar=rhs1) = eq1;
       BackendDAE.EQUATION(exp=lhs2, scalar=rhs2) = eq2;
 

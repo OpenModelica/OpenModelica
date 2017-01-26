@@ -1625,8 +1625,8 @@ algorithm
         varlst = BackendVariable.varList(v);
         knvarlst = BackendVariable.varList(globalKnownVars);
         states = BackendVariable.getAllStateVarFromVariables(v);
-        inputvars = List.select(knvarlst,BackendVariable.isInput);
-        paramvars = List.select(knvarlst, BackendVariable.isParam);
+        _ = List.select(knvarlst,BackendVariable.isInput);
+        _ = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
 

@@ -337,7 +337,6 @@ algorithm
     case (outerCref::{})
       equation
         outerCrefExp = DAE.CREF(outerCref, ty);
-        innerCrefExp = DAE.CREF(inInnerCref, ty);
         crefState = ComponentReference.crefStripLastIdent(outerCref);
         crefStateExp = DAE.CREF(crefState, ty);
         expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
@@ -595,8 +594,8 @@ algorithm
     local
       DAE.VarDirection direction;
       Absyn.InnerOuter innerOuter;
-    case DAE.VAR(direction=direction as DAE.OUTPUT(), innerOuter=innerOuter as Absyn.OUTER()) then true;
-    case DAE.VAR(direction=direction as DAE.OUTPUT(), innerOuter=innerOuter as Absyn.INNER_OUTER()) then true;
+    case DAE.VAR(direction=DAE.OUTPUT(), innerOuter=Absyn.OUTER()) then true;
+    case DAE.VAR(direction=DAE.OUTPUT(), innerOuter=Absyn.INNER_OUTER()) then true;
     else false;
   end match;
 end isOuterOutput;
@@ -1017,7 +1016,7 @@ algorithm
         smnode1 = if BaseHashTable.hasKey(cref1, outTable)
           then BaseHashTable.get(cref1, outTable)
             else SMNODE(cref1, true, HashSet.emptyHashSet());
-        SMNODE(_,isInitial1,edges1) = smnode1;
+        SMNODE(_,_,edges1) = smnode1;
         edges1 = BaseHashSet.add(cref1, edges1);
         smnode1 = SMNODE(cref1,true,edges1);
         outTable = BaseHashTable.add((cref1, smnode1), outTable);

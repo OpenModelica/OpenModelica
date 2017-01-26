@@ -867,7 +867,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _))) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="sample")), ((_, _, samples, _), (eq_count, _, _))) equation
       zc = createZeroCrossing(inExp, {eq_count});
       mergeZeroCrossings(zc, samples);
       //itmp = (listLength(zc_lst)-listLength(zeroCrossings));
@@ -897,11 +897,11 @@ algorithm
     then (inExp, true, inTpl);
 
     // coditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, samples, numMathFunctions), _)) equation
+    case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, _, _), _)) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " + intString(DoubleEndedList.length(relations)) + "\n");
       end if;
-      (e1, tpl as ((_, relations, samples, numMathFunctions), tp1 as (eq_count, vars, globalKnownVars))) = Expression.traverseExpTopDown(e1, collectZC, inTpl);
+      (e1, tpl as ((_, _, _, _), (eq_count, _, _))) = Expression.traverseExpTopDown(e1, collectZC, inTpl);
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {eq_count});
       empty = not ZeroCrossings.contains(zeroCrossings, zc);
@@ -1108,7 +1108,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample")), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="sample")), (_, _, _, (_, _, samples, _), (alg_indx, _, _))) equation
       eqs = {alg_indx};
       zc = createZeroCrossing(inExp, eqs);
       ZeroCrossings.add(samples, zc);
@@ -1122,15 +1122,15 @@ algorithm
       then (inExp, true, inTpl);
 
     // conditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), (iterator, _, DAE.RANGE(), (zeroCrossings, relations, _, numMathFunctions), _))
+    case (DAE.LUNARY(exp=e1, operator=op), (iterator, _, DAE.RANGE(), (zeroCrossings, relations, _, _), _))
       guard Expression.expContains(inExp, iterator)
       equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY with Iterator: " + intString(DoubleEndedList.length(relations)) + "\n");
       end if;
-      (e1, tpl as (iterator, inExpLst, range2, (_, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
+      (e1, tpl as (iterator, inExpLst, _, (_, relations, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       e_1 = DAE.LUNARY(op, e1);
-      (explst, itmp) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
+      (explst,_) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
       zc_lst = createZeroCrossings(explst, {alg_indx});
       ZeroCrossings.add_list(zeroCrossings, zc_lst);
       if Flags.isSet(Flags.RELIDX) then
@@ -1144,7 +1144,7 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " + intString(DoubleEndedList.length(relations)) + "\n");
       end if;
-      (e1, tpl as (iterator, inExpLst, range, (_, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
+      (e1, tpl as (_, _, _, (_, _, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {alg_indx});
       ZeroCrossings.add(zeroCrossings, zc);
@@ -1170,7 +1170,7 @@ algorithm
       if intGt(DoubleEndedList.length(relations), oldNumRelations) then
         e_1 := DAE.LBINARY(e_1, op, e_2);
         if Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator) then
-          (explst, itmp) := replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
+          (explst,_) := replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
           zc_lst := createZeroCrossings(explst, {alg_indx});
           ZeroCrossings.add_list(zeroCrossings, zc_lst);
           if Flags.isSet(Flags.RELIDX) then

@@ -356,7 +356,7 @@ algorithm
     case Equation.UNTYPED_EQUALITY()
       algorithm
         (e1, ty1) := typeExp(eq.lhs, scope, eq.info);
-        (e2, ty2) := typeExp(eq.rhs, scope, eq.info);
+        (e2,_) := typeExp(eq.rhs, scope, eq.info);
       then
         Equation.EQUALITY(e1, e2, ty1, eq.info);
 
@@ -444,7 +444,7 @@ algorithm
 
     case Equation.UNTYPED_REINIT()
       algorithm
-        (e1, ty1) := typeCref(eq.cref, scope, eq.info);
+        (e1,_) := typeCref(eq.cref, scope, eq.info);
         (e2) := typeExp(eq.reinitExp, scope, eq.info);
       then
         Equation.REINIT(e1, e2, eq.info);
@@ -489,8 +489,8 @@ algorithm
 
     case Statement.UNTYPED_ASSIGNMENT()
       algorithm
-        (e1, ty1) := typeExp(st.lhs, scope, st.info);
-        (e2, ty2) := typeExp(st.rhs, scope, st.info);
+        (e1,_) := typeExp(st.lhs, scope, st.info);
+        (e2,_) := typeExp(st.rhs, scope, st.info);
       then
         Statement.ASSIGNMENT(e1, e2, st.info);
 
@@ -536,7 +536,7 @@ algorithm
 
     case Statement.UNTYPED_REINIT()
       algorithm
-        (e1, ty1) := typeCref(st.cref, scope, st.info);
+        (e1,_) := typeCref(st.cref, scope, st.info);
         (e2) := typeExp(st.reinitExp, scope, st.info);
       then
         Statement.REINIT(e1, e2, st.info);

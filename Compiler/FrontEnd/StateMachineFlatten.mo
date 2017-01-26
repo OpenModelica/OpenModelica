@@ -399,7 +399,7 @@ algorithm
       DAE.Exp subsExp;
       Boolean hit;
       String xInState, name;
-    case (DAE.CALL(path=Absyn.IDENT(name)), (xInState, subsExp, hit)) guard name == xInState
+    case (DAE.CALL(path=Absyn.IDENT(name)), (xInState, subsExp, _)) guard name == xInState
       then (subsExp, (xInState, subsExp, true));
     else (inExp, inXSubstHit);
   end match;
@@ -824,13 +824,13 @@ algorithm
       Boolean hit;
       DAE.CallAttributes attr;
       DAE.Type ty;
-    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, attr),
-      (cref, hit)) guard ComponentReference.crefEqual(cr, cref)
+    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _),
+      (cref, _)) guard ComponentReference.crefEqual(cr, cref)
       algorithm
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cref);
       then (DAE.CREF(substituteRef, ty), (cref, true));
-    case (DAE.CALL(Absyn.IDENT("pre"), {DAE.CREF(cr, ty)}, attr),
-      (cref, hit)) guard ComponentReference.crefEqual(cr, cref)
+    case (DAE.CALL(Absyn.IDENT("pre"), {DAE.CREF(cr, ty)}, _),
+      (cref, _)) guard ComponentReference.crefEqual(cr, cref)
       algorithm
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cref);
       then (DAE.CREF(substituteRef, ty), (cref, true));
@@ -856,8 +856,8 @@ algorithm
       Boolean hit;
       DAE.CallAttributes attr;
       DAE.Type ty;
-    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, attr),
-      (cref, hit)) guard ComponentReference.crefEqual(cr, cref)
+    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _),
+      (cref, _)) guard ComponentReference.crefEqual(cr, cref)
       algorithm
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cref);
       then (DAE.CREF(substituteRef, ty), (cref, true));
@@ -1846,7 +1846,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Ident firstIdent;
       DAE.Ident lastIdent;
-    case DAE.EQUATION(exp=exp, scalar=scalar)
+    case DAE.EQUATION(exp=exp)
       equation
         DAE.CREF(componentRef=cref) = exp;
         firstIdent = ComponentReference.crefFirstIdent(cref);
@@ -1893,7 +1893,7 @@ algorithm
     case DAE.CALL(Absyn.IDENT("sample"),
     { expX,
       DAE.CLKCONST(DAE.INFERRED_CLOCK())},
-    attr)
+    _)
       then (expX, inHitCount + 1);
     else (inExp,inHitCount);
   end match;

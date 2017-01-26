@@ -1348,7 +1348,7 @@ algorithm
       Prefix.Prefix p;
 
     // clock kinds
-    case (cache, env, ih, DAE.INFERRED_CLOCK(), p)
+    case (cache, _, _, DAE.INFERRED_CLOCK(), _)
       then (cache, inClkKind);
 
     case (cache, env, ih, DAE.INTEGER_CLOCK(e, resolution), p)

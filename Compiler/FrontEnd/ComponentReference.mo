@@ -2610,7 +2610,7 @@ algorithm
       then
         (makeCrefIdent(id,ty,{}),idx,SOME(cr));
 
-    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, ident=id))
       equation
         // continue
         outCref = stripCrefIdentSliceSubs(cr);
@@ -2977,10 +2977,10 @@ algorithm
     case(_,0)
       then (inCref);
 
-    case(DAE.CREF_QUAL(id, ty, subs, last),1)
+    case(DAE.CREF_QUAL(id, ty, subs, _),1)
       then DAE.CREF_IDENT(id, ty, subs);
 
-    case(DAE.CREF_IDENT(id, ty, subs),_)
+    case(DAE.CREF_IDENT(_, _, _),_)
       then inCref;
 
     case (DAE.CREF_QUAL(id, ty, subs, last),)

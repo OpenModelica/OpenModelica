@@ -126,7 +126,7 @@ algorithm
       list<list<Integer>> partitions, activatorsForPartitions;
       list<Integer> stateToActivators;
 
-    case (BackendDAE.DAE(eqs=_), _, _, _, _,_, _, _, _, _, _, _, _, _) equation
+    case (BackendDAE.DAE(), _, _, _, _,_, _, _, _, _, _, _, _, _) equation
       // DO MULTI-RATE-PARTITIONING
       true =  Flags.isSet(Flags.MULTIRATE_PARTITION);
       print("DO MULTIRATE\n");

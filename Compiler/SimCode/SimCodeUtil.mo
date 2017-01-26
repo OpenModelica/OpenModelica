@@ -898,7 +898,7 @@ algorithm
 
     // dynamic tearing
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index, indexLinearSystem=systemIndex), SOME(SimCode.LINEARSYSTEM(index=index2, indexLinearSystem=systemIndex2))), _) equation
-      sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
+      _ = arrayUpdate(inSysIndexMap, index, systemIndex);
       sysIndexMap = arrayUpdate(inSysIndexMap, index2, systemIndex2);
     then sysIndexMap;
 
@@ -1436,7 +1436,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, syst.orderedEqs, syst.orderedVars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, noDiscEquations1, uniqueEqIndex1, tempvars) = createSingleArrayEqnCode(true, eqnlst, varlst, uniqueEqIndex, tempvars, shared.info);
+        (equations1,_, uniqueEqIndex1, tempvars) = createSingleArrayEqnCode(true, eqnlst, varlst, uniqueEqIndex, tempvars, shared.info);
 
         eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
         eqBackendSimCodeMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, e, eqBackendSimCodeMapping);
@@ -1484,7 +1484,7 @@ algorithm
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
 
     // A single when equation
-    case BackendDAE.SINGLEWHENEQUATION(eqn=e)
+    case BackendDAE.SINGLEWHENEQUATION()
       equation
         (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, syst.orderedEqs, syst.orderedVars);
         // States are solved for der(x) not x.
@@ -1546,7 +1546,7 @@ algorithm
         // block is dynamic, belong in dynamic section
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
 
-        (equations1, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
+        (_, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
           createOdeSystem(true, false, syst, shared, comp, uniqueEqIndex, tempvars, sccIndex, eqSccMapping, backendMapping);
         //eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
 
@@ -4133,7 +4133,7 @@ algorithm
     case (BackendDAE.FULL_JACOBIAN(_), _, _) then (NONE(), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(NONE(),pattern as (sparsepatternComRefs, sparsepatternComRefsT,
-                                             (independentComRefs, dependentVarsComRefs), nonZeroElements),
+                                             (independentComRefs, dependentVarsComRefs), _),
                                              sparseColoring), _, _)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -4170,7 +4170,7 @@ algorithm
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     independentVarsLst, residualVarsLst, dependentVarsLst)),
-                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), nonZeroElements),
+                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
                                       sparseColoring), _, _)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -4925,7 +4925,7 @@ algorithm
       constant Boolean debug = false;
 
     // if only sparsity pattern is generated
-    case ({(optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors)})
+    case ({(optionBDAE, (sparsepattern, _, (diffCompRefs, diffedCompRefs), _), colsColors)})
       guard  checkForEmptyBDAE(optionBDAE)
       equation
         if debug then
@@ -5643,7 +5643,7 @@ algorithm
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms})}, iuniqueEqIndex+1, itempvars);
 
     /* Record() = f()  */
-    case (_, e1 as DAE.CALL(path=path, expLst=e1lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
+    case (_, DAE.CALL(path=path, expLst=e1lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
       equation
 
         true = Absyn.pathEqual(path, rpath);
@@ -5891,7 +5891,7 @@ algorithm
 
     // An array equation
     // cref = rhsexp
-    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source))::_, BackendDAE.VAR()::_, _, _, _) equation
       e1 = Expression.replaceDerOpInExp(lhse);
       e2 = Expression.replaceDerOpInExp(e2);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
@@ -6914,25 +6914,25 @@ algorithm
      then (exp,varsIn);
 
      // time > -1.0 or similar
-    case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATER(),exp2=DAE.RCONST(real=r),index=idx,optionExpisASUB=optionExpisASUB),_)
+    case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATER(),exp2=DAE.RCONST(real=r)),_)
      equation
        true = realLe(r,0.0);
      then (expIn,varsIn);
 
      // time >= -1.0 or similar
-    case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATEREQ(),exp2=DAE.RCONST(real=r),index=idx,optionExpisASUB=optionExpisASUB),_)
+    case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATEREQ(),exp2=DAE.RCONST(real=r)),_)
      equation
        true = realLe(r,0.0);
      then (expIn,varsIn);
 
     // -1.0 < time or similar
-    case(DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESS(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),index=idx,optionExpisASUB=optionExpisASUB),_)
+    case(DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESS(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))),_)
      equation
        true = realLe(r,0.0);
      then (expIn,varsIn);
 
      // -1.0 <= time or similar
-    case(DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESSEQ(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),index=idx,optionExpisASUB=optionExpisASUB),_)
+    case(DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESSEQ(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))),_)
      equation
        true = realLe(r,0.0);
      then (expIn,varsIn);
@@ -7617,7 +7617,7 @@ algorithm
     then s;
 
     // no dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac), NONE()))
       equation
         s = intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"\tvariables:\n"+stringDelimitList(List.map(vars,simVarString),"\n");
@@ -7628,7 +7628,7 @@ algorithm
     then s;
 
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac), SOME(SimCode.LINEARSYSTEM(indexLinearSystem=_))))
       equation
         s = "strict set:\n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"\tvariables:\n\t"+stringDelimitList(List.map(vars,simVarString),"\t\n");
@@ -7649,7 +7649,7 @@ algorithm
     then s;
 
     // dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM())))
       equation
         s = "strict set: \n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
@@ -7677,7 +7677,7 @@ algorithm
         end if;
       then s;
 
-    case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp, source=source))
+    case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp))
       equation
         s = intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
         s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
@@ -7717,7 +7717,7 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
 
     // no dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(jacobianMatrix=jac, simJac=simJac), NONE()))
       equation
         print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
@@ -7726,7 +7726,7 @@ algorithm
     then ();
 
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
       equation
         print(simEqSystemString(eqSysIn));
         print("\n\tsimJac:\n");
@@ -7741,14 +7741,14 @@ algorithm
     then ();
 
     // no dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(jacobianMatrix=jac), NONE()))
       equation
         print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
     then ();
 
     // dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
       equation
         print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
@@ -8624,7 +8624,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       BackendDAE.Variables globalKnownVars;
-    case (BackendDAE.VAR(varName = cr, varDirection = DAE.OUTPUT()), _) then SimCodeVar.OUTPUT();
+    case (BackendDAE.VAR(varDirection = DAE.OUTPUT()), _) then SimCodeVar.OUTPUT();
     case (BackendDAE.VAR(varName = cr, varDirection = DAE.INPUT()), globalKnownVars)
       equation
         (_, _) = BackendVariable.getVar(cr, globalKnownVars);
@@ -10564,31 +10564,31 @@ algorithm
       (exp, a) = func(exp, a);
     then (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source), a);
 
-    case (SimCode.SES_IFEQUATION(index, ifbranches, elsebranch, source), _, a)
+    case (SimCode.SES_IFEQUATION(_, _, _, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_ALGORITHM(index, stmts), _, a)
+    case (SimCode.SES_ALGORITHM(_, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs), _, a)
+    case (SimCode.SES_INVERSE_ALGORITHM(_, _, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_LINEAR(lSystem, alternativeTearingL), _, a)
+    case (SimCode.SES_LINEAR(_, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl), _, a)
+    case (SimCode.SES_NONLINEAR(_, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_MIXED(index, cont, discVars, discEqs, indexSys), _, a)
+    case (SimCode.SES_MIXED(_, _, _, _, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_WHEN(index, conditions, initialCall, whenStmtLst, elseWhen, source), _, a)
+    case (SimCode.SES_WHEN(_, _, _, _, _, _), _, a)
       /* TODO: Me */
     then (eq, a);
 
@@ -11863,7 +11863,7 @@ algorithm
     then {};
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(vars=simVars,residual=residual)))
       equation
-        crefs = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
+        _ = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
         crefs2 = list(SimCodeFunctionUtil.varName(v) for v in simVars);
       then listAppend(crefs2,crefs2);
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(crefs=crefs)))
@@ -12827,7 +12827,7 @@ algorithm
             new_unknowns = Expression.getAllCrefs(exp);
             // And include all those one defining the RHS
         then computeDependenciesHelper(tail,listAppend(unknowns,new_unknowns), listAppend(r,{head}));
-    case ( (head as SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM(vars=vars, beqs=beqs)))::tail,_, r)
+    case ( (head as SimCode.SES_LINEAR(lSystem = SimCode.LINEARSYSTEM( beqs=beqs)))::tail,_, r)
         equation
             // This linear system defines the following crefs
             linsys_unk = getSimEqSystemCrefsLHS(head);

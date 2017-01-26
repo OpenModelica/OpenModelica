@@ -2998,7 +2998,7 @@ algorithm
       DAE.Const c;
       DAE.VarParallelism p;
 
-    case DAE.FUNCARG(n,ty,c,p,_)
+    case DAE.FUNCARG(n,ty,c,_,_)
       equation
         s = unparseType(ty);
         cs = DAEUtil.constStrFriendly(c);

@@ -316,14 +316,14 @@ algorithm
     // check for possibly introduced der(previous())
     case DAE.CALL(path = Absyn.IDENT(name = "der"),
                   expLst = {DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = expLst)},
-                  attr = attr as DAE.CALL_ATTR(ty = ty))
+                  attr = attr as DAE.CALL_ATTR())
       algorithm
         exp := DAE.CALL(Absyn.IDENT(name = "der"), expLst, attr);
       then exp;
     // check for possibly introduced previous(previous())
     case DAE.CALL(path = Absyn.IDENT(name = "previous"),
                   expLst = {DAE.CALL(path = Absyn.IDENT(name = "previous"), expLst = expLst)},
-                  attr = attr as DAE.CALL_ATTR(ty = ty))
+                  attr = attr as DAE.CALL_ATTR())
       algorithm
         exp := DAE.CALL(Absyn.IDENT(name = "previous"), expLst, attr);
       then exp;
@@ -535,7 +535,7 @@ algorithm
         list<BackendDAE.Equation> lstEqs;
         Integer i;
         BackendDAE.Equation eq;
-      case syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs)
+      case syst as BackendDAE.EQSYSTEM(orderedEqs = eqs)
         algorithm
           lstEqs := {};
           for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
@@ -2104,15 +2104,15 @@ algorithm
       DAE.Exp e, e1, e2;
     case (Absyn.IDENT("hold"), {e})
       then detectEqPartitionCall1(false, true, inPartition, e, inRefs, info);
-    case (Absyn.IDENT("sample"), {e, e1})
+    case (Absyn.IDENT("sample"), {e, _})
       then detectEqPartitionCall1(true, false, inPartition, e, inRefs, info);
-    case (Absyn.IDENT("subSample"), {e, e1})
+    case (Absyn.IDENT("subSample"), {e, _})
       then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
-    case (Absyn.IDENT("superSample"), {e, e1})
+    case (Absyn.IDENT("superSample"), {e, _})
       then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
-    case (Absyn.IDENT("shiftSample"), {e, e1, e2})
+    case (Absyn.IDENT("shiftSample"), {e, _, _})
       then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
-    case (Absyn.IDENT("backSample"), {e, e1, e2})
+    case (Absyn.IDENT("backSample"), {e, _, _})
       then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);
     case (Absyn.IDENT("noClock"), {e})
       then detectEqPartitionCall1(true, true, inPartition, e, inRefs, info);

@@ -2272,7 +2272,7 @@ algorithm
     case DAE.RSUB() then inExp.ty;
     case (DAE.CODE(ty = tp)) then tp;
       /* array reduction with known size */
-    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
+    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
       equation
         false = dimensionKnown(dim);
         iterTp = typeof(iterExp);
@@ -5828,7 +5828,7 @@ algorithm
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
         (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
         (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
-        (e4_1,ext_arg_4) = traverseExpTopDown(e4, rel, ext_arg_3);
+        (e4_1,_) = traverseExpTopDown(e4, rel, ext_arg_3);
       then (DAE.SUM(tp,e1_1,e2_1,e3_1,e4_1),ext_arg_3);
 
     else
@@ -10629,7 +10629,7 @@ algorithm
       Absyn.Path p1,p2;
       list<DAE.Exp> exps;
     case (DAE.CAST(exp=exp),_) then splitRecord(exp,ty);
-     case (DAE.CREF(componentRef=cr),DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}))
+     case (DAE.CREF(componentRef=_),DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}))
        //Don't split External objects
       then fail();
     case (DAE.CREF(componentRef=cr),DAE.T_COMPLEX(varLst = vs))

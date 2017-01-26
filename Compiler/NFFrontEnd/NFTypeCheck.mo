@@ -729,7 +729,7 @@ algorithm
           dims := Type.arrayDims(inType1);
           arrtp := Type.liftArrayLeftList(inType2,dims);
 
-          (exp1,exp2,ty1, true) := matchExpressions(inExp1,inType1,inExp2,arrtp);
+          (exp1,exp2,_, true) := matchExpressions(inExp1,inType1,inExp2,arrtp);
 
           // Create a scalar Real Type and lift it to array.
           // Necessary because even if both operands are of Integer type the result

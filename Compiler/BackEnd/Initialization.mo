@@ -1491,7 +1491,7 @@ algorithm
     then ({}, {}, {});
 
     case currRedundantEqn::restRedundantEqns equation
-      nVars = BackendVariable.varsSize(inVars);
+      _ = BackendVariable.varsSize(inVars);
       _ = BackendDAEUtil.equationSize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
     //BackendDump.dumpMatchingEqns(vecEqsToVar);
@@ -2502,7 +2502,7 @@ algorithm
     then (DAE.BCONST(false), inUseHomotopy);
 
     // replace homotopy(actual, simplified) with actual
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::simplified::_), _)
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_), _)
     then (actual, true);
 
     else (inExp, inUseHomotopy);

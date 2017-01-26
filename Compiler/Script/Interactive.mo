@@ -5827,7 +5827,7 @@ algorithm
       list<Absyn.ElementArg> ea;
       Absyn.EqMod em;
     case NONE() then NONE();
-    case SOME(Absyn.CLASSMOD(ea, em))
+    case SOME(Absyn.CLASSMOD(ea, _))
       algorithm
         ea := list(e for e guard(match e case Absyn.REDECLARATION() then true; else false; end match) in ea);
         m := Absyn.CLASSMOD(ea, Absyn.NOMOD());
@@ -9253,7 +9253,7 @@ algorithm
         Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) = getPathedClassInProgram(modelpath, p);
         publst = getPublicList(parts);
         protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), listAppend(publst, protlst));
+        Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,Absyn.TPATH(_,_),items),_,_) = getElementContainsName(Absyn.CREF_IDENT(name,{}), listAppend(publst, protlst));
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
@@ -9368,7 +9368,7 @@ algorithm
         lst;
 
     // clear any messages that may have been added
-    case ((SCode.CLASS()),cdef,env)
+    case ((SCode.CLASS()),_,_)
       equation
         ErrorExt.rollBack("getInheritedClassesHelper");
       then
@@ -9389,7 +9389,7 @@ algorithm
         lst;
 
     // clear any messages that may have been added
-    case ((SCode.CLASS()),cdef,env)
+    case ((SCode.CLASS()),_,_)
       equation
         ErrorExt.rollBack("getInheritedClassesHelper");
       then
@@ -9428,7 +9428,7 @@ algorithm
         paths = List.map(lst, Absyn.crefToPath);
       then
         paths;
-    case (modelpath,st as GlobalScript.SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
+    case (modelpath,GlobalScript.SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
       equation
         cdef = getPathedClassInProgram(modelpath, p);
         extendsLst = getExtendsInClass(cdef);
@@ -10538,7 +10538,7 @@ public function addTransitionWithAnnotation
   output Boolean b;
   output Absyn.Program outProgram;
 algorithm
-  (b,outProgram) := matchcontinue (inComponentRef, from, to, condition, immediate, reset, synchronize, priority, inAnnotation, inProgram)
+  (b,outProgram) := match (inComponentRef, from, to, condition, immediate, reset, synchronize, priority, inAnnotation, inProgram)
     local
       Absyn.Path modelpath,package_;
       Absyn.Class cdef,newcdef;
@@ -10582,7 +10582,7 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
-  end matchcontinue;
+  end match;
 end addTransitionWithAnnotation;
 
 public function deleteTransition
@@ -10770,7 +10770,7 @@ algorithm
 
     case ({}) then (inDefaultValue,true);
 
-    case (((namedArg as Absyn.NAMEDARG(argName = namedArgName, argValue = namedArgValue)) :: _))
+    case (((namedArg as Absyn.NAMEDARG(argName = namedArgName)) :: _))
       guard stringEq(namedArgName, inNamedArg)
       then
         (Dump.printNamedArgValueStr(namedArg), false);
@@ -10800,26 +10800,26 @@ algorithm
       Boolean immediate2, reset2, synchronize2;
       Integer priority2;
 
-    case ({from1, to1, condition1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+    case ({from1, to1, condition1}, from2, to2, condition2, _, _, _, _)
       guard
         stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2)
       then
         true;
 
-    case ({from1, to1, condition1, immediate1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+    case ({from1, to1, condition1, immediate1}, from2, to2, condition2, immediate2, _, _, _)
       guard
         stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
       then
         true;
 
-    case ({from1, to1, condition1, immediate1, reset1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+    case ({from1, to1, condition1, immediate1, reset1}, from2, to2, condition2, immediate2, reset2, _, _)
       guard
         stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
         and stringEq(reset1, boolString(reset2))
       then
         true;
 
-    case ({from1, to1, condition1, immediate1, reset1, synchronize1}, from2, to2, condition2, immediate2, reset2, synchronize2, priority2)
+    case ({from1, to1, condition1, immediate1, reset1, synchronize1}, from2, to2, condition2, immediate2, reset2, synchronize2, _)
       guard
         stringEq(from1, from2) and stringEq(to1, to2) and stringEq(condition1, condition2) and stringEq(immediate1, boolString(immediate2))
         and stringEq(reset1, boolString(reset2)) and stringEq(synchronize1, boolString(synchronize2))
@@ -18750,13 +18750,13 @@ algorithm
       Absyn.ElementItem e;
       list<Absyn.ElementItem> rest, filtered;
       String f,file;
-    case (file,{}) then {};
+    case (_,{}) then {};
     case (file,(e as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
       equation
         false = stringEqual(file, f); // not from this file, use it!
         filtered = excludeElementsFromFile(file, rest);
       then e::filtered;
-    case (file,(e as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
+    case (file,(Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
       equation
         true = stringEqual(file, f); // is from this file, discard!
         filtered = excludeElementsFromFile(file, rest);

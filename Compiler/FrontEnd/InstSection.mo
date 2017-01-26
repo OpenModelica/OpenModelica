@@ -2301,14 +2301,14 @@ algorithm
       then
         Algorithm.makeIf(cond_exp, cond_prop, if_branch, else_if_branches, else_branch, source);
 
-    case SCode.ALG_FOR(info = info)
+    case SCode.ALG_FOR(info=_)
       algorithm
         (outCache, outStatements) := instForStatement(outCache, inEnv, inIH,
           inPrefix, inState, inStatement, inSource, inInitial, inImpl, inUnrollLoops);
       then
         outStatements;
 
-    case SCode.ALG_PARFOR(info = info)
+    case SCode.ALG_PARFOR(info=_)
       algorithm
         (outCache, outStatements) := instParForStatement(outCache, inEnv, inIH,
           inPrefix, inState, inStatement, inSource, inInitial, inImpl, inUnrollLoops);
@@ -4445,7 +4445,7 @@ algorithm
     // Connection of ExternalObject!
     case (cache,env,ih,sets,pre,
         c1,f1,DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}),_,
-        c2,f2,DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}),_,ct,_,_,graph,_)
+        c2,f2,DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}),_,_,_,_,graph,_)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -5172,7 +5172,7 @@ algorithm
       then
         fail();
 
-    case (cache,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2)
+    case (cache,e1 as Absyn.TUPLE(expressions = expl),_,prop2)
       equation
         Absyn.CALL() = inRhs;
         true = List.all(expl, Absyn.isCref);

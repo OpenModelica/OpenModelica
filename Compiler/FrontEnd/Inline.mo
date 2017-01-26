@@ -659,7 +659,6 @@ algorithm
         (e_1,assrtLst) := Expression.traverseExpBottomUp(e,function inlineCall(fns=fns),{});
         false := referenceEq(e, e_1);
         if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-          eq := DAE.PARTIAL_EQUATION(e_1);
           source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
           (DAE.PARTIAL_EQUATION(e_2),source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
         else

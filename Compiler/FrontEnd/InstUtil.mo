@@ -1201,7 +1201,7 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
       stringEq(className,s1) // in same scope look up.
     then
       extractConstantPlusDeps3(acr::acrefs,remainingComps,className,existing);
-  case((Absyn.CREF_QUAL(s1,_,_))::acrefs,_,_,existing)
+  case((Absyn.CREF_QUAL(_,_,_))::acrefs,_,_,existing)
     equation
       // false = stringEq(className,s1);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
@@ -5288,7 +5288,7 @@ algorithm
     case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL()),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
-        (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+        (cache,_, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
         // For qualified crefs, copy input/output from the first part of the
         // cref. This is done so that the correct code can be generated when
         // using qualified crefs in external function definitions.
@@ -5485,20 +5485,20 @@ algorithm
       String pstr;
       SourceInfo info;
 
-    case (p,ClassInf.TYPE_INTEGER(),v,_,_,_)
+    case (_,ClassInf.TYPE_INTEGER(),v,_,_,_)
       then DAE.T_INTEGER(v);
 
-    case (p,ClassInf.TYPE_REAL(),v,_,_,_)
+    case (_,ClassInf.TYPE_REAL(),v,_,_,_)
       then DAE.T_REAL(v);
 
-    case (p,ClassInf.TYPE_STRING(),v,_,_,_)
+    case (_,ClassInf.TYPE_STRING(),v,_,_,_)
       then DAE.T_STRING(v);
 
-    case (p,ClassInf.TYPE_BOOL(),v,_,_,_)
+    case (_,ClassInf.TYPE_BOOL(),v,_,_,_)
       then DAE.T_BOOL(v);
 
     // BTH
-    case (p,ClassInf.TYPE_CLOCK(),v,_,_,_)
+    case (_,ClassInf.TYPE_CLOCK(),v,_,_,_)
       then DAE.T_CLOCK(v);
 
     case (p,ClassInf.TYPE_ENUM(),_,_,_,_)
@@ -5527,7 +5527,7 @@ algorithm
         resType;
 
     // Array of type extending from base type, adrpo: WITH EQUALITY CONSTRAINT, build a T_SUBTYPE_BASIC
-    case (p, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), SOME(_), _)
+    case (_, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), SOME(_), _)
       equation
         classState = arrayTTypeToClassInfState(arrayType);
         resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
@@ -5551,13 +5551,13 @@ algorithm
     /*------------------------*/
 
     // not extending
-    case (p,st,l,NONE(),equalityConstraint,_)
+    case (_,st,l,NONE(),equalityConstraint,_)
       equation
         failure(ClassInf.META_UNIONTYPE(_) = st);
       then DAE.T_COMPLEX(st,l,equalityConstraint);
 
     // extending
-    case (p,st,l,SOME(bc),equalityConstraint,_)
+    case (_,st,l,SOME(bc),equalityConstraint,_)
       equation
         failure(ClassInf.META_UNIONTYPE(_) = st);
       then DAE.T_SUBTYPE_BASIC(st,l,bc,equalityConstraint);
@@ -5619,20 +5619,20 @@ algorithm
 
     case (p,ClassInf.TYPE_INTEGER(),v,_,_)
       equation
-        somep = getOptPath(p);
+        _ = getOptPath(p);
       then DAE.T_INTEGER(v);
 
-    case (p,ClassInf.TYPE_REAL(),v,_,_)
+    case (_,ClassInf.TYPE_REAL(),v,_,_)
       then DAE.T_REAL(v);
 
-    case (p,ClassInf.TYPE_STRING(),v,_,_)
+    case (_,ClassInf.TYPE_STRING(),v,_,_)
       then DAE.T_STRING(v);
 
-    case (p,ClassInf.TYPE_BOOL(),v,_,_)
+    case (_,ClassInf.TYPE_BOOL(),v,_,_)
       then DAE.T_BOOL(v);
 
     // BTH
-    case (p,ClassInf.TYPE_CLOCK(),v,_,_)
+    case (_,ClassInf.TYPE_CLOCK(),v,_,_)
       then DAE.T_CLOCK(v);
 
     case (p,ClassInf.TYPE_ENUM(),_,_,_)
@@ -5653,10 +5653,10 @@ algorithm
         enumtype;
 
     // not extending basic type!
-    case (p,st,l,NONE(),_)
+    case (_,st,l,NONE(),_)
       then DAE.T_COMPLEX(st,l,NONE()); // adrpo: TODO! check equalityConstraint!
 
-    case (p,st,l,SOME(bc),_)
+    case (_,st,l,SOME(bc),_)
       then DAE.T_SUBTYPE_BASIC(st,l,bc,NONE());
 
     else
@@ -7678,7 +7678,7 @@ algorithm
       equation
         ht = prefixAndAddCrefsToHt(cache,ht,pre,crs);
       then FCore.CACHE(ie,f,(ht,crss),p,program);
-    case (FCore.CACHE(ie,f,(ht,{}),p,program),_) then cache;
+    case (FCore.CACHE(_,_,(_,{}),_,_),_) then cache;
     case (FCore.NO_CACHE(),_) then cache;
   end match;
 end popStructuralParameters;
@@ -7876,7 +7876,7 @@ algorithm
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
-    case (DAE.STMT_ASSERT(cond=DAE.BCONST(false),source=source),_,(_,_,_)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
+    case (DAE.STMT_ASSERT(cond=DAE.BCONST(false)),_,(_,_,_)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
       then ((true,true,{}));
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
       equation
@@ -7889,7 +7889,7 @@ algorithm
         info = ElementSource.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((true,true,unbound));
-    case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"),expLst={}),source=source),_,(_,_,unbound))
+    case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"),expLst={})),_,(_,_,_))
       then ((true,true,{}));
     case (DAE.STMT_NORETCALL(exp=exp,source=source),_,(_,_,unbound))
       equation
@@ -8341,7 +8341,7 @@ public function optAppendField
   input Option<tuple<Absyn.ComponentRef,DAE.ComponentRef>> fieldDomOpt;
   output DomainFieldsLst outDomFieldsLst;
 algorithm
-  outDomFieldsLst := matchcontinue fieldDomOpt
+  outDomFieldsLst := match fieldDomOpt
   local
     Absyn.ComponentRef fieldCr;
     DAE.ComponentRef domainCr;
@@ -8356,7 +8356,7 @@ algorithm
         end if;
       then
         outDomFieldsLst;
-  end matchcontinue;
+  end match;
 end optAppendField;
 
 protected function optAppendFieldMapFun
@@ -8395,7 +8395,7 @@ algorithm
     newDiscretizedEQs := {inEQ};
     //TODO: fix:
 
-    newDiscretizedEQs := matchcontinue inEQ
+    newDiscretizedEQs := match inEQ
       local
         Absyn.Exp lhs_exp, rhs_exp;
         Absyn.ComponentRef domainCr, domainCr1, fieldCr;
@@ -8454,18 +8454,18 @@ algorithm
           {extrapolateFieldEq(true, fieldCr, domainCr1, N, comment, info, fieldLst)};*/
       //left boundary condition or extrapolation
       case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
+                  domain = Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
                   comment = comment, info = info))
         equation
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+          (_,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
           (lhs_exp, _) = Absyn.traverseExp(lhs_exp, extrapFieldTraverseFun, 1);
           (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, 1);
         then
           {newEQFun(1, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
       //right boundary condition or extrapolation
       case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
-                  domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
+                  domain = Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
                   comment = comment, info = info))
         equation
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
@@ -8474,7 +8474,7 @@ algorithm
           (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
         then
           {newEQFun(N, lhs_exp, rhs_exp, domainCr1, comment, info, fieldLst)};
-    end matchcontinue;
+    end match;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
 end discretizePDE;
@@ -8536,13 +8536,13 @@ algorithm
       Absyn.ComponentRef fcr, fcr_arg;
     case (Absyn.CALL(
                           function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}),
-                          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(fcr_arg as Absyn.CREF_IDENT())})
+                          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(Absyn.CREF_IDENT())})
                     ),
          Absyn.CREF(fcr as Absyn.CREF_IDENT())
          )
     then
       fcr;
-    case (Absyn.CREF(fcr as Absyn.CREF_IDENT()),Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(fcr_arg as Absyn.CREF_IDENT())})))
+    case (Absyn.CREF(fcr as Absyn.CREF_IDENT()),Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(Absyn.CREF_IDENT())})))
     then
       fcr;
   end match;

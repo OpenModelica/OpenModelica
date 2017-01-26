@@ -257,7 +257,7 @@ algorithm
 
         // lookup in IH
         InnerOuter.INST_INNER(
-           innerPrefix,
+           _,
            _,
            _,
            _,
@@ -282,7 +282,7 @@ algorithm
 
 
     // is ONLY outer
-    case (cache,env,ih,store,_,mod,pre,n,_,_,pf,_,_,_,_,_,_,graph,csets,_)
+    case (cache,env,ih,store,_,mod,pre,n,_,_,_,_,_,_,_,_,_,graph,csets,_)
       equation
         // only outer!
         true = Absyn.isOnlyOuter(io);
@@ -1625,7 +1625,7 @@ algorithm
           attr, pf, inDimension, dims, idxs, inst_dims, impl, comment, info,
           graph, csets);
 
-    case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, i, DAE.DIM_BOOLEAN(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
+    case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, _, DAE.DIM_BOOLEAN(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
       equation
         mod_1 = Mod.lookupIdxModification(mod, DAE.BCONST(false));
         mod_2 = Mod.lookupIdxModification(mod, DAE.BCONST(true));

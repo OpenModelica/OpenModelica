@@ -2454,7 +2454,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         false = listMember(Absyn.pathString(cn), {"tuple","Tuple","array","Array","Option","list","List"});
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r as SCode.R_UNIONTYPE(typeVars=typeVars),classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
+        (cache,(SCode.CLASS(name=cn2,restriction=SCode.R_UNIONTYPE(typeVars=typeVars),classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
         (cache,fq_class) = makeFullyQualifiedIdent(cache,cenv,cn2);
         new_ci_state = ClassInf.META_UNIONTYPE(fq_class, typeVars);
         (cache,SOME(ty as DAE.T_METAUNIONTYPE())) = MetaUtil.fixUniontype(cache, env, new_ci_state, classDef);
@@ -5376,7 +5376,7 @@ algorithm
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
-        (_::(lst as {SOME(partialInst)})) = BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        (_::(lst as {SOME(_)})) = BaseHashTable.get(fullEnvPathPlusClass, instHash);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then

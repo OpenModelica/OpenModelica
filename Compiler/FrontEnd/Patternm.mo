@@ -475,7 +475,7 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       algorithm
-        (cache,t,_) :=
+        (cache,_,_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
         (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,typeVars=typeVars,knownSingleton = knownSingleton,path = fqPath),_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
@@ -1138,12 +1138,12 @@ algorithm
       String id;
       SourceInfo info;
       tuple<HashTableStringToPath.HashTable,SourceInfo> tpl;
-    case ((DAE.PAT_AS(id=id,pat=pat),tpl as (ht,info)))
+    case ((DAE.PAT_AS(id=id,pat=pat),(ht,info)))
       equation
         true = BaseHashTable.hasKey(id, ht);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
       then pat;
-    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,_)))
+    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),(ht,_)))
       equation
         true = BaseHashTable.hasKey(id, ht);
       then pat;
@@ -1293,7 +1293,7 @@ algorithm
       SourceInfo info;
       DAE.Type ty;
       tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> extra;
-    case ((DAE.PAT_AS(id=name,pat=pat),extra as (localsTree,useTree,info)))
+    case ((DAE.PAT_AS(id=name,pat=pat),(localsTree,useTree,info)))
       equation
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
@@ -1301,7 +1301,7 @@ algorithm
           pat = inPat;
         end if;
       then pat;
-    case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),extra as (localsTree,useTree,info)))
+    case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),(localsTree,useTree,info)))
       equation
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);

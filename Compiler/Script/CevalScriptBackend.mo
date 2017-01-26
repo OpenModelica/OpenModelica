@@ -824,7 +824,7 @@ algorithm
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
 
-    case (cache,_,"convertUnits",{Values.STRING(str1),Values.STRING(str2)},st,_)
+    case (cache,_,"convertUnits",{Values.STRING(_),Values.STRING(_)},st,_)
       then
         (cache,Values.TUPLE({Values.BOOL(false),Values.REAL(1.0),Values.REAL(0.0)}),st);
 
@@ -838,7 +838,7 @@ algorithm
       then
         (cache,v,st);
 
-    case (cache,_,"getDerivedUnits",{Values.STRING(str1)},st,_)
+    case (cache,_,"getDerivedUnits",{Values.STRING(_)},st,_)
       then
         (cache,ValuesUtil.makeArray({}),st);
 
@@ -868,8 +868,8 @@ algorithm
     case (cache,_,"getTransitions",_,st,_)
       then (cache, Values.ARRAY({},{}), st);
 
-    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
-                                   Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
+                                   Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -879,9 +879,9 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
-                                   Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i),
-                                   Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+    case (cache,_,"addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
+                                   Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
+                                   Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -910,12 +910,12 @@ algorithm
       then
         (cache,Values.BOOL(bval),st);
 
-    case (cache,_,"addTransition",{_,_,_,_,_,_,_,_,v},st as GlobalScript.SYMBOLTABLE(),_)
+    case (cache,_,"addTransition",{_,_,_,_,_,_,_,_,_},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,_,"deleteTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
-                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i)},
+    case (cache,_,"deleteTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
+                                      Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_)},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -938,9 +938,9 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
-                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
-                                      Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
+                                      Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.STRING(_),
+                                      Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -950,10 +950,10 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
-                                      Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
-                                      Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1),
-                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+    case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
+                                      Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.STRING(_),
+                                      Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
+                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=_,eqMod=Absyn.NOMOD())))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -986,11 +986,11 @@ algorithm
       then
         (cache,Values.BOOL(bval),st);
 
-    case (cache,_,"updateTransition",{_,_,_,_,_,_,_,_,_,_,_,_,_,v},st as GlobalScript.SYMBOLTABLE(),_)
+    case (cache,_,"updateTransition",{_,_,_,_,_,_,_,_,_,_,_,_,_,_},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE()),_)
       algorithm
         ExecStat.execStatReset();
 
@@ -1087,7 +1087,7 @@ algorithm
     case (cache,_,"diffModelicaFileListings",_,st,_) then (cache,Values.STRING(""),st);
 
   // exportToFigaro cases added by Alexander Carlqvist
-    case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
+    case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)}, st as GlobalScript.SYMBOLTABLE(), _)
       equation
     (scodeP, _) = GlobalScriptUtil.symbolTableToSCode(st);
     /* The following line of code should be commented out when building from trunk.
@@ -1721,7 +1721,7 @@ algorithm
       then
         (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,NONE(),ic,iv,cf,lf));
 
-    case (cache,_,"addClassAnnotation",{_,v},st as GlobalScript.SYMBOLTABLE(),_)
+    case (cache,_,"addClassAnnotation",{_,_},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.BOOL(false),st);
 
@@ -1836,7 +1836,7 @@ algorithm
         (cache,Values.STRING(str),st);
 
     // if the lookup fails
-    case (cache,_,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(_))},st as GlobalScript.SYMBOLTABLE(ast=_),_)
+    case (cache,_,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(_))},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.STRING(""),st);
 
@@ -1863,7 +1863,7 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,_,"getInheritedClasses",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+    case (cache,_,"getInheritedClasses",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(),_)
       equation
         paths = Interactive.getInheritedClasses(classpath, st);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
@@ -1913,7 +1913,7 @@ algorithm
 
     case (cache,_,"getAnnotationNamedModifiers",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-          Absyn.CLASS(cname,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,p);
+          Absyn.CLASS(_,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,p);
           annlst= getAnnotationList(cdef);
           modifiernamelst=getElementArgsModifiers(annlst,annotationname);
           v1 = ValuesUtil.makeArray(List.map(modifiernamelst, ValuesUtil.makeString));
@@ -1922,7 +1922,7 @@ algorithm
 
      case (cache,_,"getAnnotationModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname),Values.STRING(modifiername)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-          Absyn.CLASS(cname,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,p);
+          Absyn.CLASS(_,_,_,_,_,cdef,_) =Interactive.getPathedClassInProgram(classpath,p);
           annlst= getAnnotationList(cdef);
           modifiervalue=getElementArgsModifiersValue(annlst,annotationname,modifiername);
       then
@@ -2060,8 +2060,8 @@ algorithm
 
     case (cache,_,"diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},st,_)
       equation
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
+        _ = System.pwd();
+        _ = System.pathDelimiter();
         filename = Util.absoluteOrRelative(filename);
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
         filename_1 = Util.absoluteOrRelative(filename_1);
@@ -2824,7 +2824,7 @@ algorithm
       then
         (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
-    case (_, _, _, GlobalScript.SYMBOLTABLE(p, fp, ic, iv, cf, lf), _, _)
+    case (_, _, _, GlobalScript.SYMBOLTABLE(p, _, _, _, _, _), _, _)
       equation
         false = Flags.isSet(Flags.GRAPH_INST);
         true = Flags.isSet(Flags.SCODE_INST);
@@ -4869,7 +4869,7 @@ algorithm
         (Absyn.CLASS(restriction=restriction)) = Interactive.getPathedClassInProgram(className, p);
         true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
         (cache,env,_,st) = runFrontEnd(cache,env,className,st,true);
-        classNameStr = Absyn.pathString(className);
+        _ = Absyn.pathString(className);
       then
         (cache,Values.STRING(""),st);
 
@@ -7312,7 +7312,7 @@ algorithm
     String name,name1, s;
     list<String> modfiernamelist;
     Absyn.ElementArg eltarg;
-  case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::eltarglst,name1)
+  case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::_,name1)
     guard stringEq(name, name1)
     equation
        elt=getElementArgsList(modification);
@@ -7324,7 +7324,7 @@ algorithm
     then
         getElementArgsModifiers(eltarglst,name1);
 
-  case({},name1) then {"The searched annotation name not found"};
+  case({},_) then {"The searched annotation name not found"};
  end match;
 end getElementArgsModifiers;
 
@@ -7344,7 +7344,7 @@ algorithm
       String modfiername_value;
       Absyn.ElementArg eltarg;
 
-    case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::eltarglst,name1,name2)
+    case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::_,name1,name2)
       guard stringEq(name1, name)
       equation
         elt=getElementArgsList(modification);
@@ -7358,7 +7358,7 @@ algorithm
       then
         modfiername_value;
 
-    case({},name1,name2) then "The Searched value not Found";
+    case({},_,_) then "The Searched value not Found";
   end match;
 
  end getElementArgsModifiersValue;

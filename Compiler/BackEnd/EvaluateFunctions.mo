@@ -479,7 +479,7 @@ algorithm
       list<DAE.Exp> exps, exps0, sub, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps;
       list<list<DAE.Exp>> scalarExp;
 
-  case(DAE.CALL(path=path, expLst=exps0, attr=attr1),_)
+  case(DAE.CALL(path=path, expLst=exps0),_)
     equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("\nStart constant evaluation of expression: "+ExpressionDump.printExpStr(expIn)+"\n\n");
@@ -540,14 +540,13 @@ algorithm
           //BackendVarTransform.dumpReplacements(repl);
 
         // recognize if there are statements we cannot evaluate at the moment
-        hasAssert = List.fold(algs,hasAssertFold,false);
-        hasReturn = List.fold(algs,hasReturnFold,false);
-        hasTerminate = List.fold(algs,hasReturnFold,false);
-        hasReinit = List.fold(algs,hasReinitFold,false);
-        abort = hasReturn or hasTerminate or hasReinit;
+        _ = List.fold(algs,hasAssertFold,false);
+        _ = List.fold(algs,hasReturnFold,false);
+        _ = List.fold(algs,hasReturnFold,false);
+        _ = List.fold(algs,hasReinitFold,false);
 
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm, consider bindings of protected vars as well
-        (algs,funcs,repl,idx) = List.mapFold3(algs,evaluateFunctions_updateAlgElements,funcsIn,repl,1);
+        (algs,_,repl,_) = List.mapFold3(algs,evaluateFunctions_updateAlgElements,funcsIn,repl,1);
         //print("\nall algs after"+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
         //BackendVarTransform.dumpReplacements(repl);
 
@@ -560,7 +559,7 @@ algorithm
           //print("all constant exps:\n"+ExpressionDump.printExpListStr(constExps)+"\n");
 
         // get the completely constant complex outputs, the constant parts of complex outputs and the variable parts of complex outputs and the expressions
-        (constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs) = checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
+        (constComplexCrefs,_,constScalarCrefs,varScalarCrefs) = checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
         constScalarExps = List.map1r(constScalarCrefs,BackendVarTransform.getReplacement,repl);
         constComplexExps = List.map1r(constComplexCrefs,BackendVarTransform.getReplacement,repl);
         (constScalarCrefs,constScalarExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
@@ -2823,7 +2822,7 @@ protected function expandDimension"expands the dimensions. e.g. [3,3] {{1,1},{1,
   input list<list<DAE.Subscript>> subsIn;
   output list<list<DAE.Subscript>> subsOut;
 algorithm
-  subsOut := matchcontinue(dims,subsIn)
+  subsOut := match(dims,subsIn)
     local
       Integer size;
       list<Integer> range;
@@ -2847,7 +2846,7 @@ algorithm
   case({},_)
     equation
     then subsIn;
-  end matchcontinue;
+  end match;
 end expandDimension;
 
 protected function subsLstString
@@ -3090,7 +3089,7 @@ algorithm
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
            print("--> the predicted const outputs:\n"+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
          end if;
-         (constOutExps,_,varOutExps) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
+         (_,_,_) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
          //_ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);

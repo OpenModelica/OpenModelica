@@ -807,7 +807,7 @@ algorithm
       // CREF
       DAE.ComponentRef cref;
       DAE.Type ty;
-    case ((i, expThen)::{}, DAE.CREF(componentRef=_,ty=ty))
+    case ((i, expThen)::{}, DAE.CREF(ty=ty))
       equation
         callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
         // SMS_PRE.initialState.activeState == i

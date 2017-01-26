@@ -575,7 +575,7 @@ algorithm
 
     case BackendDAE.ZERO_CROSSING(e, ilst1)
       equation
-        (e_1, _, b, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
+        (e_1, _,_, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
       then if not referenceEq(e,e_1) then BackendDAE.ZERO_CROSSING(e_1, ilst1) else zc;
 
     else zc;
@@ -911,13 +911,13 @@ algorithm
       BackendDAE.EqSystem eqSys, newEqSys;
       Boolean insideIfExp;
 
-    case (e1 as DAE.IFEXP(), (fns,eqSys,b,insideIfExp))
+    case (DAE.IFEXP(), (_,_,_,_))
       then fail();
 
     case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=true)),_)
       then (inExp,inTuple);
 
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,eqSys,b,false))
+    case (DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,eqSys,_,false))
     guard Inline.checkInlineType(inlineType,fns) and Flags.getConfigEnum(Flags.INLINE_METHOD)==2
       equation
         (fn,comment) = Inline.getFunctionBody(p,fns);
@@ -943,7 +943,7 @@ algorithm
         (newExp,(fns,newEqSys,true,false));
 
     //fallback use old implementation
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,eqSys,b,insideIfExp))
+    case (DAE.CALL(p,_,DAE.CALL_ATTR(inlineType=inlineType)),(fns,eqSys,b,insideIfExp))
       equation
         //TODO sace assertLst
         (newExp, _) = Inline.inlineCall(inExp, {}, fns);

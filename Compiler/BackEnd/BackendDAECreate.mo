@@ -1935,7 +1935,7 @@ algorithm
         (eqnl, reqnl);
 
     // if a function call includes external functions, it is not allowed to expand the left hand side since the call will be evaluated multiple times. That's an unintended behaviour.
-    case DAE.EQUATION(exp = lhs as DAE.TUPLE(PR=expl), scalar = e as DAE.CALL(_), source = source)::xs
+    case DAE.EQUATION(exp = lhs as DAE.TUPLE(PR=_), scalar = e as DAE.CALL(_), source = source)::xs
       equation
         //print("Do not lower equations with function calls that solve tuples "+DAEDump.dumpEquationStr(listHead(inDAEElementLst))+"\n");
         ty = Expression.typeof(lhs);
@@ -1953,7 +1953,7 @@ algorithm
       then
         (eqnl, reqnl);
 
-    case (el as DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)), scalar = e, source = source))::xs algorithm
+    case (el as DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = _)), scalar = e, source = source))::xs algorithm
       try
         e := ExpressionSolve.solve(cre, e, cre);
       else
@@ -1967,7 +1967,7 @@ algorithm
       (eqnl, reqnl) := lowerWhenEqn2(xs, inCond, functionTree, eq::iEquationLst, iREquationLst);
     then (eqnl, reqnl);
 
-    case DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)), rhs = e, source = source)::xs
+    case DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = _)), rhs = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(cre,e),source);
         size = Expression.sizeOf(Expression.typeof(cre));
@@ -2002,7 +2002,7 @@ algorithm
       then
         (eqnl, reqnl);
 
-    case DAE.ARRAY_EQUATION(dimension=ds, exp = (cre as DAE.CREF(componentRef = cr)), array = e, source = source)::xs
+    case DAE.ARRAY_EQUATION(dimension=ds, exp = (cre as DAE.CREF(componentRef = _)), array = e, source = source)::xs
       equation
         (DAE.EQUALITY_EXPS(_,e), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(cre,e),source);
         size = List.fold(Expression.dimensionsSizes(ds), intMul, 1);

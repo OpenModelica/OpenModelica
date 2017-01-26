@@ -97,7 +97,7 @@ algorithm
     local
       list<String> typeVars;
     case Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
-        body = body as Absyn.PARTS(classParts = parts, typeVars=typeVars))
+        body = body as Absyn.PARTS(classParts = parts))
       algorithm
         (parts, outMetaClasses) := fixClassParts(parts, outClass.name, body.typeVars);
         body.classParts := parts;

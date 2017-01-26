@@ -3883,7 +3883,7 @@ algorithm
       end match;
       then outExp;
     // keep DynamicSelect for Boolean with cref arg (visible, primitivesVisible)
-    case (Absyn.BOOL(value = bconst), Absyn.CREF(componentRef = acref))
+    case (Absyn.BOOL(), Absyn.CREF(componentRef = acref))
       then Expression.makeArray({dstatic, Expression.crefToExp(absynCrefToComponentReference(acref))}, ty, true);
     end match;
   // return first argument of DynamicSelect for model editing per default
@@ -4699,7 +4699,6 @@ algorithm
     case (cache,env,{acondition},{},impl,pre,_)
       equation
         (cache, condition, prop1, _) = elabExpInExpression(cache,env,acondition,impl,NONE(),true,pre,info);
-        astartInterval = Absyn.REAL("0.0");
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
         call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, DAE.RCONST(0.0)));
@@ -7622,8 +7621,8 @@ algorithm
         */
         fargs = List.map(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
-        (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
+        (cache,_,newslots,_,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
+        (cache,newslots2,_,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
         args_2 = slotListArgs(newslots2);
 
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
@@ -8210,7 +8209,6 @@ algorithm
           ty.typeVars := typeVars;
           prop := getProperties(ty, ty_const);
         else
-          typeVars := inType.typeVars;
           prop := getProperties(ty, ty_const);
         end if;
       then
@@ -11950,7 +11948,7 @@ algorithm
         // Debug.traceln("Try elabSucscriptsDims " + id);
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,_,t,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
+        (cache,_,_,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         // false = Types.isUnknownType(t);
         // print("elabCrefSubs type of: " + id + " is " + Types.printTypeStr(t) + "\n");
         // Debug.traceln("    elabSucscriptsDims " + id + " got var");

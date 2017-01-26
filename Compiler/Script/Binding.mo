@@ -155,7 +155,7 @@ algorithm
       list<Absyn.ClassPart> classParts, nclsp;
       list<Absyn.Annotation> ann ;
       Option<String>  comment;
-    case(Absyn.CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, Absyn.PARTS(typeVars, classAttrs, classParts, ann, comment), info))
+    case(Absyn.CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, Absyn.PARTS(typeVars, classAttrs, _, ann, comment), info))
       equation
         nbody = Absyn.PARTS(typeVars, classAttrs, {Absyn.PUBLIC(ag_elems)}, ann, comment);
       then

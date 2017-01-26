@@ -978,7 +978,7 @@ algorithm
 
       case ((e1, e2)) guard(Expression.isZero(e1))
         equation
-          tp = Expression.typeof(e2);
+          _ = Expression.typeof(e2);
         then NONE();
 
   end match;
@@ -1654,7 +1654,7 @@ algorithm
     /*der(x)/dt*/
     case ("$_DF$DER",_)
       equation
-        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter, expStack);
+        (exp_1,_) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter, expStack);
         exp_2 =  Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
       then
        (Expression.expDiv(exp_1,exp_2), inFuncs);
@@ -1774,7 +1774,7 @@ algorithm
         (DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), res1, res2), funcs);
 
     // diff(div(e1,e2)) =  diff(if noEvent(e1 > 0) then floor(e1/e2) else ceil(e1/e2)) = 0.0;
-    case ("div", {e1,e2}, DAE.CALL_ATTR(ty=tp))
+    case ("div", {_,_}, DAE.CALL_ATTR(ty=tp))
       equation
         (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -1792,8 +1792,7 @@ algorithm
     // diff(rem(e1,e2)) = diff(e1 -div(e1,e2)*e2)
     case ("rem", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       equation
-        etmp = Expression.makePureBuiltinCall("div", {e1, e2}, tp);
-        e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2, DAE.MUL(tp),  etmp));
+        _ = Expression.makePureBuiltinCall("div", {e1, e2}, tp);
         (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
       then
         (res1, funcs);
@@ -2661,17 +2660,17 @@ algorithm
     case ({}, _, _, _, _, _, _, _)
     then (MetaModelica.Dangerous.listReverseInPlace(inElementsDer), inFunctionTree, MetaModelica.Dangerous.listReverseInPlace(inElementsNoDer), MetaModelica.Dangerous.listReverseInPlace(inBooleanLst));
 
-    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD())),  binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) equation
+    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD())),  binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) equation
       dcref = createDiffedCrefName(cref, matrixName);
       var = DAEUtil.replaceCrefInVar(dcref, var1);
-      (dbinding, functions) = differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
+      (dbinding,_) = differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, expStack);
       var = DAEUtil.replaceBindungInVar(dbinding, var);
       vars = var::inElementsDer;
       blst = true::inBooleanLst;
       (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, expStack);
     then (vars, functions, elementsNoDer, blst);
 
-    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD()))))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) equation
+    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) equation
       dcref = createDiffedCrefName(cref, matrixName);
       var = DAEUtil.replaceCrefInVar(dcref, var1);
 

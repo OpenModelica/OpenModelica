@@ -1945,7 +1945,7 @@ algorithm
       equation
         //cre = Expression.crefExp(cr);
         (cre1,b1) = replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
-        (cr1,_) = validWhenLeftHandSide(cre1,cre,cr);
+        (_,_) = validWhenLeftHandSide(cre1,cre,cr);
         source = ElementSource.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
         (exp1,b2) = replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
         (exp1,_) = ExpressionSimplify.condsimplify(b2,exp1);

@@ -1911,7 +1911,7 @@ algorithm
         (cls_el :: rest_prog, env);
 
     // Could not collect the class (i.e. it's not used), continue with the rest.
-    case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
+    case (_, _, (SCode.CLASS()) :: rest_prog, _, env)
       equation
         (rest_prog, env) =
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);

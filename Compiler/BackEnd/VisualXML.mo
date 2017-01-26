@@ -318,7 +318,7 @@ algorithm
   (crefOut,wasCut) := matchcontinue(crefIn,crefCut)
     local
       DAE.ComponentRef crefCut1, crefIn1;
-  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=_))
+  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
     equation
       // the crefs are not equal, check the next cref in crefIn
       true = not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);

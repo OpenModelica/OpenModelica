@@ -2988,7 +2988,7 @@ algorithm
       then
         DAE.T_ARRAY(t_1,{dim});
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t),
+    case (DAE.T_ARRAY(dims = {_}, ty = t),
           DAE.SLICE(exp = e as DAE.RANGE()) :: ys)
       algorithm
         t_1 := checkSubscripts(t, ys);
@@ -3123,7 +3123,7 @@ algorithm
       Absyn.Path p;
 
     // Simple identifier
-    case (cache,ht,DAE.CREF_IDENT(ident = id,subscriptLst = ss),_)
+    case (_,_,DAE.CREF_IDENT(ident = id,subscriptLst = ss),_)
       algorithm
         (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) := lookupVarFIdent(inCache,inBinTree,id,ss,inEnv);
       then (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name);
@@ -3397,7 +3397,7 @@ algorithm
       then DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, {DAE.ICONST(0)}));
 
     // Array with integer dimension.
-    case DAE.DIM_INTEGER(integer = sz)
+    case DAE.DIM_INTEGER()
       then DAE.SLICE(DAE.RANGE(
         DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(inDim.integer)}),
         DAE.ICONST(1), NONE(), DAE.ICONST(inDim.integer)));

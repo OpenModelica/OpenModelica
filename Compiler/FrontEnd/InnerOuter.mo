@@ -2198,7 +2198,6 @@ algorithm
         rexpandsize = rsize * 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + size;
         arr_1 = Array.expand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
@@ -2224,7 +2223,7 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr;
       Integer n,size;
-    case (VALUE_ARRAY(n,arr),_,_)
+    case (VALUE_ARRAY(_,arr),_,_)
       equation
         (pos < arrayLength(arr)) = true;
         arrayUpdate(arr, pos + 1, SOME(entry));
@@ -2249,7 +2248,7 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr;
       Integer n,size;
-    case (VALUE_ARRAY(n,arr),_)
+    case (VALUE_ARRAY(_,arr),_)
       equation
         (pos < arrayLength(arr)) = true;
         arrayUpdate(arr, pos + 1,NONE());

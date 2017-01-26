@@ -108,7 +108,7 @@ algorithm
       list<String> inunits,outunits,inargs,outargs;
       DAE.Function fn;
       list<Functionargs> fncheck,fncheck1;
-    case (fn,fncheck)
+    case (fn,_)
       equation
         s=getFunctionName(fn);
         inelt=DAEUtil.getFunctionInputVars(fn);
@@ -175,7 +175,7 @@ algorithm
       list<String> inputargs,inputargs1,inputargs2,outputargs,outputargs1,outputargs2;
       DAE.ComponentRef cr;
       DAE.VarDirection direction;
-    case(DAE.VAR(componentRef=cr,direction=direction,ty=DAE.T_REAL(),variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString))))))
+    case(DAE.VAR(ty=DAE.T_REAL(),variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString))))))
       guard(unitString <> "")
       then
         (unitString);
@@ -201,7 +201,7 @@ algorithm
       DAE.ElementSource eltsrc;
       Option<SCode.Comment> comment;
 
-    case(DAE.DAE(elementLst={DAE.COMP(ident=ident,dAElist=varlist,source=eltsrc,comment=comment)}),varlist2)
+    case(DAE.DAE(elementLst={DAE.COMP(ident=ident,source=eltsrc,comment=comment)}),varlist2)
       equation
         outdae=DAE.DAE({DAE.COMP(ident,varlist2,eltsrc,comment)});
       then
@@ -347,7 +347,7 @@ algorithm
       ((HtCr2U, b, HtS2U, HtU2S))=foldEquation(eq,{},(HtCr2U, b, HtS2U, HtU2S));
     then ((HtCr2U, b, HtS2U, HtU2S));
 
-    case (DAE.VAR(componentRef=cref, ty=DAE.T_REAL(), binding=SOME(_),source=source), (HtCr2U, _, HtS2U, HtU2S))
+    case (DAE.VAR(ty=DAE.T_REAL(), binding=SOME(_)), (HtCr2U, _, HtS2U, HtU2S))
     then ((HtCr2U, false, HtS2U, HtU2S));
 
       else inTpl;
@@ -404,11 +404,11 @@ algorithm
       list<String> invars,outvars,inunitlist,outunitlist;
       list<DAE.Exp> explist,explist1,explist2;
 
-    case (DAE.EQUATION(exp=DAE.Exp.TUPLE(PR=explist1), scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path),expLst=explist2)), HtCr2U, HtS2U, HtU2S,args)
+    case (DAE.EQUATION(exp=DAE.Exp.TUPLE(PR=explist1), scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path))), HtCr2U, HtS2U, HtU2S,args)
       equation
         s1=Absyn.pathString(path);
         s1=System.trim(s1,".");
-        (invars,outvars,inunitlist,outunitlist)=getNamedUnitlist(s1,args);
+        (_,outvars,_,outunitlist)=getNamedUnitlist(s1,args);
         (HtCr2U, HtS2U, HtU2S, expList2) = foldCallArg1(explist1, HtCr2U, HtS2U, HtU2S,NFUnit.MASTER({}),outunitlist,outvars,s1);
         (_, (HtCr2U, HtS2U, HtU2S), expList3) = insertUnitInEquation(call, (HtCr2U, HtS2U, HtU2S),NFUnit.MASTER({}),args);
         expList=List.append_reverse(expList2, expList3);
@@ -416,11 +416,11 @@ algorithm
         (HtCr2U, HtS2U, HtU2S,expList);
 
 
-    case (DAE.EQUATION(exp=lhs, scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path),expLst=explist)), HtCr2U, HtS2U, HtU2S,args)
+    case (DAE.EQUATION(exp=lhs, scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path))), HtCr2U, HtS2U, HtU2S,args)
       equation
         s1=Absyn.pathString(path);
         s1=System.trim(s1,".");
-        (invars,outvars,_,outunitlist)=getNamedUnitlist(s1,args);
+        (_,outvars,_,outunitlist)=getNamedUnitlist(s1,args);
         (ut, (HtCr2U, HtS2U, HtU2S), _) = insertUnitInEquation(lhs, (HtCr2U, HtS2U, HtU2S),NFUnit.MASTER({}),args);
         formalargs =listGet(outunitlist,1);
         formalvar =listGet(outvars,1);
@@ -848,27 +848,27 @@ algorithm
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
       //all other BINARIES
-    case (DAE.BINARY(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.BINARY(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
       //LBINARY
-    case (DAE.LBINARY(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.LBINARY(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
       //LUNARY
-    case (DAE.LUNARY(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.LUNARY(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
       //MATRIX
-    case (DAE.MATRIX(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.MATRIX(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
       //ARRAY
-    case (DAE.ARRAY(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.ARRAY(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), {});
 
     // builtin function calls
-    case (DAE.CALL(path = Absyn.IDENT(name = s1),expLst=ExpList), (HtCr2U, HtS2U, HtU2S), _,_) equation
+    case (DAE.CALL(path = Absyn.IDENT(),expLst=ExpList), (HtCr2U, HtS2U, HtU2S), _,_) equation
       (HtCr2U, HtS2U, HtU2S, expListList) = foldCallArg(ExpList, HtCr2U, HtS2U, HtU2S);
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
@@ -888,23 +888,23 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
       //ICONST
-    case (DAE.ICONST(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.ICONST(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S) , {});
 
       //BCONST
-    case (DAE.BCONST(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.BCONST(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S) , {});
 
       //SCONST
-    case (DAE.SCONST(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.SCONST(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S) , {});
 
       //RCONST
-    case (DAE.RCONST(), (HtCr2U, HtS2U, HtU2S), _,args)
+    case (DAE.RCONST(), (HtCr2U, HtS2U, HtU2S), _,_)
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S) , {});
 
       //"time"
-    case (DAE.CREF(componentRef=cr), (HtCr2U, HtS2U, HtU2S), _,args) equation
+    case (DAE.CREF(componentRef=cr), (HtCr2U, HtS2U, HtU2S), _,_) equation
       true = ComponentReference.crefEqual(cr, DAE.crefTime);
       ut = NFUnit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
       HtS2U = addUnit2HtS2U(("time", ut), HtS2U);
@@ -912,7 +912,7 @@ algorithm
     then (ut, (HtCr2U, HtS2U, HtU2S), {});
 
       //CREF
-    case (DAE.CREF(componentRef=cr, ty=DAE.T_REAL()), (HtCr2U, _, _), _,args) equation
+    case (DAE.CREF(componentRef=cr, ty=DAE.T_REAL()), (HtCr2U, _, _), _,_) equation
       ut = BaseHashTable.get(cr, HtCr2U);
     then (ut, inTpl, {});
 
@@ -942,7 +942,7 @@ algorithm
       list<Functionargs> rest;
       String fnname,fnname1;
       list<String> invars,inunitlist, outunitlist,outvars;
-    case(fnname,FUNCTIONUNITS(fnname1,invars,outvars,inunitlist,outunitlist)::rest)
+    case(fnname,FUNCTIONUNITS(fnname1,invars,outvars,inunitlist,outunitlist)::_)
       guard stringEq(fnname,fnname1)
       equation
         inunitlist=inunitlist;
@@ -1332,7 +1332,7 @@ algorithm
       list<DAE.Var> varlist;
       DAE.Binding eqbind;
       String s,name;
-    case (DAE.Var.TYPES_VAR(name=name,binding=eqbind)::varlist)
+    case (DAE.Var.TYPES_VAR(name=name,binding=eqbind)::_)
       guard stringEq(name,"unit")
       equation
         s=getStringFromExp(eqbind);

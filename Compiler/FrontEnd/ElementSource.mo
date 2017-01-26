@@ -55,7 +55,7 @@ algorithm
       list<DAE.SymbolicOperation> operations1;
       list<SCode.Comment> comment1,comment2;
       SCode.Comment comment;
-    case (DAE.SOURCE(info, partOfLst1, instanceOpt1, connectEquationOptLst1, typeLst1, operations1, comment1),SOME(comment))
+    case (DAE.SOURCE(_, _, _, _, _, _, _),SOME(comment))
       algorithm
         source.comment := comment::source.comment;
       then source;

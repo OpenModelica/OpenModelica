@@ -1213,7 +1213,7 @@ algorithm
     case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),_) then {};
 
     case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
-      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)), typeSpec = t),info)
+      (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)), typeSpec = t),info)
       algorithm
         xs_1 := {};
         for comp in inElementSpec4.components loop

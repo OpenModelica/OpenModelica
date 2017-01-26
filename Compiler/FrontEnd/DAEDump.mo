@@ -3719,7 +3719,7 @@ algorithm
       then
         str;
 
-    case (DAE.DEFINE(componentRef = c,exp = e,source = src))
+    case (DAE.DEFINE(componentRef = c,exp = _,source = src))
       equation
         cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
@@ -3728,7 +3728,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIALDEFINE(componentRef = c,exp = e,source = src))
+    case (DAE.INITIALDEFINE(componentRef = c,exp = _,source = src))
       equation
         cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);

@@ -272,7 +272,7 @@ algorithm
     case NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty)
       algorithm
         env := NFSCodeEnv.enterFrame(cls_env, inEnv);
-        cls_env :: rest_env := qualify2(env, cls_ty, inExtendsTable);
+        cls_env :: _ := qualify2(env, cls_ty, inExtendsTable);
       then
         NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
 
@@ -1131,7 +1131,7 @@ algorithm
         env := NFSCodeEnv.enterFrame(cls_env, inEnv);
         (cls, env) := updateClassExtends(cls, env, cls_ty);
         // Call update2 on the class' environment to update the extends.
-        cls_env :: rest_env := update2(env);
+        cls_env :: _ := update2(env);
         // Rebuild the class item with the updated information.
         item := NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
       then

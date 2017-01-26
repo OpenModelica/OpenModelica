@@ -4557,7 +4557,7 @@ algorithm
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
       HpcOmSimCode.Schedule schedule;
       list<Integer> order;
-    case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=_),_,_,_)
+    case(_,HpcOmTaskGraph.TASKGRAPHMETA(),_,_,_)
       algorithm
         true := intNe(arrayLength(iTaskGraph),0);
         nTasks := arrayLength(iTaskGraph);

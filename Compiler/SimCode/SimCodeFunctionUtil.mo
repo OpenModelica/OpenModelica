@@ -1132,7 +1132,7 @@ algorithm
           exp2 := inExp;
         end try;
       then (exp2, tpl);
-    case (exp as DAE.MATRIX(), tpl)
+    case (DAE.MATRIX(), tpl)
       algorithm
         try
           isLiteralArrayExp(inExp);
@@ -1214,7 +1214,7 @@ algorithm
       list<DAE.Exp> l;
       DAE.Type et;
       HashTableExpToIndex.HashTable ht;
-    case (exp, (i, ht, l))
+    case (exp, (_, ht, _))
       equation
         ix = BaseHashTable.get(exp, ht);
         nexp = DAE.SHARED_LITERAL(ix, exp);
@@ -1884,7 +1884,7 @@ algorithm
   libPaths := matchcontinue(uri,path,inLibs)
     local
       String str, platform1, platform2;
-  case(_, _,{str as "-lWinmm"}) guard System.os()=="Windows_NT"
+  case(_, _,{"-lWinmm"}) guard System.os()=="Windows_NT"
     //Winmm has to be linked from the windows system but not from the resource directories.
     //This is a fix for M_DD since otherwise the dummy pthread.dll that breaks the built will be linked
     then {(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")};
@@ -2097,19 +2097,19 @@ algorithm
     case Absyn.STRING("Lapack") then ({},{});
 
     //pthreads is already linked under windows
-    case Absyn.STRING(str as "pthread") guard System.os()=="Windows_NT"
+    case Absyn.STRING("pthread") guard System.os()=="Windows_NT"
       equation
         Error.addCompilerNotification("pthreads library is already available. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
    //do not link rt.dll for Modelica Device Drivers as it is not needed under windows
-    case Absyn.STRING(str as "rt") guard System.os()=="Windows_NT"
+    case Absyn.STRING("rt") guard System.os()=="Windows_NT"
       equation
         Error.addCompilerNotification("rt library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
     //user32 is already linked under windows
-    case Absyn.STRING(str as "User32") guard System.os()=="Windows_NT"
+    case Absyn.STRING("User32") guard System.os()=="Windows_NT"
       equation
         Error.addCompilerNotification("User32 library is already available. It is not linked from the external library resource directory.\n");
       then  ({},{});
@@ -2122,7 +2122,7 @@ algorithm
       then  ({str},{});
 
     //do not link X11.dll for Modelica Device Drivers as it is not needed under windows
-    case Absyn.STRING(str as "X11") guard System.os()=="Windows_NT"
+    case Absyn.STRING("X11") guard System.os()=="Windows_NT"
       equation
         Error.addCompilerNotification("X11 library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});

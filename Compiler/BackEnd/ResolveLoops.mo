@@ -460,7 +460,7 @@ author: vwaurich TUD 12-2016"
   input list<list<Integer>> pathsIn;
   output list<list<Integer>> pathsOut;
 algorithm
-  pathsOut := matchcontinue(eqCrossLstIn, mIn, mTIn, pathsIn)
+  pathsOut := match(eqCrossLstIn, mIn, mTIn, pathsIn)
     local
       Integer crossEq, adjVar, adjEq;
       list<Integer> rest, adjVars, adjVars2, adjEqs, sharedVars, newPath;
@@ -490,7 +490,7 @@ algorithm
     then paths;
   case({},_,_,_)
     then pathsIn;
-  end matchcontinue;
+  end match;
 end getShortPathsBetweenEqCrossNodes;
 
 protected function connectsLoops "author:Waurich TUD 2014-02
@@ -719,7 +719,7 @@ algorithm
       (daeEqs,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqs,daeVarsIn,replEqs);
     then
       (daeEqs,replEqs);
-  case(loop1::rest,_::crossEqs,_::crossVars,_,_,_,_,_,_,_)
+  case(loop1::rest,_::_,_::_,_,_,_,_,_,_,_)
     algorithm
       // both eqCrossNodes and varCrossNodes, at least try the small loops
         //print("both eqCrossNodes and varCrossNodes, loopLength"+intString(listLength(loop1))+"\n");
@@ -1391,17 +1391,17 @@ algorithm
       sign = if exists2 then sign2 else sign;
     then
       (exists,sign);
-  case(DAE.BINARY(exp1=exp1 as DAE.CREF(), operator = DAE.MUL(), exp2=exp2 as DAE.RCONST(r)),_)
+  case(DAE.BINARY(exp1=exp1 as DAE.CREF(), operator = DAE.MUL(), exp2=DAE.RCONST(r)),_)
     equation
       //exp1*rconst
-      (exists,sign1) = expIsCref(exp1,crefIn);
+      (exists,_) = expIsCref(exp1,crefIn);
       sign = r > 0;
     then
       (exists,sign);
-  case(DAE.BINARY(exp1=exp1 as DAE.RCONST(r), operator = DAE.MUL(), exp2=exp2 as DAE.CREF()),_)
+  case(DAE.BINARY(exp1=exp1 as DAE.RCONST(r), operator = DAE.MUL(), exp2=DAE.CREF()),_)
     equation
       //rconst*exp2
-      (exists,sign1) = expIsCref(exp1,crefIn);
+      (exists,_) = expIsCref(exp1,crefIn);
       sign = r > 0;
     then
       (exists,sign);
@@ -1622,13 +1622,13 @@ algorithm
         (_,(b,_)) = isAddOrSubExp(exp2,(b,vars));
       then (inExp,(b,vars));
 
-    case (DAE.BINARY(exp1 = exp1 as DAE.CREF(componentRef=cref),operator = DAE.MUL(),exp2=exp2),(true,vars))
+    case (DAE.BINARY(exp1=DAE.CREF(componentRef=cref),operator = DAE.MUL(),exp2=exp2),(true,vars))
       algorithm
         //state*const. is allowed
         b := BackendVariable.isState(cref, vars) and Expression.isConst(exp2);
       then (inExp,(b,vars));
 
-    case (DAE.BINARY(exp1 = exp1,operator = DAE.MUL(),exp2 = exp2 as DAE.CREF(componentRef=cref)),(true,vars))
+    case (DAE.BINARY(exp1 = exp1,operator = DAE.MUL(),exp2=DAE.CREF(componentRef=cref)),(true,vars))
       algorithm
         //const*state. is allowed
         b := Expression.isConst(exp1) and BackendVariable.isState(cref, vars);

@@ -323,7 +323,7 @@ algorithm
       list<DAE.Var> varLst;
 
     // Real
-    case (cache,env,mod,DAE.T_REAL(varLst = varLst),index_list)
+    case (cache,_,mod,DAE.T_REAL(varLst = varLst),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
         (unit_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
@@ -349,7 +349,7 @@ algorithm
           start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Integer
-    case (cache,env,mod,DAE.T_INTEGER(varLst = varLst),index_list)
+    case (cache,_,mod,DAE.T_INTEGER(varLst = varLst),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (min_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);

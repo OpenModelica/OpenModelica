@@ -546,7 +546,7 @@ protected
    String fnName;
    DAE.Const vr, vr1, vr2;
 algorithm
-  (typedExp, ty, variability) := matchcontinue(functionName, functionArgs)
+  (typedExp, ty, variability) := match(functionName, functionArgs)
     local
       Absyn.ComponentRef acref;
       Absyn.Exp aexp1, aexp2;
@@ -567,7 +567,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "String"), Absyn.FUNCTIONARGS(args = afargs))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (args, tys, vrs) := Typing.typeExps(afargs, scope, info);
+        (args,_, vrs) := Typing.typeExps(afargs, scope, info);
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
         ty := Type.STRING();
       then
@@ -577,7 +577,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "Integer"), Absyn.FUNCTIONARGS(args = afargs))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (args, tys, vrs) := Typing.typeExps(afargs, scope, info);
+        (args,_, vrs) := Typing.typeExps(afargs, scope, info);
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
         ty := Type.INTEGER();
       then
@@ -585,7 +585,7 @@ algorithm
 
     // TODO FIXME! handle all the Modelica 3.3 operators here, see isSpecialBuiltinFunctionName
 
- end matchcontinue;
+ end match;
 end typeSpecialBuiltinFunctionCall;
 
 
@@ -633,10 +633,10 @@ algorithm
       Type el_ty, ty1, ty2;
 
     // size(arr, dim)
-    case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
+    case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1, _}))
       algorithm
-        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
-        (dexp2, ty2, vr2) := Typing.typeExp(aexp1, scope, info);
+        (dexp1,_, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp2,_, vr2) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
         ty := Type.INTEGER();
@@ -648,7 +648,7 @@ algorithm
     // size(arr)
     case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
-        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp1,_, vr1) := Typing.typeExp(aexp1, scope, info);
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
         ty := Type.INTEGER();
         // the variability does not actually depend on the variability of "arr" but on the variability of the dimensions of "arr"
@@ -656,11 +656,11 @@ algorithm
       then
         (Expression.SIZE(dexp1, NONE()), ty, vr);
 
-    case (Absyn.CREF_IDENT(name = "smooth"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
+    case (Absyn.CREF_IDENT(name = "smooth"), Absyn.FUNCTIONARGS(args = {aexp1, _}))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
-        (dexp2, ty2, vr2) := Typing.typeExp(aexp1, scope, info);
+        (dexp1,_, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp2,_, vr2) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
         ty := Type.REAL();
@@ -671,7 +671,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "rooted"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
         call_path := Absyn.crefToPath(functionName);
-        (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
+        (dexp1,_, vr1) := Typing.typeExp(aexp1, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
         ty := Type.BOOLEAN();

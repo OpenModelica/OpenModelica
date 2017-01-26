@@ -717,7 +717,7 @@ algorithm
 
     case "ExperimentalEmbeddedC"
       algorithm
-        guid := System.getUUIDStr();
+        _ := System.getUUIDStr();
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};

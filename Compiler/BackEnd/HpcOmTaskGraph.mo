@@ -6073,7 +6073,7 @@ algorithm
       array<ComponentInfo> compInformations1, compInformations2;
   case(_,_,_)
     equation
-      BackendDAE.DAE(eqs = _, shared = shared) = dae;
+      BackendDAE.DAE(shared = shared) = dae;
       remEqs = BackendDAEUtil.collapseRemovedEqs(dae);
       TASKGRAPHMETA(varCompMapping=varCompMap) = graphDataIn;
       eqLst = BackendEquation.equationList(remEqs);

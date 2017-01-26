@@ -893,7 +893,7 @@ algorithm
     case {} then (listReverse(inAccum),inTypeA);
     case (BackendDAE.ASSIGN(left = e1, right = e2, source = source)::rest)
       equation
-        tp = Expression.typeof(e2);
+        _ = Expression.typeof(e2);
         (e1, extArg) = inFunc(e1, inTypeA);
         (e2, extArg) = inFunc(e2, extArg);
         (outWhenOps, extArg) = traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(e1, e2, source)::inAccum);
@@ -1026,7 +1026,7 @@ algorithm
     case {} then (inCont,inTypeA);
     case (BackendDAE.ASSIGN(left = e1, right = e2)::rest)
       equation
-        tp = Expression.typeof(e2);
+        _ = Expression.typeof(e2);
         if inCont then
          (_, b, extArg) = inFunc(e1, inTypeA);
         end if;
@@ -1420,7 +1420,6 @@ algorithm
       rexpandsize = rsize * 0.4;
       expandsize = realInt(rexpandsize);
       expandsize_1 = intMax(expandsize, 1);
-      newsize = expandsize_1 + arrSize;
       arr_1 = Array.expand(expandsize_1, equOptArr, NONE());
       n_1 = numberOfElement + 1;
       arr_2 = arrayUpdate(arr_1, n_1, SOME(inEquation));
