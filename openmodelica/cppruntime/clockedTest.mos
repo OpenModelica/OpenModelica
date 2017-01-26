@@ -17,9 +17,9 @@ model DID \"Double Integrator Discrete-time\"
   output Real y2(start = y2_start, fixed = true);
   Real ud;
 equation
-  ud = sample(u, Clock(Clock(intervalCounter, resolution), solverMethod = \"ExplicitEuler\"));
+  ud = sample(u, Clock(Clock(intervalCounter, resolution), solverMethod = \"ImplicitTrapezoid\"));
   der(y1) = p * ud;
-  der(y2) = y1 + 0.5 * p * ud * interval(ud);
+  der(y2) = y1;
 end DID;
 ");
 getErrorString();
