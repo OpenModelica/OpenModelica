@@ -247,15 +247,17 @@ VariablesTreeItem* VariablesTreeItem::rootParent()
  * \brief VariablesTreeItem::getValue
  * Returns the value in the desired unit or
  * an empty value in case of conversion error.
+ * \param fromUnit
+ * \param toUnit
+ * \return
  */
-QVariant VariablesTreeItem::getValue(QString unit, OMCProxy *pOMCProxy)
+QVariant VariablesTreeItem::getValue(QString fromUnit, QString toUnit)
 {
   QString value = "";
-  if (mPreviousUnit.compare(unit) == 0) {
+  if (fromUnit.compare(toUnit) == 0) {
     value = mValue;
-  }
-  else {
-    OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(mPreviousUnit, unit);
+  } else {
+    OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(fromUnit, toUnit);
     if (convertUnit.unitsCompatible) {
       bool ok = false;
       qreal realValue = mValue.toDouble(&ok);
@@ -1094,7 +1096,8 @@ void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTre
       /* Ticket #2250, 4031
        * We need to convert the value to base unit since the values stored in init xml are always in base unit.
        */
-      QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getUnit(), MainWindow::instance()->getOMCProxy()).toString();
+      QString value = pChildVariablesTreeItem->getValue(pChildVariablesTreeItem->getDisplayUnit(),
+                                                        pChildVariablesTreeItem->getUnit()).toString();
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
       variableToFind.remove(QRegExp(outputFileName + "."));
       QHash<QString, QString> hash;
@@ -1244,15 +1247,20 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setUnit(pVariablesTreeItem->getUnit());
         pPlotWindow->setDisplayUnit(pVariablesTreeItem->getDisplayUnit());
         pPlotWindow->plot(pPlotCurve);
+        /* Ticket:4231
+         * Only update the variables browser value and unit when updating some curve not when checking/unchecking variable.
+         */
+        if (pPlotCurve) {
+          /* Ticket:2250
+           * Update the value of Variables Browser display unit according to the display unit of already plotted curve.
+           */
+          pVariablesTreeItem->setData(3, pPlotCurve->getDisplayUnit(), Qt::EditRole);
+          QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getDisplayUnit()).toString();
+          pVariablesTreeItem->setData(1, value, Qt::EditRole);
+        }
         if (!pPlotCurve) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
-        /* Ticket:2250
-         * Update the value of Variables Browser display unit according to the display unit of already plotted curve.
-         */
-        pVariablesTreeItem->setData(3, pPlotCurve->getDisplayUnit(), Qt::EditRole);
-        QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getDisplayUnit(), MainWindow::instance()->getOMCProxy()).toString();
-        pVariablesTreeItem->setData(1, value, Qt::EditRole);
         if (pPlotCurve && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(),
                                                                                                  pVariablesTreeItem->getDisplayUnit());

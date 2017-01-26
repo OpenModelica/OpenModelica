@@ -78,7 +78,7 @@ public:
   VariablesTreeItem* parent() {return mpParentVariablesTreeItem;}
   VariablesTreeItem* parent() const {return mpParentVariablesTreeItem;}
   VariablesTreeItem* rootParent();
-  QVariant getValue(QString unit, OMCProxy *pOMCProxy);
+  QVariant getValue(QString fromUnit, QString toUnit);
 private:
   QList<VariablesTreeItem*> mChildren;
   VariablesTreeItem *mpParentVariablesTreeItem;
