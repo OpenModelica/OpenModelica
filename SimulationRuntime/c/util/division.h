@@ -33,6 +33,7 @@
 #define DIVISION_H
 
 #include "openmodelica.h"
+#include "omc_error.h"
 
 /* #define CHECK_NAN */
 #ifdef CHECK_NAN
@@ -41,7 +42,7 @@
 #define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error_time(threadData, b, c, data->localData[0]->timeValue, __FILE__, __LINE__,data->simulationInfo->noThrowDivZero?1:0)))
 #endif
 
-#define DIVISION_SIM(a,b,msg,equation) (__OMC_DIV_SIM(threadData, a, b, msg, equationIndexes, data->simulationInfo->noThrowDivZero, data->localData[0]->timeValue, initial() ))
+#define DIVISION_SIM(a,b,msg,equation) (__OMC_DIV_SIM(threadData, a, b, msg, equationIndexes, data->simulationInfo->noThrowDivZero, data->localData[0]->timeValue, initial()))
 
 #define DIVISIONNOTIME(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(threadData, b, c, __FILE__, __LINE__)))
 
@@ -49,15 +50,21 @@ modelica_real division_error_equation_time(threadData_t*, modelica_real a, model
 modelica_real division_error_time(threadData_t*,modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow);
 modelica_real division_error(threadData_t*,modelica_real b, const char* division_str, const char* file, long line);
 modelica_real isnan_error(threadData_t*,modelica_real b, const char* division_str, const char* file, long line);
+int valid_number(double a);
 
-static inline modelica_real __OMC_DIV_SIM(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int * equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_){
-  if(b != 0.0){
-    return a/b;
-  }else if(initial_ &&  a == 0.0){
-    return 0.0;
-  }else{
-    return a/ division_error_equation_time(threadData, a, b, msg, equationIndexes, time_, noThrowDivZero);
-  }
+static inline modelica_real __OMC_DIV_SIM(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int *equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_)
+{
+  modelica_real res;
+  if(b != 0.0)
+    res = a/b;
+  else if(initial_ && a == 0.0)
+    res = 0.0;
+  else
+    res = a / division_error_equation_time(threadData, a, b, msg, equationIndexes, time_, noThrowDivZero);
+
+  if(!valid_number(res))
+    throwStreamPrintWithEquationIndexes(threadData, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
+  return res;
 }
 
 #endif
