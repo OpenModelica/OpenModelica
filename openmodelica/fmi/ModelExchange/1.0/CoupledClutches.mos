@@ -32,7 +32,35 @@ val(J4_w1, 1);
 // record SimulationResult
 //     resultFile = "CoupledClutches_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CoupledClutches_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'J1_w1|J2_w1|J3_w1|J4_w1', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// stdout            | warning | While solving non-linear system an assertion failed at time 1e-08.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=-nan) / (b=1), where divisor b is: J1.J
+// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
+// "
 // end SimulationResult;
 // ""
 // 3.235521367082613
