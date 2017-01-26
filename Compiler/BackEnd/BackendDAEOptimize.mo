@@ -81,13 +81,11 @@ import Matching;
 import MetaModelica.Dangerous;
 import RewriteRules;
 import SCode;
-import Sorting;
 import SynchronousFeatures;
 import Tearing;
 import Types;
 import Util;
 import Values;
-import ValuesUtil;
 
 public function simplifyAllExpressions "author: lochel"
   input BackendDAE.BackendDAE inDAE;

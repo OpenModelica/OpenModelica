@@ -51,9 +51,6 @@ import NFStatement.Statement;
 import Type = NFType;
 
 protected
-import ClassInf;
-import ComponentReference;
-import Error;
 import Inst = NFInst;
 import InstUtil;
 import List;

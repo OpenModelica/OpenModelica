@@ -45,7 +45,6 @@ public import DAE;
 public import FCore;
 
 protected import List;
-protected import InstStateMachineUtil;
 protected import ComponentReference;
 protected import ExpressionDump;
 protected import DAEUtil;

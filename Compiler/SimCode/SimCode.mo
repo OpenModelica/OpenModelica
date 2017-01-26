@@ -61,7 +61,6 @@ import HashTableCrefSimVar;
 import HpcOmSimCode;
 import SimCodeFunction;
 import SimCodeVar;
-import SCode;
 
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;

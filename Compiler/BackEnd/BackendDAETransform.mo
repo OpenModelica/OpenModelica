@@ -60,12 +60,10 @@ protected
   import Flags;
   import GC;
   import List;
-  import SCode;
   import Sorting;
   import SymbolicJacobian;
   import System;
   import Util;
-  import Values;
   import MetaModelica.Dangerous;
 
 // =============================================================================

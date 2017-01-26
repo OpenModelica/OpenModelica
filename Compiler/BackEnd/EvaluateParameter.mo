@@ -68,7 +68,6 @@ protected import Ceval;
 protected import ComponentReference;
 protected import ElementSource;
 protected import Error;
-protected import EvaluateFunctions;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;

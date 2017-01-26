@@ -159,9 +159,7 @@ import ValuesUtil;
 import System;
 import SCodeDump;
 import UnitAbsynBuilder;
-import NFSCodeFlattenRedeclare;
 import InstStateMachineUtil;
-import HashTableSM1;
 import NFUnitCheck;
 
 import DAEDump; // BTH

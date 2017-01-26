@@ -37,7 +37,6 @@ encapsulated package TplParser
   $Id$
 "
 
-import AvlSetString;
 import Tpl;
 import TplAbsyn;
 

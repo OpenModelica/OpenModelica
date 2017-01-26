@@ -50,7 +50,6 @@ protected import NFEnvExtends;
 protected import Flags;
 protected import List;
 protected import System;
-protected import NFSCodeLookup;
 
 public type Env = NFSCodeEnv.Env;
 

@@ -42,7 +42,6 @@ public import SimCode;
 public import SimCodeVar;
 
 protected
-import Absyn;
 import Array;
 import BackendDAEUtil;
 import BackendVarTransform;

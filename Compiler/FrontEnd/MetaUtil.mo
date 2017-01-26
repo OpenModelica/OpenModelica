@@ -45,7 +45,6 @@ protected
 
 import Config;
 import Error;
-import FGraph;
 import Flags;
 import List;
 import MetaModelica.Dangerous;

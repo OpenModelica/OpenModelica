@@ -78,7 +78,6 @@ import ExpressionDump;
 import FBuiltin;
 import Flags;
 import FGraph;
-import FLookup;
 import FNode;
 import GC;
 import GenerateAPIFunctionsTpl;

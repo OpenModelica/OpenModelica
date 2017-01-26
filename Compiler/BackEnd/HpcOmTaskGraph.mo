@@ -51,7 +51,6 @@ protected import Error;
 protected import Expression;
 protected import Flags;
 protected import HpcOmBenchmark;
-protected import HpcOmEqSystems;
 protected import HpcOmScheduler;
 protected import List;
 protected import SimCodeUtil;

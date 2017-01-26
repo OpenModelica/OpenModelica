@@ -45,7 +45,6 @@ public import DAE;
 public import System;
 protected import ComponentReference;
 protected import ExpressionDump;
-protected import Util;
 
 public type Key = DAE.ComponentRef;
 public type Value = Option<DAE.Exp>;

@@ -81,7 +81,6 @@ import Dump;
 import Config;
 import Inst;
 import InstFunction;
-import InstSection;
 import System;
 import ErrorExt;
 import InstExtends;

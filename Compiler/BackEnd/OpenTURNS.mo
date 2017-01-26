@@ -43,7 +43,6 @@ public
 import Absyn;
 import BackendDAE;
 import DAE;
-import FCore;
 
 protected
 import Array;

@@ -54,7 +54,6 @@ protected import HashTableSM;
 protected import Array;
 protected import PrefixUtil;
 protected import ExpressionDump;
-protected import ValuesUtil;
 protected import DAEDump;
 protected import HashTableExpToIndexExp;
 protected import MathematicaDump;

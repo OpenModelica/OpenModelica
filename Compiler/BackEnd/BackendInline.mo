@@ -44,7 +44,6 @@ public import BackendDAE;
 public import DAE;
 public import Inline;
 public import SCode;
-public import Values;
 
 protected
  import BackendVarTransform;

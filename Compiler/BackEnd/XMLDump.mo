@@ -101,7 +101,6 @@ protected import Print;
 protected import Util;
 protected import Types;
 protected import DAEDump;
-protected import ValuesUtil;
 protected import ClassInf;
 protected import System;        // for stringReplace
 import ZeroCrossings;

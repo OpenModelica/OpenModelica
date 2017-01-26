@@ -39,7 +39,6 @@ import File;
 protected
 import BackendDAE.VarKind;
 import CR=ComponentReference;
-import CodegenC;
 import CodegenUtil;
 import DAE.{Exp,Type};
 import Dump;

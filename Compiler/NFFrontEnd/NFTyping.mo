@@ -53,15 +53,12 @@ import NFType.Type;
 import Operator = NFOperator;
 
 protected
-import ComponentReference;
-import Error;
 import Inst = NFInst;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Types;
 import ClassInf;
 import InstUtil = NFInstUtil;
-import Static;
 import Func = NFFunc;
 import NFClass.ClassTree;
 

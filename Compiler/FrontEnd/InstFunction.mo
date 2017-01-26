@@ -54,7 +54,6 @@ public import UnitAbsyn;
 
 protected import Lookup;
 protected import Inst;
-import DAEDump;
 protected import InstUtil;
 protected import UnitAbsynBuilder;
 protected import ElementSource;

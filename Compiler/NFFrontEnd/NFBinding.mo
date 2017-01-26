@@ -39,7 +39,6 @@ public
 
 protected
   import Dump;
-  import ExpressionDump;
   import Binding = NFBinding;
 
 public

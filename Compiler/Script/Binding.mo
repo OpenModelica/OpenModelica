@@ -5,7 +5,6 @@ public import Absyn;
 public import SCode;
 public import SCodeDump;
 public import Dump;
-public import Print;
 
 protected import SCodeUtil;
 protected import Interactive;

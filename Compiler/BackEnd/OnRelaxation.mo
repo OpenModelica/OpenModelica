@@ -52,7 +52,6 @@ protected import DumpGraphML;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
-protected import Flags;
 protected import HashSet;
 protected import HashTable4;
 protected import List;

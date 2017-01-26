@@ -55,7 +55,6 @@ protected import ClassInf;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
-protected import DynamicOptimization;
 protected import ElementSource;
 protected import Error;
 protected import Expression;

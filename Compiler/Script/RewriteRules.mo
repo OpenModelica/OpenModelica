@@ -85,7 +85,6 @@ protected import GlobalScriptDump;
 protected import List;
 protected import Parser;
 protected import System;
-protected import Util;
 
 // frontend rewrite stuff
 // ----------------------

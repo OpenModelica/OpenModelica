@@ -58,10 +58,8 @@ import ExecStat;
 import Flags;
 import HpcOmMemory;
 import HpcOmScheduler;
-import Initialization;
 import List;
 import SimCodeUtil;
-import SimCodeFunctionUtil;
 import System;
 import Util;
 

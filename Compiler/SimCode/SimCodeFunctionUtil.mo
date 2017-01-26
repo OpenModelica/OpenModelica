@@ -34,6 +34,7 @@ encapsulated package SimCodeFunctionUtil "SimCode functions not related to equat
 import DAE;
 import HashTableExpToIndex;
 import SimCodeFunction;
+import SimCodeVar;
 
 protected
 
@@ -43,7 +44,6 @@ import CevalScript;
 import ComponentReference;
 import DAEDump;
 import DAEUtil;
-import Debug;
 import ElementSource;
 import Error;
 import Expression;

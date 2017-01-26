@@ -47,7 +47,6 @@ protected import BackendDAEEXT;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendInline;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendVarTransform;
@@ -60,7 +59,6 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
-protected import FCore;
 protected import Flags;
 protected import HashTable2;
 protected import HashTable3;
@@ -74,8 +72,6 @@ protected import SCode;
 protected import Sorting;
 protected import System;
 protected import Util;
-protected import Values;
-protected import ValuesUtil;
 
 
 // =============================================================================

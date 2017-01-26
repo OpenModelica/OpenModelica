@@ -74,7 +74,6 @@ import InstUtil;
 import List;
 import Lookup;
 import MetaModelica.Dangerous;
-import MetaUtil;
 import SCodeUtil;
 import Static;
 import System;

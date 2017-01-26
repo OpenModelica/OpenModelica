@@ -51,13 +51,11 @@ public import Prefix;
 
 // protected imports
 protected import AvlSetString;
-protected import ComponentReference;
 protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Flags;
 protected import FGraph;
-protected import FNode;
 protected import Inst;
 protected import InstUtil;
 protected import List;

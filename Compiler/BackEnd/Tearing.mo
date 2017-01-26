@@ -51,7 +51,6 @@ protected import BackendVariable;
 protected import Config;
 protected import DoubleEndedList;
 protected import DumpGraphML;
-protected import ElementSource;
 protected import Error;
 protected import ExecStat.execStat;
 protected import Expression;

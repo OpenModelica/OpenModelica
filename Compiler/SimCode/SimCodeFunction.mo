@@ -38,7 +38,6 @@ import Absyn;
 import DAE;
 import HashTableStringToPath;
 import Tpl;
-import SimCodeVar;
 
 uniontype FunctionCode
   "Root data structure containing information required for templates to

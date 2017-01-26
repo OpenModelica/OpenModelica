@@ -48,7 +48,6 @@ import NFInstNode.InstNode;
 import SCode;
 
 protected
-import Dump;
 import Error;
 import List;
 

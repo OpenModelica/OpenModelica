@@ -1,8 +1,8 @@
 #!/bin/bash
 
-for f in ../*/*.mo; do
+for f in "$@"; do
   case $f in
-    *Template*)
+    *Template*TV.mo)
       SKIP=1
       ;;
     *susan_codegen*)
@@ -16,7 +16,7 @@ for f in ../*/*.mo; do
     continue
   fi
   for i in `grep -o "import \+[A-Za-z0-9_]\+ *;" "$f" | cut -d" " -f2 | cut -d";" -f1`; do
-    if ! grep -q "$i[.]" "$f"; then
+    if ! grep "$i" "$f" | grep -q -v "import \+$i *[;]"; then
       echo "Unused import $i in $f"
       sed -i "/^[a-z]* *import \+$i *;/d" "$f"
     fi

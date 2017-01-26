@@ -41,7 +41,6 @@ public import DAE;
 
 protected import BaseHashSet;
 protected import ClassInf;
-protected import ConnectUtil;
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;

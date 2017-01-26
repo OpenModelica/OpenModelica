@@ -50,7 +50,6 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import ExpressionDump;
 protected import Flags;
-protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import Util;

@@ -49,7 +49,6 @@ protected import Differentiate;
 protected import ElementSource;
 protected import Expression;
 protected import ExpressionDump;
-protected import BackendDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;

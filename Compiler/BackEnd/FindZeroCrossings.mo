@@ -40,10 +40,8 @@ encapsulated package FindZeroCrossings
 import Absyn;
 import BackendDAE;
 import DAE;
-import FCore;
 
 protected
-import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;

@@ -39,7 +39,6 @@ import NFStatement.Statement;
 import SCode.Element;
 import Type = NFType;
 import Array;
-import Error;
 
 encapsulated package ClassTree
   uniontype Entry

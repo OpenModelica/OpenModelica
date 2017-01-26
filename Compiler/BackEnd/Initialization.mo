@@ -41,7 +41,6 @@ import Absyn;
 import BackendDAE;
 import BackendDAEFunc;
 import DAE;
-import FCore;
 import HashSet;
 import Util;
 

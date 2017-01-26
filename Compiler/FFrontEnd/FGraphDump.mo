@@ -70,7 +70,6 @@ type Types = list<DAE.Type>;
 
 protected
 import Flags;
-import List;
 import Dump;
 import Absyn;
 import Util;

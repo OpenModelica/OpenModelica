@@ -32,6 +32,7 @@
 encapsulated uniontype NFOperator
 protected
   import Operator = NFOperator;
+  import Util;
 
 public
   import Type = NFType;

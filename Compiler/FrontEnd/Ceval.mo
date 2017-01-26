@@ -64,7 +64,6 @@ public import Lookup;
 
 // protected imports
 protected import BackendInterface;
-protected import BaseHashTable;
 protected import ComponentReference;
 protected import Config;
 protected import Debug;
@@ -73,7 +72,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
-protected import HashTable;
 protected import InstBinding;
 protected import InstUtil;
 protected import List;

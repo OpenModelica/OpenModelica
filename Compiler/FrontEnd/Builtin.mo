@@ -41,7 +41,6 @@ encapsulated package Builtin
 
 import Absyn;
 import DAE;
-import Error;
 import SCode;
 import FCore;
 import FGraph;
@@ -54,12 +53,6 @@ import FBuiltin;
 import Flags;
 import FGraphBuildEnv;
 import Global;
-import List;
-import MetaUtil;
-import Parser;
-import SCodeUtil;
-import Settings;
-import System;
 import Util;
 
 public function variableIsBuiltin

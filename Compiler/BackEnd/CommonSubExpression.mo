@@ -45,14 +45,11 @@ import Array;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
-import BackendDAEOptimize;
 import BackendVarTransform;
 import BackendVariable;
 import BaseHashTable;
 import ComponentReference;
-import DAEDump;
 import DAEUtil;
-import Error;
 import ExpandableArray;
 import Expression;
 import ExpressionDump;
@@ -61,12 +58,9 @@ import ExpressionSimplify;
 import Global;
 import HashTableExpToExp;
 import HashTableExpToIndex;
-import HpcOmEqSystems;
 import HpcOmTaskGraph;
 import List;
-import Print;
 import ResolveLoops;
-import SynchronousFeatures;
 import Types;
 
 uniontype CSE_Equation

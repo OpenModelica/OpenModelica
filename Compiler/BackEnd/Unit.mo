@@ -39,13 +39,13 @@ encapsulated package Unit
 
 public
 import DAE;
+import HashTableStringToUnit;
+import HashTableUnitToString;
 import System;
 
 protected
 import ComponentReference;
 import Error;
-import HashTableStringToUnit;
-import HashTableUnitToString;
 import Util;
 
 
