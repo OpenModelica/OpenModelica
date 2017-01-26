@@ -193,16 +193,12 @@ algorithm
           // check solverMethod
           if stringLength(solverMethod) > 7 and substring(solverMethod, 1, 8) == "Explicit" then
             if solverMethod <> "ExplicitEuler" then
-              Error.addCompilerWarning("Solving clocked continuous equations with " +
-                                       "ExplicitEuler instead of specified " + solverMethod + ". "
-                                       + "Supporting ImplicitEuler, SemiImplicitEuler and ExplicitEuler.");
+              Error.addMessage(Error.CLOCK_SOLVERMETHOD, {"ExplicitEuler", solverMethod});
               solverMethod := "ExplicitEuler";
             end if;
           elseif stringLength(solverMethod) > 0 and solverMethod <> "ImplicitEuler"
-              and solverMethod <> "SemiImplicitEuler" then
-            Error.addCompilerWarning("Solving clocked continuous equations with " +
-                                     "ImplicitEuler instead of specified " + solverMethod + ". "
-                                     + "Supporting ImplicitEuler, SemiImplicitEuler and ExplicitEuler.");
+              and solverMethod <> "SemiImplicitEuler" and solverMethod <> "ImplicitTrapezoid" then
+            Error.addMessage(Error.CLOCK_SOLVERMETHOD, {"ImplicitEuler", solverMethod});
             solverMethod := "ImplicitEuler";
           end if;
           // replace der(x) with $DER.x and collect derVars x
@@ -221,12 +217,18 @@ algorithm
           for derVar in derVars loop
             var := listGet(BackendVariable.getVar(derVar, syst.orderedVars), 1);
             exp := DAE.CALL(Absyn.IDENT(name = "der"), {DAE.CREF(derVar, var.varType)}, DAE.callAttrBuiltinImpureReal);
-            exp := applyEulerMethod(exp, {});
+            exp := substituteFiniteDifference(exp);
             exp2 := DAE.CREF(ComponentReference.crefPrefixDer(derVar), var.varType);
             if solverMethod == "ExplicitEuler" then
               // introduce states to delay derivatives; see MLS 3.3, section 16.8.2 Solver Methods
               exp2 := DAE.CALL(Absyn.IDENT(name = "previous"), {exp2}, DAE.callAttrBuiltinImpureReal);
+            elseif solverMethod == "ImplicitTrapezoid" then
+              // evaluate derivatives at beginning and end of interval; see MLS 3.3, section 16.8.2 Solver Methods
+              exp2 := DAE.BINARY(exp2, DAE.ADD(DAE.T_REAL_DEFAULT),
+                                 DAE.CALL(Absyn.IDENT(name = "previous"), {exp2}, DAE.callAttrBuiltinImpureReal));
+              exp2 := DAE.BINARY(DAE.RCONST(0.5), DAE.MUL(DAE.T_REAL_DEFAULT), exp2);
             end if;
+            // clocked continuous states are fixed at first tick
             exp2 := DAE.IFEXP(DAE.CALL(Absyn.IDENT(name = "firstTick"), {}, DAE.callAttrBuiltinImpureBool),
                               DAE.RCONST(0), exp2);
             eq := BackendDAE.EQUATION(exp, exp2, var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
@@ -330,21 +332,21 @@ algorithm
   end match;
 end shiftDerVars;
 
-protected function applyEulerMethod1 "helper to applyEulerMethod"
+protected function substituteFiniteDifference1 "helper to substituteFiniteDifference"
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inDerVars;
   output DAE.Exp outExp;
   output list<DAE.ComponentRef> outDerVars;
 algorithm
-  (outExp, outDerVars) := Expression.traverseExpBottomUp(inExp, applyEulerMethod, inDerVars);
-end applyEulerMethod1;
+  (outExp, outDerVars) := Expression.traverseExpBottomUp(inExp, substituteFiniteDifference, inDerVars);
+end substituteFiniteDifference1;
 
-protected function applyEulerMethod
+protected function substituteFiniteDifference
 "Convert continous-time to clocked expression by replacing
  der(x) -> (x - previous(x)) / interval().
  author: rfranke"
   input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inDerVars;
+  input list<DAE.ComponentRef> inDerVars = {};
   output DAE.Exp outExp;
   output list<DAE.ComponentRef> outDerVars;
 algorithm
@@ -367,7 +369,7 @@ algorithm
       then (exp, x :: inDerVars);
     else (inExp, inDerVars);
   end match;
-end applyEulerMethod;
+end substituteFiniteDifference;
 
 protected function markClockedStates
 "Collect discrete states and mark them for further processing.
