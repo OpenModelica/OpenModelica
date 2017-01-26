@@ -864,6 +864,8 @@ public constant Message USER_DEFINED_TEARING_ERROR = MESSAGE(577, SYMBOLIC(), ER
   Util.gettext("Wrong usage of user defined tearing: %s Make sure you use user defined tearing as stated in the flag description."));
 public constant Message USER_TEARING_VARS = MESSAGE(578, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Following iteration variables are selected by the user for strong component %s (DAE kind: %s):\n%s"));
+public constant Message CLASS_EXTENDS_TARGET_NOT_FOUND = MESSAGE(579, TRANSLATION(), ERROR(),
+  Util.gettext("Base class targeted by class extends %s not found in the inherited classes."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

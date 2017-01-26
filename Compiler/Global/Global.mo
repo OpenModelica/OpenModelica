@@ -76,6 +76,8 @@ constant Integer fgraph_nextId = 22;
 constant Integer backendDAE_cseIndex = 23;
 // strong component index
 constant Integer strongComponent_index = 24;
+// class extends
+constant Integer classExtends_index = 25;
 
 // ----------------------
 
