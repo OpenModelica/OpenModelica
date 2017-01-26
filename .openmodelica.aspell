@@ -53,3 +53,8 @@ OMCFlags
 OMEdit
 OMNotebook
 setCommandLineOptions
+solverMethod
+ExplicitEuler
+ImplicitEuler
+ImplicitTrapezoid
+SemiImplicitEuler
