@@ -171,34 +171,16 @@ end startPositionFromExp;
 
 public function charsTillEndOfLine
   input list<String> inChars;
-  input Integer inAccCount;
-  output Integer outCharsTillEnd;
+  input output Integer outCharsTillEnd;
+protected
+  Integer i;
 algorithm
-  (outCharsTillEnd) := charsTillEndOfLine2(1,inChars,inAccCount-1); // -1 because we will count the first one an extra time...
+  for c in inChars loop
+    i := stringCharInt(c);
+    if (i == 10) or (i == 13) then return; end if;
+    outCharsTillEnd := outCharsTillEnd + (if i == 9 then TabSpaces else 1); // \t counts as 4 spaces
+  end for;
 end charsTillEndOfLine;
-
-public function charsTillEndOfLine2
-  input Integer head;
-  input list<String> rest;
-  input Integer accCount;
-  output Integer outCharsTillEnd;
-algorithm
-  (outCharsTillEnd) := match (head, rest, accCount)
-    local
-      list<String> chars;
-      String c;
-    case (10,_,_) then accCount; // \n
-    case (13,_,_) then accCount; // \r
-    case (9,c::chars,_)
-      then charsTillEndOfLine2(stringCharInt(c),chars,accCount+4); // \t counts as 4 spaces
-    case (_,c::chars,_)
-      then charsTillEndOfLine2(stringCharInt(c),chars,accCount+1);
-
-    case (_,{},_)
-      then accCount;
-
-  end match;
-end charsTillEndOfLine2;
 
 
 public function makeStartLineInfo
@@ -411,38 +393,28 @@ algorithm
 end parseErrorPrevPositionOptInfoChars;
 
 public function expectChar
-  input list<String> inChars;
-  input LineInfo inLineInfo;
+  input output list<String> chars;
+  input output LineInfo lineInfo;
   input String inExpectedChar;
-
-  output list<String> outChars;
-  output LineInfo outLineInfo;
 algorithm
-  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inExpectedChar)
+  chars := match (chars)
     local
-      list<String> chars;
+      list<String> rest;
       LineInfo linfo;
-      String ec, c;
+      String c;
 
-    case (c :: chars, linfo, ec)
-      equation
-        true = stringEq(c, ec);
-      then (chars, linfo);
+    case (c :: rest)
+      guard stringEq(c, inExpectedChar)
+      then rest;
 
-    case (chars, linfo, ec)
+    case (_)
       equation
         // false = stringEq(c, ec));
         // or chars = {}
-        (linfo) = parseError(chars, linfo, "Expected character '" + ec + "' at the position.", false);
+        (lineInfo) = parseError(chars, lineInfo, "Expected character '" + inExpectedChar + "' at the position.", false);
         //fprint(Flags.FAILTRACE, "???Expected character '" + ec + "'\n");
-      then (chars, linfo);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- !!! TplParser.expectChar failed.\n");
-      then fail();
-
-  end matchcontinue;
+      then chars;
+  end match;
 end expectChar;
 
 //intended to say error before the last interleave, but need
