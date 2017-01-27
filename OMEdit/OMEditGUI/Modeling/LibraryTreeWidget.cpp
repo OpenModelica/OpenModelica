@@ -2170,7 +2170,37 @@ void LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLi
     } else if (lineNumber > pLibraryTreeItem->mClassInformation.lineNumberEnd) {
       after += currentLine + "\n";
     } else if (pLibraryTreeItem->inRange(lineNumber)) {
-      text += currentLine + "\n";
+      /* Ticket #4233
+       * We could have code like this,
+       *
+       * package P
+       *   package Q
+       *       model M1
+       *      end M1;
+       *
+       *      model M2
+       *      end M2; end Q;
+       *   end P;
+       *
+       * So we need to conside column start and end.
+       */
+      if (lineNumber == pLibraryTreeItem->mClassInformation.lineNumberStart) {
+        QString leftStr = currentLine.left(pLibraryTreeItem->mClassInformation.columnNumberStart - 1);
+        int nonSpaceIndex = TabSettings::firstNonSpace(leftStr);
+        /* If there is no other text on the first line of class then take the whole line.
+         */
+        if (nonSpaceIndex >= pLibraryTreeItem->mClassInformation.columnNumberStart - 1) {
+          text += currentLine + "\n";
+        } else {
+          before += currentLine.left(pLibraryTreeItem->mClassInformation.columnNumberStart - 1);
+          text += currentLine.mid(pLibraryTreeItem->mClassInformation.columnNumberStart - 1) + "\n";
+        }
+      } else if (lineNumber == pLibraryTreeItem->mClassInformation.lineNumberEnd) {
+        text += currentLine.left(pLibraryTreeItem->mClassInformation.columnNumberEnd);
+        after += currentLine.mid(pLibraryTreeItem->mClassInformation.columnNumberEnd) + "\n";
+      } else {
+        text += currentLine + "\n";
+      }
     }
     lineNumber++;
   }

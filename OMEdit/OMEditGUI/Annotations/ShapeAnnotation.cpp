@@ -783,7 +783,7 @@ QVariant ShapeAnnotation::getDynamicValue(QString name)
       VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
       VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(fullName, pVariablesTreeModel->getRootVariablesTreeItem());
       if (pVariablesTreeItem != NULL) {
-        dynamicValue = pVariablesTreeItem->getValue(pVariablesTreeItem->getUnit(), pMainWindow->getOMCProxy());
+        dynamicValue = pVariablesTreeItem->getValue(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getUnit());
       }
     }
   }
