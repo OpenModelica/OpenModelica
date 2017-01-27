@@ -851,6 +851,8 @@ extern double SystemImpl__time(void)
 
 extern int SystemImpl__directoryExists(const char *str)
 {
+  /* if the string is NULL return 0 */
+  if (!str) return 0;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   WIN32_FIND_DATA FileData;
   HANDLE sh;

@@ -226,7 +226,7 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   /* get the temporary directory */
   /* if corbaObjectReferenceFilePath value is set and is a valid directory then use it for dumping the object reference file. */
   const char* tempPath = NULL;
-  if (SystemImpl__directoryExists(corbaObjectReferenceFilePath))
+  if (!corbaObjectReferenceFilePath && SystemImpl__directoryExists(corbaObjectReferenceFilePath))
     tempPath = corbaObjectReferenceFilePath;
   else
     tempPath = SettingsImpl__getTempDirectoryPath();
