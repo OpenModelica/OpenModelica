@@ -1618,6 +1618,46 @@ void MainWindow::tileSubWindowsVertically()
   }
 }
 
+/*!
+ * \brief MainWindow::toggleTabOrSubWindowView
+ * Slot activated when mpToggleTabOrSubWindowView triggered signal is raised.\n
+ * Toggles between tab or sub-window view mode.
+ */
+void MainWindow::toggleTabOrSubWindowView()
+{
+  QMdiArea *pMdiArea = 0;
+  // get the current QMdiArea
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      pMdiArea = mpModelWidgetContainer;
+      break;
+    case 2:
+      pMdiArea = mpPlotWindowContainer;
+      break;
+    default:
+      return;
+  }
+  // set the QMdiArea view mode
+  if (pMdiArea) {
+    QMdiSubWindow *pSubWindow = 0;
+    switch (pMdiArea->viewMode()) {
+      case QMdiArea::SubWindowView:
+        pMdiArea->setViewMode(QMdiArea::TabbedView);
+        break;
+      case QMdiArea::TabbedView:
+        pMdiArea->setViewMode(QMdiArea::SubWindowView);
+        pSubWindow = pMdiArea->currentSubWindow();
+        if (pSubWindow) {
+          pSubWindow->show();
+          pSubWindow->setWindowState(Qt::WindowMaximized);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 void MainWindow::instantiateModel()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -2545,6 +2585,10 @@ void MainWindow::createActions()
   mpTileWindowsVerticallyAction = new QAction(tr("Tile Windows Vertically"), this);
   mpTileWindowsVerticallyAction->setStatusTip(tr("Arranges all child windows in a vertically tiled pattern"));
   connect(mpTileWindowsVerticallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsVertically()));
+  // Toggle between tab or sub-window view
+  mpToggleTabOrSubWindowView = new QAction(tr("Toggle Tab/Sub-window View"), this);
+  mpToggleTabOrSubWindowView->setStatusTip(tr("Toggle between tab or sub-window view mode"));
+  connect(mpToggleTabOrSubWindowView, SIGNAL(triggered()), SLOT(toggleTabOrSubWindowView()));
   // Simulation Menu
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
@@ -2914,6 +2958,8 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpTileWindowsVerticallyAction);
   pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
+  pViewMenu->addSeparator();
+  pViewMenu->addAction(mpToggleTabOrSubWindowView);
   pViewMenu->addSeparator();
   pViewMenu->addAction(mpShowGridLinesAction);
   pViewMenu->addAction(mpResetZoomAction);

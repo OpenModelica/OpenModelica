@@ -1502,7 +1502,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 1, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
   // Modeling View Mode
-  mpModelingViewModeGroupBox = new QGroupBox(tr("Modeling View Mode"));
+  mpModelingViewModeGroupBox = new QGroupBox(tr("Default Modeling View Mode"));
   mpModelingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
   mpModelingTabbedViewRadioButton->setChecked(true);
   mpModelingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
@@ -3768,7 +3768,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpAutoScaleCheckBox, 0, 0);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Plotting View Mode
-  mpPlottingViewModeGroupBox = new QGroupBox(tr("Plotting View Mode"));
+  mpPlottingViewModeGroupBox = new QGroupBox(tr("Default Plotting View Mode"));
   mpPlottingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
   mpPlottingTabbedViewRadioButton->setChecked(true);
   mpPlottingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
