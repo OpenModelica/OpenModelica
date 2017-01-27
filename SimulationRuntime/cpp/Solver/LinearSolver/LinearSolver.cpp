@@ -165,7 +165,7 @@ void LinearSolver::initialize()
 			_iterationStatus = SOLVERERROR;
 		}
 	}
-	LOGGER_WRITE("LinearSolver: initialized",LC_NLS,LL_DEBUG);
+	LOGGER_WRITE("LinearSolver: initialized", LC_LS, LL_DEBUG);
 }
 
 void LinearSolver::solve()
@@ -237,7 +237,7 @@ void LinearSolver::solve()
 		{
 			dgetc2_(&_dimSys, _A, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
 			dgesc2_(&_dimSys, _A, &_dimSys, _b, _ihelpArray, _jhelpArray, _scale);
-			LOGGER_WRITE("LinearSolver: Linear system singular, using perturbed system matrix.", LC_NLS, LL_DEBUG);
+			LOGGER_WRITE("LinearSolver: Linear system singular, using perturbed system matrix.", LC_LS, LL_DEBUG);
 			_iterationStatus = DONE;
 		}
 		else
