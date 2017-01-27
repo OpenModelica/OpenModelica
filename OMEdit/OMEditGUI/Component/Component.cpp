@@ -1465,7 +1465,7 @@ void Component::createActions()
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Fetch interfaces action
-  mpFetchInterfaceDataAction = new QAction(Helper::fetchInterfaceData, mpGraphicsView);
+  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, mpGraphicsView);
   mpFetchInterfaceDataAction->setStatusTip(tr("Fetch interface data for this external model"));
   connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
   // Todo: Connect /robbr
@@ -2488,6 +2488,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         break;
       case LibraryTreeItem::MetaModel:
         menu.addAction(pComponent->getFetchInterfaceDataAction());
+        menu.addSeparator();
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
     }

@@ -3309,7 +3309,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   }
   // first remove the result file.
   if (QFile::exists(fileName)) {
-    QFile::remove(fileName);
+    if (!QFile::remove(fileName)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE).arg(fileName),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
   }
   // write the result file.
   QFile file(fileName);
@@ -3437,7 +3441,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   }
   // first remove the visual xml file.
   if (QFile::exists(fileName)) {
-    QFile::remove(fileName);
+    if (!QFile::remove(fileName)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE).arg(fileName),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
   }
   // can we write visual xml file.
   if (!canWriteVisualXMLFile) {

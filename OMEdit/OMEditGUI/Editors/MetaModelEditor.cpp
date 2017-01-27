@@ -578,6 +578,7 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces, QString singleMo
           interfacePoint.setAttribute("Causality", interfaceDataElement.attribute("Causality"));
           interfacePoint.setAttribute("Domain", interfaceDataElement.attribute("Domain"));
           subModel.appendChild(interfacePoint);
+          setPlainText(mXmlDocument.toString());
           Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
             pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"),
