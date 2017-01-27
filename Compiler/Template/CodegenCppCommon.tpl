@@ -61,21 +61,20 @@ template crefToCStrForArray(ComponentRef cr, Text& dims)
 ::=
   match cr
   case CREF_IDENT(__) then
-  let &dims+=listLength(subscriptLst)
-  '<%ident%>'
- case CREF_QUAL(__) then               '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStrForArray(componentRef,dims)%>'
-
+    let &dims+=listLength(subscriptLst)
+    '<%ident%>_'
+  case CREF_QUAL(__) then
+    '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStrForArray(componentRef,dims)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStrForArray;
 
-
 template crefToCStr1(ComponentRef cr, Boolean useFlatArrayNotation)
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%>'
- case CREF_QUAL(__) then               '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef,useFlatArrayNotation)%>'
-
+  case CREF_IDENT(__) then '<%ident%>_'
+  case CREF_QUAL(__) then
+    '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef,useFlatArrayNotation)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
@@ -316,7 +315,7 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
  "Helper function to cref."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%><%subscriptsToCStr(subscriptLst, useFlatArrayNotation)%>'
+  case CREF_IDENT(__) then '<%ident%>_<%subscriptsToCStr(subscriptLst, useFlatArrayNotation)%>'
   case CREF_QUAL(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
@@ -2810,7 +2809,7 @@ case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=
     let lhsStr = contextCref(crefStripSubs(cr), context, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-      '_<%lhsStr%>_P_<%var.name%> = <%rhsStr%>.<%var.name%>;'
+      '_<%lhsStr%>P_<%var.name%>_ = <%rhsStr%>.<%var.name%>;'
     ; separator="\n"
     %>
     >>
