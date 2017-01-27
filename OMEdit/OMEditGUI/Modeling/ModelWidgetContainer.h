@@ -377,7 +377,8 @@ public:
   void updateUndoRedoActions();
   void updateDynamicResults(QString resultFileName);
   QString getResultFileName() {return mResultFileName;}
-  void writeVisualXMLFile();
+  bool writeCoSimulationResultFile(QString fileName);
+  bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -460,15 +461,20 @@ public:
   bool isShowGridLines() {return mShowGridLines;}
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
+#if !defined(WITHOUT_OSG)
+  void updateThreeDViewer(ModelWidget *pModelWidget);
+#endif
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
+  QMdiSubWindow *mpLastActiveSubWindow;
   void loadPreviousViewType(ModelWidget *pModelWidget);
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
+  void updateThreeDViewer(QMdiSubWindow *pSubWindow);
   void saveModelWidget();
   void saveAsModelWidget();
   void saveTotalModelWidget();

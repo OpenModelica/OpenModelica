@@ -1438,6 +1438,7 @@ void MetaModelSubModelAttributes::setUpDialog()
   mpGeometryFileLabel = new Label(tr("Geometry File:"));
   mpGeometryFileTextBox = new QLineEdit;
   mpGeometryFileBrowseButton = new QPushButton(Helper::browse);
+  mpGeometryFileBrowseButton->setAutoDefault(false);
   connect(mpGeometryFileBrowseButton, SIGNAL(clicked()), this, SLOT(browseGeometryFile()));
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);

@@ -2249,6 +2249,7 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
     }
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
     pMetaModelEditor->addInterfacesData(interfaces, singleModel);
+    pLibraryTreeItem->getModelWidget()->updateModelText();
   }
 }
 

@@ -82,8 +82,11 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mExactStep = false;
   mModelFile = "";
   mGeometryFile = "";
-  mPosition = "";
-  mAngle321 = "";
+  mPosition = "0,0,0";
+  mAngle321 = "0,0,0";
+  mDimensions = 3;
+  mTLMCausality = StringHandler::getTLMCausality(StringHandler::TLMBidirectional);
+  mDomain = StringHandler::getTLMDomain(StringHandler::Mechanical);
 }
 
 /*!
@@ -131,6 +134,9 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mGeometryFile = pComponentInfo->getGeometryFile();
   mPosition = pComponentInfo->getPosition();
   mAngle321 = pComponentInfo->getAngle321();
+  mDimensions = pComponentInfo->getDimensions();
+  mTLMCausality = pComponentInfo->getTLMCausality();
+  mDomain = pComponentInfo->getDomain();
 }
 
 /*!
@@ -1319,7 +1325,7 @@ void Component::drawInterfacePoints()
           pComponentInfo->setAngle321(interfacePoint.attribute("Angle321", "0,0,0"));
           pComponentInfo->setDimensions(interfacePoint.attribute("Dimensions", "3").toInt());
           pComponentInfo->setTLMCausality(interfacePoint.attribute("Causality",
-                                                       StringHandler::getTLMCausality(StringHandler::TLMBidirectional)));
+                                                                   StringHandler::getTLMCausality(StringHandler::TLMBidirectional)));
           pComponentInfo->setDomain(interfacePoint.attribute("Domain",
                                                              StringHandler::getTLMDomain(StringHandler::Mechanical)));
           mComponentsList.append(new Component(pComponentInfo, this));
@@ -1459,7 +1465,7 @@ void Component::createActions()
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Fetch interfaces action
-  mpFetchInterfaceDataAction = new QAction(Helper::fetchInterfaceData, mpGraphicsView);
+  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, mpGraphicsView);
   mpFetchInterfaceDataAction->setStatusTip(tr("Fetch interface data for this external model"));
   connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
   // Todo: Connect /robbr
@@ -2482,6 +2488,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         break;
       case LibraryTreeItem::MetaModel:
         menu.addAction(pComponent->getFetchInterfaceDataAction());
+        menu.addSeparator();
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
     }
@@ -2561,6 +2568,12 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
       }
     }
+#if !defined(WITHOUT_OSG)
+    // if subModel selection is changed in MetaModel
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+      MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
+    }
+#endif
   } else if (change == QGraphicsItem::ItemPositionHasChanged) {
     emit transformChange();
   }

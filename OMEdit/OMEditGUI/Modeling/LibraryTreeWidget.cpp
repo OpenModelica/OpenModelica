@@ -2485,7 +2485,8 @@ void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
     fail = !QFile::remove(fileInfo.absoluteFilePath());
   }
   if (fail) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unable to delete <b>%1</b>.")
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE)
                                                           .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
   }
   pLibraryTreeItem->deleteLater();
@@ -4212,7 +4213,7 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
       }
       QFile::copy(modelFileInfo.absoluteFilePath(), newModelFilePath);
       // copy the geomtry file to the created directory
-      if (pComponent) {
+      if (pComponent && !pComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
         QFileInfo geometryFileInfo(pComponent->getComponentInfo()->getGeometryFile());
         QString newGeometryFilePath = directoryPath + "/" + geometryFileInfo.fileName();
         if (geometryFileInfo.absoluteFilePath().compare(newGeometryFilePath) != 0) {

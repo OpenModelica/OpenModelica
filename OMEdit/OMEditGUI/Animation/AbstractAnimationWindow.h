@@ -54,6 +54,7 @@ public:
   AbstractAnimationWindow(QWidget *pParent);
   void openAnimationFile(QString fileName);
   virtual void createActions();
+  void clearView();
 private:
   bool loadVisualization();
 protected:
