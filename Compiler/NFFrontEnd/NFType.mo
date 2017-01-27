@@ -178,6 +178,16 @@ public
     end match;
   end isEnumeration;
 
+  function isComplex
+    input Type ty;
+    output Boolean isComplex;
+  algorithm
+    isComplex := match ty
+      case COMPLEX() then true;
+      else false;
+    end match;
+  end isComplex;
+
   function isScalarArray
     input Type ty;
     output Boolean isScalar;

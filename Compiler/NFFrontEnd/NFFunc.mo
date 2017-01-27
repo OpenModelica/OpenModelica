@@ -140,13 +140,11 @@ algorithm
        SCode.COMMENT(NONE(), NONE()),
        NONE(),
        info), scope);
-
   fakeComponent := Inst.instComponent(fakeComponent, scope, InstNode.parent(classNode));
 
   // we need something better than this as this will type the function twice
   fakeComponent := Typing.typeComponent(fakeComponent);
   (classNode, classType) := Typing.typeClass(classNode);
-
   // see if the class is a builtin function (including definitions in the ModelicaBuiltin.mo), record or normal function
 
   // is builtin function defined in ModelicaBuiltin.mo
@@ -163,7 +161,6 @@ algorithm
 
   // is normal function call
   (typedExp, ty, variability) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
-
 end typeFunctionCall;
 
 function getFunctionInputs
@@ -519,7 +516,19 @@ algorithm
             "cat",
             "rem",
             "actualStream",
-            "inStream"});
+            "inStream",
+            // TODO Clock
+            "previous",
+            "hold",
+            "subSample",
+            "superSample",
+            // TODO sample, shiftSample, backSample, noClock
+            "initialState",
+            "transition",
+            "activeState",
+            "ticksInState",
+            "timeInState"
+            });
       then
         b;
 
@@ -745,6 +754,118 @@ algorithm
       then
         (typedExp, ty, vr);
 
+    case (Absyn.CREF_IDENT(name = "previous"), Absyn.FUNCTIONARGS(args = {aexp1}))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      algorithm
+        // TODO? Check that aexp1 is a Component Expression (MLS 3.3, Section 16.2.3) or parameter expression
+        (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall("previous", {dexp1}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+    case (Absyn.CREF_IDENT(name = "hold"), Absyn.FUNCTIONARGS(args = {aexp1}))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      algorithm
+        // TODO? Check that aexp1 is a Component Expression (MLS 3.3, Section 16.2.3) or parameter expression
+        (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall("hold", {dexp1}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+    // subSample(u)/superSample(u), subSample(u, factor)/superSample(u, factor)
+    case (Absyn.CREF_IDENT(name = fnName), Absyn.FUNCTIONARGS(args = afargs))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33) and
+        listMember(fnName, {"subSample", "superSample"}) and
+          (listLength(afargs) == 1 or listLength(afargs) == 2)
+      algorithm
+        if listLength(afargs) == 1 then
+          aexp1 := listHead(afargs);
+          // Create default argument factor=0
+          dexp2 := Expression.INTEGER(0);
+        else
+          {aexp1, aexp2} := afargs;
+          (dexp2, ty2, vr2) := Typing.typeExp(aexp2, scope, info);
+          Type.INTEGER() := ty2;
+          // TODO FIXME  check if vr2 is a parameter expressions
+          // TODO FIXME (evaluate) and check if factor >= 0
+        end if;
+        (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
+
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall(fnName, {dexp1, dexp2}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+    // initialState(state)
+    case (Absyn.CREF_IDENT(name = "initialState"), Absyn.FUNCTIONARGS(args = {aexp1}))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      algorithm
+        (dexp1, ty1, vr) := Typing.typeExp(aexp1, scope, info);
+
+        // MLS 3.3 requires a 'block' instance as argument aexp1.
+        // Checking here for 'complex' types is too broad, but convenient
+        Error.assertionOrAddSourceMessage(Type.isComplex(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+            {"initialState(" + Expression.toString(dexp1) + "), Argument needs to be a block instance.",
+            Absyn.pathString(InstNode.path(scope))}, info);
+
+        ty := Type.NORETCALL();
+
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall("initialState", {dexp1}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+    // transition(from, to, condition, immediate=true, reset=true, synchronize=false, priority=1)
+    case (Absyn.CREF_IDENT(name = "transition"), _)
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      then
+        elabBuiltinTransition(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
+
+    // activeState(state)
+    case (Absyn.CREF_IDENT(name = "activeState"), Absyn.FUNCTIONARGS(args = {aexp1}))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      algorithm
+        (dexp1, ty1, vr) := Typing.typeExp(aexp1, scope, info);
+
+        // MLS 3.3 requires a 'block' instance as argument aexp1.
+        // Checking here for 'complex' types is too broad, but convenient
+        Error.assertionOrAddSourceMessage(Type.isComplex(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+            {"activeState(" + Expression.toString(dexp1) + "), Argument needs to be a block instance.",
+            Absyn.pathString(InstNode.path(scope))}, info);
+
+        ty := Type.BOOLEAN();
+
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall("activeState", {dexp1}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+    // ticksInState()
+    case (Absyn.CREF_IDENT(name = "ticksInState"), Absyn.FUNCTIONARGS(args = {}))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      algorithm
+        ty := Type.INTEGER();
+        vr := DAE.C_VAR();
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall("ticksInState", {}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+    // timeInState()
+    case (Absyn.CREF_IDENT(name = "timeInState"), Absyn.FUNCTIONARGS(args = {}))
+      guard intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33)
+      algorithm
+        ty := Type.REAL();
+        vr := DAE.C_VAR();
+        // create the typed call
+        typedExp := Expression.makeBuiltinCall("timeInState", {}, ty, true);
+      then
+        (typedExp, ty, vr);
+
+
+
     /* adrpo: adapt these to the new structures, see above
     case (Absyn.CREF_IDENT(name = "product"), Absyn.FUNCTIONARGS(args = afargs))
       equation
@@ -909,6 +1030,122 @@ algorithm
 
  end matchcontinue;
 end typeBuiltinFunctionCall;
+
+
+protected function elabBuiltinTransition
+"elaborate the builtin operator
+ transition(from, to, condition, immediate=true, reset=true, synchronize=false, priority=1)"
+  input Absyn.ComponentRef functionName;
+  input Absyn.FunctionArgs functionArgs;
+  input Prefix prefix;
+  input InstNode classNode;
+  input Type classType;
+  input SCode.Element cls;
+  input InstNode scope;
+  input SourceInfo info;
+  output Expression typedExp;
+  output Type ty;
+  output DAE.Const variability;
+protected
+  list<Absyn.Exp>  afargs;
+  list<Absyn.NamedArg> anamed_args;
+  Absyn.Ident argName;
+  Absyn.Exp argValue;
+  array<Absyn.Exp> argExps = listArray({Absyn.STRING("from_NoDefault"), Absyn.STRING("to_NoDefault"),  Absyn.STRING("condition_NoDefault"), Absyn.BOOL(true), Absyn.BOOL(true), Absyn.BOOL(false), Absyn.INTEGER(1)});
+  array<Absyn.Exp> afargsArray;
+  Expression dexp1, dexp2, dexp3, dexp4, dexp5, dexp6, dexp7;
+  Type ty1, ty2, ty3, ty4, ty5, ty6, ty7;
+  DAE.Const vr1, vr2, vr3, vr4, vr5, vr6, vr7;
+  String str;
+  Integer afargsLen;
+algorithm
+  Absyn.FUNCTIONARGS(args=afargs, argNames=anamed_args) := functionArgs;
+  afargsArray := listArray(afargs);
+  afargsLen := listLength(afargs);
+
+  for i in 1:afargsLen loop
+    argExps := arrayUpdate(argExps, i, arrayGet(afargsArray,i));
+  end for;
+
+  for anamed in anamed_args loop
+    Absyn.NAMEDARG(argName, argValue) := anamed;
+    if argName == "from" and afargsLen < 1 then arrayUpdate(argExps, 1, argValue);
+    elseif argName == "to" and afargsLen < 2 then arrayUpdate(argExps, 2, argValue);
+    elseif argName == "condition" and afargsLen < 3 then arrayUpdate(argExps, 3, argValue);
+    elseif argName == "immediate" and afargsLen < 4 then arrayUpdate(argExps, 4, argValue);
+    elseif argName == "reset" and afargsLen < 5 then arrayUpdate(argExps, 5, argValue);
+    elseif argName == "synchronize" and afargsLen < 6 then arrayUpdate(argExps, 6, argValue);
+    elseif argName == "priority" and afargsLen < 7 then arrayUpdate(argExps, 7, argValue);
+    else
+      Error.addSourceMessageAndFail(Error.NO_SUCH_ARGUMENT,
+      {"transition(" + argName + "=" + Dump.dumpExpStr(argValue) + "), no such argument or conflict with unnamed arguments",
+        Absyn.pathString(InstNode.path(scope))}, info);
+    end if;
+  end for;
+
+  // check if first 3 mandatory arguments have been provided
+  for i in 1:3 loop
+    () := match arrayGet(argExps, i)
+      case Absyn.STRING(str)
+        algorithm
+          Error.addSourceMessageAndFail(Error.WRONG_TYPE_OR_NO_OF_ARGS,
+              {"transition(from, to, condition, immediate=true, reset=true, synchronize=false, priority=1), missing " + intString(i) + ". argument",
+              Absyn.pathString(InstNode.path(scope))}, info);
+        then fail();
+      else then ();
+    end match;
+  end for;
+
+  (dexp1, ty1, vr1) := Typing.typeExp(arrayGet(argExps,1), scope, info);
+  (dexp2, ty2, vr2) := Typing.typeExp(arrayGet(argExps,2), scope, info);
+  // MLS 3.3 requires a 'block' instances as argument 1 and 2.
+  // Checking here for 'complex' types is too broad, but convenient
+  Error.assertionOrAddSourceMessage(Type.isComplex(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(" + Expression.toString(dexp1) + ", ...), Argument needs to be a block instance.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+  Error.assertionOrAddSourceMessage(Type.isComplex(ty2),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(..., " + Expression.toString(dexp2) + ", ...), Argument needs to be a block instance.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+
+    // TODO check that variability of arguments below are parameter or constant
+
+  (dexp3, ty3, vr3) := Typing.typeExp(arrayGet(argExps,3), scope, info);
+  Error.assertionOrAddSourceMessage(Type.isBoolean(ty3),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(..., " + Expression.toString(dexp3) + ", ...), Argument needs to be of type Boolean.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+
+  (dexp4, ty4, vr4) := Typing.typeExp(arrayGet(argExps,4), scope, info);
+  Error.assertionOrAddSourceMessage(Type.isBoolean(ty4),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(..., " + Expression.toString(dexp4) + ", ...), Argument needs to be of type Boolean.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+
+  // Error.assertionOrAddSourceMessage(Types.isParameterOrConstant(vr4),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+  //   {"transition(..., " + Expression.toString(dexp4) + ", ...), Argument needs to be of type Boolean.",
+  //     Absyn.pathString(InstNode.path(scope))}, info);
+
+  (dexp5, ty5, vr5) := Typing.typeExp(arrayGet(argExps,5), scope, info);
+  Error.assertionOrAddSourceMessage(Type.isBoolean(ty5),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(..., " + Expression.toString(dexp5) + ", ...), Argument needs to be of type Boolean.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+
+  (dexp6, ty6, vr6) := Typing.typeExp(arrayGet(argExps,6), scope, info);
+  Error.assertionOrAddSourceMessage(Type.isBoolean(ty6),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(..., " + Expression.toString(dexp6) + ", ...), Argument needs to be of type Boolean.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+
+  (dexp7, ty7, vr7) := Typing.typeExp(arrayGet(argExps,7), scope, info);
+  // TODO check that "priority" argument is >= 1
+  Error.assertionOrAddSourceMessage(Type.isInteger(ty7),Error.WRONG_TYPE_OR_NO_OF_ARGS,
+    {"transition(..., " + Expression.toString(dexp7) + ", ...), Argument needs to be of type Integer.",
+      Absyn.pathString(InstNode.path(scope))}, info);
+
+
+  ty := Type.NORETCALL();
+  // create the typed call
+  typedExp := Expression.makeBuiltinCall("transition", {dexp1, dexp2, dexp3, dexp4, dexp5, dexp6, dexp7}, ty, true);
+  variability := DAE.C_UNKNOWN();
+end elabBuiltinTransition;
+
 
 function getFunctionAttributes
   input InstNode funcNode;
