@@ -126,6 +126,60 @@ QDomElement MetaModelEditor::getSubModelElement(QString name)
   return QDomElement();
 }
 
+QStringList MetaModelEditor::getParameterNames(QString subModelName)
+{
+  QStringList ret;
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModelElement = subModelList.at(i).toElement();
+    if(subModelElement.attribute("Name").compare(subModelName) == 0) {
+      QDomElement parameterElement = subModelElement.firstChildElement("Parameter");
+      while(!parameterElement.isNull()) {
+        ret << parameterElement.attribute("Name");
+        parameterElement = parameterElement.nextSiblingElement("Parameter");
+      }
+    }
+  }
+  return ret;
+}
+
+QString MetaModelEditor::getParameterValue(QString subModelName, QString parameterName)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModelElement = subModelList.at(i).toElement();
+    if(subModelElement.attribute("Name").compare(subModelName) == 0) {
+      QDomElement parameterElement = subModelElement.firstChildElement("Parameter");
+      while(!parameterElement.isNull()) {
+        if(parameterElement.attribute("Name").compare(parameterName) == 0) {
+          return parameterElement.attribute("Value");
+        }
+        parameterElement = parameterElement.nextSiblingElement("Parameter");
+      }
+    }
+  }
+  return "";      //Should never happen
+}
+
+void MetaModelEditor::setParameterValue(QString subModelName, QString parameterName, QString value)
+{
+    QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+    for (int i = 0 ; i < subModelList.size() ; i++) {
+      QDomElement subModelElement = subModelList.at(i).toElement();
+      if (subModelElement.attribute("Name").compare(subModelName) == 0) {
+        QDomElement parameterElement = subModelElement.firstChildElement("Parameter");
+        while(!parameterElement.isNull()) {
+            if(parameterElement.attribute("Name").compare(parameterName) == 0) {
+                parameterElement.setAttribute("Value",value);
+            }
+            parameterElement = parameterElement.nextSiblingElement("Parameter");
+        }
+        setPlainText(mXmlDocument.toString());
+        return;
+      }
+    }
+}
+
 /*!
  * \brief MetaModelEditor::getMetaModelName
  * Gets the MetaModel name.
@@ -545,7 +599,7 @@ QString MetaModelEditor::getSimulationStopTime()
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces
  */
-void MetaModelEditor::addInterfacesData(QDomElement interfaces, QString singleModel)
+void MetaModelEditor::addInterfacesData(QDomElement interfaces, QDomElement parameters, QString singleModel)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -627,6 +681,52 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces, QString singleMo
       }
       else {
         subModelInterfaceDataElement = subModelInterfaceDataElement.nextSiblingElement("InterfacePoint");
+      }
+    }
+
+    //Add or update parameters
+    QDomElement parameterDataElement = parameters.firstChildElement();
+    while (!parameterDataElement.isNull()) {
+      subModel = subModelList.at(i).toElement();
+      if (subModel.attribute("Name").compare(parameterDataElement.attribute("model")) == 0 &&
+          (subModel.attribute("Name") == singleModel || singleModel.isEmpty())) {
+        QDomElement parameterPoint;
+        // update parameter
+        //Do nothing if parameter already exists (i.e. never overwrite values)
+        if (!existParameter(subModel.attribute("Name"), parameterDataElement)) {  // insert parameter
+          QDomElement parameterPoint = mXmlDocument.createElement("Parameter");
+          parameterPoint.setAttribute("Name", parameterDataElement.attribute("Name"));
+          parameterPoint.setAttribute("Value", parameterDataElement.attribute("DefaultValue"));
+          subModel.appendChild(parameterPoint);
+        }
+      }
+      parameterDataElement = parameterDataElement.nextSiblingElement();
+    }
+
+    //Remove all parameters in sub model that does not exist in fetched data (i.e. has been externally removed)
+    subModel = subModelList.at(i).toElement();
+    if(subModel.attribute("Name") != singleModel && !singleModel.isEmpty()){
+      continue;   //Ignore other models if single model is specified
+    }
+    pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
+    QDomElement subModelParameterDataElement = subModel.firstChildElement("Parameter");
+    while (!subModelParameterDataElement.isNull()) {
+      bool parameterExists = false;
+      parameterDataElement = parameters.firstChildElement();
+      while (!parameterDataElement.isNull()) {
+        if (subModelParameterDataElement.attribute("Name") == parameterDataElement.attribute("Name") &&
+          subModel.attribute("Name") == parameterDataElement.attribute("model")) {
+          parameterExists = true;
+        }
+        parameterDataElement = parameterDataElement.nextSiblingElement();
+      }
+      if (!parameterExists) {
+        QDomElement elementToRemove = subModelParameterDataElement;
+        subModelParameterDataElement = subModelParameterDataElement.nextSiblingElement("Parameter");
+        subModel.removeChild(elementToRemove);
+      }
+      else {
+        subModelParameterDataElement = subModelParameterDataElement.nextSiblingElement("Parameter");
       }
     }
   }
@@ -830,6 +930,26 @@ bool MetaModelEditor::existInterfacePoint(QString subModelName, QString interfac
         QDomElement interfaceElement = subModelChildren.at(j).toElement();
         if (interfaceElement.tagName().compare("InterfacePoint") == 0 &&
             interfaceElement.attribute("Name").compare(interfaceName) == 0) {
+          return true;
+        }
+      }
+      break;
+    }
+  }
+  return false;
+}
+
+bool MetaModelEditor::existParameter(QString subModelName, QDomElement parameterDataElement)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    if (subModel.attribute("Name").compare(subModelName) == 0) {
+      QDomNodeList subModelChildren = subModel.childNodes();
+      for (int j = 0 ; j < subModelChildren.size() ; j++) {
+        QDomElement parameterElement = subModelChildren.at(j).toElement();
+        if (parameterElement.tagName().compare("Parameter") == 0 &&
+            parameterElement.attribute("Name").compare(parameterDataElement.attribute("Name")) == 0) {
           return true;
         }
       }
@@ -1211,6 +1331,7 @@ void MetaModelHighlighter::initializeSettings()
                   << "\\bSubModels\\b"
                   << "\\bSubModel\\b"
                   << "\\bInterfacePoint\\b"
+                  << "\\bParameter\\b"
                   << "\\bConnections\\b"
                   << "\\bConnection\\b"
                   << "\\bLines\\b"

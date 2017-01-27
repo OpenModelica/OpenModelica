@@ -240,6 +240,11 @@ private:
   Label *mpGeometryFileLabel;
   QLineEdit *mpGeometryFileTextBox;
   QPushButton *mpGeometryFileBrowseButton;
+  QScrollArea *mpParametersScrollArea;
+  QGridLayout *mpParametersLayout;
+  QLabel *mpParametersLabel;
+  QList<QLabel*> mParameterLabels;
+  QList<QLineEdit*> mParameterLineEdits;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

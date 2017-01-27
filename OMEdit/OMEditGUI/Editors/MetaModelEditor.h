@@ -73,6 +73,9 @@ public:
   QDomElement getConnectionsElement();
   QDomNodeList getConnections();
   QDomElement getSubModelElement(QString name);
+  QStringList getParameterNames(QString subModelName);
+  QString getParameterValue(QString subModelName, QString parameterName);
+  void setParameterValue(QString subModelName, QString parameterName, QString value);
   void setMetaModelName(QString name);
   bool addSubModel(Component *pComponent);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
@@ -86,7 +89,7 @@ public:
   bool isSimulationParams();
   QString getSimulationStartTime();
   QString getSimulationStopTime();
-  void addInterfacesData(QDomElement interfaces, QString singleModel=QString());
+  void addInterfacesData(QDomElement interfaces, QDomElement parameters, QString singleModel=QString());
   void addInterface(Component *pInterfaceComponent, QString subModel);
   bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
@@ -98,6 +101,7 @@ private:
   XMLDocument mXmlDocument;
 
   bool existInterfacePoint(QString subModelName, QString interfaceName);
+  bool existParameter(QString subModelName, QDomElement parameterDataElement);
   bool getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG, QGenericMatrix<3,1,double> &X_C_PHI_X,
                                      QGenericMatrix<3,1,double> &CG_X_R_CG, QGenericMatrix<3,1,double> &X_C_R_X);
   bool fuzzyCompare(double p1, double p2);

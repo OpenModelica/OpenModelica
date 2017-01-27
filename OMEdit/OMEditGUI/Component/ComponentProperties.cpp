@@ -44,6 +44,8 @@
 #include <QMessageBox>
 #include <QDesktopServices>
 #include <QDesktopWidget>
+#include <QList>
+#include <QStringList>
 
 /*!
  * \class Parameter
@@ -1440,6 +1442,15 @@ void MetaModelSubModelAttributes::setUpDialog()
   mpGeometryFileBrowseButton = new QPushButton(Helper::browse);
   mpGeometryFileBrowseButton->setAutoDefault(false);
   connect(mpGeometryFileBrowseButton, SIGNAL(clicked()), this, SLOT(browseGeometryFile()));
+  // Model parameters
+  mpParametersLayout = new QGridLayout;
+  mpParametersLabel = new QLabel("Parameters:");
+  mpParametersLayout->addWidget(mpParametersLabel,0,0,1,2);
+  mpParametersScrollArea = new QScrollArea;
+  mpParametersScrollArea->setWidgetResizable(true);
+  QWidget *pScrollWidget = new QWidget;
+  pScrollWidget->setLayout(mpParametersLayout);
+  mpParametersScrollArea->setWidget(pScrollWidget);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1466,7 +1477,8 @@ void MetaModelSubModelAttributes::setUpDialog()
   pMainLayout->addWidget(mpGeometryFileLabel, 5, 0);
   pMainLayout->addWidget(mpGeometryFileTextBox, 5, 1);
   pMainLayout->addWidget(mpGeometryFileBrowseButton, 5, 2);
-  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpParametersScrollArea,6,0,1,3);
+  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -1487,7 +1499,18 @@ void MetaModelSubModelAttributes::initializeDialog()
   mpModelFileTextBox->setText(mpComponent->getComponentInfo()->getModelFile());
   // set the geometry file name
   mpGeometryFileTextBox->setText(mpComponent->getComponentInfo()->getGeometryFile());
-
+  // update parameter widgets
+  MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  QStringList parameters = pEditor->getParameterNames(mpComponent->getName());
+  mParameterLabels.clear();
+  mParameterLineEdits.clear();
+  for(int i=0; i<parameters.size(); ++i) {
+      mParameterLabels.append(new QLabel(parameters[i]));
+      mParameterLineEdits.append(new QLineEdit(pEditor->getParameterValue(mpComponent->getName(), parameters[i])));
+      mpParametersLayout->addWidget(mParameterLabels.last(),i+1,0);
+      mpParametersLayout->addWidget(mParameterLineEdits.last(),i+1,1);
+  }
+  mpParametersLabel->setVisible(!parameters.isEmpty());
 }
 
 /*!
@@ -1549,6 +1572,14 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
     pModelWidget->getUndoStack()->push(pUpdateSubModelAttributesCommand);
     pModelWidget->updateModelText();
   }
+
+  for(int i=0; i<mParameterLabels.size(); ++i) {
+    QString parameterName = mParameterLabels[i]->text();
+    QString parameterValue = mParameterLineEdits[i]->text();
+    MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+    pEditor->setParameterValue(mpComponent->getName(), parameterName, parameterValue);
+  }
+
   accept();
 }
 

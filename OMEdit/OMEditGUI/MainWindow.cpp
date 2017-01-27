@@ -2278,17 +2278,24 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg("interfaceData.xml")
                           .arg(file.errorString()), Helper::ok);
   } else {
-    QDomDocument interfaceData;
-    interfaceData.setContent(&file);
+    QDomDocument modelDataDocument;
+    modelDataDocument.setContent(&file);
     file.close();
     // Get the interfaces element
-    QDomElement interfaces = interfaceData.documentElement();
+    QDomElement modelData, interfaces,parameters;
+    modelData = modelDataDocument.documentElement();
+    interfaces = modelData.firstChildElement("Interfaces");
+    parameters = modelData.firstChildElement("Parameters");
+    if(interfaces.isNull() && parameters.isNull()) {
+        interfaces = modelDataDocument.documentElement();   //Backwards compatibility, remove later /Robert
+    }
+
     // if we don't have ModelWidget then show it.
     if (!pLibraryTreeItem->getModelWidget()) {
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     }
     MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    pMetaModelEditor->addInterfacesData(interfaces, singleModel);
+    pMetaModelEditor->addInterfacesData(interfaces, parameters, singleModel);
     pLibraryTreeItem->getModelWidget()->updateModelText();
   }
 }

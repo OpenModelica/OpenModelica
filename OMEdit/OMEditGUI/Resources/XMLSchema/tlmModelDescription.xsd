@@ -110,6 +110,15 @@
             <xs:attribute name="Angle321" type="xs:string" use="optional"/>
           </xs:complexType>
         </xs:element>
+        <xs:element name="Parameter" minOccurs="0" maxOccurs="unbounded">
+          <xs:annotation>
+            <xs:documentation>TLM parameter for SubModel</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="Name" type="xs:string" use="required"/>
+            <xs:attribute name="Value" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
       </xs:sequence>
       <xs:attribute name="Name" type="xs:string" use="required"/>
       <xs:attribute name="StartCommand" type="xs:string" use="required"/>
