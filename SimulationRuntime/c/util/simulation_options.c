@@ -120,7 +120,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_ALARM */                 "aborts after the given number of seconds (0 disables)",
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the result file",
-  /* FLAG_CSV_OSTEP */             "value specifies csv-files for debuge values for optimizer step",
+  /* FLAG_CSV_OSTEP */             "value specifies csv-files for debug values for optimizer step",
   /* FLAG_DAE_MODE */              "flag to let the integrator use daeResiduals",
   /* FLAG_DELTA_X_LINEARIZE */     "value specifies the delta x value for numerical differentiation used by linearization. The default value is 1e-5.",
   /* FLAG_DELTA_X_SOLVER */        "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
@@ -132,23 +132,23 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IDA_MAXNONLINITERS */    "value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
   /* FLAG_IDA_MAXCONVFAILS */      "value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
   /* FLAG_IDA_NONLINCONVCOEF */    "value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
-  /* FLAG_IDA_LS */                "selects the linear solver used by ida",
+  /* FLAG_IDA_LS */                "select the linear solver used by ida",
   /* FLAG_IDAS */                  "flag to add sensitivity information to the result files",
   /* FLAG_IGNORE_HIDERESULT */     "ignore HideResult=true annotation",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
   /* FLAG_IIT */                   "[double] value specifies a time for the initialization of the model",
   /* FLAG_ILS */                   "[int] default: 1",
-  /* FLAG_INITIAL_STEP_SIZE */     "value specifies an initial stepsize for the dassl solver",
+  /* FLAG_INITIAL_STEP_SIZE */     "value specifies an initial step size for supported solver",
   /* FLAG_INPUT_CSV */             "value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */            "value specifies an external file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */     "value specifies an file with states start values for the optimization of the model",
   /* FLAG_IPOPT_HESSE */           "value specifies the hessian for Ipopt",
   /* FLAG_IPOPT_INIT */            "value specifies the initial guess for optimization",
-  /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt",
+  /* FLAG_IPOPT_JAC */             "value specifies the Jacobian for Ipopt",
   /* FLAG_IPOPT_MAX_ITER */        "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */      "value specifies lvl for a warm start in ipopt: 1,2,3,...",
-  /* FLAG_JACOBIAN */              "selects the type of the jacobians that is used for the integrator.\n  jacobian=[coloredNumerical (default) |numerical|internalNumerical|coloredSymbolical|symbolical].",
+  /* FLAG_JACOBIAN */              "select the calculation method for Jacobian if needed by the integrator. Valid values depend on the used method.",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */       "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
@@ -160,8 +160,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LV */                    "[string list] value specifies the logging level",
   /* FLAG_MAX_BISECTION_ITERATIONS */  "[int (default 0)] value specifies the maximum number of bisection iterations for state event detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */  "[int (default 20)] value specifies the maximum number of event iterations",
-  /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
-  /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
+  /* FLAG_MAX_ORDER */             "value specifies maximum integration order for supported solver",
+  /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size for supported solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
   /* FLAG_NEWTON_FTOL */           "[double (default 1e-12)] tolerance respecting residuals for updating solution vector in Newton solver",
   /* FLAG_NEWTON_XTOL */           "[double (default 1e-12)] tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver",
@@ -172,14 +172,14 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NLS_MAX_DENSITY */       "[double (default 0.2)] value specifies the maximum density for using a non-linear sparse solver",
   /* FLAG_NLS_MIN_SIZE */          "[int (default 10001)] value specifies the minimum system size for using a non-linear sparse solver",
   /* FLAG_NOEMIT */                "do not emit any results to the result file",
-  /* FLAG_NOEQUIDISTANT_GRID */    "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl is used.",
+  /* FLAG_NOEQUIDISTANT_GRID */    "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl or ida integrator.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "value controls the output frequency in noEquidistantTimeGrid mode",
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/ "value controls the output time point in noEquidistantOutputTime mode",
   /* FLAG_NOEVENTEMIT */           "do not emit event points to the result file",
-  /* FLAG_NO_RESTART */            "flag deactivates the restart of dassl/ida after an event is performed.",
-  /* FLAG_NO_ROOTFINDING */        "flag deactivates the internal root finding procedure of dassl/ida.",
+  /* FLAG_NO_RESTART */            "disables the restart of the integration method after an event is performed, used by the methods: dassl, ida",
+  /* FLAG_NO_ROOTFINDING */        "disables the internal root finding procedure of methods: dassl and ida.",
   /* FLAG_NO_SUPPRESS_ALG */       "flag to not suppress algebraic variables in the local error test of ida solver in daeMode",
-  /* FLAG_OPTDEBUGEJAC */          "value specifies the number of iter from the dyn. optimization, which will be debuge, creating *csv and *py file",
+  /* FLAG_OPTDEBUGEJAC */          "value specifies the number of iter from the dyn. optimization, which will be debug, creating *csv and *py file",
   /* FLAG_OPTIMIZER_NP */          "value specifies the number of points in a subinterval",
   /* FLAG_OPTIMIZER_TGRID */       "value specifies external file with time points.",
   /* FLAG_OUTPUT */                "output the variables a, b and c at the end of the simulation to the standard output",
@@ -188,7 +188,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_PORT */                  "value specifies the port for simulation status (default disabled)",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
   /* FLAG_RT */                    "value specifies the scaling factor for real-time synchronization (0 disables)",
-  /* FLAG_S */                     "value specifies the solver",
+  /* FLAG_S */                     "value specifies the integration method",
   /* FLAG_SOLVER_STEPS */          "dumps the number of integration steps into the result file",
   /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
@@ -210,13 +210,13 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_CPU */
   "  Dumps the cpu-time into the result file using the variable named $cpuTime",
   /* FLAG_CSV_OSTEP */
-  "  Value specifies csv-files for debuge values for optimizer step",
+  "  Value specifies csv-files for debug values for optimizer step",
   /* FLAG_DAE_MODE */
-  "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and the IDA integrator is used.",
+  "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and ida method is used.",
   /* FLAG_DELTA_X_LINEARIZE */
   "value specifies the delta x value for numerical differentiation used by linearization. The default value is sqrt(DBL_EPSILON*2e1).",
   /* FLAG_DELTA_X_SOLVER */
-  "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
+  "value specifies the delta x value for numerical differentiation used by integration method. The default values is sqrt(DBL_EPSILON).",
   /* FLAG_EMBEDDED_SERVER */
   "  Enables an embedded server. Valid values:\n\n"
   "  * none - default, run without embedded server\n"
@@ -239,12 +239,12 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IDA_NONLINCONVCOEF */
   "  value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */
-  "  Value specifies the linear solver of the IDA integrator. Valid values:\n\n"
+  "  Value specifies the linear solver of the ida integration method. Valid values:\n"
   "  * klu - default, fast sparse linear solver\n"
   "  * dense - dense linear solver, sundials default method\n"
   "  * spgmr - sparse iterative linear solver based on generalized minimal residual method, convergance is not guaranteed, sundials method\n"
   "  * spbcg - sparse iterative linear solver based on biconjugate gradient method, convergance is not guaranteed, sundials method\n"
-  "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method\n",
+  "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method",
   /* FLAG_IDAS */
   "  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.",
   /* FLAG_IGNORE_HIDERESULT */
@@ -259,7 +259,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\n"
   "  The value is an Integer with default value 1.",
   /* FLAG_INITIAL_STEP_SIZE */
-  "  Value specifies an initial stepsize for the dassl solver.",
+  "  Value specifies an initial step size, used by the methods: dassl, ida",
    /* FLAG_INPUT_CSV */
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */
@@ -271,18 +271,19 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_INIT */
   "  Value specifies the initial guess for optimization (sim, const).",
   /* FLAG_IPOPT_JAC */
-  "  Value specifies the jacobian for Ipopt(SYM, NUM, NUMDENSE).",
+  "  Value specifies the Jacobian for Ipopt(SYM, NUM, NUMDENSE).",
   /* FLAG_IPOPT_MAX_ITER */
   "  Value specifies the max number of iteration for ipopt.",
   /* FLAG_IPOPT_WARM_START */
   "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */
-  "  Selects the type of the Jacobian that is used for the integrator:\n\n"
-  "  * coloredNumerical (colored numerical Jacobian, the default).\n"
-  "  * internalNumerical (internal dassl numerical Jacobian).\n"
-  "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
-  "  * numerical - numerical Jacobian.\n\n"
-  "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
+  "  Select the calculation method for Jacobian used by the integration method:\n"
+  "  * coloredNumerical - A dense colored numerical Jacobian, which is default for dassl. Usable with dassl and ida.\n"
+  "  * internalNumerical - A dense internal numerical Jacobian. Usable with dassl and ida.\n"
+  "  * coloredSymbolical - A dense colored symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.\n"
+  "  * numerical - A dense numerical Jacobian. Usable with dassl and ida.\n"
+  "  * symbolical - A dense symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.\n"
+  "  * kluSparse - A sparse colored numerical Jacobian, which is default for ida. Usable with ida.",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
   /* FLAG_L_DATA_RECOVERY */
@@ -315,9 +316,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the maximum number of event iterations.\n"
   "  The value is an Integer with default value 20.",
   /* FLAG_MAX_ORDER */
-  "  Value specifies maximum integration order, used by dassl solver.",
+  "  Value specifies maximum integration order, used by the methods: dassl, ida.",
   /* FLAG_MAX_STEP_SIZE */
-  "  Value specifies maximum absolute step size, used by dassl solver.",
+  "  Value specifies maximum absolute step size, used by the methods: dassl, ida.",
   /* FLAG_MEASURETIMEPLOTFORMAT */
   "  Value specifies the output format of the measure time functionality\n\n"
   "  * svg\n"
@@ -354,7 +355,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEMIT */
   "  Do not emit any results to the result file.",
   /* FLAG_NOEQUIDISTANT_GRID */
-  "  Output the internal steps given by dassl instead of interpolating results\n"
+  "  Output the internal steps given by dassl/ida instead of interpolating results\n"
   "  into an equidistant time grid as given by stepSize or numberOfIntervals.",
   /* FLAG_NOEQUIDISTANT_OUT_FREQ*/
   "  Integer value n controls the output frequency in noEquidistantTimeGrid mode\n"
@@ -365,15 +366,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEVENTEMIT */
   "  Do not emit event points to the result file.",
   /* FLAG_NO_RESTART */
-  "  Deactivates the restart of dassl/ida after an event is performed.",
+  "  Disables the restart of the integration method after an event is performed, used by the methods: dassl, ida",
   /* FLAG_NO_ROOTFINDING */
-  "  Deactivates the internal root finding procedure of dassl/ida solver.",
+  "  Disables the internal root finding procedure of methods: dassl and ida.",
   /* FLAG_NO_SUPPRESS_ALG */
   "  flag to not suppress algebraic variables in the local error test of the ida solver in daeMode.\n"
   "  In general, the use of this option is discouraged when solving DAE systems of index 1,\n"
   "  whereas it is generally encouraged for systems of index 2 or more.",
   /* FLAG_OPTDEBUGEJAC */
-  "  Value specifies the number of itereations from the dynamic optimization, which\n"
+  "  Value specifies the number of iterations from the dynamic optimization, which\n"
   "  will be debugged, creating .csv and .py files.",
   /* FLAG_OPTIMIZER_NP */
   "  Value specifies the number of points in a subinterval.\n"
@@ -402,11 +403,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
-  "  Value specifies the solver (integration method).",
+  "  Value specifies the integration method.",
   /* FLAG_SOLVER_STEPS */
   "  dumps the number of integration steps into the result file",
   /* FLAG_UP_HESSIAN */
-  "  Value specifies the number of steps, which keep hessian matrix constant.",
+  "  Value specifies the number of steps, which keep Hessian matrix constant.",
   /* FLAG_W */
   "  Shows all warnings even if a related log-stream is inactive.",
 
@@ -518,7 +519,7 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   "unknown",
   "euler - Explicit Euler (order 1)",
   "rungekutta - Runge-Kutta (fixed step, order 4)",
-  "dassl - BDF solver with colored numerical jacobian, with interval root finding - default",
+  "dassl - BDF solver with colored numerical Jacobian, with interval root finding - default",
   "optimization - Special solver for dynamic optimization",
   "radau5 - Radau IIA with 3 points, \"Implicit Runge-Kutta\", order 5 [sundial/kinsol needed]",
   "radau3 - Radau IIA with 2 points, \"Implicit Runge-Kutta\", order 3 [sundial/kinsol needed]",
@@ -659,8 +660,8 @@ const char *JACOBIAN_METHOD[JAC_MAX+1] = {
   "unknown",
 
   "coloredNumerical",
-  "coloredSymbolical",
   "internalNumerical",
+  "coloredSymbolical",
   "numerical",
   "symbolical",
   "kluSparse",
@@ -671,12 +672,12 @@ const char *JACOBIAN_METHOD[JAC_MAX+1] = {
 const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
   "unknown",
 
-  "colored numerical jacobian - default.",
-  "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
-  "internal numerical jacobian.",
-  "numerical jacobian.",
-  "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization.",
-  "sparse jacobian for KLU",
+  "  * coloredNumerical - A dense colored numerical Jacobian, which is default for dassl. Usable with dassl and ida.",
+  "  * internalNumerical - A dense internal numerical Jacobian. Usable with dassl and ida.",
+  "  * coloredSymbolical - A dense colored symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
+  "  * numerical - A dense numerical Jacobian. Usable with dassl and ida.",
+  "  * symbolical - A dense symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
+  "  * kluSparse - A sparse colored numerical Jacobian, which is default for ida. Usable with ida.",
 
   "JAC_MAX"
  };
