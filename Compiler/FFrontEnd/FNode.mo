@@ -606,7 +606,7 @@ algorithm
         nd = FCore.CO(inElement, DAE.NOMOD(), inKind, FCore.VAR_UNTYPED());
         i  = DAE.TYPES_VAR(
                   n,
-                  DAE.ATTR(ct,prl,var,dir,io,vis),
+                  DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl,var,dir,io,vis),
                   DAE.T_UNKNOWN_DEFAULT,
                   DAE.UNBOUND(),NONE());
       then

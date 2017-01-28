@@ -3098,7 +3098,7 @@ algorithm
   match (inCache,inBinTree,inComponentRef,inEnv)
     local
       String id,id2;
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
       SCode.Parallelism prl;
       SCode.Variability vt,vt2;
       Absyn.Direction di;

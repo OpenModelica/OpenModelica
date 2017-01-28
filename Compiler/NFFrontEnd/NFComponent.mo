@@ -239,7 +239,7 @@ uniontype Component
     daeAttr := match(attr)
       case ATTRIBUTES()
         then DAE.ATTR(
-               NFInstUtil.daeToSCodeConnectorType(attr.connectorType),
+               attr.connectorType,
                NFInstUtil.daeToSCodeParallelism(attr.parallelism),
                NFInstUtil.daeToSCodeVariability(attr.variability),
                NFInstUtil.daeToAbsynDirection(attr.direction),

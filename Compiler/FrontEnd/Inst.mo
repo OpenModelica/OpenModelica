@@ -4092,7 +4092,7 @@ algorithm
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,SOME(updatedComps)) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, SOME(updatedComps), SOME(cref));
 
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" + FGraph.printGraphStr(env_1) + "\n");
       then
@@ -4150,7 +4150,7 @@ algorithm
         crefs_2 = InstUtil.removeOptCrefFromCrefs(crefs_2, currentCref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,SOME(updatedComps)) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, SOME(updatedComps), SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
         (cache,env_1,ih,SOME(updatedComps));
 
@@ -4998,7 +4998,7 @@ algorithm
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5036,7 +5036,7 @@ algorithm
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5074,7 +5074,7 @@ algorithm
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5113,7 +5113,7 @@ algorithm
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then

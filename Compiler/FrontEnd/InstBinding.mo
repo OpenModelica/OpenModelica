@@ -101,19 +101,19 @@ public constant DAE.Type distributionType =
                 {
                   DAE.TYPES_VAR(
                     "name",
-                    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
+                    DAE.ATTR(DAE.NON_CONNECTOR(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
                     DAE.T_STRING_DEFAULT,
                     DAE.UNBOUND(), // binding
                     NONE()),
                   DAE.TYPES_VAR(
                     "params",
-                    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
+                    DAE.ATTR(DAE.NON_CONNECTOR(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
                     DAE.T_ARRAY_REAL_NODIM,
                     DAE.UNBOUND(), // binding
                     NONE()),
                   DAE.TYPES_VAR(
                     "paramNames",
-                    DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
+                    DAE.ATTR(DAE.NON_CONNECTOR(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
                     DAE.T_ARRAY_STRING_NODIM,
                     DAE.UNBOUND(), // binding
                     NONE())

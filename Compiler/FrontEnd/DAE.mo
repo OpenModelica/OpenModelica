@@ -47,6 +47,7 @@ import ClassInf;
 import SCode;
 import Prefix;
 import Values;
+import Connect;
 
 protected
 import DAEDump;
@@ -73,9 +74,12 @@ public uniontype VarKind
 end VarKind;
 
 public uniontype ConnectorType
+  "The type of a connector element."
   record POTENTIAL end POTENTIAL;
   record FLOW end FLOW;
-  record STREAM end STREAM;
+  record STREAM
+    Option<ComponentRef> associatedFlow;
+  end STREAM;
   record NON_CONNECTOR end NON_CONNECTOR;
 end ConnectorType;
 
@@ -239,6 +243,14 @@ public uniontype Element
     Exp array;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIAL_ARRAY_EQUATION;
+
+  record CONNECT_EQUATION "a connect equation"
+    Element lhsElement;
+    Connect.Face lhsFace;
+    Element rhsElement;
+    Connect.Face rhsFace;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end CONNECT_EQUATION;
 
   record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
     Exp lhs;
@@ -776,7 +788,7 @@ end Var;
 public
 uniontype Attributes "- Attributes"
   record ATTR
-    SCode.ConnectorType connectorType "flow, stream or unspecified";
+    ConnectorType       connectorType "flow, stream or unspecified";
     SCode.Parallelism   parallelism "parallelism";
     SCode.Variability   variability "variability" ;
     Absyn.Direction     direction "direction" ;
@@ -786,10 +798,10 @@ uniontype Attributes "- Attributes"
 end Attributes;
 
 public
-constant Attributes dummyAttrVar   = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
-constant Attributes dummyAttrParam = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
-constant Attributes dummyAttrConst = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
-constant Attributes dummyAttrInput = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.INPUT(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrVar   = ATTR(NON_CONNECTOR(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrParam = ATTR(NON_CONNECTOR(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrConst = ATTR(NON_CONNECTOR(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrInput = ATTR(NON_CONNECTOR(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.INPUT(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;

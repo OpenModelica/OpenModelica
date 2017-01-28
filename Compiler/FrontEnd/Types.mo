@@ -1271,7 +1271,7 @@ algorithm
   outV := match(var)
     local
       String name;
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
       SCode.Visibility vis;
       DAE.Type tp;
       DAE.Binding bind;
@@ -1303,7 +1303,7 @@ algorithm
       Option<DAE.Const> cnstForRange;
 
     case DAE.TYPES_VAR(name,DAE.ATTR(_,prl,_,_,_,_),tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(SCode.POTENTIAL(),prl,SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),tp,bind,cnstForRange);
+    then DAE.TYPES_VAR(name,DAE.ATTR(DAE.NON_CONNECTOR(),prl,SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),tp,bind,cnstForRange);
 
   end match;
 end setVarDefaultInput;
@@ -1315,7 +1315,7 @@ algorithm
   outV := match(var)
     local
       String name;
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
       Absyn.Direction dir;
       DAE.Type tp;
       DAE.Binding bind;
@@ -2678,7 +2678,7 @@ algorithm
     local
       String t,res,n, s;
       DAE.Type typ;
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
 
     case DAE.TYPES_VAR(name = n,ty = typ,attributes = DAE.ATTR(connectorType = ct))
       equation
@@ -2692,17 +2692,15 @@ algorithm
 end unparseVar;
 
 public function connectorTypeStr
-  input SCode.ConnectorType ct;
+  input DAE.ConnectorType ct;
   output String str;
 algorithm
   str := matchcontinue(ct)
     local String s;
-    case (_)
-      equation
-        "" = SCodeDump.connectorTypeStr(ct);
-      then
-        "";
-    else SCodeDump.connectorTypeStr(ct) + " ";
+    case DAE.POTENTIAL() then "";
+    case DAE.FLOW() then "flow ";
+    case DAE.STREAM(_) then "stream ";
+    else "";
   end matchcontinue;
 end connectorTypeStr;
 
@@ -5310,7 +5308,7 @@ algorithm
     case ({},_) then {};
 
     // we have a flow prefix
-    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(connectorType = SCode.FLOW()),ty = ty) :: vs),cr)
+    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(connectorType = DAE.FLOW()),ty = ty) :: vs),cr)
       equation
         ty2 = simplifyType(ty);
         cr_1 = ComponentReference.crefPrependIdent(cr, id,{},ty2);
@@ -5345,7 +5343,7 @@ algorithm
       DAE.ComponentRef cref_;
 
     case ({},_) then {};
-    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(connectorType = SCode.STREAM()),ty = ty) :: vs),cr)
+    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(connectorType = DAE.STREAM()),ty = ty) :: vs),cr)
       equation
         ty2 = simplifyType(ty);
         cr_1 = ComponentReference.crefPrependIdent(cr, id, {}, ty2);

@@ -2989,7 +2989,7 @@ algorithm
       DAE.Type t1,t2;
       DAE.Properties prop1,prop2;
       DAE.Attributes attr1,attr2;
-      SCode.ConnectorType ct1, ct2;
+      DAE.ConnectorType ct1, ct2;
       Boolean impl;
       DAE.Type ty1,ty2;
       Connect.Face f1,f2;
@@ -3093,7 +3093,7 @@ protected function instConnector
   output FCore.Cache outCache = inCache;
   output DAE.ComponentRef outCref;
   output DAE.Attributes outAttr;
-  output SCode.ConnectorType connectorType;
+  output DAE.ConnectorType connectorType;
   output SCode.Variability variability;
   output Absyn.InnerOuter innerOuter;
   output Connect.Face face;
@@ -3232,7 +3232,7 @@ algorithm
       DAE.Type t1,t2;
       DAE.Properties prop1,prop2;
       DAE.Attributes attr1,attr2,attr;
-      SCode.ConnectorType ct1, ct2;
+      DAE.ConnectorType ct1, ct2;
       Boolean impl;
       DAE.Type ty1,ty2,ty;
       Connect.Sets sets;
@@ -3267,8 +3267,8 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (attr1,ty1) = Lookup.lookupConnectorVar(env,c1_2);
         (attr2,ty2) = Lookup.lookupConnectorVar(env,c2_2);
-        DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr1;
-        DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr2;
+        DAE.ATTR(connectorType = DAE.POTENTIAL()) = attr1;
+        DAE.ATTR(connectorType = DAE.POTENTIAL()) = attr2;
         true = Types.isExpandableConnector(ty1);
         true = Types.isExpandableConnector(ty2);
 
@@ -3532,7 +3532,7 @@ algorithm
           c1_2,
           state,
           ty1,
-          SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR(), Absyn.NONFIELD()),
+          SCode.ATTR(arrDims, DAEUtil.toSCodeConnectorType(ct1), prl1, vt1, Absyn.BIDIR(), Absyn.NONFIELD()),
           vis1,
           io1,
           source);
@@ -3939,7 +3939,7 @@ protected function checkConnectTypes
   input DAE.Attributes inRhsAttributes;
   input SourceInfo inInfo;
 protected
-  SCode.ConnectorType lhs_ct, rhs_ct;
+  DAE.ConnectorType lhs_ct, rhs_ct;
   Absyn.Direction lhs_dir, rhs_dir;
   Absyn.InnerOuter lhs_io, rhs_io;
   SCode.Visibility lhs_vis, rhs_vis;
@@ -4011,8 +4011,8 @@ algorithm
 end checkConnectTypesType;
 
 protected function checkConnectTypesFlowStream
-  input SCode.ConnectorType inLhsConnectorType;
-  input SCode.ConnectorType inRhsConnectorType;
+  input DAE.ConnectorType inLhsConnectorType;
+  input DAE.ConnectorType inRhsConnectorType;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
   input SourceInfo inInfo;
@@ -4025,7 +4025,7 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = SCode.connectorTypeEqual(inLhsConnectorType, inRhsConnectorType);
+        true = DAEUtil.connectorTypeEqual(inLhsConnectorType, inRhsConnectorType);
       then
         ();
 
@@ -4033,9 +4033,9 @@ algorithm
       equation
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        pre_str1 = SCodeDump.connectorTypeStr(inLhsConnectorType);
-        pre_str2 = SCodeDump.connectorTypeStr(inRhsConnectorType);
-        err_strl = if SCode.potentialBool(inLhsConnectorType)
+        pre_str1 = DAEUtil.connectorTypeStr(inLhsConnectorType);
+        pre_str2 = DAEUtil.connectorTypeStr(inRhsConnectorType);
+        err_strl = if DAEUtil.potentialBool(inLhsConnectorType)
           then {pre_str2, cref_str2, cref_str1}
           else {pre_str1, cref_str1, cref_str2};
         Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, inInfo);
@@ -4139,7 +4139,7 @@ public function connectComponents "
   input Connect.Face inFace8;
   input DAE.Type inType9;
   input SCode.Variability vt2;
-  input SCode.ConnectorType inConnectorType;
+  input DAE.ConnectorType inConnectorType;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -4163,7 +4163,7 @@ algorithm
       DAE.Dimension dim1,dim2;
       DAE.DAElist dae;
       list<DAE.Var> l1,l2;
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
       String c1_str,t1_str,t2_str,c2_str;
       FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -4183,7 +4183,7 @@ algorithm
     // connections to outer components
     case(cache,env,ih,sets,pre,c1,f1,_,_,c2,f2,_,_,ct,_,_,graph,_)
       equation
-        false = SCode.streamBool(ct);
+        false = DAEUtil.streamBool(ct);
         // print("Connecting components: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
         //    ComponentReference.printComponentRefStr(c1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
         //    ComponentReference.printComponentRefStr(c2) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
@@ -4208,7 +4208,7 @@ algorithm
         (cache,env,ih,sets,DAE.emptyDae,graph);
 
     // Non-flow and Non-stream type Parameters and constants generate assert statements
-    case (cache,env,ih,sets,pre,c1,_,t1,_,c2,_,t2,_,SCode.POTENTIAL(),_,_,graph,_)
+    case (cache,env,ih,sets,pre,c1,_,t1,_,c2,_,t2,_,DAE.POTENTIAL(),_,_,graph,_)
       equation
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
         true = Types.basicType(Types.arrayElementType(t1));
@@ -4279,7 +4279,7 @@ algorithm
     case (cache,env,ih,sets,pre,
         c1,f1,DAE.T_ARRAY(dims = {dim1}, ty = t1),_,
         c2,f2,DAE.T_ARRAY(dims = {dim2}, ty = t2),_,
-        ct as SCode.POTENTIAL(),_,_,graph,_)
+        ct as DAE.POTENTIAL(),_,_,graph,_)
       equation
         DAE.T_COMPLEX() = Types.arrayElementType(t1);
         DAE.T_COMPLEX() = Types.arrayElementType(t2);
@@ -4299,7 +4299,7 @@ algorithm
     case (cache,env,ih,sets,pre,
         c1,f1,DAE.T_ARRAY(dims = {dim1}, ty = t1),_,
         c2,f2,DAE.T_ARRAY(dims = {dim2}, ty = t2),_,
-        ct as SCode.POTENTIAL(),_,_,graph,_)
+        ct as DAE.POTENTIAL(),_,_,graph,_)
       equation
         DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) = Types.arrayElementType(t1);
         DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) = Types.arrayElementType(t2);
@@ -4337,7 +4337,7 @@ algorithm
     // Connection of connectors with an equality constraint.
     case (cache,env,ih,sets,pre,c1,f1,t1 as DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,idim1,inlineType1))),_,
                                 c2,f2,t2 as DAE.T_COMPLEX(equalityConstraint=SOME((_,_,_))),_,
-                                ct as SCode.POTENTIAL(),_,_,
+                                ct as DAE.POTENTIAL(),_,_,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)),_)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
@@ -4383,7 +4383,7 @@ algorithm
     // Connection of connectors with an equality constraint extending BASIC TYPES
     case (cache,env,ih,sets,pre,c1,f1,DAE.T_SUBTYPE_BASIC(complexType = t1, equalityConstraint=SOME((fpath1,idim1,inlineType1))),_,
                                 c2,f2,DAE.T_SUBTYPE_BASIC(complexType = t2, equalityConstraint=SOME((_,_,_))),_,
-                                ct as SCode.POTENTIAL(),_,_,
+                                ct as DAE.POTENTIAL(),_,_,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)),_)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
@@ -4519,7 +4519,7 @@ protected function connectArrayComponents
   input DAE.Type inRhsType;
   input SCode.Variability inRhsVar;
   input Absyn.InnerOuter inRhsIO;
-  input SCode.ConnectorType inConnectorType;
+  input DAE.ConnectorType inConnectorType;
   input ConnectionGraph.ConnectionGraph inGraph;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
@@ -4581,7 +4581,7 @@ protected function connectVars
   input Connect.Face inFace7;
   input list<DAE.Var> inTypesVarLst8;
   input SCode.Variability vt2;
-  input SCode.ConnectorType inConnectorType;
+  input DAE.ConnectorType inConnectorType;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -4603,7 +4603,7 @@ algorithm
       Connect.Face f1,f2;
       String n;
       DAE.Attributes attr1,attr2;
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
       DAE.Type ty1,ty2;
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
@@ -4632,12 +4632,12 @@ algorithm
 end connectVars;
 
 protected function propagateConnectorType
-  input SCode.ConnectorType inConnectorType;
-  input SCode.ConnectorType inSubConnectorType;
-  output SCode.ConnectorType outSubConnectorType;
+  input DAE.ConnectorType inConnectorType;
+  input DAE.ConnectorType inSubConnectorType;
+  output DAE.ConnectorType outSubConnectorType;
 algorithm
   outSubConnectorType := match(inConnectorType, inSubConnectorType)
-    case (SCode.POTENTIAL(), _) then inSubConnectorType;
+    case (DAE.POTENTIAL(), _) then inSubConnectorType;
     else inConnectorType;
   end match;
 end propagateConnectorType;

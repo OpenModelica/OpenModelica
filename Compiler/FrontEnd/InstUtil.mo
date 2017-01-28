@@ -3872,8 +3872,8 @@ algorithm
     case (_, SCode.POTENTIAL(), _, _) then inVarConnectorType;
     case (DAE.POTENTIAL(), SCode.FLOW(), _, _) then DAE.FLOW();
     case (DAE.NON_CONNECTOR(), SCode.FLOW(), _, _) then DAE.FLOW();
-    case (DAE.POTENTIAL(), SCode.STREAM(), _, _) then DAE.STREAM();
-    case (DAE.NON_CONNECTOR(), SCode.STREAM(), _, _) then DAE.STREAM();
+    case (DAE.POTENTIAL(), SCode.STREAM(), _, _) then DAE.STREAM(NONE());
+    case (DAE.NON_CONNECTOR(), SCode.STREAM(), _, _) then DAE.STREAM(NONE());
 
     // Error if the component tries to overwrite the prefix of a subcomponent.
     else

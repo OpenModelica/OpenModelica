@@ -1988,11 +1988,23 @@ public function toConnectorType
 algorithm
   outConnectorType := match(inConnectorType, inState)
     case (SCode.FLOW(), _) then DAE.FLOW();
-    case (SCode.STREAM(), _) then DAE.STREAM();
+    case (SCode.STREAM(), _) then DAE.STREAM(NONE());
     case (_, ClassInf.CONNECTOR()) then DAE.POTENTIAL();
     else DAE.NON_CONNECTOR();
   end match;
 end toConnectorType;
+
+public function toConnectorTypeNoState
+ input SCode.ConnectorType scodeConnectorType;
+ input Option<DAE.ComponentRef> flowName = NONE();
+ output DAE.ConnectorType daeConnectorType;
+algorithm
+  daeConnectorType := match scodeConnectorType
+    case SCode.FLOW() then DAE.FLOW();
+    case SCode.STREAM() then DAE.STREAM(flowName);
+    else DAE.POTENTIAL();
+  end match;
+end toConnectorTypeNoState;
 
 public function toDaeParallelism "Converts scode parallelsim to dae parallelism.
   Prints a warning if parallel variables are used
@@ -5621,7 +5633,7 @@ protected
 algorithm
   SCode.ATTR(connectorType = ct, parallelism = prl, variability = var, direction = dir) := inAttributes;
   SCode.PREFIXES(innerOuter = io, visibility = vis) := inPrefixes;
-  outAttributes := DAE.ATTR(ct, prl, var, dir, io, vis);
+  outAttributes := DAE.ATTR(toConnectorTypeNoState(ct), prl, var, dir, io, vis);
 end translateSCodeAttrToDAEAttr;
 
 public function varName
@@ -5756,7 +5768,7 @@ public function setAttributeDirection
   input DAE.Attributes inAttributes;
   output DAE.Attributes outAttributes;
 protected
-  SCode.ConnectorType ct;
+  DAE.ConnectorType ct;
   SCode.Parallelism p;
   SCode.Variability var;
   Absyn.InnerOuter io;
@@ -6308,6 +6320,72 @@ algorithm
   replOut := replIn;
   (outExp,_) := VarTransform.replaceExp(inExp,replIn,NONE());
 end replaceCompRef;
+
+public function connectorTypeStr
+  input DAE.ConnectorType connectorType;
+  output String string;
+algorithm
+  string := match connectorType
+    local
+      DAE.ComponentRef cref;
+      String cref_str;
+
+    case DAE.POTENTIAL() then "";
+    case DAE.FLOW() then "flow";
+    case DAE.STREAM(NONE()) then "stream()";
+    case DAE.STREAM(SOME(cref))
+      algorithm
+        cref_str := ComponentReference.printComponentRefStr(cref);
+      then
+        "stream(" + cref_str + ")";
+    else "non connector";
+  end match;
+end connectorTypeStr;
+
+public function streamBool
+  input DAE.ConnectorType inStream;
+  output Boolean bStream;
+algorithm
+  bStream := match(inStream)
+    case DAE.STREAM() then true;
+    else false;
+  end match;
+end streamBool;
+
+public function potentialBool
+  input DAE.ConnectorType inConnectorType;
+  output Boolean outPotential;
+algorithm
+  outPotential := match(inConnectorType)
+    case DAE.POTENTIAL() then true;
+    else false;
+  end match;
+end potentialBool;
+
+public function connectorTypeEqual
+  input DAE.ConnectorType inConnectorType1;
+  input DAE.ConnectorType inConnectorType2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(inConnectorType1, inConnectorType2)
+    case (DAE.POTENTIAL(), DAE.POTENTIAL()) then true;
+    case (DAE.FLOW(), DAE.FLOW()) then true;
+    case (DAE.STREAM(_), DAE.STREAM(_)) then true;
+    case (DAE.NON_CONNECTOR(), DAE.NON_CONNECTOR()) then true;
+  end match;
+end connectorTypeEqual;
+
+public function toSCodeConnectorType
+ input DAE.ConnectorType daeConnectorType;
+ output SCode.ConnectorType scodeConnectorType;
+algorithm
+  scodeConnectorType := match daeConnectorType
+    case DAE.FLOW() then SCode.FLOW();
+    case DAE.STREAM(_) then SCode.STREAM();
+    case DAE.POTENTIAL() then SCode.POTENTIAL();
+    case DAE.NON_CONNECTOR() then SCode.POTENTIAL();
+  end match;
+end toSCodeConnectorType;
 
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;

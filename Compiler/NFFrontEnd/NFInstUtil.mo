@@ -1626,7 +1626,7 @@ public function translateConnectorType
 algorithm
   outConnectorType := match(inConnectorType)
     case SCode.FLOW() then DAE.FLOW();
-    case SCode.STREAM() then DAE.STREAM();
+    case SCode.STREAM() then DAE.STREAM(NONE());
     else DAE.NON_CONNECTOR();
   end match;
 end translateConnectorType;

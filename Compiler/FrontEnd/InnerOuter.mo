@@ -583,7 +583,7 @@ algorithm
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       SCode.ConnectorType ct;
+       DAE.ConnectorType ct;
        DAE.DAElist dae;
        InstHierarchy ih;
        Connect.SetTrie sets;
@@ -656,7 +656,7 @@ algorithm
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       SCode.ConnectorType ct;
+       DAE.ConnectorType ct;
        DAE.DAElist dae;
        InstHierarchy ih;
        Connect.SetTrie sets;
@@ -1265,7 +1265,7 @@ algorithm
       DAE.Type ty;
       DAE.Binding binding;
 
-      SCode.ConnectorType ct;
+      DAE.ConnectorType ct;
       SCode.Parallelism parallelism "parallelism";
       SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;

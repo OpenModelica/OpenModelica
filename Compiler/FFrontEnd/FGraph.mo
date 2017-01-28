@@ -556,7 +556,7 @@ algorithm
               SCode.noComment, NONE(), Absyn.dummyInfo);
         v = DAE.TYPES_VAR(
               name,
-              DAE.ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+              DAE.ATTR(DAE.NON_CONNECTOR(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
               ty,
               binding,
               constOfForIteratorRange);

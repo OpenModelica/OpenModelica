@@ -327,6 +327,14 @@ package DAE
       ElementSource source "the origin of the component/equation/algorithm";
     end INITIAL_ARRAY_EQUATION;
 
+    record CONNECT_EQUATION "a connect equation"
+      Element lhsElement;
+      Connect.Face lhsFace;
+      Element rhsElement;
+      Connect.Face rhsFace;
+      ElementSource source "the origin of the component/equation/algorithm";
+    end CONNECT_EQUATION;
+
     record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
       Exp lhs;
       Exp rhs;
@@ -711,8 +719,7 @@ package DAE
 
   uniontype Attributes "- Attributes"
     record ATTR
-      SCode.Flow          flowPrefix "flow" ;
-      SCode.Stream        streamPrefix "stream" ;
+      ConnectorType       connectorType "flow, stream or unspecified";
       SCode.Parallelism   parallelism "parallelism";
       SCode.Variability   variability "variability" ;
       Absyn.Direction     direction "direction" ;
@@ -767,6 +774,15 @@ package DAE
     record PARAM "parameter"   end PARAM;
     record CONST "constant"    end CONST;
   end VarKind;
+
+  uniontype ConnectorType "The type of a connector element."
+    record POTENTIAL end POTENTIAL;
+    record FLOW end FLOW;
+    record STREAM
+      Option<ComponentRef> associatedFlow;
+    end STREAM;
+    record NON_CONNECTOR end NON_CONNECTOR;
+  end ConnectorType;
 
   uniontype VarDirection
     record INPUT  "input"                   end INPUT;
@@ -1396,5 +1412,12 @@ package Flags
   end getConfigBool;
 end Flags;
 
+package Connect
+  uniontype Face
+    record INSIDE "This is an inside connection" end INSIDE;
+    record OUTSIDE "This is an outside connection" end OUTSIDE;
+    record NO_FACE end NO_FACE;
+  end Face;
+end Connect;
 
 end DAEDumpTV;

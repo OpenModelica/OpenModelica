@@ -4233,7 +4233,7 @@ algorithm
     case DAE.CREF(componentRef = cr)
       algorithm
         (_, attr) := Lookup.lookupVar(inCache, inEnv, cr);
-        DAE.ATTR(connectorType = SCode.STREAM()) := attr;
+        DAE.ATTR(connectorType = DAE.STREAM()) := attr;
       then
         ();
 

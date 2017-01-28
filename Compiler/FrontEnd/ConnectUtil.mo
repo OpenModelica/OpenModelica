@@ -183,7 +183,7 @@ public function addConnection
   input Face face1;
   input DAE.ComponentRef cref2;
   input Face face2;
-  input SCode.ConnectorType connectorType;
+  input DAE.ConnectorType connectorType;
   input DAE.ElementSource source;
 protected
   ConnectorElement e1, e2;
@@ -222,7 +222,7 @@ public function addArrayConnection
   input DAE.ComponentRef cref2;
   input Face face2;
   input DAE.ElementSource source;
-  input SCode.ConnectorType connectorType;
+  input DAE.ConnectorType connectorType;
 protected
   list<DAE.ComponentRef> crefs1, crefs2;
   DAE.ComponentRef cr2;
@@ -238,13 +238,16 @@ end addArrayConnection;
 
 protected function makeConnectorType
   "Creates a connector type from the flow or stream prefix given."
-  input SCode.ConnectorType connectorType;
+  input DAE.ConnectorType connectorType;
   output ConnectorType ty;
+protected
+  Option<DAE.ComponentRef> flowName;
 algorithm
   ty := match(connectorType)
-    case SCode.POTENTIAL() then ConnectorType.EQU();
-    case SCode.FLOW() then ConnectorType.FLOW();
-    case SCode.STREAM() then ConnectorType.STREAM(NONE());
+    case DAE.POTENTIAL() then ConnectorType.EQU();
+    case DAE.FLOW() then ConnectorType.FLOW();
+    case DAE.STREAM(flowName) then ConnectorType.STREAM(flowName);
+    case DAE.NON_CONNECTOR() then ConnectorType.NO_TYPE();
     else
       algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -381,13 +384,13 @@ protected function getStreamAndFlowVariables
 algorithm
   for var in variables loop
     _ := match var
-      case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.FLOW()))
+      case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = DAE.FLOW()))
         algorithm
           flows := var :: flows;
         then
           ();
 
-      case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.STREAM()))
+      case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = DAE.STREAM()))
         algorithm
           streams := var :: streams;
         then
@@ -2853,14 +2856,14 @@ algorithm
     else
       _ := match attr
         // A flow variable.
-        case DAE.ATTR(connectorType = SCode.FLOW())
+        case DAE.ATTR(connectorType = DAE.FLOW())
           algorithm
             flowVars := flowVars + sizeOfType(var.ty);
           then
             ();
 
         // A stream variable.
-        case DAE.ATTR(connectorType = SCode.STREAM())
+        case DAE.ATTR(connectorType = DAE.STREAM())
           algorithm
             streamVars := streamVars + sizeOfType(var.ty);
           then
