@@ -216,6 +216,8 @@ install-python: $(IDLPYTHONTARGET)
 script-files-python: mkbuilddirs-python
 	# copy library files neeeded by OMPython
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
+	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_lib)/python)
+	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_lib)/python)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
@@ -228,6 +230,8 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win32/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/)
 else # mingw64
+	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/bin/x86_win32/omniORB420_vc10_rt.dll $(builddir_lib)/python)
+	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/bin/x86_win32/omnithread40_vc10_rt.dll $(builddir_lib)/python)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORBpy-4.2.0-win64/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
