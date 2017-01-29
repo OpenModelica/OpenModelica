@@ -12902,15 +12902,15 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname =  lastIdentOfPath(modelInfo.name)
-
+  let clockIndex = if intGt(listLength(tmpVars), 0) then getClockIndex(listGet(tmpVars, 1), simCode)
   let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-      equation_(eq, contextJacobian, &varDecls /*BUFD*/, /*&tmp*/ simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      ;separator="\n")
+    equation_(eq, contextJacobian, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    ;separator="\n")
   <<
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
+    <%if clockIndex then 'const int clockIndex = <%clockIndex%>;'%>
     <%varDecls%>
     <%eqns_%>
   }
