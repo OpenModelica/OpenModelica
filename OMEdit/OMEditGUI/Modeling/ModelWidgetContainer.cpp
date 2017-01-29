@@ -3242,10 +3242,12 @@ void ModelWidget::updateModelText()
   setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+#if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
     MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(this);
   }
+#endif
 }
 
 /*!
