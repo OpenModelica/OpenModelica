@@ -172,6 +172,14 @@ template contextFunName(String funName, Context context)
   else '_functions-><%funName%>'
 end contextFunName;
 
+template contextIteratorName(Ident name, Context context)
+  "Generates code for an iterator variable."
+::=
+  match context
+  case FUNCTION_CONTEXT(__) then name
+  else name + "_"
+end contextIteratorName;
+
 template crefWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Return cref with index for the lhs of a for loop, i.e., _resistori_P_i."
@@ -206,17 +214,12 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
   match cr
   case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
   case CREF_IDENT(ident = "time") then
-   match context
+    match context
     case  ALGLOOP_CONTEXT(genInitialisation=false)
     then "_system->_simTime"
-    else
-    "_simTime"
+    else "_simTime"
     end match
-  //filter key words for variable names
-  case CREF_IDENT(ident = "unsigned") then 'unsigned_'
-  case CREF_IDENT(ident = "string") then 'string_'
-  case CREF_IDENT(ident = "int") then 'int_'
-  else '<%representationCref(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, varDecls, stateDerVectorName, useFlatArrayNotation) %>'
+  else '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
 end cref1;
 
 template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
@@ -2760,24 +2763,6 @@ template encloseInParantheses(String expStr)
 ::=
 if intEq(stringGet(expStr, 1), stringGet("(", 1)) then '<%expStr%>' else '(<%expStr%>)'
 end encloseInParantheses;
-
-
-
-
-
-
-
-template contextIteratorName(Ident name, Context context)
-  "Generates code for an iterator variable."
-::=
- name
-end contextIteratorName;
-
-
-
-
-
-
 
 template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp, Text &varDecls, SimCode simCode,
                       Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
