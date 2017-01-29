@@ -13,6 +13,7 @@ clockedTypesTest.mos \
 clockedTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
+nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
 RefArrayDim2.mos \
