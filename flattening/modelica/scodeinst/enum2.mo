@@ -13,6 +13,6 @@ end M;
 
 // Result:
 // class M
-//   enumeration(one, two, three) e;
+//   enumeration(one, two, three) e(start = E2.two);
 // end M;
 // endResult

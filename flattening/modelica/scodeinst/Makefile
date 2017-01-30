@@ -8,6 +8,8 @@ bindings3.mo \
 bindings4.mo \
 bindings5.mo \
 bindings7.mo \
+BooleanDim.mo \
+builtinmod.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
 ClassAsComponentError.mo \
@@ -25,9 +27,11 @@ DuplicateMod4.mo \
 DuplicateMod5.mo \
 enum1.mo \
 enum2.mo \
+enum3.mo \
 enum4.mo \
 enum5.mo \
 enum7.mo \
+enum8.mo \
 eq1.mo \
 eq7.mo \
 eq10.mo \
@@ -65,11 +69,11 @@ usertype3.mo \
 usertype4.mo \
 usertype5.mo \
 usertype6.mo \
+when1.mo
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-builtinmod.mo \
 compfunc.mo \
 conn3.mo \
 conn5.mo \
@@ -95,7 +99,6 @@ dim14.mo \
 dim16.mo \
 dim18.mo \
 dim1.mo \
-enum3.mo \
 enum6.mo \
 eq2.mo \
 eq3.mo \
@@ -214,7 +217,6 @@ MultiInheritanceRedeclare1.mo \
 noretcall1.mo \
 redeclare3.mo \
 redeclare10.mo \
-when1.mo \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

@@ -35,7 +35,7 @@ model A
   MyInteger i(quantity = "m", min = -100, max = 100, start = 10, fixed = true);
   MyBoolean b(quantity = "m", start = false, fixed = true);
   MyString s(quantity = "m", start = "hello");
-  MyStateSelect m(start = StateSelect.avoid);
+  MyStateSelect m(start = MyStateSelect.avoid);
 end A;
 
 // Result:
@@ -44,6 +44,6 @@ end A;
 //   Integer i(quantity = "m", min = -100, max = 100, start = 10, fixed = true);
 //   Boolean b(quantity = "m", start = false, fixed = true);
 //   String s(quantity = "m", start = "hello");
-//   enumeration() m;
+//   enumeration(never, avoid, default, prefer, always) m(start = MyStateSelect.avoid);
 // end A;
 // endResult
