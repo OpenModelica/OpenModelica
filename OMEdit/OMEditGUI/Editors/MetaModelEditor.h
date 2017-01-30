@@ -104,6 +104,7 @@ private:
   QGenericMatrix<3, 1, double> getRotationVector(QGenericMatrix<3, 3, double> R);
 private slots:
   virtual void showContextMenu(QPoint point);
+  void updateAllOrientations();
 public slots:
   void setPlainText(const QString &text);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);

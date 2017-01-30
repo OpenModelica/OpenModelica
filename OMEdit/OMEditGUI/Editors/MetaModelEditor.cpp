@@ -100,6 +100,7 @@ bool MetaModelEditor::validateText()
       mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
+  updateAllOrientations();
   return true;
 }
 
@@ -358,6 +359,12 @@ void MetaModelEditor::updateSubModelOrientation(QString name, QGenericMatrix<3,1
   QString rot_str = QString("%1,%2,%3").arg(rot(0,0)).arg(rot(0,1)).arg(rot(0,2));
   getSubModelElement(name).setAttribute("Angle321", rot_str);
   setPlainText(mXmlDocument.toString());
+
+  Component *pComp = mpModelWidget->getDiagramGraphicsView()->getComponentObject(name);
+  if(pComp) {
+    pComp->getComponentInfo()->setPosition(pos_str);
+    pComp->getComponentInfo()->setAngle321(rot_str);
+  }
 }
 
 /*!
@@ -857,6 +864,25 @@ QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3
   return QGenericMatrix<3,1,double>(phi);
 }
 
+void MetaModelEditor::updateAllOrientations()
+{
+  QDomNodeList subModelList = getSubModels();
+  for (int i=0; i<subModelList.size(); ++i) {
+    QDomElement subModelElement = subModelList.at(i).toElement();
+    GraphicsView *pView = mpModelWidget->getDiagramGraphicsView();
+    QString modelName = subModelElement.attribute("Name");
+
+    if(subModelElement.hasAttribute("Position") && subModelElement.hasAttribute("Angle321")) {
+      Component *pComp = pView->getComponentObject(modelName);
+      if(pComp) {
+        pComp->getComponentInfo()->setPosition(subModelElement.attribute("Position"));
+        pComp->getComponentInfo()->setAngle321(subModelElement.attribute("Angle321"));
+      }
+    }
+  }
+  mpModelWidget->getModelWidgetContainer()->updateThreeDViewer(mpModelWidget);
+}
+
 /*!
  * \brief MetaModelEditor::getPositionAndRotationVectors
  * Extracts position and rotation vectors for specified TLM interface, both between CG and model X and between X and interface C
@@ -1090,6 +1116,7 @@ void MetaModelEditor::setPlainText(const QString &text)
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
     mXmlDocument.setContent(text);
+    updateAllOrientations();
     // use the text from mXmlDocument so that we can map error to line numbers. We don't care about users formatting in the file.
     mpPlainTextEdit->setPlainText(mXmlDocument.toString());
     mForceSetPlainText = false;

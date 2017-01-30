@@ -72,7 +72,8 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpSpeedComboBox(nullptr),
     mpPerspectiveDropDownBox(nullptr),
     mpRotateCameraLeftAction(nullptr),
-    mpRotateCameraRightAction(nullptr)
+    mpRotateCameraRightAction(nullptr),
+    mCameraInitialized(false)
 {
   // to distinguish this widget as a subwindow among the plotwindows
   setObjectName(QString("animationWidget"));
@@ -99,7 +100,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
  * \brief AbstractAnimationWindow::openAnimationFile
  * \param fileName
  */
-void AbstractAnimationWindow::openAnimationFile(QString fileName)
+void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCamera)
 {
   std::string file = fileName.toStdString();
   if (file.compare("")) {
@@ -128,6 +129,11 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName)
       } else {
         mpPerspectiveDropDownBox->setCurrentIndex(1);
         cameraPositionSide();
+      }
+
+      if(stashCamera && !mCameraInitialized) {         // mCameraInitialized is used to make sure the view is never stashed
+        mCameraInitialized = true;      // before the camera is initialized the first time
+        stashView();
       }
     }
   }
@@ -212,6 +218,19 @@ void AbstractAnimationWindow::clearView()
     mpViewerWidget->getSceneView()->setSceneData(0);
     mpViewerWidget->update();
   }
+}
+
+void AbstractAnimationWindow::stashView()
+{
+  if(!mCameraInitialized) return;
+  mStashedViewMatrix = mpViewerWidget->getSceneView()->getCameraManipulator()->getMatrix();
+}
+
+void AbstractAnimationWindow::popView()
+{
+    if(!mCameraInitialized) return;
+    mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mStashedViewMatrix);
+    mpViewerWidget->update();
 }
 
 /*!

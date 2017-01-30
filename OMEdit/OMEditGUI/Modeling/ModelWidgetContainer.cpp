@@ -5037,8 +5037,11 @@ void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
     QString visualXMLFileName = QString("%1/%2_visual.xml").arg(Utilities::tempDirectory()).arg(fileName);
     // write dummy csv file and visualization file
     if (pModelWidget->writeCoSimulationResultFile(resultFileName) && pModelWidget->writeVisualXMLFile(visualXMLFileName, true)) {
+      MainWindow::instance()->getThreeDViewer()->stashView();
       MainWindow::instance()->getThreeDViewerDockWidget()->show();
-      MainWindow::instance()->getThreeDViewer()->openAnimationFile(resultFileName);
+      MainWindow::instance()->getThreeDViewer()->clearView();
+      MainWindow::instance()->getThreeDViewer()->openAnimationFile(resultFileName,true);
+      MainWindow::instance()->getThreeDViewer()->popView();
     } else {
       MainWindow::instance()->getThreeDViewer()->clearView();
     }

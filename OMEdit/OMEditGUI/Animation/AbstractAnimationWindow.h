@@ -52,9 +52,11 @@ class AbstractAnimationWindow : public QMainWindow
   Q_OBJECT
 public:
   AbstractAnimationWindow(QWidget *pParent);
-  void openAnimationFile(QString fileName);
+  void openAnimationFile(QString fileName, bool stashCamera=false);
   virtual void createActions();
   void clearView();
+  void stashView();
+  void popView();
 private:
   bool loadVisualization();
 protected:
@@ -78,6 +80,8 @@ protected:
   QComboBox *mpPerspectiveDropDownBox;
   QAction *mpRotateCameraLeftAction;
   QAction *mpRotateCameraRightAction;
+  osg::Matrixd mStashedViewMatrix;
+  bool mCameraInitialized;
 
   void resetCamera();
   void cameraPositionIsometric();
