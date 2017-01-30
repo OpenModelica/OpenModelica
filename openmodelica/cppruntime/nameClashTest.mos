@@ -10,9 +10,13 @@ loadString("
 package NameClash
   function f
     input Real simTime;
-    output Real mydouble = simTime; // fixme: double does not work in functions!
-    output Integer int = integer(simTime);
-    output String string = String(simTime);
+    output Real double;
+    output Integer int;
+    output String string;
+  algorithm
+    double := simTime;
+    int := integer(simTime);
+    string := String(simTime);
   end f;
   model Test
     Real simTime = time;
