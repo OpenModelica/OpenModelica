@@ -84,16 +84,14 @@ template subscriptsToCStrForArray(list<Subscript> subscripts)
   if subscripts then
     '<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>'
 end subscriptsToCStrForArray;
-/*
-tempalte for writing output variable names in mat or csv files
-*/
+
 template crefStrForWriteOutput(ComponentRef cr)
+ "template for writing output variable names in mat or csv files"
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStrForWriteOutput(subscriptLst)%>'
   case CREF_IDENT(ident = "time") then "_simTime"
   case CREF_IDENT(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>'
-  // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrForWriteOutput(componentRef)%>)'
   case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrForWriteOutput(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>.<%crefStrForWriteOutput(componentRef)%>'
@@ -107,21 +105,13 @@ template subscriptsStrForWriteOutput(list<Subscript> subscripts)
     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'//previous multi_array     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
 end subscriptsStrForWriteOutput;
 
-
 template crefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStr(subscriptLst)%>'
   case CREF_IDENT(ident = "time") then "_simTime"
-  //filter key words for variable names
-  case CREF_IDENT(ident = "unsigned") then 'unsigned_'
-  case CREF_IDENT(ident = "string") then 'string_'
-  case CREF_IDENT(ident = "int") then 'int_'
-  case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
-  // Are these even needed? Function context should only have CREF_IDENT :)
-  case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
-  case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStr(componentRef)%>)'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%ident%>_<%subscriptsStr(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%ident%>_<%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
 
@@ -175,9 +165,7 @@ end contextFunName;
 template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
 ::=
-  match context
-  case FUNCTION_CONTEXT(__) then name
-  else name + "_"
+  name + "_"
 end contextIteratorName;
 
 template crefWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
@@ -229,8 +217,8 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
       '__z[<%i%>]'
     case STATE_DER() then
       '__zDot[<%i%>]'
-   case DAE_RESIDUAL_VAR() then
-   '__daeResidual[<%i%>]'
+    case DAE_RESIDUAL_VAR() then
+      '__daeResidual[<%i%>]'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
@@ -549,8 +537,8 @@ template arrayCrefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "_simTime"
-  case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%>.<%arrayCrefStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%ident%>_'
+  case CREF_QUAL(__) then '<%ident%>_.<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
@@ -2794,7 +2782,7 @@ case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=
     let lhsStr = contextCref(crefStripSubs(cr), context, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-      '_<%lhsStr%>P_<%var.name%>_ = <%rhsStr%>.<%var.name%>;'
+      '_<%lhsStr%>P_<%var.name%>_ = <%rhsStr%>.<%var.name%>_;'
     ; separator="\n"
     %>
     >>
