@@ -169,15 +169,13 @@ algorithm
     local
       Absyn.Exp dim_exp;
       Expression typed_exp;
+      Class cls;
 
     case Dimension.UNTYPED(dimension = dim_exp)
       algorithm
-        typed_exp := typeExp(dim_exp, scope, info);
+        typed_exp := typeExp(dim_exp, scope, info, true);
       then
-        match typed_exp
-          case Expression.INTEGER() then Dimension.INTEGER(typed_exp.value);
-          else Dimension.EXP(typed_exp);
-        end match;
+        Dimension.fromTypedExp(typed_exp);
 
     else dimension;
   end match;
@@ -681,6 +679,7 @@ function typeExp
   input Absyn.Exp untypedExp;
   input InstNode scope;
   input SourceInfo info;
+  input Boolean allowTypename = false;
   output Expression typedExp;
   output Type ty;
   output DAE.Const variability;
@@ -704,7 +703,7 @@ algorithm
       then (Expression.BOOLEAN(untypedExp.value), Type.BOOLEAN(), Const.C_CONST());
 
     case Absyn.Exp.CREF()
-      then typeCref(untypedExp.componentRef, scope, info);
+      then typeCref(untypedExp.componentRef, scope, info, allowTypename);
 
     case Absyn.Exp.ARRAY()
       algorithm
@@ -910,6 +909,7 @@ function typeCref
   input Absyn.ComponentRef untypedCref;
   input InstNode scope;
   input SourceInfo info;
+  input Boolean allowTypename = false;
   output Expression typedCref;
   output Type ty;
   output DAE.Const variability;
@@ -919,19 +919,46 @@ protected
   Component.Attributes attr;
   DAE.VarKind vr;
   Component comp;
+  Class cls;
+  Type t;
 algorithm
-  (node, prefix) := Lookup.lookupComponent(untypedCref, scope, info);
+  (node, prefix) := Lookup.lookupComponent(untypedCref, scope, info, allowTypename);
 
-  node := typeComponent(node);
-  comp := InstNode.component(node);
+  if allowTypename and InstNode.isClass(node) then
+    // Special case when a cref refers to a typename, e.g. as a dimension.
+    cls := InstNode.getClass(node);
+    t := Class.getType(cls);
 
-  prefix := Prefix.fromCref(untypedCref, prefix);
-  prefix := updateCrefPrefix(untypedCref, node, prefix);
-  typedCref := Expression.CREF(node, prefix);
+    (typedCref, ty) := match t
+      // Make sure it's a type that's allowed, and make a cref.
+      case Type.ENUMERATION() then (Expression.CREF(node, prefix), t);
+      case Type.BOOLEAN() then (Expression.CREF(node, prefix), t);
 
-  Component.TYPED_COMPONENT(ty = ty, attributes = attr) := comp;
-  Component.ATTRIBUTES(variability = vr) := attr;
-  variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
+      // This should be caught by the lookup.
+      else
+        algorithm
+          assert(false, getInstanceName() + " got invalid typename class");
+        then
+          fail();
+
+    end match;
+
+    // Enumeration literals are always constant.
+    variability := DAE.C_CONST();
+
+  else
+    // A normal component.
+    node := typeComponent(node);
+    comp := InstNode.component(node);
+
+    prefix := Prefix.fromCref(untypedCref, prefix);
+    prefix := updateCrefPrefix(untypedCref, node, prefix);
+    typedCref := Expression.CREF(node, prefix);
+
+    Component.TYPED_COMPONENT(ty = ty, attributes = attr) := comp;
+    Component.ATTRIBUTES(variability = vr) := attr;
+    variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
+  end if;
 end typeCref;
 
 function updateCrefPrefix

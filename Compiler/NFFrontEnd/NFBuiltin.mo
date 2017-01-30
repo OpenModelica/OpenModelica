@@ -40,208 +40,218 @@ encapsulated package NFBuiltin
   defined by ModelicaBuiltin.mo.
   "
 
-public import Absyn;
-public import DAE;
-public import SCode;
+public
+import Absyn;
+import DAE;
+import SCode;
+import Binding = NFBinding;
+import NFClass.Class;
+import NFClass.ClassTree;
+import NFComponent.Component;
+import NFExpression.Expression;
+import NFInstNode.InstNode;
+import NFInstNode.InstNodeType;
+import NFMod.Modifier;
+import Type = NFType;
 
-// Default parts of the declarations for builtin elements and types:
-public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
-  SCode.PUBLIC(), SCode.NOT_REDECLARE(), SCode.NOT_FINAL(),
-  Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE());
+encapsulated package Elements
+  import SCode;
+  import Absyn;
 
-public constant SCode.Attributes BUILTIN_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD());
+  // Default parts of the declarations for builtin elements and types:
+  public constant Absyn.TypeSpec ENUMTYPE_SPEC =
+    Absyn.TPATH(Absyn.IDENT("$EnumType"), NONE());
 
-public constant SCode.Attributes BUILTIN_CONST_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD());
+  // StateSelect-specific elements:
+  constant SCode.Element STATESELECT_NEVER = SCode.COMPONENT(
+    "never", SCode.defaultPrefixes, SCode.defaultConstAttr, ENUMTYPE_SPEC,
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
-public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
-  {}, {}, {}, {}, {}, {}, {}, NONE());
+  constant SCode.Element STATESELECT_AVOID = SCode.COMPONENT(
+    "avoid", SCode.defaultPrefixes, SCode.defaultConstAttr, ENUMTYPE_SPEC,
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
+  constant SCode.Element STATESELECT_DEFAULT = SCode.COMPONENT(
+    "default", SCode.defaultPrefixes, SCode.defaultConstAttr, ENUMTYPE_SPEC,
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
-// Metatypes used to define the builtin types:
-public constant Absyn.TypeSpec BUILTIN_REALTYPE_SPEC =
-  Absyn.TPATH(Absyn.IDENT("$RealType"), NONE());
-public constant Absyn.TypeSpec BUILTIN_INTEGERTYPE_SPEC =
-  Absyn.TPATH(Absyn.IDENT("$IntegerType"), NONE());
-public constant Absyn.TypeSpec BUILTIN_BOOLEANTYPE_SPEC =
-  Absyn.TPATH(Absyn.IDENT("$BooleanType"), NONE());
-public constant Absyn.TypeSpec BUILTIN_STRINGTYPE_SPEC =
-  Absyn.TPATH(Absyn.IDENT("$StringType"), NONE());
-public constant Absyn.TypeSpec BUILTIN_ENUMTYPE_SPEC =
-  Absyn.TPATH(Absyn.IDENT("$EnumType"), NONE());
-public constant Absyn.TypeSpec BUILTIN_STATESELECT_SPEC =
-  Absyn.TPATH(Absyn.IDENT("StateSelect"), NONE());
+  constant SCode.Element STATESELECT_PREFER = SCode.COMPONENT(
+    "prefer", SCode.defaultPrefixes, SCode.defaultConstAttr, ENUMTYPE_SPEC,
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
+  constant SCode.Element STATESELECT_ALWAYS = SCode.COMPONENT(
+    "always", SCode.defaultPrefixes, SCode.defaultConstAttr, ENUMTYPE_SPEC,
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
-// Builtin type attributes.
-// Generic elements:
-public constant SCode.Element BUILTIN_ATTR_QUANTITY = SCode.COMPONENT(
-  "quantity", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  constant SCode.Element REAL = SCode.CLASS("Real",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment,Absyn.dummyInfo);
 
-public constant SCode.Element BUILTIN_ATTR_UNIT = SCode.COMPONENT(
-  "unit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  constant SCode.Element INTEGER = SCode.CLASS("Integer",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment,Absyn.dummyInfo);
 
-public constant SCode.Element BUILTIN_ATTR_DISPLAYUNIT = SCode.COMPONENT(
-  "displayUnit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  constant SCode.Element BOOLEAN = SCode.CLASS("Boolean",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment,Absyn.dummyInfo);
 
-public constant SCode.Element BUILTIN_ATTR_FIXED = SCode.COMPONENT(
-  "fixed", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_ATTR_STATESELECT = SCode.COMPONENT(
-  "stateSelect", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STATESELECT_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-// Real-specific elements:
-public constant SCode.Element BUILTIN_REAL_MIN = SCode.COMPONENT(
-  "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_REAL_MAX = SCode.COMPONENT(
-  "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_REAL_START = SCode.COMPONENT(
-  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_REAL_NOMINAL = SCode.COMPONENT(
-  "nominal", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-// Integer-specific elements:
-public constant SCode.Element BUILTIN_INTEGER_MIN = SCode.COMPONENT(
-  "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_INTEGER_MAX = SCode.COMPONENT(
-  "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_INTEGER_START = SCode.COMPONENT(
-  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-// Boolean-specific elements:
-public constant SCode.Element BUILTIN_BOOLEAN_START = SCode.COMPONENT(
-  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-// String-specific elements:
-public constant SCode.Element BUILTIN_STRING_START = SCode.COMPONENT(
-  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-// StateSelect-specific elements:
-public constant SCode.Element BUILTIN_ENUM_MIN = SCode.COMPONENT(
-  "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_ENUM_MAX = SCode.COMPONENT(
-  "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_ENUM_START = SCode.COMPONENT(
-  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_STATESELECT_NEVER = SCode.COMPONENT(
-  "never", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_STATESELECT_AVOID = SCode.COMPONENT(
-  "avoid", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_STATESELECT_DEFAULT = SCode.COMPONENT(
-  "default", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_STATESELECT_PREFER = SCode.COMPONENT(
-  "prefer", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
-
-public constant SCode.Element BUILTIN_STATESELECT_ALWAYS = SCode.COMPONENT(
-  "always", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  constant SCode.Element STRING = SCode.CLASS("String",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment,Absyn.dummyInfo);
 
 
-// The builtin types:
-public constant list<SCode.Element> BUILTIN_REAL_ATTRIBUTES = {
-  BUILTIN_ATTR_QUANTITY,
-  BUILTIN_ATTR_UNIT,
-  BUILTIN_ATTR_DISPLAYUNIT,
-  BUILTIN_REAL_MIN,
-  BUILTIN_REAL_MAX,
-  BUILTIN_REAL_START,
-  BUILTIN_ATTR_FIXED,
-  BUILTIN_REAL_NOMINAL,
-  BUILTIN_ATTR_STATESELECT
-};
+  constant SCode.Element STATESELECT = SCode.CLASS("StateSelect",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.ENUMERATION({
+      SCode.ENUM("never",   SCode.noComment),
+      SCode.ENUM("avoid",   SCode.noComment),
+      SCode.ENUM("default", SCode.noComment),
+      SCode.ENUM("prefer",  SCode.noComment),
+      SCode.ENUM("always",  SCode.noComment)
+    }),
+    SCode.noComment, Absyn.dummyInfo);
 
-public constant SCode.Element BUILTIN_REAL = SCode.CLASS("Real",
-  SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-  SCode.noComment,Absyn.dummyInfo);
+  // Builtin variable time:
+  constant SCode.Element TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
+      SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(), Absyn.NONFIELD()),
+      Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
+end Elements;
 
-public constant list<SCode.Element> BUILTIN_INTEGER_ATTRIBUTES = {
-  BUILTIN_ATTR_QUANTITY,
-  BUILTIN_INTEGER_MIN,
-  BUILTIN_INTEGER_MAX,
-  BUILTIN_INTEGER_START,
-  BUILTIN_ATTR_FIXED
-};
+// InstNodes for the builtin types. These have empty class trees to prevent
+// access to the attributes via dot notation (which is not needed for
+// modifiers and illegal in other cases).
+constant InstNode REAL_TYPE = InstNode.CLASS_NODE("Real",
+  Elements.REAL,
+  listArray({Class.PARTIAL_BUILTIN(Type.REAL(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-public constant SCode.Element BUILTIN_INTEGER = SCode.CLASS("Integer",
-  SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-  SCode.noComment,Absyn.dummyInfo);
+constant InstNode INT_TYPE = InstNode.CLASS_NODE("Integer",
+  Elements.INTEGER,
+  listArray({Class.PARTIAL_BUILTIN(Type.INTEGER(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
+constant InstNode BOOLEAN_TYPE = InstNode.CLASS_NODE("Boolean",
+  Elements.BOOLEAN,
+  listArray({Class.PARTIAL_BUILTIN(Type.BOOLEAN(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-public constant list<SCode.Element> BUILTIN_BOOLEAN_ATTRIBUTES = {
-  BUILTIN_ATTR_QUANTITY,
-  BUILTIN_BOOLEAN_START,
-  BUILTIN_ATTR_FIXED
-};
+constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
+  Elements.STRING,
+  listArray({Class.PARTIAL_BUILTIN(Type.STRING(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-public constant SCode.Element BUILTIN_BOOLEAN = SCode.CLASS("Boolean",
-  SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-  SCode.noComment,Absyn.dummyInfo);
+constant Type STATESELECT_TYPE_TYPE = Type.ENUMERATION(
+  Absyn.IDENT("StateSelect"), {"never", "avoid", "default", "prefer", "always"});
 
+constant InstNode STATESELECT_TYPE = InstNode.CLASS_NODE("StateSelect",
+  Elements.STATESELECT,
+  listArray({Class.PARTIAL_BUILTIN(STATESELECT_TYPE_TYPE, ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-public constant list<SCode.Element> BUILTIN_STRING_ATTRIBUTES = {
-  BUILTIN_ATTR_QUANTITY,
-  BUILTIN_STRING_START
-};
+constant Binding STATESELECT_NEVER_BINDING =
+  Binding.TYPED_BINDING(
+    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "never", 1),
+    STATESELECT_TYPE_TYPE,
+    DAE.C_CONST(),
+    -1,
+    Absyn.dummyInfo);
 
-public constant SCode.Element BUILTIN_STRING = SCode.CLASS("String",
-  SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-  SCode.noComment,Absyn.dummyInfo);
+constant Binding STATESELECT_AVOID_BINDING =
+  Binding.TYPED_BINDING(
+    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "avoid", 2),
+    STATESELECT_TYPE_TYPE,
+    DAE.C_CONST(),
+    -1,
+    Absyn.dummyInfo);
 
+constant Binding STATESELECT_DEFAULT_BINDING =
+  Binding.TYPED_BINDING(
+    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "default", 3),
+    STATESELECT_TYPE_TYPE,
+    DAE.C_CONST(),
+    -1,
+    Absyn.dummyInfo);
 
-public constant SCode.Element BUILTIN_STATESELECT = SCode.CLASS("StateSelect",
-  SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-  SCode.noComment, Absyn.dummyInfo);
+constant Binding STATESELECT_PREFER_BINDING =
+  Binding.TYPED_BINDING(
+    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "prefer", 4),
+    STATESELECT_TYPE_TYPE,
+    DAE.C_CONST(),
+    -1,
+    Absyn.dummyInfo);
 
-// Builtin variable time:
-public constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
-    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(), Absyn.NONFIELD()),
-    Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+constant Binding STATESELECT_ALWAYS_BINDING =
+  Binding.TYPED_BINDING(
+    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "always", 5),
+    STATESELECT_TYPE_TYPE,
+    DAE.C_CONST(),
+    -1,
+    Absyn.dummyInfo);
 
+constant InstNode STATESELECT_NEVER =
+  InstNode.COMPONENT_NODE("never",
+    Elements.STATESELECT_NEVER,
+    listArray({Component.TYPED_COMPONENT(
+      InstNode.EMPTY_NODE(),
+      STATESELECT_TYPE_TYPE,
+      STATESELECT_NEVER_BINDING,
+      NFComponent.CONST_ATTR)}),
+    STATESELECT_TYPE);
 
-public constant DAE.Type BUILTIN_TYPE_STATE_SELECT = DAE.T_ENUMERATION(
-  NONE(),
-  Absyn.IDENT("StateSelect"),
-  {"never", "avoid", "default", "prefer", "always"}, {}, {}
-);
+constant InstNode STATESELECT_AVOID =
+  InstNode.COMPONENT_NODE("avoid",
+    Elements.STATESELECT_AVOID,
+    listArray({Component.TYPED_COMPONENT(
+      InstNode.EMPTY_NODE(),
+      STATESELECT_TYPE_TYPE,
+      STATESELECT_AVOID_BINDING,
+      NFComponent.CONST_ATTR)}),
+    STATESELECT_TYPE);
+
+constant InstNode STATESELECT_DEFAULT =
+  InstNode.COMPONENT_NODE("default",
+    Elements.STATESELECT_DEFAULT,
+    listArray({Component.TYPED_COMPONENT(
+      InstNode.EMPTY_NODE(),
+      STATESELECT_TYPE_TYPE,
+      STATESELECT_DEFAULT_BINDING,
+      NFComponent.CONST_ATTR)}),
+    STATESELECT_TYPE);
+
+constant InstNode STATESELECT_PREFER =
+  InstNode.COMPONENT_NODE("prefer",
+    Elements.STATESELECT_PREFER,
+    listArray({Component.TYPED_COMPONENT(
+      InstNode.EMPTY_NODE(),
+      STATESELECT_TYPE_TYPE,
+      STATESELECT_PREFER_BINDING,
+      NFComponent.CONST_ATTR)}),
+    STATESELECT_TYPE);
+
+constant InstNode STATESELECT_ALWAYS =
+InstNode.COMPONENT_NODE("always",
+    Elements.STATESELECT_ALWAYS,
+    listArray({Component.TYPED_COMPONENT(
+      InstNode.EMPTY_NODE(),
+      STATESELECT_TYPE_TYPE,
+      STATESELECT_ALWAYS_BINDING,
+      NFComponent.CONST_ATTR)}),
+    STATESELECT_TYPE);
+
+constant InstNode TIME =
+  InstNode.COMPONENT_NODE("time",
+    Elements.TIME,
+    listArray({Component.TYPED_COMPONENT(
+      REAL_TYPE,
+      Type.REAL(),
+      Binding.UNBOUND(),
+      NFComponent.INPUT_ATTR)}),
+    InstNode.EMPTY_NODE());
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltin;

@@ -37,7 +37,10 @@ public
   import Absyn.Exp;
   import Absyn.Path;
   import Dump;
+  import NFClass.Class;
   import NFExpression.Expression;
+  import NFInstNode.InstNode;
+  import Type = NFType;
 
   record UNTYPED
     Absyn.Exp dimension;
@@ -52,8 +55,7 @@ public
   end BOOLEAN;
 
   record ENUM
-    Absyn.Path enumTypeName;
-    list<String> literals;
+    Type enumType;
   end ENUM;
 
   record EXP
@@ -63,15 +65,56 @@ public
   record UNKNOWN
   end UNKNOWN;
 
+  function fromTypedExp
+    input Expression exp;
+    output Dimension dim;
+  algorithm
+    dim := match exp
+      local
+        Class cls;
+
+      case Expression.INTEGER() then INTEGER(exp.value);
+
+      case Expression.CREF()
+        algorithm
+          if InstNode.isClass(exp.component) then
+            cls := InstNode.getClass(exp.component);
+
+            dim := match cls
+              case Class.PARTIAL_BUILTIN(ty = Type.BOOLEAN())
+                then BOOLEAN();
+
+              case Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION())
+                then ENUM(cls.ty);
+
+              else
+                algorithm
+                  assert(false, getInstanceName() + " got non-typename class.");
+                then
+                  fail();
+            end match;
+          else
+            dim := Dimension.EXP(exp);
+          end if;
+        then
+          dim;
+
+      else Dimension.EXP(exp);
+    end match;
+  end fromTypedExp;
+
   function toDAE
     input Dimension dim;
     output DAE.Dimension daeDim;
   algorithm
     daeDim := match dim
+      local
+        Type ty;
+
       case INTEGER() then DAE.DIM_INTEGER(dim.size);
       case BOOLEAN() then DAE.DIM_BOOLEAN();
-      case ENUM()
-        then DAE.DIM_ENUM(dim.enumTypeName, dim.literals, listLength(dim.literals));
+      case ENUM(enumType = ty as Type.ENUMERATION())
+        then DAE.DIM_ENUM(ty.typePath, ty.literals, listLength(ty.literals));
       case EXP() then DAE.DIM_EXP(Expression.toDAE(dim.exp));
       case UNKNOWN() then DAE.DIM_UNKNOWN();
     end match;
@@ -82,9 +125,12 @@ public
     output Integer size;
   algorithm
     size := match dim
+      local
+        Type ty;
+
       case INTEGER() then dim.size;
       case BOOLEAN() then 2;
-      case ENUM() then listLength(dim.literals);
+      case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
     end match;
   end size;
 
@@ -120,9 +166,12 @@ public
     output String str;
   algorithm
     str := match dim
+      local
+        Type ty;
+
       case INTEGER() then String(dim.size);
       case BOOLEAN() then "Boolean";
-      case ENUM() then Absyn.pathString(dim.enumTypeName);
+      case ENUM(enumType = ty as Type.ENUMERATION()) then Absyn.pathString(ty.typePath);
       case EXP() then Expression.toString(dim.exp);
       case UNKNOWN() then ":";
       case UNTYPED() then Dump.printExpStr(dim.dimension);

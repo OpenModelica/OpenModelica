@@ -337,7 +337,7 @@ protected
   Integer index = 1;
 algorithm
   for lit in literals loop
-    binding := Binding.TYPED_BINDING(Expression.ENUM_LITERAL(enumType, index),
+    binding := Binding.TYPED_BINDING(Expression.ENUM_LITERAL(enumType, lit.literal, index),
       enumType, DAE.C_CONST(), 0, info);
     comp := Component.TYPED_COMPONENT(enumClass, enumType, binding, NFComponent.CONST_ATTR);
     lit_nodes := InstNode.fromComponent(lit.literal, comp, enum_def, enumClass) :: lit_nodes;

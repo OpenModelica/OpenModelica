@@ -188,9 +188,9 @@ algorithm
         then flattenArrayBoolDim(element, rest_dims, prefix, subscripts,
           scalarFunc, elements);
 
-      //case Dimension.ENUM()
-      //  then flattenArrayEnumDim(element, dim.enumTypeName, dim.literals,
-      //    rest_dims, prefix, subscripts, scalarFunc, elements);
+      case Dimension.ENUM()
+        then flattenArrayEnumDim(element, dim.enumType, rest_dims, prefix,
+          subscripts, scalarFunc, elements);
 
       else
         algorithm
@@ -235,28 +235,37 @@ algorithm
   elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
 end flattenArrayBoolDim;
 
-//function flattenArrayEnumDim<ElementT>
-//  input ElementT element;
-//  input Absyn.Path typeName;
-//  input list<String> literals;
-//  input list<Dimension> restDims;
-//  input Prefix prefix;
-//  input list<Subscript> subscripts;
-//  input ExpandScalarFunc scalarFunc;
-//  input output list<DAE.Element> elements;
-//protected
-//  Integer i = 1;
-//  Expression enum_exp;
-//  list<Subscript> subs;
-//algorithm
-//  for l in literals loop
-//    enum_exp := Expression.ENUM_LITERAL(Absyn.suffixPath(typeName, l), i);
-//    i := i + 1;
-//
-//    subs := Subscript.INDEX(enum_exp) :: subscripts;
-//    elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
-//  end for;
-//end flattenArrayEnumDim;
+function flattenArrayEnumDim<ElementT>
+  input ElementT element;
+  input Type enumType;
+  input list<Dimension> restDims;
+  input Prefix prefix;
+  input list<Subscript> subscripts;
+  input ExpandScalarFunc scalarFunc;
+  input output list<DAE.Element> elements;
+protected
+  Integer i = 1;
+  Expression enum_exp;
+  list<String> literals;
+  list<Subscript> subs;
+algorithm
+  literals := match enumType
+    case Type.ENUMERATION() then enumType.literals;
+    else
+      algorithm
+        assert(false, getInstanceName() + " got non-enum type");
+      then
+        fail();
+  end match;
+
+  for l in literals loop
+    enum_exp := Expression.ENUM_LITERAL(enumType, l, i);
+    i := i + 1;
+
+    subs := Subscript.INDEX(enum_exp) :: subscripts;
+    elements := flattenArray(element, restDims, prefix, scalarFunc, elements, subs);
+  end for;
+end flattenArrayEnumDim;
 
 function flattenScalar
   input Component component;
@@ -768,6 +777,7 @@ algorithm
     case Type.INTEGER() then makeIntVarAttributes(mods);
     case Type.BOOLEAN() then makeBoolVarAttributes(mods);
     case Type.STRING() then makeStringVarAttributes(mods);
+    case Type.ENUMERATION() then makeEnumVarAttributes(mods);
     else NONE();
   end match;
 end makeVarAttributes;
@@ -778,17 +788,19 @@ function makeRealVarAttributes
 protected
   Option<DAE.Exp> quantity = NONE(), unit = NONE(), displayUnit = NONE();
   Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
+  Option<DAE.StateSelect> state_select = NONE();
 algorithm
   for m in mods loop
     () := match Modifier.name(m)
-      case "quantity"    algorithm quantity := makeVarAttribute(m); then ();
-      case "unit"        algorithm unit := makeVarAttribute(m); then ();
       case "displayUnit" algorithm displayUnit := makeVarAttribute(m); then ();
-      case "min"         algorithm min := makeVarAttribute(m); then ();
-      case "max"         algorithm max := makeVarAttribute(m); then ();
-      case "start"       algorithm start := makeVarAttribute(m); then ();
       case "fixed"       algorithm fixed := makeVarAttribute(m); then ();
+      case "max"         algorithm max := makeVarAttribute(m); then ();
+      case "min"         algorithm min := makeVarAttribute(m); then ();
       case "nominal"     algorithm nominal := makeVarAttribute(m); then ();
+      case "quantity"    algorithm quantity := makeVarAttribute(m); then ();
+      case "start"       algorithm start := makeVarAttribute(m); then ();
+      case "stateSelect" algorithm state_select := makeStateSelectAttribute(m); then ();
+      case "unit"        algorithm unit := makeVarAttribute(m); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
@@ -803,7 +815,7 @@ algorithm
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_REAL(
     quantity, unit, displayUnit, min, max, start, fixed, nominal,
-    NONE(), NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
+    state_select, NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
 end makeRealVarAttributes;
 
 function makeIntVarAttributes
@@ -890,6 +902,36 @@ algorithm
     quantity, start, NONE(), NONE(), NONE(), NONE()));
 end makeStringVarAttributes;
 
+function makeEnumVarAttributes
+  input list<Modifier> mods;
+  output Option<DAE.VariableAttributes> attributes;
+protected
+  Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE();
+algorithm
+  for m in mods loop
+    () := match Modifier.name(m)
+      case "fixed"       algorithm fixed := makeVarAttribute(m); then ();
+      case "max"         algorithm max := makeVarAttribute(m); then ();
+      case "min"         algorithm min := makeVarAttribute(m); then ();
+      case "quantity"    algorithm quantity := makeVarAttribute(m); then ();
+      case "start"       algorithm start := makeVarAttribute(m); then ();
+
+      // The attributes should already be type checked, so we shouldn't get any
+      // unknown attributes here.
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown type attribute " +
+            Modifier.name(m));
+        then
+          fail();
+    end match;
+  end for;
+
+  attributes := SOME(DAE.VariableAttributes.VAR_ATTR_ENUMERATION(
+    quantity, min, max, start, fixed, NONE(), NONE(), NONE(), NONE()));
+end makeEnumVarAttributes;
+
 function makeVarAttribute
   input Modifier mod;
   output Option<DAE.Exp> attribute;
@@ -909,6 +951,59 @@ algorithm
 
   end match;
 end makeVarAttribute;
+
+function makeStateSelectAttribute
+  input Modifier mod;
+  output Option<DAE.StateSelect> stateSelect;
+algorithm
+  stateSelect := match mod
+    local
+      Expression exp;
+      InstNode node;
+
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(
+        bindingExp = exp as Expression.ENUM_LITERAL(
+          ty = Type.ENUMERATION(typePath = Absyn.IDENT("StateSelect")))))
+      then
+        SOME(lookupStateSelectMember(exp.name));
+
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(
+        bindingExp = exp as Expression.CREF(component = node)))
+      then
+        SOME(lookupStateSelectMember(InstNode.name(node)));
+
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING())
+      algorithm
+        assert(false, getInstanceName() + " got non StateSelect value");
+      then
+        fail();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " git untyped binding");
+      then
+        fail();
+
+  end match;
+end makeStateSelectAttribute;
+
+function lookupStateSelectMember
+  input String name;
+  output DAE.StateSelect stateSelect;
+algorithm
+  stateSelect := match name
+    case "never" then DAE.StateSelect.NEVER();
+    case "avoid" then DAE.StateSelect.AVOID();
+    case "default" then DAE.StateSelect.DEFAULT();
+    case "prefer" then DAE.StateSelect.PREFER();
+    case "always" then DAE.StateSelect.ALWAYS();
+    else
+      algorithm
+        assert(false, getInstanceName() + " got unknown StateSelect literal");
+      then
+        fail();
+  end match;
+end lookupStateSelectMember;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;
