@@ -891,7 +891,7 @@ template makeStateSelectHeader(list<StateSet> stateSets)
 ::=
   (stateSets |> stateSet as SES_STATESET(__) hasindex i0 =>
      let jacDecl =
-       (stateSet.jacobianMatrix |> (_,seedVars,name,(_,_),_,_,_) =>
+       (stateSet.jacobianMatrix |> JAC_MATRIX(seedVars=seedVars, matrixName=name) =>
            '<%declareJacobians2(name,seedVars)%>'
            ;separator="\n")
      <<
@@ -921,8 +921,8 @@ template selectState(list<DAE.ComponentRef> states, list<DAE.ComponentRef> state
 ::=
     let newStateAssign = (states |> stateVar hasindex i0 => '<%makeReinitDynamicState(stateVar,statescandidates,crA,nStates,i0)%>';separator="\n")
     <<
-    calc_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_,_) => '<%name%>')%>();
-    if (selectDynamicStates(_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_,_) => '<%name%>')%>,<%nStates%>,<%nCandidates%>,rowSelect<%crefarray(crA)%>,colSelect<%crefarray(crA)%>))
+    calc_Jacobian_<%(jacobianMatrix |> JAC_MATRIX(matrixName=name) => '<%name%>')%>();
+    if (selectDynamicStates(_Jacobian_<%(jacobianMatrix |> JAC_MATRIX(matrixName=name) => '<%name%>')%>,<%nStates%>,<%nCandidates%>,rowSelect<%crefarray(crA)%>,colSelect<%crefarray(crA)%>))
     {
         for (int row = 0; row < <%nStates%>; row++)
             for (int col = 0; col < <%nCandidates%>; col++)
@@ -1578,7 +1578,7 @@ template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<Sim
   if seedVars then
     let varDecls = (seedVars |> var as SIMVAR(__) hasindex i0 =>
       'double &_<%jacobianVarsSeedDefine(name)%>$pDER<%matrixName%>$P<%jacobianVarsSeedDefine(name)%> = _S_[<%i0%>];';separator="\n")
-    let eqs = (cols |> (eqnSys,colVars,_) => '<%jacobianColumnEqn(eqnSys,colVars,matrixName,listLength(sparsePattern),listLength(seedVars))%>';separator="\n")
+    let eqs = (cols |> JAC_COLUMN(columnEqns=eqnSys,columnVars=colVars) => '<%jacobianColumnEqn(eqnSys,colVars,matrixName,listLength(sparsePattern),listLength(seedVars))%>';separator="\n")
     <<
     void <%modelName%>::calc_Jacobian_<%matrixName%>()
     {
@@ -1603,7 +1603,7 @@ end jacobianVarsSeedDefine;
 
 template makeJacobianFuncs(list<JacobianMatrix> jacobians, String modelName)
 ::=
-  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,sparsePattern),_,_,_) =>
+  let jacDecls = (jacobians |> JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, sparsityT=sparsePattern) =>
     '<%makeJacobianFunc(name,jacColumn,seedVars,sparsePattern,modelName)%>'
    ;separator="\n")
   <<
@@ -1635,7 +1635,7 @@ end declareJacobians2;
 
 template declareJacobians(list<JacobianMatrix> jacobians)
 ::=
-  let jacDecls = (jacobians |> (_,seedVars,name,_,_,_,_) =>
+  let jacDecls = (jacobians |> JAC_MATRIX(seedVars=seedVars, matrixName=name) =>
     '<%declareJacobians2(name,seedVars)%>'
    ;separator="\n")
   <<

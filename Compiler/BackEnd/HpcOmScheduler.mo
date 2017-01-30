@@ -3543,18 +3543,18 @@ protected function TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate "author: Wau
 algorithm
   (jacOut,tplOut) := matchcontinue(jacIn,tplIn)
     local
-      Integer maxCol,jacIdx;
+      Integer maxCol,jacIdx,partIdx;
       list<SimCode.JacobianColumn> jacCols;
       list<SimCodeVar.SimVar> vars;
       String name;
-      tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>> sparsePatt;
+      SimCode.SparsityPattern sparsity,sparsityT;
       list<list<Integer>> colCols;
       array<Integer> ass;
       Integer newIdx;
-    case(SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),(newIdx,ass))
+    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,colCols,maxCol,jacIdx,partIdx)),(newIdx,ass))
       equation
         (jacCols,(newIdx,ass)) = List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
-   then (SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),(newIdx,ass));
+   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,colCols,maxCol,jacIdx,partIdx)),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;
@@ -3570,13 +3570,13 @@ algorithm
     local
       list<SimCode.SimEqSystem> simEqs;
       list<SimCodeVar.SimVar> simVars;
-      String colLen;
+      Integer rowLen;
       array<Integer> ass;
       Integer newIdx;
-    case((simEqs,simVars,colLen),(newIdx,ass))
+    case (SimCode.JAC_COLUMN(simEqs,simVars,rowLen),(newIdx,ass))
       equation
         (simEqs,(newIdx,ass)) = List.mapFold(simEqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
-   then((simEqs,simVars,colLen),(newIdx,ass));
+   then (SimCode.JAC_COLUMN(simEqs,simVars,rowLen),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate;
@@ -3585,22 +3585,15 @@ protected function TDS_replaceSimEqSysIdxInJacobianMatrix "author: Waurich TUD 2
   Replaces the index with the assigned one in a jacobian matrix."
   input Option<SimCode.JacobianMatrix> jacIn;
   input array<Integer> assIn;
-  output Option<SimCode.JacobianMatrix> jacOut;
+  output Option<SimCode.JacobianMatrix> jacOut = jacIn;
 algorithm
-  jacOut := matchcontinue(jacIn,assIn)
+  jacOut := matchcontinue(jacIn)
     local
-      Integer maxCol,jacIdx;
-      list<SimCode.JacobianColumn> jacCols;
-      list<SimCodeVar.SimVar> vars;
-      String name;
-      tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>> sparsePatt;
-      list<list<Integer>> colCols;
-      array<Integer> ass;
-      Integer newIdx;
-    case(SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),_)
+      SimCode.JacobianMatrix jacMatrix;
+    case SOME(jacMatrix as SimCode.JAC_MATRIX())
       equation
-        jacCols = List.map1(jacCols,TDS_replaceSimEqSysIdxInJacobianColumn,assIn);
-   then SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx));
+        jacMatrix.columns = List.map1(jacMatrix.columns, TDS_replaceSimEqSysIdxInJacobianColumn, assIn);
+   then SOME(jacMatrix);
    else jacIn;
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrix;
@@ -3609,21 +3602,9 @@ protected function TDS_replaceSimEqSysIdxInJacobianColumn "author: Waurich TUD 2
   Replaces the index with the assigned one in a jacobian column."
   input SimCode.JacobianColumn jacIn;
   input array<Integer> assIn;
-  output SimCode.JacobianColumn jacOut;
+  output SimCode.JacobianColumn jacOut = jacIn;
 algorithm
-  jacOut := matchcontinue(jacIn,assIn)
-    local
-      list<SimCode.SimEqSystem> simEqs;
-      list<SimCodeVar.SimVar> simVars;
-      String colLen;
-      array<Integer> ass;
-      Integer newIdx;
-    case((simEqs,simVars,colLen),_)
-      equation
-        simEqs = List.map1(simEqs,TDS_replaceSimEqSysIndex,assIn);
-   then ((simEqs,simVars,colLen));
-   else jacIn;
-  end matchcontinue;
+  jacOut.columnEqns := List.map1(jacOut.columnEqns, TDS_replaceSimEqSysIndex, assIn);
 end TDS_replaceSimEqSysIdxInJacobianColumn;
 
 protected function TDS_updateModelInfo "

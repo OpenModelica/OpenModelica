@@ -494,7 +494,7 @@ template simulationFile_nls(SimCode simCode)
   match simCode
     case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__))) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionNonLinearResiduals(jacobianEquations,modelNamePrefixStr);separator="\n\n")
+    let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionNonLinearResiduals(cEqns,modelNamePrefixStr);separator="\n") ;separator="\n"))
     <<
     /* Non Linear Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
@@ -892,7 +892,7 @@ template simulationFile_dae(SimCode simCode)
      let modelNamePrefixStr = modelNamePrefix(simCode)
      let initDAEmode =
        match sparsityPattern
-       case SOME((_, _, _, (_, sparse), colorList, maxColor, _)) then
+       case SOME(JAC_MATRIX(sparsityT=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
          '<%initializeDAEmodeData(listLength(residualVars), listLength(algebraicDAEVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
        case NONE() then
          'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }'
@@ -1464,7 +1464,7 @@ end globalDataAliasVarArray;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_), _, _, indexJacobian)  =>
+  let analyticVars = (JacobianMatrixes |> JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
     let varsDef = variableDefinitionsJacobians2(indexJacobian, jacColumn, seedVars, name)
     <<
     #if defined(__cplusplus)
@@ -1493,7 +1493,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
   let seedVarsResult = (seedVars |> var hasindex index0 =>
     jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name)
     ;separator="\n")
-  let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
+  let columnVarsResult = (jacobianColumn |> JAC_COLUMN(columnVars=vars) =>
     (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name);separator="\n")
     ;separator="\n\n")
   /* generate at least one print command to have the same index and avoid the strange side effect */
@@ -1730,7 +1730,7 @@ template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<Si
   let initbody_lambda0 = functionInitialMixedSystemsTemp(initialEquations_lambda0)
   let parambody = functionInitialMixedSystemsTemp(parameterEquations)
   let body = functionInitialMixedSystemsTemp(allEquations)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialMixedSystemsTemp(jacobianEquations) ;separator="\n\n")
+  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialMixedSystemsTemp(cEqns);separator="\n") ;separator="\n"))
   <<
   /* funtion initialize mixed systems */
   void <%symbolName(modelNamePrefix,"initialMixedSystem")%>(int nMixedSystems, MIXED_SYSTEM_DATA* mixedSystemData)
@@ -1774,7 +1774,7 @@ template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimE
   let initbody_lambda0 = functionSetupMixedSystemsTemp(initialEquations_lambda0, &header,modelNamePrefixStr)
   let parambody = functionSetupMixedSystemsTemp(parameterEquations,&header,modelNamePrefixStr)
   let body = functionSetupMixedSystemsTemp(allEquations,&header,modelNamePrefixStr)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionSetupMixedSystemsTemp(jacobianEquations,&header,modelNamePrefixStr);separator="\n\n")
+  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionSetupMixedSystemsTemp(cEqns,&header,modelNamePrefixStr);separator="\n") ;separator="\n"))
   <<
   /* initial mixed systems */
   <%initbody%>
@@ -1860,7 +1860,7 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   let initbody_lambda0 = functionInitialLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix, &globalConstraintsFunctions)
   let parambody = functionInitialLinearSystemsTemp(parameterEquations, modelNamePrefix, &globalConstraintsFunctions)
   let body = functionInitialLinearSystemsTemp(allEquations, modelNamePrefix, &globalConstraintsFunctions)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialLinearSystemsTemp(jacobianEquations, modelNamePrefix, &globalConstraintsFunctions);separator="\n\n")
+  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialLinearSystemsTemp(cEqns, modelNamePrefix, &globalConstraintsFunctions);separator="\n") ;separator="\n"))
   <<
   /* Prototypes for the strict sets (Dynamic Tearing) */
   <%tempeqns1%>
@@ -1911,9 +1911,9 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
          case SOME(__) then
            let size = listLength(ls.vars)
            let nnz = listLength(ls.simJac)
-           let generatedJac = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-           let initialJac = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-           let jacIndex = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+           let generatedJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+           let initialJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+           let jacIndex = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then '<%jacindex%>' case NONE() then '-1'
            <<
            assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
@@ -1969,14 +1969,14 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
          case SOME(__) then
            let size = listLength(ls.vars)
            let nnz = listLength(ls.simJac)
-           let generatedJac = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-           let initialJac = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-           let jacIndex = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+           let generatedJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+           let initialJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+           let jacIndex = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then '<%jacindex%>' case NONE() then '-1'
            let size2 = listLength(at.vars)
            let nnz2 = listLength(at.simJac)
-           let generatedJac2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-           let initialJac2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-           let jacIndex2 = match at.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+           let generatedJac2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+           let initialJac2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+           let jacIndex2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then '<%jacindex%>' case NONE() then '-1'
            let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
            <<
            assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
@@ -2022,7 +2022,7 @@ template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<Sim
   let initbody_lambda0 = functionSetupLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
   let parambody = functionSetupLinearSystemsTemp(parameterEquations, modelNamePrefix)
   let body = functionSetupLinearSystemsTemp(allEquations, modelNamePrefix)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionSetupLinearSystemsTemp(jacobianEquations, modelNamePrefix);separator="\n\n")
+  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionSetupLinearSystemsTemp(cEqns, modelNamePrefix);separator="\n") ;separator="\n"))
   <<
   /* initial linear systems */
   <%initbody%>
@@ -2368,7 +2368,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   let initbody_lambda0 = functionInitialNonLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix,&globalConstraintsFunctions)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix,&globalConstraintsFunctions)
   let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix,&globalConstraintsFunctions)
-  let jacobianbody = (jacobianMatrixes |> ({(jacobianEquations,_,_)}, _, _, _, _, _, _) => functionInitialNonLinearSystemsTemp(jacobianEquations, modelNamePrefix, &globalConstraintsFunctions) ;separator="\n\n")
+  let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialNonLinearSystemsTemp(cEqns, modelNamePrefix, &globalConstraintsFunctions);separator="\n") ;separator="\n"))
   <<
   /* Prototypes for the strict sets (Dynamic Tearing) */
   <%tempeqns1%>
@@ -2421,9 +2421,9 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
   match system
     case nls as NONLINEARSYSTEM(__) then
       let size = listLength(nls.crefs)
-      let generatedJac = match nls.jacobianMatrix case SOME(({},_,name,_,_,_,_)) then 'NULL' case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-      let initialJac = match nls.jacobianMatrix case SOME(({},_,name,_,_,_,_)) then 'NULL' case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-      let jacIndex = match nls.jacobianMatrix case SOME(({},_,name,_,_,_,jacindex)) then '-1' case SOME((_,_,name,_,_,_,jacindex)) then  '<%jacindex%>' case NONE() then '-1'
+      let generatedJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={},matrixName=name)) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+      let initialJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={},matrixName=name)) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+      let jacIndex = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={}, matrixName=name)) then '-1' case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then  '<%jacindex%>' case NONE() then '-1'
       let innerSystems = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName, "")
       let casualCall = if not intEq(indexStrict, 0) then '<%symbolName(modelPrefixName,"eqFunction")%>_<%indexStrict%>' else 'NULL'
       let constraintsCall = if not intEq(indexStrict, 0) then 'checkConstraints<%nls.index%>' else 'NULL'
@@ -2553,7 +2553,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
-        jacobianMatrix=SOME((_,_,_,(sparsePattern,_),colorList,maxColor,_))),
+        jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,coloredCols=colorList,maxColorCols=maxColor))),
         alternativeTearing=NONE()) then
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
@@ -2580,9 +2580,9 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       >>
     // dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
-        jacobianMatrix=SOME((_,_,_,(sparsePattern,_),colorList,maxColor,_))),
+        jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,coloredCols=colorList,maxColorCols=maxColor))),
         alternativeTearing = SOME(at as NONLINEARSYSTEM(
-        jacobianMatrix=SOME((_,_,_,(sparsePattern2,_),colorList2,maxColor2,_))))
+        jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern2,coloredCols=colorList2,maxColorCols=maxColor2))))
         ) then
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
@@ -2839,9 +2839,9 @@ template functionInitialStateSets(SimCode simCode, list<StateSet> stateSets, Str
 ::=
      let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-       let generatedJac = match jacobianMatrix case (_,_,name,_,_,_,_) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column'
-       let initialJac =  match jacobianMatrix case (_,_,name,_,_,_,_) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>'
-       let jacIndex = match jacobianMatrix case (_,_,_,_,_,_,jacindex) then '<%jacindex%>'
+       let generatedJac = match jacobianMatrix case JAC_MATRIX(matrixName=name) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column'
+       let initialJac =  match jacobianMatrix case JAC_MATRIX(matrixName=name) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>'
+       let jacIndex = match jacobianMatrix case JAC_MATRIX(jacobianIndex=jacindex) then '<%jacindex%>'
        let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%crefVarInfo( s)%>;' ;separator="\n")
        let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%crefVarInfo( cstate)%>;' ;separator="\n")
        <<
@@ -4633,10 +4633,10 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, maxColor, indexJacobian) =>
+  let initialjacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
-  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
-    generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
+  let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx) =>
+    generateMatrix(mat, vars, name, partIdx, modelNamePrefix) ;separator="\n")
 
   <<
   <%initialjacMats%>
@@ -4645,7 +4645,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String 
   >>
 end functionAnalyticJacobians;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -4669,9 +4669,8 @@ case _ then
       let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
       let colorString = genSPColors(colorList, "data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols")
-
-      let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
-      let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
+      let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
+      let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
       <<
 
@@ -4716,12 +4715,12 @@ case _ then
 end match
 end initialAnalyticJacobians;
 
-template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, String modelNamePrefix)
+template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, Integer partIdx, String modelNamePrefix)
   "This template generates source code for a single jacobian in dense format and sparse format.
   This is a helper of template functionAnalyticJacobians"
 ::=
-  let indxColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn)
-  match indxColumn
+  let nRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>')
+  match nRows
   case "0" then
     <<
     int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data, threadData_t *threadData)
@@ -4743,11 +4742,11 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
         }
         >>
       case _ then
-        let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
-          functionJac(eqs, vars, indxColumn, matrixname, modelNamePrefix)
+        let jacMats = (jacobianColumn |> JAC_COLUMN(columnEqns=eqs) =>
+          functionJac(eqs, partIdx, matrixname, modelNamePrefix)
           ;separator="\n")
-        let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
-          indxColumn
+        let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows)  =>
+          nRows
           ;separator="\n")
         <<
         <%jacMats%>
@@ -4756,13 +4755,13 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   end match
 end generateMatrix;
 
-template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, String columnLength, String matrixName, String modelNamePrefix) "template functionJac
+template functionJac(list<SimEqSystem> jacEquations, Integer partIdx, String matrixName, String modelNamePrefix) "template functionJac
   This template generates functions for each column of a single jacobian.
   This is a helper of generateMatrix."
 ::=
   <<
   <%(jacEquations |> eq =>
-    equation_impl(-1, eq, contextSimulationNonDiscrete, modelNamePrefix); separator="\n")%>
+    equation_impl(partIdx, eq, contextSimulationNonDiscrete, modelNamePrefix); separator="\n")%>
   int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(void* inData, threadData_t *threadData)
   {
     TRACE_PUSH

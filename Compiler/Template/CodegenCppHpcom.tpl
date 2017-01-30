@@ -94,8 +94,8 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationFactoryFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
 
       let() = textFile(simulationMainRunScript(simCode, &extraFuncs, &extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode, &extraFuncs, &extraFuncsDecl, "")%>')
-      let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, 0, stateDerVectorName, false) ;separator="")
+      let jac =  (jacobianMatrixes |> JAC_MATRIX(columns=mat) =>
+          (mat |> JAC_COLUMN(columnEqns=eqs) =>  algloopfiles(eqs,simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, 0, stateDerVectorName, false) ;separator="")
           ;separator="")
       let alg = algloopfiles(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, 0, stateDerVectorName, false)
       let clk = getSubPartitions(clockedPartitions) |> subPartition hasindex i fromindex 1 =>

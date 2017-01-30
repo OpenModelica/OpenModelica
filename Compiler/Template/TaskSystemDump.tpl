@@ -159,7 +159,7 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       let _ = SimCodeUtil.sortEqSystems(ls.residual) |> reseq  =>
                 eqDefinesDepends(reseq, defines, depends)
       let _ = (match ls.jacobianMatrix
-        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then
+        case SOME(SimCode.JAC_MATRIX(columns={JAC_COLUMN(columnEqns=eqns)})) then
           let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
                   eqDefinesDepends(jeq, defines, depends)
           ""
@@ -173,7 +173,7 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
           <%ls.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
           </residuals>
           <jacobian>
-          <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
+          <%match ls.jacobianMatrix case SOME(SimCode.JAC_MATRIX(columns={JAC_COLUMN(columnEqns=eqns)})) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
           </jacobian>
         </linear>
       </equation><%\n%>
@@ -185,13 +185,13 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       let _ = SimCodeUtil.sortEqSystems(nls.eqs) |> nleq  =>
                 eqDefinesDepends(nleq, defines, depends)
       let _ = (match nls.jacobianMatrix
-        case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then
+        case SOME(SimCode.JAC_MATRIX(columns={JAC_COLUMN(columnEqns=eqns)})) then
           let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
                   eqDefinesDepends(jeq, defines, depends)
           ""
        )
       <<
-      <%match nls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),nls.index,withOperations) else ''%>
+      <%match nls.jacobianMatrix case SOME(SimCode.JAC_MATRIX(columns={JAC_COLUMN(columnEqns=eqns)})) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),nls.index,withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <nonlinear indexNonlinear="<%nls.indexNonLinearSystem%>">
           <%defines%>

@@ -269,14 +269,30 @@ package SimCode
   type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
   type ExtDestructor = tuple<String, DAE.ComponentRef>;
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-  type JacobianColumn = tuple<list<SimEqSystem>, list<SimCodeVar.SimVar>, String>; // column equations, column vars, column length
-  type JacobianMatrix = tuple<list<JacobianColumn>, // column
-                            list<SimCodeVar.SimVar>,           // seed vars
-                            String,                 // matrix name
-                            tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>>,    // sparse pattern
-                            list<list<Integer>>,    // colored cols
-                            Integer,                         // max color used
-                            Integer>;                        // jacobian index
+
+  type SparsityPattern = list<tuple<Integer, list<Integer>>>;
+
+  uniontype JacobianColumn
+    record JAC_COLUMN
+      list<SimEqSystem> columnEqns;
+      list<SimCodeVar.SimVar> columnVars;
+      Integer numberOfResultVars;
+    end JAC_COLUMN;
+  end JacobianColumn;
+
+  uniontype JacobianMatrix
+    record JAC_MATRIX
+      list<JacobianColumn> columns;
+      list<SimCodeVar.SimVar> seedVars;
+      String matrixName;
+      SparsityPattern sparsity;
+      SparsityPattern sparsityT;
+      list<list<Integer>> coloredCols;
+      Integer maxColorCols;
+      Integer jacobianIndex;
+      Integer partitionIndex;
+    end JAC_MATRIX;
+  end JacobianMatrix;
 
   uniontype SimCode
     record SIMCODE

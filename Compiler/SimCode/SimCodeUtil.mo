@@ -384,6 +384,8 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+    (clockedPartitions, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoopsClockPartitions(clockedPartitions, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // collect symbolic jacobians from state selection
     (stateSets, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians) := indexStateSets(stateSets, {}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {}, {});
@@ -1049,7 +1051,7 @@ algorithm
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), homotopySupport, mixedSystem), NONE())::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac as ({},_,_,_,_,_,_)), homotopySupport, mixedSystem), NONE())::rest, _, _, _, _, _, _, _)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac as SimCode.JAC_MATRIX(columns={})), homotopySupport, mixedSystem), NONE())::rest, _, _, _, _, _, _, _)
       equation
         (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), homotopySupport, mixedSystem), NONE())::inEqnsAcc, inSymJacsAcc);
@@ -1083,7 +1085,7 @@ algorithm
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, NONE(), homotopySupport2, mixedSystem2)))::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac as ({},_,_,_,_,_,_)), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, SOME(symJac2 as ({},_,_,_,_,_,_)), homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac as SimCode.JAC_MATRIX(columns={})), homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, SOME(symJac2 as SimCode.JAC_MATRIX(columns={})), homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
       equation
         (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
         (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
@@ -1144,14 +1146,14 @@ protected function countandIndexAlgebraicLoopsSymJac "
 protected
   list<SimCode.JacobianColumn> columns;
   list<SimCodeVar.SimVar> vars;
-  String str;
-  tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>> tpl;    // sparse pattern
+  String name;
+  SimCode.SparsityPattern sparsity,sparsityT;
   list<list<Integer>> colors;
   Integer maxcolor, index;
 algorithm
-  (columns, vars, str, tpl, colors, maxcolor, index) := inSymjac;
+  SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, index) := inSymjac;
   (columns, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, outSymJacs) := countandIndexAlgebraicLoopsSymJacColumn(columns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, {});
-  outSymjac := (columns, vars, str, tpl, colors, maxcolor, outJacobianIndex);
+  outSymjac := SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, outJacobianIndex, -1);
   outJacobianIndex := outJacobianIndex + 1;
 end countandIndexAlgebraicLoopsSymJac;
 
@@ -1175,20 +1177,72 @@ algorithm
     list<SimCode.JacobianColumn> rest, result, res1;
     list<SimCode.SimEqSystem> eqns, eqns1;
     list<SimCodeVar.SimVar> vars;
-    String str;
+    Integer nRows;
     Integer countLinearSys, countNonLinSys, countMixedSys, countJacobians;
     list<SimCode.JacobianMatrix> symJacs;
 
     case ({}, _, _, _, _, _)
     then ({}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inSymJacs);
 
-    case ((eqns, vars, str)::rest, _, _, _, _, _) equation
+    case (SimCode.JAC_COLUMN(eqns, vars, nRows)::rest, _, _, _, _, _) equation
       (eqns1, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs) = countandIndexAlgebraicLoops(eqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inSymJacs);
       (res1, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs) = countandIndexAlgebraicLoopsSymJacColumn(rest, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs);
-      result = (eqns1, vars, str)::res1;
+      result = SimCode.JAC_COLUMN(eqns1, vars, nRows)::res1;
     then (result, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs);
   end match;
 end countandIndexAlgebraicLoopsSymJacColumn;
+
+protected function countandIndexAlgebraicLoopsClockPartitions "
+  function to process clockPartitions for symbolic jacobians"
+  input list<SimCode.ClockedPartition> inColockPartition;
+  input Integer inLinearSysIndex;
+  input Integer inNonLinSysIndex;
+  input Integer inMixedSysIndex;
+  input Integer inJacobianIndex;
+  input list<SimCode.JacobianMatrix> inSymJacs;
+  output list<SimCode.ClockedPartition> outColockPartition = {};
+  output Integer outLinearSysIndex = inLinearSysIndex;
+  output Integer outNonLinSysIndex = inNonLinSysIndex;
+  output Integer outMixedSysIndex = inMixedSysIndex;
+  output Integer outJacobianIndex = inJacobianIndex;
+  output list<SimCode.JacobianMatrix> outSymJacs = inSymJacs;
+protected
+  SimCode.SubPartition subPartitionTmp;
+  SimCode.ClockedPartition clockPartitionTmp;
+  list<SimCode.SubPartition> subPartitionsTmp;
+  list<SimCode.SimEqSystem> equations;
+  list<SimCode.JacobianMatrix> tmpJacs;
+  Integer clockIndex = 0;
+algorithm
+  for clockPartion in inColockPartition loop
+    subPartitionsTmp := {};
+    for subPartion in clockPartion.subPartitions loop
+      clockIndex := clockIndex + 1;
+      (equations, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, tmpJacs) :=
+       countandIndexAlgebraicLoops(subPartion.equations, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, {});
+      tmpJacs := list(rewriteJacPartIdx(a,clockIndex) for a in tmpJacs);
+      outSymJacs := listAppend(tmpJacs, outSymJacs);
+      subPartitionTmp := SimCode.SUBPARTITION(
+        subPartion.vars,
+        equations,
+        subPartion.removedEquations,
+        subPartion.subClock,
+        subPartion.holdEvents);
+      subPartitionsTmp := subPartitionTmp::subPartitionsTmp;
+    end for;
+    clockPartitionTmp := SimCode.CLOCKED_PARTITION(clockPartion.baseClock, listReverse(subPartitionsTmp));
+    outColockPartition := clockPartitionTmp::outColockPartition;
+  end for;
+  outColockPartition := listReverse(outColockPartition);
+end countandIndexAlgebraicLoopsClockPartitions;
+
+protected function rewriteJacPartIdx
+  input SimCode.JacobianMatrix inJac;
+  input Integer index;
+  output SimCode.JacobianMatrix outJac = inJac;
+algorithm
+  outJac.partitionIndex := index;
+end rewriteJacPartIdx;
 
 // =============================================================================
 // section to create SimCode.Equations from BackendDAE.Equation
@@ -4115,8 +4169,8 @@ algorithm
     BackendDAE.StrongComponents comps;
 
     list<SimCodeVar.SimVar> tempvars;
-    String name, s, dummyVar;
-    Integer maxColor, uniqueEqIndex, nonZeroElements;
+    String name, dummyVar;
+    Integer maxColor, uniqueEqIndex, nonZeroElements, nRows;
 
     list<SimCode.SimEqSystem> columnEquations;
     list<SimCodeVar.SimVar> columnVars;
@@ -4165,7 +4219,7 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(({}, {}, "", (sparseInts, sparseIntsT), coloring, maxColor, -1)), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, coloring, maxColor, -1, -1)), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
@@ -4220,7 +4274,7 @@ algorithm
         // set sparse pattern
         coloring = sortColoring(varsSeedIndex, sparseColoring);
         maxColor = listLength(sparseColoring);
-        s =  intString(listLength(residualVarsLst));
+        nRows = listLength(residualVarsLst);
 
         // create seed vars
         seedVars = replaceSeedVarsName(seedVars, name);
@@ -4229,7 +4283,7 @@ algorithm
           print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(({(columnEquations, columnVars, s)}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1)), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, -1)), uniqueEqIndex, tempvars);
 
     else
       equation
@@ -4264,27 +4318,22 @@ protected function createJacobianLinearCode
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
   input Integer iuniqueEqIndex;
-  output list<SimCode.JacobianMatrix> res;
+  output list<SimCode.JacobianMatrix> res = {};
   output Integer ouniqueEqIndex;
 algorithm
   (res,ouniqueEqIndex) := matchcontinue (inSymjacs, inModelInfo, iuniqueEqIndex)
     local
       SimCode.HashTableCrefToSimVar crefSimVarHT;
+      SimCode.JacobianMatrix tmpJac;
     case (_, _, _)
       equation
         // b = Flags.disableDebug(Flags.EXEC_STAT);
         crefSimVarHT = createCrefToSimVarHT(inModelInfo);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
-        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, {"A", "B", "C", "D"});
-        // if optModule is not activated add dummy matrices
-        res = addLinearizationMatrixes(res);
+        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, {"A", "B", "C", "D"}, {});
         // _ = Flags.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
-    else
-      equation
-        res = {({}, {}, "A", ({}, {}), {}, 0, -1), ({}, {}, "B", ({}, {}), {}, 0, -1), ({}, {}, "C", ({}, {}), {}, 0, -1), ({}, {}, "D", ({}, {}), {}, 0, -1)};
-      then (res,iuniqueEqIndex);
   end matchcontinue;
 end createJacobianLinearCode;
 
@@ -4309,6 +4358,7 @@ protected function createSymbolicJacobianssSimCode
   input SimCode.HashTableCrefToSimVar inSimVarHT;
   input Integer iuniqueEqIndex;
   input list<String> inNames;
+  input list<SimCode.JacobianMatrix> inJacobianMatrixes;
   output list<SimCode.JacobianMatrix> outJacobianMatrixes;
   output Integer ouniqueEqIndex;
 algorithm
@@ -4324,10 +4374,10 @@ algorithm
       list<BackendDAE.Var>  diffVars, diffedVars, alldiffedVars, seedVarLst, allVars;
       list<DAE.ComponentRef> diffCompRefs, diffedCompRefs, allCrefs;
 
-      Integer uniqueEqIndex;
+      Integer uniqueEqIndex, nRows;
 
       list<String> restnames;
-      String name, s, dummyVar;
+      String name, dummyVar;
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> columnEquations;
@@ -4345,12 +4395,26 @@ algorithm
       list<list<Integer>> coloring;
       Option<BackendDAE.SymbolicJacobian> optionBDAE;
 
-    case ({}, _, _, _) then ({}, iuniqueEqIndex);
+      SimCode.JacobianMatrix tmpJac;
+    case (_, _, _, {}) then (inJacobianMatrixes, iuniqueEqIndex);
+
+    // if nothing is generated
+    case ({}, _, _, name::restnames)
+      equation
+        tmpJac = SimCode.emptyJacobian;
+        tmpJac.matrixName = name;
+        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode({}, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
+     then
+        (linearModelMatrices, uniqueEqIndex);
+
     // if nothing is generated
     case (((NONE(), ({}, {}, ({}, {}), _), {}))::rest, _, _, name::restnames)
       equation
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames);
-        linearModelMatrices = (({}, {}, name, ({}, {}), {}, 0, -1))::linearModelMatrices;
+        tmpJac = SimCode.emptyJacobian;
+        tmpJac.matrixName = name;
+        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
      then
         (linearModelMatrices, uniqueEqIndex);
 
@@ -4391,7 +4455,7 @@ algorithm
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
 
         maxColor = listLength(colsColors);
-        s = intString(listLength(diffedCompRefs));
+        nRows = listLength(diffedCompRefs);
         coloring = sortColoring(seedVars, colsColors);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -4405,9 +4469,11 @@ algorithm
         // create seed vars
         seedVars = replaceSeedVarsName(seedVars, name);
 
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames);
-        linearModelMatrices = (({(({}, {}, s))}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1))::linearModelMatrices;
-     then
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, -1);
+        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
+
+        then
         (linearModelMatrices, uniqueEqIndex);
 
     case (((SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
@@ -4478,7 +4544,7 @@ algorithm
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
 
         maxColor = listLength(colsColors);
-        s =  intString(listLength(diffedVars));
+        nRows =  listLength(diffedVars);
         coloring = sortColoring(seedVars, colsColors);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -4492,8 +4558,9 @@ algorithm
         // create seed vars
         seedVars = replaceSeedVarsName(seedVars, name);
 
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames);
-        linearModelMatrices = (({((columnEquations, columnVars, s))}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1))::linearModelMatrices;
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, -1);
+        linearModelMatrices = tmpJac::inJacobianMatrixes;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
         (linearModelMatrices, uniqueEqIndex);
     else
@@ -4614,30 +4681,6 @@ algorithm
   end matchcontinue;
 end createAllDiffedSimVars;
 
-protected function addLinearizationMatrixes
-"fuction creates the jacobian column-wise
- author: wbraun"
-  input list<SimCode.JacobianMatrix> injacobianMatrixes;
-  output list<SimCode.JacobianMatrix> outjacobianMatrixes;
-algorithm
-  outjacobianMatrixes :=
-  matchcontinue (injacobianMatrixes)
-    local
-      SimCode.JacobianMatrix inSymJacs;
-    case (inSymJacs::{})
-      equation
-        outjacobianMatrixes = {inSymJacs, ({}, {}, "B", ({}, {}), {}, 0, -1), ({}, {}, "C", ({}, {}), {}, 0, -1), ({}, {}, "D", ({}, {}), {}, 0, -1)};
-      then
-        outjacobianMatrixes;
-    case _
-      equation
-        true = (4 == listLength(injacobianMatrixes));
-      then
-        injacobianMatrixes;
-    else {({}, {}, "A", ({}, {}), {}, 0, -1), ({}, {}, "B", ({}, {}), {}, 0, -1), ({}, {}, "C", ({}, {}), {}, 0, -1), ({}, {}, "D", ({}, {}), {}, 0, -1)};
-  end matchcontinue;
-end addLinearizationMatrixes;
-
 protected function collectAllJacobianEquations
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
   output list<SimCode.SimEqSystem> outEqn = {};
@@ -4646,9 +4689,9 @@ protected
   list<SimCode.SimEqSystem> tmp;
 algorithm
   for m in inJacobianMatrix loop
-    (column, _, _, _, _, _, _) := m;
+    SimCode.JAC_MATRIX(columns=column) := m;
     for c in column loop
-      (tmp,_,_) := c;
+      SimCode.JAC_COLUMN(columnEqns=tmp) := c;
       outEqn := listAppend(tmp, outEqn);
     end for;
   end for;
@@ -4662,9 +4705,9 @@ protected
   list<SimCodeVar.SimVar> tmp;
 algorithm
   for m in inJacobianMatrix loop
-    (column, _, _, _, _, _, _) := m;
+    SimCode.JAC_MATRIX(columns=column) := m;
     for c in column loop
-      (_,tmp,_) := c;
+      SimCode.JAC_COLUMN(columnVars=tmp) := c;
       outVars := listAppend(tmp, outVars);
     end for;
   end for;
@@ -4679,7 +4722,7 @@ protected
   list<SimCodeVar.SimVar> seedVars;
 algorithm
   for m in inJacobianMatrices loop
-    (_, seedVars, _, _, _, _, _) := m;
+    SimCode.JAC_MATRIX(seedVars=seedVars) := m;
     outVars := listAppend(seedVars, outVars);
   end for;
   outVars := List.map1(outVars, setSimVarKind, BackendDAE.SEED_VAR());
@@ -4907,9 +4950,9 @@ algorithm
     local
       list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
 
-      Integer uniqueEqIndex;
+      Integer uniqueEqIndex, nResultVars;
 
-      String name, s, dummyVar;
+      String name, dummyVar;
 
       list<SimCodeVar.SimVar> seedVars, indexVars, seedIndexVars;
 
@@ -4966,7 +5009,7 @@ algorithm
         sparseIntsT = arrayList(sparseArrayT);
 
         maxColor = listLength(colsColors);
-        s = intString(listLength(diffedCompRefs));
+        nResultVars = listLength(diffedCompRefs);
         coloring = sortColoring(seedVars, colsColors);
 
         if debug then
@@ -4978,7 +5021,7 @@ algorithm
         end if;
 
      then
-        (({(({}, {}, s))}, {}, inName, (sparseInts, sparseIntsT), coloring, maxColor, -1), iuniqueEqIndex);
+        (SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({}, {}, nResultVars)}, {}, inName, sparseInts, sparseIntsT, coloring, maxColor, -1, -1), iuniqueEqIndex);
 
     else
       equation
@@ -7815,7 +7858,7 @@ protected function dumpJacobianMatrixLst
   input list<SimCode.JacobianMatrix> simjacs;
 algorithm
   for jac in simjacs loop
-    print("\nsimjacs:\n");
+    print("\nsymbolic directional derivative:\n");
     dumpJacobianMatrix(SOME(jac));
     print("\n");
   end for;
@@ -7833,8 +7876,8 @@ algorithm
       list<SimCode.SimEqSystem> colEqs;
     case(SOME(jac))
       equation
-        (cols,_,_,_,_,_,idx) = jac;
-        colEqs = List.flatten(List.map(cols,Util.tuple31));
+        SimCode.JAC_MATRIX(columns=cols, jacobianIndex=idx) = jac;
+        colEqs = List.flatten(list(a.columnEqns for a in cols));
         print("\tJacobian idx: "+intString(idx)+"\n\t");
         dumpSimEqSystemLst(colEqs,"\n\t");
         print("\n");
@@ -8746,27 +8789,21 @@ end addDivExpErrorMsgtosimJac;
 
 protected function addDivExpErrorMsgtosymJac "helper for addDivExpErrorMsgtoSimEqSystem."
   input Option<SimCode.JacobianMatrix> inJac;
-  output Option<SimCode.JacobianMatrix> outJac;
+  output Option<SimCode.JacobianMatrix> outJac = inJac;
 algorithm
   outJac := match inJac
     local
-      list<SimCode.SimEqSystem> a;
-      list<SimCodeVar.SimVar> b,c;
-      tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>> d;
-      list<list<Integer>> e;
-      Integer f,g;
-      String i, j;
-    case (SOME(({(a,b,i)}, c, j, d, e, f, g)))
+      list<SimCode.SimEqSystem> eqns;
+      SimCode.JacobianColumn jacColumn;
+      SimCode.JacobianMatrix tmpJac;
+    case SOME(tmpJac as SimCode.JAC_MATRIX(columns={jacColumn as SimCode.JAC_COLUMN()}))
       equation
-        a =  List.map(a, addDivExpErrorMsgtoSimEqSystem);
+        jacColumn.columnEqns = List.map(jacColumn.columnEqns, addDivExpErrorMsgtoSimEqSystem);
+        tmpJac.columns = {jacColumn};
       then
-        (SOME(({(a, b, i)}, c, j, d, e, f, g)));
-    case (SOME(({},c,j,d,e,f,g))) then SOME(({},c,j,d,e,f,g));
-    case (NONE()) then NONE();
+        SOME(tmpJac);
     else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.addDivExpErrorMsgtosymJac failed"});
-      then fail();
+      outJac;
   end match;
 end addDivExpErrorMsgtosymJac;
 
@@ -10038,7 +10075,7 @@ algorithm
     case ({}, files) then files;
 
     // handle rest
-    case ((onemat, _, _, _, _, _, _)::rest, files)
+    case (SimCode.JAC_MATRIX(columns=onemat)::rest, files)
       equation
         files = getFilesFromJacobianMatrix(onemat, files);
         files = getFilesFromJacobianMatrixes(rest, files);
@@ -10064,7 +10101,7 @@ algorithm
     case ({}, files) then files;
 
     // handle rest
-    case ((systems, vars, _)::rest, files)
+    case (SimCode.JAC_COLUMN(columnEqns=systems, columnVars=vars)::rest, files)
       equation
         files = getFilesFromSimEqSystems({systems}, files);
         (_, files) = List.mapFold(vars, getFilesFromSimVar, files);

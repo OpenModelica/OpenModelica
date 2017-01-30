@@ -224,7 +224,7 @@ end algLoopXML;
 
 template jacobianMatrixesXML(list<JacobianMatrix> JacobianMatrixes)
 ::=
-  let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, maxColor, jacIndex) =>
+  let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=jacIndex) =>
     jacobianMatrixXML(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor)
     ;separator="\n";empty)
   <<
@@ -234,7 +234,7 @@ end jacobianMatrixesXML;
 
 template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor)
 ::=
-  let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn; separator="\n")
+  let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>'; separator="\n")
   let jacvals = (sparsepattern |> (index,indexes) hasindex index0 =>
                    '<Column>
                    <%(indexes |> i_index hasindex index1 =>

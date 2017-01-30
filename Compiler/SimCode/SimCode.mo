@@ -65,15 +65,32 @@ import SimCodeVar;
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-type JacobianColumn = tuple<list<SimEqSystem>, list<SimCodeVar.SimVar>, String>;     // column equations, column vars, column length
-type JacobianMatrix = tuple<list<JacobianColumn>,                         // column
-                            list<SimCodeVar.SimVar>,                      // seed vars
-                            String,                                       // matrix name
-                            tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>>,    // sparse pattern
-                            list<list<Integer>>,                          // colored cols
-                            Integer,                                      // max color used
-                            Integer>;                                     // jacobian index
 
+type SparsityPattern = list< tuple<Integer, list<Integer>> >;
+
+uniontype JacobianColumn
+  record JAC_COLUMN
+    list<SimEqSystem> columnEqns;       // column equations equals in size to column vars
+    list<SimCodeVar.SimVar> columnVars; // all column vars, none results vars index -1, the other corresponding to rows index
+    Integer numberOfResultVars;         // corresponds to the number of rows
+  end JAC_COLUMN;
+end JacobianColumn;
+
+uniontype JacobianMatrix
+  record JAC_MATRIX
+    list<JacobianColumn> columns;       // columns equations and variables
+    list<SimCodeVar.SimVar> seedVars;   // corresponds to the number of columns
+    String matrixName;                  // unique matrix name
+    SparsityPattern sparsity;
+    SparsityPattern sparsityT;
+    list<list<Integer>> coloredCols;
+    Integer maxColorCols;
+    Integer jacobianIndex;
+    Integer partitionIndex;
+  end JAC_MATRIX;
+end JacobianMatrix;
+
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, -1);
 
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 

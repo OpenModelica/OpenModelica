@@ -526,7 +526,7 @@ algorithm
       j = listLength(lSystem.simJac);
 
       jeqs = match lSystem.jacobianMatrix
-        case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then jeqs;
         else {};
       end match;
       eqs = SimCodeUtil.sortEqSystems(listAppend(lSystem.residual,jeqs));
@@ -568,7 +568,7 @@ algorithm
       j = listLength(lSystem.simJac);
 
       jeqs = match lSystem.jacobianMatrix
-        case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then jeqs;
         else {};
       end match;
       eqs = SimCodeUtil.sortEqSystems(listAppend(lSystem.residual,jeqs));
@@ -607,7 +607,7 @@ algorithm
       j = listLength(atL.simJac);
 
       jeqs = match atL.jacobianMatrix
-        case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then jeqs;
         else {};
       end match;
       eqs = SimCodeUtil.sortEqSystems(listAppend(atL.residual,jeqs));
@@ -700,7 +700,7 @@ algorithm
       serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
       min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in List.rest(eqs));
       jeqs = match nlSystem.jacobianMatrix
-        case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then SimCodeUtil.sortEqSystems(jeqs);
         else {};
       end match;
       min(serializeEquation(file,e,section,withOperations) for e in jeqs);
@@ -730,7 +730,7 @@ algorithm
       serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
       min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in List.rest(eqs));
       jeqs = match nlSystem.jacobianMatrix
-        case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then SimCodeUtil.sortEqSystems(jeqs);
         else {};
       end match;
       min(serializeEquation(file,e,section,withOperations) for e in jeqs);
@@ -757,7 +757,7 @@ algorithm
       serializeEquation(file,listHead(eqs),section,withOperations,parent=atNL.index,first=true);
       min(serializeEquation(file,e,section,withOperations,parent=atNL.index) for e in List.rest(eqs));
       jeqs = match atNL.jacobianMatrix
-        case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then SimCodeUtil.sortEqSystems(jeqs);
         else {};
       end match;
       min(serializeEquation(file,e,section,withOperations) for e in jeqs);
