@@ -78,7 +78,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="radau5");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="imprungekutta", simflags="-impRKOrder=5");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -86,7 +86,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="lobatto6");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="imprungekutta", simflags="-impRKOrder=6");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -102,12 +102,12 @@ val(derrabbits,420);
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 312.646388171254
-// 1154.916195003603
-// 43.73296866750736
-// 120.0717136466924
-// 76.41358412477841
+// 4310.037646344885
+// 312.6463881685007
+// 1154.916262002063
+// 43.73296313290461
+// 120.0717136466132
+// 76.4135843120514
 // record SimulationResult
 //     resultFile = "LotkaVolterra_res.csv",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
@@ -119,65 +119,65 @@ val(derrabbits,420);
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 312.1431510083457
-// 1154.916195003603
-// 43.72994605753467
-// 120.0665673499015
-// 76.41258678631471
+// 4310.037646344885
+// 312.1431109344455
+// 1154.916262002063
+// 43.72995074542722
+// 120.0665678317609
+// 76.4125896314704
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'euler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 151.2664618329749
-// 1154.916195003603
-// 4.328990442636163
-// 121.238860900215
-// 79.63027760038031
+// 4310.037646344885
+// 151.2664618264293
+// 1154.916262002063
+// 4.328991625812239
+// 121.2388609001865
+// 79.63027796167692
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'rungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 312.1340720172249
-// 1154.916195003603
-// 43.72612492289309
-// 120.0665742623361
-// 76.41278697013256
+// 4310.037646344885
+// 312.1340719997071
+// 1154.916262002063
+// 43.7261379252981
+// 120.0665742623086
+// 76.41278732145514
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'impeuler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 708.6928678964949
-// 1154.916195003603
-// 572.1365045039711
-// 118.7562132969063
-// 63.26222966726176
+// 4310.037646344885
+// 708.6928679431032
+// 1154.916262002063
+// 572.136694468436
+// 118.7562132961125
+// 63.26222998739447
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'radau5', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'imprungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=5'",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 312.1425595994811
-// 1154.916195003603
-// 43.7296208664064
-// 120.0665739249899
-// 76.4126064081303
+// 4310.037646344885
+// 312.1425595751107
+// 1154.916262002063
+// 43.72963386571539
+// 120.0665739251048
+// 76.41260675962764
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'lobatto6', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'imprungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6'",
 //     messages = ""
 // end SimulationResult;
-// 4310.037646344409
-// 312.1425514765839
-// 1154.916195003603
-// 43.72961660014964
-// 120.0665739034361
-// 76.41260662913169
+// 4310.037646344885
+// 312.1425514260991
+// 1154.916262002063
+// 43.72962959203593
+// 120.0665739033309
+// 76.41260698075324
 // endResult
