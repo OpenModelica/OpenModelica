@@ -139,12 +139,9 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 #ifdef WITH_SUNDIALS
-  case S_RADAU5:
-  case S_RADAU3:
   case S_RADAU1:
   case S_LOBATTO2:
-  case S_LOBATTO4:
-  case S_LOBATTO6:
+  case S_IMPRUNGEKUTTA:
     retVal = radau_lobatto_step(data, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
@@ -281,58 +278,37 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
 #endif
 #ifdef WITH_SUNDIALS
-  case S_RADAU5:
-  {
-    /* Allocate Radau5 IIA work arrays */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 5");
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 3);
-    break;
-  }
-  case S_RADAU3:
-  {
-    /* Allocate Radau3 IIA work arrays */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 3");
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 2);
-    break;
-  }
   case S_RADAU1:
-  {
-    /* Allocate Radau1 IIA work arrays */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 1 (implicit euler) ");
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 1);
-    break;
-  }
-  case S_LOBATTO6:
-  {
-    /* Allocate Lobatto2 IIIA work arrays */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 6");
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 3);
-    break;
-  }
-  case S_LOBATTO4:
-  {
-    /* Allocate Lobatto4 IIIA work arrays */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 4");
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 2);
-    break;
-  }
   case S_LOBATTO2:
+  case S_IMPRUNGEKUTTA:
   {
-    /* Allocate Lobatto6 IIIA work arrays */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 2 (trapeze rule)");
+    int usedImpRKOrder = DEFAULT_IMPRK_ORDER;
+    if (solverInfo->solverMethod == S_RADAU1)
+      usedImpRKOrder = 1;
+    if (solverInfo->solverMethod == S_LOBATTO2)
+      usedImpRKOrder = 2;
+
+    /* Check the order if set */
+    if (omc_flag[FLAG_IMPRK_ORDER])
+    {
+      usedImpRKOrder = atoi(omc_flagValue[FLAG_IMPRK_ORDER]);
+      if (usedImpRKOrder>6 || usedImpRKOrder<1)
+      {
+        warningStreamPrint(LOG_STDOUT, 0, "Selected order %d is out of range[1-6]. Use default order %d", usedImpRKOrder, DEFAULT_IMPRK_ORDER);
+        usedImpRKOrder = DEFAULT_IMPRK_ORDER;
+      }
+    }
+
+    /* Allocate implicit Runge-Kutta methods */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Runge-Kutta method with order %d", usedImpRKOrder);
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, solverInfo->solverMethod, 1);
+    allocateKinOde(data, threadData, solverInfo, usedImpRKOrder);
     break;
   }
   case S_IDA:
   {
     IDA_SOLVER* idaData = NULL;
-  /* Allocate Lobatto6 IIIA work arrays */
+    /* Allocate ida working data */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing IDA DAE Solver");
     idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
     retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
@@ -394,35 +370,12 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == S_RADAU5)
+  else if(solverInfo->solverMethod == S_RADAU1 ||
+          solverInfo->solverMethod == S_LOBATTO2 ||
+          solverInfo->solverMethod == S_IMPRUNGEKUTTA)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 3);
-  }
-  else if(solverInfo->solverMethod == S_RADAU3)
-  {
-    /* free  work arrays */
-    freeKinOde(data, solverInfo, 2);
-  }
-  else if(solverInfo->solverMethod == S_RADAU1)
-  {
-    /* free  work arrays */
-    freeKinOde(data, solverInfo, 1);
-  }
-  else if(solverInfo->solverMethod == S_LOBATTO6)
-  {
-    /* free  work arrays */
-    freeKinOde(data, solverInfo, 3);
-  }
-  else if(solverInfo->solverMethod == S_LOBATTO4)
-  {
-    /* free  work arrays */
-    freeKinOde(data, solverInfo, 2);
-  }
-  else if(solverInfo->solverMethod == S_LOBATTO2)
-  {
-    /* free  work arrays */
-    freeKinOde(data, solverInfo, 1);
+    freeKinOde(data, solverInfo);
   }
   else if(solverInfo->solverMethod == S_IDA)
   {

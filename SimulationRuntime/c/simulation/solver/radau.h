@@ -40,6 +40,9 @@
 #include "omc_config.h"
 
 #ifdef WITH_SUNDIALS
+
+  #define DEFAULT_IMPRK_ORDER 5
+
   #include <math.h>
   #include <nvector/nvector_serial.h>
 
@@ -84,7 +87,7 @@
       threadData_t *threadData;
       SOLVER_INFO *solverInfo;
       int N;
-      int flag;
+      int order;
     }KINODE;
 
 #else
@@ -94,12 +97,12 @@
       DATA *data;
       SOLVER_INFO *solverInfo;
       int N;
-      int flag;
+      int order;
     }KINODE;
 
 #endif /* SUNDIALS */
-  int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int flag, int N);
-  int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int N);
+  int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int order);
+  int freeKinOde(DATA* data, SOLVER_INFO* solverInfo);
   int kinsolOde(SOLVER_INFO* solverInfo);
 #ifdef __cplusplus
 };

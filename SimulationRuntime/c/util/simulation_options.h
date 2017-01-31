@@ -64,6 +64,7 @@ enum _FLAG
   FLAG_IIM,
   FLAG_IIT,
   FLAG_ILS,
+  FLAG_IMPRK_ORDER,
   FLAG_INITIAL_STEP_SIZE,
   FLAG_INPUT_CSV,
   FLAG_INPUT_FILE,
@@ -140,21 +141,18 @@ enum SOLVER_METHOD
 {
   S_UNKNOWN = 0,
 
-  S_EULER,         /*  1 */
-  S_RUNGEKUTTA,    /*  2 */
-  S_DASSL,         /*  3 */
-  S_OPTIMIZATION,  /*  4 */
-  S_RADAU5,        /*  5 */
-  S_RADAU3,        /*  6 */
-  S_RADAU1,        /*  7 */
-  S_LOBATTO2,      /*  8 */
-  S_LOBATTO4,      /*  9 */
-  S_LOBATTO6,      /* 10 */
-  S_SYM_EULER,     /* 11 */
-  S_SYM_IMP_EULER, /* 12 */
-  S_HEUN,          /* 13 */
-  S_IDA,           /* 14 */
-  S_ERKSSC,        /* 15 */
+  S_EULER,
+  S_RUNGEKUTTA,
+  S_DASSL,
+  S_OPTIMIZATION,
+  S_RADAU1,
+  S_LOBATTO2,
+  S_IMPRUNGEKUTTA,
+  S_SYM_EULER,
+  S_SYM_IMP_EULER,
+  S_HEUN,
+  S_IDA,
+  S_ERKSSC,
   S_QSS,
 
   S_MAX

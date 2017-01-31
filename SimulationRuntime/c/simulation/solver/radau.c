@@ -29,10 +29,14 @@
  */
 
 /*! \file radau.c
- * author: team Bielefeld :)
+ * author: Ru(n)ge
+ * description: This file contains implicit Runge-Kutta methods of different order,
+ * based on Radau IIA and Lobatto IIA methods. The method with order one is
+ * corresponding to the implicit euler method. Further orders 2 to 6.
  */
 
 #include <string.h>
+#include <math.h>
 
 #include "radau.h"
 #include "external_input.h"
@@ -55,7 +59,7 @@ extern int KINSetInfoHandlerFn(void *kinmem, KINInfoHandlerFn ihfun, void *ih_da
 }
 #endif
 
-static int allocateNlpOde(KINODE *kinOde);
+static int allocateNlpOde(KINODE *kinOde, int order);
 static int allocateKINSOLODE(KINODE *kinOde);
 
 
@@ -81,16 +85,16 @@ static int lobatto2Res(N_Vector z, N_Vector f, void* user_data);
 static int lobatto4Res(N_Vector z, N_Vector f, void* user_data);
 static int lobatto6Res(N_Vector z, N_Vector f, void* user_data);
 
-int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int flag, int N)
+int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int order)
 {
   KINODE *kinOde = (KINODE*) solverInfo->solverData;
   kinOde->kData = (KDATAODE*) malloc(sizeof(KDATAODE));
   kinOde->nlp = (NLPODE*) malloc(sizeof(NLPODE));
-  kinOde->N = N;
-  kinOde->flag = flag;
+  kinOde->order = order;
+  kinOde->N = ceil((double)order/2.0);
   kinOde->data = data;
   kinOde->threadData = threadData;
-  allocateNlpOde(kinOde);
+  allocateNlpOde(kinOde, order);
   allocateKINSOLODE(kinOde);
   kinOde->solverInfo = solverInfo;
   kinOde->kData->mset = 50;
@@ -104,29 +108,29 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   if (ACTIVE_STREAM(LOG_SOLVER)) {
     KINSetPrintLevel(kinOde->kData->kmem,2);
   }
-  //KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2);
+  /* KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2); */
   KINSetMaxSetupCalls(kinOde->kData->kmem, kinOde->kData->mset);
   kinOde->nlp->currentStep = &kinOde->solverInfo->currentStepSize;
   KINSetErrHandlerFn(kinOde->kData->kmem, kinsol_errorHandler, NULL);
   KINSetInfoHandlerFn(kinOde->kData->kmem, kinsol_infoHandler, NULL);
-  switch(kinOde->flag)
+  switch(kinOde->order)
   {
-    case S_RADAU5:
+    case 5:
       KINInit(kinOde->kData->kmem, radau5Res, kinOde->kData->x);
       break;
-    case S_RADAU3:
+    case 3:
       KINInit(kinOde->kData->kmem, radau3Res, kinOde->kData->x);
       break;
-    case S_RADAU1:
+    case 1:
       KINInit(kinOde->kData->kmem, radau1Res, kinOde->kData->x);
       break;
-    case S_LOBATTO2:
+    case 2:
       KINInit(kinOde->kData->kmem, lobatto2Res, kinOde->kData->x);
       break;
-    case S_LOBATTO4:
+    case 4:
       KINInit(kinOde->kData->kmem, lobatto4Res, kinOde->kData->x);
       break;
-    case S_LOBATTO6:
+    case 6:
       KINInit(kinOde->kData->kmem, lobatto6Res, kinOde->kData->x);
       break;
 
@@ -136,37 +140,37 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   /* Call KINDense to specify the linear solver */
  /*KINSpbcg*/
   if(kinOde->nlp->nStates < 10)
-    KINSpgmr(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
+    KINSpgmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates+1);
   else
-    KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
+    KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates+1);
   kinOde->kData->glstr = KIN_LINESEARCH;
 
   return 0;
 }
 
-static int allocateNlpOde(KINODE *kinOde)
+static int allocateNlpOde(KINODE *kinOde, int order)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   nlp->nStates = kinOde->data->modelData->nStates;
 
-  switch(kinOde->flag)
+  switch(order)
   {
-  case S_RADAU5:
+  case 5:
     radau5Coeff(kinOde);
     break;
-  case S_RADAU3:
+  case 3:
     radau3Coeff(kinOde);
     break;
-  case S_RADAU1:
+  case 1:
     radau1Coeff(kinOde);
     break;
-  case S_LOBATTO2:
+  case 2:
     radau1Coeff(kinOde); /* TODO: Is this right? */
     break;
-  case S_LOBATTO4:
+  case 4:
     lobatto4Coeff(kinOde);
     break;
-  case S_LOBATTO6:
+  case 6:
     lobatto6Coeff(kinOde);
     break;
   default:
@@ -214,14 +218,13 @@ static int boundsVars(KINODE *kinOde)
 static int radau5Coeff(KINODE *kinOde)
 {
   int i;
-  const int N = 3;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
 
-  nlp->c = (long double**) malloc(N * sizeof(long double*));
-  for(i = 0; i < N; i++)
-    nlp->c[i] = (long double*) calloc(N+1, sizeof(long double));
+  nlp->c = (long double**) malloc(kinOde->N * sizeof(long double*));
+  for(i = 0; i < kinOde->N; i++)
+    nlp->c[i] = (long double*) calloc(kinOde->N+1, sizeof(long double));
 
-  nlp->a = (double*) malloc(N * sizeof(double));
+  nlp->a = (double*) malloc(kinOde->N * sizeof(double));
 
   nlp->c[0][0] = 4.1393876913398137178367408896470696703591369767880;
   nlp->c[0][1] = 3.2247448713915890490986420373529456959829737403284;
@@ -247,14 +250,13 @@ static int radau5Coeff(KINODE *kinOde)
 static int radau3Coeff(KINODE *kinOde)
 {
   int i;
-  const int N = 2;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
 
-  nlp->c = (long double**) malloc(N * sizeof(long double*));
-  for(i = 0; i < N; i++)
-    nlp->c[i] = (long double*) calloc(N+1, sizeof(long double));
+  nlp->c = (long double**) malloc(kinOde->N  * sizeof(long double*));
+  for(i = 0; i < kinOde->N; i++)
+    nlp->c[i] = (long double*) calloc(kinOde->N+1, sizeof(long double));
 
-  nlp->a = (double*) malloc(N * sizeof(double));
+  nlp->a = (double*) malloc(kinOde->N * sizeof(double));
 
   nlp->c[0][0] = 2.0;
   nlp->c[0][1] = 1.50;
@@ -294,15 +296,14 @@ static int lobatto4Coeff(KINODE *kinOde)
 static int lobatto6Coeff(KINODE *kinOde)
 {
   int i;
-  const int N = 3;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
 
 
-  nlp->c = (long double**) malloc(N * sizeof(long double*));
-  for(i = 0; i < N; ++i)
-    nlp->c[i] = (long double*) malloc((N+2)* sizeof(long double));
+  nlp->c = (long double**) malloc(kinOde->N * sizeof(long double*));
+  for(i = 0; i < kinOde->N; ++i)
+    nlp->c[i] = (long double*) malloc((kinOde->N+2)* sizeof(long double));
 
-  nlp->a = (double*) malloc(N * sizeof(double));
+  nlp->a = (double*) malloc(kinOde->N * sizeof(double));
 
   nlp->c[0][0] = 4.3013155617496424838955952368431696002490512113396;
   nlp->c[0][1] = 3.6180339887498948482045868343656381177203091798058;
@@ -353,10 +354,10 @@ static int allocateKINSOLODE(KINODE *kinOde)
   return 0;
 }
 
-int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int N)
+int freeKinOde(DATA* data, SOLVER_INFO* solverInfo)
 {
   KINODE *kinOde = (KINODE*) solverInfo->solverData;
-  freeImOde((void*) kinOde->nlp ,N);
+  freeImOde((void*) kinOde->nlp, kinOde->N);
   freeKinsol((void*) kinOde->kData);
   free(kinOde);
   return 0;
@@ -392,7 +393,7 @@ static int freeKinsol(void * kOde)
 
 static int initKinsol(KINODE *kinOde)
 {
-  int i,j,k, n;
+  int i,j,k,n;
   double *scal_eq, *scal_var, *x, *f2;
   long double tmp, h, hf, hf_min;
   DATA *data;
