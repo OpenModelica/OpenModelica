@@ -101,6 +101,7 @@ uniontype Class
 
   record INSTANCED_CLASS
     ClassTree.Tree elements;
+    array<InstNode> extendsNodes;
     array<InstNode> components;
     list<Equation> equations;
     list<Equation> initialEquations;
@@ -124,12 +125,6 @@ uniontype Class
 
   type Element = ClassTree.Entry;
 
-  function emptyInstancedClass
-    output Class cls;
-  algorithm
-    cls := INSTANCED_CLASS(ClassTree.new(), listArray({}), {}, {}, {}, {});
-  end emptyInstancedClass;
-
   function initExpandedClass
     input ClassTree.Tree classes;
     output Class cls;
@@ -139,6 +134,7 @@ uniontype Class
 
   function instExpandedClass
     input array<InstNode> components;
+    input array<InstNode> extendsNodes;
     input Class expandedClass;
     output Class instancedClass;
   protected
@@ -159,7 +155,7 @@ uniontype Class
           // instantiated and typed in the correct scope. They should be
           // collected from the extends nodes when flattening the class.
         then
-          INSTANCED_CLASS(expandedClass.elements, components, eqs, ieqs, algs, ialgs);
+          INSTANCED_CLASS(expandedClass.elements, extendsNodes, components, eqs, ieqs, algs, ialgs);
     end match;
   end instExpandedClass;
 
@@ -257,7 +253,10 @@ uniontype Class
     input Class cls;
     output array<InstNode> extendsNodes;
   algorithm
-    EXPANDED_CLASS(extendsNodes = extendsNodes) := cls;
+    extendsNodes := match cls
+      case EXPANDED_CLASS() then cls.extendsNodes;
+      case INSTANCED_CLASS() then cls.extendsNodes;
+    end match;
   end extendsNodes;
 
   function setSections
@@ -273,8 +272,8 @@ uniontype Class
           cls.modifier, equations, initialEquations, algorithms, initialAlgorithms);
 
       case INSTANCED_CLASS()
-        then INSTANCED_CLASS(cls.elements, cls.components, equations,
-          initialEquations, algorithms, initialAlgorithms);
+        then INSTANCED_CLASS(cls.elements, cls.extendsNodes, cls.components,
+          equations, initialEquations, algorithms, initialAlgorithms);
     end match;
   end setSections;
 

@@ -782,7 +782,7 @@ function instClass
   input InstNode parent;
 protected
   Class c;
-  array<InstNode> components;
+  array<InstNode> components, ext_nodes;
   Modifier type_mod, mod;
   list<Modifier> type_mods, inst_type_mods;
   Binding binding;
@@ -809,10 +809,11 @@ algorithm
         par := if InstNode.isEmpty(parent) then node else parent;
 
         // Instantiate the components.
-        components := instComponents(Class.components(c), par, node);
+        (components, ext_nodes) :=
+          instComponents(Class.components(c), Class.extendsNodes(c), par, node);
 
         // Update the node with the new instance.
-        c := Class.instExpandedClass(components, c);
+        c := Class.instExpandedClass(components, ext_nodes, c);
         node := InstNode.updateClass(c, node);
       then
         ();
@@ -864,13 +865,17 @@ end instClass;
 
 function instComponents
   input array<InstNode> nodes;
+  input array<InstNode> extendsNodes;
   input InstNode parent;
   input InstNode scope;
   output array<InstNode> instNodes;
+  output array<InstNode> instExtendsNodes;
 protected
   InstNode node, ext;
+  Integer ext_idx = 1;
 algorithm
   instNodes := arrayCopy(nodes);
+  instExtendsNodes := arrayCopy(extendsNodes);
 
   for i in 1:arrayLength(nodes) loop
     node := nodes[i];
@@ -881,7 +886,8 @@ algorithm
       ext := Class.resolveExtendsRef(node, InstNode.getClass(scope));
       ext := instClass(ext, Modifier.NOMOD(), InstNode.EMPTY_NODE());
       instNodes[i] := ext;
-      //Class.updateExtends(node, ext, InstNode.getClass(scope));
+      instExtendsNodes[ext_idx] := ext;
+      ext_idx := ext_idx + 1;
     end if;
   end for;
 end instComponents;
