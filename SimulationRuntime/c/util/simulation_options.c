@@ -501,37 +501,40 @@ const int FLAG_TYPE[FLAG_MAX] = {
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
-  "unknown",
-  "euler",
-  "rungekutta",
-  "dassl",
-  "optimization",
-  "impeuler",
-  "trapezoid",
-  "imprungekutta",
-  "symEuler",
-  "symEulerSsc",
-  "heun",
-  "ida",
-  "rungekutta_ssc",
-  "qss"
+
+  /* S_UNKNOWN = 0 */   "unknown",
+  /* S_EULER */         "euler",
+  /* S_HEUN */          "heun",
+  /* S_RUNGEKUTTA */    "rungekutta",
+  /* S_IMPEULER */      "impeuler",
+  /* S_TRAPEZOID */     "trapezoid",
+  /* S_IMPRUNGEKUTTA */ "imprungekutta",
+  /* S_DASSL */         "dassl",
+  /* S_IDA */           "ida",
+  /* S_ERKSSC */        "rungekuttaSsc",
+  /* S_SYM_EULER */     "symEuler",
+  /* S_SYM_EULER_SSC */ "symEulerSsc",
+  /* S_QSS */           "qss",
+  /* S_OPTIMIZATION */  "optimization",
+  /* S_MAX */           "s_max"
 };
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
-  "unknown",
-  "euler - Explicit Euler (order 1)",
-  "rungekutta - Runge-Kutta (fixed step, order 4)",
-  "dassl - BDF solver with colored numerical Jacobian, with interval root finding - default",
-  "optimization - Special solver for dynamic optimization",
-  "impeuler - Implicit Euler (actually Radau IIA, order 1) [sundial/kinsol needed]",
-  "trapezoid - Trapezoidal rule (actually Lobatto IIA with 2 points) [sundial/kinsol needed]",
-  "imprungekutta - Implicit Runge-Kutta bases on Radau and Lobatto IIA methods. Order based on flag 1-6 [sundial/kinsol needed]",
-  "symEuler - symbolic implicit euler, [compiler flag +symEuler needed]",
-  "symEulerSsc - symbolic implicit euler with step-size control, [compiler flag +symEuler needed]",
-  "heun - Heun's method (Runge-Kutta fixed step, order 2)",
-  "ida - Sundials ida solver",
-  "rungekutta_ssc - Runge-Kutta (with step size control, see. Novikov (2016), Solving Stiff Systems of ODEs...)",
-  "qss - A QSS solver [experimental]"
+  /* S_UNKNOWN = 0 */   "unknown",
+  /* S_EULER */         "euler - Euler - explicit, fixed step size, order 1",
+  /* S_HEUN */          "heun - Heun's method - explicit, fixed step, order 2",
+  /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
+  /* S_IMPEULER */      "impeuler - Euler - implicit, fixed step size, order 1",
+  /* S_TRAPEZOID */     "trapezoid - trapezoidal rule - implicit, fixed step size, order 2",
+  /* S_IMPRUNGEKUTTA */ "imprungekutta - Runge-Kutta methods based on Radau and Lobatto IIA - implicit, fixed step size, order 1-6(selected manually by flag -impRKOrder)",
+  /* S_DASSL */         "dassl - default solver - BDF method - implicit, step size control, order 1-5",
+  /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method with sparse linear solver - implicit, step size control, order 1-5",
+  /* S_ERKSSC */        "rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step size control, order 4-5 [experimental]",
+  /* S_SYM_EULER */     "symEuler - symbolic implicit Euler [compiler flag +symEuler needed] - implicit, fixed step size, order 1",
+  /* S_SYM_EULER_SSC */ "symEulerSsc - symbolic implicit Euler with step size control [compiler flag +symEuler needed] - implicit, step size control, order 1",
+  /* S_QSS */           "qss - A QSS solver [experimental]"
+  /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization",
+  /* S_MAX */           "S_MAX"
 };
 
 const char *INIT_METHOD_NAME[IIM_MAX] = {
@@ -566,7 +569,7 @@ const char *LS_DESC[LS_MAX+1] = {
 
   /* LS_LAPACK */       "method using lapack LU factorization",
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* LS_LIS */          "method using iterativ solver Lis",
+  /* LS_LIS */          "method using iterative solver Lis",
 #endif
   /* LS_KLU */          "method using klu sparse linear solver",
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
@@ -592,7 +595,7 @@ const char *LSS_DESC[LS_MAX+1] = {
   "unknown",
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* LS_LIS */          "method using iterativ solver Lis",
+  /* LS_LIS */          "method using iterative solver Lis",
 #endif
   /* LS_KLU */          "method using klu sparse linear solver",
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
@@ -698,9 +701,9 @@ const char *IDA_LS_METHOD_DESC[IDA_LS_MAX+1] = {
 
   "ida internal dense method",
   "ida use sparse direct solver KLU",
-  "ida generalized minimal residual method. Iterativ method",
-  "ida Bi-CGStab. Iterativ method",
-  "ida TFQMR. Iterativ method",
+  "ida generalized minimal residual method. Iterative method",
+  "ida Bi-CGStab. Iterative method",
+  "ida TFQMR. Iterative method",
 
   "IDA_LS_MAX"
 };

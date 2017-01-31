@@ -139,8 +139,8 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 #ifdef WITH_SUNDIALS
-  case S_RADAU1:
-  case S_LOBATTO2:
+  case S_IMPEULER:
+  case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
     retVal = radau_lobatto_step(data, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -165,7 +165,7 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
-  case S_SYM_IMP_EULER:
+  case S_SYM_EULER_SSC:
     retVal = sym_euler_im_with_step_size_control_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
@@ -215,7 +215,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   {
   case S_SYM_EULER:
   case S_EULER: break;
-  case S_SYM_IMP_EULER:
+  case S_SYM_EULER_SSC:
   {
     allocateSymEulerImp(solverInfo, data->modelData->nStates);
     break;
@@ -278,14 +278,14 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
 #endif
 #ifdef WITH_SUNDIALS
-  case S_RADAU1:
-  case S_LOBATTO2:
+  case S_IMPEULER:
+  case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
   {
     int usedImpRKOrder = DEFAULT_IMPRK_ORDER;
-    if (solverInfo->solverMethod == S_RADAU1)
+    if (solverInfo->solverMethod == S_IMPEULER)
       usedImpRKOrder = 1;
-    if (solverInfo->solverMethod == S_LOBATTO2)
+    if (solverInfo->solverMethod == S_TRAPEZOID)
       usedImpRKOrder = 2;
 
     /* Check the order if set */
@@ -342,7 +342,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
-  if (solverInfo->solverMethod == S_SYM_IMP_EULER)
+  if (solverInfo->solverMethod == S_SYM_EULER_SSC)
   {
     freeSymEulerImp(solverInfo);
   }
@@ -370,8 +370,8 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == S_RADAU1 ||
-          solverInfo->solverMethod == S_LOBATTO2 ||
+  else if(solverInfo->solverMethod == S_IMPEULER ||
+          solverInfo->solverMethod == S_TRAPEZOID ||
           solverInfo->solverMethod == S_IMPRUNGEKUTTA)
   {
     /* free  work arrays */
@@ -621,12 +621,9 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   switch(solverInfo.solverMethod)
   {
 #ifndef WITH_SUNDIALS
-  case S_RADAU1:
-  case S_RADAU3:
-  case S_RADAU5:
-  case S_LOBATTO2:
-  case S_LOBATTO4:
-  case S_LOBATTO6:
+  case S_IMPEULER:
+  case S_TRAPEZOID:
+  case S_IMPRUNGEKUTTA:
     warningStreamPrint(LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
     TRACE_POP
     return 1;
@@ -725,7 +722,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       retVal = data->callback->performSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
       /* terminate the simulation */
-      if (solverInfo.solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, 0);
+      if (solverInfo.solverMethod == S_SYM_EULER_SSC) data->callback->symEulerUpdate(data, 0);
       finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
     }

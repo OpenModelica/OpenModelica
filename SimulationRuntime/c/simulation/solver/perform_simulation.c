@@ -81,7 +81,7 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
 {
   prefixedName_updateContinuousSystem(data, threadData);
 
-  if (solverInfo->solverMethod == S_SYM_IMP_EULER) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
+  if (solverInfo->solverMethod == S_SYM_EULER_SSC) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
 
   saveZeroCrossings(data, threadData);
 
