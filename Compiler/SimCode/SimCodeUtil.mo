@@ -1149,11 +1149,11 @@ protected
   String name;
   SimCode.SparsityPattern sparsity,sparsityT;
   list<list<Integer>> colors;
-  Integer maxcolor, index;
+  Integer maxcolor, index, partIdx;
 algorithm
-  SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, index) := inSymjac;
+  SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, index, partIdx) := inSymjac;
   (columns, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, outSymJacs) := countandIndexAlgebraicLoopsSymJacColumn(columns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, {});
-  outSymjac := SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, outJacobianIndex, -1);
+  outSymjac := SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, outJacobianIndex, partIdx);
   outJacobianIndex := outJacobianIndex + 1;
 end countandIndexAlgebraicLoopsSymJac;
 
@@ -4219,7 +4219,7 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, coloring, maxColor, -1, -1)), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, coloring, maxColor, -1, 0)), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
@@ -4283,7 +4283,7 @@ algorithm
           print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, -1)), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0)), uniqueEqIndex, tempvars);
 
     else
       equation
@@ -4469,7 +4469,7 @@ algorithm
         // create seed vars
         seedVars = replaceSeedVarsName(seedVars, name);
 
-        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, -1);
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0);
         linearModelMatrices = tmpJac::inJacobianMatrixes;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
@@ -4558,7 +4558,7 @@ algorithm
         // create seed vars
         seedVars = replaceSeedVarsName(seedVars, name);
 
-        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, -1);
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0);
         linearModelMatrices = tmpJac::inJacobianMatrixes;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
@@ -5021,7 +5021,7 @@ algorithm
         end if;
 
      then
-        (SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({}, {}, nResultVars)}, {}, inName, sparseInts, sparseIntsT, coloring, maxColor, -1, -1), iuniqueEqIndex);
+        (SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({}, {}, nResultVars)}, {}, inName, sparseInts, sparseIntsT, coloring, maxColor, -1, 0), iuniqueEqIndex);
 
     else
       equation

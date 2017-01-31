@@ -90,7 +90,7 @@ uniontype JacobianMatrix
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, -1);
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0);
 
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 

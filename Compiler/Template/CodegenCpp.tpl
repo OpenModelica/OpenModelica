@@ -12850,7 +12850,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
    let &varDecls = buffer "" /*BUFD*/
 
  let jacMats = (JacobianMatrixes |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=jacIndex, partitionIndex=partIdx) =>
-    generateMatrix(jacIndex, mat, vars, name, sparsepattern, colorList, partIdx, maxColor, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    generateMatrix(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor, partIdx, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n\n";empty)
  /*let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
