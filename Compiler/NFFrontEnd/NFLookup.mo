@@ -46,6 +46,7 @@ import NFInstNode.InstNode;
 import NFLookupState.LookupState;
 import NFPrefix.Prefix;
 import Type = NFType;
+import NFMod.Modifier;
 
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
 
@@ -79,11 +80,12 @@ function lookupComponent
   input SourceInfo info;
   input Boolean allowTypename = false;
   output InstNode foundComponent "The component the cref resolves to.";
-  output Prefix prefix;
+  output list<InstNode> restNodes "The rest of the found nodes.";
+  output InstNode foundScope "The scope the first part of the cref was found in.";
 protected
   LookupState state;
 algorithm
-  (foundComponent, prefix, state) := lookupCref(cref, scope, info);
+  (foundComponent, restNodes, foundScope, state) := lookupCref(cref, scope, info);
 
   if allowTypename then
     state := fixTypenameState(foundComponent, state);
@@ -114,48 +116,55 @@ function lookupFunctionName
   input InstNode scope "The scope to look in.";
   input SourceInfo info;
   output InstNode func;
-  output Prefix prefix;
+  output InstNode foundScope;
 protected
   LookupState state;
 algorithm
-  (func, prefix, state) := lookupCref(cref, scope, info);
+  (func, _, foundScope, state) := lookupCref(cref, scope, info);
   LookupState.assertFunction(state, func, cref, info);
 end lookupFunctionName;
 
 function lookupCref
+  "This function will look up a component reference in the given scope, and
+   return a list of nodes that correspond to the parts of the cref in reverse
+   order. I.e. when looking up the cref a.b.c, the list of nodes {c, b, a} will
+   be returned. The scope where the first part of the cref was found will also
+   be returned."
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
   input SourceInfo info;
-  output InstNode node;
-  output Prefix prefix;
+  output InstNode node "The node the cref refers to.";
+  output list<InstNode> restNodes "The rest of the found nodes.";
+  output InstNode foundScope "The scope where the first part of the cref was found.";
   output LookupState state;
 protected
   MatchType match_ty;
+  InstNode n;
 algorithm
-  (node, prefix, state, match_ty) := lookupBuiltinCref(cref, info);
+  (node, restNodes, state, match_ty) := lookupBuiltinCref(cref, info);
 
   if match_ty == MatchType.NOT_FOUND then
     match_ty := MatchType.FOUND;
 
-    (node, prefix, state) := matchcontinue cref
+    (node, restNodes, foundScope, state) := matchcontinue cref
       local
         Class.Element element;
         InstNode found_scope;
 
       case Absyn.ComponentRef.CREF_IDENT()
         algorithm
-          (node, prefix) := lookupSimpleCref(cref.name, scope);
+          (node, foundScope) := lookupSimpleCref(cref.name, scope);
           state := LookupState.nodeState(node);
         then
-          (node, prefix, state);
+          (node, {node}, foundScope, state);
 
       case Absyn.ComponentRef.CREF_QUAL()
         algorithm
-          (node, prefix) := lookupSimpleCref(cref.name, scope);
-          state := LookupState.nodeState(node);
-          (node, state) := lookupCrefInNode(cref.componentRef, node, state);
+          (n, foundScope) := lookupSimpleCref(cref.name, scope);
+          state := LookupState.nodeState(n);
+          (node, restNodes, state) := lookupCrefInNode(cref.componentRef, n, state);
         then
-          (node, prefix, state);
+          (node, n :: restNodes, foundScope, state);
 
       case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
         then lookupCref(cref.componentRef, InstNode.topComponent(scope), info);
@@ -164,8 +173,10 @@ algorithm
         algorithm
           match_ty := MatchType.NOT_FOUND;
         then
-          (InstNode.EMPTY_NODE(), Prefix.NO_PREFIX(), LookupState.STATE_BEGIN());
+          (InstNode.EMPTY_NODE(), {}, scope, LookupState.STATE_BEGIN());
     end matchcontinue;
+  else
+    foundScope := scope;
   end if;
 
   if match_ty <> MatchType.FOUND then
@@ -181,7 +192,7 @@ function lookupBuiltinCref
   input Absyn.ComponentRef cref;
   input SourceInfo info;
   output InstNode node;
-  output Prefix prefix = Prefix.NO_PREFIX();
+  output list<InstNode> restNodes;
   output LookupState state = LookupState.STATE_PREDEF_COMP();
   output MatchType matchType = MatchType.FOUND;
 protected
@@ -190,39 +201,62 @@ protected
 algorithm
   cr := Absyn.unqualifyCref(cref);
 
-  node := match cr
-    local
-
+  (node, restNodes) := match cr
     case Absyn.ComponentRef.CREF_IDENT()
-      then match cr.name
-        case "time" then NFBuiltin.TIME;
-        case "Boolean" then NFBuiltin.BOOLEAN_TYPE;
-        case "StateSelect" then NFBuiltin.STATESELECT_TYPE;
-        else algorithm matchType := MatchType.NOT_FOUND; then InstNode.EMPTY_NODE();
-      end match;
+      algorithm
+        node := match cr.name
+          case "time" then NFBuiltin.TIME;
+          case "Boolean" then NFBuiltin.BOOLEAN_TYPE;
+          case "StateSelect" then NFBuiltin.STATESELECT_TYPE;
+          else
+            algorithm
+              matchType := MatchType.NOT_FOUND;
+            then
+              InstNode.EMPTY_NODE();
+        end match;
+      then
+        (node, {node});
 
     case Absyn.ComponentRef.CREF_QUAL()
-      then match cr.name
-        case "StateSelect"
-          then match cr.componentRef
-            case Absyn.CREF_IDENT(name = id)
-              then match id
-                case "never" then NFBuiltin.STATESELECT_NEVER;
-                case "avoid" then NFBuiltin.STATESELECT_AVOID;
-                case "default" then NFBuiltin.STATESELECT_DEFAULT;
-                case "prefer" then NFBuiltin.STATESELECT_PREFER;
-                case "always" then NFBuiltin.STATESELECT_ALWAYS;
-                // Invalid StateSelect member.
-                else algorithm matchType := MatchType.PARTIAL; then InstNode.EMPTY_NODE();
+      algorithm
+        node := match cr.name
+          case "StateSelect"
+            algorithm
+              node := match cr.componentRef
+                case Absyn.CREF_IDENT(name = id)
+                  then match id
+                    case "never" then NFBuiltin.STATESELECT_NEVER;
+                    case "avoid" then NFBuiltin.STATESELECT_AVOID;
+                    case "default" then NFBuiltin.STATESELECT_DEFAULT;
+                    case "prefer" then NFBuiltin.STATESELECT_PREFER;
+                    case "always" then NFBuiltin.STATESELECT_ALWAYS;
+                    else // Invalid StateSelect member.
+                      algorithm
+                        matchType := MatchType.PARTIAL;
+                      then
+                        InstNode.EMPTY_NODE();
+                   end match;
+
+                else // Invalid StateSelect form.
+                  algorithm
+                    matchType := MatchType.PARTIAL;
+                  then
+                    InstNode.EMPTY_NODE();
               end match;
 
-            // Invalid StateSelect form.
-            else algorithm matchType := MatchType.PARTIAL; then InstNode.EMPTY_NODE();
-          end match;
+              restNodes := {NFBuiltin.STATESELECT_TYPE, node};
+            then
+              node;
 
-        // Qualified name that's not a builtin name.
-        else algorithm matchType := MatchType.NOT_FOUND; then InstNode.EMPTY_NODE();
-      end match;
+          else // Qualified name that's not a builtin name.
+            algorithm
+              matchType := MatchType.NOT_FOUND;
+              restNodes := {};
+            then
+              InstNode.EMPTY_NODE();
+        end match;
+      then
+        (node, restNodes);
 
   end match;
 end lookupBuiltinCref;
@@ -385,9 +419,8 @@ function lookupSimpleCref
   input String name;
   input InstNode scope;
   output InstNode node;
-  output Prefix prefix;
+  output InstNode foundScope = scope;
 protected
-  InstNode foundScope = scope;
   Class cls;
   Class.Element e;
 algorithm
@@ -400,14 +433,7 @@ algorithm
       cls := InstNode.getClass(foundScope);
       node := Class.lookupElement(name, cls);
 
-      // We found it, build the prefix for the found cref.
-      if i == 1 then
-        prefix := InstNode.prefix(scope);
-      else
-        prefix := InstNode.prefix(foundScope);
-      end if;
-
-      // We're done here.
+      // We found a node, return it.
       return;
     else
       // Look in the next enclosing scope.
@@ -423,14 +449,20 @@ end lookupSimpleCref;
 function lookupCrefInNode
   input Absyn.ComponentRef cref;
   input output InstNode node;
+        output list<InstNode> nodes;
   input output LookupState state;
 protected
   Class scope;
+  InstNode n;
 algorithm
   if LookupState.isError(state) then
     return;
   end if;
 
+  // TODO: If the node is a package and the cref is qualified, then we should
+  // fully instantiate the node and not just expand it. Otherwise we can't look
+  // up something like P.a.b where P is a package and a is a package constant,
+  // since a will not be instantiated and thus we will fail when looking for b.
   scope := match node
     case InstNode.CLASS_NODE()
       then InstNode.getClass(Inst.expand(node));
@@ -439,20 +471,21 @@ algorithm
       then InstNode.getClass(node);
   end match;
 
-  (node, state) := match cref
+  (node, nodes, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
         node := Class.lookupElement(cref.name, scope);
         state := LookupState.next(node, state);
       then
-        (node, state);
+        (node, {node}, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        node := Class.lookupElement(cref.name, scope);
-        state := LookupState.next(node, state);
+        n := Class.lookupElement(cref.name, scope);
+        state := LookupState.next(n, state);
+        (node, nodes, state) := lookupCrefInNode(cref.componentRef, n, state);
       then
-        lookupCrefInNode(cref.componentRef, node, state);
+        (node, n :: nodes, state);
 
   end match;
 end lookupCrefInNode;

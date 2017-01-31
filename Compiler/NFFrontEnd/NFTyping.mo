@@ -68,7 +68,7 @@ function typeClass
         output Type ty;
 algorithm
   (classNode, ty) := typeComponents(classNode);
-  classNode := typeComponentBindings(classNode);
+  classNode := typeBindings(classNode);
   classNode := typeSections(classNode);
 end typeClass;
 
@@ -96,11 +96,7 @@ algorithm
         Type.COMPLEX(classNode);
 
     case Class.INSTANCED_BUILTIN()
-      algorithm
-        cls.attributes := typeTypeAttributes(cls.attributes, cls.ty, scope);
-        classNode := InstNode.updateClass(cls, classNode);
-      then
-        cls.ty;
+      then cls.ty;
 
     else
       algorithm
@@ -181,7 +177,7 @@ algorithm
   end match;
 end typeDimension;
 
-function typeComponentBindings
+function typeBindings
   input output InstNode classNode;
   input InstNode scope = classNode;
 protected
@@ -197,13 +193,18 @@ algorithm
           if InstNode.isComponent(components[i]) then
             typeComponentBinding(components[i], scope);
           else
-            components[i] := typeComponentBindings(components[i]);
+            components[i] := typeBindings(components[i]);
           end if;
         end for;
       then
         ();
 
-    case Class.INSTANCED_BUILTIN() then ();
+    case Class.INSTANCED_BUILTIN()
+      algorithm
+        cls.attributes := typeTypeAttributes(cls.attributes, cls.ty, scope);
+        classNode := InstNode.updateClass(cls, classNode);
+      then
+        ();
 
     else
       algorithm
@@ -212,7 +213,7 @@ algorithm
       then
         fail();
   end match;
-end typeComponentBindings;
+end typeBindings;
 
 function typeComponentBinding
   input InstNode component;
@@ -239,7 +240,7 @@ algorithm
           InstNode.updateComponent(c, component);
         end if;
 
-        typeComponentBindings(c.classInst, component);
+        typeBindings(c.classInst, component);
       then
         ();
 
@@ -906,15 +907,20 @@ algorithm
 end typeRange;
 
 function typeCref
+  "Looks up a given component reference and returns a typed Expression, along
+   with the type and variability of the referenced component. In some cases a
+   typename, like Boolean or an enumeration, may be used to indicate a range.
+   This is also handled by this function if the parameter allowTypename is true."
   input Absyn.ComponentRef untypedCref;
   input InstNode scope;
   input SourceInfo info;
-  input Boolean allowTypename = false;
+  input Boolean allowTypename = false "Allow crefs referring to typenames.";
   output Expression typedCref;
   output Type ty;
   output DAE.Const variability;
 protected
-  InstNode node;
+  InstNode node, found_scope, first_node;
+  list<InstNode> nodes;
   Prefix prefix;
   Component.Attributes attr;
   DAE.VarKind vr;
@@ -922,7 +928,22 @@ protected
   Class cls;
   Type t;
 algorithm
-  (node, prefix) := Lookup.lookupComponent(untypedCref, scope, info, allowTypename);
+  // Look up the cref.
+  (node, nodes, found_scope) := Lookup.lookupComponent(untypedCref, scope, info, allowTypename);
+
+  // Type the first node found (which should recursively type the other nodes too).
+  first_node := listHead(nodes);
+  if InstNode.isComponent(first_node) then
+    first_node := typeComponent(first_node);
+  else
+    first_node := Inst.instantiate(first_node, Modifier.NOMOD(), found_scope);
+    first_node := typeComponents(first_node, found_scope);
+  end if;
+
+  // Create a prefix from the scope the cref was found in.
+  prefix := InstNode.prefix(found_scope);
+  // Append the cref itself to the prefix.
+  prefix := makeCrefPrefix(untypedCref, nodes, prefix);
 
   if allowTypename and InstNode.isClass(node) then
     // Special case when a cref refers to a typename, e.g. as a dimension.
@@ -943,62 +964,42 @@ algorithm
 
     end match;
 
-    // Enumeration literals are always constant.
+    // Typenames are always constant.
     variability := DAE.C_CONST();
 
   else
-    // A normal component.
-    node := typeComponent(node);
-    comp := InstNode.component(node);
-
-    prefix := Prefix.fromCref(untypedCref, prefix);
-    prefix := updateCrefPrefix(untypedCref, node, prefix);
+    // A normal component, create a cref from it.
     typedCref := Expression.CREF(node, prefix);
 
+    // TODO: The subscripts needs to taken into account when getting the type of
+    // the component.
+    comp := InstNode.component(node);
     Component.TYPED_COMPONENT(ty = ty, attributes = attr) := comp;
     Component.ATTRIBUTES(variability = vr) := attr;
     variability := NFTyping.variabilityToConst(NFInstUtil.daeToSCodeVariability(vr));
   end if;
 end typeCref;
 
-function updateCrefPrefix
+function makeCrefPrefix
   input Absyn.ComponentRef cref;
-  input InstNode component;
+  input list<InstNode> nodes;
   input output Prefix prefix;
 algorithm
-  prefix := match (cref, prefix)
-    case (Absyn.ComponentRef.CREF_IDENT(), Prefix.PREFIX(prefixTy = PrefixType.CREF))
-      algorithm
-        prefix.ty := InstNode.getType(component);
-      then
-        prefix;
+  assert(not listEmpty(nodes), getInstanceName() + " got too few instance nodes");
 
-    case (Absyn.ComponentRef.CREF_QUAL(), Prefix.PREFIX(prefixTy = PrefixType.CREF))
-      algorithm
-        prefix.ty := InstNode.getType(component);
-        prefix.restPrefix := updateCrefPrefix(cref.componentRef,
-          InstNode.parent(component), prefix.restPrefix);
-      then
-        prefix;
+  prefix := match cref
+    case Absyn.ComponentRef.CREF_IDENT()
+      then Prefix.addCref(listHead(nodes), prefix);
 
-    case (Absyn.ComponentRef.CREF_IDENT(), Prefix.PREFIX())
-      algorithm
-        prefix.prefixTy := PrefixType.CREF;
-      then
-        prefix;
+    case Absyn.ComponentRef.CREF_QUAL()
+      then makeCrefPrefix(cref.componentRef, listRest(nodes),
+        Prefix.addCref(listHead(nodes), prefix));
 
-    case (Absyn.ComponentRef.CREF_QUAL(), Prefix.PREFIX())
-      algorithm
-        prefix.prefixTy := PrefixType.CREF;
-        prefix.restPrefix := updateCrefPrefix(cref.componentRef, component, prefix.restPrefix);
-      then
-        prefix;
-
-    case (Absyn.ComponentRef.CREF_FULLYQUALIFIED(), _)
-      then updateCrefPrefix(cref.componentRef, component, prefix);
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      then makeCrefPrefix(cref.componentRef, nodes, prefix);
 
   end match;
-end updateCrefPrefix;
+end makeCrefPrefix;
 
 public function variabilityToConst "translates SCode.Variability to DAE.Const"
   input SCode.Variability variability;

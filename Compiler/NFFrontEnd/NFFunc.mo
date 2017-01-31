@@ -89,7 +89,7 @@ protected
   String fn_name;
   Absyn.Path fn, fn_1;
   InstNode fakeComponent;
-  InstNode classNode;
+  InstNode classNode, foundScope;
   list<Expression> arguments;
   DAE.CallAttributes ca;
   Type classType, resultType;
@@ -115,7 +115,8 @@ algorithm
 
   try
     // try to lookup the function, if is working then is either a user defined function or present in ModelicaBuiltin.mo
-    (classNode, prefix) := Lookup.lookupFunctionName(functionName, scope, info);
+    (classNode, foundScope) := Lookup.lookupFunctionName(functionName, scope, info);
+    prefix := InstNode.prefix(foundScope);
   else
     // we could not lookup the class, see if is a special builtin such as String(), etc
     if isSpecialBuiltinFunctionName(functionName) then
@@ -642,10 +643,10 @@ algorithm
       Type el_ty, ty1, ty2;
 
     // size(arr, dim)
-    case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1, _}))
+    case (Absyn.CREF_IDENT(name = "size"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
       algorithm
         (dexp1,_, vr1) := Typing.typeExp(aexp1, scope, info);
-        (dexp2,_, vr2) := Typing.typeExp(aexp1, scope, info);
+        (dexp2,_, vr2) := Typing.typeExp(aexp2, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.elabBuiltinSize in Static.mo
         ty := Type.INTEGER();
@@ -665,11 +666,11 @@ algorithm
       then
         (Expression.SIZE(dexp1, NONE()), ty, vr);
 
-    case (Absyn.CREF_IDENT(name = "smooth"), Absyn.FUNCTIONARGS(args = {aexp1, _}))
+    case (Absyn.CREF_IDENT(name = "smooth"), Absyn.FUNCTIONARGS(args = {aexp1, aexp2}))
       algorithm
         call_path := Absyn.crefToPath(functionName);
         (dexp1,_, vr1) := Typing.typeExp(aexp1, scope, info);
-        (dexp2,_, vr2) := Typing.typeExp(aexp1, scope, info);
+        (dexp2,_, vr2) := Typing.typeExp(aexp2, scope, info);
 
         // TODO FIXME: calculate the correct type and the correct variability, see Static.mo
         ty := Type.REAL();

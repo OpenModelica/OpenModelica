@@ -69,7 +69,7 @@ uniontype Prefix
     DAE.Type ty;
   algorithm
     if InstNode.isClass(node) then
-      prefix := PREFIX(InstNode.name(node), {}, Type.UNKNOWN(), prefix, PrefixType.CLASS);
+      prefix := PREFIX(InstNode.name(node), {}, Type.COMPLEX(node), prefix, PrefixType.CLASS);
     else
       prefix := PREFIX(InstNode.name(node), {},
         InstNode.getType(node), prefix, PrefixType.COMPONENT);
@@ -81,7 +81,7 @@ uniontype Prefix
     input output Prefix prefix;
   algorithm
     if InstNode.isClass(node) then
-      prefix := PREFIX(InstNode.name(node), {}, Type.UNKNOWN(), prefix, PrefixType.CREF);
+    prefix := PREFIX(InstNode.name(node), {}, Type.COMPLEX(node), prefix, PrefixType.CREF);
     else
       prefix := PREFIX(InstNode.name(node), {},
         Component.getType(InstNode.component(node)), prefix, PrefixType.CREF);
