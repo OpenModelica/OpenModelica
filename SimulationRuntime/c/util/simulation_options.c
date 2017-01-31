@@ -515,8 +515,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_SYM_EULER */     "symEuler",
   /* S_SYM_EULER_SSC */ "symEulerSsc",
   /* S_QSS */           "qss",
-  /* S_OPTIMIZATION */  "optimization",
-  /* S_MAX */           "s_max"
+  /* S_OPTIMIZATION */  "optimization"
 };
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
@@ -532,9 +531,8 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_ERKSSC */        "rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step size control, order 4-5 [experimental]",
   /* S_SYM_EULER */     "symEuler - symbolic implicit Euler [compiler flag +symEuler needed] - implicit, fixed step size, order 1",
   /* S_SYM_EULER_SSC */ "symEulerSsc - symbolic implicit Euler with step size control [compiler flag +symEuler needed] - implicit, step size control, order 1",
-  /* S_QSS */           "qss - A QSS solver [experimental]"
-  /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization",
-  /* S_MAX */           "S_MAX"
+  /* S_QSS */           "qss - A QSS solver [experimental]",
+  /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 
 const char *INIT_METHOD_NAME[IIM_MAX] = {
