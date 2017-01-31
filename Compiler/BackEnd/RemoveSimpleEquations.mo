@@ -475,6 +475,13 @@ protected
   DAE.Exp e1,e2,e3,e4;
 
 algorithm
+  if BackendDAEUtil.isClockedSyst(inSystem) then
+    outSystem := inSystem;
+    outShared := inShared;
+    outTpl := inTpl;
+    return;
+  end if;
+
   try
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := outSystem;
     ((repl, globalFindSimple, unReplaceable, maxTraversals)) := inTpl;
