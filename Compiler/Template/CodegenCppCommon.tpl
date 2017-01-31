@@ -502,6 +502,7 @@ template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &p
   else
     var
 end daeExpCrefRhsArrayBox2;
+
 template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
                              Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -512,7 +513,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '<%contextFunName(record_type_name, context)%>(<%vars%>,<%ret_var%>);<%\n%>/*testfunction*/'
+  let &preExp += '<%contextFunName(record_type_name, context)%>(<%vars%>,<%ret_var%>);<%\n%>'
   '<%ret_var%>'
 end daeExpRecordCrefRhs;
 
@@ -1662,7 +1663,7 @@ template structParams(String structName,String varName,list<Var>  exps)
 ::=
    let  params = (exps |> e => match e
     case TYPES_VAR(__) then
-    '<%varName%>.<%name%>=<%structName%>.<%name%>;'
+    '<%varName%>.<%name%>_ = <%structName%>.<%name%>_;'
     ;separator="\n" )
   params
 end structParams;
