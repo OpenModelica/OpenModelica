@@ -547,7 +547,7 @@ const char *INIT_METHOD_DESC[IIM_MAX] = {
   "solves the initialization problem symbolically - default"
 };
 
-const char *LS_NAME[LS_MAX+1] = {
+const char *LS_NAME[LS_MAX] = {
   "LS_UNKNOWN",
 
   /* LS_LAPACK */       "lapack",
@@ -557,12 +557,10 @@ const char *LS_NAME[LS_MAX+1] = {
   /* LS_KLU */          "klu",
   /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
-  /* LS_DEFAULT */      "default",
-
-  "LS_MAX"
+  /* LS_DEFAULT */      "default"
 };
 
-const char *LS_DESC[LS_MAX+1] = {
+const char *LS_DESC[LS_MAX] = {
   "unknown",
 
   /* LS_LAPACK */       "method using lapack LU factorization",
@@ -572,33 +570,27 @@ const char *LS_DESC[LS_MAX+1] = {
   /* LS_KLU */          "method using klu sparse linear solver",
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
-  /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback",
-
-  "LS_MAX"
+  /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback"
 };
 
-const char *LSS_NAME[LS_MAX+1] = {
+const char *LSS_NAME[LS_MAX] = {
   "LS_UNKNOWN",
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
 #endif
   /* LS_KLU */          "klu",
-  /* LS_UMFPACK */      "umfpack",
-
-  "LSS_MAX"
+  /* LS_UMFPACK */      "umfpack"
 };
 
-const char *LSS_DESC[LS_MAX+1] = {
+const char *LSS_DESC[LS_MAX] = {
   "unknown",
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
 #endif
   /* LS_KLU */          "method using klu sparse linear solver",
-  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
-
-  "LSS_MAX"
+  /* LS_UMFPACK */      "method using umfpack sparse linear solver"
 };
 
 const char *NLS_NAME[NLS_MAX+1] = {
@@ -631,32 +623,28 @@ const char *NLS_DESC[NLS_MAX+1] = {
   "NLS_MAX"
 };
 
-const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1] = {
+const char *NEWTONSTRATEGY_NAME[NEWTON_MAX] = {
   "NEWTON_UNKNOWN",
 
   /* NEWTON_DAMPED */       "damped",
   /* NEWTON_DAMPED2 */      "damped2",
   /* NEWTON_DAMPED_LS */    "damped_ls",
   /* NEWTON_DAMPED_BT */    "damped_bt",
-  /* NEWTON_PURE */         "pure",
-
-  "NEWTON_MAX"
+  /* NEWTON_PURE */         "pure"
 };
 
-const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
+const char *NEWTONSTRATEGY_DESC[NEWTON_MAX] = {
   "unknown",
 
   /* NEWTON_DAMPED */       "Newton with a damping strategy",
   /* NEWTON_DAMPED2 */      "Newton with a damping strategy 2",
   /* NEWTON_DAMPED_LS */    "Newton with a damping line search",
   /* NEWTON_DAMPED_BT */    "Newton with a damping backtracking and a minimum search via golden ratio method",
-  /* NEWTON_PURE */         "Newton without damping strategy",
-
-  "NEWTON_MAX"
+  /* NEWTON_PURE */         "Newton without damping strategy"
 };
 
 
-const char *JACOBIAN_METHOD[JAC_MAX+1] = {
+const char *JACOBIAN_METHOD[JAC_MAX] = {
   "unknown",
 
   "coloredNumerical",
@@ -664,12 +652,10 @@ const char *JACOBIAN_METHOD[JAC_MAX+1] = {
   "coloredSymbolical",
   "numerical",
   "symbolical",
-  "kluSparse",
-
-  "JAC_MAX"
+  "kluSparse"
 };
 
-const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
+const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "unknown",
 
   "  * coloredNumerical - A dense colored numerical Jacobian, which is default for dassl. Usable with dassl and ida.",
@@ -677,51 +663,41 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX+1] = {
   "  * coloredSymbolical - A dense colored symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
   "  * numerical - A dense numerical Jacobian. Usable with dassl and ida.",
   "  * symbolical - A dense symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
-  "  * kluSparse - A sparse colored numerical Jacobian, which is default for ida. Usable with ida.",
-
-  "JAC_MAX"
+  "  * kluSparse - A sparse colored numerical Jacobian, which is default for ida. Usable with ida."
  };
 
-const char *IDA_LS_METHOD[IDA_LS_MAX+1] = {
+const char *IDA_LS_METHOD[IDA_LS_MAX] = {
   "unknown",
 
   "dense",
   "klu",
   "spgmr",
   "spbcg",
-  "sptfqmr",
-
-  "IDA_LS_MAX"
+  "sptfqmr"
 };
 
-const char *IDA_LS_METHOD_DESC[IDA_LS_MAX+1] = {
+const char *IDA_LS_METHOD_DESC[IDA_LS_MAX] = {
   "unknown",
 
   "ida internal dense method",
   "ida use sparse direct solver KLU",
   "ida generalized minimal residual method. Iterative method",
   "ida Bi-CGStab. Iterative method",
-  "ida TFQMR. Iterative method",
-
-  "IDA_LS_MAX"
+  "ida TFQMR. Iterative method"
 };
 
-const char *NLS_LS_METHOD[NLS_LS_MAX+1] = {
+const char *NLS_LS_METHOD[NLS_LS_MAX] = {
   "unknown",
 
   "totalpivot",
   "lapack",
-  "klu",
-
-  "NLS_LS_MAX"
+  "klu"
 };
 
-const char *NLS_LS_METHOD_DESC[NLS_LS_MAX+1] = {
+const char *NLS_LS_METHOD_DESC[NLS_LS_MAX] = {
   "unknown",
 
   "internal total pivot implementation. Solve in some case even under-determined systems.",
   "use external lapack implementation.",
-  "use klu direct sparse solver.",
-
-  "NLS_LS_MAX"
+  "use klu direct sparse solver."
 };

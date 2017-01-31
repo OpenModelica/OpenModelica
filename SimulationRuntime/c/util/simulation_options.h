@@ -201,10 +201,10 @@ enum LINEAR_SPARSE_SOLVER
   LSS_MAX
 };
 
-extern const char *LS_NAME[LS_MAX+1];
-extern const char *LS_DESC[LS_MAX+1];
-extern const char *LSS_NAME[LS_MAX+1];
-extern const char *LSS_DESC[LS_MAX+1];
+extern const char *LS_NAME[LS_MAX];
+extern const char *LS_DESC[LS_MAX];
+extern const char *LSS_NAME[LS_MAX];
+extern const char *LSS_DESC[LS_MAX];
 
 enum NONLINEAR_SOLVER
 {
@@ -238,8 +238,8 @@ enum NEWTON_STRATEGY
 extern const char *NLS_NAME[NLS_MAX+1];
 extern const char *NLS_DESC[NLS_MAX+1];
 
-extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1];
-extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1];
+extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
+extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];
 
 enum JACOBIAN_METHOD
 {
@@ -255,8 +255,8 @@ enum JACOBIAN_METHOD
   JAC_MAX
 };
 
-extern const char *JACOBIAN_METHOD[JAC_MAX+1];
-extern const char *JACOBIAN_METHOD_DESC[JAC_MAX+1];
+extern const char *JACOBIAN_METHOD[JAC_MAX];
+extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
 
 enum IDA_LS
 {
@@ -271,8 +271,8 @@ enum IDA_LS
   IDA_LS_MAX
 };
 
-extern const char *IDA_LS_METHOD[IDA_LS_MAX+1];
-extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX+1];
+extern const char *IDA_LS_METHOD[IDA_LS_MAX];
+extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
 
 enum NLS_LS
 {
@@ -285,8 +285,8 @@ enum NLS_LS
   NLS_LS_MAX
 };
 
-extern const char *NLS_LS_METHOD[NLS_LS_MAX+1];
-extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX+1];
+extern const char *NLS_LS_METHOD[NLS_LS_MAX];
+extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
 
 
 #if defined(__cplusplus)
