@@ -73,14 +73,15 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Below the error message is shown, after trying to simulate the Constants model. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <Input>simulate( Constants )  //?? Error - should have emitted variability error</Input>
+          <Input>simulate( Constants ) </Input>
           <Output>record SimulationResult
     resultFile = "",
-    messages = "Simulation failed for model: Constants
-[&lt;interactive>:3:3-3:29:writable] Error: Component c1 of variability CONST has binding 2.0 + p1 of higher variability PARAM.
+    messages = "Failed to build model: Constants"
+end SimulationResult;
+OMC-ERROR:
+"[&lt;interactive>:3:3-3:29:writable] Error: Component c1 of variability CONST has binding 2.0 + p1 of higher variability PARAM.
 Error: Error occurred while flattening model Constants
-"
-end SimulationResult;</Output>
+"</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -109,7 +110,7 @@ p, li { white-space: pre-wrap; }
   parameter Real p1 = 1;
   parameter Real p2 = p1 + 2;      // Fine! - p1 + 2 has same variability
 end ConstantsCorrect;</Input>
-          <Output>{ConstantsCorrect,Constants}</Output>
+          <Output>{ConstantsCorrect}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -138,6 +139,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>
@@ -164,14 +167,14 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model TestEquations
-  Constants c1(p1 = 3);
-  Constants c2(p2 = 7);   // Fine, declaration equation can be modified.
+  ConstantsCorrect c1(p1 = 3);
+  ConstantsCorrect c2(p2 = 7); // Fine, declaration equation can be modified.
   Boolean b;
   Real x;
 equation
   b = noEvent(x > 1);
 end TestEquations;</Input>
-          <Output>{TestEquations,ConstantsCorrect,Constants}</Output>
+          <Output>{TestEquations}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -199,11 +202,12 @@ p, li { white-space: pre-wrap; }
           <Input>simulate( TestEquations ) </Input>
           <Output>record SimulationResult
     resultFile = "",
-    messages = "Simulation failed for model: TestEquations
-[&lt;interactive>:3:3-3:23:writable] Error: Variable c2: In modifier (p2 = 7), class or component p2 not found in &lt;Constants>.
+    messages = "Failed to build model: TestEquations"
+end SimulationResult;
+OMC-ERROR:
+"[&lt;interactive>:3:3-3:23:writable] Error: Variable c2: In modifier (p2 = 7), class or component p2 not found in &lt;Constants$c2>.
 Error: Error occurred while flattening model TestEquations
-"
-end SimulationResult;</Output>
+"</Output>
         </GraphCell>
       </GroupCell>
     </GroupCell>

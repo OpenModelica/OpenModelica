@@ -10,7 +10,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Exercise 1&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Exercise 2.2.1.1&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
       <GroupCell closed="false">
         <TextCell style="Section">
@@ -77,7 +77,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Create a class, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Add&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, that calculates the sum of two parameters, which are &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Integer&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> numbers with given values. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell closed="true" style="Graph">
+        <GraphCell style="Graph" closed="true">
           <Input></Input>
           <Output></Output>
         </GraphCell>
@@ -102,8 +102,8 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Since &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x + y = sum &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">is an equation and not an assignment, the equation can also be written as sum&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> = x + y &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">without changing the meaning of the equation.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell closed="false" style="Graph">
-            <Input>class Add
+          <GraphCell style="Graph" closed="false">
+            <Input>model Add
   parameter Integer x = 1;
   parameter Integer y = 2;
   Real sum;
@@ -112,8 +112,9 @@ equation
 end Add;</Input>
             <Output>{Add}</Output>
           </GraphCell>
-          <TextCell style="Subsubsection">
-            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+          <GroupCell closed="false">
+            <TextCell style="Subsubsection">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
 &lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
@@ -121,29 +122,37 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">Simulation of Add&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-          </TextCell>
-          <GraphCell closed="false" style="Graph">
-            <Input>simulate(Add)</Input>
-            <Output>record SimulationResult
+            </TextCell>
+            <GraphCell style="Graph" closed="false">
+              <Input>simulate(Add)</Input>
+              <Output>record SimulationResult
     resultFile = "Add_res.mat",
     messages = ""
 end SimulationResult;</Output>
-          </GraphCell>
-          <TextCell style="Text">
-            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+            </GraphCell>
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
 &lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">When we have simulated the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Add&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, we can look at the values of the variables at a specific point in time by writing: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">val(variableName,time)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, here with time=0;.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-          </TextCell>
-          <GraphCell closed="false" style="Graph">
-            <Input>{2,3}  //??val needed
-//{val(sum,0), val(x,0), val(y,0)}</Input>
-            <Output>{2,3}</Output>
-          </GraphCell>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">When we have simulated the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Add&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, we can look at the values of the variables at a specific point in time by writing: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">val(variableName,time)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, here with time=0;. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">val(variableName)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is the same as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">val(variableName,0)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell style="Graph" closed="false">
+              <Input>val(sum,0)</Input>
+              <Output>3.0</Output>
+            </GraphCell>
+            <GraphCell style="Graph" closed="false">
+              <Input>val(x)</Input>
+              <Output>1.0</Output>
+            </GraphCell>
+            <GraphCell style="Graph" closed="false">
+              <Input>val(y)</Input>
+              <Output>2.0</Output>
+            </GraphCell>
+          </GroupCell>
         </GroupCell>
       </GroupCell>
     </GroupCell>
