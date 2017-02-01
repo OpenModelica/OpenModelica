@@ -241,6 +241,7 @@ private:
   QLineEdit *mpGeometryFileTextBox;
   QPushButton *mpGeometryFileBrowseButton;
   QScrollArea *mpParametersScrollArea;
+  QWidget *mpParametersScrollWidget;
   QGridLayout *mpParametersLayout;
   QLabel *mpParametersLabel;
   QList<QLabel*> mParameterLabels;

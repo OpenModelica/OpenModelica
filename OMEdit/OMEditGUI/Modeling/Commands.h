@@ -145,6 +145,8 @@ private:
   GraphicsView *mpIconGraphicsView;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsView *mpGraphicsView;
+  QStringList mParameterNames;
+  QStringList mParameterValues;
 };
 
 class AddConnectionCommand : public QUndoCommand
@@ -244,13 +246,17 @@ class UpdateSubModelAttributesCommand : public QUndoCommand
 {
 public:
   UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
-                                  QUndoCommand *pParent = 0);
+                                  QStringList &parameterNames, QStringList &oldParameterValues,
+                                  QStringList &newParameterValues, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   Component *mpComponent;
   ComponentInfo mOldComponentInfo;
   ComponentInfo mNewComponentInfo;
+  QStringList mParameterNames;
+  QStringList mOldParameterValues;
+  QStringList mNewParameterValues;
 };
 
 class UpdateSimulationParamsCommand : public QUndoCommand

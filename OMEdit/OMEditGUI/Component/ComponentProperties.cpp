@@ -1448,9 +1448,9 @@ void MetaModelSubModelAttributes::setUpDialog()
   mpParametersLayout->addWidget(mpParametersLabel,0,0,1,2);
   mpParametersScrollArea = new QScrollArea;
   mpParametersScrollArea->setWidgetResizable(true);
-  QWidget *pScrollWidget = new QWidget;
-  pScrollWidget->setLayout(mpParametersLayout);
-  mpParametersScrollArea->setWidget(pScrollWidget);
+  mpParametersScrollWidget = new QWidget;
+  mpParametersScrollWidget->setLayout(mpParametersLayout);
+  mpParametersScrollArea->setWidget(mpParametersScrollWidget);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1510,6 +1510,7 @@ void MetaModelSubModelAttributes::initializeDialog()
       mpParametersLayout->addWidget(mParameterLabels.last(),i+1,0);
       mpParametersLayout->addWidget(mParameterLineEdits.last(),i+1,1);
   }
+  mpParametersScrollWidget->setVisible(!parameters.isEmpty());
   mpParametersLabel->setVisible(!parameters.isEmpty());
 }
 
@@ -1564,20 +1565,33 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
   newComponentInfo.setStartCommand(mpStartCommandTextBox->text());
   newComponentInfo.setExactStep(mpExactStepCheckBox->isChecked());
   newComponentInfo.setGeometryFile(mpGeometryFileTextBox->text());
+
+
+  QStringList parameterNames, oldParameterValues, newParameterValues;
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    BaseEditor *pBaseEditor = mpComponent->getGraphicsView()->getModelWidget()->getEditor();
+    MetaModelEditor *pEditor = qobject_cast<MetaModelEditor*>(pBaseEditor);
+
+    parameterNames = pEditor->getParameterNames(mpComponent->getName());  //Assume submodel; otherwise returned list is empty
+    foreach(QString parName, parameterNames) {
+      oldParameterValues.append(pEditor->getParameterValue(mpComponent->getName(), parName));
+    }
+
+    for(int i=0; i<mParameterLineEdits.size(); ++i) {
+      newParameterValues.append(mParameterLineEdits[i]->text());
+    }
+  }
+
   // If user has really changed the Component's attributes then push that change on the stack.
-  if (oldComponentInfo != newComponentInfo) {
+  if (oldComponentInfo != newComponentInfo || oldParameterValues != newParameterValues) {
     UpdateSubModelAttributesCommand *pUpdateSubModelAttributesCommand = new UpdateSubModelAttributesCommand(mpComponent, oldComponentInfo,
-                                                                                                            newComponentInfo);
+                                                                                                            newComponentInfo,
+                                                                                                            parameterNames,
+                                                                                                            oldParameterValues,
+                                                                                                            newParameterValues);
     ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
     pModelWidget->getUndoStack()->push(pUpdateSubModelAttributesCommand);
     pModelWidget->updateModelText();
-  }
-
-  for(int i=0; i<mParameterLabels.size(); ++i) {
-    QString parameterName = mParameterLabels[i]->text();
-    QString parameterValue = mParameterLineEdits[i]->text();
-    MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-    pEditor->setParameterValue(mpComponent->getName(), parameterName, parameterValue);
   }
 
   accept();

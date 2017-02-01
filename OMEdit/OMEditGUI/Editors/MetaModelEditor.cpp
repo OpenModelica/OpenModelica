@@ -163,21 +163,28 @@ QString MetaModelEditor::getParameterValue(QString subModelName, QString paramet
 
 void MetaModelEditor::setParameterValue(QString subModelName, QString parameterName, QString value)
 {
-    QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
-    for (int i = 0 ; i < subModelList.size() ; i++) {
-      QDomElement subModelElement = subModelList.at(i).toElement();
-      if (subModelElement.attribute("Name").compare(subModelName) == 0) {
-        QDomElement parameterElement = subModelElement.firstChildElement("Parameter");
-        while(!parameterElement.isNull()) {
-            if(parameterElement.attribute("Name").compare(parameterName) == 0) {
-                parameterElement.setAttribute("Value",value);
-            }
-            parameterElement = parameterElement.nextSiblingElement("Parameter");
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModelElement = subModelList.at(i).toElement();
+    if (subModelElement.attribute("Name").compare(subModelName) == 0) {
+      QDomElement parameterElement = subModelElement.firstChildElement("Parameter");
+      while(!parameterElement.isNull()) {
+        if(parameterElement.attribute("Name").compare(parameterName) == 0) {
+          parameterElement.setAttribute("Value",value);
+          setPlainText(mXmlDocument.toString());
+          return;
         }
-        setPlainText(mXmlDocument.toString());
-        return;
+        parameterElement = parameterElement.nextSiblingElement("Parameter");
       }
+      //Parameter not found, insert it
+      QDomElement parameterPoint = mXmlDocument.createElement("Parameter");
+      parameterPoint.setAttribute("Name", parameterName);
+      parameterPoint.setAttribute("Value", value);
+      subModelElement.appendChild(parameterPoint);
+      setPlainText(mXmlDocument.toString());
+      return;
     }
+  }
 }
 
 /*!

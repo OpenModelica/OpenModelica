@@ -675,6 +675,15 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
   mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
   mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
+
+  //Save sub-model parameters for meta models
+  if(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    MetaModelEditor *pEditor = qobject_cast<MetaModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
+    mParameterNames = pEditor->getParameterNames(pComponent->getName());  //Assume submodel; otherwise returned list is empty
+    foreach(QString parName, mParameterNames) {
+      mParameterValues.append(pEditor->getParameterValue(pComponent->getName(), parName));
+    }
+  }
 }
 
 /*!
@@ -743,6 +752,14 @@ void DeleteComponentCommand::undo()
     mpComponent->emitAdded();
   }
   mpGraphicsView->addComponentToClass(mpComponent);
+
+  //Restore sub-model parameters for meta models
+  if(pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    MetaModelEditor *pEditor = qobject_cast<MetaModelEditor*>(pModelWidget->getEditor());
+    for(int i=0; i<mParameterNames.size(); ++i) {
+        pEditor->setParameterValue(mpComponent->getName(),mParameterNames[i],mParameterValues[i]);
+    }
+  }
 }
 
 AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, QUndoCommand *pParent)
@@ -1141,13 +1158,20 @@ void UpdateClassSimulationFlagsAnnotationCommand::undo()
 }
 
 UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
-                                                                 const ComponentInfo &newComponentInfo, QUndoCommand *pParent)
+                                                                 const ComponentInfo &newComponentInfo,
+                                                                 QStringList &parameterNames, QStringList &oldParameterValues,
+                                                                 QStringList &newParameterValues, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
   mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
   mNewComponentInfo.updateComponentInfo(&newComponentInfo);
   setText(QString("Update SubModel %1 Attributes").arg(mpComponent->getName()));
+
+  //Save sub-model parameters for meta models
+  mParameterNames = parameterNames;
+  mOldParameterValues = oldParameterValues;
+  mNewParameterValues = newParameterValues;
 }
 
 /*!
@@ -1162,6 +1186,12 @@ void UpdateSubModelAttributesCommand::redo()
   mpComponent->getComponentInfo()->setStartCommand(mNewComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mNewComponentInfo.getExactStep());
   mpComponent->getComponentInfo()->setGeometryFile(mNewComponentInfo.getGeometryFile());
+
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    for(int i=0; i<mParameterNames.size(); ++i) {
+      pMetaModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mNewParameterValues[i]);
+    }
+  }
 }
 
 /*!
@@ -1176,6 +1206,12 @@ void UpdateSubModelAttributesCommand::undo()
   mpComponent->getComponentInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mOldComponentInfo.getExactStep());
   mpComponent->getComponentInfo()->setGeometryFile(mOldComponentInfo.getGeometryFile());
+
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    for(int i=0; i<mParameterNames.size(); ++i) {
+      pMetaModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mOldParameterValues[i]);
+    }
+  }
 }
 
 UpdateSimulationParamsCommand::UpdateSimulationParamsCommand(LibraryTreeItem *pLibraryTreeItem, QString oldStartTime, QString newStartTime, QString oldStopTime,
