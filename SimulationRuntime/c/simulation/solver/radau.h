@@ -29,7 +29,7 @@
  */
 
 /*! \file radau.h
- * author: team Bielefeld
+ * author: Ru(n)ge, wbraun
  */
 
 #ifndef _RADAU_H_
@@ -70,7 +70,7 @@
       double *x;
       int nStates;
       double dt;
-      double *currentStep;
+      double currentStep;
       double t0;
       double *min;
       double *max;
@@ -88,6 +88,7 @@
       SOLVER_INFO *solverInfo;
       int N;
       int order;
+      int lsMethod;        /* specifies the method the used linear solver */
     }KINODE;
 
 #else

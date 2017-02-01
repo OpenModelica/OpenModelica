@@ -29,7 +29,7 @@
  */
 
 /*! \file radau.c
- * author: Ru(n)ge
+ * author: Ru(n)ge, wbraun
  * description: This file contains implicit Runge-Kutta methods of different order,
  * based on Radau IIA and Lobatto IIA methods. The method with order one is
  * corresponding to the implicit euler method. Further orders 2 to 6.
@@ -40,6 +40,8 @@
 
 #include "radau.h"
 #include "external_input.h"
+
+#include "simulation/options.h"
 #ifdef WITH_SUNDIALS
 
 #include <kinsol/kinsol.h>
@@ -61,7 +63,6 @@ extern int KINSetInfoHandlerFn(void *kinmem, KINInfoHandlerFn ihfun, void *ih_da
 
 static int allocateNlpOde(KINODE *kinOde, int order);
 static int allocateKINSOLODE(KINODE *kinOde);
-
 
 static void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data);
 
@@ -87,6 +88,7 @@ static int lobatto6Res(N_Vector z, N_Vector f, void* user_data);
 
 int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int order)
 {
+  int i;
   KINODE *kinOde = (KINODE*) solverInfo->solverData;
   kinOde->kData = (KDATAODE*) malloc(sizeof(KDATAODE));
   kinOde->nlp = (NLPODE*) malloc(sizeof(NLPODE));
@@ -110,7 +112,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
   /* KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2); */
   KINSetMaxSetupCalls(kinOde->kData->kmem, kinOde->kData->mset);
-  kinOde->nlp->currentStep = &kinOde->solverInfo->currentStepSize;
+
   KINSetErrHandlerFn(kinOde->kData->kmem, kinsol_errorHandler, NULL);
   KINSetInfoHandlerFn(kinOde->kData->kmem, kinsol_infoHandler, NULL);
   switch(kinOde->order)
@@ -137,13 +139,53 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     default:
       assert(0);
   }
-  /* Call KINDense to specify the linear solver */
- /*KINSpbcg*/
-  if(kinOde->nlp->nStates < 10)
-    KINSpgmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates+1);
+  /* if FLAG_IMPRK_LS is set, choose ida linear solver method */
+  if (omc_flag[FLAG_IMPRK_LS])
+  {
+    for(i=1; i< IMPRK_LS_MAX;i++)
+    {
+      if (!strcmp((const char*)omc_flagValue[FLAG_IMPRK_LS], IMPRK_LS_METHOD[i])){
+        kinOde->lsMethod = (int)i;
+        break;
+      }
+    }
+    if (kinOde->lsMethod == IMPRK_LS_UNKNOWN)
+    {
+      if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+      {
+        warningStreamPrint(LOG_SOLVER, 1, "unrecognized linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
+        for(i=1; i < IMPRK_LS_MAX; ++i)
+        {
+          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IMPRK_LS_METHOD[i], IMPRK_LS_METHOD_DESC[i]);
+        }
+        messageClose(LOG_SOLVER);
+      }
+      throwStreamPrint(threadData,"unrecognized linear solver method %s", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
+    }
+  }
   else
-    KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates+1);
+  {
+    kinOde->lsMethod = IMPRK_LS_ITERATIVE;
+  }
+
   kinOde->kData->glstr = KIN_LINESEARCH;
+
+  switch (kinOde->lsMethod){
+    case IMPRK_LS_ITERATIVE:
+      /*KINSpbcg*/
+      if(kinOde->nlp->nStates < 10)
+        KINSpgmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates+1);
+      else
+        KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates+1);
+      break;
+    case IMPRK_LS_DENSE:
+      KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+      break;
+    default:
+      throwStreamPrint(threadData,"unrecognized linear solver method %s", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
+    break;
+  }
+  KINSetNoInitSetup(kinOde->kData->kmem, FALSE);
 
   return 0;
 }
@@ -182,16 +224,233 @@ static int allocateNlpOde(KINODE *kinOde, int order)
 }
 
 static void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
-  {
-      warningStreamPrint(LOG_SOLVER, 0, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
-      if (msg) warningStreamPrint(LOG_SOLVER, 0, "%s", msg);
-  }
+{
+    warningStreamPrint(LOG_SOLVER, 0, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+    if (msg) warningStreamPrint(LOG_SOLVER, 0, "%s", msg);
+}
 
 static void kinsol_infoHandler(const char* module, const char* function, char* msg, void* user_data)
-  {
-    infoStreamPrint(LOG_SOLVER, 0, " %s: %s ", module, function);
-    if (msg) infoStreamPrint(LOG_SOLVER, 0, "%s", msg);
+{
+  infoStreamPrint(LOG_SOLVER, 0, " %s: %s ", module, function);
+  if (msg) infoStreamPrint(LOG_SOLVER, 0, "%s", msg);
+}
+
+static int allocateKINSOLODE(KINODE *kinOde)
+{
+  int m;
+  DATA *data = kinOde->data;
+  int n = data->modelData->nStates;
+  int i, j, k;
+  double* c;
+  KDATAODE * kData = (kinOde)->kData;
+  m =  kinOde->N*n;
+  kData->x = N_VNew_Serial(m);
+  kData->sVars = N_VNew_Serial(m);
+  kData->sEqns = N_VNew_Serial(m);
+  kData->c = N_VNew_Serial(m);
+  kData->kmem = KINCreate();
+  c = NV_DATA_S(kData->c);
+
+  for(j=0, k=0; j< kinOde->N; ++j)
+    for(i=0; i<n; ++i, ++k)
+      c[k] = 0;
+
+  KINSetUserData(kinOde->kData->kmem, (void*) kinOde);
+  KINSetConstraints(kinOde->kData->kmem, kData->c);
+  return 0;
+}
+
+int freeKinOde(DATA* data, SOLVER_INFO* solverInfo)
+{
+  KINODE *kinOde = (KINODE*) solverInfo->solverData;
+  freeImOde((void*) kinOde->nlp, kinOde->N);
+  freeKinsol((void*) kinOde->kData);
+  free(kinOde);
+  return 0;
+}
+
+static int freeImOde(void *nlpode, int N)
+{
+  int i;
+  NLPODE *nlp = (NLPODE*) nlpode;
+  free(nlp->min);
+  free(nlp->max);
+  free(nlp->s);
+
+  for(i=0; i<N; i++) {
+    free(nlp->c[i]);
   }
+  free(nlp->c);
+
+  free(nlp->a);
+  return 0;
+}
+
+static int freeKinsol(void * kOde)
+{
+  KDATAODE *kData = (KDATAODE*) kOde;
+  N_VDestroy_Serial(kData->x);
+  N_VDestroy_Serial(kData->sVars);
+  N_VDestroy_Serial(kData->sEqns);
+  N_VDestroy_Serial(kData->c);
+  KINFree(&kData->kmem);
+  return 0;
+}
+
+static int initKinsol(KINODE *kinOde)
+{
+  int i,j,k,n;
+  double *scal_eq, *scal_var, *x, *f2;
+  long double tmp, h, hf, hf_min;
+  DATA *data;
+  NLPODE *nlp;
+  KDATAODE * kData;
+
+  n = kinOde->nlp->nStates;
+  data= kinOde->data;
+  kData = kinOde->kData;
+  x = NV_DATA_S(kData->x);
+  nlp = kinOde->nlp;
+
+  nlp->currentStep = kinOde->solverInfo->currentStepSize;
+  f2 = data->localData[2]->realVars + n;
+  nlp->dt = nlp->currentStep;
+  nlp->derx = data->localData[0]->realVars + n;
+  nlp->x0 = data->localData[1]->realVars;
+  nlp->f0 = data->localData[1]->realVars + n;
+  nlp->t0 = data->localData[1]->timeValue;
+
+
+  scal_var = NV_DATA_S(kData->sVars);
+  scal_eq = NV_DATA_S(kData->sEqns);
+
+  hf_min = 1e-6;
+  for(j=0, k=0; j<kinOde->N; ++j)
+  {
+    for(i=0;i<n;++i,++k)
+    {
+      hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]);
+      if(fabsl(hf) < hf_min) hf_min = fabsl(hf);
+      x[k] = (nlp->x0[i] + hf);
+      tmp = fabs(x[k] + nlp->x0[i]) + 1e-12;
+      tmp = (tmp < 1e-9) ? nlp->s[i] : 2.0/tmp;
+      scal_var[k] = tmp + 1e-9;
+      scal_eq[k] = 1.0/(scal_var[k])+ 1e-12;
+    }
+  }
+  KINSetMaxNewtonStep(kinOde->kData->kmem, hf_min);
+  return 0;
+}
+
+int kinsolOde(SOLVER_INFO* solverInfo)
+{
+  KINODE *kinOde = (KINODE*) solverInfo->solverData;
+  KDATAODE *kData = kinOde->kData;
+  int flag, dense=0, try_again = 1;
+  int retries = 0;
+
+  infoStreamPrint(LOG_SOLVER, 1, "##IMPRK## new step from %.15g to %.15g", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize);
+  initKinsol(kinOde);
+
+  do
+  {
+    kData->error_code = KINSol(kData->kmem,           /* KINSol memory block */
+                               kData->x,              /* initial guess on input; solution vector */
+                               kData->glstr,          /* global strategy choice */
+                               kData->sVars,          /* scaling vector, for the variable cc */
+                               kData->sEqns           /* scaling vector, for the residual eqns */
+                               );
+
+    switch(kinOde->lsMethod){
+      retries++;
+      case IMPRK_LS_ITERATIVE:
+        if(retries == 0)
+        {
+         KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+         dense=1;
+         warningStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINDense.");
+        }
+        else if(retries == 1)
+        {
+          KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+          dense=0;
+          warningStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSptfqmr.");
+        }
+        else if(retries == 2)
+        {
+          KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+          warningStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSpbcg.");
+        }
+        else
+        {
+          try_again= 0;
+        }
+        break;
+      case IMPRK_LS_DENSE:
+        dense=1;
+        if (retries== 1)
+        {
+          kinOde->kData->glstr = KIN_NONE;
+        }
+        else
+        {
+          try_again= 0;
+        }
+        break;
+      default:
+        kData->error_code = -42;
+        try_again = 0;
+        break;
+    }
+
+  }while(kData->error_code < 0 && try_again);
+
+  /* save stats */
+  /* steps */
+  solverInfo->solverStatsTmp[0] += 1;
+  /* functionODE evaluations */
+  {
+    long int tmp = 0;
+    flag = KINGetNumFuncEvals(kData->kmem, &tmp);
+    if (flag == KIN_SUCCESS)
+    {
+      solverInfo->solverStatsTmp[1] += tmp;
+    }
+  }
+
+  /* Jacobians evaluations */
+  {
+    long int tmp = 0;
+    if (dense)
+    {
+      flag = KINDlsGetNumJacEvals(kData->kmem, &tmp);
+    }
+    else
+    {
+      flag = KINSpilsGetNumJtimesEvals(kData->kmem, &tmp);
+    }
+    if (flag == KIN_SUCCESS)
+    {
+      solverInfo->solverStatsTmp[2] += tmp;
+    }
+  }
+
+  /* beta-condition failures evaluations */
+  {
+    long int tmp = 0;
+    flag = KINGetNumBetaCondFails(kData->kmem, &tmp);
+    if (flag == KIN_SUCCESS)
+    {
+      solverInfo->solverStatsTmp[4] += tmp;
+    }
+  }
+  infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished .");
+  /* closing new step message */
+  messageClose(LOG_SOLVER);
+
+  return (kData->error_code<0) ? -1 : 0;
+}
+
 
 static int boundsVars(KINODE *kinOde)
 {
@@ -326,110 +585,6 @@ static int lobatto6Coeff(KINODE *kinOde)
   nlp->a[0]    = 0.27639320225002103035908263312687237645593816403885;
   nlp->a[1]    = 0.72360679774997896964091736687312762354406183596115;
   nlp->a[2]    = 1.0;
-  return 0;
-}
-
-static int allocateKINSOLODE(KINODE *kinOde)
-{
-  int m;
-  DATA *data = kinOde->data;
-  int n = data->modelData->nStates;
-  int i, j, k;
-  double* c;
-  KDATAODE * kData = (kinOde)->kData;
-  m =  kinOde->N*n;
-  kData->x = N_VNew_Serial(m);
-  kData->sVars = N_VNew_Serial(m);
-  kData->sEqns = N_VNew_Serial(m);
-  kData->c = N_VNew_Serial(m);
-  kData->kmem = KINCreate();
-  c = NV_DATA_S(kData->c);
-
-  for(j=0, k=0; j< kinOde->N; ++j)
-    for(i=0; i<n; ++i, ++k)
-      c[k] = 0;
-
-  KINSetUserData(kinOde->kData->kmem, (void*) kinOde);
-  KINSetConstraints(kinOde->kData->kmem, kData->c);
-  return 0;
-}
-
-int freeKinOde(DATA* data, SOLVER_INFO* solverInfo)
-{
-  KINODE *kinOde = (KINODE*) solverInfo->solverData;
-  freeImOde((void*) kinOde->nlp, kinOde->N);
-  freeKinsol((void*) kinOde->kData);
-  free(kinOde);
-  return 0;
-}
-
-static int freeImOde(void *nlpode, int N)
-{
-  int i;
-  NLPODE *nlp = (NLPODE*) nlpode;
-  free(nlp->min);
-  free(nlp->max);
-  free(nlp->s);
-
-  for(i=0; i<N; i++) {
-    free(nlp->c[i]);
-  }
-  free(nlp->c);
-
-  free(nlp->a);
-  return 0;
-}
-
-static int freeKinsol(void * kOde)
-{
-  KDATAODE *kData = (KDATAODE*) kOde;
-  N_VDestroy_Serial(kData->x);
-  N_VDestroy_Serial(kData->sVars);
-  N_VDestroy_Serial(kData->sEqns);
-  N_VDestroy_Serial(kData->c);
-  KINFree(&kData->kmem);
-  return 0;
-}
-
-static int initKinsol(KINODE *kinOde)
-{
-  int i,j,k,n;
-  double *scal_eq, *scal_var, *x, *f2;
-  long double tmp, h, hf, hf_min;
-  DATA *data;
-  NLPODE *nlp;
-  KDATAODE * kData;
-
-  n = kinOde->nlp->nStates;
-  data= kinOde->data;
-  kData = kinOde->kData;
-  x = NV_DATA_S(kData->x);
-  nlp = kinOde->nlp;
-  f2 = data->localData[2]->realVars + n;
-  nlp->dt = *(nlp->currentStep);
-  nlp->derx = data->localData[0]->realVars + n;
-  nlp->x0 = data->localData[1]->realVars;
-  nlp->f0 = data->localData[1]->realVars + n;
-  nlp->t0 = data->localData[1]->timeValue;
-
-  scal_var = NV_DATA_S(kData->sVars);
-  scal_eq = NV_DATA_S(kData->sEqns);
-
-  hf_min = 1e-6;
-  for(j=0, k=0; j<kinOde->N; ++j)
-  {
-    for(i=0;i<n;++i,++k)
-    {
-      hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]);
-      if(fabsl(hf) < hf_min) hf_min = fabsl(hf);
-      x[k] = (nlp->x0[i] + hf);
-      tmp = fabs(x[k] + nlp->x0[i]) + 1e-12;
-      tmp = (tmp < 1e-9) ? nlp->s[i] : 2.0/tmp;
-      scal_var[k] = tmp + 1e-9;
-      scal_eq[k] = 1.0/(scal_var[k])+ 1e-12;
-    }
-  }
-  KINSetMaxNewtonStep(kinOde->kData->kmem, hf_min);
   return 0;
 }
 
@@ -651,76 +806,6 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   }
 
   return 0;
-}
-
-int kinsolOde(SOLVER_INFO* solverInfo)
-{
-  KINODE *kinOde = (KINODE*) solverInfo->solverData;
-  KDATAODE *kData = kinOde->kData;
-  int i, flag, dense=0;
-  long int tmp;
-  initKinsol(kinOde);
-  for(i = 0; i < 3; ++i)
-  {
-
-    kData->error_code = KINSol(kData->kmem,           /* KINSol memory block */
-                               kData->x,              /* initial guess on input; solution vector */
-                               kData->glstr,          /* global strategy choice */
-                               kData->sVars,          /* scaling vector, for the variable cc */
-                               kData->sEqns );
-
-    if(kData->error_code>=0)
-    {
-      break;
-    }
-
-    if(i == 0)
-    {
-     KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     dense=1;
-     infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINDense.");
-    }
-    else if(i == 1)
-    {
-      KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-      dense=0;
-      infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSptfqmr.");
-    }
-    else if(i == 2)
-    {
-      KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-      infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSpbcg.");
-    }
-  }
-  /* save stats */
-  /* steps */
-  solverInfo->solverStatsTmp[0] += 1;
-  /* functionODE evaluations */
-  tmp = 0;
-  flag = KINGetNumFuncEvals(kData->kmem, &tmp);
-  if (flag == KIN_SUCCESS)
-  {
-    solverInfo->solverStatsTmp[1] += tmp;
-  }
-
-  /* Jacobians evaluations */
-  tmp = 0;
-  flag = KINDlsGetNumJacEvals(kData->kmem, &tmp);
-  if (flag == KIN_SUCCESS)
-  {
-    solverInfo->solverStatsTmp[2] += tmp;
-  }
-
-  /* beta-condition failures evaluations */
-  tmp = 0;
-  flag = KINGetNumBetaCondFails(kData->kmem, &tmp);
-  if (flag == KIN_SUCCESS)
-  {
-    solverInfo->solverStatsTmp[4] += tmp;
-  }
-
-
-  return (kData->error_code<0) ? -1 : 0;
 }
 #else
 

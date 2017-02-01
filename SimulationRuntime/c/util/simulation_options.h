@@ -65,6 +65,7 @@ enum _FLAG
   FLAG_IIT,
   FLAG_ILS,
   FLAG_IMPRK_ORDER,
+  FLAG_IMPRK_LS,
   FLAG_INITIAL_STEP_SIZE,
   FLAG_INPUT_CSV,
   FLAG_INPUT_FILE,
@@ -287,6 +288,19 @@ enum NLS_LS
 
 extern const char *NLS_LS_METHOD[NLS_LS_MAX];
 extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
+
+enum IMPRK_LS
+{
+  IMPRK_LS_UNKNOWN = 0,
+
+  IMPRK_LS_ITERATIVE,
+  IMPRK_LS_DENSE,
+
+  IMPRK_LS_MAX
+};
+
+extern const char *IMPRK_LS_METHOD[IMPRK_LS_MAX];
+extern const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX];
 
 
 #if defined(__cplusplus)

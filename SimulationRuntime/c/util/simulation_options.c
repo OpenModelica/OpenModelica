@@ -57,6 +57,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IIT */                   "iit",
   /* FLAG_ILS */                   "ils",
   /* FLAG_IMPRK_ORDER */           "impRKOrder",
+  /* FLAG_IMPRK_LS */              "impRKLS",
   /* FLAG_INITIAL_STEP_SIZE */     "initialStepSize",
   /* FLAG_INPUT_CSV */             "csvInput",
   /* FLAG_INPUT_FILE */            "exInputFile",
@@ -141,6 +142,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IIT */                   "[double] value specifies a time for the initialization of the model",
   /* FLAG_ILS */                   "[int] default: 1",
   /* FLAG_IMPRK_ORDER */           "[int (default 5)] value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1-6",
+  /* FLAG_IMPRK_LS */              "selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta",
   /* FLAG_INITIAL_STEP_SIZE */     "value specifies an initial step size for supported solver",
   /* FLAG_INPUT_CSV */             "value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */            "value specifies an external file with inputs for the simulation/optimization of the model",
@@ -262,6 +264,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  The value is an Integer with default value 1.",
   /* FLAG_IMPRK_ORDER */
   "  Value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1 to 6. Default order is 5.",
+  /* FLAG_IMPRK_LS */
+  "  Selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta\n"
+  "  * iterativ - default, sparse iterativ linear solver with fallback case to dense solver\n"
+  "  * dense - dense linear solver, sundials default method",
   /* FLAG_INITIAL_STEP_SIZE */
   "  Value specifies an initial step size, used by the methods: dassl, ida",
    /* FLAG_INPUT_CSV */
@@ -444,6 +450,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IIM */                   FLAG_TYPE_OPTION,
   /* FLAG_IIT */                   FLAG_TYPE_OPTION,
   /* FLAG_ILS */                   FLAG_TYPE_OPTION,
+  /* FLAG_IMPRK_LS */              FLAG_TYPE_OPTION,
   /* FLAG_IMPRK_ORDER */           FLAG_TYPE_OPTION,
   /* FLAG_INITIAL_STEP_SIZE */     FLAG_TYPE_OPTION,
   /* FLAG_INPUT_CSV */             FLAG_TYPE_OPTION,
@@ -700,4 +707,18 @@ const char *NLS_LS_METHOD_DESC[NLS_LS_MAX] = {
   "internal total pivot implementation. Solve in some case even under-determined systems.",
   "use external lapack implementation.",
   "use klu direct sparse solver."
+};
+
+const char *IMPRK_LS_METHOD[IMPRK_LS_MAX] = {
+  "unknown",
+
+  "iterative",
+  "dense"
+};
+
+const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX] = {
+  "unknown",
+
+  "use sparse iterative solvers",
+  "use direct dense method"
 };
