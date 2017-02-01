@@ -5396,9 +5396,9 @@ case var as VARIABLE(__) then
   let recordInit = initRecordMembers(var, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let &varInits += if recordInit then
   <<
-    //initRecordMembers <%varName%>
-    <%preExp%>
-    <%recordInit%>
+  //initRecordMembers <%varName%>
+  <%preExp%>
+  <%recordInit%>
   >>
   let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
 
@@ -5452,7 +5452,7 @@ template recordMemberInit(Var v, Text varName, Text &preExp /*BUFP*/, Text &varD
 ::=
   match v
   case TYPES_VAR(__) then
-    let vn = '<%varName%>.<%name%>'
+    let vn = '<%varName%>.<%name%>_'
     let defaultValue =
       match binding
       case VALBOUND(valBound = val) then

@@ -337,8 +337,8 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp, Text &varDecls, S
       daeExpRecordCrefRhs(t, cr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case CREF(ty = T_FUNCTION_REFERENCE_FUNC(functionType=t)) then
     functionClosure(underscorePath(crefToPathIgnoreSubs(componentRef)), "", t, t, context, &extraFuncsDecl)
-  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
-    crefStr(cr)
+  case CREF(componentRef = CREF_IDENT(ident=ident), ty = T_FUNCTION_REFERENCE_VAR(__)) then
+    contextFunName(ident, context)
   else
     daeExpCrefRhs2(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 end daeExpCrefRhs;
