@@ -16,6 +16,7 @@ problem2-imprk.mos \
 problem2-symEuler.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
+problem2-imprkLS.mos \
 problem3-symEuler.mos \
 problem4-erk_ssc.mos \
 testDAEp1.mos \
