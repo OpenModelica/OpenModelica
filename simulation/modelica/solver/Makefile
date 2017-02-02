@@ -7,18 +7,33 @@ problem1-dasslsteps.mos \
 problem1-impeuler.mos \
 problem1-trapezoid.mos \
 problem1-imprk.mos \
-problem1-symEuler.mos \
 problem1-ida.mos \
+problem1-symSolverImp.mos \
+problem1-symSolverExp.mos \
+problem1-symSolverImpSsc.mos \
+problem1-symSolverExpSsc.mos \
 problem2-dasslsteps.mos \
 problem2-impeuler.mos \
 problem2-trapezoid.mos \
 problem2-imprk.mos \
-problem2-symEuler.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem2-imprkLS.mos \
-problem3-symEuler.mos \
+problem2-symSolverImp.mos \
+problem2-symSolverExp.mos \
+problem2-symSolverImpSsc.mos \
+problem2-symSolverExpSsc.mos \
+problem3-symSolverImp.mos \
+problem3-symSolverExp.mos \
+problem3-symSolverImpSsc.mos \
+problem3-symSolverExpSsc.mos \
 problem4-erk_ssc.mos \
+problem4-symSolverImp.mos \
+problem4-symSolverExp.mos \
+problem5-symSolverImp.mos \
+problem5-symSolverExp.mos \
+problem6-symSolverImp.mos \
+problem6-symSolverExp.mos \
 testDAEp1.mos \
 testDAEp2.mos \
 testDAEp3.mos \
@@ -27,6 +42,26 @@ testDAEp5.mos \
 testDAEp6.mos \
 testDAEmodeDrumBoiler.mos
 
+# run only symSolver tests
+SYMSOLVER = \
+problem1-symSolverImp.mos \
+problem1-symSolverExp.mos \
+problem1-symSolverImpSsc.mos \
+problem1-symSolverExpSsc.mos \
+problem2-symSolverImp.mos \
+problem2-symSolverExp.mos \
+problem2-symSolverImpSsc.mos \
+problem2-symSolverExpSsc.mos \
+problem3-symSolverImp.mos \
+problem3-symSolverExp.mos \
+problem3-symSolverImpSsc.mos \
+problem3-symSolverExpSsc.mos \
+problem4-symSolverImp.mos \
+problem4-symSolverExp.mos \
+problem5-symSolverImp.mos \
+problem5-symSolverExp.mos \
+problem6-symSolverImp.mos \
+problem6-symSolverExp.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -70,3 +105,10 @@ failingtest :
 	@echo Running failing tests...
 	@echo
 	@$(TEST) $(FAILINGTESTFILES)
+
+symSolver:
+	@echo
+	@echo Running tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(SYMSOLVER)
