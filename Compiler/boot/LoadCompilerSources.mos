@@ -276,6 +276,7 @@ if true then /* Suppress output */
     "../BackEnd/RemoveSimpleEquations.mo",
     "../BackEnd/ResolveLoops.mo",
     "../BackEnd/Sorting.mo",
+    "../BackEnd/SymbolicImplicitSolver.mo",
     "../BackEnd/SymbolicJacobian.mo",
     "../BackEnd/SynchronousFeatures.mo",
     "../BackEnd/StateMachineFeatures.mo",

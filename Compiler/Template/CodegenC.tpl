@@ -181,6 +181,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *data, DAEMODE_DATA*);
     extern int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA*, threadData_t*);
+    extern int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA*, threadData_t*);
 
     #include "<%fileNamePrefix%>_literals.h"
 
@@ -201,7 +202,6 @@ end translateModel;
     #endif
 
     #endif
-
     <%\n%>
     >>
   end match
@@ -506,9 +506,10 @@ template simulationFile_nls(SimCode simCode)
     <%functionNonLinearResiduals(initialEquations_lambda0, modelNamePrefixStr)%>
     <%functionNonLinearResiduals(parameterEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(allEquations,modelNamePrefixStr)%>
+    <%functionNonLinearResiduals(inlineEquations,modelNamePrefixStr)%>
     <%jacobianbody%>
 
-    <%if intGt(varInfo.numNonLinearSystems, 0) then functionInitialNonLinearSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefixStr)%>
+    <%if intGt(varInfo.numNonLinearSystems, 0) then functionInitialNonLinearSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, inlineEquations, jacobianMatrixes, modelNamePrefixStr)%>
 
     #if defined(__cplusplus)
     }
@@ -532,9 +533,9 @@ template simulationFile_lsy(SimCode simCode)
     extern "C" {
     #endif
 
-    <%functionSetupLinearSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
+    <%functionSetupLinearSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, inlineEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
 
-    <% if intGt(varInfo.numLinearSystems,0) then functionInitialLinearSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
+    <% if intGt(varInfo.numLinearSystems,0) then functionInitialLinearSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, inlineEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -933,6 +934,67 @@ template simulationFile_dae(SimCode simCode)
   end match
 end simulationFile_dae;
 
+template simulationFile_inl(SimCode simCode)
+"DAEmode equations generation"
+::=
+  match simCode
+    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),inlineEquations={}) then
+      let modelNamePrefixStr = modelNamePrefix(simCode)
+      <<
+      /* Inline equation file is empty */
+      <%simulationFileHeader(fileNamePrefix(simCode))%>
+      #ifdef __cplusplus
+      extern "C" {
+      #endif
+      int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA *data, threadData_t *threadData){
+      <% if intEq(Flags.getConfigEnum(Flags.SYM_SOLVER),0) then
+      <<
+        return -1;
+      >>
+      %>
+      <% if intGt(Flags.getConfigEnum(Flags.SYM_SOLVER),0) then
+      <<
+        return 0;
+      >>
+      %>
+      }
+      #ifdef __cplusplus
+      }
+      #endif<%\n%>
+      >>
+    case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),inlineEquations=inlineEquations) then
+      let modelNamePrefixStr = modelNamePrefix(simCode)
+
+      let funcNames = (inlineEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n")
+      <<
+      /* Inline equation file */
+      <%simulationFileHeader(fileNamePrefix(simCode))%>
+
+      #ifdef __cplusplus
+      extern "C" {
+      #endif
+
+      <%(inlineEquations |> eq hasindex i0 =>
+          equation_impl(-1, eq, contextSimulationNonDiscrete, modelNamePrefixStr)
+          ;separator="\n")%>
+
+      /* inline equations*/
+      int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA *data, threadData_t *threadData){
+
+        TRACE_PUSH
+
+        <%funcNames%>
+
+        TRACE_POP
+        return 0;
+      }
+
+      #ifdef __cplusplus
+      }
+      #endif<%\n%>
+      >>
+end simulationFile_inl;
+
 template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
@@ -992,8 +1054,6 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     <%functionDAE(allEquations, modelNamePrefixStr)%>
 
     <%functionLocalKnownVars(localKnownVars, modelNamePrefixStr)%>
-
-    <%functionSymEuler(modelInfo, modelNamePrefixStr)%>
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
@@ -1088,7 +1148,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
        <%symbolName(modelNamePrefixStr,"setInputData")%>,
        <%symbolName(modelNamePrefixStr,"getTimeGrid")%>,
-       <%symbolName(modelNamePrefixStr,"symEulerUpdate")%>,
+       <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>,
        <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
@@ -1132,6 +1192,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
       data.simulationInfo = &simInfo;
       measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" /* Would be good if this was not a global variable...*/ %>;
       compiledInDAEMode = <%intSub(Flags.getConfigEnum(Flags.DAE_MODE), 1)%>;
+      compiledWithSymSolver = <% intSub(Flags.getConfigEnum(Flags.SYM_SOLVER), 0) %>;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
 
@@ -1637,32 +1698,6 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
   end match
 end functionInput;
 
-template functionSymEuler(ModelInfo modelInfo, String modelNamePrefix)
-  "Generates function in simulation file."
-::=
-  match modelInfo
-  case MODELINFO(vars=SIMVARS(__)) then
-    <<
-    int <%symbolName(modelNamePrefix,"symEulerUpdate")%>(DATA *data, modelica_real dt)
-    {
-      <%if Flags.getConfigBool(Flags.SYM_EULER) then
-      <<
-      TRACE_PUSH
-        <%cref(makeUntypedCrefIdent(BackendDAE.symEulerDT))%> = dt;
-      TRACE_POP
-      return 0;
-      >>
-      else
-      <<
-      return -1;
-      >>
-      %>
-    }
-
-    >>
-  end match
-end functionSymEuler;
-
 template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
@@ -1846,7 +1881,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &hea
 end functionSetupMixedSystemsTemp;
 
 
-template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
+template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> inlineEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let &tempeqns1 = buffer ""
@@ -1860,6 +1895,7 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   let initbody_lambda0 = functionInitialLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix, &globalConstraintsFunctions)
   let parambody = functionInitialLinearSystemsTemp(parameterEquations, modelNamePrefix, &globalConstraintsFunctions)
   let body = functionInitialLinearSystemsTemp(allEquations, modelNamePrefix, &globalConstraintsFunctions)
+  let inlinebody = functionInitialLinearSystemsTemp(inlineEquations, modelNamePrefix, &globalConstraintsFunctions)
   let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialLinearSystemsTemp(cEqns, modelNamePrefix, &globalConstraintsFunctions);separator="\n") ;separator="\n"))
   <<
   /* Prototypes for the strict sets (Dynamic Tearing) */
@@ -1880,6 +1916,8 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
     <%parambody%>
     /* model linear systems */
     <%body%>
+    /* inline linear systems */
+    <%inlinebody%>
     /* jacobians linear systems */
     <%jacobianbody%>
   }
@@ -2015,13 +2053,14 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
    ;separator="\n\n")
 end functionInitialLinearSystemsTemp;
 
-template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
+template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> inlineEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionSetupLinearSystemsTemp(initialEquations, modelNamePrefix)
   let initbody_lambda0 = functionSetupLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix)
   let parambody = functionSetupLinearSystemsTemp(parameterEquations, modelNamePrefix)
   let body = functionSetupLinearSystemsTemp(allEquations, modelNamePrefix)
+  let inlinebody = functionSetupLinearSystemsTemp(inlineEquations, modelNamePrefix)
   let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionSetupLinearSystemsTemp(cEqns, modelNamePrefix);separator="\n") ;separator="\n"))
   <<
   /* initial linear systems */
@@ -2032,6 +2071,8 @@ template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<Sim
   <%parambody%>
   /* model linear systems */
   <%body%>
+  /* inline linear systems */
+  <%inlinebody%>
   /* jacobians linear systems */
   <%jacobianbody%>
   >>
@@ -2354,7 +2395,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
    ;separator="\n\n")
 end functionSetupLinearSystemsTemp;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
+template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> initialEquations_lambda0, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> inlineEquations, list<JacobianMatrix> jacobianMatrixes, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let &tempeqns1 = buffer ""
@@ -2368,6 +2409,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   let initbody_lambda0 = functionInitialNonLinearSystemsTemp(initialEquations_lambda0, modelNamePrefix,&globalConstraintsFunctions)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix,&globalConstraintsFunctions)
   let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix,&globalConstraintsFunctions)
+  let inlineEqnsbody = functionInitialNonLinearSystemsTemp(inlineEquations,modelNamePrefix,&globalConstraintsFunctions)
   let jacobianbody = ((jacobianMatrixes |> JAC_MATRIX(columns=clst) => (clst |> JAC_COLUMN(columnEqns=cEqns) => functionInitialNonLinearSystemsTemp(cEqns, modelNamePrefix, &globalConstraintsFunctions);separator="\n") ;separator="\n"))
   <<
   /* Prototypes for the strict sets (Dynamic Tearing) */
@@ -2384,6 +2426,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
     <%initbody_lambda0%>
     <%parambody%>
     <%equationbody%>
+    <%inlineEqnsbody%>
     <%jacobianbody%>
   }
   >>
@@ -5715,7 +5758,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c<%extraFiles |> extraFile => ' <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
+
   OFILES=$(CFILES:.c=.obj)
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
 
@@ -5766,7 +5810,8 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c<%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
+
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)
 

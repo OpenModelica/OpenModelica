@@ -339,6 +339,7 @@ package SimCode
       Option<FmiModelStructure> modelStructure;
       PartitionData partitionData;
       Option<DaeModeData> daeModeData;
+      list<SimEqSystem> inlineEquations;
     end SIMCODE;
   end SimCode;
 
@@ -1140,9 +1141,8 @@ package BackendDAE
     record OPT_LOOP_INPUT
       DAE.ComponentRef replaceExp;
     end OPT_LOOP_INPUT;
-    record ALG_STATE "algebraic state"
-      VarKind oldKind;
-    end ALG_STATE;
+  record ALG_STATE  end ALG_STATE; // algebraic state used by inline solver
+  record ALG_STATE_OLD  end ALG_STATE_OLD; // algebraic state old value used by inline solver
   record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
   end VarKind;
 
@@ -1225,7 +1225,7 @@ package BackendDAE
 
   constant String optimizationMayerTermName;
   constant String optimizationLagrangeTermName;
-  constant String symEulerDT;
+  constant String symSolverDT;
 
   type Constraints = list<DAE.Constraint> "Constraints on the solvability of the (casual) tearing set; needed for proper Dynamic Tearing";
 
@@ -3356,7 +3356,7 @@ package Flags
   constant ConfigFlag PROFILING_LEVEL;
   constant ConfigFlag CPP_FLAGS;
   constant ConfigFlag MATRIX_FORMAT;
-  constant ConfigFlag SYM_EULER;
+  constant ConfigFlag SYM_SOLVER;
   constant DebugFlag FMU_EXPERIMENTAL;
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;

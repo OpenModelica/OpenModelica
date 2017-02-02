@@ -253,6 +253,9 @@ end printClassAttributes;
 
 public function printShared "This function dumps the BackendDAE.Shared representation to stdout."
   input BackendDAE.Shared inShared;
+protected
+  BackendDAE.EqSystems eqS;
+  BackendDAE.InlineData inlineData;
 algorithm
   print("\nBackendDAEType: ");
   printBackendDAEType(inShared.backendDAEType);
@@ -279,6 +282,7 @@ algorithm
   if Flags.isSet(Flags.DUMP_FUNCTIONS) then
     DAEDump.dumpFunctionTree(inShared.functionTree, "Functions");
   end if;
+
 end printShared;
 
 public function printBasePartitions
@@ -351,6 +355,7 @@ algorithm
     case (BackendDAE.ARRAYSYSTEM()) then "multidim equation arrays";
     case (BackendDAE.PARAMETERSYSTEM()) then "parameter system";
     case (BackendDAE.INITIALSYSTEM()) then "initialization";
+    case (BackendDAE.INLINESYSTEM()) then "inline system";
   end match;
 end printBackendDAEType2String;
 
@@ -2406,6 +2411,7 @@ algorithm
     case BackendDAE.OPT_TGRID()  then "OPT_TGRID";
     case BackendDAE.OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT";
     case BackendDAE.ALG_STATE()  then "ALG_STATE";
+    case BackendDAE.ALG_STATE_OLD()  then "ALG_STATE_OLD";
   end match;
 end kindString;
 

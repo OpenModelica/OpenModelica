@@ -508,7 +508,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
-
   /* S_UNKNOWN = 0 */   "unknown",
   /* S_EULER */         "euler",
   /* S_HEUN */          "heun",
@@ -519,8 +518,8 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_DASSL */         "dassl",
   /* S_IDA */           "ida",
   /* S_ERKSSC */        "rungekuttaSsc",
-  /* S_SYM_EULER */     "symEuler",
-  /* S_SYM_EULER_SSC */ "symEulerSsc",
+  /* S_SYM_SOLVER */    "symSolver",
+  /* S_SYM_SOLVER_SSC */"symSolverSsc",
   /* S_QSS */           "qss",
   /* S_OPTIMIZATION */  "optimization"
 };
@@ -536,8 +535,8 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_DASSL */         "dassl - default solver - BDF method - implicit, step size control, order 1-5",
   /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method with sparse linear solver - implicit, step size control, order 1-5",
   /* S_ERKSSC */        "rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step size control, order 4-5 [experimental]",
-  /* S_SYM_EULER */     "symEuler - symbolic implicit Euler [compiler flag +symEuler needed] - implicit, fixed step size, order 1",
-  /* S_SYM_EULER_SSC */ "symEulerSsc - symbolic implicit Euler with step size control [compiler flag +symEuler needed] - implicit, step size control, order 1",
+  /* S_SYM_SOLVER */     "symSolver - symbolic inline Solver [compiler flag +symSolver needed] - fixed step size, order 1",
+  /* S_SYM_SOLVER_SSC */ "symSolverSsc - symbolic implicit Euler with step size control [compiler flag +symSolver needed] - step size control, order 1",
   /* S_QSS */           "qss - A QSS solver [experimental]",
   /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };

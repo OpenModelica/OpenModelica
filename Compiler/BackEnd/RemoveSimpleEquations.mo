@@ -294,7 +294,8 @@ algorithm
   //BackendDump.dumpVarList(knownVarList, "knownVarList in");
   for var in BackendVariable.varList(knownVars2) loop
     cref := BackendVariable.varCref(var);
-    if not BackendVariable.existsVar(cref, knownVars1, false) and (not BackendVariable.isInput(var)) then
+    if not BackendVariable.existsVar(cref, knownVars1, false) and
+       not (BackendVariable.isInput(var) or BackendVariable.isAlgebraicOldState(var)) then
       // put var back to the correct partition
       outDAE := fixKnownVarsCausal2(var, outDAE);
     else

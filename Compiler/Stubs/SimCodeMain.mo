@@ -19,9 +19,10 @@ algorithm
   assert(false, getInstanceName());
 end createSimulationSettings;
 
-function generateModelCode<T,A,B,C,D,E>
+function generateModelCode<T,A,B,C,D,E,F>
   input T inBackendDAE;
   input T inInitDAE;
+  input Option<F> inInlineDAE;
   input Boolean inUseHomotopy;
   input Option<T> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;

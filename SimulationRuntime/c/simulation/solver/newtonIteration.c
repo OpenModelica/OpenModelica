@@ -150,7 +150,7 @@ int freeNewtonData(void **voiddata)
 
 /*! \fn solve system with Newton-Raphson
  *
- *  \param [in]  [n] size of equation
+ *  \param [in]   [n] size of equation
  *                [eps] tolerance for x
  *                [h] tolerance for f'
  *                [k] maximum number of iterations
@@ -158,10 +158,10 @@ int freeNewtonData(void **voiddata)
  *                [f] user provided function
  *                [data] userdata
  *                [info]
- *				  [calculate_jacobian] flag which decides whether Jacobian is calculated
- *					(0)  once for the first calculation
- * 					(i)  every i steps (=1 means original newton method)
- * 					(-1) never, factorization has to be given in A
+ *          [calculate_jacobian] flag which decides whether Jacobian is calculated
+ *          (0)  once for the first calculation
+ *          (i)  every i steps (=1 means original newton method)
+ *          (-1) never, factorization has to be given in A
  *
  */
 int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solverData, void* userdata)

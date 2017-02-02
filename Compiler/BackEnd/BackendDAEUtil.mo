@@ -104,6 +104,7 @@ import ResolveLoops;
 import SCode;
 import Sorting;
 import StateMachineFeatures;
+import SymbolicImplicitSolver;
 import SymbolicJacobian;
 import SynchronousFeatures;
 import System;
@@ -485,6 +486,15 @@ algorithm
   matching := copyMatching(inSystem.matching);
   outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mt, matching, inSystem.stateSets, inSystem.partitionKind, removedEqs);
 end copyEqSystem;
+
+public function copyEqSystems
+  input BackendDAE.EqSystems inSystems;
+  output BackendDAE.EqSystems outSystems = {};
+algorithm
+  for e in inSystems loop
+    outSystems := copyEqSystem(e) :: outSystems;
+  end for;
+end copyEqSystems;
 
 public function mergeEqSystems
   input BackendDAE.EqSystem System1;
@@ -1305,7 +1315,7 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  if Flags.getConfigBool(Flags.SYM_EULER) then
+  if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
     (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
   else
     (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
@@ -1675,7 +1685,11 @@ algorithm
     case syst as BackendDAE.EQSYSTEM( orderedEqs=ordererdEqs, orderedVars=v,
                                       matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
       algorithm
-        (_, statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+        if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
+          (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+        else
+          (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+        end if;
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
 
         indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate";
@@ -2979,6 +2993,9 @@ algorithm
       guard not AvlSetInt.hasKey(vars, i)
       then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_)
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_)
       guard not AvlSetInt.hasKey(vars, i)
       then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_)
@@ -6770,6 +6787,7 @@ public function getSolvedSystem "Run the equation system pipeline."
   input Option<list<String>> strPostOptModules = NONE();
   output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
+  output Option<BackendDAE.InlineData > outInlineData;
   output Boolean outUseHomotopy "true if homotopy(...) is used during initialization";
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
@@ -6781,6 +6799,7 @@ protected
   list<tuple<BackendDAEFunc.optimizationModule, String>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
+  BackendDAE.InlineData inlineData;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
@@ -6832,6 +6851,9 @@ algorithm
 
   simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
   simDAE := Initialization.removeInitializationStuff(simDAE);
+
+  // generate inline solver
+  outInlineData := SymbolicImplicitSolver.symSolver(simDAE);
 
   // post-optimization phase
   outSimDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
@@ -7398,7 +7420,6 @@ protected function allPostOptimizationModules
     (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
-    (BackendDAEOptimize.symEuler, "symEuler"),
     (ResolveLoops.reshuffling_post, "reshufflePost"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
     (Tearing.tearingSystem, "tearingSystem"),
@@ -7572,10 +7593,6 @@ algorithm
 
     enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS, enabledModules, "addScaledVars_states", "postOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS_INPUT, enabledModules, "addScaledVars_inputs", "postOptModules+");
-
-    if Flags.getConfigBool(Flags.SYM_EULER) then
-      enabledModules := "symEuler"::enabledModules;
-    end if;
 
     if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
       enabledModules := "simplifyLoops"::enabledModules;
@@ -8346,7 +8363,8 @@ algorithm
                               backendDAEType,
                               {},
                               ei,
-                              emptyPartitionsInfo());
+                              emptyPartitionsInfo()
+                              );
 end createEmptyShared;
 
 public function emptyPartitionsInfo

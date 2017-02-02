@@ -894,7 +894,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")),
     ("solveLinearSystem", Util.notrans("solve linear system with newton step")),
     ("solveSimpleEquations", Util.notrans("Solves simple equations")),
-    ("symEuler", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symEuler.")),
+    ("symSolver", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symSolver.")),
     ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")),
     ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
@@ -1149,9 +1149,9 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(67, "dynamicTearing",
   })),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
 
-constant ConfigFlag SYM_EULER = CONFIG_FLAG(68, "symEuler",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Rewrite the ode system for implicit euler."));
+constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(68, "symSolver",
+  NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), SOME(STRING_OPTION({"none", "impEuler", "expEuler"})),
+  Util.gettext("Activates symbolic implicit solver (original system is not changed)."));
 
 constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(69,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1412,7 +1412,7 @@ constant list<ConfigFlag> allConfigFlags = {
   CPP_FLAGS,
   REMOVE_SIMPLE_EQUATIONS,
   DYNAMIC_TEARING,
-  SYM_EULER,
+  SYM_SOLVER,
   ADD_TIME_AS_STATE,
   LOOP2CON,
   FORCE_TEARING,

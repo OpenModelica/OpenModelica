@@ -67,11 +67,11 @@ else
 SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
 endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverKlu$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_imp_euler$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT) ida_solver$(OBJ_EXT)
+SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverKlu$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_solver_ssc$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT) ida_solver$(OBJ_EXT)
 else
 SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
-SOLVER_HFILES = dassl.h delay.h epsilon.h events.h external_input.h ida_solver.h linearSystem.h mixedSystem.h model_help.h nonlinearSystem.h nonlinearValuesList.h radau.h sym_imp_euler.h solver_main.h stateset.h
+SOLVER_HFILES = dassl.h delay.h epsilon.h events.h external_input.h ida_solver.h linearSystem.h mixedSystem.h model_help.h nonlinearSystem.h nonlinearValuesList.h radau.h sym_solver_ssc.h solver_main.h stateset.h
 
 INITIALIZATION_OBJS = initialization$(OBJ_EXT)
 INITIALIZATION_HFILES = initialization.h

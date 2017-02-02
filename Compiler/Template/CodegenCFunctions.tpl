@@ -4058,6 +4058,7 @@ end contextIteratorName;
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
+  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case WILD(__) then ''
   else crefToCStr(cr, 0, false)
 end cref;
@@ -4101,6 +4102,9 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre)
     (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStr(cr)%>')
     else crefToCStr(componentRef, ix, true))
   else match cref2simvar(cr, getSimCode())
+  case SIMVAR(varKind=ALG_STATE_OLD(), index=index)
+  then
+    'data->simulationInfo->inlineData->algOldVars[<%index%>]'
   case SIMVAR(varKind=JAC_VAR())
   case SIMVAR(varKind=JAC_DIFF_VAR())
   case SIMVAR(varKind=SEED_VAR())
@@ -5555,7 +5559,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let derstr = cref(crefPrefixDer(arg.componentRef))
     let nameold0 = crefOld(arg.componentRef, 0)
     let nameold1 = crefOld(arg.componentRef, 1)
-    let dt = cref(makeUntypedCrefIdent(BackendDAE.symEulerDT))
+    let dt = 'data->simulationInfo->inlineData->dt'
     '(<%dt%> == 0.0 ? <%derstr%> : (<%nameold0%> - <%nameold1%>)/<%dt%>)'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then

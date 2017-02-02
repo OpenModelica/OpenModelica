@@ -97,6 +97,7 @@ algorithm
         min(serializeEquation(file,eq,"max",withOperations) for eq in SimCodeUtil.sortEqSystems(code.maxValueEquations));
         min(serializeEquation(file,eq,"parameter",withOperations) for eq in SimCodeUtil.sortEqSystems(code.parameterEquations));
         min(serializeEquation(file,eq,"assertions",withOperations) for eq in SimCodeUtil.sortEqSystems(code.algorithmAndEquationAsserts));
+        min(serializeEquation(file,eq,"inline",withOperations) for eq in SimCodeUtil.sortEqSystems(code.inlineEquations));
         min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))));
         min(serializeEquation(file,eq,"jacobian",withOperations) for eq in SimCodeUtil.sortEqSystems(code.jacobianEquations));
         File.write(file, "\n],\n\"functions\":[");
@@ -1029,7 +1030,11 @@ algorithm
       then ();
     case BackendDAE.ALG_STATE()
       equation
-        File.write(file,"helper variable transform ode for symEuler");
+        File.write(file,"helper variable transform ode for symSolver");
+      then ();
+    case BackendDAE.ALG_STATE_OLD()
+      equation
+        File.write(file,"helper variable transform ode for symSolver");
       then ();
     else
       equation

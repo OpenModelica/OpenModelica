@@ -714,7 +714,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
-  if (simData->modelData->nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_EULER) {
+  if (simData->modelData->nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_SOLVER) {
     solverID = S_EULER;
   }
 

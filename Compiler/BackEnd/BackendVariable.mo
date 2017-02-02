@@ -1184,6 +1184,17 @@ algorithm
   end match;
 end isRealOptimizeDerInput;
 
+public function isAlgebraicOldState
+"Return true if variable is old algebraic variable for inline integration."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind =  BackendDAE.ALG_STATE_OLD())) then true;
+    else false;
+  end match;
+end isAlgebraicOldState;
+
 public function hasMayerTermAnno
 "author: Vitalij Ruge
  Return true if variable has isMayer=true annotation"

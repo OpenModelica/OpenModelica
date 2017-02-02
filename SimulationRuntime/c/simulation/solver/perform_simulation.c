@@ -81,7 +81,10 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
 {
   prefixedName_updateContinuousSystem(data, threadData);
 
-  if (solverInfo->solverMethod == S_SYM_EULER_SSC) data->callback->symEulerUpdate(data, solverInfo->solverStepSize);
+  if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
+    data->simulationInfo->inlineData->dt = solverInfo->solverStepSize;
+    //data->callback->symbolicInlineSystems(data, threadData);
+  }
 
   saveZeroCrossings(data, threadData);
 
@@ -387,7 +390,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           __currStepNo++;
         }
       }
+
       solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
+
       solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
       /* if retry reduce stepsize */

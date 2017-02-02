@@ -59,6 +59,7 @@ double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
+int compiledWithSymSolver = 0;
 double numericalDifferentiationDeltaXlinearize = 1e-8;
 double numericalDifferentiationDeltaXsolver = 1e-8;
 
@@ -1011,6 +1012,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for daeMode */
   data->simulationInfo->daeModeData = (DAEMODE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(DAEMODE_DATA));
   data->callback->initializeDAEmodeData(data, data->simulationInfo->daeModeData);
+
+  /* buffer for inline Data */
+  data->simulationInfo->inlineData = (INLINE_DATA*) omc_alloc_interface.malloc_uncollectable(sizeof(INLINE_DATA));
+  data->simulationInfo->inlineData->algVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
+  data->simulationInfo->inlineData->algOldVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
 
   /* buffer for analytical jacobians */
   data->simulationInfo->analyticJacobians = (ANALYTIC_JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(ANALYTIC_JACOBIAN));

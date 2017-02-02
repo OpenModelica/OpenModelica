@@ -432,6 +432,15 @@ typedef struct DAEMODE_DATA
 
 } DAEMODE_DATA;
 
+typedef struct INLINE_DATA
+{
+  /* step size for inline step */
+  modelica_real dt;
+  /* alg-state variables */
+  modelica_real* algVars;
+  /* old alg-state variables */
+  modelica_real* algOldVars;
+} INLINE_DATA;
 
 typedef struct MODEL_DATA_XML
 {
@@ -645,6 +654,8 @@ typedef struct SIMULATION_INFO
   STATE_SET_DATA* stateSetData;
 
   DAEMODE_DATA* daeModeData;
+
+  INLINE_DATA* inlineData;
 
   /* delay vars */
   double tStart;

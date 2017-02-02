@@ -28,11 +28,11 @@
  *
  */
 
-/*! \file sym_imp_euler.h
+/*! \file sym_solver_ssc.h
  */
 
-#ifndef _SYM_IMP_EULER_H_
-#define _SYM_IMP_EULER_H_
+#ifndef _SYM_SOLVER_SSC_H_
+#define _SYM_SOLVER_SSC_H_
 
 #include "simulation_data.h"
 #include "solver_main.h"
@@ -40,23 +40,23 @@
 
 #include <math.h>
 
-typedef struct DATA_SYM_IMP_EULER{
+typedef struct DATA_SYM_SOLVER_SSC{
   void* data;
   void* solverData;
   double *y05, *y1,*y2;
-  double *radauVarsOld, *radauVars;
+  double *radauVarsOld, *radauVars, *der_x0;
   double radauTime;
   double radauTimeOld;
   double radauStepSize, radauStepSizeOld;
   int firstStep;
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
-}DATA_SYM_IMP_EULER;
+}DATA_SYM_SOLVER_SSC;
 
 
-int allocateSymEulerImp(SOLVER_INFO* solverInfo, int size);
-int freeSymEulerImp(SOLVER_INFO* solverInfo);
-int sym_euler_im_with_step_size_control_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int allocateSymSolverSsc(SOLVER_INFO* solverInfo, int size);
+int freeSymSolverSsc(SOLVER_INFO* solverInfo);
+int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 
-#endif /* _SYM_IMP_EULER_H_ */
+#endif /* _SYM_SOLVER_SSC_H_ */

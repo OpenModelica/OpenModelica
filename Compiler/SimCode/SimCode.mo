@@ -148,6 +148,7 @@ uniontype SimCode
     Option<FmiModelStructure> modelStructure;
     PartitionData partitionData;
     Option<DaeModeData> daeModeData;
+    list<SimEqSystem> inlineEquations;
   end SIMCODE;
 end SimCode;
 

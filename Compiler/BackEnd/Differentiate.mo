@@ -1651,14 +1651,6 @@ algorithm
       then
        (exp_1, inFuncs);
 
-    /*der(x)/dt*/
-    case ("$_DF$DER",_)
-      equation
-        (exp_1,_) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter, expStack);
-        exp_2 =  Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
-      then
-       (Expression.expDiv(exp_1,exp_2), inFuncs);
-
   end match;
 end differentiateCallExp1Arg;
 

@@ -111,7 +111,6 @@ uniontype Shared "Data shared for all equation-systems"
     Variables externalObjects               "External object variables";
     Variables aliasVars                     "Data originating from removed simple equations needed to build
                                              variables' lookup table (in C output).
-
                                              In that way, double buffering of variables in pre()-buffer, extrapolation
                                              buffer and results caching, etc., is avoided, but in C-code output all the
                                              data about variables' names, comments, units, etc. is preserved as well as
@@ -131,6 +130,13 @@ uniontype Shared "Data shared for all equation-systems"
     PartitionsInfo partitionsInfo;
   end SHARED;
 end Shared;
+
+uniontype InlineData
+  record INLINE_DATA
+    EqSystems inlineSystems;
+    Variables knownVariables;
+  end INLINE_DATA;
+end InlineData;
 
 uniontype BasePartition
   record BASE_PARTITION
@@ -170,6 +176,7 @@ uniontype BackendDAEType "BackendDAEType to indicate different types of BackendD
   record ARRAYSYSTEM     "Type for multi dim equation arrays BackendDAE.DAE" end ARRAYSYSTEM;
   record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"          end PARAMETERSYSTEM;
   record INITIALSYSTEM   "Type for initial system BackendDAE.DAE"            end INITIALSYSTEM;
+  record INLINESYSTEM    "Type for inline system BackendDAE.DAE"             end INLINESYSTEM;
 end BackendDAEType;
 
 //
@@ -262,9 +269,8 @@ uniontype VarKind "variable kind"
   record OPT_LOOP_INPUT
     .DAE.ComponentRef replaceExp;
   end OPT_LOOP_INPUT;
-  record ALG_STATE "algebraic state"
-    VarKind oldKind;
-  end ALG_STATE;
+  record ALG_STATE  end ALG_STATE; // algebraic state used by inline solver
+  record ALG_STATE_OLD  end ALG_STATE_OLD; // algebraic state old value used by inline solver
   record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
 end VarKind;
 
@@ -715,7 +721,7 @@ public constant String functionDerivativeNamePrefix = "$funDER";
 
 public constant String optimizationMayerTermName = "$OMC$objectMayerTerm";
 public constant String optimizationLagrangeTermName = "$OMC$objectLagrangeTerm";
-public constant String symEulerDT = "__OMC_DT";
+public constant String symSolverDT = "__OMC_DT";
 
 type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
 

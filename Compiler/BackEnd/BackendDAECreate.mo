@@ -158,7 +158,8 @@ algorithm
                                                     extObjCls,
                                                     BackendDAE.SIMULATION(),
                                                     symjacs,inExtraInfo,
-                                                    BackendDAEUtil.emptyPartitionsInfo()));
+                                                    BackendDAEUtil.emptyPartitionsInfo()
+                                                    ));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   varSize := BackendVariable.varsSize(vars_1);
   eqnSize := BackendDAEUtil.equationSize(eqnarr);

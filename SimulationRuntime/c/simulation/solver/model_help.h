@@ -83,6 +83,7 @@ extern double newtonXTol;
 extern double newtonFTol;
 extern const size_t SIZERINGBUFFER;
 extern int compiledInDAEMode;
+extern int compiledWithSymSolver;
 extern double numericalDifferentiationDeltaXlinearize;
 extern double numericalDifferentiationDeltaXsolver;
 

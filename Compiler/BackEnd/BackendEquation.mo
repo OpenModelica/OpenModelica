@@ -649,7 +649,7 @@ algorithm
 end traverseExpsOfEquationListList_WithStop;
 
 public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
-  Traverses all expressions of a equation.
+  Traverses all expressions of an equation.
   It is possible to change the equation."
   input BackendDAE.Equation inEquation;
   input FuncExpType inFunc;

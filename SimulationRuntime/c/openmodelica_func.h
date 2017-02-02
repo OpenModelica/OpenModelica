@@ -304,10 +304,10 @@ int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_real**t);
 
 
 /*
- * update parameter for symEuler
+ * update parameter for symSolver
  */
 
-int (*symEulerUpdate)(DATA * data, modelica_real dt);
+int (*symbolicInlineSystems)(DATA * data, threadData_t *threadData);
 
 /*
  * initialize clocks and subclocks info in modelData

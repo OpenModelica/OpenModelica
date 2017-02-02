@@ -147,6 +147,7 @@ end simulationFindLiterals;
 public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
+  input Option<BackendDAE.InlineData> inInlineData;
   input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
@@ -224,6 +225,8 @@ protected
   list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
   list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
   list<list<SimCode.SimEqSystem>> daeEquations;         // --> functionODE4DAE
+  list<list<SimCode.SimEqSystem>> inlineEquationsTemp;  // --> symbolicInlineSystemTemp
+  list<SimCode.SimEqSystem> inlineEquations;            // --> symbolicInlineSystem
   list<SimCodeVar.SimVar> residualVars, algebraicVars;  // --> variables for functionODE4DAE
   SimCodeVar.SimVars tmpSimVars;
   SimCode.VarInfo varInfo;
@@ -236,7 +239,13 @@ protected
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  BackendDAE.InlineData inlineData;
+  list<SimCodeVar.SimVar> inlineSimKnVars;
+  BackendDAE.Variables emptyVars;
   constant Boolean debug = false;
+  Integer SymEuler_help = 0;
+  SimCodeVar.SimVar dtSimVar;
+  BackendDAE.Var dtVar;
 algorithm
   try
     execStat("Backend phase and start with SimCode phase");
@@ -286,10 +295,30 @@ algorithm
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
     execStat("simCode: created event and clocks part");
 
+    // ToDo: fix this ugly flag switchting
+    if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
+      SymEuler_help := Flags.getConfigEnum(Flags.SYM_SOLVER);
+      Flags.setConfigEnum(Flags.SYM_SOLVER, 0);
+    end if;
+
     (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
       equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
-          createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping);
+          createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
     if debug then execStat("simCode: createEquationsForSystems"); end if;
+
+
+
+    if (SymEuler_help > 0) then
+      Flags.setConfigEnum(Flags.SYM_SOLVER, SymEuler_help);
+    end if;
+
+    //List.map1_0(inlineEquations, dumpSimEqSystemLst,"\n");
+    if debug then execStat("simCode: createEquationsForSystems for inline module"); end if;
+
+    (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
+          translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
+                                    backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
+    if debug then execStat("simCode: translateClockedEquations"); end if;
 
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
     execStat("simCode: created simulation system equations");
@@ -333,6 +362,18 @@ algorithm
     // just the algorithms without outputs
     algebraicEquations := listAppend(algebraicEquations, removedEquations::{});
     allEquations := List.append_reverse(allEquations, removedEquations);
+
+    // create inline equations if present
+    if isSome(inInlineData) then
+      SOME(inlineData) := inInlineData;
+      (uniqueEqIndex, inlineEquationsTemp, _, _, , _, tempvars, _, _, _, _) :=
+            createEquationsForSystems(inlineData.inlineSystems,
+                                      shared, uniqueEqIndex, {}, tempvars, uniqueEqIndex,
+                                      SimCode.NO_MAPPING(), false);
+      inlineEquations := List.flatten(inlineEquationsTemp);
+    else
+      inlineEquations := {};
+    end if;
 
     // create residuals equations from ode equations for daeMode
     if Flags.getConfigEnum(Flags.DAE_MODE)>1 then
@@ -386,6 +427,8 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (clockedPartitions, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoopsClockPartitions(clockedPartitions, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+    (inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // collect symbolic jacobians from state selection
     (stateSets, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians) := indexStateSets(stateSets, {}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {}, {});
@@ -408,6 +451,7 @@ algorithm
     seedVars := collectAllSeedVars(SymbolicJacs);
     modelInfo := setSeedVars(seedVars, modelInfo);
     execStat("simCode: created linear, non-linear and system jacobian parts");
+
 
     // map index also odeEquations and algebraicEquations
     systemIndexMap := List.fold(allEquations, getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
@@ -439,11 +483,24 @@ algorithm
 
       residualVars := rewriteIndex(residualVars, 0);
       crefToSimVarHT:= List.fold(residualVars,addSimVarToHashTable,crefToSimVarHT);
-    algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
+      algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
       daeModeConf := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then SimCode.ALL_EQUATIONS(); case 3 then SimCode.DYNAMIC_EQUATIONS(); end match;
       daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars, daeModeConf));
     else
       daeModeData := NONE();
+    end if;
+
+    // add known inline vars to simVarHT
+    if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
+      SOME(inlineData) := inInlineData;
+      emptyVars := BackendVariable.emptyVars();
+      inlineSimKnVars := adjustStatesForInlineSolver(modelInfo.vars.stateVars);
+      // omc dt
+      ({dtVar},_) := BackendVariable.getVar(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}), inlineData.knownVariables);
+      dtSimVar := dlowvarToSimvar(dtVar, NONE(), emptyVars);
+      dtSimVar.index := listLength(inlineSimKnVars);
+      inlineSimKnVars := dtSimVar::inlineSimKnVars;
+      crefToSimVarHT := List.fold(inlineSimKnVars,addSimVarToHashTable,crefToSimVarHT);
     end if;
 
     if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
@@ -518,7 +575,8 @@ algorithm
                               SOME(backendMapping),
                               modelStruct,
                               SimCode.emptyPartitionData,
-                              daeModeData
+                              daeModeData,
+                              inlineEquations
                               );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
@@ -653,7 +711,7 @@ algorithm
     //FIXME: Add continuous clocked systems support
     (_, _, equations, _, ouniqueEqIndex, clockedVars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
         createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, {},
-                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping);
+                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true);
     sccOffset := listLength(comps) + sccOffset;
     //otempvars := listAppend(clockedVars, otempvars);
     GC.free(stateeqnsmark);
@@ -1261,7 +1319,7 @@ tuple<Integer /*uniqueEqIndex*/,
       list<tuple<Integer,Integer>> /*eqBackendSimCodeMapping*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
-protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>>;
+protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -1271,6 +1329,7 @@ protected function createEquationsForSystems "Some kind of comments would be ver
   input list<SimCodeVar.SimVar> itempvars;
   input Integer iSccOffset; //to map the generated equations to the old strongcomponents, they are numbered from (1+offset) to (n+offset)
   input SimCode.BackendMapping iBackendMapping;
+  input Boolean createAlgebraicEquations;
   output Integer ouniqueEqIndex;
   output list<list<SimCode.SimEqSystem>> oodeEquations;
   output list<list<SimCode.SimEqSystem>> oalgebraicEquations;
@@ -1286,7 +1345,7 @@ protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
 algorithm
-  arg := (shared, inAllZeroCrossings);
+  arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
   foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
   (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
   oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
@@ -1317,13 +1376,14 @@ algorithm
       SimCode.BackendMapping backendMapping;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       BackendDAE.Shared shared;
+      Boolean createAlgebraicEquations;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
       equation
         if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
           BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
         end if;
 
-        (shared, zeroCrossings) = inArg;
+        (shared, zeroCrossings, createAlgebraicEquations) = inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) = inFold;
 
@@ -1339,7 +1399,7 @@ algorithm
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) =
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
-                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping);
+                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping,createAlgebraicEquations);
         GC.free(stateeqnsmark);
         GC.free(zceqnsmarks);
 
@@ -1368,7 +1428,7 @@ tuple<Integer /*uniqueEqIndex*/,
       Integer /*sccOffset*/>;
 protected type CreateEquationsForSystemArg =
 tuple<array<Integer> /*stateeqnsmark*/, array<Integer> /*zceqnsmark*/,
-      BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/>;
+      BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/, Boolean>;
 
 protected function createEquationsForSystem
   input array<Integer> stateeqnsmark;
@@ -1382,6 +1442,7 @@ protected function createEquationsForSystem
   input list<tuple<Integer,Integer>> ieqSccMapping;
   input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
   input SimCode.BackendMapping iBackendMapping;
+  input Boolean createAlgebraicEquations;
   output list<SimCode.SimEqSystem> outOdeEquations;
   output list<SimCode.SimEqSystem> outAlgebraicEquations;
   output list<SimCode.SimEqSystem> outAllEquations;
@@ -1396,7 +1457,7 @@ protected
   CreateEquationsForSystemArg arg;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings;
 algorithm
-  arg := (stateeqnsmark, zceqnsmark, syst, shared);
+  arg := (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations);
   foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping, iSccIndex);
   foldArg := List.fold1(comps, createEquationsForSystem1, arg, foldArg);
   (ouniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
@@ -1447,10 +1508,30 @@ protected
   list<tuple<Integer,Integer>> eqSccMapping, eqBackendSimCodeMapping;
   SimCode.BackendMapping backendMapping;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings;
+  list<Integer> eqsIdx,varIdx;
+  list<BackendDAE.Var> varlst;
+  list<BackendDAE.Equation> eqnlst;
+  Boolean createAlgebraicEquations, bdynamic, skip;
+  Boolean debug = false;
 algorithm
-  (stateeqnsmark, zceqnsmark, syst, shared) := inArg;
+  (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations) := inArg;
   (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
-   tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex) := inFold;
+  tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex) := inFold;
+  (varlst,varIdx,eqnlst,eqsIdx) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
+  bdynamic := BackendDAEUtil.blockIsDynamic(eqsIdx, stateeqnsmark);
+
+  skip := false;
+
+  if debug then
+    print("Proceed component: " + BackendDump.strongComponentString(comp) + "\n");
+    BackendDump.dumpEquationList(eqnlst,"Equations:");
+    BackendDump.dumpVarList(varlst,"Variables:");
+  end if;
+
+  // skip is when equations
+  skip := Util.boolAndList(List.map(eqnlst, BackendEquation.isWhenEquation));
+  // skip is discrete
+  skip := Util.boolAndList(List.map(varlst, BackendVariable.isVarDiscrete)) or skip;
 
   outFold := match comp
     local
@@ -1458,11 +1539,14 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Equation eqn;
       SimCode.SimEqSystem firstSES;
-      list<BackendDAE.Equation> eqnlst;
-      list<BackendDAE.Var> varlst;
+
       list<Integer> eqnslst;
       list<SimCode.SimEqSystem> equations1, noDiscEquations1;
       String message;
+
+    case _ guard not (createAlgebraicEquations or bdynamic) or skip and not createAlgebraicEquations
+    then (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
+            tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex);
 
     case BackendDAE.SINGLEEQUATION(eqn=index, var=vindex)
       equation
@@ -1600,8 +1684,8 @@ algorithm
         // block is dynamic, belong in dynamic section
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
 
-        (_, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
-          createOdeSystem(true, false, syst, shared, comp, uniqueEqIndex, tempvars, sccIndex, eqSccMapping, backendMapping);
+        (equations1, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
+          createOdeSystem(true and createAlgebraicEquations, false, syst, shared, comp, uniqueEqIndex, tempvars, sccIndex, eqSccMapping, backendMapping);
         //eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
@@ -3308,7 +3392,7 @@ algorithm
           BackendDump.dumpBipartiteGraphStrongComponent1(inComp,BackendEquation.equationList(eqns),BackendVariable.varList(vars), SOME(BackendDAEUtil.getFunctions(ishared)),"BIPARITEGRPAH_TS_"+intString(iuniqueEqIndex));
         end if;
 
-        (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, strictTearingSet, casualTearingSet, isyst, ishared, iuniqueEqIndex, mixedSystem, itempvars);
+        (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, genDiscrete, strictTearingSet, casualTearingSet, isyst, ishared, iuniqueEqIndex, mixedSystem, itempvars);
         tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
         tmpBackendMapping = iBackendMapping;
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
@@ -3500,6 +3584,7 @@ end generateSolvedEquation;
 protected function createTornSystem
   input Boolean linear;
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
+  input Boolean genDiscrete;
   input BackendDAE.TearingSet strictTearingSet;
   input Option<BackendDAE.TearingSet> casualTearingSet;
   input BackendDAE.EqSystem isyst;
@@ -3604,7 +3689,7 @@ algorithm
        reqns = BackendEquation.getEqns(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
-       (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
        simequations = listAppend(simequations, resEqs);
 
@@ -3624,7 +3709,7 @@ algorithm
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
          simequations = listAppend(simequations, resEqs);
 
@@ -3649,7 +3734,7 @@ algorithm
        // generate residual replacements
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
-       (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
        simequations = listAppend(simequations, resEqs);
 
@@ -3671,7 +3756,7 @@ algorithm
          // generate residual replacements
          tcrs = List.map(tvars, BackendVariable.varCref);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
          simequations = listAppend(simequations, resEqs);
 
@@ -3867,6 +3952,7 @@ end solveInnerEquations1;
 protected function createTornSystemInnerEqns
   input BackendDAE.InnerEquations innerEquations;
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
+  input Boolean genDiscrete;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Integer iuniqueEqIndex;
@@ -3899,7 +3985,7 @@ algorithm
     eqn := BackendEquation.equationNth1(eqns, eqnindx);
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
-    (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(true, false, true, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
+    (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(genDiscrete, false, genDiscrete, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
     DoubleEndedList.push_list_back(equations, simequations);
   end for;
 
@@ -6057,7 +6143,7 @@ algorithm
   ((uniqueEqIndex, knownVarEquations)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
   // generate equations from the solved systems
   (uniqueEqIndex, _, _, _, solvedEquations, _, tempvars, _, _, _, _) :=
-      createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING());
+      createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING(), true);
   // generate equations from the removed equations
   ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
   // generate equations from the alias variables
@@ -6099,7 +6185,7 @@ algorithm
   ((uniqueEqIndex, knownEquations)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
   // generate equations from the solved systems
   (uniqueEqIndex, _, _, _, solvedEquations, _, tempvars, _, _, _, _) :=
-      createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING());
+      createEquationsForSystems(systs, shared, uniqueEqIndex, {}, itempvars, 0, SimCode.NO_MAPPING(), true);
   // generate equations from the alias variables
   ((uniqueEqIndex, aliasEquations)) := BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
   allEquations := List.append_reverse(solvedEquations, aliasEquations);
@@ -7202,7 +7288,10 @@ protected function extractVarsFromList
   input array<HashSet.HashSet> hs;
 algorithm
   if if ComponentReference.isPreCref(var.varName) then false else not BaseHashSet.has(var.varName, arrayGet(hs,1)) then
-    extractVarFromVar(var, aliasVars, vars, simVars, hs);
+    /* ignore variable, since they are treated by kind in the codegen */
+    if not BackendVariable.isAlgebraicOldState(var) then
+      extractVarFromVar(var, aliasVars, vars, simVars, hs);
+    end if;
   //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
@@ -7970,6 +8059,10 @@ algorithm
   print(UNDERLINE + "\n\n\n");
   print("\ninitialEquations_lambda0: ("+intString(listLength(simCode.initialEquations_lambda0))+")\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.initialEquations_lambda0,"\n");
+  if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
+    print("\ninlineEquations: ("+intString(listLength(simCode.inlineEquations))+" systems)\n" + UNDERLINE + "\n");
+    dumpSimEqSystemLst(simCode.inlineEquations,"\n");
+  end if;
   print("\nremovedInitialEquations: \n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
   print("\nstartValueEquations: \n" + UNDERLINE + "\n");
@@ -9154,6 +9247,23 @@ algorithm
       then fail();
   end match;
 end simEqSystemIndex;
+
+
+protected function adjustStatesForInlineSolver
+  input list<SimCodeVar.SimVar> inStates;
+  output list<SimCodeVar.SimVar> outStates = {};
+algorithm
+try
+  for var in inStates loop
+    var.name := ComponentReference.appendStringLastIdent("$Old", var.name);
+    var.varKind := BackendDAE.ALG_STATE_OLD();
+    outStates := var::outStates;
+  end for;
+else
+  Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.adjustStatesForInlineSolver failed"});
+  fail();
+end try;
+end adjustStatesForInlineSolver;
 
 /**************************************/
 /************* for index ***************/

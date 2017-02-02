@@ -50,7 +50,7 @@
 #include "simulation/solver/epsilon.h"
 #include "simulation/solver/external_input.h"
 #include "linearSystem.h"
-#include "sym_imp_euler.h"
+#include "sym_solver_ssc.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
@@ -85,7 +85,7 @@ typedef struct RK4_DATA
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
@@ -160,13 +160,13 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
     return retVal;
-  case S_SYM_EULER:
-    retVal = sym_euler_im_step(data, threadData, solverInfo);
+  case S_SYM_SOLVER:
+    retVal = sym_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
-  case S_SYM_EULER_SSC:
-    retVal = sym_euler_im_with_step_size_control_step(data, threadData, solverInfo);
+  case S_SYM_SOLVER_SSC:
+    retVal = sym_solver_ssc_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
@@ -213,11 +213,11 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 
   switch (solverInfo->solverMethod)
   {
-  case S_SYM_EULER:
+  case S_SYM_SOLVER:
   case S_EULER: break;
-  case S_SYM_EULER_SSC:
+  case S_SYM_SOLVER_SSC:
   {
-    allocateSymEulerImp(solverInfo, data->modelData->nStates);
+    allocateSymSolverSsc(solverInfo, data->modelData->nStates);
     break;
   }
   case S_ERKSSC:
@@ -342,9 +342,9 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);
   /* deintialize solver related workspace */
-  if (solverInfo->solverMethod == S_SYM_EULER_SSC)
+  if (solverInfo->solverMethod == S_SYM_SOLVER_SSC)
   {
-    freeSymEulerImp(solverInfo);
+    freeSymSolverSsc(solverInfo);
   }
   else if(solverInfo->solverMethod == S_RUNGEKUTTA || solverInfo->solverMethod == S_HEUN
          || solverInfo->solverMethod == S_ERKSSC)
@@ -722,7 +722,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       retVal = data->callback->performSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
       /* terminate the simulation */
-      if (solverInfo.solverMethod == S_SYM_EULER_SSC) data->callback->symEulerUpdate(data, 0);
+      //if (solverInfo.solverMethod == S_SYM_SOLVER_SSC) data->callback->symbolicInlineSystems(data, threadData, 0, 2);
       finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
       omc_alloc_interface.collect_a_little();
     }
@@ -907,32 +907,62 @@ static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO
   return 0;
 }
 
-/***************************************    SYM_EULER_IMP     *********************************/
-static int sym_euler_im_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
-  int retVal,i,j;
-  /*time*/
-  solverInfo->currentTime = data->localData[1]->timeValue + solverInfo->currentStepSize;
-  data->localData[0]->timeValue = solverInfo->currentTime;
-  /*update dt*/
-  retVal = data->callback->symEulerUpdate(data, solverInfo->currentStepSize);
-  if(retVal != 0){
-    errorStreamPrint(LOG_STDOUT, 0, "Solver %s disabled on this configuration, set compiler flag +symEuler!", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
-    EXIT(0);
-  }
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-  /* eval alg equations, note ode is empty */
-  data->callback->functionODE(data, threadData);
-  /* update der(x)*/
-  for(i=0, j=data->modelData->nStates; i<data->modelData->nStates; ++i, ++j)
-    data->localData[0]->realVars[j] = (data->localData[0]->realVars[i]-data->localData[1]->realVars[i])/solverInfo->currentStepSize;
 
-  /* save stats */
-  /* steps */
-  solverInfo->solverStatsTmp[0] += 1;
-  /* function ODE evaluation is done directly after this */
-  solverInfo->solverStatsTmp[1] += 1;
+/***************************************    SYM_SOLVER     *********************************/
+static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
+  int retVal,i,j;
+
+  modelica_integer nStates = data->modelData->nStates;
+  SIMULATION_DATA *sData = data->localData[0];
+  SIMULATION_DATA *sDataOld = data->localData[1];
+  modelica_real* stateDer = sDataOld->realVars + data->modelData->nStates;
+
+  if (solverInfo->currentStepSize >= DASSL_STEP_EPS){
+    /* time */
+    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
+    sData->timeValue = solverInfo->currentTime;
+    /* update dt */
+    data->simulationInfo->inlineData->dt = solverInfo->currentStepSize;
+    /* copy old states to workspace */
+    memcpy(data->simulationInfo->inlineData->algOldVars, sDataOld->realVars, nStates * sizeof(double));
+    memcpy(sData->realVars, sDataOld->realVars, nStates * sizeof(double));
+
+    /* read input vars */
+    externalInputUpdate(data);
+    data->callback->input_function(data, threadData);
+    retVal = data->callback->symbolicInlineSystems(data, threadData);
+
+    if(retVal != 0){
+      return -1;
+    }
+
+
+    /* update der(x) */
+    for(i=0; i<nStates; ++i, ++j)
+    {
+      stateDer[i] = (sData->realVars[i]-data->simulationInfo->inlineData->algOldVars[i])/solverInfo->currentStepSize;
+    }
+
+    /* save stats */
+    /* steps */
+    solverInfo->solverStatsTmp[0] += 1;
+    /* function ODE evaluation is done directly after this */
+    solverInfo->solverStatsTmp[1] += 1;
+  }
+  else
+  /* in case desired step size is too small */
+  {
+    infoStreamPrint(LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
+
+    /* explicit euler step*/
+    for(i = 0; i < nStates; i++)
+    {
+      sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
+    }
+    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    solverInfo->currentTime = sData->timeValue;
+  }
   return retVal;
 }
 
