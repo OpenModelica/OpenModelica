@@ -255,12 +255,18 @@ int first_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   DATA_SYM_SOLVER_SSC* userdata = (DATA_SYM_SOLVER_SSC*)solverInfo->solverData;
   const int n = data->modelData->nStates;
-  double jacobian[n*n];
   modelica_real* stateDer = sData->realVars + data->modelData->nStates;
   modelica_real* stateDerOld = sDataOld->realVars + data->modelData->nStates;
   double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
   double Atol = data->simulationInfo->tolerance, Rtol = data->simulationInfo->tolerance;
   int i,j,retVal;
+/* it seems that jacobian is not used yet!
+#if defined(_MSC_VER) // handle crap compilers
+  double *jacobian = (double*)malloc(n*n*sizeof(double));
+#else
+  double jacobian[n*n];
+#endif
+*/
 
   /* initialize radau values */
   for (i=0; i<data->modelData->nStates; i++)
@@ -372,8 +378,14 @@ int first_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   {
     userdata->radauStepSize = 0.5*solverInfo->currentStepSize;
   }
+/*
+#if defined(_MSC_VER) // handle crap compilers
+  free(jacobian)
+#endif
+*/
   return 0;
 }
+
 
 /*! \fn generateTwoApproximationsOfDifferentOrder
  *
