@@ -795,9 +795,11 @@ void DuplicateClassDialog::duplicateClass()
      * So that the getClassInformation returns the correct line number information.
      * Otherwise we have the problems like the one reported in Ticket #3793.
      */
-    QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
-    QString classText = QString("within %1;%2").arg(mpPathTextBox->text()).arg(MainWindow::instance()->getOMCProxy()->listFile(fileName));
-    MainWindow::instance()->getOMCProxy()->loadString(classText, fileName, Helper::utf8, false, false);
+    if (pParentLibraryTreeItem->isRootItem()) {
+      QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
+      QString classText = MainWindow::instance()->getOMCProxy()->listFile(fileName);
+      MainWindow::instance()->getOMCProxy()->loadString(classText, fileName, Helper::utf8, false, false);
+    }
     // create the new LibraryTreeItem
     LibraryTreeItem *pLibraryTreeItem;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);

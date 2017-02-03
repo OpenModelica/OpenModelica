@@ -1410,7 +1410,8 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
     }
     // if we first updated the parent class then the child classes needs to be updated as well.
     if (pParentLibraryTreeItem != pLibraryTreeItem) {
-      pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false, false);
+      pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8,
+                            pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure, false);
       updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
       pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
     }
@@ -1444,7 +1445,8 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
   }
   // if we first updated the parent class then the child classes needs to be updated as well.
   if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8, false, false);
+    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8,
+                          pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure, false);
     updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
     pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
   }
@@ -3893,17 +3895,21 @@ bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryT
   bool result = false;
   if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
     result = saveModelicaLibraryTreeItemOneFile(pLibraryTreeItem);
-    saveChildLibraryTreeItemsOneFile(pLibraryTreeItem);
+    if (result) {
+      saveChildLibraryTreeItemsOneFile(pLibraryTreeItem);
+    }
   } else {
     result = saveModelicaLibraryTreeItemFolder(pLibraryTreeItem);
-    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-      // if any child is saved in package.mo then only mark it saved and update its information because it should be already saved.
-      LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-      if (pLibraryTreeItem->getFileName().compare(pChildLibraryTreeItem->getFileName()) == 0) {
-        saveChildLibraryTreeItemsOneFileHelper(pChildLibraryTreeItem);
-        saveChildLibraryTreeItemsOneFile(pChildLibraryTreeItem);
-      } else {
-        saveModelicaLibraryTreeItemHelper(pChildLibraryTreeItem);
+    if (result) {
+      for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+        // if any child is saved in package.mo then only mark it saved and update its information because it should be already saved.
+        LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+        if (pLibraryTreeItem->getFileName().compare(pChildLibraryTreeItem->getFileName()) == 0) {
+          saveChildLibraryTreeItemsOneFileHelper(pChildLibraryTreeItem);
+          saveChildLibraryTreeItemsOneFile(pChildLibraryTreeItem);
+        } else {
+          saveModelicaLibraryTreeItemHelper(pChildLibraryTreeItem);
+        }
       }
     }
   }
