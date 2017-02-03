@@ -51,6 +51,7 @@
 #include "simulation/solver/external_input.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
+#include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
@@ -170,6 +171,14 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     return retVal;
+  case S_IRKSCO:
+  {
+    retVal = irksco_midpoint_rule(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+    return retVal;
+  }
+
   }
 
   TRACE_POP
@@ -205,11 +214,19 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->solverStats = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
   solverInfo->solverStatsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
 
-  /* if FLAG_NOEQUIDISTANT_GRID is set, choose dassl step method */
+  /* if FLAG_NOEQUIDISTANT_GRID is set, choose integrator step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
   {
     solverInfo->integratorSteps = 1; /* TRUE */
   }
+  else
+  {
+    solverInfo->integratorSteps = 0;
+  }
+
+  /* set tolerance for ZeroCrossings */
+  /*  TODO: Check this! */
+  /*  setZCtol(fmin(simInfo->stepSize, simInfo->tolerance)); */
 
   switch (solverInfo->solverMethod)
   {
@@ -218,6 +235,11 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_SYM_SOLVER_SSC:
   {
     allocateSymSolverSsc(solverInfo, data->modelData->nStates);
+    break;
+  }
+  case S_IRKSCO:
+  {
+    allocateIrksco(solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
   case S_ERKSSC:
@@ -354,6 +376,10 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
       free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
+  }
+  else if (solverInfo->solverMethod == S_IRKSCO)
+  {
+    freeIrksco(solverInfo);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)

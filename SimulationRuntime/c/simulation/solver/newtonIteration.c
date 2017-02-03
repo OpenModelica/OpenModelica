@@ -309,6 +309,13 @@ int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solver
         warningStreamPrint(LOG_NLS_V, 0, "Warning: maximal number of iteration reached but no root found");
         break;
       }
+      /* check if maximum iteration is reached */
+      if (k > 5)
+      {
+        *info = -1;
+        warningStreamPrint(LOG_NLS_V, 0, "Warning: maximal number threshold reached");
+        break;
+      }
     }
 
     if(ACTIVE_STREAM(LOG_NLS_V))
