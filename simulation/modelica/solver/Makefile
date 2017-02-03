@@ -7,6 +7,7 @@ problem1-dasslsteps.mos \
 problem1-impeuler.mos \
 problem1-trapezoid.mos \
 problem1-imprk.mos \
+problem1-irksco.mos \
 problem1-ida.mos \
 problem1-symSolverImp.mos \
 problem1-symSolverExp.mos \
@@ -16,6 +17,7 @@ problem2-dasslsteps.mos \
 problem2-impeuler.mos \
 problem2-trapezoid.mos \
 problem2-imprk.mos \
+problem2-irksco.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem2-imprkLS.mos \
@@ -32,6 +34,7 @@ problem4-symSolverImp.mos \
 problem4-symSolverExp.mos \
 problem5-symSolverImp.mos \
 problem5-symSolverExp.mos \
+problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
 testDAEp1.mos \
