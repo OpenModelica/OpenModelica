@@ -568,7 +568,6 @@ void irksco_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solver
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   DATA_IRKSCO* userdata = (DATA_IRKSCO*)solverInfo->solverData;
   const int n = data->modelData->nStates;
-  double jacobian[n*n];
   modelica_real* stateDer = sData->realVars + data->modelData->nStates;
   double sc, d, d0 = 0.0, d1 = 0.0, d2 = 0.0, h0, h1, delta_ti, infNorm, sum = 0;
   double Atol = 1e-6, Rtol = 1e-3;
