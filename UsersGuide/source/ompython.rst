@@ -52,8 +52,78 @@ OMPython provides user friendly features like:
 
 -  Easy access to the library and testing of OpenModelica commands.
 
-Test Commands
-~~~~~~~~~~~~~
+Features of Enhanced OMPython
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Some more improvements are added to OMPython functionality for querying more information about the models
+and simulate them. A list of new user friendly API functionality allows user to extract information about models using python
+objects. A list of API functionality is described below.
+
+To get started, create a ModelicaSystem object:
+
+>>> from OMPython import ModelicaSystem
+>>> mod=ModelicaSystem("BouncingBall.mo","BouncingBall")
+
+The object constructor requires a minimum of 2 input arguments which are strings, and may need a third string input argument. 
+
+- The ﬁrst input argument must be a string with the ﬁle name of the Modelica code, with Modelica ﬁle extension ".mo"
+  If the  Modelica ﬁle is not in the current directory of Python, then the ﬁle path must also be included
+  
+-  The second input argument must be a string with the name of the Modelica model 
+   including the namespace if the model is wrapped within a Modelica package
+   
+-  A third input argument is used if the Modelica model builds on other Modelica code, e.g. the Modelica Standard Library. 
+
+Standard get methods API
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+>>> mod.getQuantities() 
+>>> mod.getContinuous()
+>>> mod.getInputs()
+>>> mod.getOutputs()
+>>> mod.getParameters()
+>>> mod.getSimulationOptions()
+
+Two calling possibilities are accepted using getXXX() where "XXX" can be any of the above functions (eg:) getParameters().
+
+-  getXXX() without input argument, returns a dictionary with names as keys and values as values. 
+-  getXXX(S), where S is a sequence of strings of names, returns a tuple of values for the speciﬁed names.
+
+
+Standard set methods API
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+>>> mod.setInputs()
+>>> mod.setParameters()
+>>> mod.setSimulationOptions()
+
+Two calling possibilities are accepted using setXXXs(),where "XXX" can be any of above functions. 
+
+-  setXXX(k) with K being a sequence of keyword assignments of type quantity name = value  Here, the quantity name could be 
+   a parameter name (i.e., not a string), an input name, etc.
+-  setXXXs(**D), with D being a dictionary with quantity names as keywords and values as described with the alternative 
+   input argument K.
+
+Example usage of Above API
+~~~~~~~~~~~~~~~~~~~~~~~~~~   
+An example of how to get parameter names and change the value of parameters using set methods and finally simulate the  "BouncingBall.mo" model is given below.
+
+>>>  mod.getParameters()
+{'c': 0.9, 'radius': 0.1}
+
+>>>  mod.setParameters(radius=14,c=0.5) //setting parameter value using first option
+>>>  mod.setParameters(**{"radius":14,"c":0.5}) // setting parameter value using second option
+
+To check whether new values are updated to model , we can again query the getParameters().
+
+>>> mod.getParameters()
+{'c': 0.5, 'radius': 14}
+
+And then finally we can simulate the model using. 
+ 
+>>> mod.simulate()
+
+Test Commands using old OMPython features
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To test the command outputs, simply create an OMCSession object by
 importing from the OMPython library within Python interepreter. The
