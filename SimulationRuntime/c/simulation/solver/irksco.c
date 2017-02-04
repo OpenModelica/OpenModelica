@@ -213,9 +213,19 @@ int rk_imp_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, d
   /* initial guess calculated via linear extrapolation */
   for (i=0; i<userdata->ordersize; i++)
   {
-    for (j=0; j<n; j++)
+    if (userdata->radauStepSizeOld > 1e-16)
     {
-      solverData->x[i*n+j] = userdata->m[j] * (userdata->radauTimeOld + userdata->c[i] * userdata->radauStepSize )+ userdata->n[j] - userdata->y0[j];
+      for (j=0; j<n; j++)
+      {
+        solverData->x[i*n+j] = userdata->m[j] * (userdata->radauTimeOld + userdata->c[i] * userdata->radauStepSize )+ userdata->n[j] - userdata->y0[j];
+      }
+    }
+    else
+    {
+      for (j=0; j<n; j++)
+      {
+        solverData->x[i*n+j] = userdata->radauVars[i];
+      }
     }
   }
 
