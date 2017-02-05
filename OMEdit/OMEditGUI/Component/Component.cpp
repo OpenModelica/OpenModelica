@@ -2400,7 +2400,9 @@ void Component::openClass()
 void Component::viewDocumentation()
 {
   MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem);
+  bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
   MainWindow::instance()->getDocumentationDockWidget()->show();
+  MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
 }
 
 /*!

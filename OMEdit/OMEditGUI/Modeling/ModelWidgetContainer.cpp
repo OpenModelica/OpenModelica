@@ -4625,7 +4625,9 @@ void ModelWidget::showDocumentationView()
     return;
   }
   MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
+  bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
   MainWindow::instance()->getDocumentationDockWidget()->show();
+  MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
 }
 
 /*!

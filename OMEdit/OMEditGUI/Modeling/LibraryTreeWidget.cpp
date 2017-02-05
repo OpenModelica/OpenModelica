@@ -2880,7 +2880,9 @@ void LibraryTreeView::viewDocumentation()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
+    bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
     MainWindow::instance()->getDocumentationDockWidget()->show();
+    MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
   }
 }
 
