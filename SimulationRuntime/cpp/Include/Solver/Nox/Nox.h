@@ -53,7 +53,7 @@ private:
       *_y_new,
       *_yScale;
 
-  NoxLapackInterface *_noxLapackInterface;
+  Teuchos::RCP<NoxLapackInterface> _noxLapackInterface;
 
   Teuchos::RCP<NOX::LAPACK::Group> _grp;
 
@@ -70,6 +70,6 @@ private:
 
   bool _firstCall;
   bool _generateoutput;
-  bool _useScale;
+  bool _useDomainScaling;
 };
 /** @} */ // end of solverNox

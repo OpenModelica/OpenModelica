@@ -20,8 +20,9 @@ class NoxLapackInterface : public NOX::LAPACK::Interface {
     //! Initial guess
     Teuchos::RCP<NOX::LAPACK::Vector> _initialGuess;
 	INonLinearAlgLoop *_algLoop;///< Algebraic loop to be solved, required to obtain value of f
-	double _yScale;
+	double *_yScale, *_fScale;
 	int _dimSys;
 	bool _generateoutput;
-	bool _useScale;
+	bool _useDomainScaling;
+	bool _useFunctionValueScaling;
 };

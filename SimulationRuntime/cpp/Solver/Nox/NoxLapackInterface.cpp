@@ -8,32 +8,39 @@
 NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)
 	:_algLoop(algLoop)
 	,_generateoutput(false)
-	,_useScale(true)
+	,_useDomainScaling(false)
+	,_useFunctionValueScaling(true)
 	,_yScale(NULL)
+	,_fScale(NULL)
 {
 	_dimSys = _algLoop->getDimReal();
 	_initialGuess = Teuchos::rcp(new NOX::LAPACK::Vector(_dimSys));
 
-	double* x = new double[_dimSys];
-	_algLoop->getReal(x);
+	if (_useDomainScaling){
+		if(_yScale) delete [] _yScale;
+		_yScale = new double[_dimSys];
 
-	for(int i=0;i<_dimSys;i++){
-		(*_initialGuess)(i)=x[i];//I don't need this, NoxLapackInterface::getInitialGuess() is called anyway at the beginning.
+		_algLoop->getNominalReal(_yScale);//in Kinsol, this is issued in the function Kinsol::initialize(). I hope this works as well.
+		for (int i=0; i<_dimSys; i++){
+			if(_yScale[i] != 0)
+				_yScale[i] = 1/_yScale[i];
+			else
+				_yScale[i] = 1;
+		}
 	}
-	//(*_initialGuess)(0)=-0.305315;
-	//(*_initialGuess)(1)=1.40775;
 
-	//std::cout << "Initial guess is given by " << std::endl;
-	//for(int i=0;i<_dimSys;i++) std::cout << (*_initialGuess)(i) << " ";
-	//std::cout << std::endl;
-
-	delete [] x;
+	if (_useFunctionValueScaling){
+		if(_fScale) delete [] _fScale;
+		_fScale = new double[_dimSys];
+	}
 }
 
 //! Destructor
 NoxLapackInterface::~NoxLapackInterface()
 {
-	//nothing to delete, since the algloop passed is passed as a shared pointer.
+    if(_yScale) delete [] _yScale;
+    if(_fScale) delete [] _fScale;
+	//no need to delete the alglooppointer, since the algloop passed is passed as a shared pointer.
 }
 
 const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
@@ -44,15 +51,32 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 	if (_generateoutput) std::cout << "computing initial guess" << std::endl;
 
 	for(int i=0;i<_dimSys;i++){
-		(*_initialGuess)(i)=x[i];
+		if (_useDomainScaling) {
+			(*_initialGuess)(i)=x[i]*_yScale[i];
+		}else{
+			(*_initialGuess)(i)=x[i];
+		}
+
+		//quick test whether the scaling worked correctly
+		if (_useDomainScaling) if ((*_initialGuess)(i)>1e4 || ((*_initialGuess)(i)<1e-4 && (*_initialGuess)(i)>1e-12)) std::cout << "scaling initial guess failed. Initial Guess (" << i << ")=" << (*_initialGuess)(i) << std::endl;
 	}
-	//(*_initialGuess)(0)=-0.305315;
-	//(*_initialGuess)(1)=1.40775;
 
 	if (_generateoutput) {
 		std::cout << "Initial guess is given by " << std::endl;
 		for(int i=0;i<_dimSys;i++) std::cout << (*_initialGuess)(i) << " ";
 		std::cout << std::endl;
+	}
+
+	if (_useFunctionValueScaling){
+		_algLoop->evaluate();
+		_algLoop->getRHS(_fScale);
+		if (_generateoutput) std::cout << "_fScale = (";
+		for(int i=0;i<_dimSys;i++){
+			if (std::abs(_fScale[i])<1.0)
+				_fScale[i]=1.0;
+			if (_generateoutput) std::cout << " " << _fScale[i];
+		}
+		if (_generateoutput) std::cout << ")" << std::endl;
 	}
 
 	delete [] x;
@@ -62,8 +86,13 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	double* rhs = new double[_dimSys];//stores f(x)
 	double* xp = new double[_dimSys];//stores x temporarily
-	for (int i=0;i<_dimSys;i++)
-		xp[i]=x(i);
+	for (int i=0;i<_dimSys;i++){
+		if (_useDomainScaling){
+			xp[i]=x(i)/_yScale[i];
+		}else{
+			xp[i]=x(i);
+		}
+	}
 
 	_algLoop->setReal(xp);
 	_algLoop->evaluate();
@@ -72,7 +101,7 @@ bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vec
 	if (_generateoutput) {
 		std::cout << "we are at position x=(";
 		for (int i=0;i<_dimSys;i++){
-			std::cout << xp[i] << " ";
+			std::cout << x(i) << " ";
 		}
 		std::cout << ")" << std::endl;
 		std::cout << std::endl;
@@ -86,7 +115,14 @@ bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vec
 	}
 
 	for (int i=0;i<_dimSys;i++){
-		f(i)=rhs[i];
+
+		if (_useFunctionValueScaling){
+			f(i)=rhs[i]/_fScale[i];
+		}else{
+			f(i)=rhs[i];
+		}
+
+
 	}
 
 	delete [] rhs;
@@ -95,16 +131,20 @@ bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vec
 }
 
 bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const NOX::LAPACK::Vector & x){
-	//setting the forward difference parameters. We divide by alpha*|x_i|+beta during computation of the difference quotient. It is similar to the Finite Difference implementation by Nox, which can be found under https://trilinos.org/docs/dev/packages/nox/doc/html/classNOX_1_1Epetra_1_1FiniteDifference.html
+	//setting the forward difference parameters. We divide by the denominator alpha*|x_i|+beta in the computation of the difference quotient. It is similar to the Finite Difference implementation by Nox, which can be found under https://trilinos.org/docs/dev/packages/nox/doc/html/classNOX_1_1Epetra_1_1FiniteDifference.html
 	double alpha=1.0e-11;
 	double beta=1.0e-9;
 	double* f1 = new double[_dimSys];//f(x+(alpha*|x_i|+beta)*e_i)
 	double* f2 = new double[_dimSys];//f(x)
 	double* xplushei = new double[_dimSys];//x+(alpha*|x_i|+beta)*e_i
 
-
-	for (int i=0;i<_dimSys;i++)
-		xplushei[i]=x(i);
+	for (int i=0;i<_dimSys;i++){
+		if (_useDomainScaling){
+			xplushei[i]=x(i)/_yScale[i];
+		}else{
+			xplushei[i]=x(i);
+		}
+	}
 	_algLoop->setReal(xplushei);
 	_algLoop->evaluate();
 	_algLoop->getRHS(f2);
@@ -112,7 +152,7 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 	if (_generateoutput) {
 		std::cout << "we are at position x=(";
 		for (int i=0;i<_dimSys;i++){
-			std::cout << xplushei[i] << " ";
+			std::cout << x(i) << " ";
 		}
 		std::cout << ")" << std::endl;
 		std::cout << std::endl;
@@ -121,20 +161,59 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 	}
 
 	for (int i=0;i<_dimSys;i++){
-		xplushei[i]+=alpha*std::abs(xplushei[i])+beta;//I hope that at some point, cmath is included
+		//adding the denominator of the difference quotient
+
+		if (_useDomainScaling){
+			//variant 1
+			//xplushei[i]+=(alpha*std::abs(xplushei[i])+beta)/_yScale[i];
+			//variant 2
+			xplushei[i]+=(alpha*std::abs(xplushei[i]*_yScale[i])+beta)/_yScale[i];
+		}else{
+			xplushei[i]+=alpha*std::abs(xplushei[i])+beta;
+		}
+
 		_algLoop->setReal(xplushei);
 		_algLoop->evaluate();
 		_algLoop->getRHS(f1);
 
 		for (int j=0;j<_dimSys;j++){
-			J(j,i) = (f1[j]-f2[j])/(xplushei[i]-x(i));//=\partial_i f_j
+			if (_useDomainScaling){
+				//variant 1
+				//J(j,i) = _yScale[i]*(f1[j]-f2[j])/(xplushei[i]-x(i)/_yScale[i]);//=\partial_i f_j
+				//variant 2
+				//J(j,i) = (f1[j]-f2[j])/(xplushei[i]-x(i)/_yScale[i]);//=\partial_i f_j
+				//variant 3
+				if (_useFunctionValueScaling){
+					J(j,i) = (f1[j]-f2[j])/(_fScale[j]*(_yScale[i]*xplushei[i]-x(i)));//=\partial_i f_j
+				}else{
+					J(j,i) = (f1[j]-f2[j])/(_yScale[i]*xplushei[i]-x(i));//=\partial_i f_j
+				}
+			}else{
+				if (_useFunctionValueScaling){
+					J(j,i) = (f1[j]-f2[j])/(_fScale[j]*(xplushei[i]-x(i)));//=\partial_i f_j
+				}else{
+					J(j,i) = (f1[j]-f2[j])/(xplushei[i]-x(i));//=\partial_i f_j
+				}
+			}
+
 			if (_generateoutput) std::cout << J(j,i) << " ";
 		}
 		if (_generateoutput) std::cout << std::endl;
-		xplushei[i]=x(i);//reset xplushei
+
+		//reset xplushei
+		if (_useDomainScaling){
+			xplushei[i]=x(i)/_yScale[i];
+		}else{
+			xplushei[i]=x(i);
+		}
 	}
 
 	if (_generateoutput) std::cout << std::endl;
+
+	if (_generateoutput) std::cout << "done computing Jacobian" << std::endl;
+
+	_algLoop->setReal(xplushei);
+	_algLoop->evaluate();
 
 	delete [] f1;
 	delete [] f2;
