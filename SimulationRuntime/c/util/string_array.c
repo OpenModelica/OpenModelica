@@ -956,6 +956,6 @@ void unpack_string_array(const string_array_t *a, const char **data)
   size_t sz = base_array_nr_of_elements(*a);
   long i;
   for (i=0; i<sz; i++) {
-    data[i] = mmc_mk_scon(data[i]);
+    ((void**)a->data)[i] = mmc_mk_scon(data[i]);
   }
 }

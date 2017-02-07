@@ -126,9 +126,15 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   return nmatch;
 }
 
+static char* Modelica_strdup(const char *str)
+{
+  char *res = ModelicaAllocateString(strlen(str));
+  strcpy(res, str);
+}
+
 extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **outMatches)
 {
-  return OpenModelica_regexImpl(str,re,maxn,extended,sensitive,(void*(*)(const char*)) mmc_mk_scon,(void**)outMatches);
+  return OpenModelica_regexImpl(str,re,maxn,extended,sensitive,(void*(*)(const char*)) Modelica_strdup,(void**)outMatches);
 }
 
 #endif /* OMC_MINIMAL_RUNTIME */
