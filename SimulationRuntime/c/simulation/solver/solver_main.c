@@ -635,7 +635,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 {
   TRACE_PUSH
 
-  int i, retVal = 0, initSolverInfo = 0;
+  int i, retVal = 1, initSolverInfo = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = data->simulationInfo;
@@ -675,6 +675,9 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     simInfo->stepSize = MINIMAL_STEP_SIZE;
     simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
   }
+#if !defined(OMC_EMCC)
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
 
   /*  initialize external input structure */
   externalInputallocate(data);
@@ -685,10 +688,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   /* initialize all parts of the model */
   retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
   omc_alloc_interface.collect_a_little();
-
-#if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
 
   if(0 == retVal) {
     retVal = initializeSolverData(data, threadData, &solverInfo);
@@ -701,6 +700,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update);
 #endif
   if(0 == retVal) {
+    retVal = -1;
     /* if the model has no time changing variables skip the main loop*/
     if(data->modelData->nVariablesReal == 0    &&
        data->modelData->nVariablesInteger == 0 &&
@@ -715,7 +715,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       solverInfo.currentTime = simInfo->stopTime;
       data->localData[0]->timeValue = simInfo->stopTime;
       overwriteOldSimulationData(data);
-      finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
+      retVal = finishSimulation(data, threadData, &solverInfo, outputVariablesAtEnd);
     } else if(S_QSS == solverInfo.solverMethod) {
       /* starts the simulation main loop - special solvers */
       sim_result.emit(&sim_result,data,threadData);
