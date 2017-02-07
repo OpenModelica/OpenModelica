@@ -469,7 +469,6 @@ private:
   bool mShowGridLines;
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
-  QMdiSubWindow *mpLastActiveSubWindow;
   void loadPreviousViewType(ModelWidget *pModelWidget);
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);

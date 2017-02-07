@@ -4711,7 +4711,6 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   pModelSwitcherLayout->setContentsMargins(0, 0, 0, 0);
   pModelSwitcherLayout->addWidget(mpRecentModelsList, 0, 0);
   mpModelSwitcherDialog->setLayout(pModelSwitcherLayout);
-  mpLastActiveSubWindow = 0;
   // install QApplication event filter to handle the ctrl+tab and ctrl+shift+tab
   QApplication::instance()->installEventFilter(this);
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(currentModelWidgetChanged(QMdiSubWindow*)));
@@ -5040,7 +5039,9 @@ void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
     // write dummy csv file and visualization file
     if (pModelWidget->writeCoSimulationResultFile(resultFileName) && pModelWidget->writeVisualXMLFile(visualXMLFileName, true)) {
       MainWindow::instance()->getThreeDViewer()->stashView();
+      bool state = MainWindow::instance()->getThreeDViewerDockWidget()->blockSignals(true);
       MainWindow::instance()->getThreeDViewerDockWidget()->show();
+      MainWindow::instance()->getThreeDViewerDockWidget()->blockSignals(state);
       MainWindow::instance()->getThreeDViewer()->clearView();
       MainWindow::instance()->getThreeDViewer()->openAnimationFile(resultFileName,true);
       MainWindow::instance()->getThreeDViewer()->popView();
@@ -5211,13 +5212,9 @@ void ModelWidgetContainer::updateThreeDViewer(QMdiSubWindow *pSubWindow)
 {
 #if !defined(WITHOUT_OSG)
   if (!pSubWindow) {
+    MainWindow::instance()->getThreeDViewer()->clearView();
     return;
   }
-  /* if the same sub window is activated again then just return */
-  if (mpLastActiveSubWindow == pSubWindow) {
-    return;
-  }
-  mpLastActiveSubWindow = pSubWindow;
   ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
   updateThreeDViewer(pModelWidget);
 #else

@@ -46,6 +46,7 @@
 #include "Plotting/VariablesWidget.h"
 #if !defined(WITHOUT_OSG)
 #include "Animation/ThreeDViewer.h"
+#include "Animation/ViewerWidget.h"
 #endif
 #include "Util/Helper.h"
 #include "Simulation/SimulationOutputWidget.h"
@@ -276,6 +277,7 @@ void MainWindow::setUpMainWindow()
   mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
   addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
   mpThreeDViewerDockWidget->hide();
+  connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
 #endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
@@ -2357,6 +2359,22 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
       }
     }
   }
+}
+
+/*!
+ * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
+ * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
+ * \param visible
+ */
+void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
+{
+#if !defined(WITHOUT_OSG)
+  if (visible) {
+    mpThreeDViewer->getViewerWidget()->update();
+  }
+#else
+  Q_UNUSED(visible);
+#endif
 }
 
 /*!
