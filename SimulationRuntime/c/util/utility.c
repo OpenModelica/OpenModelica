@@ -130,6 +130,7 @@ static char* Modelica_strdup(const char *str)
 {
   char *res = ModelicaAllocateString(strlen(str));
   strcpy(res, str);
+  return res;
 }
 
 extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **outMatches)
