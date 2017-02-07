@@ -214,7 +214,7 @@ readFile("stateSpace-MSD.xml");
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"5\" name=\"damper1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use phi_rel and w_rel as states\">
+// <variable id=\"5\" name=\"damper1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s_rel and v_rel as states\">
 // <bindExpression string=\"StateSelect.prefer\">
 // </bindExpression>
 // <attributesValues>
