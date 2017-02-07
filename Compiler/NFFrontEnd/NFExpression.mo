@@ -107,6 +107,7 @@ uniontype Expression
 
   record CALL
     Absyn.Path path;
+    Expression cref "a pointer to the class of the function and the prefix, Expression.CREF";
     list<Expression> arguments;
     CallAttributes attr;
   end CALL;
@@ -663,25 +664,27 @@ uniontype Expression
   function makeBuiltinCall
     "Create a CALL with the given data for a call to a builtin function."
     input String name;
+    input Expression cref "pointer to class and prefix";
     input list<Expression> args;
     input Type result_type;
     input Boolean isImpure;
     output Expression call;
     annotation(__OpenModelica_EarlyInline = true);
   algorithm
-    call := Expression.CALL(Absyn.IDENT(name), args,
+    call := Expression.CALL(Absyn.IDENT(name), cref, args,
       CallAttributes.CALL_ATTR(result_type, false, true, isImpure, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
   end makeBuiltinCall;
 
   function makePureBuiltinCall
     "Create a CALL with the given data for a call to a builtin function."
     input String name;
+    input Expression cref "pointer to class and prefix";
     input list<Expression> args;
     input Type result_type;
     output Expression call;
     annotation(__OpenModelica_EarlyInline = true);
   algorithm
-    call := makeBuiltinCall(name, args, result_type, false);
+    call := makeBuiltinCall(name, cref, args, result_type, false);
   end makePureBuiltinCall;
 end Expression;
 

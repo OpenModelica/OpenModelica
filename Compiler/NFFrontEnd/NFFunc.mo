@@ -120,7 +120,7 @@ algorithm
   else
     // we could not lookup the class, see if is a special builtin such as String(), etc
     if isSpecialBuiltinFunctionName(functionName) then
-      (typedExp, ty, variability) := typeSpecialBuiltinFunctionCall(functionName, functionArgs, scope, info);
+      (typedExp, ty, variability) := typeSpecialBuiltinFunctionCall(functionName, functionArgs, prefix, classNode, scope, info);
       return;
     end if;
     // fail otherwise
@@ -316,7 +316,7 @@ algorithm
           functionAttributes.isFunctionPointer,
           inlineType,DAE.NO_TAIL());
 
-  typedExp := Expression.CALL(fn, dargs, ca);
+  typedExp := Expression.CALL(fn, Expression.CREF(classNode, prefix), dargs, ca);
 end typeNormalFunction;
 
 function argsFromSlots
@@ -547,6 +547,8 @@ protected function typeSpecialBuiltinFunctionCall
  TODO FIXME, add all"
   input Absyn.ComponentRef functionName;
   input Absyn.FunctionArgs functionArgs;
+  input Prefix prefix;
+  input InstNode classNode;
   input InstNode scope;
   input SourceInfo info;
   output Expression typedExp;
@@ -581,7 +583,7 @@ algorithm
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
         ty := Type.STRING();
       then
-        (Expression.CALL(call_path, args, NFExpression.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, Expression.CREF(classNode, prefix), args, NFExpression.callAttrBuiltinOther), ty, vr);
 
     // TODO FIXME: check that the input is an enumeration
     case (Absyn.CREF_IDENT(name = "Integer"), Absyn.FUNCTIONARGS(args = afargs))
@@ -591,7 +593,7 @@ algorithm
         vr := List.fold(vrs, Types.constAnd, DAE.C_CONST());
         ty := Type.INTEGER();
       then
-        (Expression.CALL(call_path, args, NFExpression.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, Expression.CREF(classNode, prefix), args, NFExpression.callAttrBuiltinOther), ty, vr);
 
     // TODO FIXME! handle all the Modelica 3.3 operators here, see isSpecialBuiltinFunctionName
 
@@ -676,7 +678,7 @@ algorithm
         ty := Type.REAL();
         vr := vr1;
       then
-        (Expression.CALL(call_path, {dexp1,dexp2}, NFExpression.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, Expression.CREF(classNode, prefix), {dexp1,dexp2}, NFExpression.callAttrBuiltinOther), ty, vr);
 
     case (Absyn.CREF_IDENT(name = "rooted"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
@@ -687,7 +689,7 @@ algorithm
         ty := Type.BOOLEAN();
         vr := vr1;
       then
-        (Expression.CALL(call_path, {dexp1}, NFExpression.callAttrBuiltinOther), ty, vr);
+        (Expression.CALL(call_path, Expression.CREF(classNode, prefix), {dexp1}, NFExpression.callAttrBuiltinOther), ty, vr);
 
     case (Absyn.CREF_IDENT(name = "transpose"), Absyn.FUNCTIONARGS(args = {aexp1}))
       algorithm
@@ -698,7 +700,7 @@ algorithm
         ty := Type.ARRAY(el_ty, {d2, d1});
 
         // create the typed transpose expression
-        typedExp := Expression.makePureBuiltinCall("transpose", {dexp1}, ty);
+        typedExp := Expression.makePureBuiltinCall("transpose", Expression.CREF(classNode, prefix), {dexp1}, ty);
         vr := vr1;
       then
         (typedExp, ty, vr);
@@ -716,7 +718,7 @@ algorithm
 
         ty := el_ty;
         vr := vr1;
-        typedExp := Expression.makePureBuiltinCall(fnName, {dexp1}, ty);
+        typedExp := Expression.makePureBuiltinCall(fnName, Expression.CREF(classNode, prefix), {dexp1}, ty);
       then
         (typedExp, ty, vr);
 
@@ -732,7 +734,7 @@ algorithm
         //(dexp2, _) := Types.matchType(dexp2, ty2, ty, true);
         vr := Types.constAnd(vr1, vr2);
         false := Type.isString(ty);
-        typedExp := Expression.makePureBuiltinCall(fnName, {dexp1, dexp2}, ty);
+        typedExp := Expression.makePureBuiltinCall(fnName, Expression.CREF(classNode, prefix), {dexp1, dexp2}, ty);
       then
         (typedExp, ty, vr);
 
@@ -741,7 +743,7 @@ algorithm
         (dexp1, ty1, vr1) := Typing.typeExp(aexp1, scope, info);
         Type.ARRAY(elementType = el_ty, dimensions = {d1}) := ty1;
         ty := Type.ARRAY(el_ty, {d1, d1});
-        typedExp := Expression.makePureBuiltinCall("diagonal", {dexp1}, ty);
+        typedExp := Expression.makePureBuiltinCall("diagonal", Expression.CREF(classNode, prefix), {dexp1}, ty);
         vr := vr1;
       then
         (typedExp, ty, vr);
@@ -751,7 +753,7 @@ algorithm
         (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
 
         // create the typed call
-        typedExp := Expression.makePureBuiltinCall("pre", {dexp1}, ty);
+        typedExp := Expression.makePureBuiltinCall("pre", Expression.CREF(classNode, prefix), {dexp1}, ty);
       then
         (typedExp, ty, vr);
 
@@ -761,7 +763,7 @@ algorithm
         // TODO? Check that aexp1 is a Component Expression (MLS 3.3, Section 16.2.3) or parameter expression
         (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
         // create the typed call
-        typedExp := Expression.makeBuiltinCall("previous", {dexp1}, ty, true);
+        typedExp := Expression.makeBuiltinCall("previous", Expression.CREF(classNode, prefix), {dexp1}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -771,7 +773,7 @@ algorithm
         // TODO? Check that aexp1 is a Component Expression (MLS 3.3, Section 16.2.3) or parameter expression
         (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
         // create the typed call
-        typedExp := Expression.makeBuiltinCall("hold", {dexp1}, ty, true);
+        typedExp := Expression.makeBuiltinCall("hold", Expression.CREF(classNode, prefix), {dexp1}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -795,7 +797,7 @@ algorithm
         (dexp1, ty, vr) := Typing.typeExp(aexp1, scope, info);
 
         // create the typed call
-        typedExp := Expression.makeBuiltinCall(fnName, {dexp1, dexp2}, ty, true);
+        typedExp := Expression.makeBuiltinCall(fnName, Expression.CREF(classNode, prefix), {dexp1, dexp2}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -814,7 +816,7 @@ algorithm
         ty := Type.NORETCALL();
 
         // create the typed call
-        typedExp := Expression.makeBuiltinCall("initialState", {dexp1}, ty, true);
+        typedExp := Expression.makeBuiltinCall("initialState", Expression.CREF(classNode, prefix), {dexp1}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -839,7 +841,7 @@ algorithm
         ty := Type.BOOLEAN();
 
         // create the typed call
-        typedExp := Expression.makeBuiltinCall("activeState", {dexp1}, ty, true);
+        typedExp := Expression.makeBuiltinCall("activeState", Expression.CREF(classNode, prefix), {dexp1}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -850,7 +852,7 @@ algorithm
         ty := Type.INTEGER();
         vr := DAE.C_VAR();
         // create the typed call
-        typedExp := Expression.makeBuiltinCall("ticksInState", {}, ty, true);
+        typedExp := Expression.makeBuiltinCall("ticksInState", Expression.CREF(classNode, prefix), {}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -861,7 +863,7 @@ algorithm
         ty := Type.REAL();
         vr := DAE.C_VAR();
         // create the typed call
-        typedExp := Expression.makeBuiltinCall("timeInState", {}, ty, true);
+        typedExp := Expression.makeBuiltinCall("timeInState", Expression.CREF(classNode, prefix), {}, ty, true);
       then
         (typedExp, ty, vr);
 
@@ -1143,7 +1145,7 @@ algorithm
 
   ty := Type.NORETCALL();
   // create the typed call
-  typedExp := Expression.makeBuiltinCall("transition", {dexp1, dexp2, dexp3, dexp4, dexp5, dexp6, dexp7}, ty, true);
+  typedExp := Expression.makeBuiltinCall("transition", Expression.CREF(classNode, prefix), {dexp1, dexp2, dexp3, dexp4, dexp5, dexp6, dexp7}, ty, true);
   variability := DAE.C_UNKNOWN();
 end elabBuiltinTransition;
 
