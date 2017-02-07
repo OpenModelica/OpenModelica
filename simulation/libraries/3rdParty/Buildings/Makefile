@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
-TESTFILES = Buildings.HeatTransfer.Examples.ConductorMultiLayer.mos
+TESTFILES = Buildings.HeatTransfer.Examples.ConductorMultiLayer.mos \
+ReaderTMY3_total.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
