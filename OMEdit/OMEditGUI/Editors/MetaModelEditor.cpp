@@ -1007,7 +1007,9 @@ void MetaModelEditor::updateAllOrientations()
       }
     }
   }
+#if !defined(WITHOUT_OSG)
   mpModelWidget->getModelWidgetContainer()->updateThreeDViewer(mpModelWidget);
+#endif
 }
 
 /*!

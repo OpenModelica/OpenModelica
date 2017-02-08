@@ -216,6 +216,7 @@ void AbstractAnimationWindow::clearView()
 {
   if (mpViewerWidget) {
     mpViewerWidget->getSceneView()->setSceneData(0);
+    popView();
     mpViewerWidget->update();
   }
 }
@@ -228,9 +229,9 @@ void AbstractAnimationWindow::stashView()
 
 void AbstractAnimationWindow::popView()
 {
-    if(!mCameraInitialized) return;
-    mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mStashedViewMatrix);
-    mpViewerWidget->update();
+  if(!mCameraInitialized) return;
+  mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mStashedViewMatrix);
+  mpViewerWidget->update();
 }
 
 /*!
