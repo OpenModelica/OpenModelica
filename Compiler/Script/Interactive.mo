@@ -1004,7 +1004,7 @@ protected
   Absyn.Class cls;
   list<GlobalScript.LoadedFile> lf;
   Absyn.Modification mod;
-  Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2;
+  Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2, evalParamAnn;
   Boolean addFunctions;
   FCore.Graph env;
   Absyn.Exp exp;
@@ -1126,9 +1126,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         ErrorExt.setCheckpoint("getComponentAnnotations");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getComponentAnnotations(cr, p);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getComponentAnnotations");
       then
         outResult;
@@ -1137,9 +1138,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthComponentAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthComponentAnnotation(cr, p, n);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getNthComponentAnnotation");
       then
         outResult;
@@ -1226,9 +1228,10 @@ algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthConnectionAnnotation");
         path := Absyn.crefToPath(cr);
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthConnectionAnnotation(path, p, n);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getNthConnectionAnnotation");
       then
         outResult;
@@ -1249,9 +1252,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthConnectorIconAnnotation(Absyn.crefToPath(cr), p, n);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getNthConnectorIconAnnotation");
       then
         outResult;
@@ -1260,9 +1264,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         ErrorExt.setCheckpoint("getIconAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getIconAnnotation");
       then
         outResult;
@@ -1271,9 +1276,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         ErrorExt.setCheckpoint("getDiagramAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getDiagramAnnotation(Absyn.crefToPath(cr), p);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getDiagramAnnotation");
       then
         outResult;
@@ -1282,9 +1288,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthInheritedClassMapAnnotation(Absyn.crefToPath(cr), n, p, "IconMap");
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
       then
         outResult;
@@ -1293,9 +1300,10 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthInheritedClassMapAnnotation(Absyn.crefToPath(cr), n, p, "DiagramMap");
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
       then
         outResult;
@@ -1305,10 +1313,11 @@ algorithm
         {Absyn.CREF(componentRef = cr),
          Absyn.CREF(componentRef = Absyn.CREF_IDENT(name, {}))} := args;
         ErrorExt.setCheckpoint("getNamedAnnotation");
+        evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNamedAnnotation(Absyn.crefToPath(cr), p,
             Absyn.IDENT(name), SOME("{}"), getAnnotationValue);
-        Config.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(evalParamAnn);
         ErrorExt.rollBack("getNamedAnnotation");
       then
         outResult;
@@ -13752,7 +13761,7 @@ protected function buildEnvForGraphicProgramFull
   output FCore.Graph outEnv;
   output Absyn.Program outProgram;
 protected
-  Boolean check_model, eval_param;
+  Boolean check_model, eval_param, failed = false;
   Absyn.Program graphic_program;
   SCode.Program scode_program;
 algorithm
@@ -13765,11 +13774,17 @@ algorithm
   Flags.setConfigBool(Flags.CHECK_MODEL, true);
   Config.setEvaluateParametersInAnnotations(true);
 
-  (outCache, outEnv) := Inst.instantiateClass(FCore.emptyCache(),
-    InnerOuter.emptyInstHierarchy, scode_program, inModelPath);
+  try
+    (outCache, outEnv) := Inst.instantiateClass(FCore.emptyCache(), InnerOuter.emptyInstHierarchy, scode_program, inModelPath);
+  else
+    failed := true;
+  end try;
 
   Config.setEvaluateParametersInAnnotations(eval_param);
   Flags.setConfigBool(Flags.CHECK_MODEL, check_model);
+  if failed then
+    fail();
+  end if;
 end buildEnvForGraphicProgramFull;
 
 protected function getAnnotationString

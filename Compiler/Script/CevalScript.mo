@@ -1700,17 +1700,18 @@ end getVariableNames;
 public function getPackageVersion
   input Absyn.Path path;
   input Absyn.Program p;
-  output String version;
+  output String version = "";
+protected
+  Boolean evalParamAnn;
 algorithm
-  version := matchcontinue (path,p)
-    case (_,_)
-      equation
-        Config.setEvaluateParametersInAnnotations(true);
-        Absyn.STRING(version) = Interactive.getNamedAnnotation(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-        Config.setEvaluateParametersInAnnotations(false);
-      then version;
-    else "";
-  end matchcontinue;
+  evalParamAnn := Config.getEvaluateParametersInAnnotations();
+  Config.setEvaluateParametersInAnnotations(true);
+  try
+    Absyn.STRING(version) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+  else
+    version := "";
+  end try;
+  Config.setEvaluateParametersInAnnotations(evalParamAnn);
 end getPackageVersion;
 
 protected function errorToValue
