@@ -6800,6 +6800,7 @@ protected
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.InlineData inlineData;
+  BackendDAE.Variables globalKnownVars;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
@@ -6844,10 +6845,13 @@ algorithm
   end if;
 
   // generate system for initialization
-  (outInitDAE, outUseHomotopy, outInitDAE_lambda0, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outUseHomotopy, outInitDAE_lambda0, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters, globalKnownVars) := Initialization.solveInitialSystem(dae);
 
   // use function tree from initDAE further for simDAE
   simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
+
+  // Set updated globalKnownVars
+  simDAE := setDAEGlobalKnownVars(simDAE, globalKnownVars);
 
   simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
   simDAE := Initialization.removeInitializationStuff(simDAE);

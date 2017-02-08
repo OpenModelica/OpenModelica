@@ -85,6 +85,7 @@ public function solveInitialSystem "author: lochel
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output list<BackendDAE.Var> outPrimaryParameters "already sorted";
   output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
+  output BackendDAE.Variables outGlobalKnownVars;
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.BackendDAE initdae;
@@ -116,7 +117,7 @@ algorithm
     //end if;
     execStat("inlineWhenForInitialization (initialization)");
 
-    (dae, initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
+    (dae, initVars, outPrimaryParameters, outAllPrimaryParameters, outGlobalKnownVars) := selectInitializationVariablesDAE(dae);
     // if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
       // BackendDump.dumpVarList(outPrimaryParameters, "selected primary parameters");
       // BackendDump.dumpVarList(outAllPrimaryParameters, "selected all primary parameters");
@@ -782,6 +783,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   output BackendDAE.Variables outInitVars;
   output list<BackendDAE.Var> outPrimaryParameters = {};
   output list<BackendDAE.Var> outAllPrimaryParameters = {};
+  output BackendDAE.Variables outGlobalKnownVars = dae.shared.globalKnownVars;
 protected
   BackendDAE.Variables allParameters, otherVariables;
   BackendDAE.EquationArray allParameterEqns;
@@ -844,6 +846,7 @@ algorithm
         otherVariables := BackendVariable.addVar(p, otherVariables);
         p := BackendVariable.setVarFixed(p, false);
         outInitVars := BackendVariable.addVar(p, outInitVars);
+        outGlobalKnownVars := BackendVariable.addVar(p, outGlobalKnownVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
         bindExp := BackendVariable.varBindExpStartValueNoFail(p);
