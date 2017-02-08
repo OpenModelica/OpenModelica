@@ -1492,6 +1492,14 @@ external "builtin";
 annotation(preferredView="text");
 end setCommandLineOptions;
 
+function getCommandLineOptions
+  "Returns all command line options who have non-default values as a string.
+   The format of the string is '--flag=value --flag2=value2'."
+  output String flags;
+external "builtin";
+annotation(preferredView="text");
+end getCommandLineOptions;
+
 function getConfigFlagValidOptions
   "Returns the list of valid options for a string config flag, and the description strings for these options if available"
   input String flag;

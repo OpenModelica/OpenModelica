@@ -943,6 +943,12 @@ algorithm
     case (cache,_,"setCommandLineOptions",_,st,_)
       then (cache,Values.BOOL(false),st);
 
+    case (cache, _, "getCommandLineOptions", {}, st, _)
+      then (cache, Values.STRING(Flags.unparseFlags()), st);
+
+    case (cache, _, "getCommandLineOptions", _, st, _)
+      then (cache, Values.BOOL(false), st);
+
     case (cache,_,"clearCommandLineOptions",{},st,_)
       equation
         Flags.resetDebugFlags();

@@ -1493,32 +1493,23 @@ end createDebugFlags;
 public function loadFlags
   "Loads the flags with getGlobalRoot. Creates a new flags structure if it
    hasn't been created yet."
-  output Flags outFlags;
+  input Boolean initialize = true;
+  output Flags flags;
+protected
+  array<Boolean> debug_flags;
+  array<FlagData> config_flags;
 algorithm
-  outFlags := matchcontinue()
-    local
-      array<Boolean> debug_flags;
-      array<FlagData> config_flags;
-      Flags flags;
-      Integer debug_count, config_count;
-
-    case ()
-      equation
-        outFlags = getGlobalRoot(Global.flagsIndex);
-      then
-        outFlags;
-
+  try
+    flags := getGlobalRoot(Global.flagsIndex);
+  else
+    if initialize then
+      List.fold(allDebugFlags, checkDebugFlag, 1);
+      flags := FLAGS(createDebugFlags(), createConfigFlags());
+      saveFlags(flags);
     else
-      equation
-        List.fold(allDebugFlags, checkDebugFlag, 1);
-        debug_flags = createDebugFlags();
-        config_flags = createConfigFlags();
-        flags = FLAGS(debug_flags, config_flags);
-        saveFlags(flags);
-      then
-        flags;
-
-  end matchcontinue;
+      flags := Flags.NO_FLAGS();
+    end if;
+  end try;
 end loadFlags;
 
 public function backupFlags
@@ -2934,6 +2925,92 @@ algorithm
     case STRING_DESC_OPTION(options) then List.map(options,Util.tuple21);
   end match;
 end getValidStringOptions;
+
+public
+function flagDataEq
+  input FlagData data1;
+  input FlagData data2;
+  output Boolean eq;
+algorithm
+  eq := match (data1, data2)
+    case (EMPTY_FLAG(), EMPTY_FLAG()) then true;
+    case (BOOL_FLAG(), BOOL_FLAG()) then data1.data == data2.data;
+    case (INT_FLAG(), INT_FLAG()) then data1.data == data2.data;
+    case (INT_LIST_FLAG(), INT_LIST_FLAG())
+      then List.isEqualOnTrue(data1.data, data2.data, intEq);
+    case (REAL_FLAG(), REAL_FLAG()) then data1.data == data2.data;
+    case (STRING_FLAG(), STRING_FLAG()) then data1.data == data2.data;
+    case (STRING_LIST_FLAG(), STRING_LIST_FLAG())
+      then List.isEqualOnTrue(data1.data, data2.data, stringEq);
+    case (ENUM_FLAG(), ENUM_FLAG())
+      then referenceEq(data1.validValues, data2.validValues) and
+           data1.data == data2.data;
+    else false;
+  end match;
+end flagDataEq;
+
+function flagDataString
+  input FlagData flagData;
+  output String str;
+algorithm
+  str := match flagData
+    case BOOL_FLAG() then boolString(flagData.data);
+    case INT_FLAG() then intString(flagData.data);
+    case INT_LIST_FLAG()
+      then List.toString(flagData.data, intString, "", "", ",", "", false);
+
+    case REAL_FLAG() then realString(flagData.data);
+    case STRING_FLAG() then flagData.data;
+    case STRING_LIST_FLAG() then stringDelimitList(flagData.data, ",");
+    case ENUM_FLAG() then Util.tuple21(listGet(flagData.validValues, flagData.data));
+    else "";
+  end match;
+end flagDataString;
+
+function unparseFlags
+  "Goes through all the existing flags, and each flag whose value differs from
+   the default is added to the output string as flag=value."
+  output String str = "";
+protected
+  Flags flags;
+  array<Boolean> debug_flags;
+  array<FlagData> config_flags;
+  list<String> strl = {};
+  String name;
+algorithm
+  try
+    FLAGS(debugFlags = debug_flags, configFlags = config_flags) := loadFlags(false);
+  else
+    str := "";
+    return;
+  end try;
+
+  for f in allDebugFlags loop
+    if f.default <> debug_flags[f.index] then
+      strl := f.name :: strl;
+    end if;
+  end for;
+
+  if not listEmpty(strl) then
+    str := "-d=" + stringDelimitList(strl, ",");
+  end if;
+
+  strl := {};
+  for f in allConfigFlags loop
+    if not flagDataEq(f.defaultValue, config_flags[f.index]) then
+      name := match f.shortname
+        case SOME(name) then " -" + name;
+        else " --" + f.name;
+      end match;
+
+      strl := (name + "=" + flagDataString(config_flags[f.index])) :: strl;
+    end if;
+  end for;
+
+  if not listEmpty(strl) then
+    str := str + stringAppendList(strl);
+  end if;
+end unparseFlags;
 
 annotation(__OpenModelica_Interface="util");
 end Flags;
