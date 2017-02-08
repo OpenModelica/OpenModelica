@@ -1,0 +1,37 @@
+// name: getCommandLineOptions
+// keywords: 
+// status: correct
+//
+// Tests the getCommandLineOptions API function.
+//
+
+// Set the default rtest flags to something predictable.
+setCommandLineOptions("--running-testsuite=\"\" -r=900 --locale=C");
+
+// The actual test:
+getCommandLineOptions();
+setCommandLineOptions("-d=failtrace");
+getCommandLineOptions();
+setCommandLineOptions("--showAnnotations");
+getCommandLineOptions();
+setCommandLineOptions("-d=ceval");
+getCommandLineOptions();
+setCommandLineOptions("--postOptModules=dumpDAE,dumpDAEXML");
+getCommandLineOptions();
+clearCommandLineOptions();
+getCommandLineOptions();
+
+// Result:
+// true
+// " -r=900 --locale=C --running-testsuite=\"\""
+// true
+// "-d=failtrace -r=900 --locale=C --running-testsuite=\"\""
+// true
+// "-d=failtrace -r=900 --locale=C --showAnnotations=true --running-testsuite=\"\""
+// true
+// "-d=ceval,failtrace -r=900 --locale=C --showAnnotations=true --running-testsuite=\"\""
+// true
+// "-d=ceval,failtrace -r=900 --locale=C --postOptModules=dumpDAE,dumpDAEXML --showAnnotations=true --running-testsuite=\"\""
+// true
+// ""
+// endResult

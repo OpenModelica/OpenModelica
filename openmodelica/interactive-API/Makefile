@@ -30,6 +30,7 @@ ForStatement6.mos \
 ForStatement7.mos \
 ForStatement8.mos \
 getClassNames.mos \
+getCommandLineOptions.mos \
 GetComponents.mos \
 getDialogAnnotation.mos \
 getIconAnnotation.mos \
