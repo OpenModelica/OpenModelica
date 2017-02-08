@@ -209,14 +209,15 @@ void SimulationDialog::setUpForm()
   QStringList jacobianMethods, jacobianMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
   mpJacobianComboBox = new QComboBox;
+  mpJacobianComboBox->addItem("");
+  mpJacobianComboBox->setItemData(0, "", Qt::ToolTipRole);
   mpJacobianComboBox->addItems(jacobianMethods);
   for (int i = 0 ; i < jacobianMethodsDesc.size() ; i++) {
-    mpJacobianComboBox->setItemData(i, jacobianMethodsDesc.at(i), Qt::ToolTipRole);
+    mpJacobianComboBox->setItemData(i + 1, jacobianMethodsDesc.at(i), Qt::ToolTipRole);
   }
   connect(mpJacobianComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateJacobianToolTip(int)));
-  updateJacobianToolTip(0);
   // dassl options
-  mpDasslOptionsGroupBox = new QGroupBox(tr("DASSL Options"));
+  mpDasslOptionsGroupBox = new QGroupBox(tr("DASSL/IDA Options"));
   // no root finding
   mpDasslRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
   mpDasslRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of dassl"));
@@ -908,7 +909,9 @@ SimulationOptions SimulationDialog::createSimulationOptions()
                          .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=").append(simulationOptions.getResultFileName()));
   // jacobian
-  simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->currentText()));
+  if (!mpJacobianComboBox->currentText().isEmpty()) {
+    simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->currentText()));
+  }
   // dassl options
   if (mpDasslOptionsGroupBox->isEnabled()) {
     // dassl root finding
@@ -1402,7 +1405,7 @@ void SimulationDialog::updateMethodToolTip(int index)
  */
 void SimulationDialog::enableDasslOptions(QString method)
 {
-  if (method.compare("dassl") == 0) {
+  if (method.compare("dassl") == 0 || method.compare("ida") == 0) {
     mpDasslOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
   } else {
