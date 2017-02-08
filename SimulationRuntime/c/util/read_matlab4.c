@@ -91,6 +91,7 @@ int mat_element_length(int type)
   int t = (type%10);
   if(m) return -1; /* We require IEEE Little Endian for now */
   if(o) return -1; /* Reserved number; forced 0 */
+  if(t == 1 && p == 0) return 8; /* Double text matrix? */
   if(t == 1 && p != 5) return -1; /* Text matrix? Force element length=1 */
   if(t == 2) return -1; /* Sparse matrix fails */
   switch (p) {
@@ -152,6 +153,65 @@ void remSpaces(char *ch){
     }
 }
 
+/* Read n elements into str; convert from double if necessary, etc */
+static int read_chars(int type, size_t n, FILE *file, char *str)
+{
+  int p = (type%100)/10;
+  if (p == 0) { /* Double */
+    double d=0.0;
+    int k;
+    for (k=0; k<n; k++) {
+      if (fread(&d, sizeof(double), 1, file) != 1) {
+        return 1;
+      }
+      str[k] = (char) d;
+    }
+    return 0;
+  } else if (p == 5) { /* Byte */
+    return fread(str,n,1,file) != 1;
+  }
+  return 1;
+}
+
+static int read_int32(int type, size_t n, FILE *file, int32_t *val)
+{
+  int p = (type%100)/10;
+  if (p == 0) { /* Double */
+    double d=0.0;
+    int k;
+    for (k=0; k<n; k++) {
+      if (fread(&d, sizeof(double), 1, file) != 1) {
+        return 1;
+      }
+      val[k] = (int32_t) d;
+    }
+    return 0;
+  } else if (p == 2) { /* int32 */
+    return fread(val,n*sizeof(int32_t),1,file) != 1;
+  }
+  return 1;
+}
+
+static int read_double(int type, size_t n, FILE *file, double *val)
+{
+  int p = (type%100)/10;
+  if (p == 0) { /* Double */
+    return fread(val,n*sizeof(double),1,file) != 1;
+  } else if (p == 1) { /* float */
+    float f=0.0;
+    int k;
+    for (k=0; k<n; k++) {
+      if (fread(&f, sizeof(float), 1, file) != 1) {
+        return 1;
+      }
+      val[k] = (double) f;
+    }
+    return 0;
+  }
+  return 1;
+}
+
+
 /* Returns 0 on success; the error message on error */
 const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader)
 {
@@ -172,16 +232,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
     size_t matrix_length,element_length;
     char *name;
-    reader->doublePrecision = 1;
     if(nr != 1) return "Corrupt header (1)";
-    /* fprintf(stderr, "Found matrix type=%04d mrows=%d ncols=%d imagf=%d namelen=%d\n", hdr.type, hdr.mrows, hdr.ncols, hdr.imagf, hdr.namelen); */
-    if(hdr.type != matrixTypes[i])
-    {
-      if((i > 3) && (hdr.type == 10))
-        reader->doublePrecision = 0;
-      else
-        return "Matrix type mismatch";
-    }
+    /* fprintf(stderr, "Found matrix %d=%s type=%04d mrows=%d ncols=%d imagf=%d namelen=%d\n", i, name, hdr.type, hdr.mrows, hdr.ncols, hdr.imagf, hdr.namelen); */
     if(hdr.imagf > 1) return "Matrix uses imaginary numbers";
     if((element_length = mat_element_length(hdr.type)) == -1) return "Could not determine size of matrix elements";
     name = (char*) malloc(hdr.namelen);
@@ -209,8 +261,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       char tmp[45];
       if(hdr.mrows != 4) return "Aclass matrix does not have 4 rows";
       if(hdr.ncols != 11) return "Aclass matrix does not have 11 cols";
-      if(fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
-        return "Corrupt header: Aclass matrix";
+      if (read_chars(hdr.type, hdr.ncols*hdr.mrows, reader->file, tmp)) {
+        return "Could not read: Aclass matrix as text";
       }
       for(k=0; k<hdr.mrows; k++) {
         char row[12];
@@ -230,7 +282,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
             /* fprintf(stderr, "use binNormal format\n"); */
             binTrans = 0;
           } else {
-            fprintf(stderr, "row 3: %s\n", row);
+            /* fprintf(stderr, "row 3: %s\n", row); */
             return "Aclass matrix does not match binTrans or binNormal format";
           }
         }
@@ -247,20 +299,21 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==1) {
         for(k=0; k<hdr.ncols; k++) {
           reader->allInfo[k].name = (char*) malloc(hdr.mrows+1);
-          if(fread(reader->allInfo[k].name,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
+          if (read_chars(hdr.type, hdr.mrows, reader->file, reader->allInfo[k].name)) {
+            return "Could not read: names matrix as text";
+          }
           reader->allInfo[k].name[hdr.mrows] = '\0';
           reader->allInfo[k].isParam = -1;
           reader->allInfo[k].index = -1;
           remSpaces(reader->allInfo[k].name);
-          /* fprintf(stderr, "    Adding variable %s\n", reader->allInfo[k].name); */
+          /* fprintf(stderr, "    Adding variable '%s'\n", reader->allInfo[k].name); */
          }
       }
       if(binTrans==0) {
-      uint32_t j;
-      char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
-        if(fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
-          free(tmp);
-          return "Corrupt header: names matrix";
+        uint32_t j;
+        char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
+        if (read_chars(hdr.type, hdr.ncols*hdr.mrows, reader->file, tmp)) {
+          return "Could not read: names matrix as text";
         }
         for(k=0; k<hdr.mrows; k++) {
           reader->allInfo[k].name = (char*) malloc(hdr.ncols+1);
@@ -271,7 +324,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           reader->allInfo[k].isParam = -1;
           reader->allInfo[k].index = -1;
           remSpaces(reader->allInfo[k].name);
-          /* fprintf(stderr, "    Adding variable %s\n", reader->allInfo[k].name);  */
+          /* fprintf(stderr, "    Adding variable '%s'\n", reader->allInfo[k].name); */
         }
         free(tmp);
       }
@@ -282,15 +335,17 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==1) {
         for(k=0; k<hdr.ncols; k++) {
           reader->allInfo[k].descr = (char*) malloc(hdr.mrows+1);
-          if(fread(reader->allInfo[k].descr,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
+          if (read_chars(hdr.type, hdr.mrows, reader->file, reader->allInfo[k].descr)) {
+            return "Could not read: description matrix as text";
+          }
           reader->allInfo[k].descr[hdr.mrows] = '\0';
-         }
+          /* fprintf(stderr, "    Adding description %s\n", reader->allInfo[k].descr); */
+        }
       } else if(binTrans==0) {
         uint32_t j;
         char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
-        if(fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
-          free(tmp);
-          return "Corrupt header: names matrix";
+        if (read_chars(hdr.type, hdr.ncols*hdr.mrows, reader->file, tmp)) {
+          return "Could not read: description matrix as text";
         }
         for(k=0; k<hdr.mrows; k++) {
           reader->allInfo[k].descr = (char*) malloc(hdr.ncols+1);
@@ -298,7 +353,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
             reader->allInfo[k].descr[j] = tmp[j*hdr.mrows+k];
           }
           reader->allInfo[k].descr[hdr.ncols] = '\0';
-          /* fprintf(stderr, "    Adding variable %s\n", reader->allInfo[k].name); */
+          /* fprintf(stderr, "    Adding description %s\n", reader->allInfo[k].descr); */
         }
         free(tmp);
       }
@@ -307,7 +362,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     case 3: { /* "dataInfo" */
       unsigned int k;
       int32_t *tmp = (int32_t*) malloc(sizeof(int32_t)*hdr.ncols*hdr.mrows);
-      if(1 != fread(tmp,sizeof(int32_t)*hdr.ncols*hdr.mrows,1,reader->file)) {
+      if (read_int32(hdr.type, hdr.ncols*hdr.mrows, reader->file, tmp)) {
         free(tmp); tmp=NULL;
         return "Corrupt header: dataInfo matrix";
       }
@@ -331,72 +386,50 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       break;
     }
     case 4: { /* "data_1" */
+      unsigned int k;
       if(binTrans==1) {
-        unsigned int k;
         if(hdr.mrows == 0) return "data_1 matrix does not contain at least 1 variable";
         if(hdr.ncols != 2 && hdr.ncols != 1) return "data_1 matrix does not have 1 or 2 cols";
         reader->nparam = hdr.mrows;
-        if(reader->doublePrecision==1)
-        {
-          reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-          if(1 != fread(reader->params,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
-        }
-        else
-        {
-          float *buffer = (float*) malloc(hdr.mrows*hdr.ncols*sizeof(float));
-          reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-          if(1 != fread(buffer,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
-          for(k=0;k<hdr.mrows*hdr.ncols;k++)
-          {
-            reader->params[k] = buffer[k];
-          }
-          free(buffer);
+        reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
+        if (read_double(hdr.type, hdr.mrows*hdr.ncols, reader->file, reader->params)) {
+          return "Corrupt header: data_1 matrix";
         }
        /* fprintf(stderr, "    startTime = %.6g\n", reader->params[0]);
         * fprintf(stderr, "    stopTime = %.6g\n", reader->params[1]); */
-        for(k=1; k<reader->nparam; k++) {
-          if(hdr.ncols == 2 && reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
-          /* fprintf(stderr, "    Parameter[%d] = %.6g\n", k, reader->params[k]); */
-        }
       }
       if(binTrans==0) {
-        unsigned int k,j;
+        unsigned int j;
         if(hdr.ncols == 0) return "data_1 matrix does not contain at least 1 variable";
         if(hdr.mrows != 2 && hdr.mrows != 1) return "data_1 matrix does not have 1 or 2 rows";
         reader->nparam = hdr.ncols;
-        if(reader->doublePrecision==1)
-        {
-          double *tmp=NULL;
-          tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-          reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-          if(1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
-          for(k=0; k<hdr.mrows; k++) {
-            for(j=0; j<hdr.ncols; j++) {
-              reader->params[k*hdr.ncols+j] = tmp[k +j*hdr.mrows];
-            }
+        double *tmp=NULL;
+        tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
+        reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
+        if (read_double(hdr.type, hdr.mrows*hdr.ncols, reader->file, tmp)) {
+          return "Corrupt header: data_1 matrix";
+        }
+        for(k=0; k<hdr.mrows; k++) {
+          for(j=0; j<hdr.ncols; j++) {
+            reader->params[k*hdr.ncols+j] = tmp[k +j*hdr.mrows];
           }
-          free(tmp);
         }
-        else
-        {
-          float *tmp=NULL;
-          tmp = (float*) malloc(hdr.mrows*hdr.ncols*sizeof(float));
-          reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-          if(1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
-          for(k=0; k<hdr.mrows; k++) {
-            for(j=0; j<hdr.ncols; j++) {
-              reader->params[k*hdr.ncols+j] = tmp[k +j*hdr.mrows];
-            }
-          }
-          free(tmp);
-        }
-        for(k=1; k<reader->nparam; k++) {
-          if(hdr.mrows == 2 && reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
-        }
+        free(tmp);
+      }
+      for(k=1; k<reader->nparam; k++) {
+        if(hdr.mrows == 2 && reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
       }
       break;
     }
     case 5: { /* "data_2" */
+      int p = (hdr.type / 10)%10;
+      if (p==0) {
+        reader->doublePrecision=1;
+      } else if (p==1) {
+        reader->doublePrecision=0;
+      } else {
+        return "data_2 matrix not in double/float representation";
+      }
       if(binTrans==1) {
         reader->nrows = hdr.ncols;
         /* Allow empty matrix; it's not a complete file, but ok... */
@@ -414,42 +447,27 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         reader->nvar = hdr.ncols;
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
-        if(reader->doublePrecision==1)
-        {
-          double *tmp=NULL;
-          tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
-          if(1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_2 matrix";
-          for(k=0; k<hdr.ncols; k++) {
-            reader->vars[k] = (double*) malloc(hdr.mrows*sizeof(double));
-            for(j=0; j<hdr.mrows; j++) {
-              reader->vars[k][j] = tmp[j+k*hdr.mrows];
-            }
-          }
-          for(k=reader->nvar; k<reader->nvar*2; k++) {
-            reader->vars[k] = (double*) malloc(hdr.mrows*sizeof(double));
-            for(j=0; j<hdr.mrows; j++) {
-              reader->vars[k][j] = -reader->vars[k-reader->nvar][j];
-            }
-          }
-          free(tmp);
-        } else {
-          float *tmp=NULL;
-          tmp = (float*) malloc(hdr.mrows*hdr.ncols*sizeof(float));
-          if(1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_2 matrix";
-          for(k=0; k<hdr.ncols; k++) {
-            reader->vars[k] = (double*) malloc(hdr.mrows*sizeof(double));
-            for(j=0; j<hdr.mrows; j++) {
-              reader->vars[k][j] = tmp[j+k*hdr.mrows];
-            }
-          }
-          for(k=reader->nvar; k<reader->nvar*2; k++) {
-            reader->vars[k] = (double*) malloc(hdr.mrows*sizeof(double));
-            for(j=0; j<hdr.mrows; j++) {
-              reader->vars[k][j] = -reader->vars[k-reader->nvar][j];
-            }
-          }
-          free(tmp);
+
+
+        double *tmp=NULL;
+        tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
+        if (read_double(hdr.type, hdr.mrows*hdr.ncols, reader->file, tmp)) {
+          return "Corrupt header: data_2 matrix";
         }
+        for(k=0; k<hdr.ncols; k++) {
+          reader->vars[k] = (double*) malloc(hdr.mrows*sizeof(double));
+          for(j=0; j<hdr.mrows; j++) {
+            reader->vars[k][j] = tmp[j+k*hdr.mrows];
+          }
+        }
+        for(k=reader->nvar; k<reader->nvar*2; k++) {
+          reader->vars[k] = (double*) malloc(hdr.mrows*sizeof(double));
+          for(j=0; j<hdr.mrows; j++) {
+            reader->vars[k][j] = -reader->vars[k-reader->nvar][j];
+          }
+        }
+        free(tmp);
+
         if(-1==fseek(reader->file,matrix_length,SEEK_CUR)) return "Corrupt header: data_2 matrix";
       }
       break;
