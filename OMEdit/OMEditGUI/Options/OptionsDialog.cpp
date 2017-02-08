@@ -967,14 +967,14 @@ void OptionsDialog::saveGraphicalViewsSettings()
 //! Saves the Simulation section settings to omedit.ini
 void OptionsDialog::saveSimulationSettings()
 {
+  // clear command line options before saving new ones
+  MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
   // save matching algorithm
   mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   // save index reduction
   mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
-  // clear command line options before saving new ones
-  MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
   // save +simCodeTarget
   mpSettings->setValue("simulation/targetLanguage", mpSimulationPage->getTargetLanguageComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));

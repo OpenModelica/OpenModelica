@@ -801,6 +801,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
  */
 bool SimulationDialog::translateModel(QString simulationParameters)
 {
+  // reset simulation setting
+  OptionsDialog::instance()->saveSimulationSettings();
   // check reset messages number before simulation option
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
