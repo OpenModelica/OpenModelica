@@ -947,7 +947,7 @@ algorithm
       then (cache, ValuesUtil.makeStringArray(Flags.unparseFlags()), st);
 
     case (cache, _, "getCommandLineOptions", _, st, _)
-      then (cache, Values.BOOL(false), st);
+      then (cache, Values.META_FAIL(), st);
 
     case (cache,_,"clearCommandLineOptions",{},st,_)
       equation
