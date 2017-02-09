@@ -133,14 +133,14 @@ interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
 %.stamp.mo:
 	@mkdir -p build
 	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; className := $$TypeName($(@:$(GEN_DIR)%.stamp.mo=%)); runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
-	$(OMC) -n=1 $@.mos
+	$(OMC) -g=MetaModelica -n=1 $@.mos
 	@touch $@
 %.interface.mo: %.stamp.mo
 
 ifeq ($(wildcard $(OMC)),)
 else
 Makefile.sources: LoadCompilerSources.mos MakeSources.mos
-	$(OMC) -n=1 MakeSources.mos
+	$(OMC) -g=MetaModelica -n=1 MakeSources.mos
 	mv Makefile.sources.tmp Makefile.sources
 	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
 
@@ -148,17 +148,17 @@ LoadCompilerInterface.mos: Makefile.sources
 	@test -f $@ || (rm -f $< && $(MAKE) -f $(defaultMakefileTarget) $<)
 Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
 	@rm -f $@
-	$(OMC) -n=1 $<
+	$(OMC) -g=MetaModelica -n=1 $<
 endif
 
 $(GEN_DIR)%.stamp:
 	@test ! -z "$^" || (echo Empty dependencies for $@ ; false)
 	@echo 'echo(false);files:={"'`echo $^ | sed 's/ /","/g'`'"};mainClass:=$$TypeName('`basename $@ | sed "s/[.]stamp//"`');runScript("CompileFile.mos");print("Something went horribly wrong for '$@'\\n");exit(1);' > $@.mos
-	$(OMC) -n=1 $(OMC_EXTRA_FLAGS) $@.mos
+	$(OMC) -g=MetaModelica -n=1 $(OMC_EXTRA_FLAGS) $@.mos
 	@touch $@
 
 $(GEN_DIR)_main.c:
-	$(OMC) GenerateEntryPoint.mos
+	$(OMC) -g=MetaModelica GenerateEntryPoint.mos
 
 $(GEN_DIR)_main.o: $(GEN_DIR)_main.c
 	$(CC) -DOMC_ENTRYPOINT_STATIC= -c $(GEN_DIR)_main.c -o  $(GEN_DIR)_main.o $(CFLAGS) $(CPPFLAGS)

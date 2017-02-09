@@ -4733,7 +4733,6 @@ algorithm
 
     case (e, t1 as DAE.T_ARRAY(), DAE.T_METABOXED(ty = t2), _)
       equation
-        // true = Config.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
         t2 = DAE.T_METABOXED(t1);
         e = Expression.boxExp(e);
@@ -5558,7 +5557,7 @@ algorithm
   out := match ity
     local
       list<DAE.Type> tys;
-      Type ty;
+      Type t, ty;
 
     case DAE.T_METABOXED() then unboxedType(ity.ty);
 
@@ -5585,8 +5584,12 @@ algorithm
       equation
         ty = unboxedType(ity.ty);
         ty = boxIfUnboxedType(ty);
-      then
-        DAE.T_METAARRAY(ty);
+      then DAE.T_METAARRAY(ty);
+
+    case t as DAE.T_ARRAY()
+      equation
+        t.ty = unboxedType(t.ty);
+      then t;
 
     else ity;
   end match;
@@ -5762,7 +5765,7 @@ bind polymorphic variabled. Used when elaborating calls."
 protected
   constant Boolean debug=false;
 algorithm
-  if (if not Config.acceptMetaModelicaGrammar() then true else listEmpty(getAllInnerTypesOfType(expected, isPolymorphic))) then
+  if /*(if not Config.acceptMetaModelicaGrammar() then true else*/ listEmpty(getAllInnerTypesOfType(expected, isPolymorphic)) then
     (exp,actual) := matchType(exp,actual,expected,printFailtrace);
   else
     if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + "\n"); end if;
@@ -6043,6 +6046,11 @@ algorithm
         tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
         tys = List.map(tys, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys);
+
+    case (t1 as DAE.T_ARRAY(),_,_,_)
+      equation
+        t1.ty = fixPolymorphicRestype2(t1.ty,prefix,bindings, info);
+      then t1;
 
     case (t1 as DAE.T_TUPLE(),_,_,_)
       equation
@@ -6744,6 +6752,9 @@ algorithm
       equation
         true = List.isEqualOnTrue(names1, names2, stringEq);
       then inBindings;
+
+    case (DAE.T_ARRAY(ty = ty1),DAE.T_ARRAY(ty = ty2))
+      then subtypePolymorphic(ty1,ty2,envPath,inBindings);
 
     case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2))
       then subtypePolymorphic(ty1,ty2,envPath,inBindings);

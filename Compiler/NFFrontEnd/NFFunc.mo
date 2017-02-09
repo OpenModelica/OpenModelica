@@ -1188,7 +1188,7 @@ algorithm
         is_impure := if is_impure then true else SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
       then
         DAE.FUNCTION_ATTRIBUTES(inline_ty, is_om_pure, is_impure, false,
-          DAE.FUNCTION_BUILTIN(SOME(name)), DAE.FP_NON_PARALLEL());
+          DAE.FUNCTION_BUILTIN(SOME(name), SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments")), DAE.FP_NON_PARALLEL());
 
     // Parallel function: there are some builtin functions.
     case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
@@ -1200,7 +1200,7 @@ algorithm
         is_om_pure := not SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_Impure");
       then
         DAE.FUNCTION_ATTRIBUTES(inline_ty, is_om_pure, false, false,
-          DAE.FUNCTION_BUILTIN(SOME(name)), DAE.FP_PARALLEL_FUNCTION());
+          DAE.FUNCTION_BUILTIN(SOME(name), SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments")), DAE.FP_PARALLEL_FUNCTION());
 
     // Parallel function: non-builtin.
     case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
@@ -1285,13 +1285,13 @@ algorithm
       algorithm
         Static.elabBuiltinHandler(id);
       then
-        (DAE.FUNCTION_BUILTIN(SOME(id)), true, funcName);
+        (DAE.FUNCTION_BUILTIN(SOME(id), false), true, funcName);
 
     case (Absyn.QUALIFIED("OpenModelicaInternal", Absyn.IDENT(name = id)), _)
       algorithm
         Static.elabBuiltinHandlerInternal(id);
       then
-        (DAE.FUNCTION_BUILTIN(SOME(id)), true, funcName);
+        (DAE.FUNCTION_BUILTIN(SOME(id), false), true, funcName);
 
     case (Absyn.FULLYQUALIFIED(), _)
       algorithm
@@ -1300,7 +1300,7 @@ algorithm
         (builtin, isBuiltin, funcName.path);
 
     case (Absyn.QUALIFIED("Connection", Absyn.IDENT("isRoot")), _)
-      then (DAE.FUNCTION_BUILTIN(NONE()), true, funcName);
+      then (DAE.FUNCTION_BUILTIN(NONE(), false), true, funcName);
 
     else (DAE.FUNCTION_NOT_BUILTIN(), false, funcName);
   end matchcontinue;

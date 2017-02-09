@@ -1044,10 +1044,10 @@ partial function EvaluateSingletonTypeFunction
   output Type ty;
 end EvaluateSingletonTypeFunction;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
 
 public
 uniontype FunctionAttributes
@@ -1068,6 +1068,7 @@ uniontype FunctionBuiltin
 
   record FUNCTION_BUILTIN "Function is builtin"
     Option<String> name;
+    Boolean unboxArgs;
   end FUNCTION_BUILTIN;
 
   record FUNCTION_BUILTIN_PTR "The function has a body, but its function pointer is builtin. This means inline code+optimized pointer if need be."

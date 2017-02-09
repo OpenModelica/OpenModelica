@@ -4567,63 +4567,6 @@ algorithm
   end match;
 end elabBuiltinMinMaxCommon;
 
-protected function elabBuiltinDelay "
-Author BZ
-TODO: implement,
-fix types, so we can have integer as input
-verify that the input is correct."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> inPosArgs;
-  input list<Absyn.NamedArg> inNamedArgs;
-  input Boolean inImplicit;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-protected
-  DAE.Type ty;
-algorithm
-  if listLength(inPosArgs) == 2 then
-    ty := DAE.T_FUNCTION(
-      {DAE.FUNCARG("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-       DAE.FUNCARG("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      Absyn.IDENT("delay"));
-  else
-    ty := DAE.T_FUNCTION(
-      {DAE.FUNCARG("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-       DAE.FUNCARG("delayTime",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-       DAE.FUNCARG("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-      DAE.T_REAL_DEFAULT,
-      DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-      Absyn.IDENT("delay"));
-  end if;
-
-  (outCache, SOME((outExp, outProperties))) := elabCallArgs3(inCache, inEnv, {ty},
-      Absyn.IDENT("delay"), inPosArgs, inNamedArgs, inImplicit, NONE(), inPrefix, inInfo);
-  outExp := Expression.traverseExpDummy(outExp, elabBuiltinDelay2);
-end elabBuiltinDelay;
-
-protected function elabBuiltinDelay2
-  input DAE.Exp exp;
-  output DAE.Exp oexp;
-algorithm
-  oexp := match exp
-    local
-      Absyn.Path path;
-      DAE.Exp e1,e2;
-      DAE.CallAttributes attr;
-
-    case DAE.CALL(path as Absyn.IDENT("delay"), {e1,e2}, attr)
-      then DAE.CALL(path, {e1,e2,e2}, attr);
-
-    else exp;
-  end match;
-end elabBuiltinDelay2;
-
 protected function elabBuiltinClock
   "Author: BTH
    This function elaborates the builtin Clock constructor Clock(..)."
@@ -4752,45 +4695,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinClock;
 
-protected function elabBuiltinPrevious "
-Author: BTH
-This function elaborates the builtin operator previous(u)."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> args;
-  input list<Absyn.NamedArg> nargs;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
-    local
-      DAE.Exp call, u;
-      DAE.Type ty1,ty2,ty;
-      Boolean impl;
-      FCore.Graph env;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      DAE.Properties prop1, prop;
-      Absyn.Exp au;
-
-    case (cache,env,{au},{},impl,pre,_)
-      equation
-        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
-        ty1 = Types.arrayElementType(Types.getPropType(prop1));
-        ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-                 ty1,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                Absyn.IDENT("previous"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("previous"), args, nargs, impl, NONE(), pre, info);
-      then (cache, call, prop);
-  end match;
-end elabBuiltinPrevious;
-
 protected function elabBuiltinHold "
 Author: BTH
 This function elaborates the builtin operator hold(u)."
@@ -4915,135 +4819,6 @@ algorithm
 
   end matchcontinue;
 end elabBuiltinSample;
-
-
-protected function elabBuiltinSubSample "
-Author: BTH
-This function elaborates the builtin operator subSample(u,factor)."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> args;
-  input list<Absyn.NamedArg> nargs;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
-    local
-      DAE.Exp call,u,factor;
-      DAE.Type ty1,ty2,ty;
-      Boolean impl;
-      FCore.Graph env;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      DAE.Properties prop1,prop2,prop;
-      Absyn.Exp au,afactor;
-      Values.Value val;
-
-    case (cache,env,{au},{},impl,pre,_)
-      equation
-        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
-        afactor = Absyn.INTEGER(0);
-        ty1 = Types.arrayElementType(Types.getPropType(prop1));
-        ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-                ty1,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                Absyn.IDENT("subSample"));
-        // Pretend that subSample(x) was subSample(x,0) since "0" is the default value if no argument given
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("subSample"),
-               listReverse(afactor :: args), nargs, impl, NONE(), pre, info);
-      then (cache, call, prop);
-
-    case (cache,env,{au,afactor},{},impl,pre,_)
-      equation
-        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
-        (cache, factor, prop2, _) = elabExpInExpression(cache,env,afactor,impl,NONE(),true,pre,info);
-        (factor,_) = Types.matchType(factor,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // evaluate and check if factor >= 0 (rfranke)
-        (cache, val, _) = Ceval.ceval(cache, env, factor, false, NONE(), Absyn.MSG(info), 0);
-        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
-          Error.WRONG_VALUE_OF_ARG, {"subSample", "factor", ValuesUtil.valString(val), ">= 0"}, info);
-        afactor = Absyn.INTEGER(ValuesUtil.valueInteger(val));
-        ty1 = Types.arrayElementType(Types.getPropType(prop1));
-        ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-                 ty1,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                Absyn.IDENT("subSample"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("subSample"), {au, afactor}, nargs, impl, NONE(), pre, info);
-      then (cache, call, prop);
-  end match;
-end elabBuiltinSubSample;
-
-protected function elabBuiltinSuperSample "
-Author: BTH
-This function elaborates the builtin operator superSample(u,factor)."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> args;
-  input list<Absyn.NamedArg> nargs;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
-    local
-      DAE.Exp call,u,factor;
-      DAE.Type ty1,ty2,ty;
-      Boolean impl;
-      FCore.Graph env;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      DAE.Properties prop1,prop2,prop;
-      Absyn.Exp au,afactor;
-      Values.Value val;
-
-    case (cache,env,{au},{},impl,pre,_)
-      equation
-        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
-        afactor = Absyn.INTEGER(0);
-        ty1 = Types.arrayElementType(Types.getPropType(prop1));
-        ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-                ty1,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                Absyn.IDENT("superSample"));
-        // Pretend that superSample(x) was superSample(x,0) since "0" is the default value if no argument given
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("superSample"),
-               listReverse(afactor :: args), nargs, impl, NONE(), pre, info);
-      then (cache, call, prop);
-
-    case (cache,env,{au,afactor},{},impl,pre,_)
-      equation
-        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
-        (cache, factor, prop2, _) = elabExpInExpression(cache,env,afactor,impl,NONE(),true,pre,info);
-        (factor,_) = Types.matchType(factor,Types.getPropType(prop2),DAE.T_INTEGER_DEFAULT,true);
-        // evaluate and check if factor >= 0 (rfranke)
-        (cache, val, _) = Ceval.ceval(cache, env, factor, false, NONE(), Absyn.MSG(info), 0);
-        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
-          Error.WRONG_VALUE_OF_ARG, {"superSample", "factor", ValuesUtil.valString(val), ">= 0"}, info);
-        afactor = Absyn.INTEGER(ValuesUtil.valueInteger(val));
-        ty1 = Types.arrayElementType(Types.getPropType(prop1));
-        ty =  DAE.T_FUNCTION(
-                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 DAE.FUNCARG("factor",DAE.T_INTEGER_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
-                 ty1,
-                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
-                Absyn.IDENT("superSample"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("superSample"), {au, afactor}, nargs, impl, NONE(), pre, info);
-      then (cache, call, prop);
-  end match;
-end elabBuiltinSuperSample;
 
 protected function elabBuiltinShiftSample "
 Author: BTH
@@ -5720,37 +5495,6 @@ algorithm
   (outCache, outExp, outProperties) := verifyBuiltInHandlerType(inCache, inEnv,
     inPosArgs, inImplicit, Types.isEnumeration, "Integer", inPrefix, inInfo);
 end elabBuiltinIntegerEnum;
-
-protected function elabBuiltinDiagonal "This function elaborates on the builtin operator diagonal, creating a
-  matrix with a value of the diagonal. The other elements are zero."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> inPosArgs;
-  input list<Absyn.NamedArg> inNamedArgs;
-  input Boolean inImplicit;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-protected
-  DAE.Exp exp;
-  list<DAE.Exp> expl;
-  DAE.Properties prop;
-  DAE.Dimension dim;
-  DAE.Type arr_ty, ty;
-  DAE.Const c;
-algorithm
-  (outCache, exp, prop) := elabExpInExpression(inCache, inEnv,
-    listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
-  DAE.PROP(DAE.T_ARRAY(dims = {dim}, ty = arr_ty), c) := prop;
-
-  ty := DAE.T_ARRAY(DAE.T_ARRAY(arr_ty, {dim}), {dim});
-  outProperties := DAE.PROP(ty, c);
-  ty := Types.simplifyType(ty);
-
-  outExp := Expression.makePureBuiltinCall("diagonal", {exp}, ty);
-end elabBuiltinDiagonal;
 
 protected function elabBuiltinSimplify "This function elaborates the simplify function.
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be
@@ -6808,7 +6552,6 @@ public function elabBuiltinHandler
   end HandlerFunc;
 algorithm
   outHandler := match (inIdent)
-    case "delay" then elabBuiltinDelay;
     case "smooth" then elabBuiltinSmooth;
     case "size" then elabBuiltinSize;
     case "ndims" then elabBuiltinNDims;
@@ -6826,7 +6569,6 @@ algorithm
     case "firstTick" then elabBuiltinFirstTick;
     case "interval" then elabBuiltinInterval;
     case "boolean" then elabBuiltinBoolean;
-    case "diagonal" then elabBuiltinDiagonal;
     case "noEvent" then elabBuiltinNoevent;
     case "edge" then elabBuiltinEdge;
     case "der" then elabBuiltinDer;
@@ -6852,22 +6594,10 @@ algorithm
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinClock;
-    case "previous"
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then elabBuiltinPrevious;
     case "hold"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinHold;
-    case "subSample"
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then elabBuiltinSubSample;
-    case "superSample"
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then elabBuiltinSuperSample;
     case "shiftSample"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
@@ -6972,23 +6702,21 @@ algorithm
     case (Absyn.IDENT(name = id),_)
       equation
         elabBuiltinHandler(id);
-      then
-        (DAE.FUNCTION_BUILTIN(SOME(id)), true, inPath);
+      then (DAE.FUNCTION_BUILTIN(SOME(id), false), true, inPath);
 
     case (Absyn.QUALIFIED("OpenModelicaInternal", Absyn.IDENT(name = id)), _)
       equation
         elabBuiltinHandlerInternal(id);
-      then
-        (DAE.FUNCTION_BUILTIN(SOME(id)), true, inPath);
+      then (DAE.FUNCTION_BUILTIN(SOME(id), false), true, inPath);
 
     case (Absyn.FULLYQUALIFIED(path), _)
       equation
-        (isBuiltin as DAE.FUNCTION_BUILTIN(_),_,path) = isBuiltinFunc(path,ty);
+        (isBuiltin as DAE.FUNCTION_BUILTIN(),_,path) = isBuiltinFunc(path,ty);
       then
         (isBuiltin, true, path);
 
     case (Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), _)
-      then (DAE.FUNCTION_BUILTIN(NONE()), true, inPath);
+      then (DAE.FUNCTION_BUILTIN(NONE(), false), true, inPath);
 
     else (DAE.FUNCTION_NOT_BUILTIN(), false, inPath);
   end matchcontinue;
@@ -7891,7 +7619,7 @@ algorithm
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
   callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or (not isPure),isFunctionPointer,inlineType,DAE.NO_TAIL()));
-  //ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
+  // ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
 
   // create a replacement for input variables -> their binding
   //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
@@ -8996,8 +8724,23 @@ protected
   InstTypes.PolymorphicBindings pb;
   Absyn.Path path;
   Boolean success = false;
-  list<DAE.Type> rest_tys = inTypes;
+  list<DAE.Type> rest_tys = inTypes, tys;
+  String name;
+  DAE.Exp arg;
+  Integer numArgs;
+  DAE.FuncArg funcarg;
 algorithm
+  if listLength(rest_tys)>1 then
+    // Filter out some interesting candidates first; this makes us not
+    // look at overloaded functions with the wrong number of arguments (getting weird error-messages)
+    numArgs := listLength(inPosArgs)+listLength(inNamedArgs);
+    tys := list(ty for ty guard match ty case DAE.T_FUNCTION() then
+      ((numArgs <= listLength(ty.funcArg)) and numArgs >= sum(if Util.isNone(argument.defaultBinding) then 1 else 0 for argument in ty.funcArg));
+      end match in rest_tys);
+    if not listEmpty(tys) then
+      rest_tys := tys;
+    end if;
+  end if;
   while not success loop
     func_ty :: rest_tys := rest_tys;
 
@@ -9009,14 +8752,24 @@ algorithm
       (outCache, outArgs, outSlots, outConsts, pb) := elabInputArgs(inCache, inEnv,
         inPosArgs, inNamedArgs, slots, inOnlyOneFunction, inCheckTypes, inImplicit,
         isExternalObject, inST, inPrefix, inInfo, func_ty, path);
+      pb := Types.solvePolymorphicBindings(pb, inInfo, path);
+      res_ty := Types.fixPolymorphicRestype(res_ty, pb, inInfo);
+      (outArgs, outSlots, params, res_ty) := match func_attr.isBuiltin
+        case DAE.FUNCTION_BUILTIN(unboxArgs=true)
+          then (
+            List.map(outArgs, Expression.unboxExp),
+            list(match slot case SLOT(arg=SOME(arg)) algorithm slot.arg := SOME(Expression.unboxExp(arg)); then slot; else slot; end match for slot in outSlots),
+            list(match p case funcarg algorithm funcarg.ty := Types.unboxedType(Types.fixPolymorphicRestype(p.ty, pb, inInfo)); then funcarg; end match for p in params), // Fix the types of the inputs (needed for slots evaluation)
+            Types.unboxedType(res_ty));
+        else (outArgs, outSlots, params, res_ty);
+      end match;
 
       // Check the sanity of function parameters whose types are dependent on other parameters.
       // e.g. input Integer i; input Integer a[i]; // type of 'a' depends on the value 'i'.
       (params, res_ty) := applyArgTypesToFuncType(outSlots, params, res_ty, inEnv, inCheckTypes, inInfo);
-      pb := Types.solvePolymorphicBindings(pb, inInfo, path);
 
       outDimensions := slotsVectorizable(outSlots, inInfo);
-      outResultType := Types.fixPolymorphicRestype(res_ty, pb, inInfo);
+      outResultType := res_ty;
       outFunctionType := DAE.T_FUNCTION(params, outResultType, func_attr, path);
 
       // Only created when not checking types for error msg.

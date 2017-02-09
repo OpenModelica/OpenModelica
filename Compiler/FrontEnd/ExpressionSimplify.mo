@@ -1250,6 +1250,12 @@ algorithm
    guard Expression.isConst(e1)
      then Expression.makeConstZeroE(e1);
 
+   // We only match delay with 3 arguments in most places...
+   case e as DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,e2})
+     algorithm
+       e.expLst := {e1,e2,e2};
+     then e;
+
    // delay of constant expression
    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
    guard Expression.isConst(e1)

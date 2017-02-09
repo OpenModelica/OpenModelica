@@ -915,6 +915,12 @@ algorithm
     case (cache,_,_,DAE.META_OPTION(NONE()),_)
       equation
       then (cache,DAE.META_OPTION(NONE()));
+
+    case (cache,env,ih,e as DAE.UNBOX(e1),p)
+      equation
+        (cache,e1) = prefixExp(cache, env, ih, e1, p);
+        e.exp = e1;
+      then (cache,e);
         // ------------------------
 
     // no prefix, return the input expression

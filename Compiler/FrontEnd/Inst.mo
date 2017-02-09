@@ -2420,7 +2420,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
-        true = Config.acceptMetaModelicaGrammar();
+        // true = Config.acceptMetaModelicaGrammar(); // We use this for builtins also
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,_,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{}, inSets,info);
@@ -2432,7 +2432,7 @@ algorithm
           SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic")),modifications=mod),
           _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = Config.acceptMetaModelicaGrammar();
+        // true = Config.acceptMetaModelicaGrammar(); // We use this for builtins also
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         Error.addSourceMessage(Error.META_POLYMORPHIC, {className}, info);
       then fail();

@@ -367,12 +367,10 @@ end skew;
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
 
-impure function delay "Delay expression"
-  external "builtin";
+function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
   annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
-end delay;
 
 function min "Returns the smallest element"
   external "builtin";
@@ -423,9 +421,11 @@ function smooth "Indicate smoothness of expression"
 </html>"));
 end smooth;
 
-function diagonal "Returns a diagonal matrix"
+function diagonal<T> "Returns a diagonal matrix"
+  input T v[:];
+  output T mat[size(v,1),size(v,1)];
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_UnboxArguments=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'diagonal()'\">diagonal()</a>
 </html>"));
 end diagonal;
@@ -495,33 +495,12 @@ function sample "Overloaded operator to either trigger time events or to convert
 </html>"));
 end sample;
 
-function previous "Access previous value of a clocked variable"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
-</html>"));
-end previous;
-
 function hold "Conversion from clocked discrete-time to continuous time"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
 </html>"));
 end hold;
-
-impure function subSample "Conversion from faster clock to slower clock"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'subSample()'\">subSample()</a>
-</html>"));
-end subSample;
-
-function superSample "Conversion from slower clock to faster clock"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
-</html>"));
-end superSample;
 
 function shiftSample "First activation of clock is shifted in time"
   external "builtin";
@@ -815,13 +794,33 @@ external "builtin";
 annotation(version="Modelica 3.3");
 end spatialDistribution;
 
+function previous<T> "Access previous value of a clocked variable"
+  input T u;
+  output T y;
+  external "builtin";
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
+</html>"));
+end previous;
+
+function subSample = $overload(OpenModelica.Internal.subSampleExpression, OpenModelica.Internal.subSampleClock)
+  "Conversion from faster clock to slower clock"
+  annotation(version="Modelica 3.3", Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'subSample()'\">subSample()</a>
+</html>"));
+
+function superSample = $overload(OpenModelica.Internal.superSampleExpression, OpenModelica.Internal.superSampleClock)
+  "Conversion from slower clock to faster clock"
+  annotation(version="Modelica 3.3", Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
+</html>"));
+
 /* Actually contains more...
 record SimulationResult
   String resultFile;
   String simulationOptions;
   String messages;
 end SimulationResult; */
-
 encapsulated package OpenModelica "OpenModelica internal defintions and scripting functions"
 
 type $Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
@@ -850,6 +849,50 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
 
   type BuiltinType "Integer,Real,String,enumeration or array of some kind"
   end BuiltinType;
+
+  impure function subSampleExpression<T>
+    input T u;
+    parameter input Integer factor(min=0)=0;
+    output T y;
+    external "builtin" y=subSample(u,factor);
+    annotation(__OpenModelica_UnboxArguments=true);
+  end subSampleExpression;
+
+  impure function subSampleClock
+    input Clock u;
+    parameter input Integer factor(min=0)=0;
+    output Clock y;
+    external "builtin" y=subSample(u,factor);
+  end subSampleClock;
+
+  impure function superSampleExpression<T>
+    input T u;
+    parameter input Integer factor(min=0)=0;
+    output T y;
+    external "builtin" y=superSample(u,factor);
+    annotation(__OpenModelica_UnboxArguments=true);
+  end superSampleExpression;
+
+  impure function superSampleClock
+    input Clock u;
+    parameter input Integer factor(min=0)=0;
+    output Clock y;
+    external "builtin" y=superSample(u,factor);
+  end superSampleClock;
+
+  impure function delay2
+    input Real expr;
+    parameter input Real delayTime;
+    output Real value;
+    external "builtin" value=delay(expr, delayTime);
+  end delay2;
+
+  impure function delay3
+    input Real expr, delayTime;
+    parameter input Real delayMax;
+    output Real value;
+    external "builtin" value=delay(expr, delayTime, delayMax);
+  end delay3;
 
   function intAbs
     input Integer v;

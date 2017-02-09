@@ -7208,7 +7208,7 @@ algorithm
   attr := matchcontinue (cl,vl)
     local
       SCode.Restriction restriction;
-      Boolean isOpenModelicaPure, isImpure, hasOutVars;
+      Boolean isOpenModelicaPure, isImpure, hasOutVars, unboxArgs;
       DAE.FunctionBuiltin isBuiltin;
       DAE.InlineType inlineType;
       String name;
@@ -7222,7 +7222,8 @@ algorithm
         inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
         isImpure = if isImpure then true else SCode.hasBooleanNamedAnnotationInClass(cl,"__ModelicaAssociation_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
+        unboxArgs = SCode.hasBooleanNamedAnnotationInClass(cl, "__OpenModelica_UnboxArguments");
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
@@ -7232,7 +7233,8 @@ algorithm
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
+        unboxArgs = SCode.hasBooleanNamedAnnotationInClass(cl, "__OpenModelica_UnboxArguments");
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)

@@ -350,10 +350,16 @@ public function getInitialFunctions
 "Fetches the Absyn.Program representation of the functions (and other classes) in the initial environment"
   output Absyn.Program initialProgram;
   output SCode.Program initialSCodeProgram;
+protected
+  String fileModelica,fileMetaModelica,fileParModelica,filePDEModelica;
 algorithm
+  fileModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
+  fileMetaModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/MetaModelicaBuiltin.mo";
+  fileParModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/ParModelicaBuiltin.mo";
+  filePDEModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/PDEModelicaBuiltin.mo";
+
   (initialProgram,initialSCodeProgram) := matchcontinue ()
     local
-      String fileModelica,fileMetaModelica,fileParModelica,filePDEModelica;
       list<tuple<Integer,tuple<Absyn.Program,SCode.Program>>> assocLst;
       list<Absyn.Class> classes,classes1,classes2;
       Absyn.Program p;
@@ -371,12 +377,10 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
-        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
-        fileMetaModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/MetaModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
-        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8");
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP());
         (p as Absyn.PROGRAM(classes=classes)) = MetaUtil.createMetaClassesInProgram(p);
@@ -387,12 +391,10 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
-        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
-        fileParModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ParModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
-        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileParModelica,"UTF-8");
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileParModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP());
         sp = List.map(classes, SCodeUtil.translateClass);
@@ -402,9 +404,8 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
-        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-        (p as Absyn.PROGRAM(classes=classes)) = Parser.parsebuiltin(fileModelica,"UTF-8");
+        (p as Absyn.PROGRAM(classes=classes)) = Parser.parsebuiltin(fileModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,(p,sp))::assocLst);
@@ -412,12 +413,10 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA);
-        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
-        filePDEModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/PDEModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(filePDEModelica),Error.FILE_NOT_FOUND_ERROR,{filePDEModelica},Absyn.dummyInfo);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
-        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(filePDEModelica,"UTF-8");
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(filePDEModelica,"UTF-8",acceptedGram=Flags.METAMODELICA);
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP());
         sp = List.map(classes, SCodeUtil.translateClass);

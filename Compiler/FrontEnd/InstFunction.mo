@@ -403,7 +403,7 @@ algorithm
 
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
-        (ty1,_) = Types.traverseType(ty1, -1, Types.makeExpDimensionsUnknown);
+        // (ty1,_) = Types.traverseType(ty1, -1, Types.makeExpDimensionsUnknown);
         env_1 = FGraph.mkTypeNode(cenv, n, ty1);
         vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
