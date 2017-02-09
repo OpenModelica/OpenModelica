@@ -99,11 +99,11 @@ private slots:
 };
 
 class GraphicsView;
-class MetaModelSimulationParamsDialog : public QDialog
+class CompositeModelSimulationParamsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  MetaModelSimulationParamsDialog(GraphicsView *pGraphicsView);
+  CompositeModelSimulationParamsDialog(GraphicsView *pGraphicsView);
 private:
   GraphicsView *mpGraphicsView;
   LibraryTreeItem *mpLibraryTreeItem;

@@ -1748,12 +1748,13 @@ void RenameItemDialog::renameItem()
         updateChildrenPath(mpLibraryTreeItem);
       }
     }
-  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (mpLibraryTreeItem->getModelWidget()) {
-      MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-      RenameMetaModelCommand *pRenameMetaModelCommand = new RenameMetaModelCommand(pMetaModelEditor, mpLibraryTreeItem->getName(),
-                                                                                   mpNameTextBox->text());
-      mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameMetaModelCommand);
+      CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
+      RenameCompositeModelCommand *pRenameCompositeModelCommand = new RenameCompositeModelCommand(pCompositeModelEditor,
+                                                                                                  mpLibraryTreeItem->getName(),
+                                                                                                  mpNameTextBox->text());
+      mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameCompositeModelCommand);
       mpLibraryTreeItem->getModelWidget()->updateModelText();
     }
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {

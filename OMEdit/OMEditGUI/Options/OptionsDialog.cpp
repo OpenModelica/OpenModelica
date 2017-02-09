@@ -82,7 +82,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpModelicaEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpModelicaEditorPage, SIGNAL(updatePreview()));
   mpMetaModelicaEditorPage = new MetaModelicaEditorPage(this);
-  mpMetaModelEditorPage = new MetaModelEditorPage(this);
+  mpCompositeModelEditorPage = new CompositeModelEditorPage(this);
   mpCEditorPage = new CEditorPage(this);
   mpHTMLEditorPage = new HTMLEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
@@ -115,9 +115,9 @@ void OptionsDialog::readSettings()
   readMetaModelicaEditorSettings();
   emit metaModelicaEditorSettingsChanged();
   mpMetaModelicaEditorPage->emitUpdatePreview();
-  readMetaModelEditorSettings();
-  emit metaModelEditorSettingsChanged();
-  mpMetaModelEditorPage->emitUpdatePreview();
+  readCompositeModelEditorSettings();
+  emit compositeModelEditorSettingsChanged();
+  mpCompositeModelEditorPage->emitUpdatePreview();
   readCEditorSettings();
   emit cEditorSettingsChanged();
   mpCEditorPage->emitUpdatePreview();
@@ -366,25 +366,25 @@ void OptionsDialog::readMetaModelicaEditorSettings()
 }
 
 /*!
- * \brief OptionsDialog::readMetaModelEditorSettings
- * Reads the MetaModelEditor settings from omedit.ini
+ * \brief OptionsDialog::readCompositeModelEditorSettings
+ * Reads the CompositeModelEditor settings from omedit.ini
  */
-void OptionsDialog::readMetaModelEditorSettings()
+void OptionsDialog::readCompositeModelEditorSettings()
 {
-  if (mpSettings->contains("MetaModelEditor/textRuleColor")) {
-    mpMetaModelEditorPage->setColor("Text", QColor(mpSettings->value("MetaModelEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains("compositeModelEditor/textRuleColor")) {
+    mpCompositeModelEditorPage->setColor("Text", QColor(mpSettings->value("compositeModelEditor/textRuleColor").toUInt()));
   }
-  if (mpSettings->contains("MetaModelEditor/commentRuleColor")) {
-    mpMetaModelEditorPage->setColor("Comment", QColor(mpSettings->value("MetaModelEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains("compositeModelEditor/commentRuleColor")) {
+    mpCompositeModelEditorPage->setColor("Comment", QColor(mpSettings->value("compositeModelEditor/commentRuleColor").toUInt()));
   }
-  if (mpSettings->contains("MetaModelEditor/tagRuleColor")) {
-    mpMetaModelEditorPage->setColor("Tag", QColor(mpSettings->value("MetaModelEditor/tagRuleColor").toUInt()));
+  if (mpSettings->contains("compositeModelEditor/tagRuleColor")) {
+    mpCompositeModelEditorPage->setColor("Tag", QColor(mpSettings->value("compositeModelEditor/tagRuleColor").toUInt()));
   }
-  if (mpSettings->contains("MetaModelEditor/quotesRuleColor")) {
-    mpMetaModelEditorPage->setColor("Quotes", QColor(mpSettings->value("MetaModelEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains("compositeModelEditor/quotesRuleColor")) {
+    mpCompositeModelEditorPage->setColor("Quotes", QColor(mpSettings->value("compositeModelEditor/quotesRuleColor").toUInt()));
   }
-  if (mpSettings->contains("MetaModelEditor/elementsRuleColor")) {
-    mpMetaModelEditorPage->setColor("Element", QColor(mpSettings->value("MetaModelEditor/elementsRuleColor").toUInt()));
+  if (mpSettings->contains("compositeModelEditor/elementsRuleColor")) {
+    mpCompositeModelEditorPage->setColor("Element", QColor(mpSettings->value("compositeModelEditor/elementsRuleColor").toUInt()));
   }
 }
 
@@ -905,16 +905,16 @@ void OptionsDialog::saveMetaModelicaEditorSettings()
 }
 
 /*!
- * \brief OptionsDialog::saveMetaModelEditorSettings
- * Saves the MetaModelEditor settings to omedit.ini
+ * \brief OptionsDialog::saveCompositeModelEditorSettings
+ * Saves the CompositeModelEditor settings to omedit.ini
  */
-void OptionsDialog::saveMetaModelEditorSettings()
+void OptionsDialog::saveCompositeModelEditorSettings()
 {
-  mpSettings->setValue("MetaModelEditor/textRuleColor", mpMetaModelEditorPage->getColor("Text").rgba());
-  mpSettings->setValue("MetaModelEditor/commentRuleColor", mpMetaModelEditorPage->getColor("Comment").rgba());
-  mpSettings->setValue("MetaModelEditor/tagRuleColor", mpMetaModelEditorPage->getColor("Tag").rgba());
-  mpSettings->setValue("MetaModelEditor/quotesRuleColor", mpMetaModelEditorPage->getColor("Quotes").rgba());
-  mpSettings->setValue("MetaModelEditor/elementsRuleColor", mpMetaModelEditorPage->getColor("Element").rgba());
+  mpSettings->setValue("compositeModelEditor/textRuleColor", mpCompositeModelEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("compositeModelEditor/commentRuleColor", mpCompositeModelEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("compositeModelEditor/tagRuleColor", mpCompositeModelEditorPage->getColor("Tag").rgba());
+  mpSettings->setValue("compositeModelEditor/quotesRuleColor", mpCompositeModelEditorPage->getColor("Quotes").rgba());
+  mpSettings->setValue("compositeModelEditor/elementsRuleColor", mpCompositeModelEditorPage->getColor("Element").rgba());
 }
 
 /*!
@@ -1222,10 +1222,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pMetaModelicaEditorItem = new QListWidgetItem(mpOptionsList);
   pMetaModelicaEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pMetaModelicaEditorItem->setText(tr("MetaModelica Editor"));
-  // MetaModel Editor Item
-  QListWidgetItem *pMetaModelEditorItem = new QListWidgetItem(mpOptionsList);
-  pMetaModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pMetaModelEditorItem->setText(tr("MetaModel Editor"));
+  // CompositeModel Editor Item
+  QListWidgetItem *pCompositeModelEditorItem = new QListWidgetItem(mpOptionsList);
+  pCompositeModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pCompositeModelEditorItem->setText(tr("CompositeModel Editor"));
   // C/C++ Editor Item
   QListWidgetItem *pCEditorItem = new QListWidgetItem(mpOptionsList);
   pCEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -1290,7 +1290,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpTextEditorPage);
   mpPagesWidget->addWidget(mpModelicaEditorPage);
   mpPagesWidget->addWidget(mpMetaModelicaEditorPage);
-  mpPagesWidget->addWidget(mpMetaModelEditorPage);
+  mpPagesWidget->addWidget(mpCompositeModelEditorPage);
   mpPagesWidget->addWidget(mpCEditorPage);
   mpPagesWidget->addWidget(mpHTMLEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
@@ -1377,8 +1377,8 @@ void OptionsDialog::saveSettings()
   emit modelicaEditorSettingsChanged();
   saveMetaModelicaEditorSettings();
   emit metaModelicaEditorSettingsChanged();
-  saveMetaModelEditorSettings();
-  emit metaModelEditorSettingsChanged();
+  saveCompositeModelEditorSettings();
+  emit compositeModelEditorSettingsChanged();
   saveCEditorSettings();
   emit cEditorSettingsChanged();
   saveHTMLEditorSettings();
@@ -2484,14 +2484,14 @@ void MetaModelicaEditorPage::setLineWrapping(bool enabled)
 }
 
 /*!
- * \class MetaModelEditorPage
- * \brief Creates an interface for MetaModel Text settings.
+ * \class CompositeModelEditorPage
+ * \brief Creates an interface for CompositeModel Text settings.
  */
 /*!
- * \brief MetaModelEditorPage::MetaModelEditorPage
+ * \brief CompositeModelEditorPage::CompositeModelEditorPage
  * \param pOptionsDialog is the pointer to OptionsDialog
  */
-MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
+CompositeModelEditorPage::CompositeModelEditorPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
@@ -2521,12 +2521,12 @@ MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
                      "</Model>\n");
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox
-  MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pMetaModelHighlighter, SLOT(settingsChanged()));
+  CompositeModelHighlighter *pCompositeModelHighlighter = new CompositeModelHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pCompositeModelHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pMetaModelHighlighter, SLOT(settingsChanged()));
+          pCompositeModelHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pMetaModelHighlighter, SLOT(settingsChanged()));
+          pCompositeModelHighlighter, SLOT(settingsChanged()));
   connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
@@ -2536,12 +2536,12 @@ MetaModelEditorPage::MetaModelEditorPage(OptionsDialog *pOptionsDialog)
 }
 
 /*!
- * \brief MetaModelEditorPage::setColor
+ * \brief CompositeModelEditorPage::setColor
  * Sets the color of an item.
  * \param item
  * \param color
  */
-void MetaModelEditorPage::setColor(QString item, QColor color)
+void CompositeModelEditorPage::setColor(QString item, QColor color)
 {
   QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
   if (items.size() > 0) {
@@ -2554,12 +2554,12 @@ void MetaModelEditorPage::setColor(QString item, QColor color)
 }
 
 /*!
- * \brief MetaModelEditorPage::getColor
+ * \brief CompositeModelEditorPage::getColor
  * Returns the color of an item.
  * \param item
  * \return
  */
-QColor MetaModelEditorPage::getColor(QString item)
+QColor CompositeModelEditorPage::getColor(QString item)
 {
   QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
   if (items.size() > 0) {
@@ -2572,11 +2572,11 @@ QColor MetaModelEditorPage::getColor(QString item)
 }
 
 /*!
- * \brief MetaModelEditorPage::setLineWrapping
+ * \brief CompositeModelEditorPage::setLineWrapping
  * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
  * Sets the mpPreviewPlainTextBox line wrapping mode.
  */
-void MetaModelEditorPage::setLineWrapping(bool enabled)
+void CompositeModelEditorPage::setLineWrapping(bool enabled)
 {
   if (enabled) {
     mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);

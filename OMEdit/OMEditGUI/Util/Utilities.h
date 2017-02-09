@@ -325,7 +325,7 @@ typedef struct {
   QString mZf;
   QString mZfr;
   QString mAlpha;
-} MetaModelConnection;
+} CompositeModelConnection;
 
 class PreviewPlainTextEdit : public QPlainTextEdit
 {
@@ -425,7 +425,7 @@ namespace Utilities {
 
   QString& tempDirectory();
   QSettings* getApplicationSettings();
-  void parseMetaModelText(MessageHandler *pMessageHandler, QString contents);
+  void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();

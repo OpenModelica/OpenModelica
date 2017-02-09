@@ -456,12 +456,12 @@ QSettings* Utilities::getApplicationSettings()
 
 
 /*!
- * \brief Utilities::parseMetaModelText
- * Parses the MetaModel text against the schema.
+ * \brief Utilities::parseCompositeModelText
+ * Parses the CompositeModel text against the schema.
  * \param pMessageHandler
  * \param contents
  */
-void Utilities::parseMetaModelText(MessageHandler *pMessageHandler, QString contents)
+void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString contents)
 {
   QFile schemaFile(QString(":/Resources/XMLSchema/tlmModelDescription.xsd"));
   schemaFile.open(QIODevice::ReadOnly);

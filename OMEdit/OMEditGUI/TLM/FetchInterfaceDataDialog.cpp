@@ -207,18 +207,18 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnno
     interfaces << pConnectionLineAnnotation->getStartComponentName() + "  ->  " + pConnectionLineAnnotation->getEndComponentName();
     interfaces << pConnectionLineAnnotation->getEndComponentName() + "  ->  " + pConnectionLineAnnotation->getStartComponentName();
   } else {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pModelWidget->getEditor());
-    if (pMetaModelEditor) {
-      QDomNodeList connections = pMetaModelEditor->getConnections();
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pModelWidget->getEditor());
+    if (pCompositeModelEditor) {
+      QDomNodeList connections = pCompositeModelEditor->getConnections();
       for (int i = 0; i < connections.size(); i++) {
         QDomElement connection = connections.at(i).toElement();
         //Only align bidirectional connections
-        if(pMetaModelEditor->getInterfaceCausality(connection.attribute("From")) ==
-                StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
-           pMetaModelEditor->getInterfaceCausality(connection.attribute("To")) ==
-                StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
-            interfaces << connection.attribute("From") + "  ->  " + connection.attribute("To");
-            interfaces << connection.attribute("To") + "  ->  " + connection.attribute("From");
+        if(pCompositeModelEditor->getInterfaceCausality(connection.attribute("From")) ==
+           StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
+           pCompositeModelEditor->getInterfaceCausality(connection.attribute("To")) ==
+           StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
+          interfaces << connection.attribute("From") + "  ->  " + connection.attribute("To");
+          interfaces << connection.attribute("To") + "  ->  " + connection.attribute("From");
         }
       }
     }
@@ -259,17 +259,17 @@ AlignInterfacesDialog::AlignInterfacesDialog(ModelWidget *pModelWidget, LineAnno
 /*!
  * \brief AlignInterfacesDialog::alignInterfaces
  * Slot activated when mpOkButton clicked signal is raised.\n
- * Calls the MetaModelEditor::alignInterfaces() function.
+ * Calls the CompositeModelEditor::alignInterfaces() function.
  */
 void AlignInterfacesDialog::alignInterfaces()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-  if (pMetaModelEditor) {
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+  if (pCompositeModelEditor) {
     QList<QListWidgetItem*> selectedItems = mpInterfaceListWidget->selectedItems();
     if (!selectedItems.isEmpty()) {
       QString fromInterface = selectedItems.first()->text().section("  ->  ",0,0);
       QString toInterface = selectedItems.first()->text().section("  ->  ",1,1);
-      pMetaModelEditor->alignInterfaces(fromInterface, toInterface);
+      pCompositeModelEditor->alignInterfaces(fromInterface, toInterface);
     }
   }
   accept();

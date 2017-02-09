@@ -172,17 +172,17 @@ private:
   QString mNewAnnotation;
 };
 
-class UpdateMetaModelConnection : public QUndoCommand
+class UpdateCompositeModelConnection : public QUndoCommand
 {
 public:
-  UpdateMetaModelConnection(LineAnnotation *pConnectionLineAnnotation, MetaModelConnection oldMetaModelConnection,
-                            MetaModelConnection newMetaModelConnection, QUndoCommand *pParent = 0);
+  UpdateCompositeModelConnection(LineAnnotation *pConnectionLineAnnotation, CompositeModelConnection oldCompositeModelConnection,
+                                 CompositeModelConnection newCompositeModelConnection, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   LineAnnotation *mpConnectionLineAnnotation;
-  MetaModelConnection mOldMetaModelConnection;
-  MetaModelConnection mNewMetaModelConnection;
+  CompositeModelConnection mOldCompositeModelConnection;
+  CompositeModelConnection mNewCompositeModelConnection;
 };
 
 class DeleteConnectionCommand : public QUndoCommand
@@ -277,13 +277,13 @@ private:
 class AlignInterfacesCommand : public QUndoCommand
 {
 public:
-  AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString fromInterface, QString toInterface, QGenericMatrix<3,1,double> oldPos,
-                         QGenericMatrix<3,1,double> oldRot, QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
-                         LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent = 0);
+  AlignInterfacesCommand(CompositeModelEditor *pCompositeModelEditor, QString fromInterface, QString toInterface,
+                         QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot, QGenericMatrix<3,1,double> newPos,
+                         QGenericMatrix<3,1,double> newRot, LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
-  MetaModelEditor *mpMetaModelEditor;
+  CompositeModelEditor *mpCompositeModelEditor;
   QString mFromInterface;
   QString mToInterface;
   QGenericMatrix<3,1,double> mOldPos;
@@ -293,16 +293,17 @@ private:
   LineAnnotation *mpConnectionLineAnnotation;
 };
 
-class RenameMetaModelCommand : public QUndoCommand
+class RenameCompositeModelCommand : public QUndoCommand
 {
 public:
-  RenameMetaModelCommand(MetaModelEditor *pMetaModelEditor, QString oldMetaModelName, QString newMetaModelName, QUndoCommand *pParent = 0);
+  RenameCompositeModelCommand(CompositeModelEditor *pCompositeModelEditor, QString oldCompositeModelName, QString newCompositeModelName,
+                              QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
-  MetaModelEditor *mpMetaModelEditor;
-  QString mOldMetaModelName;
-  QString mNewMetaModelName;
+  CompositeModelEditor *mpCompositeModelEditor;
+  QString mOldCompositeModelName;
+  QString mNewCompositeModelName;
 };
 
 #endif // COMMANDS_H

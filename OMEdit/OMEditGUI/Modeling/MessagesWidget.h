@@ -44,7 +44,7 @@ class MessageItem
 public:
   enum MessageItemType {
     Modelica,   /* Used to represent error messages of Modelica models. */
-    MetaModel   /* Used to represent error messages of MetaModel files. */
+    CompositeModel   /* Used to represent error messages of CompositeModel files. */
   };
   QString mTime;
   QString mFileName;

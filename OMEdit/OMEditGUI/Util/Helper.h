@@ -188,7 +188,7 @@ public:
   static QString duplicateTip;
   static QString unloadClass;
   static QString unloadClassTip;
-  static QString unloadMetaModelOrTextTip;
+  static QString unloadCompositeModelOrTextTip;
   static QString refresh;
   static QString simulate;
   static QString simulateTip;
@@ -393,7 +393,7 @@ public:
     BREAKPOINT_INSERT_NOT_SAVED,
     BREAKPOINT_INSERT_NOT_MODELICA_CLASS,
     TLMMANAGER_NOT_SET,
-    METAMODEL_UNSAVED,
+    COMPOSITEMODEL_UNSAVED,
     TLMCOSIMULATION_ALREADY_RUNNING,
     TERMINAL_COMMAND_NOT_SET,
     UNABLE_FIND_COMPONENT,

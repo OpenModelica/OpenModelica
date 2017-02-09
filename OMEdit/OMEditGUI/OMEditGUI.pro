@@ -132,7 +132,7 @@ SOURCES += main.cpp \
   Editors/TransformationsEditor.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
-  Editors/MetaModelEditor.cpp \
+  Editors/CompositeModelEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Editors/HTMLEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
@@ -198,7 +198,7 @@ HEADERS  += Util/Helper.h \
   Editors/TransformationsEditor.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
-  Editors/MetaModelEditor.h \
+  Editors/CompositeModelEditor.h \
   Editors/MetaModelicaEditor.h \
   Editors/HTMLEditor.h \
   Plotting/PlotWindowContainer.h \

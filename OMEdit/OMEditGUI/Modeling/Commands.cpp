@@ -677,8 +677,8 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
   mpGraphicsView = pGraphicsView;
 
   //Save sub-model parameters for meta models
-  if(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pEditor = qobject_cast<MetaModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
+  if(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
     mParameterNames = pEditor->getParameterNames(pComponent->getName());  //Assume submodel; otherwise returned list is empty
     foreach(QString parName, mParameterNames) {
       mParameterValues.append(pEditor->getParameterValue(pComponent->getName(), parName));
@@ -754,10 +754,10 @@ void DeleteComponentCommand::undo()
   mpGraphicsView->addComponentToClass(mpComponent);
 
   //Restore sub-model parameters for meta models
-  if(pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pEditor = qobject_cast<MetaModelEditor*>(pModelWidget->getEditor());
+  if(pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pModelWidget->getEditor());
     for(int i=0; i<mParameterNames.size(); ++i) {
-        pEditor->setParameterValue(mpComponent->getName(),mParameterNames[i],mParameterValues[i]);
+      pEditor->setParameterValue(mpComponent->getName(),mParameterNames[i],mParameterValues[i]);
     }
   }
 }
@@ -875,40 +875,41 @@ void UpdateConnectionCommand::undo()
   mpConnectionLineAnnotation->updateConnectionAnnotation();
 }
 
-UpdateMetaModelConnection::UpdateMetaModelConnection(LineAnnotation *pConnectionLineAnnotation, MetaModelConnection oldMetaModelConnection,
-                                                     MetaModelConnection newMetaModelConnection, QUndoCommand *pParent)
+UpdateCompositeModelConnection::UpdateCompositeModelConnection(LineAnnotation *pConnectionLineAnnotation,
+                                                               CompositeModelConnection oldCompositeModelConnection,
+                                                               CompositeModelConnection newCompositeModelConnection, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  mOldMetaModelConnection = oldMetaModelConnection;
-  mNewMetaModelConnection = newMetaModelConnection;
-  setText(QString("Update MetaModel Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
-                                                                     mpConnectionLineAnnotation->getEndComponentName()));
+  mOldCompositeModelConnection = oldCompositeModelConnection;
+  mNewCompositeModelConnection = newCompositeModelConnection;
+  setText(QString("Update CompositeModel Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                          mpConnectionLineAnnotation->getEndComponentName()));
 }
 
 /*!
- * \brief UpdateMetaModelConnection::redo
- * Redo the UpdateMetaModelConnection.
+ * \brief UpdateCompositeModelConnection::redo
+ * Redo the UpdateCompositeModelConnection.
  */
-void UpdateMetaModelConnection::redo()
+void UpdateCompositeModelConnection::redo()
 {
-  mpConnectionLineAnnotation->setDelay(mNewMetaModelConnection.mDelay);
-  mpConnectionLineAnnotation->setZf(mNewMetaModelConnection.mZf);
-  mpConnectionLineAnnotation->setZfr(mNewMetaModelConnection.mZfr);
-  mpConnectionLineAnnotation->setAlpha(mNewMetaModelConnection.mAlpha);
+  mpConnectionLineAnnotation->setDelay(mNewCompositeModelConnection.mDelay);
+  mpConnectionLineAnnotation->setZf(mNewCompositeModelConnection.mZf);
+  mpConnectionLineAnnotation->setZfr(mNewCompositeModelConnection.mZfr);
+  mpConnectionLineAnnotation->setAlpha(mNewCompositeModelConnection.mAlpha);
   mpConnectionLineAnnotation->getGraphicsView()->updateConnectionInClass(mpConnectionLineAnnotation);
 }
 
 /*!
- * \brief UpdateMetaModelConnection::undo
- * Undo the UpdateMetaModelConnection.
+ * \brief UpdateCompositeModelConnection::undo
+ * Undo the UpdateCompositeModelConnection.
  */
-void UpdateMetaModelConnection::undo()
+void UpdateCompositeModelConnection::undo()
 {
-  mpConnectionLineAnnotation->setDelay(mOldMetaModelConnection.mDelay);
-  mpConnectionLineAnnotation->setZf(mOldMetaModelConnection.mZf);
-  mpConnectionLineAnnotation->setZfr(mOldMetaModelConnection.mZfr);
-  mpConnectionLineAnnotation->setAlpha(mOldMetaModelConnection.mAlpha);
+  mpConnectionLineAnnotation->setDelay(mOldCompositeModelConnection.mDelay);
+  mpConnectionLineAnnotation->setZf(mOldCompositeModelConnection.mZf);
+  mpConnectionLineAnnotation->setZfr(mOldCompositeModelConnection.mZfr);
+  mpConnectionLineAnnotation->setAlpha(mOldCompositeModelConnection.mAlpha);
   mpConnectionLineAnnotation->getGraphicsView()->updateConnectionInClass(mpConnectionLineAnnotation);
 }
 
@@ -1180,16 +1181,16 @@ UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pCom
  */
 void UpdateSubModelAttributesCommand::redo()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-  pMetaModelEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
-                                             mNewComponentInfo.getExactStep() ? "true" : "false", mNewComponentInfo.getGeometryFile());
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  pCompositeModelEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
+                                                  mNewComponentInfo.getExactStep() ? "true" : "false", mNewComponentInfo.getGeometryFile());
   mpComponent->getComponentInfo()->setStartCommand(mNewComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mNewComponentInfo.getExactStep());
   mpComponent->getComponentInfo()->setGeometryFile(mNewComponentInfo.getGeometryFile());
 
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     for(int i=0; i<mParameterNames.size(); ++i) {
-      pMetaModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mNewParameterValues[i]);
+      pCompositeModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mNewParameterValues[i]);
     }
   }
 }
@@ -1200,16 +1201,16 @@ void UpdateSubModelAttributesCommand::redo()
  */
 void UpdateSubModelAttributesCommand::undo()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-  pMetaModelEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
-                                             mOldComponentInfo.getExactStep() ? "true" : "false", mOldComponentInfo.getGeometryFile());
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  pCompositeModelEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
+                                                  mOldComponentInfo.getExactStep() ? "true" : "false", mOldComponentInfo.getGeometryFile());
   mpComponent->getComponentInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
   mpComponent->getComponentInfo()->setExactStep(mOldComponentInfo.getExactStep());
   mpComponent->getComponentInfo()->setGeometryFile(mOldComponentInfo.getGeometryFile());
 
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     for(int i=0; i<mParameterNames.size(); ++i) {
-      pMetaModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mOldParameterValues[i]);
+      pCompositeModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mOldParameterValues[i]);
     }
   }
 }
@@ -1232,8 +1233,8 @@ UpdateSimulationParamsCommand::UpdateSimulationParamsCommand(LibraryTreeItem *pL
  */
 void UpdateSimulationParamsCommand::redo()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-  pMetaModelEditor->updateSimulationParams(mNewStartTime, mNewStopTime);
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
+  pCompositeModelEditor->updateSimulationParams(mNewStartTime, mNewStopTime);
 }
 
 /*!
@@ -1242,8 +1243,8 @@ void UpdateSimulationParamsCommand::redo()
  */
 void UpdateSimulationParamsCommand::undo()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-  pMetaModelEditor->updateSimulationParams(mOldStartTime, mOldStopTime);
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
+  pCompositeModelEditor->updateSimulationParams(mOldStartTime, mOldStopTime);
 }
 
 /*!
@@ -1253,13 +1254,13 @@ void UpdateSimulationParamsCommand::undo()
  * \param newText
  * \param pParent
  */
-AlignInterfacesCommand::AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor, QString fromInterface, QString toInterface,
+AlignInterfacesCommand::AlignInterfacesCommand(CompositeModelEditor *pCompositeModelEditor, QString fromInterface, QString toInterface,
                                                QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot,
                                                QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
                                                LineAnnotation *pConnectionLineAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
-  mpMetaModelEditor = pMetaModelEditor;
+  mpCompositeModelEditor = pCompositeModelEditor;
   mFromInterface = fromInterface;
   mToInterface = toInterface;
   mOldPos = oldPos;
@@ -1275,10 +1276,10 @@ AlignInterfacesCommand::AlignInterfacesCommand(MetaModelEditor *pMetaModelEditor
  */
 void AlignInterfacesCommand::redo()
 {
-  mpMetaModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mNewPos, mNewRot);
-  //qDebug() << mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface);
+  mpCompositeModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mNewPos, mNewRot);
+  //qDebug() << mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface);
   if (mpConnectionLineAnnotation) {
-    mpConnectionLineAnnotation->setAligned(mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface));
+    mpConnectionLineAnnotation->setAligned(mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface));
   }
 }
 
@@ -1288,41 +1289,41 @@ void AlignInterfacesCommand::redo()
  */
 void AlignInterfacesCommand::undo()
 {
-  mpMetaModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mOldPos, mOldRot);
-  //qDebug() << mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface);
+  mpCompositeModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mOldPos, mOldRot);
+  //qDebug() << mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface);
   if (mpConnectionLineAnnotation) {
-    mpConnectionLineAnnotation->setAligned(mpMetaModelEditor->interfacesAligned(mFromInterface, mToInterface));
+    mpConnectionLineAnnotation->setAligned(mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface));
   }
 }
 
-RenameMetaModelCommand::RenameMetaModelCommand(MetaModelEditor *pMetaModelEditor, QString oldMetaModelName, QString newMetaModelName,
-                                               QUndoCommand *pParent)
+RenameCompositeModelCommand::RenameCompositeModelCommand(CompositeModelEditor *pCompositeModelEditor, QString oldCompositeModelName,
+                                                         QString newCompositeModelName, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
-  mpMetaModelEditor = pMetaModelEditor;
-  mOldMetaModelName = oldMetaModelName;
-  mNewMetaModelName = newMetaModelName;
-  setText(QString("Rename metamodel %1").arg(mpMetaModelEditor->getModelWidget()->getLibraryTreeItem()->getName()));
+  mpCompositeModelEditor = pCompositeModelEditor;
+  mOldCompositeModelName = oldCompositeModelName;
+  mNewCompositeModelName = newCompositeModelName;
+  setText(QString("Rename CompositeModel %1").arg(mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->getName()));
 }
 
 /*!
- * \brief RenameMetaModelCommand::redo
- * Redo the rename metamodel command
+ * \brief RenameCompositeModelCommand::redo
+ * Redo the rename CompositeModel command
  */
-void RenameMetaModelCommand::redo()
+void RenameCompositeModelCommand::redo()
 {
-  mpMetaModelEditor->setMetaModelName(mNewMetaModelName);
-  mpMetaModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mNewMetaModelName);
-  mpMetaModelEditor->getModelWidget()->setWindowTitle(mNewMetaModelName);
+  mpCompositeModelEditor->setCompositeModelName(mNewCompositeModelName);
+  mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mNewCompositeModelName);
+  mpCompositeModelEditor->getModelWidget()->setWindowTitle(mNewCompositeModelName);
 }
 
 /*!
- * \brief RenameMetaModelCommand::undo
- * Undo the rename metamodel command
+ * \brief RenameCompositeModelCommand::undo
+ * Undo the rename CompositeModel command
  */
-void RenameMetaModelCommand::undo()
+void RenameCompositeModelCommand::undo()
 {
-  mpMetaModelEditor->setMetaModelName(mOldMetaModelName);
-  mpMetaModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mOldMetaModelName);
-  mpMetaModelEditor->getModelWidget()->setWindowTitle(mOldMetaModelName);
+  mpCompositeModelEditor->setCompositeModelName(mOldCompositeModelName);
+  mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mOldCompositeModelName);
+  mpCompositeModelEditor->getModelWidget()->setWindowTitle(mOldCompositeModelName);
 }

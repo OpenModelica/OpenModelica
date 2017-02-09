@@ -453,7 +453,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   setComponentFlags(true);
   createNonExistingComponent();
   createDefaultComponent();
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
     drawInterfacePoints();
@@ -1310,9 +1310,9 @@ void Component::createDefaultComponent()
  */
 void Component::drawInterfacePoints()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-  if (pMetaModelEditor) {
-    QDomNodeList subModels = pMetaModelEditor->getSubModels();
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+  if (pCompositeModelEditor) {
+    QDomNodeList subModels = pCompositeModelEditor->getSubModels();
     for (int i = 0; i < subModels.size(); i++) {
       QDomElement subModel = subModels.at(i).toElement();
       if (subModel.attribute("Name").compare(mpComponentInfo->getName()) == 0) {
@@ -1763,9 +1763,9 @@ void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pMetaModelEditor->updateSubModelPlacementAnnotation(mpComponentInfo->getName(), mTransformation.getVisible()? "true" : "false",
+  if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+    pCompositeModelEditor->updateSubModelPlacementAnnotation(mpComponentInfo->getName(), mTransformation.getVisible()? "true" : "false",
                                                         getTransformationOrigin(), getTransformationExtent(),
                                                         QString::number(mTransformation.getRotateAngle()));
   } else {
@@ -2407,12 +2407,12 @@ void Component::viewDocumentation()
 
 /*!
  * \brief Component::showSubModelAttributes
- * Slot that opens up the MetaModelSubModelAttributes Dialog.
+ * Slot that opens up the CompositeModelSubModelAttributes Dialog.
  */
 void Component::showSubModelAttributes()
 {
-  MetaModelSubModelAttributes *pSubModelAttributes = new MetaModelSubModelAttributes(this, MainWindow::instance());
-  pSubModelAttributes->exec();
+  CompositeModelSubModelAttributes *pCompositeModelSubModelAttributes = new CompositeModelSubModelAttributes(this, MainWindow::instance());
+  pCompositeModelSubModelAttributes->exec();
 }
 
 /*!
@@ -2425,7 +2425,7 @@ void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-  if(pLibraryTreeItem->getLibraryType()== LibraryTreeItem::MetaModel) {
+  if(pLibraryTreeItem->getLibraryType()== LibraryTreeItem::CompositeModel) {
     emit showSubModelAttributes();
   } else {
     if (!mpParentComponent) { // if root component is double clicked then show parameters.
@@ -2488,7 +2488,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(mpGraphicsView->getFlipHorizontalAction());
         menu.addAction(mpGraphicsView->getFlipVerticalAction());
         break;
-      case LibraryTreeItem::MetaModel:
+      case LibraryTreeItem::CompositeModel:
         menu.addAction(pComponent->getFetchInterfaceDataAction());
         menu.addSeparator();
         menu.addAction(pComponent->getSubModelAttributesAction());
@@ -2571,8 +2571,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       }
     }
 #if !defined(WITHOUT_OSG)
-    // if subModel selection is changed in MetaModel
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    // if subModel selection is changed in CompositeModel
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
       MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
     }
 #endif

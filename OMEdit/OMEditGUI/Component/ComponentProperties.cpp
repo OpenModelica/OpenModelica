@@ -1387,15 +1387,15 @@ void ComponentAttributes::updateComponentAttributes()
 }
 
 /*!
- * \class MetaModelSubModelAttributes
+ * \class CompositeModelSubModelAttributes
  * \brief A dialog for displaying SubModel attributes.
  */
 /*!
- * \brief MetaModelSubModelAttributes::MetaModelSubModelAttributes
+ * \brief CompositeModelSubModelAttributes::CompositeModelSubModelAttributes
  * \param pComponent - pointer to Component
  * \param pParent
  */
-MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, QWidget *pParent)
+CompositeModelSubModelAttributes::CompositeModelSubModelAttributes(Component *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
@@ -1406,10 +1406,10 @@ MetaModelSubModelAttributes::MetaModelSubModelAttributes(Component *pComponent, 
 }
 
 /*!
- * \brief MetaModelSubModelAttributes::setUpDialog
- * Creates the dialog and set up submodel attributes of the metamodel.
+ * \brief CompositeModelSubModelAttributes::setUpDialog
+ * Creates the dialog and set up submodel attributes of the CompositeModel.
  */
-void MetaModelSubModelAttributes::setUpDialog()
+void CompositeModelSubModelAttributes::setUpDialog()
 {
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
@@ -1485,7 +1485,7 @@ void MetaModelSubModelAttributes::setUpDialog()
 /*!
   Initialize the fields with values.
   */
-void MetaModelSubModelAttributes::initializeDialog()
+void CompositeModelSubModelAttributes::initializeDialog()
 {
   // set Name
   mpNameTextBox->setText(mpComponent->getName());
@@ -1500,7 +1500,7 @@ void MetaModelSubModelAttributes::initializeDialog()
   // set the geometry file name
   mpGeometryFileTextBox->setText(mpComponent->getComponentInfo()->getGeometryFile());
   // update parameter widgets
-  MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
+  CompositeModelEditor *pEditor = dynamic_cast<CompositeModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
   QStringList parameters = pEditor->getParameterNames(mpComponent->getName());
   mParameterLabels.clear();
   mParameterLineEdits.clear();
@@ -1515,33 +1515,33 @@ void MetaModelSubModelAttributes::initializeDialog()
 }
 
 /*!
- * \brief MetaModelSubModelAttributes::changeSimulationToolStartCommand
+ * \brief CompositeModelSubModelAttributes::changeSimulationToolStartCommand
  * Updates the simulation tool start command.\n
  * Slot activated when mpSimulationToolComboBox currentIndexChanged signal is raised.
  * \param tool
  */
-void MetaModelSubModelAttributes::changeSimulationToolStartCommand(QString tool)
+void CompositeModelSubModelAttributes::changeSimulationToolStartCommand(QString tool)
 {
   mpStartCommandTextBox->setText(StringHandler::getSimulationToolStartCommand(tool, mpStartCommandTextBox->text()));
 }
 
 /*!
- * \brief MetaModelSubModelAttributes::changeSimulationTool
+ * \brief CompositeModelSubModelAttributes::changeSimulationTool
  * Updates the simulation tool.\n
  * Slot activated when mpStartCommandTextBox textChanged signal is raised.
  * \param simulationToolStartCommand
  */
-void MetaModelSubModelAttributes::changeSimulationTool(QString simulationToolStartCommand)
+void CompositeModelSubModelAttributes::changeSimulationTool(QString simulationToolStartCommand)
 {
   mpSimulationToolComboBox->setCurrentIndex(StringHandler::getSimulationTool(simulationToolStartCommand));
 }
 
 /*!
- * \brief MetaModelSubModelAttributes::browseGeometryFile
+ * \brief CompositeModelSubModelAttributes::browseGeometryFile
  * Updates subModel parameters.\n
  * Slot activated when mpGeometryFileBrowseButton clicked signal is raised.
  */
-void MetaModelSubModelAttributes::browseGeometryFile()
+void CompositeModelSubModelAttributes::browseGeometryFile()
 {
   QString geometryFile = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
                                                        NULL, "", NULL);
@@ -1552,11 +1552,11 @@ void MetaModelSubModelAttributes::browseGeometryFile()
 }
 
 /*!
- * \brief MetaModelSubModelAttributes::updateSubModelParameters
+ * \brief CompositeModelSubModelAttributes::updateSubModelParameters
  * Updates subModel parameters.\n
  * Slot activated when mpOkButton clicked signal is raised.
  */
-void MetaModelSubModelAttributes::updateSubModelParameters()
+void CompositeModelSubModelAttributes::updateSubModelParameters()
 {
   // save the old ComponentInfo
   ComponentInfo oldComponentInfo(mpComponent->getComponentInfo());
@@ -1568,9 +1568,9 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
 
 
   QStringList parameterNames, oldParameterValues, newParameterValues;
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     BaseEditor *pBaseEditor = mpComponent->getGraphicsView()->getModelWidget()->getEditor();
-    MetaModelEditor *pEditor = qobject_cast<MetaModelEditor*>(pBaseEditor);
+    CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pBaseEditor);
 
     parameterNames = pEditor->getParameterNames(mpComponent->getName());  //Assume submodel; otherwise returned list is empty
     foreach(QString parName, parameterNames) {
@@ -1598,14 +1598,14 @@ void MetaModelSubModelAttributes::updateSubModelParameters()
 }
 
 /*!
-  \class MetaModelConnectionAttributes
-  \brief A dialog for displaying MetaModel Connection Attributes
+  \class CompositeModelConnectionAttributes
+  \brief A dialog for displaying CompositeModel Connection Attributes
   */
 /*!
   \param pConnectionLineAnnotation - pointer to LineAnnotation
   \param pMainWindow - pointer to MainWindow
   */
-MetaModelConnectionAttributes::MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation,
+CompositeModelConnectionAttributes::CompositeModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation,
                                                              bool edit, QWidget *pParent)
   : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mEdit(edit)
 {
@@ -1634,7 +1634,7 @@ MetaModelConnectionAttributes::MetaModelConnectionAttributes(GraphicsView *pGrap
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(createMetaModelConnection()));
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(createCompositeModelConnection()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
@@ -1663,25 +1663,26 @@ MetaModelConnectionAttributes::MetaModelConnectionAttributes(GraphicsView *pGrap
 }
 
 /*!
- * \brief MetaModelConnectionAttributes::createMetaModelConnection
+ * \brief CompositeModelConnectionAttributes::createCompositeModelConnection
  * Slot activated when mpOkButton clicked signal is raised.\n
  * Creates a connection
  */
-void MetaModelConnectionAttributes::createMetaModelConnection()
+void CompositeModelConnectionAttributes::createCompositeModelConnection()
 {
   if (mEdit) {
-    MetaModelConnection oldMetaModelConnection;
-    oldMetaModelConnection.mDelay = mpConnectionLineAnnotation->getDelay();
-    oldMetaModelConnection.mZf = mpConnectionLineAnnotation->getZf();
-    oldMetaModelConnection.mZfr = mpConnectionLineAnnotation->getZfr();
-    oldMetaModelConnection.mAlpha = mpConnectionLineAnnotation->getAlpha();
-    MetaModelConnection newMetaModelConnection;
-    newMetaModelConnection.mDelay = mpDelayTextBox->text();
-    newMetaModelConnection.mZf = mpZfTextBox->text();
-    newMetaModelConnection.mZfr = mpZfrTextBox->text();
-    newMetaModelConnection.mAlpha = mpAlphaTextBox->text();
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateMetaModelConnection(mpConnectionLineAnnotation, oldMetaModelConnection,
-                                                                                         newMetaModelConnection));
+    CompositeModelConnection oldCompositeModelConnection;
+    oldCompositeModelConnection.mDelay = mpConnectionLineAnnotation->getDelay();
+    oldCompositeModelConnection.mZf = mpConnectionLineAnnotation->getZf();
+    oldCompositeModelConnection.mZfr = mpConnectionLineAnnotation->getZfr();
+    oldCompositeModelConnection.mAlpha = mpConnectionLineAnnotation->getAlpha();
+    CompositeModelConnection newCompositeModelConnection;
+    newCompositeModelConnection.mDelay = mpDelayTextBox->text();
+    newCompositeModelConnection.mZf = mpZfTextBox->text();
+    newCompositeModelConnection.mZfr = mpZfrTextBox->text();
+    newCompositeModelConnection.mAlpha = mpAlphaTextBox->text();
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateCompositeModelConnection(mpConnectionLineAnnotation,
+                                                                                              oldCompositeModelConnection,
+                                                                                              newCompositeModelConnection));
   } else {
     mpConnectionLineAnnotation->setDelay(mpDelayTextBox->text());
     mpConnectionLineAnnotation->setZf(mpZfTextBox->text());

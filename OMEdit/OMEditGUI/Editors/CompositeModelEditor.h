@@ -29,8 +29,8 @@
  */
 
 
-#ifndef METAMODELEDITOR_H
-#define METAMODELEDITOR_H
+#ifndef COMPOSITEMODELEDITOR_H
+#define COMPOSITEMODELEDITOR_H
 
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
@@ -40,7 +40,7 @@
 #include <QDomDocument>
 #include <QSyntaxHighlighter>
 
-class MetaModelEditor;
+class CompositeModelEditor;
 class LineAnnotation;
 
 /*!
@@ -51,22 +51,22 @@ class XMLDocument : public QDomDocument
 {
 public:
   XMLDocument();
-  XMLDocument(MetaModelEditor *pMetaModelEditor);
+  XMLDocument(CompositeModelEditor *pCompositeModelEditor);
   QString toString() const;
 private:
-  MetaModelEditor *mpMetaModelEditor;
+  CompositeModelEditor *mpCompositeModelEditor;
 };
 
-class MetaModelEditor : public BaseEditor
+class CompositeModelEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  MetaModelEditor(QWidget *pParent);
+  CompositeModelEditor(QWidget *pParent);
   QString getLastValidText() {return mLastValidText;}
   bool validateText();
   QString getXmlDocumentContent() {return mXmlDocument.toString();}
   void setXmlDocumentContent(QString content) {mXmlDocument.setContent(content);}
-  QString getMetaModelName();
+  QString getCompositeModelName();
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
   QDomElement getInterfacePoint(QString subModelName, QString interfaceName);
@@ -76,7 +76,7 @@ public:
   QStringList getParameterNames(QString subModelName);
   QString getParameterValue(QString subModelName, QString parameterName);
   void setParameterValue(QString subModelName, QString parameterName, QString value);
-  void setMetaModelName(QString name);
+  void setCompositeModelName(QString name);
   bool addSubModel(Component *pComponent);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
@@ -119,18 +119,18 @@ public slots:
   QString getInterfaceDomain(QString interfacePoint);
 };
 
-class MetaModelEditorPage;
-class MetaModelHighlighter : public QSyntaxHighlighter
+class CompositeModelEditorPage;
+class CompositeModelHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  MetaModelHighlighter(MetaModelEditorPage *pMetaModelEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
+  CompositeModelHighlighter(CompositeModelEditorPage *pCompositeModelEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
-  MetaModelEditorPage *mpMetaModelEditorPage;
+  CompositeModelEditorPage *mpCompositeModelEditorPage;
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
@@ -150,4 +150,4 @@ private:
 public slots:
   void settingsChanged();
 };
-#endif // METAMODELEDITOR_H
+#endif // COMPOSITEMODELEDITOR_H

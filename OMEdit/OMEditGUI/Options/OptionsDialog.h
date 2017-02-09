@@ -51,7 +51,7 @@ class LibrariesPage;
 class TextEditorPage;
 class ModelicaEditorPage;
 class MetaModelicaEditorPage;
-class MetaModelEditorPage;
+class CompositeModelEditorPage;
 class CEditorPage;
 class HTMLEditorPage;
 class GraphicalViewsPage;
@@ -88,7 +88,7 @@ public:
   void readTextEditorSettings();
   void readModelicaEditorSettings();
   void readMetaModelicaEditorSettings();
-  void readMetaModelEditorSettings();
+  void readCompositeModelEditorSettings();
   void readCEditorSettings();
   void readHTMLEditorSettings();
   void readGraphicalViewsSettings();
@@ -107,7 +107,7 @@ public:
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
   void saveMetaModelicaEditorSettings();
-  void saveMetaModelEditorSettings();
+  void saveCompositeModelEditorSettings();
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
   void saveTLMSettings();
@@ -129,7 +129,7 @@ public:
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
-  MetaModelEditorPage* getMetaModelEditorPage() {return mpMetaModelEditorPage;}
+  CompositeModelEditorPage* getCompositeModelEditorPage() {return mpCompositeModelEditorPage;}
   CEditorPage* getCEditorPage() {return mpCEditorPage;}
   HTMLEditorPage* getHTMLEditorPage() {return mpHTMLEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
@@ -150,7 +150,7 @@ signals:
   void textSettingsChanged();
   void modelicaEditorSettingsChanged();
   void metaModelicaEditorSettingsChanged();
-  void metaModelEditorSettingsChanged();
+  void compositeModelEditorSettingsChanged();
   void cEditorSettingsChanged();
   void HTMLEditorSettingsChanged();
 public slots:
@@ -163,7 +163,7 @@ private:
   TextEditorPage *mpTextEditorPage;
   ModelicaEditorPage *mpModelicaEditorPage;
   MetaModelicaEditorPage *mpMetaModelicaEditorPage;
-  MetaModelEditorPage *mpMetaModelEditorPage;
+  CompositeModelEditorPage *mpCompositeModelEditorPage;
   CEditorPage *mpCEditorPage;
   HTMLEditorPage *mpHTMLEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
@@ -411,11 +411,11 @@ public slots:
   void setLineWrapping(bool enabled);
 };
 
-class MetaModelEditorPage : public QWidget
+class CompositeModelEditorPage : public QWidget
 {
   Q_OBJECT
 public:
-  MetaModelEditorPage(OptionsDialog *pOptionsDialog);
+  CompositeModelEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void setColor(QString item, QColor color);
   QColor getColor(QString item);

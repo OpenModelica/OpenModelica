@@ -186,7 +186,7 @@ QString Helper::unloadClass;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
-QString Helper::unloadMetaModelOrTextTip;
+QString Helper::unloadCompositeModelOrTextTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
@@ -412,7 +412,7 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
-  Helper::unloadMetaModelOrTextTip = tr("Unloads the MetaModel/Text file");
+  Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -667,8 +667,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
     case TLMMANAGER_NOT_SET:
       return tr("TLM Manager executable path is not set. Set it via <b>%1->TLM</b>");
-    case METAMODEL_UNSAVED:
-      return tr("Metamodel <b>%1</b> has unsaved changes. Do you want to save?");
+    case COMPOSITEMODEL_UNSAVED:
+      return tr("CompositeModel <b>%1</b> has unsaved changes. Do you want to save?");
     case TLMCOSIMULATION_ALREADY_RUNNING:
       return tr("TLM co-simulation session is already running. Only one session is allowed.");
     case TERMINAL_COMMAND_NOT_SET:

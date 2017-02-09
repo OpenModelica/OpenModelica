@@ -104,7 +104,7 @@ public:
   void setParameterValue(QString parameterValue) {mParameterValue = parameterValue;}
   QString getParameterValueWithoutFetching() const {return mParameterValue;}
   QString getParameterValue(OMCProxy *pOMCProxy, QString className);
-  // MetaModel attributes
+  // CompositeModel attributes
   void setStartCommand(QString startCommand) {mStartCommand = startCommand;}
   QString getStartCommand() const {return mStartCommand;}
   void setExactStep(bool exactStep) {mExactStep = exactStep;}
@@ -147,7 +147,7 @@ private:
   QMap<QString, QString> mModifiersMap;
   bool mParameterValueLoaded;
   QString mParameterValue;
-  // MetaModel attributes
+  // CompositeModel attributes
   QString mStartCommand;
   bool mExactStep;
   QString mModelFile;

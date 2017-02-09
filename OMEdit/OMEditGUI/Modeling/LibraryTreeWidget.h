@@ -79,7 +79,7 @@ public:
   enum LibraryType {
     Modelica,    /* Used to represent Modelica models. */
     Text,        /* Used to represent text based files. */
-    MetaModel    /* Used to represent MetaModel files. */
+    CompositeModel    /* Used to represent CompositeModel files. */
   };
   enum SaveContentsType {
     SaveInOneFile,
@@ -255,7 +255,7 @@ public:
   void showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
@@ -324,7 +324,7 @@ private:
   QAction *mpSimulationSetupAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
-  QAction *mpUnloadMetaModelFileAction;
+  QAction *mpUnloadCompositeModelFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFolderAction;
   QAction *mpRenameAction;
@@ -362,7 +362,7 @@ public slots:
   void simulationSetup();
   void duplicateClass();
   void unloadClass();
-  void unloadMetaModelOrTextFile();
+  void unloadCompositeModelOrTextFile();
   void createNewFile();
   void createNewFolder();
   void renameLibraryTreeItem();
@@ -391,9 +391,9 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
+  void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
-  bool parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelName);
+  bool parseCompositeModelFile(QFileInfo fileInfo, QString *pCompositeModelName);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -412,9 +412,9 @@ private:
   void saveChildLibraryTreeItemsOneFileHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryTreeItem);
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
+  bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void searchClasses();

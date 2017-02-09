@@ -244,7 +244,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   mpModelWidget->removeDynamicResults(); // show static values during editing
   QStringList dialogAnnotation;
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (!pLibraryTreeItem->isSaved()) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.")
@@ -424,24 +424,24 @@ void GraphicsView::addComponentToClass(Component *pComponent)
       }
       // if the package has version only then add the uses annotation
       if (!pPackageLibraryTreeItem->mClassInformation.version.isEmpty() &&
-        // Do not add a uses-annotation to itself
-        pTopLevelLibraryTreeItem->getNameStructure() != packageName) {
+          // Do not add a uses-annotation to itself
+          pTopLevelLibraryTreeItem->getNameStructure() != packageName) {
         newUsesAnnotation.append(QString("%1(version=\"%2\")").arg(packageName).arg(pPackageLibraryTreeItem->mClassInformation.version));
         QString usesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(newUsesAnnotation.join(","));
         pMainWindow->getOMCProxy()->addClassAnnotation(pTopLevelLibraryTreeItem->getNameStructure(), usesAnnotationString);
         pLibraryTreeModel->updateLibraryTreeItemClassText(pTopLevelLibraryTreeItem);
       }
     }
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     // add SubModel Element
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->addSubModel(pComponent);
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+    pCompositeModelEditor->addSubModel(pComponent);
     /* We need to iterate over Component childrens
      * because if user deletes a submodel for which interfaces are already fetched
      * then undoing the delete operation reaches here and we should add the interfaces back.
      */
     foreach (Component *pInterfaceComponent, pComponent->getComponentsList()) {
-      pMetaModelEditor->addInterface(pInterfaceComponent, pComponent->getName());
+      pCompositeModelEditor->addInterface(pInterfaceComponent, pComponent->getName());
     }
   }
 }
@@ -485,9 +485,9 @@ void GraphicsView::deleteComponentFromClass(Component *pComponent)
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     // delete the component from OMC
     pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->deleteSubModel(pComponent->getName());
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+    pCompositeModelEditor->deleteSubModel(pComponent->getName());
   }
 }
 
@@ -557,10 +557,10 @@ bool GraphicsView::checkComponentName(QString componentName)
  */
 void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    if (pMetaModelEditor) {
-      pMetaModelEditor->createConnection(pConnectionLineAnnotation);
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+    if (pCompositeModelEditor) {
+      pCompositeModelEditor->createConnection(pConnectionLineAnnotation);
     }
   } else {
     MainWindow *pMainWindow = MainWindow::instance();
@@ -584,9 +584,9 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
   MainWindow *pMainWindow = MainWindow::instance();
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    pMetaModelEditor->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+    pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
   } else {
     pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
                                                  pConnectionLineAnnotation->getEndComponentName(),
@@ -601,10 +601,10 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
  */
 void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation)
 {
-  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
-    if (pMetaModelEditor) {
-      pMetaModelEditor->updateConnection(pConnectionLineAnnotation);
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+    if (pCompositeModelEditor) {
+      pCompositeModelEditor->updateConnection(pConnectionLineAnnotation);
     }
   }
 }
@@ -1186,7 +1186,7 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
           if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
               !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
               ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
-               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel &&
+               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
                 pComponent->getComponentType() == Component::Port))) {
             return pComponent;
           }
@@ -1254,18 +1254,18 @@ void GraphicsView::addConnection(Component *pComponent)
         }
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
         mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-          MetaModelEditor* editor = dynamic_cast<MetaModelEditor*>(mpModelWidget->getEditor());
+        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+          CompositeModelEditor* editor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
           if(!editor->okToConnect(mpConnectionLineAnnotation)) {
-              removeCurrentConnection();
+            removeCurrentConnection();
           }
           else {
-              MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
-              pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(this, mpConnectionLineAnnotation, false, MainWindow::instance());
-              // if user cancels the array connection
-              if (!pMetaModelConnectionAttributes->exec()) {
-                removeCurrentConnection();
-              }
+            CompositeModelConnectionAttributes *pCompositeModelConnectionAttributes;
+            pCompositeModelConnectionAttributes = new CompositeModelConnectionAttributes(this, mpConnectionLineAnnotation, false, MainWindow::instance());
+            // if user cancels the array connection
+            if (!pCompositeModelConnectionAttributes->exec()) {
+              removeCurrentConnection();
+            }
           }
         } else {
           mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
@@ -1448,12 +1448,12 @@ void GraphicsView::showGraphicsViewProperties()
 
 /*!
  * \brief GraphicsView::showSimulationParamsDialog
- * Opens the MetaModelSimulationParamsDialog.
+ * Opens the CompositeModelSimulationParamsDialog.
  */
 void GraphicsView::showSimulationParamsDialog()
 {
-  MetaModelSimulationParamsDialog *pMetaModelSimulationParamsDialog = new MetaModelSimulationParamsDialog(this);
-  pMetaModelSimulationParamsDialog->exec();
+  CompositeModelSimulationParamsDialog *pCompositeModelSimulationParamsDialog = new CompositeModelSimulationParamsDialog(this);
+  pCompositeModelSimulationParamsDialog->exec();
 }
 
 /*!
@@ -1906,7 +1906,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       pShapeAnnotation->showShapeProperties();
       return;
-    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
       pShapeAnnotation->showShapeAttributes();
       return;
     }
@@ -2104,7 +2104,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       menu.addSeparator();
       menu.addAction(mpPropertiesAction);
-    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
       menu.addSeparator();
       menu.addAction(mpRenameAction);
       menu.addSeparator();
@@ -2439,9 +2439,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
      * Fetch the components when we really need to draw them.
      */
     /*! @todo Unable the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
-//    drawModelInheritedClassComponents(this, StringHandler::Icon);
-//    getModelComponents();
-//    drawModelIconComponents();
+    //    drawModelInheritedClassComponents(this, StringHandler::Icon);
+    //    getModelComponents();
+    //    drawModelIconComponents();
     mpEditor = 0;
   } else {
     // icon graphics framework
@@ -2462,9 +2462,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     QString contents = "";
     QFile file(mpLibraryTreeItem->getFileName());
     if (!file.open(QIODevice::ReadOnly)) {
-//      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-//                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-//                            .arg(file.errorString()), Helper::ok);
+      //      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+      //                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
+      //                            .arg(file.errorString()), Helper::ok);
     } else {
       contents = QString(file.readAll());
       file.close();
@@ -2858,7 +2858,7 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       pMainLayout->addWidget(mpModelStatusBar);
-    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
@@ -2880,33 +2880,33 @@ void ModelWidget::createModelWidgetComponents()
       if (MainWindow::instance()->isDebug()) {
         mpUndoView = new QUndoView(mpUndoStack);
       }
-      // create an xml editor for MetaModel
-      mpEditor = new MetaModelEditor(this);
-      MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+      // create an xml editor for CompositeModel
+      mpEditor = new CompositeModelEditor(this);
+      CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor);
       if (mpLibraryTreeItem->getFileName().isEmpty()) {
-        QString defaultMetaModelText = QString("<?xml version='1.0' encoding='UTF-8'?>\n"
-                                               "<!-- The root node is the meta-model -->\n"
-                                               "<Model Name=\"%1\">\n"
-                                               "  <!-- List of connected sub-models -->\n"
-                                               "  <SubModels/>\n"
-                                               "  <!-- List of TLM connections -->\n"
-                                               "  <Connections/>\n"
-                                               "  <!-- Parameters for the simulation -->\n"
-                                               "  <SimulationParams StartTime=\"0\" StopTime=\"1\" />\n"
-                                               "</Model>").arg(mpLibraryTreeItem->getName());
-        pMetaModelEditor->setPlainText(defaultMetaModelText);
-        mpLibraryTreeItem->setClassText(defaultMetaModelText);
+        QString defaultCompositeModelText = QString("<?xml version='1.0' encoding='UTF-8'?>\n"
+                                                    "<!-- The root node is the composite-model -->\n"
+                                                    "<Model Name=\"%1\">\n"
+                                                    "  <!-- List of connected sub-models -->\n"
+                                                    "  <SubModels/>\n"
+                                                    "  <!-- List of TLM connections -->\n"
+                                                    "  <Connections/>\n"
+                                                    "  <!-- Parameters for the simulation -->\n"
+                                                    "  <SimulationParams StartTime=\"0\" StopTime=\"1\" />\n"
+                                                    "</Model>").arg(mpLibraryTreeItem->getName());
+        pCompositeModelEditor->setPlainText(defaultCompositeModelText);
+        mpLibraryTreeItem->setClassText(defaultCompositeModelText);
       } else {
-        pMetaModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        pCompositeModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
       }
-      MetaModelHighlighter *pMetaModelHighlighter = new MetaModelHighlighter(OptionsDialog::instance()->getMetaModelEditorPage(),
-                                                                             mpEditor->getPlainTextEdit());
+      CompositeModelHighlighter *pCompositeModelHighlighter = new CompositeModelHighlighter(OptionsDialog::instance()->getCompositeModelEditorPage(),
+                                                                                            mpEditor->getPlainTextEdit());
       mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-      connect(OptionsDialog::instance(), SIGNAL(metaModelEditorSettingsChanged()), pMetaModelHighlighter, SLOT(settingsChanged()));
+      connect(OptionsDialog::instance(), SIGNAL(compositeModelEditorSettingsChanged()), pCompositeModelHighlighter, SLOT(settingsChanged()));
       // only get the TLM submodels and connectors if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
-        getMetaModelSubModels();
-        getMetaModelConnections();
+        getCompositeModelSubModels();
+        getCompositeModelConnections();
       }
       mpIconGraphicsScene->clearSelection();
       mpDiagramGraphicsScene->clearSelection();
@@ -2988,15 +2988,15 @@ void ModelWidget::reDrawModelWidget()
   QApplication::setOverrideCursor(Qt::WaitCursor);
   clearGraphicsViews();
   /* get model components, connection and shapes. */
-  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-    // read new metamodel anem
-    QString metaModelName = getMetaModelName();
-    mpLibraryTreeItem->setName(metaModelName);
+  if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    // read new CompositeModel name
+    QString compositeModelName = getCompositeModelName();
+    mpLibraryTreeItem->setName(compositeModelName);
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
-    setWindowTitle(metaModelName);
+    setWindowTitle(compositeModelName);
     // get the submodels and connections
-    getMetaModelSubModels();
-    getMetaModelConnections();
+    getCompositeModelSubModels();
+    getCompositeModelConnections();
     // clear the undo stack
     mpUndoStack->clear();
   } else {
@@ -3047,8 +3047,8 @@ bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
   if (ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor)) {
     return pModelicaEditor->validateText(pLibraryTreeItem);
-  } else if (MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor)) {
-    return pMetaModelEditor->validateText();
+  } else if (CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor)) {
+    return pCompositeModelEditor->validateText();
   } else {
     return true;
   }
@@ -3244,7 +3244,7 @@ void ModelWidget::updateModelText()
   pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(this);
   }
 #endif
@@ -3306,7 +3306,7 @@ void ModelWidget::updateDynamicResults(QString resultFileName)
 bool ModelWidget::writeCoSimulationResultFile(QString fileName)
 {
   // this function is only for meta-models
-  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::MetaModel) {
+  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::CompositeModel) {
     return false;
   }
   // first remove the result file.
@@ -3334,20 +3334,20 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
          * \note Don't check for connection.
          * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.
          */
-//        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
-//          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
-//              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
-            // Comma between interfaces
-            if (nActiveInterfaces > 0) {
-              resultFile << ",";
-            }
-            resultFile << "\"" << name << ".R[cG][cG](1)\",\"" << name << ".R[cG][cG](2)\",\"" << name << ".R[cG][cG](3)\","; // Position vector
-            resultFile << "\"" << name << ".A(1,1)\",\"" << name << ".A(1,2)\",\"" << name << ".A(1,3)\",\""
-                       << name << ".A(2,1)\",\"" << name << ".A(2,2)\",\"" << name << ".A(2,3)\",\""
-                       << name << ".A(3,1)\",\"" << name << ".A(3,2)\",\"" << name << ".A(3,3)\""; // Transformation matrix
-            nActiveInterfaces++;
-//          }
-//        }
+        //        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
+        //          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
+        //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
+        // Comma between interfaces
+        if (nActiveInterfaces > 0) {
+          resultFile << ",";
+        }
+        resultFile << "\"" << name << ".R[cG][cG](1)\",\"" << name << ".R[cG][cG](2)\",\"" << name << ".R[cG][cG](3)\","; // Position vector
+        resultFile << "\"" << name << ".A(1,1)\",\"" << name << ".A(1,2)\",\"" << name << ".A(1,3)\",\""
+                   << name << ".A(2,1)\",\"" << name << ".A(2,2)\",\"" << name << ".A(2,3)\",\""
+                   << name << ".A(3,1)\",\"" << name << ".A(3,2)\",\"" << name << ".A(3,3)\""; // Transformation matrix
+        nActiveInterfaces++;
+        //          }
+        //        }
       }
     }
     // write just single data for result file
@@ -3438,7 +3438,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
 bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile)
 {
   // this function is only for meta-models
-  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::MetaModel) {
+  if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::CompositeModel) {
     return false;
   }
   // first remove the visual xml file.
@@ -3640,9 +3640,9 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
          * \note Don't check for connection.
          * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.
          */
-//        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
-//          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
-//              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
+        //        foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getConnectionsList()) {
+        //          if ((pConnectionLineAnnotation->getStartComponentName().compare(name) == 0) ||
+        //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
         // get the angle
         double phi[3] = {0.0, 0.0, 0.0};
         QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
@@ -3727,8 +3727,8 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         visited = true;
         i++;
         break;
-//          }
-//        }
+        //          }
+        //        }
       }
     }
 
@@ -4294,25 +4294,25 @@ void ModelWidget::detectMultipleDeclarations()
 }
 
 /*!
- * \brief ModelWidget::getMetaModelName
- * Gets the MetaModel name.
+ * \brief ModelWidget::getCompositeModelName
+ * Gets the CompositeModel name.
  * \return
  */
-QString ModelWidget::getMetaModelName()
+QString ModelWidget::getCompositeModelName()
 {
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
-  return pMetaModelEditor->getMetaModelName();
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor);
+  return pCompositeModelEditor->getCompositeModelName();
 }
 
 /*!
- * \brief ModelWidget::getMetaModelSubModels
+ * \brief ModelWidget::getCompositeModelSubModels
  * Gets the submodels of the TLM and place them in the diagram GraphicsView.
  */
-void ModelWidget::getMetaModelSubModels()
+void ModelWidget::getCompositeModelSubModels()
 {
   QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
-  QDomNodeList subModels = pMetaModelEditor->getSubModels();
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor);
+  QDomNodeList subModels = pCompositeModelEditor->getSubModels();
   for (int i = 0; i < subModels.size(); i++) {
     QString transformation;
     QDomElement subModel = subModels.at(i).toElement();
@@ -4376,14 +4376,14 @@ void ModelWidget::getMetaModelSubModels()
 }
 
 /*!
- * \brief ModelWidget::getMetaModelConnections
+ * \brief ModelWidget::getCompositeModelConnections
  * Reads the TLM connections and draws them.
  */
-void ModelWidget::getMetaModelConnections()
+void ModelWidget::getCompositeModelConnections()
 {
   MessagesWidget *pMessagesWidget = MessagesWidget::instance();
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
-  QDomNodeList connections = pMetaModelEditor->getConnections();
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor);
+  QDomNodeList connections = pCompositeModelEditor->getConnections();
   for (int i = 0; i < connections.size(); i++) {
     QDomElement connection = connections.at(i).toElement();
     // get start submodel
@@ -4467,24 +4467,24 @@ void ModelWidget::getMetaModelConnections()
     pConnectionLineAnnotation->setZfr(connection.attribute("Zfr"));
     pConnectionLineAnnotation->setAlpha(connection.attribute("alpha"));
     // check if interfaces are aligned
-    bool aligned = pMetaModelEditor->interfacesAligned(pConnectionLineAnnotation->getStartComponentName(),
-                                                       pConnectionLineAnnotation->getEndComponentName());
+    bool aligned = pCompositeModelEditor->interfacesAligned(pConnectionLineAnnotation->getStartComponentName(),
+                                                            pConnectionLineAnnotation->getEndComponentName());
     pConnectionLineAnnotation->setAligned(aligned);
 
-    MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
+    CompositeModelEditor *pEditor = dynamic_cast<CompositeModelEditor*>(mpEditor);
     if(pEditor->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
-            StringHandler::getTLMCausality(StringHandler::TLMInput)) {
-        pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
-        pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
-        //pConnectionLineAnnotation->update();
-        //pConnectionLineAnnotation->handleComponentMoved();
+       StringHandler::getTLMCausality(StringHandler::TLMInput)) {
+      pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
+      pConnectionLineAnnotation->setEndArrow(StringHandler::ArrowFilled);
+      //pConnectionLineAnnotation->update();
+      //pConnectionLineAnnotation->handleComponentMoved();
     }
     else if(pEditor->getInterfaceCausality(pConnectionLineAnnotation->getEndComponentName()) ==
             StringHandler::getTLMCausality(StringHandler::TLMOutput)) {
-        pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
-        pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
-        //pConnectionLineAnnotation->update();
-        //pConnectionLineAnnotation->handleComponentMoved();
+      pConnectionLineAnnotation->setLinePattern(StringHandler::LineDash);
+      pConnectionLineAnnotation->setStartArrow(StringHandler::ArrowFilled);
+      //pConnectionLineAnnotation->update();
+      //pConnectionLineAnnotation->handleComponentMoved();
     }
 
     mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
@@ -4631,17 +4631,17 @@ void ModelWidget::showDocumentationView()
 }
 
 /*!
- * \brief ModelWidget::metaModelEditorTextChanged
- * Called when MetaModelEditor text has been changed by user manually.\n
+ * \brief ModelWidget::compositeModelEditorTextChanged
+ * Called when CompositeModelEditor text has been changed by user manually.\n
  * Updates the LibraryTreeItem and ModelWidget with new changes.
  * \return
  */
-bool ModelWidget::metaModelEditorTextChanged()
+bool ModelWidget::compositeModelEditorTextChanged()
 {
   MessageHandler *pMessageHandler = new MessageHandler;
-  Utilities::parseMetaModelText(pMessageHandler, mpEditor->getPlainTextEdit()->toPlainText());
+  Utilities::parseCompositeModelText(pMessageHandler, mpEditor->getPlainTextEdit()->toPlainText());
   if (pMessageHandler->isFailed()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, getLibraryTreeItem()->getName(), false,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, getLibraryTreeItem()->getName(), false,
                                                           pMessageHandler->line(), pMessageHandler->column(), 0, 0,
                                                           pMessageHandler->statusMessage(), Helper::syntaxKind, Helper::errorLevel));
     delete pMessageHandler;
@@ -4649,8 +4649,8 @@ bool ModelWidget::metaModelEditorTextChanged()
   }
   delete pMessageHandler;
   // update the xml document with new accepted text.
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpEditor);
-  pMetaModelEditor->setXmlDocumentContent(mpEditor->getPlainTextEdit()->toPlainText());
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor);
+  pCompositeModelEditor->setXmlDocumentContent(mpEditor->getPlainTextEdit()->toPlainText());
   /* get the model components and connectors */
   reDrawModelWidget();
   return true;
@@ -4764,7 +4764,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   }
-  else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
@@ -5025,7 +5025,7 @@ void ModelWidgetContainer::changeRecentModelsListSelection(bool moveDown)
  */
 void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
 {
-  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if (pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     // write dummy csv file for 3d view
     QString fileName;
     if (pModelWidget->getLibraryTreeItem()->getFileName().isEmpty()) {
@@ -5074,7 +5074,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
       case StringHandler::ModelicaText:
         pModelWidget->getTextViewToolButton()->setChecked(true);
@@ -5085,7 +5085,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
   }
 }
@@ -5118,7 +5118,7 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, metaModel;
+  bool enabled, modelica, compositeModel;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
@@ -5127,18 +5127,18 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
-      metaModel = false;
+      compositeModel = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       modelica = false;
-      metaModel = false;
+      compositeModel = false;
     } else {
       modelica = false;
-      metaModel = true;
+      compositeModel = true;
     }
   } else {
     enabled = false;
     modelica = false;
-    metaModel = false;
+    compositeModel = false;
     pModelWidget = 0;
     pLibraryTreeItem = 0;
   }
@@ -5147,17 +5147,17 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
+  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getEllipseShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || metaModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
@@ -5175,10 +5175,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled);
   MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled);
   MainWindow::instance()->getPrintModelAction()->setEnabled(enabled);
-  MainWindow::instance()->getSimulationParamsAction()->setEnabled(enabled && metaModel);
-  MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && metaModel);
-  MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && metaModel);
-  MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && metaModel);
+  MainWindow::instance()->getSimulationParamsAction()->setEnabled(enabled && compositeModel);
+  MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
+  MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
+  MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
@@ -5323,7 +5323,7 @@ void ModelWidgetContainer::printModel()
 /*!
  * \brief ModelWidgetContainer::showSimulationParams
  * Slot activated when MainWindow::mpSimulationParamsAction triggered SIGNAL is raised.
- * Shows the MetaModelSimulationParamsDialog
+ * Shows the CompositeModelSimulationParamsDialog
  */
 void ModelWidgetContainer::showSimulationParams()
 {

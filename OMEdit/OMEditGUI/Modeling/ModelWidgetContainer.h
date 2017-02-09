@@ -41,7 +41,7 @@
 #include "Util/Helper.h"
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
-#include "Editors/MetaModelEditor.h"
+#include "Editors/CompositeModelEditor.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
@@ -326,7 +326,7 @@ private slots:
 
 class ModelWidgetContainer;
 class ModelicaHighlighter;
-class MetaModelHighlighter;
+class CompositeModelHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
@@ -427,9 +427,9 @@ private:
   void removeInheritedClassConnections();
   void getModelConnections();
   void detectMultipleDeclarations();
-  QString getMetaModelName();
-  void getMetaModelSubModels();
-  void getMetaModelConnections();
+  QString getCompositeModelName();
+  void getCompositeModelSubModels();
+  void getCompositeModelConnections();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
@@ -437,7 +437,7 @@ private slots:
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool metaModelEditorTextChanged();
+  bool compositeModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
   void removeDynamicResults(QString resultFileName = "");

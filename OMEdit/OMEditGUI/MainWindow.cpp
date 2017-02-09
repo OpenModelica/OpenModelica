@@ -827,7 +827,7 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
 {
-  /* if MetaModel text is changed manually by user then validate it before fetaching the interface data. */
+  /* if CompositeModel text is changed manually by user then validate it before fetaching the interface data. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
@@ -844,7 +844,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString s
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
       pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
       pMessageBox->setDefaultButton(QMessageBox::Yes);
       int answer = pMessageBox->exec();
@@ -872,7 +872,7 @@ void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
   if (!mpTLMCoSimulationDialog) {
     mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
   }
-  /* if MetaModel text is changed manually by user then validate it before starting the TLM co-simulation. */
+  /* if CompositeModel text is changed manually by user then validate it before starting the TLM co-simulation. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;
@@ -885,7 +885,7 @@ void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
     int answer = pMessageBox->exec();
@@ -1237,15 +1237,15 @@ void MainWindow::showOpenTransformationFileDialog()
 }
 
 /*!
- * \brief MainWindow::createNewMetaModelFile
+ * \brief MainWindow::createNewCompositeModelFile
  * Creates a new TLM LibraryTreeItem & ModelWidget.\n
- * Slot activated when mpNewMetaModelFileAction triggered signal is raised.
+ * Slot activated when mpNewCompositeModelFileAction triggered signal is raised.
  */
-void MainWindow::createNewMetaModelFile()
+void MainWindow::createNewCompositeModelFile()
 {
-  QString metaModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("MetaModel");
+  QString compositeModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("CompositeModel");
   LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, metaModelName, metaModelName, "",
+  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CompositeModel, compositeModelName, compositeModelName, "",
                                                                                false, pLibraryTreeModel->getRootLibraryTreeItem());
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
@@ -1253,11 +1253,11 @@ void MainWindow::createNewMetaModelFile()
 }
 
 /*!
- * \brief MainWindow::openMetaModelFile
- * Opens the MetaModel file(s).\n
- * Slot activated when mpOpenMetaModelFileAction triggered signal is raised.
+ * \brief MainWindow::openCompositeModelFile
+ * Opens the CompositeModel file(s).\n
+ * Slot activated when mpOpenCompositeModelFileAction triggered signal is raised.
  */
-void MainWindow::openMetaModelFile()
+void MainWindow::openCompositeModelFile()
 {
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
@@ -2296,8 +2296,8 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
     if (!pLibraryTreeItem->getModelWidget()) {
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     }
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    pMetaModelEditor->addInterfacesData(interfaces, parameters, singleModel);
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
+    pCompositeModelEditor->addInterfacesData(interfaces, parameters, singleModel);
     pLibraryTreeItem->getModelWidget()->updateModelText();
   }
 }
@@ -2482,17 +2482,17 @@ void MainWindow::createActions()
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
-  // create new MetaModel action
-  mpNewMetaModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New MetaModel"), this);
-  mpNewMetaModelFileAction->setStatusTip(tr("Create New MetaModel File"));
-  connect(mpNewMetaModelFileAction, SIGNAL(triggered()), SLOT(createNewMetaModelFile()));
-  // open MetaModel file action
-  mpOpenMetaModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open MetaModel(s)"), this);
-  mpOpenMetaModelFileAction->setStatusTip(tr("Opens the MetaModel file(s)"));
-  connect(mpOpenMetaModelFileAction, SIGNAL(triggered()), SLOT(openMetaModelFile()));
+  // create new CompositeModel action
+  mpNewCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New Composite Model"), this);
+  mpNewCompositeModelFileAction->setStatusTip(tr("Create New Composite Model file"));
+  connect(mpNewCompositeModelFileAction, SIGNAL(triggered()), SLOT(createNewCompositeModelFile()));
+  // open CompositeModel file action
+  mpOpenCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Composite Model(s)"), this);
+  mpOpenCompositeModelFileAction->setStatusTip(tr("Opens the Composite Model file(s)"));
+  connect(mpOpenCompositeModelFileAction, SIGNAL(triggered()), SLOT(openCompositeModelFile()));
   // load External Model action
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
-  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM meta-modeling"));
+  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
@@ -2887,8 +2887,8 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenResultFileAction);
   pFileMenu->addAction(mpOpenTransformationFileAction);
   pFileMenu->addSeparator();
-  pFileMenu->addAction(mpNewMetaModelFileAction);
-  pFileMenu->addAction(mpOpenMetaModelFileAction);
+  pFileMenu->addAction(mpNewCompositeModelFileAction);
+  pFileMenu->addAction(mpOpenCompositeModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpOpenDirectoryAction);

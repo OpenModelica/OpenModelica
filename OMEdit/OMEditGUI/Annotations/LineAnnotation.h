@@ -75,7 +75,7 @@ public:
   QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
-  QString getMetaModelShapeAnnotation();
+  QString getCompositeModelShapeAnnotation();
   void addPoint(QPointF point);
   void removePoint(int index);
   void clearPoints();
@@ -109,7 +109,7 @@ private:
   QString mStartComponentName;
   Component *mpEndComponent;
   QString mEndComponentName;
-  // MetaModel attributes
+  // CompositeModel attributes
   QString mDelay;
   QString mZf;
   QString mZfr;

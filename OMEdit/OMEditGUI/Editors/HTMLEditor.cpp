@@ -75,7 +75,7 @@ void HTMLEditor::contentsHasChanged(int position, int charsRemoved, int charsAdd
  */
 /*!
  * \brief HTMLHighlighter::HTMLHighlighter
- * \param pMetaModelEditorPage
+ * \param pCompositeModelEditorPage
  * \param pPlainTextEdit
  */
 HTMLHighlighter::HTMLHighlighter(HTMLEditorPage *pHTMLEditorPage, QPlainTextEdit *pPlainTextEdit)
@@ -119,8 +119,8 @@ void HTMLHighlighter::initializeSettings()
 
   QStringList closingTags;
   closingTags << ">" << "/>";
-  foreach (const QString &metaModelTag, closingTags) {
-    rule.mPattern = QRegExp(metaModelTag);
+  foreach (const QString &closingTag, closingTags) {
+    rule.mPattern = QRegExp(closingTag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }

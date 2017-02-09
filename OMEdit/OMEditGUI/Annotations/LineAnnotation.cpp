@@ -489,27 +489,27 @@ QString LineAnnotation::getShapeAnnotation()
   return QString("Line(").append(annotationString.join(",")).append(")");
 }
 
-QString LineAnnotation::getMetaModelShapeAnnotation()
+/*!
+ * \brief LineAnnotation::getCompositeModelShapeAnnotation
+ * \return
+ */
+QString LineAnnotation::getCompositeModelShapeAnnotation()
 {
   QStringList annotationString;
   annotationString.append(GraphicItem::getShapeAnnotation());
   // get points
   QString pointsString;
-  if (mPoints.size() > 0)
-  {
+  if (mPoints.size() > 0) {
     pointsString.append("{");
   }
-  for (int i = 0 ; i < mPoints.size() ; i++)
-  {
+  for (int i = 0 ; i < mPoints.size() ; i++) {
     pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
     pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1)
-    {
+    if (i < mPoints.size() - 1) {
       pointsString.append(",");
     }
   }
-  if (mPoints.size() > 0)
-  {
+  if (mPoints.size() > 0) {
     pointsString.append("}");
     annotationString.append(pointsString);
   }
@@ -766,9 +766,9 @@ void LineAnnotation::handleComponentMoved()
  */
 void LineAnnotation::updateConnectionAnnotation()
 {
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pMetaModelEditor->updateConnection(this);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+    pCompositeModelEditor->updateConnection(this);
   } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());

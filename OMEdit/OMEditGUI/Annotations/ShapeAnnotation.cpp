@@ -1532,7 +1532,7 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
  */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
+  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
@@ -1550,9 +1550,9 @@ void ShapeAnnotation::showShapeAttributes()
     return;
   }
   LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
-  pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, true, MainWindow::instance());
-  pMetaModelConnectionAttributes->exec();
+  CompositeModelConnectionAttributes *pCompositeModelConnectionAttributes;
+  pCompositeModelConnectionAttributes = new CompositeModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, true, MainWindow::instance());
+  pCompositeModelConnectionAttributes->exec();
 }
 
 /*!
@@ -1587,14 +1587,14 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   }
 
   QMenu menu(mpGraphicsView);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::MetaModel) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     menu.addAction(mpShapeAttributesAction);
 
     //Only show align interfaces action for bidirectional connections
     LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     QString startName = pConnectionLineAnnotation->getStartComponentName();
     QString endName = pConnectionLineAnnotation->getEndComponentName();
-    MetaModelEditor *pEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+    CompositeModelEditor *pEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     if(pEditor->getInterfaceCausality(startName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
        pEditor->getInterfaceCausality(endName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
         menu.addSeparator();

@@ -218,11 +218,11 @@ public slots:
   void updateComponentAttributes();
 };
 
-class MetaModelSubModelAttributes : public QDialog
+class CompositeModelSubModelAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  MetaModelSubModelAttributes(Component *pComponent, QWidget *pParent = 0);
+  CompositeModelSubModelAttributes(Component *pComponent, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
@@ -257,11 +257,11 @@ private slots:
 };
 
 class LineAnnotation;
-class MetaModelConnectionAttributes : public QDialog
+class CompositeModelConnectionAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  MetaModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool edit, QWidget *pParent = 0);
+  CompositeModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool edit, QWidget *pParent = 0);
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
@@ -284,7 +284,7 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
-  void createMetaModelConnection();
+  void createCompositeModelConnection();
 };
 
 #endif // COMPONENTPROPERTIES_H

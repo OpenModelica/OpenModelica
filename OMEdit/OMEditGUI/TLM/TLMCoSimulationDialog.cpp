@@ -314,7 +314,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     gethostname(myname, MAXHOSTNAME);
     hp = gethostbyname((const char*) myname);
     if (hp == NULL) {
-      MessageItem messageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+      MessageItem messageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
                               tr("Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1")
                               .arg(QString(myname)), Helper::scriptingKind, Helper::errorLevel);
       MessagesWidget::instance()->addGUIMessage(messageItem);
@@ -416,10 +416,10 @@ void TLMCoSimulationDialog::runTLMCoSimulation()
 }
 
 /*!
- * \brief MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog
+ * \brief CompositeModelSimulationParamsDialog::CompositeModelSimulationParamsDialog
  * \param pGraphicsView
  */
-MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *pGraphicsView)
+CompositeModelSimulationParamsDialog::CompositeModelSimulationParamsDialog(GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
@@ -435,17 +435,17 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
   // Initialize simulation parameters
   mOldStartTime = "";
   mOldStopTime = "";
-  MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-  if(pMetaModelEditor->isSimulationParams()){
-    mOldStartTime = pMetaModelEditor->getSimulationStartTime();
-    mOldStopTime = pMetaModelEditor->getSimulationStopTime();
+  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+  if(pCompositeModelEditor->isSimulationParams()){
+    mOldStartTime = pCompositeModelEditor->getSimulationStartTime();
+    mOldStopTime = pCompositeModelEditor->getSimulationStopTime();
   }
   // CoSimulation Interval
   mpStartTimeLabel = new Label(tr("Start Time:"));
   mpStartTimeTextBox = new QLineEdit(mOldStartTime);
   mpStopTimeLabel = new Label(tr("Stop Time:"));
   mpStopTimeTextBox = new QLineEdit(mOldStopTime);
-    // Add the validators
+  // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
   mpStopTimeTextBox->setValidator(pDoubleValidator);
@@ -473,11 +473,11 @@ MetaModelSimulationParamsDialog::MetaModelSimulationParamsDialog(GraphicsView *p
 }
 
 /*!
- * \brief MetaModelSimulationParamsDialog::saveSimulationParams
+ * \brief CompositeModelSimulationParamsDialog::saveSimulationParams
  * Saves the Simulation Parameters.
  * Slot activated when mpSave button clicked signal is raised.
  */
-void MetaModelSimulationParamsDialog::saveSimulationParams()
+void CompositeModelSimulationParamsDialog::saveSimulationParams()
 {
   if (validateSimulationParams()) {
     // If user has changed the simulation parameters then push the change on the stack.
@@ -495,7 +495,7 @@ void MetaModelSimulationParamsDialog::saveSimulationParams()
 /*!
   Validates the simulation params entered by the user.
   */
-bool MetaModelSimulationParamsDialog::validateSimulationParams()
+bool CompositeModelSimulationParamsDialog::validateSimulationParams()
 {
   if (mpStartTimeTextBox->text().isEmpty()) {
     mpStartTimeTextBox->setText("0");

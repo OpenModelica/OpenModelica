@@ -28,7 +28,7 @@
  *
  */
 
-#include "MetaModelEditor.h"
+#include "CompositeModelEditor.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
@@ -43,10 +43,10 @@ XMLDocument::XMLDocument()
 
 }
 
-XMLDocument::XMLDocument(MetaModelEditor *pMetaModelEditor)
+XMLDocument::XMLDocument(CompositeModelEditor *pCompositeModelEditor)
   : QDomDocument()
 {
-  mpMetaModelEditor = pMetaModelEditor;
+  mpCompositeModelEditor = pCompositeModelEditor;
 }
 
 QString XMLDocument::toString() const
@@ -56,27 +56,27 @@ QString XMLDocument::toString() const
 }
 
 
-MetaModelEditor::MetaModelEditor(QWidget *pParent)
+CompositeModelEditor::CompositeModelEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
   mXmlDocument = XMLDocument(this);
 }
 
 /*!
- * \brief MetaModelEditor::validateText
- * When user make some changes in the MetaModelEditor text then this method validates the text.
+ * \brief CompositeModelEditor::validateText
+ * When user make some changes in the CompositeModelEditor text then this method validates the text.
  * \return
  */
-bool MetaModelEditor::validateText()
+bool CompositeModelEditor::validateText()
 {
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
-    if (!mpModelWidget->metaModelEditorTextChanged()) {
+    if (!mpModelWidget->compositeModelEditorTextChanged()) {
       QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("MetaModel")
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Composite Model")
                            .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
                            .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
       pMessageBox->addButton(Helper::fixErrorsManually, QMessageBox::AcceptRole);
@@ -106,12 +106,12 @@ bool MetaModelEditor::validateText()
 
 
 /*!
- * @\brief MetaModelEditor::getSubModelElement
+ * @\brief CompositeModelEditor::getSubModelElement
  * Returns SubModel element tag by model name
  * @param name Name of the sub model to search for
  * @return
  */
-QDomElement MetaModelEditor::getSubModelElement(QString name)
+QDomElement CompositeModelEditor::getSubModelElement(QString name)
 {
   QDomElement subModelsElement = getSubModelsElement();
   if(!subModelsElement.isNull()) {
@@ -126,7 +126,7 @@ QDomElement MetaModelEditor::getSubModelElement(QString name)
   return QDomElement();
 }
 
-QStringList MetaModelEditor::getParameterNames(QString subModelName)
+QStringList CompositeModelEditor::getParameterNames(QString subModelName)
 {
   QStringList ret;
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
@@ -143,7 +143,7 @@ QStringList MetaModelEditor::getParameterNames(QString subModelName)
   return ret;
 }
 
-QString MetaModelEditor::getParameterValue(QString subModelName, QString parameterName)
+QString CompositeModelEditor::getParameterValue(QString subModelName, QString parameterName)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -161,7 +161,7 @@ QString MetaModelEditor::getParameterValue(QString subModelName, QString paramet
   return "";      //Should never happen
 }
 
-void MetaModelEditor::setParameterValue(QString subModelName, QString parameterName, QString value)
+void CompositeModelEditor::setParameterValue(QString subModelName, QString parameterName, QString value)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -188,11 +188,11 @@ void MetaModelEditor::setParameterValue(QString subModelName, QString parameterN
 }
 
 /*!
- * \brief MetaModelEditor::getMetaModelName
- * Gets the MetaModel name.
+ * \brief CompositeModelEditor::getCompositeModelName
+ * Gets the CompositeModel name.
  * \return
  */
-QString MetaModelEditor::getMetaModelName()
+QString CompositeModelEditor::getCompositeModelName()
 {
   QDomNodeList nodes = mXmlDocument.elementsByTagName("Model");
   for (int i = 0; i < nodes.size(); i++) {
@@ -203,11 +203,11 @@ QString MetaModelEditor::getMetaModelName()
 }
 
 /*!
- * \brief MetaModelEditor::getSubModelsElement
+ * \brief CompositeModelEditor::getSubModelsElement
  * Returns the SubModels element tag.
  * \return
  */
-QDomElement MetaModelEditor::getSubModelsElement()
+QDomElement CompositeModelEditor::getSubModelsElement()
 {
   QDomNodeList subModels = mXmlDocument.elementsByTagName("SubModels");
   if (subModels.size() > 0) {
@@ -217,22 +217,22 @@ QDomElement MetaModelEditor::getSubModelsElement()
 }
 
 /*!
- * \brief MetaModelEditor::getSubModels
+ * \brief CompositeModelEditor::getSubModels
  * Returns the list of SubModel tags.
  * \return
  */
-QDomNodeList MetaModelEditor::getSubModels()
+QDomNodeList CompositeModelEditor::getSubModels()
 {
   return mXmlDocument.elementsByTagName("SubModel");
 }
 
 /*!
- * \brief MetaModelEditor::getInterfacePoint
+ * \brief CompositeModelEditor::getInterfacePoint
  * \param subModelName
  * \param interfaceName
  * \return
  */
-QDomElement MetaModelEditor::getInterfacePoint(QString subModelName, QString interfaceName)
+QDomElement CompositeModelEditor::getInterfacePoint(QString subModelName, QString interfaceName)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -251,11 +251,11 @@ QDomElement MetaModelEditor::getInterfacePoint(QString subModelName, QString int
 }
 
 /*!
- * \brief MetaModelEditor::getConnectionsElement
+ * \brief CompositeModelEditor::getConnectionsElement
  * Returns the Connections element tag.
  * \return
  */
-QDomElement MetaModelEditor::getConnectionsElement()
+QDomElement CompositeModelEditor::getConnectionsElement()
 {
   QDomNodeList connections = mXmlDocument.elementsByTagName("Connections");
   if (connections.size() > 0) {
@@ -265,21 +265,21 @@ QDomElement MetaModelEditor::getConnectionsElement()
 }
 
 /*!
- * \brief MetaModelEditor::getConnections
+ * \brief CompositeModelEditor::getConnections
  * Returns the list of Connection tags.
  * \return
  */
-QDomNodeList MetaModelEditor::getConnections()
+QDomNodeList CompositeModelEditor::getConnections()
 {
   return mXmlDocument.elementsByTagName("Connection");
 }
 
 /*!
- * \brief MetaModelEditor::setMetaModelName
- * Sets the MetaModel name.
+ * \brief CompositeModelEditor::setCompositeModelName
+ * Sets the CompositeModel name.
  * \param name
  */
-void MetaModelEditor::setMetaModelName(QString name)
+void CompositeModelEditor::setCompositeModelName(QString name)
 {
   QDomNodeList nodes = mXmlDocument.elementsByTagName("Model");
   for (int i = 0; i < nodes.size(); i++) {
@@ -291,12 +291,12 @@ void MetaModelEditor::setMetaModelName(QString name)
 }
 
 /*!
- * \brief MetaModelEditor::addSubModel
+ * \brief CompositeModelEditor::addSubModel
  * Adds a SubModel tag with Annotation tag as child of it.
  * \param pComponent
  * \return
  */
-bool MetaModelEditor::addSubModel(Component *pComponent)
+bool CompositeModelEditor::addSubModel(Component *pComponent)
 {
   pComponent->getComponentInfo()->setName(pComponent->getName().remove("."));
   QDomElement subModels = getSubModelsElement();
@@ -328,7 +328,7 @@ bool MetaModelEditor::addSubModel(Component *pComponent)
 }
 
 /*!
- * \brief MetaModelEditor::createAnnotationElement
+ * \brief CompositeModelEditor::createAnnotationElement
  * Creates an Annotation tag for SubModel.
  * \param subModel
  * \param visible
@@ -336,7 +336,7 @@ bool MetaModelEditor::addSubModel(Component *pComponent)
  * \param extent
  * \param rotation
  */
-void MetaModelEditor::createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation)
+void CompositeModelEditor::createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation)
 {
   QDomElement annotation = mXmlDocument.createElement("Annotation");
   annotation.setAttribute("Visible", visible);
@@ -348,7 +348,7 @@ void MetaModelEditor::createAnnotationElement(QDomElement subModel, QString visi
 }
 
 /*!
- * \brief MetaModelEditor::updateSubModelPlacementAnnotation
+ * \brief CompositeModelEditor::updateSubModelPlacementAnnotation
  * Updates the SubModel annotation.
  * \param name
  * \param visible
@@ -356,7 +356,7 @@ void MetaModelEditor::createAnnotationElement(QDomElement subModel, QString visi
  * \param extent
  * \param rotation
  */
-void MetaModelEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
+void CompositeModelEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -382,14 +382,14 @@ void MetaModelEditor::updateSubModelPlacementAnnotation(QString name, QString vi
 }
 
 /*!
- * \brief MetaModelEditor::updateSubModelParameters
+ * \brief CompositeModelEditor::updateSubModelParameters
  * Updates the SubModel parameters.
  * \param name
  * \param startCommand
  * \param exactStep
  * \param geometryFile
  */
-void MetaModelEditor::updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile)
+void CompositeModelEditor::updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -413,7 +413,7 @@ void MetaModelEditor::updateSubModelParameters(QString name, QString startComman
   }
 }
 
-void MetaModelEditor::updateSubModelOrientation(QString name, QGenericMatrix<3,1,double> pos, QGenericMatrix<3,1,double> rot)
+void CompositeModelEditor::updateSubModelOrientation(QString name, QGenericMatrix<3,1,double> pos, QGenericMatrix<3,1,double> rot)
 {
   QString pos_str = QString("%1,%2,%3").arg(pos(0,0)).arg(pos(0,1)).arg(pos(0,2));
   getSubModelElement(name).setAttribute("Position", pos_str);
@@ -429,12 +429,12 @@ void MetaModelEditor::updateSubModelOrientation(QString name, QGenericMatrix<3,1
 }
 
 /*!
- * \brief MetaModelEditor::createConnection
+ * \brief CompositeModelEditor::createConnection
  * Adds a connection tag with Annotation tag as child of it.
  * \param pConnectionLineAnnotation
  * \return
  */
-bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation)
+bool CompositeModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   QDomElement connections = getConnectionsElement();
   if (!connections.isNull()) {
@@ -447,7 +447,7 @@ bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation
     connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
     // create Annotation Element
     QDomElement annotation = mXmlDocument.createElement("Annotation");
-    annotation.setAttribute("Points", pConnectionLineAnnotation->getMetaModelShapeAnnotation());
+    annotation.setAttribute("Points", pConnectionLineAnnotation->getCompositeModelShapeAnnotation());
     connection.appendChild(annotation);
     connections.appendChild(connection);
     setPlainText(mXmlDocument.toString());
@@ -470,12 +470,12 @@ bool MetaModelEditor::createConnection(LineAnnotation *pConnectionLineAnnotation
 }
 
 /*!
- * \brief MetaModelEditor::okToConnect
+ * \brief CompositeModelEditor::okToConnect
  * Checks if a connection between two interfaces is legal
  * \param pConnectionLineAnnotation
  * \return
  */
-bool MetaModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
+bool CompositeModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
 {
   QString startComp = pConnectionLineAnnotation->getStartComponentName();
   QString endComp = pConnectionLineAnnotation->getEndComponentName();
@@ -488,7 +488,7 @@ bool MetaModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
   QString domain2 = getInterfaceDomain(endComp);
 
   if (dimensions1 != dimensions2) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
                                                           tr("Cannot connect interface points of different dimensions (%1 to %2)")
                                                           .arg(QString::number(dimensions1), QString::number(dimensions2)),
                                                           Helper::scriptingKind, Helper::errorLevel));
@@ -500,13 +500,13 @@ bool MetaModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
         causality2  == StringHandler::getTLMCausality(StringHandler::TLMOutput)) &&
       !(causality1 == StringHandler::getTLMCausality(StringHandler::TLMOutput) &&
         causality2  == StringHandler::getTLMCausality(StringHandler::TLMInput))) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
                                                           tr("Cannot connect interface points of different causality (%1 to %2)")
                                                           .arg(causality1, causality2), Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
   if (domain1 != domain2) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
                                                           tr("Cannot connect interface points of different domains (%1 to %2)")
                                                           .arg(domain1, domain2), Helper::scriptingKind, Helper::errorLevel));
     return false;
@@ -515,11 +515,11 @@ bool MetaModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation)
 }
 
 /*!
- * \brief MetaModelEditor::updateConnection
- * Updates the MetaModel connection annotation.
+ * \brief CompositeModelEditor::updateConnection
+ * Updates the CompositeModel connection annotation.
  * \param pConnectionLineAnnotation
  */
-void MetaModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnotation)
+void CompositeModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
@@ -536,7 +536,7 @@ void MetaModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnotation
         QDomElement annotationElement = connectionChildren.at(j).toElement();
         if (annotationElement.tagName().compare("Annotation") == 0) {
           annotationFound = true;
-          annotationElement.setAttribute("Points", pConnectionLineAnnotation->getMetaModelShapeAnnotation());
+          annotationElement.setAttribute("Points", pConnectionLineAnnotation->getCompositeModelShapeAnnotation());
           setPlainText(mXmlDocument.toString());
           return;
         }
@@ -544,7 +544,7 @@ void MetaModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnotation
       // if we found the connection and there is no annotation with it then add the annotation element.
       if (!annotationFound) {
         QDomElement annotationElement = mXmlDocument.createElement("Annotation");
-        annotationElement.setAttribute("Points", pConnectionLineAnnotation->getMetaModelShapeAnnotation());
+        annotationElement.setAttribute("Points", pConnectionLineAnnotation->getCompositeModelShapeAnnotation());
         connection.appendChild(annotationElement);
         setPlainText(mXmlDocument.toString());
       }
@@ -554,12 +554,12 @@ void MetaModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnotation
 }
 
 /*!
- * \brief MetaModelEditor::updateSimulationParams
+ * \brief CompositeModelEditor::updateSimulationParams
  * Updates the simulation parameters.
  * \param startTime
  * \param stopTime
  */
-void MetaModelEditor::updateSimulationParams(QString startTime, QString stopTime)
+void CompositeModelEditor::updateSimulationParams(QString startTime, QString stopTime)
 {
   QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
   if (!simulationParamsElement.isNull()) {
@@ -570,10 +570,10 @@ void MetaModelEditor::updateSimulationParams(QString startTime, QString stopTime
 }
 
 /*!
- * \brief MetaModelEditor::isSimulationParams
+ * \brief CompositeModelEditor::isSimulationParams
  * Updates the simulation parameters.
  */
-bool MetaModelEditor::isSimulationParams()
+bool CompositeModelEditor::isSimulationParams()
 {
   QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
   if (!simulationParamsElement.isNull()) {
@@ -583,30 +583,30 @@ bool MetaModelEditor::isSimulationParams()
 }
 
 /*!
- * \brief MetaModelEditor::getSimulationStartTime
+ * \brief CompositeModelEditor::getSimulationStartTime
  * Gets the simulation start time.
  */
-QString MetaModelEditor::getSimulationStartTime()
+QString CompositeModelEditor::getSimulationStartTime()
 {
   QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
   return simulationParamsElement.attribute("StartTime");
 }
 
 /*!
- * \brief MetaModelEditor::getSimulationStopTime
+ * \brief CompositeModelEditor::getSimulationStopTime
  * Gets the simulation stop time.
  */
-QString MetaModelEditor::getSimulationStopTime()
+QString CompositeModelEditor::getSimulationStopTime()
 {
   QDomElement simulationParamsElement = mXmlDocument.documentElement().firstChildElement("SimulationParams");
   return simulationParamsElement.attribute("StopTime");
 }
 /*!
- * \brief MetaModelEditor::addInterfacesData
+ * \brief CompositeModelEditor::addInterfacesData
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces
  */
-void MetaModelEditor::addInterfacesData(QDomElement interfaces, QDomElement parameters, QString singleModel)
+void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement parameters, QString singleModel)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -778,12 +778,12 @@ void MetaModelEditor::addInterfacesData(QDomElement interfaces, QDomElement para
 }
 
 /*!
- * \brief MetaModelEditor::addInterface
+ * \brief CompositeModelEditor::addInterface
  * Adds the interface to submodel.
  * \param pInterfaceComponent
  * \param subModel
  */
-void MetaModelEditor::addInterface(Component *pInterfaceComponent, QString subModel)
+void CompositeModelEditor::addInterface(Component *pInterfaceComponent, QString subModel)
 {
   QDomElement subModelElement = getSubModelElement(subModel);
   QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
@@ -798,13 +798,13 @@ void MetaModelEditor::addInterface(Component *pInterfaceComponent, QString subMo
 }
 
 /*!
- * \brief MetaModelEditor::interfacesAligned
+ * \brief CompositeModelEditor::interfacesAligned
  * Checkes whether specified TLM interfaces are aligned
  * \param interface1 First interface (submodel1.interface1)
  * \param interface2 Second interface (submodel2.interface2)
  * \return
  */
-bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
+bool CompositeModelEditor::interfacesAligned(QString interface1, QString interface2)
 {
   if(getInterfaceCausality(interface1) != StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
     //Assume interface2 has same causality and dimensions, otherwise they could not be connected)
@@ -870,12 +870,12 @@ bool MetaModelEditor::interfacesAligned(QString interface1, QString interface2)
 }
 
 /*!
- * \brief MetaModelEditor::deleteSubModel
+ * \brief CompositeModelEditor::deleteSubModel
  * Delets a SubModel.
  * \param name
  * \return
  */
-bool MetaModelEditor::deleteSubModel(QString name)
+bool CompositeModelEditor::deleteSubModel(QString name)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -894,12 +894,12 @@ bool MetaModelEditor::deleteSubModel(QString name)
 }
 
 /*!
- * \brief MetaModelEditor::deleteConnection
+ * \brief CompositeModelEditor::deleteConnection
  * Delets a connection.
  * \param name
  * \return
  */
-bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSubModelName)
+bool CompositeModelEditor::deleteConnection(QString startSubModelName, QString endSubModelName)
 {
   QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
   for (int i = 0 ; i < connectionList.size() ; i++) {
@@ -920,13 +920,13 @@ bool MetaModelEditor::deleteConnection(QString startSubModelName, QString endSub
 }
 
 /*!
- * \brief MetaModelEditor::existInterfacePoint
- * Checks whether the interface already exists in MetaModel or not.
+ * \brief CompositeModelEditor::existInterfacePoint
+ * Checks whether the interface already exists in CompositeModel or not.
  * \param subModelName
  * \param interfaceName
  * \return
  */
-bool MetaModelEditor::existInterfacePoint(QString subModelName, QString interfaceName)
+bool CompositeModelEditor::existInterfacePoint(QString subModelName, QString interfaceName)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -946,7 +946,7 @@ bool MetaModelEditor::existInterfacePoint(QString subModelName, QString interfac
   return false;
 }
 
-bool MetaModelEditor::existParameter(QString subModelName, QDomElement parameterDataElement)
+bool CompositeModelEditor::existParameter(QString subModelName, QDomElement parameterDataElement)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -967,12 +967,12 @@ bool MetaModelEditor::existParameter(QString subModelName, QDomElement parameter
 }
 
 /*!
- * \brief MetaModelEditor::getRotationVector
+ * \brief CompositeModelEditor::getRotationVector
  * Computes a rotation vector (321) from a rotation matrix
  * \param R
  * \return
  */
-QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3,double> R)
+QGenericMatrix<3,1,double> CompositeModelEditor::getRotationVector(QGenericMatrix<3,3,double> R)
 {
   double a11 = R(0,0);
   double a12 = R(0,1);
@@ -991,7 +991,7 @@ QGenericMatrix<3,1,double> MetaModelEditor::getRotationVector(QGenericMatrix<3,3
   return QGenericMatrix<3,1,double>(phi);
 }
 
-void MetaModelEditor::updateAllOrientations()
+void CompositeModelEditor::updateAllOrientations()
 {
   QDomNodeList subModelList = getSubModels();
   for (int i=0; i<subModelList.size(); ++i) {
@@ -1013,7 +1013,7 @@ void MetaModelEditor::updateAllOrientations()
 }
 
 /*!
- * \brief MetaModelEditor::getPositionAndRotationVectors
+ * \brief CompositeModelEditor::getPositionAndRotationVectors
  * Extracts position and rotation vectors for specified TLM interface, both between CG and model X and between X and interface C
  * \param interfacePoint Interface on the form "submodel.interface"
  * \param CG_X_PHI_CG Rotation vector between CG abd X
@@ -1022,7 +1022,7 @@ void MetaModelEditor::updateAllOrientations()
  * \param X_C_R_X Position vector between X and C
  * \return
  */
-bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG,
+bool CompositeModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG,
                                                     QGenericMatrix<3,1,double> &X_C_PHI_X, QGenericMatrix<3,1,double> &CG_X_R_CG,
                                                     QGenericMatrix<3,1,double> &X_C_R_X)
 {
@@ -1048,7 +1048,7 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGen
   //Make sure that all vector strings are found in XML
   if (cg_x_phi_cg_str.isEmpty() || cg_x_r_cg_str.isEmpty() || x_c_r_x_str.isEmpty() || x_c_phi_x_str.isEmpty()) {
     QString msg = tr("Interface coordinates does not exist in xml");
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
     return false;
   }
@@ -1083,13 +1083,13 @@ bool MetaModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGen
 }
 
 /*!
- * \brief MetaModelEditor::alignInterfaces
+ * \brief CompositeModelEditor::alignInterfaces
  * Aligns interface C1 in model X1 to interface C2 in model X2
  * \param fromSubModel Full name of first interfae (X1.C1)
  * \param toSubModel Full name of second interface (X2.C2)
  * \param showError
  */
-void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface, bool showError)
+void CompositeModelEditor::alignInterfaces(QString fromInterface, QString toInterface, bool showError)
 {
   //Extract rotation and position vectors to Qt matrices
   QGenericMatrix<3,1,double> CG_X1_PHI_CG;  //Rotation of X1 relative to CG expressed in CG
@@ -1139,19 +1139,19 @@ void MetaModelEditor::alignInterfaces(QString fromInterface, QString toInterface
   // Give error message if alignment failed
   if (!interfacesAligned(fromInterface, toInterface)) {
     if (showError) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::MetaModel, "", false, 0, 0, 0, 0, tr("Alignment operation failed."),
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, tr("Alignment operation failed."),
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
   }
 }
 
 /*!
- * \brief MetaModelEditor::getInterfaceType
+ * \brief CompositeModelEditor::getInterfaceType
  * Returns the type of specified interface (e.g. "3D", "Input"...)
  * \param pConnectionLineAnnotation
  * \return
  */
-int MetaModelEditor::getInterfaceDimensions(QString interfacePoint)
+int CompositeModelEditor::getInterfaceDimensions(QString interfacePoint)
 {
   //Extract submodel and interface names
   QString modelName = interfacePoint.split(".").at(0);
@@ -1168,7 +1168,7 @@ int MetaModelEditor::getInterfaceDimensions(QString interfacePoint)
   return 3;    //Backwards compatibility
 }
 
-QString MetaModelEditor::getInterfaceCausality(QString interfacePoint)
+QString CompositeModelEditor::getInterfaceCausality(QString interfacePoint)
 {
   //Extract submodel and interface names
   QString modelName = interfacePoint.split(".").at(0);
@@ -1186,12 +1186,12 @@ QString MetaModelEditor::getInterfaceCausality(QString interfacePoint)
 }
 
 /*!
- * \brief MetaModelEditor::getInterfaceDomain
+ * \brief CompositeModelEditor::getInterfaceDomain
  * Returns the physical domain of specified interface (e.g. "Mechanical", "Hydraulic"...)
  * \param pConnectionLineAnnotation
  * \return
  */
-QString MetaModelEditor::getInterfaceDomain(QString interfacePoint)
+QString CompositeModelEditor::getInterfaceDomain(QString interfacePoint)
 {
   //Extract submodel and interface names
   QString modelName = interfacePoint.split(".").at(0);
@@ -1210,24 +1210,24 @@ QString MetaModelEditor::getInterfaceDomain(QString interfacePoint)
 }
 
 /*!
- * \brief MetaModelEditor::fuzzyCompare
+ * \brief CompositeModelEditor::fuzzyCompare
  * Special implementation of fuzzyCompare. Uses much larger tolerance than built-in qFuzzyCompare()
  * \param p1
  * \param p2
  * \return
  */
-inline bool MetaModelEditor::fuzzyCompare(double p1, double p2)
+inline bool CompositeModelEditor::fuzzyCompare(double p1, double p2)
 {
   //! @todo What tolerance should be used? This is just a random number that seemed to work for some reason.
   return (qAbs(p1 - p2) <= qMax(1e-4 * qMin(qAbs(p1), qAbs(p2)),1e-5));
 }
 
 /*!
- * \brief MetaModelEditor::showContextMenu
+ * \brief CompositeModelEditor::showContextMenu
  * Create a context menu.
  * \param point
  */
-void MetaModelEditor::showContextMenu(QPoint point)
+void CompositeModelEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
@@ -1235,12 +1235,12 @@ void MetaModelEditor::showContextMenu(QPoint point)
 }
 
 /*!
- * \brief MetaModelEditor::setPlainText
+ * \brief CompositeModelEditor::setPlainText
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.
  */
-void MetaModelEditor::setPlainText(const QString &text)
+void CompositeModelEditor::setPlainText(const QString &text)
 {
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
@@ -1254,14 +1254,14 @@ void MetaModelEditor::setPlainText(const QString &text)
 }
 
 /*!
- * \brief MetaModelEditor::contentsHasChanged
- * Slot activated when MetaModelEditor's QTextDocument contentsChanged SIGNAL is raised.\n
- * Sets the model as modified so that user knows that his current metamodel is not saved.
+ * \brief CompositeModelEditor::contentsHasChanged
+ * Slot activated when CompositeModelEditor's QTextDocument contentsChanged SIGNAL is raised.\n
+ * Sets the model as modified so that user knows that his current CompositeModel is not saved.
  * \param position
  * \param charsRemoved
  * \param charsAdded
  */
-void MetaModelEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+void CompositeModelEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);
   if (mpModelWidget->isVisible()) {
@@ -1284,54 +1284,54 @@ void MetaModelEditor::contentsHasChanged(int position, int charsRemoved, int cha
   }
 }
 
-//! @class MetaModelHighlighter
-//! @brief A syntax highlighter for MetaModelEditor.
+//! @class CompositeModelHighlighter
+//! @brief A syntax highlighter for CompositeModelEditor.
 
 //! Constructor
-MetaModelHighlighter::MetaModelHighlighter(MetaModelEditorPage *pMetaModelEditorPage, QPlainTextEdit *pPlainTextEdit)
+CompositeModelHighlighter::CompositeModelHighlighter(CompositeModelEditorPage *pCompositeModelEditorPage, QPlainTextEdit *pPlainTextEdit)
   : QSyntaxHighlighter(pPlainTextEdit->document())
 {
-  mpMetaModelEditorPage = pMetaModelEditorPage;
+  mpCompositeModelEditorPage = pCompositeModelEditorPage;
   mpPlainTextEdit = pPlainTextEdit;
   initializeSettings();
 }
 
 //! Initialized the syntax highlighter with default values.
-void MetaModelHighlighter::initializeSettings()
+void CompositeModelHighlighter::initializeSettings()
 {
   QFont font;
-  font.setFamily(mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  font.setFamily(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-  mpPlainTextEdit->setTabStopWidth(mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
+  mpPlainTextEdit->setTabStopWidth(mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpMetaModelEditorPage->getColor("Text"));
-  mTagFormat.setForeground(mpMetaModelEditorPage->getColor("Tag"));
-  mElementFormat.setForeground(mpMetaModelEditorPage->getColor("Element"));
-  mCommentFormat.setForeground(mpMetaModelEditorPage->getColor("Comment"));
-  mQuotationFormat.setForeground(QColor(mpMetaModelEditorPage->getColor("Quotes")));
+  mTextFormat.setForeground(mpCompositeModelEditorPage->getColor("Text"));
+  mTagFormat.setForeground(mpCompositeModelEditorPage->getColor("Tag"));
+  mElementFormat.setForeground(mpCompositeModelEditorPage->getColor("Element"));
+  mCommentFormat.setForeground(mpCompositeModelEditorPage->getColor("Comment"));
+  mQuotationFormat.setForeground(QColor(mpCompositeModelEditorPage->getColor("Quotes")));
 
   rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
 
-  // MetaModel Tags
-  QStringList metaModelTags;
-  metaModelTags << "<\\?"
+  // CompositeModel Tags
+  QStringList compositeModelTags;
+  compositeModelTags << "<\\?"
                 << "<"
                 << "</"
                 << "\\?>"
                 << ">"
                 << "/>";
-  foreach (const QString &metaModelTag, metaModelTags) {
-    rule.mPattern = QRegExp(metaModelTag);
+  foreach (const QString &compositeModelTag, compositeModelTags) {
+    rule.mPattern = QRegExp(compositeModelTag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }
 
-  // MetaModel Elements
+  // CompositeModel Elements
   QStringList elementPatterns;
   elementPatterns << "\\bxml\\b"
                   << "\\bModel\\b"
@@ -1353,7 +1353,7 @@ void MetaModelHighlighter::initializeSettings()
     mHighlightingRules.append(rule);
   }
 
-  // MetaModel Comments
+  // CompositeModel Comments
   mCommentStartExpression = QRegExp("<!--");
   mCommentEndExpression = QRegExp("-->");
 }
@@ -1362,7 +1362,7 @@ void MetaModelHighlighter::initializeSettings()
   Highlights the multilines text.\n
   Quoted text.
   */
-void MetaModelHighlighter::highlightMultiLine(const QString &text)
+void CompositeModelHighlighter::highlightMultiLine(const QString &text)
 {
   int index = 0, startIndex = 0;
   int blockState = previousBlockState();
@@ -1415,15 +1415,15 @@ void MetaModelHighlighter::highlightMultiLine(const QString &text)
 }
 
 //! Reimplementation of QSyntaxHighlighter::highlightBlock
-void MetaModelHighlighter::highlightBlock(const QString &text)
+void CompositeModelHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpMetaModelEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingGroupBox()->isChecked()) {
+  if (!mpCompositeModelEditorPage->getOptionsDialog()->getTextEditorPage()->getSyntaxHighlightingGroupBox()->isChecked()) {
     return;
   }
   // set text block state
   setCurrentBlockState(0);
-  setFormat(0, text.length(), mpMetaModelEditorPage->getColor("Text"));
+  setFormat(0, text.length(), mpCompositeModelEditorPage->getColor("Text"));
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);
@@ -1437,7 +1437,7 @@ void MetaModelHighlighter::highlightBlock(const QString &text)
 }
 
 //! Slot activated whenever ModelicaEditor text settings changes.
-void MetaModelHighlighter::settingsChanged()
+void CompositeModelHighlighter::settingsChanged()
 {
   initializeSettings();
   rehighlight();

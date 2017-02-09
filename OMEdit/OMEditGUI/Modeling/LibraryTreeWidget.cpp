@@ -526,7 +526,7 @@ QString LibraryTreeItem::getTooltip() const {
  */
 QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
 {
-  if (mLibraryType == LibraryTreeItem::MetaModel) {
+  if (mLibraryType == LibraryTreeItem::CompositeModel) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
@@ -946,7 +946,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
   QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
   if (index.isValid()) {
     LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
-    // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., MetaModel & Text.
+    // if showOnlyModelica flag is enabled then filter out all other types of LibraryTreeItem e.g., CompositeModel & Text.
     if (mShowOnlyModelica && pLibraryTreeItem && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
       return false;
     }
@@ -1716,13 +1716,13 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
 }
 
 /*!
- * \brief LibraryTreeModel::unloadMetaModelOrTextFile
- * Unloads/deletes the MetaModel/Text class.
+ * \brief LibraryTreeModel::unloadCompositeModelOrTextFile
+ * Unloads/deletes the CompositeModel/Text class.
  * \param pLibraryTreeItem
  * \param askQuestion
  * \return
  */
-bool LibraryTreeModel::unloadMetaModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+bool LibraryTreeModel::unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
@@ -2432,7 +2432,7 @@ void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeModel::unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
-   // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
+  // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
   if (pLibraryTreeItem->getModelWidget()) {
     QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
@@ -2468,7 +2468,7 @@ void LibraryTreeModel::unloadFileChildren(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
 {
-   // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
+  // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
   if (pLibraryTreeItem->getModelWidget()) {
     QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {
@@ -2644,11 +2644,11 @@ void LibraryTreeView::createActions()
   mpUnloadClassAction->setShortcut(QKeySequence::Delete);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadClassAction, SIGNAL(triggered()), SLOT(unloadClass()));
-  // unload MetaModel/Text file Action
-  mpUnloadMetaModelFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadMetaModelFileAction->setShortcut(QKeySequence::Delete);
-  mpUnloadMetaModelFileAction->setStatusTip(Helper::unloadMetaModelOrTextTip);
-  connect(mpUnloadMetaModelFileAction, SIGNAL(triggered()), SLOT(unloadMetaModelOrTextFile()));
+  // unload CompositeModel/Text file Action
+  mpUnloadCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadCompositeModelFileAction->setShortcut(QKeySequence::Delete);
+  mpUnloadCompositeModelFileAction->setStatusTip(Helper::unloadCompositeModelOrTextTip);
+  connect(mpUnloadCompositeModelFileAction, SIGNAL(triggered()), SLOT(unloadCompositeModelOrTextFile()));
   // new file Action
   mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileAction->setStatusTip(tr("Creates a new file"));
@@ -2845,14 +2845,14 @@ void LibraryTreeView::showContextMenu(QPoint point)
         menu.addAction(mpDeleteAction);
         if (pLibraryTreeItem->isTopLevel()) {
           menu.addSeparator();
-          menu.addAction(mpUnloadMetaModelFileAction);
+          menu.addAction(mpUnloadCompositeModelFileAction);
         }
         break;
-      case LibraryTreeItem::MetaModel:
+      case LibraryTreeItem::CompositeModel:
         menu.addAction(mpFetchInterfaceDataAction);
         menu.addAction(mpTLMCoSimulationAction);
         menu.addSeparator();
-        menu.addAction(mpUnloadMetaModelFileAction);
+        menu.addAction(mpUnloadCompositeModelFileAction);
         break;
     }
     menu.exec(viewport()->mapToGlobal(point));
@@ -3110,14 +3110,14 @@ void LibraryTreeView::unloadClass()
 }
 
 /*!
- * \brief LibraryTreeView::unloadMetaModelOrTextFile
- * Unloads the MetaModel/Text LibraryTreeItem.
+ * \brief LibraryTreeView::unloadCompositeModelOrTextFile
+ * Unloads the CompositeModel/Text LibraryTreeItem.
  */
-void LibraryTreeView::unloadMetaModelOrTextFile()
+void LibraryTreeView::unloadCompositeModelOrTextFile()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->unloadMetaModelOrTextFile(pLibraryTreeItem);
+    mpLibraryWidget->getLibraryTreeModel()->unloadCompositeModelOrTextFile(pLibraryTreeItem);
   }
 }
 
@@ -3339,7 +3339,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       if (isModelicaLibraryType) {
         unloadClass();
       } else  if (isTopLevel) {
-        unloadMetaModelOrTextFile();
+        unloadCompositeModelOrTextFile();
       }
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
       if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
@@ -3430,7 +3430,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
   } else {
-    openMetaModelOrTextFile(fileInfo, showProgress);
+    openCompositeModelOrTextFile(fileInfo, showProgress);
   }
 }
 
@@ -3521,12 +3521,12 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
 }
 
 /*!
- * \brief LibraryWidget::openMetaModelOrTextFile
- * Opens a MetaModel/Text file and creates a LibraryTreeItem for it.
+ * \brief LibraryWidget::openCompositeModelOrTextFile
+ * Opens a CompositeModel/Text file and creates a LibraryTreeItem for it.
  * \param fileInfo
  * \param showProgress
  */
-void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -3553,10 +3553,10 @@ void LibraryWidget::openMetaModelOrTextFile(QFileInfo fileInfo, bool showProgres
   }
   // create a LibraryTreeItem for new loaded file.
   LibraryTreeItem *pLibraryTreeItem = 0;
-  QString metaModelName;
+  QString compositeModelName;
   if (fileInfo.suffix().compare("xml") == 0) {
-    if (parseMetaModelFile(fileInfo, &metaModelName)) {
-      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::MetaModel, metaModelName,
+    if (parseCompositeModelFile(fileInfo, &compositeModelName)) {
+      pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CompositeModel, compositeModelName,
                                                                    fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(), true,
                                                                    mpLibraryTreeModel->getRootLibraryTreeItem());
     }
@@ -3614,12 +3614,12 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
 }
 
 /*!
- * \brief LibraryWidget::parseMetaModelFile
- * Parses the MetaModel file.
+ * \brief LibraryWidget::parseCompositeModelFile
+ * Parses the CompositeModel file.
  * \param fileInfo
  * \return
  */
-bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelName)
+bool LibraryWidget::parseCompositeModelFile(QFileInfo fileInfo, QString *pCompositeModelName)
 {
   QString contents = "";
   QFile file(fileInfo.absoluteFilePath());
@@ -3633,7 +3633,7 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelNa
     file.close();
 
     MessageHandler *pMessageHandler = new MessageHandler;
-    Utilities::parseMetaModelText(pMessageHandler, contents);
+    Utilities::parseCompositeModelText(pMessageHandler, contents);
     if (pMessageHandler->isFailed()) {
       QTextDocument document;
       document.setHtml(pMessageHandler->statusMessage());
@@ -3653,7 +3653,7 @@ bool LibraryWidget::parseMetaModelFile(QFileInfo fileInfo, QString *pMetaModelNa
       QDomNodeList nodes = xmlDocument.elementsByTagName("Model");
       for (int i = 0; i < nodes.size(); i++) {
         QDomElement node = nodes.at(i).toElement();
-        *pMetaModelName = node.attribute("Name");
+        *pCompositeModelName = node.attribute("Name");
         break;
       }
       delete pMessageHandler;
@@ -3790,8 +3790,8 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
       return false;
     }
     result = saveModelicaLibraryTreeItem(pLibraryTreeItem);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
-    result = saveMetaModelLibraryTreeItem(pLibraryTreeItem);
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    result = saveCompositeModelLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
     result = saveTextLibraryTreeItem(pLibraryTreeItem);
   } else {
@@ -3817,14 +3817,14 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     return;
   }
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-      DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, MainWindow::instance());
-      pDuplicateClassDialog->exec();
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::MetaModel) {
-      saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
-    } else {
-      QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                               .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
-    }
+    DuplicateClassDialog *pDuplicateClassDialog = new DuplicateClassDialog(true, pLibraryTreeItem, MainWindow::instance());
+    pDuplicateClassDialog->exec();
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    saveAsCompositeModelLibraryTreeItem(pLibraryTreeItem);
+  } else {
+    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                             .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
+  }
 }
 
 /*!
@@ -3876,13 +3876,13 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
     result = saveModelicaLibraryTreeItemHelper(pTopLevelLibraryTreeItem);
   }
-//  if (result) {
-//    /* We need to load the file again so that the line number information for model_info.json is correct.
-//     * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
-//     * In order to get rid of it save API should update omc with new line information.
-//     */
-//    mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
-//  }
+  //  if (result) {
+  //    /* We need to load the file again so that the line number information for model_info.json is correct.
+  //     * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
+  //     * In order to get rid of it save API should update omc with new line information.
+  //     */
+  //    mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
+  //  }
   return result;
 }
 
@@ -4141,27 +4141,27 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
- * \brief LibraryWidget::saveMetaModelLibraryTreeItem
- * Saves a MetaModel LibraryTreeItem.
+ * \brief LibraryWidget::saveCompositeModelLibraryTreeItem
+ * Saves a CompositeModel LibraryTreeItem.
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   if (pLibraryTreeItem->getFileName().isEmpty()) {
-    return saveAsMetaModelLibraryTreeItem(pLibraryTreeItem);
+    return saveAsCompositeModelLibraryTreeItem(pLibraryTreeItem);
   } else {
-    return saveMetaModelLibraryTreeItem(pLibraryTreeItem, pLibraryTreeItem->getFileName());
+    return saveCompositeModelLibraryTreeItem(pLibraryTreeItem, pLibraryTreeItem->getFileName());
   }
 }
 
 /*!
- * \brief LibraryWidget::saveAsMetaModelLibraryTreeItem
- * Save a copy of the MetaModel in a new file.
+ * \brief LibraryWidget::saveAsCompositeModelLibraryTreeItem
+ * Save a copy of the CompositeModel in a new file.
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   QString fileName;
   QString name = pLibraryTreeItem->getName();
@@ -4170,21 +4170,21 @@ bool LibraryWidget::saveAsMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTree
   if (fileName.isEmpty()) {   // if user press ESC
     return false;
   }
-  return saveMetaModelLibraryTreeItem(pLibraryTreeItem, fileName);
+  return saveCompositeModelLibraryTreeItem(pLibraryTreeItem, fileName);
 }
 
 /*!
- * \brief LibraryWidget::saveMetaModelLibraryTreeItem
- * Saves a MetaModel LibraryTreeItem.
+ * \brief LibraryWidget::saveCompositeModelLibraryTreeItem
+ * Saves a CompositeModel LibraryTreeItem.
  * \param pLibraryTreeItem
  * \return
  */
-bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName)
+bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName)
 {
   if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
-    QString oldMetaModelFile = pLibraryTreeItem->getFileName();
+    QString oldCompositeModelFile = pLibraryTreeItem->getFileName();
     pLibraryTreeItem->setFileName(fileName);
     if (pLibraryTreeItem->getModelWidget()) {
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
@@ -4192,9 +4192,9 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
     }
     mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
     // Create folders for the submodels and copy there source file in them.
-    MetaModelEditor *pMetaModelEditor = dynamic_cast<MetaModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
+    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
     GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-    QDomNodeList subModels = pMetaModelEditor->getSubModels();
+    QDomNodeList subModels = pCompositeModelEditor->getSubModels();
     for (int i = 0; i < subModels.size(); i++) {
       QDomElement subModel = subModels.at(i).toElement();
       QString directoryName = subModel.attribute("Name");
@@ -4203,7 +4203,7 @@ bool LibraryWidget::saveMetaModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeIt
       if (pComponent && pComponent->getLibraryTreeItem()) {
         modelFile = pComponent->getLibraryTreeItem()->getFileName();
       } else {
-        QFileInfo fileInfo(oldMetaModelFile);
+        QFileInfo fileInfo(oldCompositeModelFile);
         modelFile = QString("%1/%2/%3").arg(fileInfo.absolutePath()).arg(directoryName).arg(subModel.attribute("ModelFile"));
       }
       // create directory for submodel

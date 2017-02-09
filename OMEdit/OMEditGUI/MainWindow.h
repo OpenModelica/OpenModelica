@@ -243,9 +243,9 @@ private:
   QAction *mpLoadModelicaLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
-  // MetaModel File Actions
-  QAction *mpNewMetaModelFileAction;
-  QAction *mpOpenMetaModelFileAction;
+  // CompositeModel File Actions
+  QAction *mpNewCompositeModelFileAction;
+  QAction *mpOpenCompositeModelFileAction;
   QAction *mpLoadExternModelAction;
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
@@ -368,8 +368,8 @@ public slots:
   void loadModelicaLibrary();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
-  void createNewMetaModelFile();
-  void openMetaModelFile();
+  void createNewCompositeModelFile();
+  void openCompositeModelFile();
   void loadExternalModels();
   void openDirectory();
   void loadSystemLibrary();
