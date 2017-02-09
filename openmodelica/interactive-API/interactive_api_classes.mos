@@ -122,7 +122,8 @@ getClassNames(B, includeConstants=true);
 // {annotation(
 //   Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})})) }
 // Evaluating: getErrorString()
-// ""
+// "Error: In modifier (extent = {{0, 0}, {100, 100}}), class or component extent not found in <Icon>.
+// "
 // Evaluating: addClassAnnotation(A.test, annotate = Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
 // true
 // Evaluating: addClassAnnotation(A.test, annotate = Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
@@ -202,7 +203,8 @@ getClassNames(B, includeConstants=true);
 // {annotation(
 //   Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})})) }
 // Evaluating: getErrorString()
-// ""
+// "Error: In modifier (extent = {{0, 0}, {100, 100}}), class or component extent not found in <Icon>.
+// "
 // Evaluating: addClassAnnotation(A.test, annotate = Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
 // true
 // Evaluating: addClassAnnotation(A.test, annotate = Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
