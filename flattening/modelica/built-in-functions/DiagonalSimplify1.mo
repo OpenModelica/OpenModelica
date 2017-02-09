@@ -16,7 +16,7 @@ end DiagonalSimplify1;
 //   parameter Integer N = 2;
 //   parameter Real p[1] = 1.0;
 //   parameter Real p[2] = 1.0;
-//   parameter Real m[1] = p[1] * 2.0;
-//   parameter Real m[2] = p[2] * 2.0;
+//   parameter Real m[1] = 2.0;
+//   parameter Real m[2] = 2.0;
 // end DiagonalSimplify1;
 // endResult

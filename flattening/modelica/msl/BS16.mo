@@ -1255,7 +1255,7 @@ end BS16;
 //   parameter Real booleanPulse1.period[1](quantity = "Time", unit = "s", min = 1e-60) = 1.0 "Times for one period";
 //   parameter Real booleanPulse1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Iime instants of first pulse";
 //   protected parameter Real booleanPulse1.p_period[1](quantity = "Time", unit = "s") = booleanPulse1.period[1];
-//   protected parameter Real booleanPulse1.Twidth[1](quantity = "Time", unit = "s") = 0.01 * booleanPulse1.p_period[1] * booleanPulse1.width[1] "width of one pulse";
+//   protected parameter Real booleanPulse1.Twidth[1](quantity = "Time", unit = "s") = 0.01 * booleanPulse1.width[1] "width of one pulse";
 //   protected parameter Real booleanPulse1.p_startTime[1](quantity = "Time", unit = "s") = booleanPulse1.startTime[1];
 //   protected Real booleanPulse1.T0[1](quantity = "Time", unit = "s", start = booleanPulse1.p_startTime[1]) "Start time of current period";
 //   parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";

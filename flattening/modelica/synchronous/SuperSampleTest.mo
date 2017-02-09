@@ -21,9 +21,7 @@ end SuperSampleTest;
 //   Real z[2];
 // equation
 //   x = superSample(1.0, 0);
-//   z[1] = /*Real*/(superSample(1, 0));
-//   z[2] = /*Real*/(superSample(2, 0));
-//   y[1] = superSample(z[1], 2);
-//   y[2] = superSample(z[2], 2);
+//   z = /*Real[2]*/(superSample({1, 2}, 0));
+//   y = superSample({z[1], z[2]}, 2);
 // end SuperSampleTest;
 // endResult

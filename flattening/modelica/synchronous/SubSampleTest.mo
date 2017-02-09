@@ -20,7 +20,6 @@ end SubSampleTest;
 //   Integer z[2];
 // equation
 //   y = subSample(2.1, 0);
-//   x[1] = subSample(z[1], 2);
-//   x[2] = subSample(z[2], 2);
+//   x = subSample({z[1], z[2]}, 2);
 // end SubSampleTest;
 // endResult

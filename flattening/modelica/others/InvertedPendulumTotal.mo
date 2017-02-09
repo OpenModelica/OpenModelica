@@ -1,6 +1,6 @@
 // name: Inverted Pendulum
 // status: correct
-// cflags:   +std=2.x
+// cflags:   --std=2.x
 //
 
 package Modelica "Modelica Standard Library"

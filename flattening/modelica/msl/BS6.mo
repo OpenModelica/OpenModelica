@@ -1231,7 +1231,7 @@ end BS6;
 //   parameter Real pulse1.startTime[1](quantity = "Time", unit = "s") = 0.0 "Output = offset for time < startTime";
 //   protected parameter Real pulse1.p_amplitude[1] = pulse1.amplitude[1];
 //   protected parameter Real pulse1.p_period[1](quantity = "Time", unit = "s") = pulse1.period[1];
-//   protected parameter Real pulse1.p_width[1](quantity = "Time", unit = "s") = 0.01 * pulse1.p_period[1] * pulse1.width[1] "Width of one pulse";
+//   protected parameter Real pulse1.p_width[1](quantity = "Time", unit = "s") = 0.01 * pulse1.width[1] "Width of one pulse";
 //   protected parameter Real pulse1.p_offset[1] = pulse1.offset[1];
 //   protected parameter Real pulse1.p_startTime[1](quantity = "Time", unit = "s") = pulse1.startTime[1];
 //   protected Real pulse1.T0[1](quantity = "Time", unit = "s", start = pulse1.p_startTime[1]) "Start time of current period";
