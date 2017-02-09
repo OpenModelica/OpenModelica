@@ -7349,7 +7349,7 @@ algorithm
         */
         fargs = List.map(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,_,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
+        (cache,_,newslots,_,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn,true);
         (cache,newslots2,_,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
         args_2 = slotListArgs(newslots2);
 
@@ -9495,6 +9495,7 @@ protected function elabInputArgs
   input SourceInfo inInfo;
   input DAE.Type inFuncType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
   input Absyn.Path inPath;
+  input Boolean isGraphicsExp = false;
   output FCore.Cache outCache = inCache;
   output list<DAE.Exp> outExps;
   output list<Slot> outSlots = inSlots;
@@ -9516,13 +9517,13 @@ algorithm
     (outCache, outSlots, consts1, outPolymorphicBindings) :=
       elabPositionalInputArgs(outCache, inEnv, inPosArgs, fargs, outSlots,
         inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
-        outPolymorphicBindings, inST, inPrefix, inInfo, inPath);
+        outPolymorphicBindings, inST, inPrefix, inInfo, inPath, isGraphicsExp);
 
     // Elaborate named arguments.
     (outCache, outSlots, consts2, outPolymorphicBindings) :=
       elabNamedInputArgs(outCache, inEnv, inNamedArgs, fargs, outSlots,
         inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
-        outPolymorphicBindings, inST, inPrefix, inInfo, inPath);
+        outPolymorphicBindings, inST, inPrefix, inInfo, inPath, isGraphicsExp);
 
     outConsts := listAppend(consts1, consts2);
   end if;
@@ -9891,6 +9892,7 @@ protected function elabPositionalInputArgs
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
   input Absyn.Path inPath;
+  input Boolean isGraphicsExp;
   output FCore.Cache outCache = inCache;
   output list<Slot> outSlots = inSlots;
   output list<DAE.Const> outConsts = {};
@@ -9907,7 +9909,7 @@ algorithm
     (outCache, outSlots, c, outPolymorphicBindings) :=
       elabPositionalInputArg(outCache, inEnv, arg, farg, position, outSlots,
           inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
-          outPolymorphicBindings, inST, inPrefix, inInfo, inPath);
+          outPolymorphicBindings, inST, inPrefix, inInfo, inPath, isGraphicsExp);
 
     position := position + 1;
     outConsts := c :: outConsts;
@@ -9935,6 +9937,7 @@ protected function elabPositionalInputArg
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   input Absyn.Path path;
+  input Boolean isGraphicsExp;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output DAE.Const outConst;
@@ -10047,6 +10050,7 @@ protected function elabNamedInputArgs
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   input Absyn.Path path;
+  input Boolean isGraphicsExp;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
@@ -10080,9 +10084,9 @@ algorithm
     case (cache, env, na :: nas, farg, slots, _, _, _, _, polymorphicBindings, _, _, _, _)
       equation
         (cache,slots,c1,polymorphicBindings) =
-        elabNamedInputArg(cache, env, na, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, inPrefix, info, path, Error.getNumErrorMessages());
+        elabNamedInputArg(cache, env, na, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, inPrefix, info, path, Error.getNumErrorMessages(), isGraphicsExp);
         (cache,slots,clist,polymorphicBindings) =
-        elabNamedInputArgs(cache, env, nas, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, inPrefix, info, path);
+        elabNamedInputArgs(cache, env, nas, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, inPrefix, info, path, isGraphicsExp);
       then
         (cache,slots,c1::clist,polymorphicBindings);
 
@@ -10111,6 +10115,7 @@ protected function elabNamedInputArg
   input SourceInfo info;
   input Absyn.Path path;
   input Integer numErrors;
+  input Boolean isGraphicsExp;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output DAE.Const outTypesConstLst;
@@ -10178,12 +10183,13 @@ algorithm
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
-    case (_, _, Absyn.NAMEDARG(argName = id), farg, _, true /* only 1 function */, _, _, _, _,_,_,_,_,_)
+    case (cache, _, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, _, polymorphicBindings,_,_,_,_,_)
       equation
         failure(_ = findNamedArgType(id, farg));
         s1 = Absyn.pathStringNoQual(path);
         Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {s1,id}, info);
-      then fail();
+        true = isGraphicsExp;
+      then (cache,slots,DAE.C_CONST(),polymorphicBindings);
 
     // failure
     case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,_,true /* 1 function */,true /* checkTypes */,_,_,_,_,pre,_,_,_)
