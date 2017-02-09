@@ -565,7 +565,9 @@ algorithm
         false = SCode.isFunctionRestriction(r); // Partial functions are handled below (used for partially evaluated functions; do not want the checkModel warning)
         c = SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
         // add a warning
-        Error.addSourceMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n}, info);
+        if not Config.getGraphicsExpMode() then
+          Error.addSourceMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n}, info);
+        end if;
         // call normal instantiation
         (cache,env,ih,store,dae,csets,ty,ci_state_1,oDA,graph) =
            instClass(inCache, inEnv, inIH, store, inMod, inPrefix, c, inInstDims, inBoolean, inCallingScope, inGraph, inSets);
@@ -828,9 +830,11 @@ algorithm
       equation
         true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
 
-        s1 = n;
-        s2 = Dump.unparseInnerouterStr(io);
-        Error.addSourceMessage(Error.MISSING_INNER_CLASS,{s1, s2}, info);
+        if not Config.getGraphicsExpMode() then
+          s1 = n;
+          s2 = Dump.unparseInnerouterStr(io);
+          Error.addSourceMessage(Error.MISSING_INNER_CLASS,{s1, s2}, info);
+        end if;
 
         (cache,env,ih,store,ci_state,graph,csets,dae,tys,bc,oDA,equalityConstraint) =
           instClassIn2(inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);

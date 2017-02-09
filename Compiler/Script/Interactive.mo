@@ -1005,7 +1005,7 @@ protected
   list<GlobalScript.LoadedFile> lf;
   Absyn.Modification mod;
   Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2, evalParamAnn;
-  Boolean addFunctions;
+  Boolean addFunctions, graphicsExpMode;
   FCore.Graph env;
   Absyn.Exp exp;
   list<Absyn.Exp> dimensions;
@@ -1264,9 +1264,12 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
+        graphicsExpMode := Config.getGraphicsExpMode();
         Config.setEvaluateParametersInAnnotations(true);
+        Config.setGraphicsExpMode(true);
         outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
+        Config.setGraphicsExpMode(graphicsExpMode);
       then
         outResult;
 

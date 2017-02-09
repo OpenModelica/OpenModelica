@@ -356,7 +356,7 @@ algorithm
         (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
-        if not (impl and listMember(pre, {Prefix.NOPRE()})) then
+        if not (impl and listMember(pre, {Prefix.NOPRE()})) and not Config.getGraphicsExpMode() then
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
@@ -390,7 +390,7 @@ algorithm
         (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
-        if not (impl and listMember(pre, {Prefix.NOPRE()})) then
+        if not (impl and listMember(pre, {Prefix.NOPRE()})) and not Config.getGraphicsExpMode() then
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);

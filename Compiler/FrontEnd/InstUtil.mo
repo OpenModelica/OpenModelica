@@ -3004,10 +3004,14 @@ public function moveBindings
 protected
   list<DAE.Element> eqs, vars;
 algorithm
+  if Config.getGraphicsExpMode() then
+    outVariables := inVariables;
+    return;
+  end if;
   DAE.DAE(elementLst = eqs) := inEquations;
   DAE.DAE(elementLst = vars) := inVariables;
-  Error.assertion(intEq(listLength(eqs), listLength(vars)),
-      "- InstUtil.moveBindings: Mismatched number of equations and variables.", Absyn.dummyInfo);
+    Error.assertion(intEq(listLength(eqs), listLength(vars)),
+        "- InstUtil.moveBindings: Mismatched number of equations and variables.", Absyn.dummyInfo);
   vars := List.threadMap(eqs, vars, moveBindings2);
   outVariables := DAE.DAE(vars);
 end moveBindings;

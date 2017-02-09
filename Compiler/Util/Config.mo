@@ -289,6 +289,20 @@ algorithm
   Flags.setConfigBool(Flags.EVAL_PARAMS_IN_ANNOTATIONS, shouldEvaluate);
 end setEvaluateParametersInAnnotations;
 
+public function getGraphicsExpMode
+  "flag to tell us if we should ignore some errors (when evaluating icons)"
+  output Boolean graphicsExpMode;
+algorithm
+  graphicsExpMode := Flags.getConfigBool(Flags.GRAPHICS_EXP_MODE);
+end getGraphicsExpMode;
+
+public function setGraphicsExpMode
+  "flag to tell us if we should ignore some errors (when evaluating icons)"
+  input Boolean graphicsExpMode;
+algorithm
+  Flags.setConfigBool(Flags.GRAPHICS_EXP_MODE, graphicsExpMode);
+end setGraphicsExpMode;
+
 public function orderConnections
   output Boolean show;
 algorithm

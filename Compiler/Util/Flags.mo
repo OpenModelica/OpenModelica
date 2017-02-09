@@ -1339,6 +1339,9 @@ constant ConfigFlag CONDENSE_ARRAYS = CONFIG_FLAG(110, "condenseArrays",
 constant ConfigFlag WFC_ADVANCED = CONFIG_FLAG(111, "wfcAdvanced",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("wrapFunctionCalls ignores more then default cases, e.g. exp, sin, cos, log, (experimental flag)"));
+constant ConfigFlag GRAPHICS_EXP_MODE = CONFIG_FLAG(112,
+  "graphicsExpMode", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Sets whether we are in graphics exp mode (evaluating icons)."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1455,7 +1458,8 @@ constant list<ConfigFlag> allConfigFlags = {
   EVALUATE_PROTECTED_PARAMS,
   REPLACE_EVALUATED_PARAMS,
   CONDENSE_ARRAYS,
-  WFC_ADVANCED
+  WFC_ADVANCED,
+  GRAPHICS_EXP_MODE
 };
 
 public function new

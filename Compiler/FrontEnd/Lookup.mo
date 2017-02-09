@@ -727,7 +727,9 @@ algorithm
       fail();
     else
       SOME(info) := inInfo;
-      Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS, {name}, info);
+      if not Config.getGraphicsExpMode() then
+        Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS, {name}, info);
+      end if;
       // We should fail here, but the MSL 3.2.1 contains such errors. So just
       // print an error and continue anyway for now.
     end if;
