@@ -38,6 +38,7 @@ getDialogAnnotation.mos \
 getIconAnnotation.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
+IllegalGraphics.mos\
 interactive_api_annotations.mos \
 interactive_api_attributes.mos \
 interactive_api_calls.mos \

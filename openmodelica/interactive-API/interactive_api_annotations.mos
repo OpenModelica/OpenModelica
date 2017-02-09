@@ -18288,7 +18288,7 @@ getDocumentationAnnotation(Modelica.UsersGuide.Contact); getErrorString();
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(Modelica.Thermal.FluidHeatFlow.Examples.Utilities.DoubleRamp)
-// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0}
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Line(true, {0.0, 0.0}, 0, {{-80, 68}, {-80, -80}}, {192, 192, 192}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None), Polygon(true, {0.0, 0.0}, 0, {192, 192, 192}, {192, 192, 192}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-80, 90}, {-88, 68}, {-72, 68}, {-80, 90}}, Smooth.None), Line(true, {0.0, 0.0}, 0, {{-90, -70}, {82, -70}}, {192, 192, 192}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None), Polygon(true, {0.0, 0.0}, 0, {192, 192, 192}, {192, 192, 192}, LinePattern.Solid, FillPattern.Solid, 0.25, {{90, -70}, {68, -62}, {68, -78}, {90, -70}}, Smooth.None), Line(true, {0.0, 0.0}, 0, {{-80, -60}, {-50, -60}, {-30, 60}, {10, 60}, {30, -20}, {70, -20}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(Modelica.Thermal.FluidHeatFlow.Examples.Utilities.DoubleRamp)
