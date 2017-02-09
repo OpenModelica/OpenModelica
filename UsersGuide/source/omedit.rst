@@ -808,8 +808,8 @@ MetaModelica Editor
 
   -  *Preview* – Shows the demo of the syntax highlighting.
 
-MetaModel Editor
-~~~~~~~~~~~~~~~~
+CompositeModel Editor
+~~~~~~~~~~~~~~~~~~~~~
 
 -  Colors
 

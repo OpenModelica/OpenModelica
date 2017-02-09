@@ -2,15 +2,15 @@ Transmission Line Modeling (TLM) Based Co-Simulation
 ====================================================
 
 This chapter gives a short description how to get started using the TLM-Based
-co-simulation in OMEdit. We introduce a graphical MetaModel editor which is an
+co-simulation in OMEdit. We introduce a graphical composite model editor which is an
 extension and specialization of the OpenModelica connection editor OMEdit.
 
-In the context of this work a MetaModel is composed of several sub-models including
-the interconnections between these sub-models. The standard way to store a MetaModel
+In the context of this work a composite model is composed of several sub-models including
+the interconnections between these sub-models. The standard way to store a composite model
 for a TLM based co-simulation is in XML format. The XML schema standard is accessible from
 `tlmModelDescription.xsd <https://github.com/OpenModelica/OMEdit/blob/master/OMEdit/OMEditGUI/Resources/XMLSchema/tlmModelDescription.xsd>`__.
 
-The full graphical functionality of the MetaModel editor for TLM Based co-simulation
+The full graphical functionality of the composite model editor for TLM Based co-simulation
 provides the following general functionalities:
 
 -  Import and add External non-Modelica models such as **Matlab/SimuLink**, **Adams**, and **BEAST** models
@@ -19,21 +19,21 @@ provides the following general functionalities:
 
 -  Specify startup methods and interfaces of the external model
 
--  Build the MetaModels by connecting the external models
+-  Build the composite models by connecting the external models
 
--  Set the co-simulation parameters in the MetaModel
+-  Set the co-simulation parameters in the composite model
 
--  Simulate the MetaModels using TLM based co-simulation
+-  Simulate the composite models using TLM based co-simulation
 
-Co-Simulating an Existing MetaModel
------------------------------------
+Co-Simulating an Existing Composite Model
+-----------------------------------------
 This section demonstrates how to load an existing double pendulum
-MetaModel,co-simulate it, and look at the results using OMEdit.
+composite model,co-simulate it, and look at the results using OMEdit.
 
-Loading a MetaModel for Co-Simulation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Loading a Composite Model for Co-Simulation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will use the "Double pendulum" MetaModel which is a multibody system that
+We will use the "Double pendulum" composite model which is a multibody system that
 consists of three sub-models: Two OpenModelica **Shaft** sub-models (**Shaft1**
 and **Shaft2**) and one **SKF/BEAST bearing** sub-model that together build a
 double pendulum. The **SKF/BEAST bearing** sub-model is a simplified model with
@@ -44,36 +44,36 @@ inner ring of the bearing model is connected via another TLM interface to
 **Shaft2**. Together they build the double pendulum with two **shafts**, one
 spherical OpenModelica joint, and one BEAST bearing.
 
-To load the double pendulum MetaModel, select **File > Open MetaModel** from the
+To load the double pendulum composite model, select **File > Open Composite Model(s)** from the
 menu and select pendulum.xml.
 
-OMEdit starts loading the MetaModel and will be shown in the **Libraries
-Browser**. Double-clicking the MetaModel in the **Library Browser** will display
-the double pendulum MetaModel as shown below in
-:numref:`tlm-double-pendulum-metamodel-textview`.
+OMEdit starts loading the composite model and will be shown in the **Libraries
+Browser**. Double-clicking the composite model in the **Library Browser** will display
+the double pendulum composite model as shown below in
+:numref:`tlm-double-pendulum-compositemodel-textview`.
 
-.. figure :: media/tlm-double-pendulum-metamodel-textview.png
-  :name: tlm-double-pendulum-metamodel-textview
+.. figure :: media/tlm-double-pendulum-compositemodel-textview.png
+  :name: tlm-double-pendulum-compositemodel-textview
 
-  Double Pendulum MetaModel Text View.
+  Double Pendulum Composite Model Text View.
 
-Co-Simulating the MetaModel
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Co-Simulating the Composite Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are two ways to start co-simulation:
 
--  Click **TLM Co-Simulation setup button** (|tlm-simulate|) from the toolbar (requires a MetaModel to be active in MetaModel Widget)
+-  Click **TLM Co-Simulation setup button** (|tlm-simulate|) from the toolbar (requires a composite model to be active in ModelWidget)
 
 .. |tlm-simulate| image:: media/omedit-icons/tlm-simulate.*
-  :alt: MetaModel simulate Icon
+  :alt: Composite Model simulate Icon
   :height: 14pt
 
--  Right click the MetaModel in the **Library Browser** and choose **TLM Co-Simulation setup** from the popup menu (see :numref:`tlm-library-browser-popup-menu`)
+-  Right click the composite model in the **Library Browser** and choose **TLM Co-Simulation setup** from the popup menu (see :numref:`tlm-library-browser-popup-menu`)
 
 .. figure :: media/tlm-library-browser-popup-menu.png
   :name: tlm-library-browser-popup-menu
 
-  Co-simulating and Fetching Interface Data of a MetaModel from the Popup Menu .
+  Co-simulating and Fetching Interface Data of a composite model from the Popup Menu .
 
 The TLM Co-Simulation setup appears as shown below in :numref:`tlm-cosimulation-setup`.
 
@@ -98,7 +98,7 @@ to check the log files.
 Plotting the Simulation Results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When the co-simulation of the MetaModel is completed successful, simulation results are collected and visualized
+When the co-simulation of the composite model is completed successful, simulation results are collected and visualized
 in the OMEdit plotting perspective as shown in :numref:`tlm-plotting-cosimulation-results`.
 The **Variables Browser** display variables that can be plotted. Each variable has a checkbox, checking it will plot the variable.
 
@@ -107,8 +107,8 @@ The **Variables Browser** display variables that can be plotted. Each variable h
 
   TLM Co-Simulation Results Plotting.
 
-MetaModeling in OMEdit
-----------------------
+Composite Modeling in OMEdit
+----------------------------
 
 Preparing External Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -128,23 +128,23 @@ as shown below in :numref:`tlm-loaded-external-models-library-browser`.
 
   External Models in OMEdit.
 
-Creating a New MetaModel
-^^^^^^^^^^^^^^^^^^^^^^^^
+Creating a New Composite Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To create a new MetaModel,select **File > New MetaModel** from the menu.
+To create a new composite model select **File > New Composite Model** from the menu.
 
-Your new MetaModel will appear in the in the **Libraries Browser** once created.
-To facilitate the process of textual metamodeling and to provide users with a
-starting point, the **Text View** (see :numref:`tlm-new-metamodel-textview`)
-includes the MetaModel XML elements and the default simulation parameters.
+Your new composite model will appear in the in the **Libraries Browser** once created.
+To facilitate the process of textual composite modeling and to provide users with a
+starting point, the **Text View** (see :numref:`tlm-new-compositemodel-textview`)
+includes the composite model XML elements and the default simulation parameters.
 
-.. figure :: media/tlm-new-metamodel-textview.png
-  :name: tlm-new-metamodel-textview
+.. figure :: media/tlm-new-compositemodel-textview.png
+  :name: tlm-new-compositemodel-textview
 
-  New MetaModel text view.
+  New composite model text view.
 
-Saving the MetaModel
-^^^^^^^^^^^^^^^^^^^^
+Saving the Composite Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -160,20 +160,20 @@ View**.
 
 .. figure :: media/tlm-add-submodels.png
 
-  Adding sub-models to the double pendulum MetaModel.
+  Adding sub-models to the double pendulum composite model.
 
 Fetching Submodels Interface Data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve list of TLM interface data for sub-models, do any of the following methods:
 
-- Click **fetch interface points button** (|interface-data|) from the toolbar (requires a MetaModel to be active in ModelWidget)
+- Click **fetch interface points button** (|interface-data|) from the toolbar (requires a composite model to be active in ModelWidget)
 
 .. |interface-data| image:: media/omedit-icons/interface-data.*
-  :alt: MetaModel Interface Data Icon
+  :alt: Composite Model Interface Data Icon
   :height: 14pt
 
-- Right click the MetaModel in the **Library Browser** and choose **Fetch Interface Data** from the popup menu
+- Right click the composite model in the **Library Browser** and choose **Fetch Interface Data** from the popup menu
   (see :numref:`tlm-library-browser-popup-menu`).
 
 :numref:`tlm-fetch-interface-progress` will appear in which you will be able to see the progress information
@@ -214,12 +214,12 @@ appear in which you will be able to specify the connection attributes.
 
   Sub-models Connection Dialog.
 
-Continue to connect all sub-models until the MetaModel **Diagram View** looks like the one in :numref:`tlm-connecting-submodels-double-pendulum` below.
+Continue to connect all sub-models until the composite model **Diagram View** looks like the one in :numref:`tlm-connecting-submodels-double-pendulum` below.
 
 .. figure :: media/tlm-connecting-submodels-double-pendulum.png
   :name: tlm-connecting-submodels-double-pendulum
 
-  Connecting sub-models of the Double Pendulum MetaModel.
+  Connecting sub-models of the Double Pendulum Composite Model.
 
 Changing Parameter Values of Submodels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -253,13 +253,13 @@ Changing Co-Simulation Parameters
 
 To change the co-simulation parameters, do any of the following methods:
 
-- Click Simulation Parameters button (|simulation-parameters|) from the toolbar (requires a MetaModel to be active in MetaModel Widget)
+- Click Simulation Parameters button (|simulation-parameters|) from the toolbar (requires a composite model to be active in ModelWidget)
 
 .. |simulation-parameters| image:: media/omedit-icons/simulation-parameters.*
-  :alt: MetaModel Simulation Parameters Icon
+  :alt: Composite Model Simulation Parameters Icon
   :height: 14pt
 
-- Right click an empty location in the Diagram View of the  MetaModel Widget and choose **Simulation Parameters**
+- Right click an empty location in the Diagram View of the composite model and choose **Simulation Parameters**
   from the popup menu (see :numref:`tlm-change-cosimulation-parameters-popup-menu`)
 
 .. figure :: media/tlm-change-cosimulation-parameters-popup-menu.png
@@ -267,7 +267,7 @@ To change the co-simulation parameters, do any of the following methods:
 
   Changing Co-Simulation Parameters from the Popup Menu.
 
-The co-simulation parameter dialog of the MetaModel appears as shown below in :numref:`tlm-change-cosimulation-parameters-dialog` in
+The co-simulation parameter dialog of the composite model appears as shown below in :numref:`tlm-change-cosimulation-parameters-dialog` in
 which you will be able to specify the simulation parameters.
 
 .. figure :: media/tlm-change-cosimulation-parameters-dialog.png
