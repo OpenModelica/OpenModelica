@@ -2968,22 +2968,32 @@ algorithm
 end flagDataString;
 
 function unparseFlags
-  "Goes through all the existing flags, and each flag whose value differs from
-   the default is added to the output string as flag=value."
-  output String str = "";
+  "Goes through all the existing flags, and returns a list of all flags with
+   values that differ from the default. The format of each string is flag=value."
+  output list<String> flagStrings = {};
 protected
   Flags flags;
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
-  list<String> strl = {};
   String name;
+  list<String> strl = {};
 algorithm
   try
     FLAGS(debugFlags = debug_flags, configFlags = config_flags) := loadFlags(false);
   else
-    str := "";
     return;
   end try;
+
+  for f in allConfigFlags loop
+    if not flagDataEq(f.defaultValue, config_flags[f.index]) then
+      name := match f.shortname
+        case SOME(name) then "-" + name;
+        else "--" + f.name;
+      end match;
+
+      flagStrings := (name + "=" + flagDataString(config_flags[f.index])) :: flagStrings;
+    end if;
+  end for;
 
   for f in allDebugFlags loop
     if f.default <> debug_flags[f.index] then
@@ -2992,23 +3002,7 @@ algorithm
   end for;
 
   if not listEmpty(strl) then
-    str := "-d=" + stringDelimitList(strl, ",");
-  end if;
-
-  strl := {};
-  for f in allConfigFlags loop
-    if not flagDataEq(f.defaultValue, config_flags[f.index]) then
-      name := match f.shortname
-        case SOME(name) then " -" + name;
-        else " --" + f.name;
-      end match;
-
-      strl := (name + "=" + flagDataString(config_flags[f.index])) :: strl;
-    end if;
-  end for;
-
-  if not listEmpty(strl) then
-    str := str + stringAppendList(strl);
+    flagStrings := "-d=" + stringDelimitList(strl, ",") :: flagStrings;
   end if;
 end unparseFlags;
 

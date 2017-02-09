@@ -944,7 +944,7 @@ algorithm
       then (cache,Values.BOOL(false),st);
 
     case (cache, _, "getCommandLineOptions", {}, st, _)
-      then (cache, Values.STRING(Flags.unparseFlags()), st);
+      then (cache, ValuesUtil.makeStringArray(Flags.unparseFlags()), st);
 
     case (cache, _, "getCommandLineOptions", _, st, _)
       then (cache, Values.BOOL(false), st);

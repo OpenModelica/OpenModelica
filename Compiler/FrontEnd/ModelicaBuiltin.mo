@@ -1536,9 +1536,9 @@ annotation(preferredView="text");
 end setCommandLineOptions;
 
 function getCommandLineOptions
-  "Returns all command line options who have non-default values as a string.
-   The format of the string is '--flag=value --flag2=value2'."
-  output String flags;
+  "Returns all command line options who have non-default values as a list of
+   strings. The format of the strings is '--flag=value --flag2=value2'."
+  output String[:] flags;
 external "builtin";
 annotation(preferredView="text");
 end getCommandLineOptions;
