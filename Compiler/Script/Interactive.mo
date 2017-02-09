@@ -1263,12 +1263,10 @@ algorithm
     case "getIconAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        ErrorExt.setCheckpoint("getIconAnnotation");
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getIconAnnotation");
       then
         outResult;
 
@@ -13847,9 +13845,11 @@ algorithm
               graphic_exp, false, Prefix.NOPRE(), info);
 
             if is_icon then
+              ErrorExt.setCheckpoint("getAnnotationString: Icon");
               (cache, graphic_dexp) :=
                 Ceval.cevalIfConstant(cache, env, graphic_dexp, prop, false, info);
               graphic_dexp := ExpressionSimplify.simplify1(graphic_dexp);
+              ErrorExt.rollBack("getAnnotationString: Icon");
             end if;
 
             outString := outString + "," + ExpressionDump.printExpStr(graphic_dexp);
