@@ -315,11 +315,6 @@ algorithm
     //List.map1_0(inlineEquations, dumpSimEqSystemLst,"\n");
     if debug then execStat("simCode: createEquationsForSystems for inline module"); end if;
 
-    (clockedPartitions, uniqueEqIndex, backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars) :=
-          translateClockedEquations(clockedSysts, dlow.shared, sccOffset, uniqueEqIndex,
-                                    backendMapping, equationSccMapping, eqBackendSimCodeMapping, tempvars);
-    if debug then execStat("simCode: translateClockedEquations"); end if;
-
     outMapping := (uniqueEqIndex /* highestSimEqIndex */, equationSccMapping);
     execStat("simCode: created simulation system equations");
 
