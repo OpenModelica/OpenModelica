@@ -53,6 +53,7 @@ class AbstractAnimationWindow : public QMainWindow
 public:
   AbstractAnimationWindow(QWidget *pParent);
   ViewerWidget* getViewerWidget() {return mpViewerWidget;}
+  VisualizerAbstract* getVisualizer() {return mpVisualizer;}
   void openAnimationFile(QString fileName, bool stashCamera=false);
   virtual void createActions();
   void clearView();

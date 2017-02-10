@@ -44,6 +44,24 @@ OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path
 {
 }
 
+/*!
+ * \brief OMVisualBase::getShapeObjectByID
+ * get the shapeObject with the same shapeID
+ *\param the name of the shape
+ *\return the selected shape
+ */
+ShapeObject* OMVisualBase::getShapeObjectByID(std::string shapeID)
+{
+  for(std::vector<ShapeObject>::iterator shape =_shapes.begin() ; shape < _shapes.end(); ++shape )
+  {
+      if(shape->_id == shapeID) {
+        return &(*shape);
+      }
+  }
+  return 0;
+}
+
+
 void OMVisualBase::initXMLDoc()
 {
   // Check if the XML file is available.
@@ -377,7 +395,6 @@ int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
       //std::cout<<"Its a CAD and the filename is "<<shape._fileName<<std::endl;
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
       osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
-
       ss->setAttribute(material.get());
       node->setStateSet(ss);
       transf->addChild(node.get());
@@ -443,9 +460,9 @@ void UpdateVisitor::apply(osg::MatrixTransform& node)
  */
 void UpdateVisitor::apply(osg::Geode& node)
 {
-  //std::cout<<"GEODE "<< _shape._id<<" "<<std::endl;
+  //std::cout<<"GEODE "<< _shape._id<<" "<<_shape.getTransparency()<<std::endl;
   osg::ref_ptr<osg::StateSet> ss = node.getOrCreateStateSet();
-
+  node.setName(_shape._id);
   //its a drawable and not a cad file so we have to create a new drawable
   if (_shape._type.compare("dxf") != 0 and (_shape._type.compare("stl") != 0))
   {
@@ -493,16 +510,49 @@ void UpdateVisitor::apply(osg::Geode& node)
     //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;
     node.addDrawable(draw.get());
   }
+  //dxf files are treated separately since they are constructed natively, including color
   if (_shape._type.compare("dxf") != 0)
   {
-    //osg::Material *material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
-    osg::ref_ptr<osg::Material> material = new osg::Material;
+    osg::Material *material;
+    if (NULL == node.getStateSet()->getAttribute(osg::StateAttribute::MATERIAL))
+      material = new osg::Material();
+    else
+      material = dynamic_cast<osg::Material*>(ss->getAttribute(osg::StateAttribute::MATERIAL));
+
     material->setDiffuse(osg::Material::FRONT, osg::Vec4f(_shape._color[0].exp / 255, _shape._color[1].exp / 255, _shape._color[2].exp / 255, 1.0));
     ss->setAttribute(material);
     node.setStateSet(ss);
+    //set transparency
+    if (_shape.getTransparency())
+      makeTransparent(node, _shape.getTransparency());
   }
+
   traverse(node);
 }
+
+/*!
+ * \brief UpdateVisitor::makeTransparent
+ * makes a geode transparent
+ * \param event
+ */
+void UpdateVisitor::makeTransparent(osg::Geode& node, float transpCoeff)
+{
+  node.getStateSet()->setMode( GL_BLEND, osg::StateAttribute::ON );
+  node.getStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+  osg::Material *material;
+  if (NULL == node.getStateSet()->getAttribute(osg::StateAttribute::MATERIAL))
+  {
+    material = new osg::Material();
+  }
+  else
+  {
+    material = dynamic_cast<osg::Material*>(node.getStateSet()->getAttribute(osg::StateAttribute::MATERIAL));
+  }
+  material->setTransparency(osg::Material::FRONT_AND_BACK, transpCoeff);
+  node.getStateSet()->setAttributeAndModes(material, osg::StateAttribute::OVERRIDE);
+}
+
+
 
 InfoVisitor::InfoVisitor()
   : _level(0)

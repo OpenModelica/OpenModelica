@@ -38,6 +38,14 @@
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 
+#include<iostream>
+
+#include<QMenu>
+
+#include "AbstractAnimationWindow.h"
+#include "Util/Helper.h"
+
+
 /*!
  * \note We need to create two files with same class name since Qt meta object compiler doesn't handle ifdef.
  * OpenGLWidget.h uses QOpenGLWidget and GLWidget.h uses QGLWidget
@@ -66,6 +74,9 @@ class ViewerWidget : public GLWidget
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
   osgViewer::View* getSceneView() {return mpSceneView;}
+  std::string getSelectedShape(){return mSelectedShape;};
+  void setSelectedShape(std::string shape){mSelectedShape = shape;};
+  void pickShape(int x, int y);
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent);
   virtual void paintGL();
@@ -77,13 +88,19 @@ protected:
   virtual void mouseReleaseEvent(QMouseEvent *event);
   virtual void wheelEvent(QWheelEvent *event);
   virtual bool event(QEvent* event);
+  void showShapePickContextMenu(const QPoint& pos);
 private:
   osgGA::EventQueue* getEventQueue() const;
-
   osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> mpGraphicsWindow;
   osg::ref_ptr<Viewer> mpViewer;
   //osg viewer scene
   osgViewer::View* mpSceneView;
+  std::string mSelectedShape;
+  AbstractAnimationWindow *mpAnimationWidget;
+public slots:
+  void changeShapeTransparency();
+  void removeTransparencyForAllShapes();
+  void makeShapeInvisible();
 };
 
 #endif // VIEWERWIDGET_H

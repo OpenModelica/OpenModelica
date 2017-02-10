@@ -65,7 +65,8 @@ ShapeObject::ShapeObject()
       _height(ShapeObjectAttribute(0.1)),
       _specCoeff(ShapeObjectAttribute(0.7)),
           _mat(osg::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)),
-          _extra(ShapeObjectAttribute(0.0))
+          _extra(ShapeObjectAttribute(0.0)),
+      mTransparent(0.0)
 {
   _r[0] = ShapeObjectAttribute(0.1);
   _r[1] = ShapeObjectAttribute(0.1);
@@ -114,9 +115,9 @@ void ShapeObject::dumpVisAttributes() const
   std::cout << "    " << _mat(2, 0) << ", " << _mat(2, 1) << ", " << _mat(2, 2) << ", " << _mat(2, 3) << std::endl;
   std::cout << "    " << _mat(3, 0) << ", " << _mat(3, 1) << ", " << _mat(3, 2) << ", " << _mat(3, 3) << std::endl;
   std::cout << "extra " << _extra.getValueString() << std::endl;
+  std::cout << "transparency " << mTransparent << std::endl;
 
 }
-
 
 /*
 double getShapeAttrFMU(const char* attr, rapidxml::xml_node<>* node, double time, fmi1_import_t* fmu)
