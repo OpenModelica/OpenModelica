@@ -334,18 +334,17 @@ public function translateModelXML
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+  matchcontinue (inCache, inEnv, inInteractiveSymbolTable, inFileNamePrefix)
     local
-      String filenameprefix,file_dir,resstr,description;
+      String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae;
       FCore.Graph graph;
-      BackendDAE.BackendDAE dlow,dlow_1;
+      BackendDAE.BackendDAE dlow, dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
       FCore.Cache cache;
-      DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       BackendDAE.BackendDAE initDAE;
       Option<BackendDAE.BackendDAE> initDAE_lambda0;
@@ -354,40 +353,40 @@ algorithm
       list<BackendDAE.Var> primaryParameters "already sorted";
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
 
-    case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
-      equation
-        /* calculate stuff that we need to create SimCode data structure */
-        System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,graph,dae,st) = CevalScriptBackend.runFrontEnd(cache,graph,className,st,false);
-        timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
-        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-        _ = FCore.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
-        description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-        (dlow_1, initDAE, _, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
-        timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+    case (cache, graph, st as GlobalScript.SYMBOLTABLE(ast=p), filenameprefix) equation
+      /* calculate stuff that we need to create SimCode data structure */
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
+      //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
+      (cache,graph,dae,st) = CevalScriptBackend.runFrontEnd(cache,graph,className,st,false);
+      timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
+      _ = FCore.getFunctionTree(cache);
+      dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
+      description = DAEUtil.daeDescription(dae);
+      dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
+      (dlow_1, initDAE, _, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
+      timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
-        (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeXML(dlow_1, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt);
-        resultValues =
-        {("timeTemplates",Values.REAL(timeTemplates)),
-          ("timeSimCode",  Values.REAL(timeSimCode)),
-          ("timeBackend",  Values.REAL(timeBackend)),
-          ("timeFrontend", Values.REAL(timeFrontend))
-          };
-          resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to XML"});
-      then
-        (cache,Values.STRING(resstr),st,dlow_1,libs,file_dir, resultValues);
-    case (_,_,_,_,_,_, _)
-      equation
-        resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
-        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-      then
-        fail();
+      (libs,file_dir,timeSimCode,timeTemplates) =
+        generateModelCodeXML(dlow_1, initDAE, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt);
+      resultValues =
+      {("timeTemplates",Values.REAL(timeTemplates)),
+        ("timeSimCode",  Values.REAL(timeSimCode)),
+        ("timeBackend",  Values.REAL(timeBackend)),
+        ("timeFrontend", Values.REAL(timeFrontend))
+        };
+
+      resstr = filenameprefix + ".xml";
+      if not Config.getRunningTestsuite() then
+        resstr = System.pwd() + System.pathDelimiter() + resstr;
+      end if;
+    then (cache, Values.STRING(resstr), st, dlow_1, libs, file_dir, resultValues);
+
+    else equation
+      resstr = Absyn.pathStringNoQual(className);
+      resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
+      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+    then fail();
   end matchcontinue;
 end translateModelXML;
 
