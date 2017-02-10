@@ -45,7 +45,6 @@
 #include "AbstractAnimationWindow.h"
 #include "Util/Helper.h"
 
-
 /*!
  * \note We need to create two files with same class name since Qt meta object compiler doesn't handle ifdef.
  * OpenGLWidget.h uses QOpenGLWidget and GLWidget.h uses QGLWidget
@@ -74,8 +73,8 @@ class ViewerWidget : public GLWidget
 public:
   ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
   osgViewer::View* getSceneView() {return mpSceneView;}
-  std::string getSelectedShape(){return mSelectedShape;};
-  void setSelectedShape(std::string shape){mSelectedShape = shape;};
+  std::string getSelectedShape() {return mSelectedShape;}
+  void setSelectedShape(std::string shape) {mSelectedShape = shape;}
   void pickShape(int x, int y);
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent);

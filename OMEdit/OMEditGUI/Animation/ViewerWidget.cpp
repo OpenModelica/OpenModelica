@@ -73,7 +73,6 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   mpViewer = new Viewer;
   mpSceneView = new osgViewer::View();
   mpAnimationWidget = qobject_cast<AbstractAnimationWindow*>(parent);
-
   // widget resolution
   int height = rect().height();
   int width = rect().width();
@@ -197,8 +196,7 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
       break;
     case Qt::RightButton:
       button = 3;
-      if((event->modifiers() == Qt::ShiftModifier))
-      {
+      if (event->modifiers() == Qt::ShiftModifier) {
         //qt counts pixels from upper left corner and osg from bottom left corner
         pickShape(event->x(), this->height() - event->y());
         showShapePickContextMenu(event->pos());
@@ -221,22 +219,17 @@ void ViewerWidget::pickShape(int x, int y)
 {
   //std::cout<<"pickShape "<<x<<" and "<<y<<std::endl;
   osgUtil::LineSegmentIntersector::Intersections intersections;
-  if (mpSceneView->computeIntersections(mpSceneView->getCamera(),osgUtil::Intersector::WINDOW , x, y, intersections))
-    {
+  if (mpSceneView->computeIntersections(mpSceneView->getCamera(),osgUtil::Intersector::WINDOW , x, y, intersections)) {
     //take the first intersection with a facette only
     osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
 
-    if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty()))
-    {
-    mSelectedShape = hitr->nodePath.back()->getName();
-    //std::cout<<"Object identified by name "<<mSelectedShape<<std::endl;
+    if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty())) {
+      mSelectedShape = hitr->nodePath.back()->getName();
+      //std::cout<<"Object identified by name "<<mSelectedShape<<std::endl;
+    } else if (hitr->drawable.valid()) {
+      mSelectedShape = hitr->drawable->className();
+      //std::cout<<"Object identified by its drawable "<<mSelectedShape<<std::endl;
     }
-    else if (hitr->drawable.valid())
-    {
-    mSelectedShape = hitr->drawable->className();
-    //std::cout<<"Object identified by its drawable "<<mSelectedShape<<std::endl;
-    }
-
   }
 }
 
@@ -252,13 +245,12 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
   QMenu contextMenu(tr("Context menu"), this);
   QMenu shapeMenu(name, this);
   shapeMenu.setIcon(QIcon(":/Resources/icons/animation.svg"));
-  QAction action0(QIcon(":/Resources/icons/undo.svg"), "Reset All Shapes", this);
-  QAction action1(QIcon(":/Resources/icons/transparency.svg"),"Change Transparency", this);
-  QAction action2(QIcon(":/Resources/icons/invisible.svg"),"Make Shape Invisible", this);
+  QAction action0(QIcon(":/Resources/icons/undo.svg"), tr("Reset All Shapes"), this);
+  QAction action1(QIcon(":/Resources/icons/transparency.svg"), tr("Change Transparency"), this);
+  QAction action2(QIcon(":/Resources/icons/invisible.svg"), tr("Make Shape Invisible"), this);
 
   //if a shape is picked, we can set it transparent
-  if (0 != QString::compare(name,QString("")))
-  {
+  if (0 != QString::compare(name,QString(""))) {
     contextMenu.addMenu(&shapeMenu);
     shapeMenu.addAction( &action1);
     shapeMenu.addAction( &action2);
@@ -277,23 +269,16 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
 void ViewerWidget::changeShapeTransparency()
 {
   ShapeObject* shape = nullptr;
-  if((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape)))
-  {
-    if (shape->_type.compare("dxf") == 0)
-    {
-      QString msg = QString("Transparency is not applicable for DXF-Files.");
+  if ((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape))) {
+    if (shape->_type.compare("dxf") == 0) {
+      QString msg = tr("Transparency is not applicable for DXF-Files.");
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-                                Helper::notificationLevel));
+                                                            Helper::notificationLevel));
       mSelectedShape = "";
-    }
-    else
-    {
-      if (shape->getTransparency() == 0)
-      {
+    } else {
+      if (shape->getTransparency() == 0) {
         shape->setTransparency(0.5);
-      }
-      else
-      {
+      } else {
         shape->setTransparency(0.0);
       }
       mpAnimationWidget->getVisualizer()->updateVisAttributes(mpAnimationWidget->getVisualizer()->getTimeManager()->getVisTime());
@@ -310,17 +295,13 @@ void ViewerWidget::changeShapeTransparency()
 void ViewerWidget::makeShapeInvisible()
 {
   ShapeObject* shape = nullptr;
-  if((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape)))
-  {
-    if (shape->_type.compare("dxf") == 0)
-    {
-      QString msg = QString("Invisibility is not applicable for DXF-Files.");
+  if ((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape))) {
+    if (shape->_type.compare("dxf") == 0) {
+      QString msg = tr("Invisibility is not applicable for DXF-Files.");
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
-              Helper::notificationLevel));
+                                                            Helper::notificationLevel));
       mSelectedShape = "";
-    }
-    else
-    {
+    } else {
       shape->setTransparency(1.0);
       mpAnimationWidget->getVisualizer()->updateVisAttributes(mpAnimationWidget->getVisualizer()->getTimeManager()->getVisTime());
       mpAnimationWidget->updateScene();
@@ -336,13 +317,11 @@ void ViewerWidget::makeShapeInvisible()
  */
 void ViewerWidget::removeTransparencyForAllShapes()
 {
-  if (mpAnimationWidget->getVisualizer() != NULL)
-  {
+  if (mpAnimationWidget->getVisualizer() != NULL) {
     std::vector<ShapeObject>* shapes = nullptr;
     shapes = &mpAnimationWidget->getVisualizer()->getBaseData()->_shapes;
-    for(std::vector<ShapeObject>::iterator shape = shapes->begin() ; shape < shapes->end(); ++shape )
-    {
-    shape->setTransparency(0.0);
+    for (std::vector<ShapeObject>::iterator shape = shapes->begin() ; shape < shapes->end(); ++shape) {
+      shape->setTransparency(0.0);
     }
     mpAnimationWidget->getVisualizer()->updateVisAttributes(mpAnimationWidget->getVisualizer()->getTimeManager()->getVisTime());
     mpAnimationWidget->updateScene();
