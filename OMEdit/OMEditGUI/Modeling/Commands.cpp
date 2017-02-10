@@ -753,7 +753,7 @@ void DeleteComponentCommand::undo()
   }
   mpGraphicsView->addComponentToClass(mpComponent);
 
-  //Restore sub-model parameters for meta models
+  //Restore sub-model parameters for composite models
   if(pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pModelWidget->getEditor());
     for(int i=0; i<mParameterNames.size(); ++i) {
@@ -1169,7 +1169,7 @@ UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pCom
   mNewComponentInfo.updateComponentInfo(&newComponentInfo);
   setText(QString("Update SubModel %1 Attributes").arg(mpComponent->getName()));
 
-  //Save sub-model parameters for meta models
+  //Save sub-model parameters for composite models
   mParameterNames = parameterNames;
   mOldParameterValues = oldParameterValues;
   mNewParameterValues = newParameterValues;
