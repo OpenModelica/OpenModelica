@@ -296,10 +296,13 @@ algorithm
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
           };
-          resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
+
+        resstr = filenameprefix + ".fmu";
+        if not Config.getRunningTestsuite() then
+          resstr = System.pwd() + System.pathDelimiter() + resstr;
+        end if;
       then
-        (cache,Values.STRING(resstr),st,dlow_1,libs,file_dir, resultValues);
+        (cache, Values.STRING(resstr), st, dlow_1, libs, file_dir, resultValues);
     else
       equation
         resstr = Absyn.pathStringNoQual(className);
