@@ -64,8 +64,12 @@ import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
+import NFExtend;
+import NFImport;
 import Typing = NFTyping;
 import ExecStat.{execStat,execStatReset};
+import SCodeDump;
+import SCodeUtil;
 import System;
 
 public
@@ -164,13 +168,14 @@ function makeScope
 protected
   InstNode node;
   list<SCode.Element> imports = {};
+  SCode.Element ex;
 algorithm
   scope := ClassTree.new();
 
   for e in elements loop
     () := match e
       // A class, create a new instance node for it and add it to the tree.
-      case SCode.CLASS()
+      case SCode.CLASS() guard not NFExtend.isRedeclareElement(e)
         algorithm
           node := InstNode.newClass(e, parentScope);
           scope := addClassToScope(e.name, ClassTree.Entry.CLASS(node), e.info, scope);
@@ -178,7 +183,7 @@ algorithm
           ();
 
       // A component, add it to the list of components and extends.
-      case SCode.COMPONENT()
+      case SCode.COMPONENT() guard not NFExtend.isRedeclareElement(e)
         algorithm
           componentsExtends := e :: componentsExtends;
         then
@@ -187,7 +192,8 @@ algorithm
       // An extends clause, add it to the list of components and extends.
       case SCode.EXTENDS()
         algorithm
-          componentsExtends := e :: componentsExtends;
+          {ex} := NFExtend.addRedeclareAsElementsToExtends({e}, List.select(elements, NFExtend.isRedeclareElement));
+          componentsExtends := ex :: componentsExtends;
         then
           ();
 
@@ -196,10 +202,15 @@ algorithm
           imports := e :: imports;
         then
           ();
+
+      else
+       algorithm
+         // print("Skipping:\n" + SCodeDump.unparseElementStr(e) + "\n");
+       then ();
     end match;
   end for;
 
-  scope := addImportsToScope(imports, parentScope, scope);
+  scope := NFImport.addImportsToScope(imports, parentScope, scope);
 end makeScope;
 
 function addClassToScope
@@ -212,55 +223,10 @@ algorithm
     scope := ClassTree.add(scope, name, id, ClassTree.addConflictFail);
   else
     // TODO: Add proper error message.
-    print("Duplicate element " + name + " found.\n");
+    print(getInstanceName() + " duplicate element " + name + " found.\n");
     fail();
   end try;
 end addClassToScope;
-
-function addImportsToScope
-  input list<SCode.Element> imports;
-  input InstNode currentScope;
-  input output ClassTree.Tree scope;
-protected
-  Absyn.Import i;
-  InstNode node, top_scope;
-  SourceInfo info;
-algorithm
-  if listEmpty(imports) then
-    return;
-  end if;
-
-  // All imports are looked up from the top scope, so we might as well look it
-  // up now to avoid having to do that for each import.
-  top_scope := InstNode.topScope(currentScope);
-
-  for imp in imports loop
-    SCode.IMPORT(imp = i, info = info) := imp;
-
-    () := match i
-      case Absyn.NAMED_IMPORT()
-        algorithm
-          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
-          scope := addClassToScope(i.name, ClassTree.Entry.CLASS(node), info, scope);
-        then
-          ();
-
-      case Absyn.QUAL_IMPORT()
-        algorithm
-          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
-          scope := addClassToScope(Absyn.pathLastIdent(i.path), ClassTree.Entry.CLASS(node), info, scope);
-        then
-          ();
-
-      else
-        algorithm
-          print("NFInst.addImportsToScope: IMPLEMENT ME\n");
-        then
-          ();
-
-    end match;
-  end for;
-end addImportsToScope;
 
 function partialInstClass
   input output InstNode node;
@@ -304,6 +270,13 @@ algorithm
         (class_tree, comps) := makeEnumerationScope(cdef.enumLst, ty, scope);
       then
         Class.PARTIAL_BUILTIN(ty, class_tree, comps, Modifier.NOMOD());
+
+    case SCode.CLASS(classDef = cdef as SCode.CLASS_EXTENDS())
+      algorithm
+        // get the already existing classes with the same name
+        print(getInstanceName() + " got class extends: " + definition.name + "\n");
+      then
+        fail();
 
     else Class.PARTIAL_CLASS(ClassTree.new(), {}, Modifier.NOMOD());
   end match;
@@ -436,7 +409,7 @@ algorithm
     case SCode.CLASS(classDef = cdef as SCode.CLASS_EXTENDS())
       algorithm
         // get the already existing classes with the same name
-        print("Got class extends: " + def.name + "\n");
+        print(getInstanceName() + " got class extends: " + def.name + "\n");
       then
         fail();
 
@@ -592,6 +565,8 @@ algorithm
       ClassTree.Tree elements;
       ClassTree.Entry entry;
       InstNode node;
+      String name;
+      SCode.Element c;
 
     case Class.EXPANDED_CLASS(elements = elements)
       algorithm
@@ -635,8 +610,18 @@ algorithm
 
                   case Modifier.REDECLARE()
                     algorithm
-                      elements := ClassTree.add(elements, InstNode.name(m.element),
-                      ClassTree.Entry.CLASS(m.element), ClassTree.addConflictReplace);
+                      name := InstNode.name(m.element);
+                      c := InstNode.definition(m.element);
+                      elements :=
+                      match c
+                        case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
+                          then
+                            NFExtend.adaptClassExtendsChain(name, ClassTree.Entry.CLASS(m.element), elements);
+
+                        else
+                          then
+                            ClassTree.add(elements, name, ClassTree.Entry.CLASS(m.element), ClassTree.addConflictReplace);
+                      end match;
                     then
                       ();
 
@@ -741,34 +726,26 @@ function addInheritedElements2
   input ClassTree.Tree inScope;
   input Integer nodeIndex;
   output ClassTree.Tree scope;
-protected
-  SCode.Element c;
-  ClassTree.Entry idExisting;
-  InstNode nodeExisting;
 algorithm
   scope := match id
+
     case ClassTree.Entry.CLASS()
       algorithm
-        // check if class exists!
         try
-          (idExisting as ClassTree.Entry.CLASS(nodeExisting)) := ClassTree.get(inScope, name);
-          c := InstNode.definition(nodeExisting);
-          scope := match c
-            // is it a class extends?
-            case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
-              then adaptClassExtendsChain(name, idExisting, id, inScope);
-            // TODO! FIXME! this seems to be a duplicate class definition, add an error
-            else
-              then ClassTree.add(inScope, name, id);
-          end match;
+         scope := ClassTree.add(inScope, name, id);
         else
-          scope := ClassTree.add(inScope, name, id);
+         // the element exists already (could be a class extends)
+         print(getInstanceName() + " duplicate element " + name + " found.\n");
+         scope := inScope;
         end try;
       then
         scope;
+
     case ClassTree.Entry.COMPONENT(node = 0)
       then ClassTree.add(inScope, name, ClassTree.Entry.COMPONENT(nodeIndex, id.index));
+
     else inScope;
+
   end match;
 end addInheritedElements2;
 
@@ -1424,156 +1401,6 @@ algorithm
 
   end match;
 end instStatement;
-
-function adaptClassExtendsChain
-"@author: adrpo
- handle class extends
- 1. see if we already have a class with the same name
- 2. patch the existing class with a new name Model_$ce$number
- 3. patch the current class extends with an extends to the Model_$extends_number and change it to a normal class"
-  input String name;
-  input ClassTree.Entry idExisting "the class extends";
-  input ClassTree.Entry id "the base class";
-  input ClassTree.Tree inScope;
-  output ClassTree.Tree scope;
-protected
-  SCode.Element new, existing;
-  InstNode newNode, nodeExisting;
-  String newName;
-  Integer ceTick = System.tmpTickIndex(Global.classExtends_index);
-algorithm
-  scope := match id
-    case ClassTree.Entry.CLASS()
-      algorithm
-        // get the class extends class
-        newNode := id.node;
-        new := InstNode.definition(id.node);
-        /* this doen't seem to work to check for the baseclass
-           as WE HAVE the baseclass and we are searching for the
-           class extends. Somehow this needs to be handled the
-           other way, from class extends to the base class!
-        // get the existing base class
-        try
-          idExisting := ClassTree.get(inScope, name);
-        else
-          // report that the target of class extends does not exist!
-          Error.addSourceMessageAndFail(Error.CLASS_EXTENDS_TARGET_NOT_FOUND, {name}, SCode.elementInfo(new));
-        end try;*/
-        ClassTree.Entry.CLASS(nodeExisting) := idExisting;
-        // get the existing class in the environment
-        existing := InstNode.definition(nodeExisting);
-        // TODO! FIXME! check if the base class (id) is replaceable and add an error if not
-        // Error.NON_REPLACEABLE_CLASS_EXTENDS
-        newName := name + "$ce$" + String(ceTick);
-        // patch the base class and the class extends!
-        (new, existing) := patchBaseClassAndClassExtends(newName, name, new, existing);
-        // update nodes!
-        newNode := InstNode.rename(newNode, newName);
-        newNode := InstNode.setDefinition(new, newNode);
-        nodeExisting := InstNode.setDefinition(existing, nodeExisting);
-
-        // do partial instantiation again TODO! FIXME! is this needed??!!
-        newNode := partialInstClass(newNode);
-        nodeExisting := partialInstClass(nodeExisting);
-
-        // replace the class extends with the new definition
-        scope := ClassTree.add(inScope, name, ClassTree.Entry.CLASS(nodeExisting), ClassTree.addConflictReplace);
-
-        // add the base class with the new name to the scope
-        scope := ClassTree.add(scope, newName, ClassTree.Entry.CLASS(newNode));
-      then
-        scope;
-
-    else inScope;
-  end match;
-end adaptClassExtendsChain;
-
-protected function patchBaseClassAndClassExtends
-  input String inBaseEltName;
-  input String inClassExtendsEltName;
-  input SCode.Element inBaseElt;
-  input SCode.Element inClassExtendsElt;
-  output SCode.Element outBaseElt;
-  output SCode.Element outClassExtendsElt;
-algorithm
-  (outBaseElt,outClassExtendsElt) := matchcontinue (inBaseElt,inClassExtendsElt)
-    local
-      SCode.Element elt,compelt,classExtendsElt;
-      SCode.Element cl;
-      SCode.ClassDef classDef,classExtendsCdef;
-      SCode.Partial partialPrefix1,partialPrefix2;
-      SCode.Encapsulated encapsulatedPrefix1,encapsulatedPrefix2;
-      SCode.Restriction restriction1,restriction2;
-      SCode.Prefixes prefixes1,prefixes2;
-      SCode.Visibility vis2;
-      String name1,name2,env_path;
-      Option<SCode.ExternalDecl> externalDecl1,externalDecl2;
-      list<SCode.Annotation> annotationLst1,annotationLst2;
-      SCode.Comment comment1,comment2;
-      Option<SCode.Annotation> ann1,ann2;
-      list<SCode.Element> els1,els2;
-      list<SCode.Equation> nEqn1,nEqn2,inEqn1,inEqn2;
-      list<SCode.AlgorithmSection> nAlg1,nAlg2,inAlg1,inAlg2;
-      list<SCode.ConstraintSection> inCons1, inCons2;
-      list<Absyn.NamedArg> clats;
-      list<tuple<SCode.Element, DAE.Mod, Boolean>> rest;
-      tuple<SCode.Element, DAE.Mod, Boolean> first;
-      SCode.Mod mods, derivedMod;
-      DAE.Mod mod1,emod;
-      SourceInfo info1, info2;
-      Boolean b;
-      SCode.Attributes attrs;
-      Absyn.TypeSpec derivedTySpec;
-
-    // found the base class with parts
-    case (cl as SCode.CLASS(name = name2, classDef = SCode.PARTS()), classExtendsElt)
-      equation
-        name1 = inClassExtendsEltName;
-        name2 = inBaseEltName;
-
-        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) = cl;
-
-        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
-
-        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2);
-        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
-        vis2 = SCode.prefixesVisibility(prefixes2);
-        elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1);
-        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
-      then
-        (compelt, elt);
-
-    // found the base class which is derived
-    case (cl as SCode.CLASS(name = name2, classDef = SCode.DERIVED()), classExtendsElt)
-      equation
-        name1 = inClassExtendsEltName;
-        name2 = inBaseEltName;
-
-        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) = cl;
-
-        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
-
-        classDef = SCode.DERIVED(derivedTySpec, derivedMod, attrs);
-        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
-        vis2 = SCode.prefixesVisibility(prefixes2);
-        elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,{},externalDecl1);
-        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
-      then
-        (compelt, elt);
-
-    // something went wrong!
-    else
-      equation
-        assert(false, getInstanceName() + " could not rename class extends base class to: " + inBaseEltName);
-      then
-        fail();
-
-  end matchcontinue;
-end patchBaseClassAndClassExtends;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

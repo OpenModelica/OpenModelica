@@ -2259,7 +2259,7 @@ algorithm
     case (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::rest, redecls)
       equation
         submods = makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
-        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), Absyn.dummyInfo);
+        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), info);
         mod = mergeSCodeMods(redeclareMod, mod);
         out = addRedeclareAsElementsToExtends(rest, redecls);
       then
