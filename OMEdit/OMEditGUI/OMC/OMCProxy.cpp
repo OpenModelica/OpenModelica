@@ -1071,7 +1071,9 @@ QString OMCProxy::getIconAnnotation(QString className)
 {
   QString expression = "getIconAnnotation(" + className + ")";
   sendCommand(expression);
-  return getResult();
+  QString result = getResult();
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
@@ -1083,7 +1085,9 @@ QString OMCProxy::getDiagramAnnotation(QString className)
 {
   QString expression = "getDiagramAnnotation(" + className + ")";
   sendCommand(expression);
-  return getResult();
+  QString result = getResult();
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
