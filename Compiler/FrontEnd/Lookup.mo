@@ -2026,6 +2026,10 @@ algorithm
 
     case (cache,env,id,_)
       equation
+        id = match id
+          case Absyn.IDENT("Clock") then Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Internal",Absyn.IDENT("ClockConstructor")));
+          else id;
+        end match;
         (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) = lookupClass(cache,env,id);
         (cache,res) = lookupFunctionsListInEnv(cache,env_1,names,info,{});
         // print(stringDelimitList(List.map(res,Types.unparseType),"\n###\n"));

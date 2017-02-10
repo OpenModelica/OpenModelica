@@ -495,13 +495,6 @@ function sample "Overloaded operator to either trigger time events or to convert
 </html>"));
 end sample;
 
-function hold "Conversion from clocked discrete-time to continuous time"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
-</html>"));
-end hold;
-
 function shiftSample "First activation of clock is shifted in time"
   external "builtin";
   annotation(Documentation(info="<html>
@@ -515,20 +508,6 @@ function backSample "First activation of clock is shifted in time before activat
   See <a href=\"modelica://ModelicaReference.Operators.'backSample()'\">backSample()</a>
 </html>"));
 end backSample;
-
-function noClock "Clock of y=Clock(u) is always inferred"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'noClock()'\">noClock()</a>
-</html>"));
-end noClock;
-
-function interval "Returns the interval between the previous and present tick of the clock of its argument"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'interval()'\">interval()</a>
-</html>"));
-end interval;
 
 function transition "Define state machine transition"
   external "builtin";
@@ -550,20 +529,6 @@ function activeState "Return true if instance of a state machine is active, othe
   See <a href=\"modelica://ModelicaReference.Operators.'activeState()'\">activeState()</a>
 </html>"));
 end activeState;
-
-function ticksInState "Returns the number of clock ticks since a transition was made to the currently active state"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
-</html>"));
-end ticksInState;
-
-function timeInState "Returns the time duration as Real in [s] since a transition was made to the currently active state"
-  external "builtin";
-  annotation(Documentation(info="<html>
-  See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
-</html>"));
-end timeInState;
 
 function change "Indicate discrete variable changing"
   external "builtin";
@@ -815,6 +780,46 @@ function superSample = $overload(OpenModelica.Internal.superSampleExpression, Op
   See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
 </html>"));
 
+function hold<T> "Conversion from clocked discrete-time to continuous time"
+  input T u;
+  output T y;
+  external "builtin";
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
+</html>"));
+end hold;
+
+function noClock<T> "Clock of y=Clock(u) is always inferred"
+  input T u;
+  output T y;
+  external "builtin";
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'noClock()'\">noClock()</a>
+</html>"));
+end noClock;
+
+function interval = $overload(OpenModelica.Internal.intervalInferred, OpenModelica.Internal.intervalExpression)
+   "Returns the interval between the previous and present tick of the clock of its argument"
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'interval()'\">interval()</a>
+</html>"));
+
+impure function ticksInState "Returns the number of clock ticks since a transition was made to the currently active state"
+  output Integer ticks;
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
+</html>"));
+end ticksInState;
+
+impure function timeInState "Returns the time duration as Real in [s] since a transition was made to the currently active state"
+  output Real t;
+  external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
+</html>"));
+end timeInState;
+
 /* Actually contains more...
 record SimulationResult
   String resultFile;
@@ -849,6 +854,56 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
 
   type BuiltinType "Integer,Real,String,enumeration or array of some kind"
   end BuiltinType;
+
+  function ClockConstructor = $overload(OpenModelica.Internal.inferredClock, OpenModelica.Internal.rationalClock, OpenModelica.Internal.realClock, OpenModelica.Internal.booleanClock, OpenModelica.Internal.solverClock)
+    "Overloaded clock constructor"
+    annotation(version="Modelica 3.3", Documentation(info="<html>
+    The Clock constructors.</a>
+  </html>"));
+
+  function inferredClock
+    output Clock c;
+    external "builtin";
+  end inferredClock;
+
+  function rationalClock
+    input Integer intervalCounter(min=0);
+    parameter input Integer resolution(unit="Hz", min=1)=1;
+    output Clock c;
+    external "builtin";
+  end rationalClock;
+
+  function realClock
+    input Real interval(unit="s", min=0);
+    output Clock c;
+    external "builtin";
+  end realClock;
+
+  function booleanClock
+    input Boolean condition;
+    input Real startInterval=0.0;
+    output Clock c;
+    external "builtin";
+  end booleanClock;
+
+  function solverClock
+    input Clock c;
+    input String solverMethod;
+    output Clock clk;
+    external "builtin";
+  end solverClock;
+
+  function intervalInferred
+    output Real interval;
+    external "builtin" interval=interval();
+  end intervalInferred;
+
+  function intervalExpression<T>
+    input T u;
+    output Real y;
+    external "builtin" y=interval(u);
+    annotation(__OpenModelica_UnboxArguments=true);
+  end intervalExpression;
 
   impure function subSampleExpression<T>
     input T u;

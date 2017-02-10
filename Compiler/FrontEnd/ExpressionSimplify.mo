@@ -1392,6 +1392,23 @@ algorithm
         e = Expression.makePureBuiltinCall("cat", DAE.ICONST(1)::es, tp);
       then e;
 
+    /* Current design uses a special DAE.Expression */
+
+    case (DAE.CALL(path=Absyn.IDENT("inferredClock"),expLst={}))
+      then DAE.CLKCONST(DAE.INFERRED_CLOCK());
+
+    case (DAE.CALL(path=Absyn.IDENT("realClock"),expLst={e1}))
+      then DAE.CLKCONST(DAE.REAL_CLOCK(e1));
+
+    case (DAE.CALL(path=Absyn.IDENT("booleanClock"),expLst={e1,e2}))
+      then DAE.CLKCONST(DAE.BOOLEAN_CLOCK(e1,e2));
+
+    case (DAE.CALL(path=Absyn.IDENT("rationalClock"),expLst={e1,e2}))
+      then DAE.CLKCONST(DAE.INTEGER_CLOCK(e1, e2));
+
+    case (DAE.CALL(path=Absyn.IDENT("solverClock"),expLst={e1,e2}))
+      then DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, e2));
+
   end matchcontinue;
 end simplifyBuiltinCalls;
 
