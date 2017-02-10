@@ -1628,7 +1628,7 @@ algorithm
         (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
         ixs = arrayCreate(arrayLength(m), 0);
-        rixs = arrayCreate(arrayLength(m), 0);
+        rixs = arrayCreate(arrayLength(rm), 0);
         vars = arrayCreate(arrayLength(mT), false);
         rvars = arrayCreate(arrayLength(rmT), false);
         // ixsT = arrayCreate(arrayLength(mT),0);
