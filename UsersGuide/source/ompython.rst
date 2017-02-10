@@ -63,20 +63,20 @@ To get started, create a ModelicaSystem object:
 >>> from OMPython import ModelicaSystem
 >>> mod=ModelicaSystem("BouncingBall.mo","BouncingBall")
 
-The object constructor requires a minimum of 2 input arguments which are strings, and may need a third string input argument. 
+The object constructor requires a minimum of 2 input arguments which are strings, and may need a third string input argument.
 
-- The ﬁrst input argument must be a string with the ﬁle name of the Modelica code, with Modelica ﬁle extension ".mo"
-  If the  Modelica ﬁle is not in the current directory of Python, then the ﬁle path must also be included
-  
--  The second input argument must be a string with the name of the Modelica model 
+- The first input argument must be a string with the file name of the Modelica code, with Modelica file extension ".mo"
+  If the  Modelica file is not in the current directory of Python, then the file path must also be included
+
+-  The second input argument must be a string with the name of the Modelica model
    including the namespace if the model is wrapped within a Modelica package
-   
--  A third input argument is used if the Modelica model builds on other Modelica code, e.g. the Modelica Standard Library. 
+
+-  A third input argument is used if the Modelica model builds on other Modelica code, e.g. the Modelica Standard Library.
 
 Standard get methods API
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
->>> mod.getQuantities() 
+>>> mod.getQuantities()
 >>> mod.getContinuous()
 >>> mod.getInputs()
 >>> mod.getOutputs()
@@ -85,8 +85,8 @@ Standard get methods API
 
 Two calling possibilities are accepted using getXXX() where "XXX" can be any of the above functions (eg:) getParameters().
 
--  getXXX() without input argument, returns a dictionary with names as keys and values as values. 
--  getXXX(S), where S is a sequence of strings of names, returns a tuple of values for the speciﬁed names.
+-  getXXX() without input argument, returns a dictionary with names as keys and values as values.
+-  getXXX(S), where S is a sequence of strings of names, returns a tuple of values for the specified names.
 
 
 Standard set methods API
@@ -96,15 +96,15 @@ Standard set methods API
 >>> mod.setParameters()
 >>> mod.setSimulationOptions()
 
-Two calling possibilities are accepted using setXXXs(),where "XXX" can be any of above functions. 
+Two calling possibilities are accepted using setXXXs(),where "XXX" can be any of above functions.
 
--  setXXX(k) with K being a sequence of keyword assignments of type quantity name = value  Here, the quantity name could be 
+-  setXXX(k) with K being a sequence of keyword assignments of type quantity name = value  Here, the quantity name could be
    a parameter name (i.e., not a string), an input name, etc.
--  setXXXs(**D), with D being a dictionary with quantity names as keywords and values as described with the alternative 
+-  setXXXs(**D), with D being a dictionary with quantity names as keywords and values as described with the alternative
    input argument K.
 
 Example usage of Above API
-~~~~~~~~~~~~~~~~~~~~~~~~~~   
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 An example of how to get parameter names and change the value of parameters using set methods and finally simulate the  "BouncingBall.mo" model is given below.
 
 >>>  mod.getParameters()
@@ -118,8 +118,8 @@ To check whether new values are updated to model , we can again query the getPar
 >>> mod.getParameters()
 {'c': 0.5, 'radius': 14}
 
-And then finally we can simulate the model using. 
- 
+And then finally we can simulate the model using.
+
 >>> mod.simulate()
 
 Test Commands using old OMPython features
