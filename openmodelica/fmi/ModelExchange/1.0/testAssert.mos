@@ -22,7 +22,7 @@ getErrorString();
 
 // Result:
 // true
-// "SimCode: The model testAssertFMI has been translated to FMU"
+// "testAssertFMI.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "testAssertFMI_me_FMU.mo"

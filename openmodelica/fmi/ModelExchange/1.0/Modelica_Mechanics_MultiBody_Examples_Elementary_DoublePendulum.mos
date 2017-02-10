@@ -32,7 +32,7 @@ val(revolute2_phi, 3);
 // true
 // true
 // ""
-// "SimCode: The model Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum has been translated to FMU"
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu"
 // ""
 // "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo"
 // ""
@@ -44,11 +44,11 @@ val(revolute2_phi, 3);
 //     messages = ""
 // end SimulationResult;
 // 0.0
-// -2.915113487866565
-// -0.0369338988540469
-// -2.315869715381388
+// -2.915113487866567
+// -0.03693389885324572
+// -2.315869680474252
 // 0.0
-// -0.5164246972076906
-// -0.9041007100656111
-// -1.736374881607126
+// -0.5164246972076183
+// -0.9041007100734307
+// -1.73637481224062
 // endResult

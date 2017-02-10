@@ -16,7 +16,7 @@ simulate(TestSourceCodeFMU); getErrorString();
 // ""
 // true
 // ""
-// "SimCode: The model TestSourceCodeFMU has been translated to FMU"
+// "TestSourceCodeFMU.fmu"
 // ""
 // "TestSourceCodeFMU_me_FMU.mo"
 // ""

@@ -46,7 +46,7 @@ val(QI, 10);
 // 0.0
 // 1.0
 // 0.0
-// "SimCode: The model BooleanNetwork1 has been translated to FMU"
+// "BooleanNetwork1.fmu"
 // ""
 // "BooleanNetwork1_me_FMU.mo"
 // ""

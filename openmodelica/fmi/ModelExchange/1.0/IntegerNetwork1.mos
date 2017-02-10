@@ -26,7 +26,7 @@ val(y5, 7.5);
 // ""
 // true
 // ""
-// "SimCode: The model IntegerNetwork1 has been translated to FMU"
+// "IntegerNetwork1.fmu"
 // ""
 // "IntegerNetwork1_me_FMU.mo"
 // ""
@@ -44,6 +44,6 @@ val(y5, 7.5);
 // 4.0
 // -2.0
 // 10.0
-// 2.999999993085606
-// -2.999999983206489
+// 2.999999987169963
+// -2.999999967431478
 // endResult

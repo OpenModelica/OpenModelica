@@ -26,7 +26,7 @@ val(y,1);
 // Result:
 // true
 // ""
-// "SimCode: The model ZeroStates20 has been translated to FMU"
+// "ZeroStates20.fmu"
 // ""
 // "ZeroStates20_me_FMU.mo"
 // true

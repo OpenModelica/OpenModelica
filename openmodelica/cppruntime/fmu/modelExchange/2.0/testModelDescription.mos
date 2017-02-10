@@ -34,7 +34,7 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
-// "SimCode: The model SIDTest has been translated to FMU"
+// "SIDTest.fmu"
 // ""
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>

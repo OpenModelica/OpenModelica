@@ -12,6 +12,6 @@ translateModelFMU(DrumBoiler);getErrorString();
 // true
 // ""
 // true
-// "SimCode: The model DrumBoiler has been translated to FMU"
+// "DrumBoiler.fmu"
 // ""
 // endResult

@@ -28,7 +28,7 @@ readFile("log.txt");
 // Result:
 // true
 // true
-// "SimCode: The model advection has been translated to FMU"
+// "advection.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // 0

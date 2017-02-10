@@ -25,7 +25,7 @@ readFile("modelDescription.tmp.xml");
 // true
 // true
 // ""
-// "SimCode: The model test_Bug3049 has been translated to FMU"
+// "test_Bug3049.fmu"
 // ""
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>

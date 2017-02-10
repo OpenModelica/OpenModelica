@@ -29,10 +29,10 @@ val(rev_phi, 3);
 // end SimulationResult;
 // ""
 // 0.0
-// -2.580150841077486
-// -1.57760305358518
-// -0.8529875495512299
-// "SimCode: The model Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum has been translated to FMU"
+// -2.580150841077482
+// -1.577603053585166
+// -0.8529875495512017
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu"
 // ""
 // "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"
 // ""
@@ -45,7 +45,7 @@ val(rev_phi, 3);
 // end SimulationResult;
 // ""
 // 0.0
-// -2.580150841078526
-// -1.577603053583732
-// -0.8529875495514888
+// -2.580150841077478
+// -1.577603053585182
+// -0.8529875495512135
 // endResult

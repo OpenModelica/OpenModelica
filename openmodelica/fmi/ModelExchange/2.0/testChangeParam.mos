@@ -49,7 +49,7 @@ getErrorString();
 // true
 // ""
 // true
-// "SimCode: The model test_ChangeParam has been translated to FMU"
+// "test_ChangeParam.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "test_ChangeParam_me_FMU.mo"

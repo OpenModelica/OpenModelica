@@ -47,7 +47,7 @@ w2/1000.0;
 
 // Result:
 // true
-// "SimCode: The model TanksConnectedPI has been translated to FMU"
+// "TanksConnectedPI.fmu"
 // "TanksConnectedPI_me_FMU.mo"
 // true
 // record SimulationResult

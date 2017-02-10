@@ -28,7 +28,7 @@ val(y, 1);
 
 // Result:
 // true
-// "SimCode: The model Modelica.Blocks.Sources.BooleanPulse has been translated to FMU"
+// "Modelica_Blocks_Sources_BooleanPulse.fmu"
 // "[Modelica 3.2.1/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // "Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo"

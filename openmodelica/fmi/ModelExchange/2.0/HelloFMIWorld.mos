@@ -23,7 +23,7 @@ val(x,1);
 
 // Result:
 // true
-// "SimCode: The model HelloFMI20World has been translated to FMU"
+// "HelloFMI20World.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "HelloFMI20World_me_FMU.mo"

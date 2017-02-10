@@ -37,7 +37,7 @@ val(y2, 1);
 // true
 // ""
 // true
-// "SimCode: The model DIC has been translated to FMU"
+// "DIC.fmu"
 // ""
 // true
 // ""

@@ -47,7 +47,7 @@ val(evaporator_qm_S, 100);
 // ""
 // true
 // ""
-// "SimCode: The model DrumBoilerModel has been translated to FMU"
+// "DrumBoilerModel.fmu"
 // ""
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>

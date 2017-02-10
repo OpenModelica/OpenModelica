@@ -33,7 +33,7 @@ readFile("modelDescription.tmp.xml");
 // Result:
 // true
 // ""
-// "SimCode: The model test_Bug2764 has been translated to FMU"
+// "test_Bug2764.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // 0

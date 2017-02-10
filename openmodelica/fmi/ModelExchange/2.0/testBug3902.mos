@@ -11,6 +11,6 @@ buildModelFMU(Modelica.Fluid.Examples.Tanks.ThreeTanks, platforms={"i686-w64-min
 // Result:
 // true
 // ""
-// "SimCode: The model Modelica.Fluid.Examples.Tanks.ThreeTanks has been translated to FMU"
+// "Modelica_Fluid_Examples_Tanks_ThreeTanks.fmu"
 // ""
 // endResult

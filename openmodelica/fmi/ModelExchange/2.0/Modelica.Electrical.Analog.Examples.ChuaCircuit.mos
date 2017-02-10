@@ -32,7 +32,7 @@ val(C2_v, 3);
 
 // Result:
 // true
-// "SimCode: The model Modelica.Electrical.Analog.Examples.ChuaCircuit has been translated to FMU"
+// "Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo"
@@ -45,15 +45,15 @@ val(C2_v, 3);
 //     messages = ""
 // end SimulationResult;
 // 0.0
-// 0.0006245340117113856
-// 0.002487686548357086
-// 0.005573487284199661
+// 0.0006245340117134548
+// 0.002487686548373747
+// 0.005573487284195184
 // 4.0
 // 3.973329565350411
-// 3.94832206647624
-// 3.924937636301487
+// 3.948322066476235
+// 3.924937636301451
 // 0.0
-// 0.0224581617610272
-// 0.04463179079046596
-// 0.06651953357135959
+// 0.02245816176097826
+// 0.04463179078992778
+// 0.06651953357058504
 // endResult

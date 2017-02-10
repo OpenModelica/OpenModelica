@@ -19,7 +19,7 @@ val(h,3);
 // ""
 // true
 // ""
-// "SimCode: The model BouncingBall has been translated to FMU"
+// "BouncingBall.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "BouncingBall_me_FMU.mo"

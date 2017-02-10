@@ -16,7 +16,7 @@ simulate(StringParameters_me_FMU, stopTime=3.0, simflags="-output=sball,eball");
 // ""
 // true
 // ""
-// "SimCode: The model StringParameters has been translated to FMU"
+// "StringParameters.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "StringParameters_me_FMU.mo"

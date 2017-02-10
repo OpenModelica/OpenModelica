@@ -31,7 +31,7 @@ val(i,1);
 
 // Result:
 // true
-// "SimCode: The model SampleEvent has been translated to FMU"
+// "SampleEvent.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "SampleEvent_me_FMU.mo"

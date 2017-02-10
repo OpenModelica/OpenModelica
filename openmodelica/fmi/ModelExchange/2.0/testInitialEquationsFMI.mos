@@ -78,7 +78,7 @@ val(y, 0.0);
 // Result:
 // true
 // ""
-// "SimCode: The model initializationTestsFMI.initial_equation1 has been translated to FMU"
+// "initializationTestsFMI_initial_equation1.fmu"
 // ""
 // "initializationTestsFMI_initial_equation1_me_FMU.mo"
 // ""
@@ -92,7 +92,7 @@ val(y, 0.0);
 // ""
 // 5.0
 // 5.0
-// "SimCode: The model initializationTestsFMI.initial_equation2 has been translated to FMU"
+// "initializationTestsFMI_initial_equation2.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "initializationTestsFMI_initial_equation2_me_FMU.mo"
@@ -107,7 +107,7 @@ val(y, 0.0);
 // ""
 // 5.0
 // 5.0
-// "SimCode: The model initializationTestsFMI.initial_equation3 has been translated to FMU"
+// "initializationTestsFMI_initial_equation3.fmu"
 // ""
 // "initializationTestsFMI_initial_equation3_me_FMU.mo"
 // ""
