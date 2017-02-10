@@ -676,7 +676,7 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
   mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
 
-  //Save sub-model parameters for meta models
+  //Save sub-model parameters for composite models
   if(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
     mParameterNames = pEditor->getParameterNames(pComponent->getName());  //Assume submodel; otherwise returned list is empty
