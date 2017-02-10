@@ -13762,7 +13762,7 @@ protected function buildEnvForGraphicProgramFull
   output FCore.Graph outEnv;
   output Absyn.Program outProgram;
 protected
-  Boolean check_model, eval_param, failed = false;
+  Boolean check_model, eval_param, failed = false, graphics_mode;
   Absyn.Program graphic_program;
   SCode.Program scode_program;
 algorithm
@@ -13772,8 +13772,10 @@ algorithm
 
   check_model := Flags.getConfigBool(Flags.CHECK_MODEL);
   eval_param := Config.getEvaluateParametersInAnnotations();
+  graphics_mode := Config.getGraphicsExpMode();
   Flags.setConfigBool(Flags.CHECK_MODEL, true);
   Config.setEvaluateParametersInAnnotations(true);
+  Config.setGraphicsExpMode(true);
 
   try
     (outCache, outEnv) := Inst.instantiateClass(FCore.emptyCache(), InnerOuter.emptyInstHierarchy, scode_program, inModelPath);
@@ -13783,6 +13785,7 @@ algorithm
 
   Config.setEvaluateParametersInAnnotations(eval_param);
   Flags.setConfigBool(Flags.CHECK_MODEL, check_model);
+  Config.setGraphicsExpMode(graphics_mode);
   if failed then
     fail();
   end if;
@@ -13821,10 +13824,17 @@ algorithm
       algorithm
         is_icon := ann_name == "Icon";
         is_diagram := ann_name == "Diagram";
-        (stripped_mod, graphic_mod) := stripGraphicsAndInteractionModification(mod);
 
+        (stripped_mod, graphic_mod) := stripGraphicsAndInteractionModification(mod);
+        ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
+        try
         (cache, env, graphic_prog) :=
           buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
+        else
+          ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
+          fail();
+        end try;
+        ErrorExt.rollBack("buildEnvForGraphicProgram");
 
         smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
           SCode.NOT_FINAL(), SCode.NOT_EACH(), info);

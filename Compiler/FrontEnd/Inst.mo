@@ -342,7 +342,9 @@ algorithm
         stackOverflow = setStackOverflowSignal(false);
 
         cname_str = Absyn.pathString(path) + (if stackOverflow then ". The compiler got into Stack Overflow!" else "");
-        Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
+        if not Config.getGraphicsExpMode() then
+          Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
+        end if;
 
         // let the GC collect these as they are used only by Inst!
         releaseInstHashTable();
@@ -418,6 +420,7 @@ algorithm
         (cache,env_2,ih,dae);
 
     case (_,_,_,path) /* error instantiating */
+      guard not Config.getGraphicsExpMode()
       equation
         cname_str = Absyn.pathString(path);
         //print(" Error flattening partial, errors: " + ErrorExt.printMessagesStr() + "\n");
@@ -600,7 +603,6 @@ algorithm
 
         ci_state = ClassInf.start(r,FGraph.getGraphName(env_1));
         csets = ConnectUtil.newSet(pre, inSets);
-
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
           = instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c, SCode.PUBLIC(), inst_dims, impl, callscope, graph, csets, NONE());
         csets = ConnectUtil.addSet(inSets, csets);
@@ -631,7 +633,9 @@ algorithm
     //  Classes with the keyword partial can not be instantiated. They can only be inherited
     case (cache,_,_,_,_,_,SCode.CLASS(name = n,partialPrefix = SCode.PARTIAL(), info = info),_,(false),_,_,_)
       equation
-        Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {n}, info);
+        if not Config.getGraphicsExpMode() then
+          Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {n}, info);
+        end if;
       then
         fail();
 

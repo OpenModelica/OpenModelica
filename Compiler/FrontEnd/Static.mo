@@ -11879,7 +11879,7 @@ algorithm
   end if;
 
   // If the types are not matching, print an error and fail.
-  if not ty_match then
+  if (not ty_match) and not Config.getGraphicsExpMode() then
     e1_str := ExpressionDump.printExpStr(inTrueBranch);
     e2_str := ExpressionDump.printExpStr(inFalseBranch);
     ty1_str := Types.unparseTypeNoAttr(true_ty);

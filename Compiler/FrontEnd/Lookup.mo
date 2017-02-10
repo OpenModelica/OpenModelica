@@ -1299,6 +1299,8 @@ algorithm
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
 
+    case (cache,env,cref) guard Config.getGraphicsExpMode() then (cache,DAE.dummyAttrConst,DAE.T_UNKNOWN_DEFAULT,DAE.UNBOUND(),NONE(),InstTypes.SPLICEDEXPDATA(NONE(),DAE.T_UNKNOWN_DEFAULT),env,env,"#varNotFound#");
+
     /*/ fail if we couldn't find it
     case (_,env,cref)
       equation

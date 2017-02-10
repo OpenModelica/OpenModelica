@@ -6808,12 +6808,14 @@ algorithm
 
   outIsConditional := match(val)
     case Values.BOOL(b) then b;
-    case Values.EMPTY(__) // Print an error if the expression has no value.
+    case Values.EMPTY() // Print an error if the expression has no value.
       equation
-        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
-          {Dump.printExpStr(inCondition)}, inInfo);
-      then
-        fail();
+        if not Config.getGraphicsExpMode() then
+          Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
+            {Dump.printExpStr(inCondition)}, inInfo);
+          fail();
+        end if;
+      then true; // Randomly pick a default for graphics mode...
     else
       equation
         Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesUtil.valString(val), sourceInfo());
