@@ -1567,16 +1567,11 @@ end mapIndexColors;
 protected function createBipartiteGraph
   input Integer inNode;
   input array<list<Integer>> inSparsePattern;
-  output list<Integer> outEdges;
+  output list<Integer> outEdges = {};
 algorithm
-  outEdges := matchcontinue(inNode,inSparsePattern)
-    case(_, _)
-      equation
-        outEdges = arrayGet(inSparsePattern,inNode);
-    then outEdges;
-    case(_, _)
-      then {};
-  end matchcontinue;
+  if arrayLength(inSparsePattern) <= inNode then
+    outEdges := arrayGet(inSparsePattern,inNode);
+  end if;
 end createBipartiteGraph;
 
 protected function createLinearModelMatrixes "This function creates the linear model matrices column-wise
