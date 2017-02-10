@@ -1290,6 +1290,7 @@ algorithm
     end if;
   else
     Error.addInternalError("function createColoring failed", sourceInfo());
+    fail();
   end try;
 end createColoring;
 
@@ -1561,6 +1562,7 @@ algorithm
     end for;
   else
     Error.addInternalError("function mapIndexColors failed", sourceInfo());
+    fail();
   end try;
 end mapIndexColors;
 
@@ -1569,8 +1571,10 @@ protected function createBipartiteGraph
   input array<list<Integer>> inSparsePattern;
   output list<Integer> outEdges = {};
 algorithm
-  if arrayLength(inSparsePattern) <= inNode then
+  if inNode >= 1 and inNode <= arrayLength(inSparsePattern)  then
     outEdges := arrayGet(inSparsePattern,inNode);
+  else
+    outEdges := {};
   end if;
 end createBipartiteGraph;
 
