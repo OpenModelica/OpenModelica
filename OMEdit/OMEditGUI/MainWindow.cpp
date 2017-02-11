@@ -770,13 +770,14 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms = pSettings->value("FMIExport/Platforms").toStringList();
   int index = platforms.indexOf("none");
-  if (index > -1)
+  if (index > -1) {
     platforms.removeAt(index);
-  if (mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
-                                                .arg(FMUName.isEmpty() ? pLibraryTreeItem->getNameStructure() : FMUName)
-                                                .arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()), Helper::scriptingKind,
-                                                Helper::notificationLevel));
+  }
+  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
+  if (!fmuFileName.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
   hideProgressBar();
@@ -797,10 +798,11 @@ void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  if (mpOMCProxy->translateModelXML(pLibraryTreeItem->getNameStructure())) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
-                                                .arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()).arg(pLibraryTreeItem->getNameStructure()),
-                                                Helper::scriptingKind, Helper::notificationLevel));
+  QString xmlFileName = mpOMCProxy->translateModelXML(pLibraryTreeItem->getNameStructure());
+  if (!xmlFileName.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::XML_GENERATED).arg(xmlFileName),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
   }
   // hide progress bar
   hideProgressBar();

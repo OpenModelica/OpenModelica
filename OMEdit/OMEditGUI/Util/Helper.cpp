@@ -634,9 +634,9 @@ QString GUIMessages::getMessage(int type)
     case INNER_MODEL_NAME_CHANGED:
       return tr("A component with the name <b>%1</b> already exists. The name is changed from <b>%1</b> to <b>%2</b>.<br /><br />This is probably wrong because the component is declared as <b>inner</b>.");
     case FMU_GENERATED:
-      return tr("The FMU %1.fmu is generated at %2");
+      return tr("The FMU is generated at <b>%1</b>.");
     case XML_GENERATED:
-      return tr("The XML is generated at %1/%2.xml");
+      return tr("The XML is generated at <b>%1</b>.");
     case FIGARO_GENERATED:
       return tr("The FIGARO is generated.");
     case UNLOAD_CLASS_MSG:

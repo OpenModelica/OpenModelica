@@ -2076,34 +2076,32 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
  * \param platforms
  * \return
  */
-bool OMCProxy::buildModelFMU(QString className, double version, QString type, QString fileNamePrefix, QList<QString> platforms)
+QString OMCProxy::buildModelFMU(QString className, double version, QString type, QString fileNamePrefix, QList<QString> platforms)
 {
-  bool result = false;
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString res = mpOMCInterface->buildModelFMU(className, QString::number(version), type, fileNamePrefix, platforms);
-  if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
-    result = true;
+  QString fmuFileName = mpOMCInterface->buildModelFMU(className, QString::number(version), type, fileNamePrefix, platforms);
+  if (!fmuFileName.isEmpty()) {
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
-  return result;
+  return fmuFileName;
 }
 
 /*!
-  Creates the XML of the model.
-  \param className - the name of the class.
-  \return the created XML location
-  */
-bool OMCProxy::translateModelXML(QString className)
+ * \brief OMCProxy::translateModelXML
+ * Creates the XML of the model.
+ * \param className - the name of the class.
+ * \return the created XML location
+ */
+QString OMCProxy::translateModelXML(QString className)
 {
-  bool result = false;
   sendCommand("translateModelXML(" + className + ")");
-  if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to XML") == 0) {
-    result = true;
+  QString xmlFileName = StringHandler::unparse(getResult());
+  if (!xmlFileName.isEmpty()) {
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
-  return result;
+  return xmlFileName;
 }
 
 /*!
