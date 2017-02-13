@@ -12940,6 +12940,11 @@ algorithm
         DAE.SHARED_LITERAL(index = i) := inExp2;
       then Util.intCompare(inExp1.index, i);
 
+    case DAE.EMPTY()
+      algorithm
+        DAE.EMPTY(name=cr) := inExp2;
+      then ComponentReference.crefCompareGeneric(inExp1.name, cr);
+
     else
       algorithm
         Error.addInternalError("Expression.compare failed: ctor:" + String(valueConstructor(inExp1)) + " " + printExpStr(inExp1) + " " + printExpStr(inExp2), sourceInfo());

@@ -3071,6 +3071,10 @@ algorithm
       then
         fail();
 
+    // Failed in graphics mode; just continue
+    case (cache,env,ih,sets,_,_,_,_,graph) guard Config.getGraphicsExpMode()
+      then (cache,env,ih,sets,DAE.emptyDae,graph);
+
     case (_,_,_,_,_,c1,c2,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
