@@ -2668,6 +2668,15 @@ protected
 algorithm
   // First, calculate the length of the string to be generated
   p1 :=  if usefq then path else makeNotFullyQualified(path);
+  _ := match p1
+    case IDENT()
+      algorithm
+        // Do not allocate memory if we're just going to copy the only identifier
+        s := p1.name;
+        return;
+      then ();
+    else ();
+  end match;
   p2 := p1;
   b := true;
   while b loop

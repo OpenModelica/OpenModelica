@@ -1242,7 +1242,9 @@ function stringAllocatorStringCopy
   input Integer destOffset=0;
 external "C" om_stringAllocatorStringCopy(dest,source,destOffset) annotation(Include="
 void om_stringAllocatorStringCopy(void *dest, char *source, int destOffset) {
-  strcpy(MMC_STRINGDATA(dest)+destOffset, source);
+  if (*source) {
+    strcpy(MMC_STRINGDATA(dest)+destOffset, source);
+  }
 }
 ", Documentation(info="<html>
 <p>Does a strcpy into the (input) destination. This is dangerous and not valid Modelica.</p>

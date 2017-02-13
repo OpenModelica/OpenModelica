@@ -862,6 +862,12 @@ algorithm
       then
         (inCache, Values.EMPTY(inExp.scope, s, v, inExp.tyStr), inST);
 
+    case (_,env,e,_,_,_,_) guard Config.getGraphicsExpMode()
+      algorithm
+        ty := Expression.typeof(inExp);
+        v := Types.typeToValue(ty);
+      then (inCache, Values.EMPTY("#graphicsExp#", ExpressionDump.printExpStr(inExp), v, Types.unparseType(ty)), inST);
+
     // ceval can fail and that is ok, caught by other rules...
     case (_,env,e,_,_,_,_) // Absyn.MSG())
       equation

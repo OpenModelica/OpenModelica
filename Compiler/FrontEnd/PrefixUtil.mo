@@ -926,6 +926,8 @@ algorithm
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
 
+    case (_,_,_,e as DAE.EMPTY(),_) then (inCache,e);
+
     case (_,_,_,e,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

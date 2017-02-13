@@ -13830,11 +13830,13 @@ algorithm
         try
         (cache, env, graphic_prog) :=
           buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
+          ErrorExt.rollBack("buildEnvForGraphicProgram");
         else
           ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
           fail();
+          // Fallback to only the graphical primitives left in the program
+          (cache, env, graphic_prog) := buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
         end try;
-        ErrorExt.rollBack("buildEnvForGraphicProgram");
 
         smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
           SCode.NOT_FINAL(), SCode.NOT_EACH(), info);

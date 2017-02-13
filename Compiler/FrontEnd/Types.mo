@@ -7384,6 +7384,9 @@ algorithm
       then
         v;
 
+    case DAE.T_UNKNOWN() then Values.META_FAIL();
+
+
     // All the other ones we don't handle
     else
       equation
