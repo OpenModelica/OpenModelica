@@ -3162,6 +3162,7 @@ algorithm
               (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) := lookupVar(cache, componentEnv, ids);
 
               ltCref := elabComponentRecursive((texp));
+              ty := tyChild; // In case it's an unspliced expression
               oSplicedExp := match ltCref
                 case (tCref::_) // with a spliced exp
                   algorithm
