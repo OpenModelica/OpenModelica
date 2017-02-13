@@ -4,6 +4,7 @@ TESTFILES = \
 VendorAnnotation.mos \
 AddClassAnnotation.mos \
 ArraySlicing.mos \
+Buildings.PartialFlowMachine.mos \
 Bug2871.mos \
 Bug2943.mos \
 Bug2882.mos \
