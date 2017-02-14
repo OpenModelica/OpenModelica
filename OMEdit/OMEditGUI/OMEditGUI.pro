@@ -178,7 +178,13 @@ SOURCES += main.cpp \
   Debugger/Attach/ProcessListModel.cpp \
   CrashReport/backtrace.c \
   CrashReport/GDBBacktrace.cpp \
-  CrashReport/CrashReportDialog.cpp
+  CrashReport/CrashReportDialog.cpp \
+  Git/GitCommands.cpp \
+  Git/CommitChangesDialog.cpp \
+  Git/RevertCommitsDialog.cpp \
+  Git/CleanDialog.cpp \
+  Traceability/TraceabilityPushDialog.cpp \
+  Traceability/TraceabilityQueryDialog.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -246,7 +252,13 @@ HEADERS  += Util/Helper.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/backtrace.h \
   CrashReport/GDBBacktrace.h \
-  CrashReport/CrashReportDialog.h
+  CrashReport/CrashReportDialog.h \
+  Git/GitCommands.h \
+  Git/CommitChangesDialog.h \
+  Git/RevertCommitsDialog.h \
+  Git/CleanDialog.h \
+  Traceability/TraceabilityPushDialog.h \
+  Traceability/TraceabilityQueryDialog.h
 
 CONFIG(osg) {
 

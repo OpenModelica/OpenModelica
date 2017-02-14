@@ -52,6 +52,7 @@
 #include <QMdiSubWindow>
 #include <QMdiArea>
 
+
 class OMCProxy;
 class TransformationsWidget;
 class LibraryWidget;
@@ -76,6 +77,8 @@ class AboutOMEditDialog;
 class Label;
 class FileDataNotifier;
 class LibraryTreeItem;
+class GitCommands;
+
 
 class MainWindow : public QMainWindow
 {
@@ -112,6 +115,7 @@ public:
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
+  GitCommands* getGitCommands() {return mpGitCommands;}
   QStatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -162,6 +166,14 @@ public:
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
+  QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
+  QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
+  QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
+  QAction* getCommitFilesAction() {return mpCommitFilesAction;}
+  QAction* getRevertCommitAction() {return mpRevertCommitAction;}
+  QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
+  QAction* getTraceabilityPushAction() {return mpTraceabilityPushAction;}
+  QAction* getTraceabilityQueryAction() {return mpTraceabilityQueryAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);
@@ -228,6 +240,7 @@ private:
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
+  GitCommands *mpGitCommands;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
@@ -296,6 +309,16 @@ private:
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
+  // Git Menu
+  QAction *mpCreateGitRepositoryAction;
+  QAction *mpLogCurrentFileAction;
+  QAction *mpStageCurrentFileForCommitAction;
+  QAction *mpUnstageCurrentFileFromCommitAction;
+  QAction *mpCommitFilesAction;
+  QAction *mpRevertCommitAction;
+  QAction *mpCleanWorkingDirectoryAction;
+  QAction *mpTraceabilityPushAction;
+  QAction *mpTraceabilityQueryAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpShowOpenModelicaCommandPromptAction;
@@ -441,6 +464,15 @@ private slots:
   void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showConfigureDialog();
   void showAttachToProcessDialog();
+  void createGitRepository();
+  void logCurrentFile();
+  void stageCurrentFileForCommit();
+  void unstageCurrentFileFromCommit();
+  void commitFiles();
+  void revertCommit();
+  void cleanWorkingDirectory();
+  void pushTraceabilityInformation();
+  void queryTraceabilityInformation();
 private:
   void createActions();
   void createToolbars();

@@ -65,6 +65,7 @@ class FigaroPage;
 class DebuggerPage;
 class FMIPage;
 class TLMPage;
+class INTOCPSTraceabilityPage;
 class TabSettings;
 class StackFramesWidget;
 
@@ -102,6 +103,7 @@ public:
   void readDebuggerSettings();
   void readFMISettings();
   void readTLMSettings();
+  void readTraceabilitySettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveTextEditorSettings();
@@ -111,6 +113,7 @@ public:
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
   void saveTLMSettings();
+  void saveTraceabilitySettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveMessagesSettings();
@@ -143,6 +146,7 @@ public:
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   TLMPage* getTLMPage() {return mpTLMPage;}
+  INTOCPSTraceabilityPage* getINTOCPSTraceabilityPage() {return mpINTOCPSTraceabilityPage;}
   void saveDialogGeometry();
   void show();
   TabSettings getTabSettings();
@@ -177,6 +181,7 @@ private:
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   TLMPage *mpTLMPage;
+  INTOCPSTraceabilityPage *mpINTOCPSTraceabilityPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -862,6 +867,30 @@ private slots:
   void browseTLMPluginPath();
   void browseTLMManagerProcess();
   void browseTLMMonitorProcess();
+};
+
+class INTOCPSTraceabilityPage : public QWidget
+{
+  Q_OBJECT
+public:
+  INTOCPSTraceabilityPage(OptionsDialog *pOptionsDialog);
+  QCheckBox* getTraceabilityCheckBox() {return mpTraceabilityCheckBox;}
+  QLineEdit* getFMUOutputDirectory() {return mpFMUOutputDirectoryTextBox;}
+  QPushButton *mpBrowseFMUOutputDirectoryButton;
+  QLineEdit* getTraceabilityDaemonIpAdress() {return mpTraceabilityDaemonIpAdressTextBox;}
+  QLineEdit* getTraceabilityDaemonPort() {return mpTraceabilityDaemonPortTextBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpINTOCPSTraceabilityGroupBox;
+  QCheckBox *mpTraceabilityCheckBox;
+  Label *mpFMUOutputDirectoryLabel;
+  QLineEdit *mpFMUOutputDirectoryTextBox;
+  Label *mpTraceabilityDaemonIpAdressLabel;
+  QLineEdit *mpTraceabilityDaemonIpAdressTextBox;
+  Label *mpTraceabilityDaemonPortLabel;
+  QLineEdit *mpTraceabilityDaemonPortTextBox;
+private slots:
+  void browseFMUOutputDirectory();
 };
 
 #endif // OPTIONSDIALOG_H

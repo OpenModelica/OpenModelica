@@ -96,6 +96,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
   mpTLMPage = new TLMPage(this);
+  mpINTOCPSTraceabilityPage = new INTOCPSTraceabilityPage(this);
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -135,6 +136,7 @@ void OptionsDialog::readSettings()
   readDebuggerSettings();
   readFMISettings();
   readTLMSettings();
+  readTraceabilitySettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -753,6 +755,26 @@ void OptionsDialog::readTLMSettings()
   }
 }
 
+/*!
+ * \brief OptionsDialog::readTraceabilitySettings
+ * Reads the  Traceability settings from omedit.ini
+ */
+void OptionsDialog::readTraceabilitySettings()
+{
+  // read traceability checkbox
+  if (mpSettings->contains("traceability/Traceability")) {
+    mpINTOCPSTraceabilityPage->getTraceabilityCheckBox()->setChecked(mpSettings->value("traceability/Traceability").toBool());
+  }
+  // read the  traceability daemon IP-adress
+  if (mpSettings->contains("traceability/IPAdress")) {
+    mpINTOCPSTraceabilityPage->getTraceabilityDaemonIpAdress()->setText(mpSettings->value("traceability/IPAdress").toString());
+  }
+  // read the traceability daemon Port
+  if (mpSettings->contains("traceability/Port")) {
+    mpINTOCPSTraceabilityPage->getTraceabilityDaemonPort()->setText(mpSettings->value("traceability/Port").toString());
+  }
+}
+
 //! Saves the General section settings to omedit.ini
 void OptionsDialog::saveGeneralSettings()
 {
@@ -1151,6 +1173,19 @@ void OptionsDialog::saveTLMSettings()
   mpSettings->setValue("TLM/MonitorProcess", mpTLMPage->getTLMMonitorProcessTextBox()->text());
 }
 
+/*!
+ * \brief OptionsDialog::saveTraceabilitySettings
+ * Saves the traceability settings in omedit.ini
+ */
+void OptionsDialog::saveTraceabilitySettings()
+{
+  // read traceability checkBox
+  mpSettings->setValue("traceability/Traceability", mpINTOCPSTraceabilityPage->getTraceabilityCheckBox()->isChecked());
+  // save the traceability daemon IP-Adress
+  mpSettings->setValue("traceability/IPAdress", mpINTOCPSTraceabilityPage->getTraceabilityDaemonIpAdress()->text());
+  // save the traceability daemon port
+  mpSettings->setValue("traceability/Port", mpINTOCPSTraceabilityPage->getTraceabilityDaemonPort()->text());
+}
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -1278,6 +1313,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTLMItem = new QListWidgetItem(mpOptionsList);
   pTLMItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
   pTLMItem->setText(tr("TLM"));
+  // INTOCPS Traceability Item
+  QListWidgetItem *pINTOCPSTraceabilityItem = new QListWidgetItem(mpOptionsList);
+  //pINTOCPSTraceabilityItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
+  pINTOCPSTraceabilityItem->setText(tr("INTO-CPS Traceability"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -1304,6 +1343,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
   mpPagesWidget->addWidget(mpTLMPage);
+  mpPagesWidget->addWidget(mpINTOCPSTraceabilityPage);
 }
 
 /*!
@@ -1394,6 +1434,7 @@ void OptionsDialog::saveSettings()
   saveDebuggerSettings();
   saveFMISettings();
   saveTLMSettings();
+  saveTraceabilitySettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -4321,4 +4362,57 @@ void TLMPage::browseTLMMonitorProcess()
 {
   mpTLMMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                      NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+ * \class INTOCPSTraceabilityPage
+ * Creates an interface for INTOCPS Traceability settings.
+ */
+INTOCPSTraceabilityPage::INTOCPSTraceabilityPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpINTOCPSTraceabilityGroupBox = new QGroupBox(tr("INTO-CPS Traceability"));
+  // Traceability
+  mpTraceabilityCheckBox = new QCheckBox(tr("Traceability"));
+  //mpTraceabilityCheckBox->setChecked(false);
+  // FMU Output Directory
+  mpFMUOutputDirectoryLabel = new Label(tr("FMU Output Directory:"));
+  mpFMUOutputDirectoryTextBox = new QLineEdit;
+  mpBrowseFMUOutputDirectoryButton = new QPushButton(Helper::browse);
+  mpBrowseFMUOutputDirectoryButton->setAutoDefault(false);
+  connect(mpBrowseFMUOutputDirectoryButton, SIGNAL(clicked()), SLOT(browseFMUOutputDirectory()));
+  // Traceability Daemon Ip Adress
+  mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Adress:"));
+  mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;
+  // Traceability Daemon Port
+  mpTraceabilityDaemonPortLabel = new Label(tr("Traceability Daemon Port:"));
+  mpTraceabilityDaemonPortTextBox = new QLineEdit;
+  // set the layout
+  QGridLayout *pINTOCPSTraceabilityGroupBoxLayout = new QGridLayout;
+  pINTOCPSTraceabilityGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpTraceabilityCheckBox, 0, 0);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpFMUOutputDirectoryLabel, 1, 0);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpFMUOutputDirectoryTextBox,1, 1);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpBrowseFMUOutputDirectoryButton,1, 2);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressLabel, 2, 0);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressTextBox, 2, 1);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortLabel, 3, 0);
+  pINTOCPSTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortTextBox, 3, 1);
+  mpINTOCPSTraceabilityGroupBox->setLayout(pINTOCPSTraceabilityGroupBoxLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpINTOCPSTraceabilityGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief INTOCPSTraceabilityPage::browseFMUOutputDirectory
+ * Browse FMU Output Directory.
+ */
+void INTOCPSTraceabilityPage::browseFMUOutputDirectory()
+{
+  mpFMUOutputDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                         .arg(Helper::chooseDirectory), NULL));
 }

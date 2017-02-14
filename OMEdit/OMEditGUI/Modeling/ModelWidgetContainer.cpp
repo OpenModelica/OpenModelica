@@ -46,11 +46,13 @@
 #include "Options/NotificationsDialog.h"
 #include "ModelicaClassDialog.h"
 #include "TLM/TLMCoSimulationDialog.h"
+#include "Git/GitCommands.h"
 #if !defined(WITHOUT_OSG)
 #include "Animation/ThreeDViewer.h"
 #endif
 
 #include <QNetworkReply>
+
 
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
@@ -5118,13 +5120,15 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, compositeModel;
+  bool enabled, modelica, compositeModel, gitWorkingDirectory;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
     enabled = true;
     pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    // check for git working directory
+    gitWorkingDirectory = MainWindow::instance()->getGitCommands()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
       compositeModel = false;
@@ -5179,12 +5183,29 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
+  MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getCommitFilesAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getRevertCommitAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getTraceabilityPushAction()->setEnabled(enabled && gitWorkingDirectory);
+  MainWindow::instance()->getTraceabilityQueryAction()->setEnabled(enabled && gitWorkingDirectory);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
       MainWindow::instance()->getSaveAction()->setEnabled(false);
       MainWindow::instance()->getSaveAsAction()->setEnabled(false);
       MainWindow::instance()->getSaveAllAction()->setEnabled(false);
+      // Disable also Git actions
+      MainWindow::instance()->getLogCurrentFileAction()->setEnabled(false);
+      MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(false);
+      MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(false);
+      MainWindow::instance()->getCommitFilesAction()->setEnabled(false);
+      MainWindow::instance()->getRevertCommitAction()->setEnabled(false);
+      MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(false);
+      MainWindow::instance()->getTraceabilityPushAction()->setEnabled(false);
+      MainWindow::instance()->getTraceabilityQueryAction()->setEnabled(false);
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();

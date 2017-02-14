@@ -286,6 +286,16 @@ public:
   static QString algorithmicDebugger;
   static QString debugConfigurations;
   static QString debugConfigurationsTip;
+  static QString createGitReposiory;
+  static QString createGitReposioryTip;
+  static QString logCurrentFile;
+  static QString logCurrentFileTip;
+  static QString stageCurrentFileForCommit;
+  static QString stageCurrentFileForCommitTip;
+  static QString unstageCurrentFileFromCommit;
+  static QString unstageCurrentFileFromCommitTip;
+  static QString commitFiles;
+  static QString commitFilesTip;
   static QString resume;
   static QString interrupt;
   static QString exit;

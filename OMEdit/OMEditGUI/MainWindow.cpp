@@ -32,6 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+
 #include "MainWindow.h"
 /* Keep PlotWindowContainer on top to include OSG first */
 #include "Plotting/PlotWindowContainer.h"
@@ -60,6 +61,12 @@
 #include "TLM/TLMCoSimulationDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
+#include "Git/CommitChangesDialog.h"
+#include "Git/RevertCommitsDialog.h"
+#include "Git/CleanDialog.h"
+#include "Git/GitCommands.h"
+#include "Traceability/TraceabilityPushDialog.h"
+#include "Traceability/TraceabilityQueryDialog.h"
 #include "omc_config.h"
 
 #include <QtSvg/QSvgGenerator>
@@ -301,6 +308,8 @@ void MainWindow::setUpMainWindow()
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
+  // create the Git commands instance
+  mpGitCommands = new GitCommands(this);
   //Create a centralwidget for the main window
   QWidget *pCentralwidget = new QWidget;
   mpCentralStackedWidget = new QStackedWidget;
@@ -2452,6 +2461,114 @@ void MainWindow::showAttachToProcessDialog()
   pAttachToProcessDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::createGitRepository
+ * Slot activated when mpcreateGitRepositoryAction triggered signal is raised.\n
+ * creates a git repository.
+ */
+void MainWindow::createGitRepository()
+{
+  QString gitRepositoryPath = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
+  if (gitRepositoryPath.isEmpty())
+    return;
+  mpGitCommands->createGitRepository(gitRepositoryPath);
+}
+
+/*!
+ * \brief MainWindow::logCurrentFile
+ * Slot activated when mplogCurrentFileAction triggered signal is raised.\n
+ * Shows the commited history of the current file.
+ */
+void MainWindow::logCurrentFile()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+     mpGitCommands->logCurrentFile(pModelWidget->getLibraryTreeItem()->getFileName());
+  }
+}
+
+/*!
+ * \brief MainWindow::stageCurrentFileForCommit
+ * Slot activated when mpstageCurrentFileForCommitAction triggered signal is raised.\n
+ * Sstages the current file for the next commit.
+ */
+void MainWindow::stageCurrentFileForCommit()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+     mpGitCommands->stageCurrentFileForCommit(pModelWidget->getLibraryTreeItem()->getFileName());
+  }
+}
+
+/*!
+ * \brief MainWindow::unstageCurrentFileFromCommit
+ * Slot activated when mpunstageCurrentFileFromCommitAction triggered signal is raised.\n
+ * unSstages the current file from the next commit.
+ */
+void MainWindow::unstageCurrentFileFromCommit()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+     mpGitCommands->unstageCurrentFileFromCommit(pModelWidget->getLibraryTreeItem()->getFileName());
+  }
+}
+
+/*!
+ * \brief MainWindow::commitFiles
+ * Slot activated when mpcommitFilesaction triggered signal is raised.\n
+ * commites modified files to git repository.
+ */
+void MainWindow::commitFiles()
+{
+  CommitChangesDialog *pCommitChangesDialog = new CommitChangesDialog(this);
+  pCommitChangesDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::revertCommit
+ * Slot activated when mpRevertCommitAction triggered signal is raised.\n
+ * reverts previous commit.
+ */
+void MainWindow::revertCommit()
+{
+  RevertCommitsDialog *pRevertCommitsDialog = new RevertCommitsDialog(this);
+  pRevertCommitsDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::cleanWorkingDirectory
+ * Slot activated when mpCleanWorkingDirectoryAction triggered signal is raised.\n
+ */
+void MainWindow::cleanWorkingDirectory()
+{
+  CleanDialog *pCleanDialog = new CleanDialog(this);
+  pCleanDialog->exec();
+//  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+//  if (pModelWidget) {
+//     mpGitCommands->cleanWorkingDirectory();
+//  }
+}
+
+/*!
+ * \brief MainWindow::pushTreaceabilityInformation
+ * Slot activated when mpTraceabilityPushAction triggered signal is raised.\n
+ */
+void MainWindow::pushTraceabilityInformation()
+{
+  TraceabilityPushDialog *pTraceabilityPushDialog = new TraceabilityPushDialog(this);
+  pTraceabilityPushDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::queryTreaceabilityInformation
+ * Slot activated when mpQueryTraceabilityAction triggered signal is raised.\n
+ */
+void MainWindow::queryTraceabilityInformation()
+{
+  TraceabilityQueryDialog *pTraceabilityQueryDialog = new TraceabilityQueryDialog(this);
+  pTraceabilityQueryDialog->exec();
+}
+
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
 {
@@ -2693,6 +2810,47 @@ void MainWindow::createActions()
   mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
   mpAttachDebuggerToRunningProcessAction->setStatusTip(Helper::attachToRunningProcessTip);
   connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
+  // INTO-CPS Menu
+  // Create git repository action
+  mpCreateGitRepositoryAction = new QAction(Helper::createGitReposiory, this);
+  mpCreateGitRepositoryAction->setStatusTip(Helper::createGitReposioryTip);
+  connect(mpCreateGitRepositoryAction, SIGNAL(triggered()), SLOT(createGitRepository()));
+  // Log current file action
+  mpLogCurrentFileAction = new QAction(Helper::logCurrentFile, this);
+  mpLogCurrentFileAction->setStatusTip(Helper::logCurrentFileTip);
+  mpLogCurrentFileAction->setEnabled(false);
+  connect(mpLogCurrentFileAction, SIGNAL(triggered()), SLOT(logCurrentFile()));
+  // Stage current file for commit action
+  mpStageCurrentFileForCommitAction = new QAction(Helper::stageCurrentFileForCommit, this);
+  mpStageCurrentFileForCommitAction->setStatusTip(Helper::stageCurrentFileForCommitTip);
+  mpStageCurrentFileForCommitAction->setEnabled(false);
+  connect(mpStageCurrentFileForCommitAction, SIGNAL(triggered()), SLOT(stageCurrentFileForCommit()));
+  // Unstage current file from commit action
+  mpUnstageCurrentFileFromCommitAction = new QAction(Helper::unstageCurrentFileFromCommit, this);
+  mpUnstageCurrentFileFromCommitAction->setStatusTip(Helper::unstageCurrentFileFromCommitTip);
+  mpUnstageCurrentFileFromCommitAction->setEnabled(false);
+  connect(mpUnstageCurrentFileFromCommitAction, SIGNAL(triggered()), SLOT(unstageCurrentFileFromCommit()));
+  // Commit action
+  mpCommitFilesAction = new QAction(Helper::commitFiles, this);
+  mpCommitFilesAction->setStatusTip(Helper::commitFilesTip);
+  mpCommitFilesAction->setEnabled(false);
+  connect(mpCommitFilesAction, SIGNAL(triggered()), SLOT(commitFiles()));
+  // revert action
+  mpRevertCommitAction = new QAction("Revert", this);
+  // mpRevertCommitAction->setStatusTip(Helper::commitFilesTip);
+  mpRevertCommitAction->setEnabled(false);
+  connect(mpRevertCommitAction, SIGNAL(triggered()), SLOT(revertCommit()));
+  // clean working directory action
+  mpCleanWorkingDirectoryAction = new QAction("Clean", this);
+  mpCleanWorkingDirectoryAction->setEnabled(false);
+  connect(mpCleanWorkingDirectoryAction, SIGNAL(triggered()), SLOT(cleanWorkingDirectory()));
+  // Treaceability actions
+  mpTraceabilityPushAction = new QAction("Push Traceability Information", this);
+  mpTraceabilityPushAction->setEnabled(false);
+  connect(mpTraceabilityPushAction, SIGNAL(triggered()), SLOT(pushTraceabilityInformation()));
+  mpTraceabilityQueryAction = new QAction("Query Traceability Information", this);
+  mpTraceabilityQueryAction->setEnabled(false);
+  connect(mpTraceabilityQueryAction, SIGNAL(triggered()), SLOT(queryTraceabilityInformation()));
   // Tools Menu
   // show OMC Logger widget action
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
@@ -3035,6 +3193,30 @@ void MainWindow::createMenus()
   pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
   // add Debug menu to menu bar
   menuBar()->addAction(pDebugMenu->menuAction());
+  // INTO-CPS menu
+  QMenu *pINTOCPSMenu = new QMenu(menuBar());
+  pINTOCPSMenu->setTitle(tr("&INTO-CPS"));
+  // Traceability actions
+  QMenu *pTraceabilityMenu = new QMenu(menuBar());
+  pTraceabilityMenu->setObjectName("TraceabilityMenu");
+  pTraceabilityMenu->setTitle(tr("Traceability"));
+  pTraceabilityMenu->addAction(mpTraceabilityPushAction);
+  pTraceabilityMenu->addAction(mpTraceabilityQueryAction);
+  // add actions to INTO-CPS menu
+  pINTOCPSMenu->addAction(mpCreateGitRepositoryAction);
+  pINTOCPSMenu->addSeparator();
+  pINTOCPSMenu->addAction(mpLogCurrentFileAction);
+  pINTOCPSMenu->addAction(mpStageCurrentFileForCommitAction);
+  pINTOCPSMenu->addAction(mpUnstageCurrentFileFromCommitAction);
+  pINTOCPSMenu->addSeparator();
+  pINTOCPSMenu->addAction(mpCommitFilesAction);
+  pINTOCPSMenu->addAction(mpRevertCommitAction);
+  pINTOCPSMenu->addSeparator();
+  pINTOCPSMenu->addAction(mpCleanWorkingDirectoryAction);
+  pINTOCPSMenu->addSeparator();
+  pINTOCPSMenu->addAction(pTraceabilityMenu->menuAction());
+  // add INTO-CPS menu to menu bar
+  menuBar()->addAction(pINTOCPSMenu->menuAction());
   // Tools menu
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));
