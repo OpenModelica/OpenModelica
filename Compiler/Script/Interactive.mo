@@ -13833,7 +13833,6 @@ algorithm
           ErrorExt.rollBack("buildEnvForGraphicProgram");
         else
           ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
-          fail();
           // Fallback to only the graphical primitives left in the program
           (cache, env, graphic_prog) := buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
         end try;
