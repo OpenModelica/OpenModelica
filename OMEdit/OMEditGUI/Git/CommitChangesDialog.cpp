@@ -1,6 +1,7 @@
 #include "CommitChangesDialog.h"
 #include "MainWindow.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/MessagesWidget.h"
 #include "Git/GitCommands.h"
 #include "util/Helper.h"
 #include "QFrame"
@@ -13,7 +14,7 @@
 #include "QFileInfo"
 
 enum { statusColumn, nameColumn, columnCount};
-enum { fileNameRole = Qt::UserRole, isDirectoryRole = Qt::UserRole + 1 };
+//enum { fileNameRole = Qt::UserRole, isDirectoryRole = Qt::UserRole + 1 };
 
 /*!
  * \class CommitChangesDialog
@@ -26,7 +27,7 @@ enum { fileNameRole = Qt::UserRole, isDirectoryRole = Qt::UserRole + 1 };
 CommitChangesDialog::CommitChangesDialog(QWidget *pParent)
 : QDialog(pParent)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append("Commit"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Commit")));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(850, 600);
   QString repository = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName();
@@ -182,7 +183,7 @@ QString CommitChangesDialog::getFileStatus(QString status)
   else if (status.trimmed().compare("C")== 0)
     return "Copied";
   else if (status.trimmed().compare("??")== 0)
-    return "Untracked";
+    return "Model Creation";
   else
     // should never be reached
     return "UnknownFileStatus";
@@ -205,50 +206,35 @@ void CommitChangesDialog::commitFiles()
   QString nameStructure = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getNameStructure();
   QFileInfo info(filePath);
   MainWindow::instance()->getGitCommands()->commitFiles(filePath, mpCommitDescriptionTextBox->toPlainText());
-
   foreach (const QString &fileName, mpModifiedFiles) {
-     if(!fileName.isEmpty()) {
-       QString activity = getFileStatus(fileName.mid(0, 2));
-       QString fileURI = fileName.mid(3);
-       generateTraceabilityURI(nameStructure, info.absolutePath(), activity, fileURI );
-       }
-    }
+    if(!fileName.isEmpty()) {
+      QString activity = getFileStatus(fileName.mid(0, 2));
+      QString fileURI = fileName.mid(3);
+      generateTraceabilityURI(nameStructure, info.absolutePath(), activity, fileURI );
+      }
+   }
   accept();
 }
 
 void CommitChangesDialog::generateTraceabilityURI(QString nameStructure, QString filePath, QString activity, QString fileURI)
 {
-
   QString toolURI, fileNameURI, activityURI, agentURI;
   QFile file(filePath + "/" + nameStructure +".md");
-
-//  QFileInfo fi("C:/Users/alame60/Desktop/INTOCPS/traceability/OpenModelica/Models/BouncingBall.mo");
-//  QString base = fi.baseName();
-//  qDebug()<<"base name"<<base;
-//  QFile file(base +".md");
-
-  /*
-   * If file not exist it will create
-   * */
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text ))
-  {
-      //qDebug() << "FAIL TO CREATE FILE / FILE NOT EXIST***";
-  }
-
-  /*for Reading line by line from text file
-  while (!file.atEnd()) {
-      QByteArray line = file.readLine();
-      qDebug() << "read output - " << line;
-  }*/
+  // open the file for writing
+  if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
     QDateTime time = QDateTime::currentDateTime();
-
-  /*for writing line by line to text file */
-      fileNameURI = "Entity.file:" + fileURI + "#"+ MainWindow::instance()->getGitCommands()->getGitHash(MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName());
-      toolURI = "Entity.softwareTool:" + MainWindow::instance()->getOMCProxy()->getVersion();
-      agentURI = "Agent:" + mpAuthorTextBox->text();
-      activityURI = "Activity." + activity +":" + time.toString("yyyy-MM-dd-hh-mm-ss");
-      QTextStream stream(&file);
-      stream << fileNameURI << "," << activityURI << "," << agentURI <<"," << toolURI;
-      file.flush();
-      file.close();
+    /*for writing line by line to text file */
+    fileNameURI = "Entity.file:" + fileURI + "#"+ MainWindow::instance()->getGitCommands()->getGitHash(MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName());
+    toolURI = "Entity.softwareTool:" + MainWindow::instance()->getOMCProxy()->getVersion();
+    agentURI = "Agent:" + mpAuthorTextBox->text();
+    activityURI = "Activity." + activity +":" + time.toString("yyyy-MM-dd-hh-mm-ss");
+    QTextStream textSstream(&file);
+    textSstream << fileNameURI << "," << activityURI << "," << agentURI <<"," << toolURI;
+    file.flush();
+    file.close();
+  } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
+                                                                   tr("The traceability information is not created in a file. One possible reason could be the model is not Modelica model"),
+                                                                   Helper::scriptingKind, Helper::notificationLevel));
+    }
 }

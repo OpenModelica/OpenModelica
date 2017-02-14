@@ -17,7 +17,7 @@
 TraceabilityPushDialog::TraceabilityPushDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append("Send Traceability Information to Daemon"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Send Traceability Information to Daemon")));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(700, 400);
   // Traceability information
@@ -123,8 +123,8 @@ void TraceabilityPushDialog::sendTraceabilityInformation()
   QByteArray OSLCTriples;
   OSLCTriples.append(traceabilityInformation.toUtf8());
   // create the request
-  QString ipAdress = OptionsDialog::instance()->getINTOCPSTraceabilityPage()->getTraceabilityDaemonIpAdress()->text();
-  QString port = OptionsDialog::instance()->getINTOCPSTraceabilityPage()->getTraceabilityDaemonPort()->text();
+  QString ipAdress = OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityDaemonIpAdress()->text();
+  QString port = OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityDaemonPort()->text();
   QUrl url("http://"+ ipAdress +":"+ port +"/traces/push/json");
   QNetworkRequest networkRequest(url);
   networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json" );

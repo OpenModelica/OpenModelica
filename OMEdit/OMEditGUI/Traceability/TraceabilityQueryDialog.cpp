@@ -16,7 +16,7 @@
 TraceabilityQueryDialog::TraceabilityQueryDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append("Query Traceability Information"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Query Traceability Information")));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(600, 400);
   //

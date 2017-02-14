@@ -20,7 +20,6 @@
 GitCommands::GitCommands(QObject *pParent)
   : QObject(pParent)
 {
-  //mpMainWindow = pMainWindow;
   mpGitProcess = new QProcess;
 }
 
@@ -103,7 +102,7 @@ void GitCommands::createGitRepository(QString repositoryPath)
 {
   if(isGitInstalled()) {
     mpGitProcess->setWorkingDirectory(repositoryPath);
-    mpGitProcess->setProcessChannelMode(QProcess::MergedChannels);
+    //mpGitProcess->setProcessChannelMode(QProcess::MergedChannels);
     mpGitProcess->start("git", QStringList() << "init");
     mpGitProcess->waitForFinished();
     QString createRepo = mpGitProcess->readAllStandardOutput();
@@ -118,7 +117,7 @@ void GitCommands::createGitRepository(QString repositoryPath)
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
     pMessageBox->setIcon(QMessageBox::Information);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText("Git not found in your system");
+    pMessageBox->setText("Git not found in the system");
     pMessageBox->exec();
   }
 }
@@ -144,15 +143,16 @@ void GitCommands::addStructuresToRepository(QString repositoryPath)
  */
 bool GitCommands::isGitInstalled()
 {
-  mpGitProcess->setProcessChannelMode(QProcess::MergedChannels);
+//  mpGitProcess->setProcessChannelMode(QProcess::MergedChannels);
   mpGitProcess->start("git", QStringList() << "--version");
   mpGitProcess->waitForFinished();
   QString git = mpGitProcess->readAllStandardOutput();
   /* Check for git installation */
-  if (!git.isEmpty()){
-      return true ;
+  if(!git.isEmpty()){
+    return true ;
   }
-  return false;
+  else
+    return false;
 }
 
 /*!

@@ -22,7 +22,7 @@
 RevertCommitsDialog::RevertCommitsDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append("Revert Commit"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Revert Commit")));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(500, 400);
   QString repository = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName();
@@ -154,7 +154,7 @@ enum Columns
 LogCommitDialog::LogCommitDialog(RevertCommitsDialog *pRevertCommitsDialog)
   : QDialog(pRevertCommitsDialog)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append("Select Commit"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Select Commit")));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(500, 400);
   mpRevertCommitsDialog = pRevertCommitsDialog;

@@ -2810,7 +2810,7 @@ void MainWindow::createActions()
   mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
   mpAttachDebuggerToRunningProcessAction->setStatusTip(Helper::attachToRunningProcessTip);
   connect(mpAttachDebuggerToRunningProcessAction, SIGNAL(triggered()), SLOT(showAttachToProcessDialog()));
-  // INTO-CPS Menu
+  // Git and traceability Menu
   // Create git repository action
   mpCreateGitRepositoryAction = new QAction(Helper::createGitReposiory, this);
   mpCreateGitRepositoryAction->setStatusTip(Helper::createGitReposioryTip);
@@ -3193,30 +3193,30 @@ void MainWindow::createMenus()
   pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
   // add Debug menu to menu bar
   menuBar()->addAction(pDebugMenu->menuAction());
-  // INTO-CPS menu
-  QMenu *pINTOCPSMenu = new QMenu(menuBar());
-  pINTOCPSMenu->setTitle(tr("&INTO-CPS"));
+  // Git menu
+  QMenu *pGitMenu = new QMenu(menuBar());
+  pGitMenu->setTitle(tr("&Git"));
   // Traceability actions
   QMenu *pTraceabilityMenu = new QMenu(menuBar());
-  pTraceabilityMenu->setObjectName("TraceabilityMenu");
+  pTraceabilityMenu->setObjectName(tr("TraceabilityMenu"));
   pTraceabilityMenu->setTitle(tr("Traceability"));
   pTraceabilityMenu->addAction(mpTraceabilityPushAction);
   pTraceabilityMenu->addAction(mpTraceabilityQueryAction);
-  // add actions to INTO-CPS menu
-  pINTOCPSMenu->addAction(mpCreateGitRepositoryAction);
-  pINTOCPSMenu->addSeparator();
-  pINTOCPSMenu->addAction(mpLogCurrentFileAction);
-  pINTOCPSMenu->addAction(mpStageCurrentFileForCommitAction);
-  pINTOCPSMenu->addAction(mpUnstageCurrentFileFromCommitAction);
-  pINTOCPSMenu->addSeparator();
-  pINTOCPSMenu->addAction(mpCommitFilesAction);
-  pINTOCPSMenu->addAction(mpRevertCommitAction);
-  pINTOCPSMenu->addSeparator();
-  pINTOCPSMenu->addAction(mpCleanWorkingDirectoryAction);
-  pINTOCPSMenu->addSeparator();
-  pINTOCPSMenu->addAction(pTraceabilityMenu->menuAction());
-  // add INTO-CPS menu to menu bar
-  menuBar()->addAction(pINTOCPSMenu->menuAction());
+  // add actions to Git menu
+  pGitMenu->addAction(mpCreateGitRepositoryAction);
+  pGitMenu->addSeparator();
+  pGitMenu->addAction(mpLogCurrentFileAction);
+  pGitMenu->addAction(mpStageCurrentFileForCommitAction);
+  pGitMenu->addAction(mpUnstageCurrentFileFromCommitAction);
+  pGitMenu->addSeparator();
+  pGitMenu->addAction(mpCommitFilesAction);
+  pGitMenu->addAction(mpRevertCommitAction);
+  pGitMenu->addSeparator();
+  pGitMenu->addAction(mpCleanWorkingDirectoryAction);
+  pGitMenu->addSeparator();
+  pGitMenu->addAction(pTraceabilityMenu->menuAction());
+  // add Git menu to menu bar
+  menuBar()->addAction(pGitMenu->menuAction());
   // Tools menu
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));

@@ -12,7 +12,7 @@
 #include "QStandardItemModel"
 #include "QApplication"
 
-enum { nameColumn, columnCount };
+enum { columnCount };
 enum { fileNameRole = Qt::UserRole, isDirectoryRole = Qt::UserRole + 1 };
 
 /*!
@@ -26,7 +26,7 @@ enum { fileNameRole = Qt::UserRole, isDirectoryRole = Qt::UserRole + 1 };
 CleanDialog::CleanDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append("Clean Repository"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Clean Repository")));
   setAttribute(Qt::WA_DeleteOnClose);
   resize(500, 400);
   // Select all check box
@@ -82,9 +82,6 @@ void CleanDialog::getUntrackedFiles()
 
 void CleanDialog::addFile(const QString &workingDirectory, QString fileName, bool checked)
 {
-  QStyle *style = QApplication::style();
-  const QIcon folderIcon = style->standardIcon(QStyle::SP_DirIcon);
-  const QIcon fileIcon = style->standardIcon(QStyle::SP_FileIcon);
   const QChar slash = QLatin1Char('/');
   // Clean the trailing slash of directories
   if (fileName.endsWith(slash))
@@ -95,7 +92,8 @@ void CleanDialog::addFile(const QString &workingDirectory, QString fileName, boo
       checked = false;
   auto nameItem = new QStandardItem(QDir::toNativeSeparators(fileName));
   nameItem->setFlags(Qt::ItemIsUserCheckable|Qt::ItemIsEnabled);
-  nameItem->setIcon(isDir ? folderIcon : fileIcon);
+  QFileInfo fileInfo(fileName);
+  nameItem->setIcon(Utilities::FileIconProvider::icon(fileInfo));
   nameItem->setCheckable(true);
   nameItem->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
   nameItem->setData(QVariant(fi.absoluteFilePath()), fileNameRole);
