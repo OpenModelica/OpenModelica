@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "util/Helper.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Options/OptionsDialog.h"
 #include "Git/GitCommands.h"
 
 
@@ -70,7 +71,6 @@ void TraceabilityQueryDialog::translateURIToJsonMessageFormat()
 
   QFile URIFile(info.absolutePath() + "/" + nameStructure +".md");
 
-   // testing parsing the text file that will construct the Json
   QString fileNameURI, activityURI, agentURI, toolURI;
   QString Test;
   QStringList URIList;
@@ -98,24 +98,30 @@ void TraceabilityQueryDialog::translateURIToJsonMessageFormat()
 void TraceabilityQueryDialog::queryTraceabilityInformation()
 {
   // create the request
-  QUrl url("http://127.0.0.1:8080/traces/to/"+ mpNodeToQueryComboBox->currentText() + "/json");
+  QString ipAdress = OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityDaemonIpAdress()->text();
+  QString port = OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityDaemonPort()->text();
+  QUrl url;
+  if(mpTraceToRadioButton->isChecked())
+    url = ("http://"+ ipAdress +":"+ port +"/traces/to/"+ mpNodeToQueryComboBox->currentText() + "/json");
+  else
+    url = ("http://"+ ipAdress +":"+ port +"/traces/from/"+ mpNodeToQueryComboBox->currentText() + "/json");
   QNetworkRequest networkRequest(url);
   networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json" );
   networkRequest.setRawHeader( "Accept-Charset", "UTF-8");
   QNetworkAccessManager *pNetworkAccessManager = new QNetworkAccessManager;
   QNetworkReply *pNetworkReply = pNetworkAccessManager->get(networkRequest);
   pNetworkReply->ignoreSslErrors();
-  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(traceabilityInformationSent(QNetworkReply*)));
+  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readTraceabilityInformation(QNetworkReply*)));
 }
 
 /*!
- * \brief TraceabilityQueryDialog::traceabilityInformationSent
+ * \brief TraceabilityQueryDialog::readTraceabilityInformation
  * \param pNetworkReply
  * Slot activated when QNetworkAccessManager finished signal is raised.\n
- * Shows an error message if the traceability information was not send correctly.\n
+ * Displays the traceability information or Show an error message if the traceability information not found.\n
  * Deletes QNetworkReply object which deletes the QHttpMultiPart and QFile objects attached with it.
  */
-void TraceabilityQueryDialog::traceabilityInformationSent(QNetworkReply *pNetworkReply)
+void TraceabilityQueryDialog::readTraceabilityInformation(QNetworkReply *pNetworkReply)
 {
   QString strReply = (QString)pNetworkReply->readAll();
   QJsonDocument doc = QJsonDocument::fromJson(strReply.toUtf8());
@@ -123,10 +129,10 @@ void TraceabilityQueryDialog::traceabilityInformationSent(QNetworkReply *pNetwor
   mpTraceabilityInformationTextBox->setPlainText(formattedJsonString);
   if (pNetworkReply->error() != QNetworkReply::NoError) {
     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          QString("ERROR: post() failed, please check your server setting \n\n%1").arg(pNetworkReply->errorString()),
-                          Helper::ok);
+                                     QString("Following error has occurred while querying the traceability information \n\n%1").arg(pNetworkReply->errorString()),
+                                     Helper::ok);
   }
   else
-  pNetworkReply->deleteLater();
+    pNetworkReply->deleteLater();
 //  accept();
 }

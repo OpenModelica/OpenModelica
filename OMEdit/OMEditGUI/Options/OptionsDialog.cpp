@@ -4374,9 +4374,6 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
   mpTraceabilityGroupBox = new QGroupBox(tr("Traceability"));
   mpTraceabilityGroupBox->setCheckable(true);
   mpTraceabilityGroupBox->setChecked(false);
-  // Traceability
-  //mpTraceabilityCheckBox = new QCheckBox(tr("Traceability"));
-  //mpTraceabilityCheckBox->setChecked(false);
   // Traceability Daemon Ip Adress
   mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Adress:"));
   mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;

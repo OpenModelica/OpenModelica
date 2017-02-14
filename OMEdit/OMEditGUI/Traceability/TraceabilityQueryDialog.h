@@ -30,7 +30,7 @@ private:
   QDialogButtonBox *mpButtonBox;
 public slots:
   void queryTraceabilityInformation();
-  void traceabilityInformationSent(QNetworkReply *pNetworkReply);
+  void readTraceabilityInformation(QNetworkReply *pNetworkReply);
 };
 
 
