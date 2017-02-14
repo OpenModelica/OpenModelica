@@ -371,8 +371,8 @@ for filepath in sorted(glob.glob('*.html')):
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
-rm -f *.png *.pdf FindFiles.log
-touch FindFiles.log
+rm -f *.png *.pdf FindFiles.log*
+touch FindFiles.log.tmp
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
 for f in `sort -u tidy.links`; do
   link=`echo $f | cut '-d!' -f2-`
@@ -385,10 +385,13 @@ for f in `sort -u tidy.links`; do
     true
   else
     inFile=`echo $f | cut '-d!' -f1`
-    echo \"$inFile: Not found: $link\" | tee -a FindFiles.log
+    inLib=`echo $inFile | cut '-d.' -f1`
+    echo \"$inLib $inFile: Not found: $link\" | tee -a FindFiles.log.tmp
   fi
 done
-rm -f tmp
+# Sort on library, then remove the library
+sort FindFiles.log.tmp | cut -d' ' -f2- > FindFiles.log
+rm -f tmp FindFiles.log.tmp
 ");
 
 writeFile("style.css",".omc-h1
