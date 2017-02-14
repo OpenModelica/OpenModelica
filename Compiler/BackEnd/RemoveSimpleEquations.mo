@@ -472,10 +472,8 @@ protected
   array<list<Integer>> mT; //[varIdx] = simpleContainer
   Boolean foundSimple, globalFindSimple, b;
   Integer maxTraversals;
-
-  DAE.Exp e1,e2,e3,e4;
-
 algorithm
+  // Don't apply removeSimpleEquations to clocked partitions
   if BackendDAEUtil.isClockedSyst(inSystem) then
     outSystem := inSystem;
     outShared := inShared;
@@ -616,10 +614,10 @@ end allAcausal;
 protected function allAcausal1 "author: Frenkel TUD 2012-12
   This function moves simple equations on the form a=b and a=const and
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
   input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> inTpl;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
   output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> outTpl;
 protected
@@ -632,7 +630,15 @@ protected
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.EqSystem syst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := isyst;
+  // Don't apply removeSimpleEquations to clocked partitions
+  if BackendDAEUtil.isClockedSyst(inSystem) then
+    outSystem := inSystem;
+    outShared := inShared;
+    outTpl := inTpl;
+    return;
+  end if;
+
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := inSystem;
   ((repl, unReplaceable, b1)) := inTpl;
 
   // transform to list, this is later not neccesary because the acausal system should save the equations as list
@@ -641,7 +647,7 @@ algorithm
 
   // check equations
   ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := allCausalFinder(eqnslst, (vars, inShared, repl, unReplaceable, mT, {}, false));
-  osyst := updateSystem(b, eqnslst, vars, repl, isyst);
+  outSystem := updateSystem(b, eqnslst, vars, repl, inSystem);
   outTpl := ((repl, unReplaceable, b or b1));
 end allAcausal1;
 
@@ -682,10 +688,10 @@ end causal;
 protected function causal1 "author: Frenkel TUD 2012-12
   This function moves simple equations on the form a=b and a=const and
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
   input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> inTpl;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
   output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> outTpl;
 protected
@@ -699,14 +705,22 @@ protected
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.EqSystem syst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  // Don't apply removeSimpleEquations to clocked partitions
+  if BackendDAEUtil.isClockedSyst(inSystem) then
+    outSystem := inSystem;
+    outShared := inShared;
+    outTpl := inTpl;
+    return;
+  end if;
+
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := inSystem;
   ((repl, unReplaceable, b1)) := inTpl;
 
   mT := arrayCreate(BackendVariable.varsSize(vars), {});
 
   // check equations
   ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := traverseComponents(comps, eqns, allCausalFinder, (vars, inShared, repl, unReplaceable, mT, {}, false));
-  osyst := updateSystem(b, eqnslst, vars, repl, isyst);
+  outSystem := updateSystem(b, eqnslst, vars, repl, inSystem);
   outTpl := ((repl, unReplaceable, b or b1));
 end causal1;
 
