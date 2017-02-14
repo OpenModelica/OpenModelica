@@ -3,7 +3,7 @@
 #include "MainWindow.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Git/GitCommands.h"
-#include "util/Helper.h"
+#include "Util/Helper.h"
 #include "QFrame"
 #include "QDialogButtonBox"
 #include "QStyle"
@@ -51,8 +51,8 @@ CleanDialog::CleanDialog(QWidget *pParent)
   mpButtonBox->addButton(mpCleanRepositoryButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   //
-  connect(mpSelectAllCheckBox, &QAbstractButton::clicked, this, selectAllItems);
-  connect(mpCleanFilesTreeView, &QAbstractItemView::clicked, this, updateSelectAllCheckBox);
+  connect(mpSelectAllCheckBox, &QAbstractButton::clicked, this, &CleanDialog::selectAllItems);
+  connect(mpCleanFilesTreeView, &QAbstractItemView::clicked, this, &CleanDialog::updateSelectAllCheckBox);
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -123,7 +123,7 @@ void CleanDialog::selectAllItems(bool checked)
   }
 }
 
-void CleanDialog::updateSelectAllCheckBox()
+void CleanDialog::updateSelectAllCheckBox(void)
 {
   bool checked = true;
   if (const int rowCount = mpCleanFilesModel->rowCount()) {

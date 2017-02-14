@@ -1,6 +1,6 @@
 #include "TraceabilityQueryDialog.h"
 #include "MainWindow.h"
-#include "util/Helper.h"
+#include "Util/Helper.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Git/GitCommands.h"

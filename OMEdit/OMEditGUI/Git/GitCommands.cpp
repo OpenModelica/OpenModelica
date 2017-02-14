@@ -2,7 +2,7 @@
 #include "MainWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
-#include "util/Helper.h"
+#include "Util/Helper.h"
 #include "QFileInfo"
 #include "QDir"
 #include "QMessageBox"

@@ -22,8 +22,6 @@ private:
   QTreeView * mpCleanFilesTreeView;
   QString *mpworkingDirectory;
   void getUntrackedFiles();
-  void selectAllItems(bool checked);
-  void updateSelectAllCheckBox();
   QStringList checkedFiles() const;
   void addFile(const QString &workingDirectory, QString fileName, bool checked);
   QCheckBox *mpSelectAllCheckBox;
@@ -37,6 +35,9 @@ private:
 //  void workingDirectoryChanged(const QString &workingDirectory);
 //  void browseWorkingDirectory();
 //  void commitTextChanged(const QString &commit);
+public slots:
+  void selectAllItems(bool checked);
+  void updateSelectAllCheckBox(void);
 };
 
 #endif // CLEANDIALOG_H

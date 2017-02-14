@@ -1,6 +1,6 @@
 #include "TraceabilityPushDialog.h"
 #include "MainWindow.h"
-#include "util/Helper.h"
+#include "Util/Helper.h"
 #include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/ModelWidgetContainer.h"

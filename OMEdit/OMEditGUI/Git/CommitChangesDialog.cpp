@@ -3,7 +3,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/MessagesWidget.h"
 #include "Git/GitCommands.h"
-#include "util/Helper.h"
+#include "Util/Helper.h"
 #include "QFrame"
 #include "QGridLayout"
 #include "QGroupBox"
