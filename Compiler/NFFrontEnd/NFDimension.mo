@@ -148,6 +148,23 @@ public
     end match;
   end isEqual;
 
+  public function allEqual
+  input list<Dimension> dims1;
+  input list<Dimension> dims2;
+  output Boolean allEqual;
+algorithm
+  allEqual := match(dims1, dims2)
+    local
+      Dimension dim1, dim2;
+      list<Dimension> rest1, rest2;
+
+    case ({}, {}) then true;
+    case (dim1::rest1, dim2::rest2) guard isEqual(dim1, dim2)
+      then allEqual(rest1, rest2);
+    else false;
+  end match;
+end allEqual;
+
   function isEqualKnown
     input Dimension dim1;
     input Dimension dim2;

@@ -95,7 +95,8 @@ uniontype Prefix
     () := match prefix
       case PREFIX()
         algorithm
-          prefix.subscripts := subscript :: prefix.subscripts;
+          // prefix.subscripts := subscript :: prefix.subscripts;
+          prefix.subscripts := listAppend(prefix.subscripts,{subscript});
         then
           ();
     end match;

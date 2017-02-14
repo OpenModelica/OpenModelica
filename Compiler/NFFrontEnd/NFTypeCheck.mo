@@ -1409,6 +1409,7 @@ algorithm
   end if;
 end matchExpressions;
 
+public
 function matchTypes
   input Type actualType;
   input Type expectedType;

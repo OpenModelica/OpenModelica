@@ -50,6 +50,7 @@ import NFMod.Modifier;
 import NFPrefix.Prefix;
 import NFStatement.Statement;
 import Type = NFType;
+import Subscript = NFSubscript;
 
 protected
 import Config;
@@ -70,7 +71,7 @@ public uniontype FunctionSlot
   record SLOT
     String name "the name of the slot";
     Option<tuple<Expression, Type, DAE.Const>> arg "the argument given by the function call";
-    Option<Binding> default "the default value from binding of the input component in the function";
+    Binding default "the default value from binding of the input component in the function";
     Option<tuple<Type, DAE.Const>> expected "the actual type of the input component, what we expect to get";
     Boolean isFilled;
   end SLOT;
@@ -103,6 +104,7 @@ protected
   DAE.FunctionBuiltin isBuiltin;
   Boolean builtin;
   DAE.InlineType inlineType;
+  Lookup.LookupState state;
 algorithm
   try
     // make sure the component is a path (no subscripts)
@@ -113,10 +115,27 @@ algorithm
     fail();
   end try;
 
+  // TODO: Revise this
   try
-    // try to lookup the function, if is working then is either a user defined function or present in ModelicaBuiltin.mo
-    (classNode, foundScope) := Lookup.lookupFunctionName(functionName, scope, info);
+    (classNode, _, foundScope, state) := Lookup.lookupCref(functionName, scope, info);
     prefix := InstNode.prefix(foundScope);
+    cls := InstNode.definition(classNode);
+
+    if SCode.isRecord(cls) then
+      classNode := Inst.instantiate(classNode, Modifier.NOMOD(), scope);
+      (classNode, classType) := Typing.typeClass(classNode);
+      (typedExp, ty, variability) := Record.typeRecordCall(functionName, functionArgs, prefix, classNode, classType, scope, info);
+    elseif isBuiltinFunctionName(functionName) then
+      classNode := Inst.instantiate(classNode, Modifier.NOMOD(), scope);
+      (classNode, classType) := Typing.typeClass(classNode);
+      (typedExp, ty, variability) := typeBuiltinFunctionCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
+    else
+      // assertfunction here.
+      // (classNode, foundScope) := Lookup.lookupFunctionName(functionName, scope, info);
+      classNode := Inst.instantiate(classNode, Modifier.NOMOD(), scope);
+      (classNode, classType) := Typing.typeClass(classNode);
+      (typedExp, ty, variability) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, scope, info);
+    end if;
   else
     // we could not lookup the class, see if is a special builtin such as String(), etc
     if isSpecialBuiltinFunctionName(functionName) then
@@ -127,42 +146,77 @@ algorithm
     fail();
   end try;
 
-  classNode := Inst.instantiate(classNode, Modifier.NOMOD(), scope);
-  fn_name :=  InstNode.name(classNode);
-  cls := InstNode.definition(classNode);
-  // create a component that has the name of the function and the scope of the function as its type
-  fakeComponent := InstNode.newComponent(
-     SCode.COMPONENT(
-       fn_name,
-       SCode.defaultPrefixes,
-       SCode.defaultVarAttr,
-       Absyn.TPATH(fn, NONE()),
-       SCode.NOMOD(),
-       SCode.COMMENT(NONE(), NONE()),
-       NONE(),
-       info), scope);
-  fakeComponent := Inst.instComponent(fakeComponent, scope, InstNode.parent(classNode));
-
-  // we need something better than this as this will type the function twice
-  fakeComponent := Typing.typeComponent(fakeComponent);
-  (classNode, classType) := Typing.typeClass(classNode);
-  // see if the class is a builtin function (including definitions in the ModelicaBuiltin.mo), record or normal function
-
-  // is builtin function defined in ModelicaBuiltin.mo
-  if isBuiltinFunctionName(functionName) then
-    (typedExp, ty, variability) := typeBuiltinFunctionCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
-    return;
-  end if;
-
-  // is record
-  if SCode.isRecord(cls) then
-    (typedExp, ty, variability) := Record.typeRecordCall(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
-    return;
-  end if;
-
-  // is normal function call
-  (typedExp, ty, variability) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
 end typeFunctionCall;
+
+function typeNormalFunction
+  input Absyn.ComponentRef funcName;
+  input Absyn.FunctionArgs callArgs;
+  input Prefix prefix;
+  input InstNode classNode;
+  input Type classType;
+  input InstNode scope;
+  input SourceInfo info;
+  output Expression typedExp;
+  output Type ty;
+  output DAE.Const variability;
+protected
+  Absyn.Path fn;
+  InstNode ty_node;
+  NFExpression.CallAttributes ca;
+  Type resultType;
+  DAE.FunctionAttributes functionAttributes;
+  list<Absyn.Exp> posargs;
+  list<Absyn.NamedArg> namedargs;
+  DAE.FunctionBuiltin isBuiltin;
+  Boolean builtin;
+  DAE.InlineType inlineType;
+  list<InstNode> inputs;
+  list<Expression> dargs, callExps;
+  Expression argExp;
+  Type argTy;
+  DAE.Const argConst;
+  list<FunctionSlot> slots;
+  FunctionSlot sl;
+  list<Dimension> vectDims;
+  SCode.Element cls;
+
+algorithm
+
+  fn := Absyn.crefToPath(funcName);
+  inputs := getFunctionInputs(classNode);
+
+  slots := createAndFillSlots(funcName, prefix, inputs, callArgs, scope, info);
+
+  // check that there are no unfilled slots and the types of actual arguments agree with the type of function arguments
+  (slots,vectDims) := typeCheckFunctionSlots(slots, fn, prefix, info);
+
+  (dargs, variability) := argsFromSlots(slots);
+
+  Type.COMPLEX(cls = ty_node) := classType;
+  functionAttributes := getFunctionAttributes(ty_node);
+  ty := makeFunctionType(ty_node, functionAttributes);
+
+  Type.FUNCTION(resultType = resultType) := ty;
+
+  (isBuiltin, builtin, fn) := isBuiltinFunc(fn, functionAttributes);
+  inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
+
+  ca := CallAttributes.CALL_ATTR(
+          resultType,
+          Type.isTuple(resultType),
+          builtin,
+          functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
+          functionAttributes.isFunctionPointer,
+          inlineType,DAE.NO_TAIL());
+
+  if listLength(vectDims) == 0 then
+    typedExp := Expression.CALL(fn, Expression.CREF(classNode, prefix), dargs, ca);
+  else
+    // ty := Type.liftArrayLeftList(ty, vectDims);
+    callExps := vectorizeCall(fn, classNode, prefix, dargs, ca, vectDims);
+    typedExp := Expression.arrayFromList(callExps, ty, vectDims);
+  end if;
+end typeNormalFunction;
 
 function getFunctionInputs
   input InstNode classNode;
@@ -204,200 +258,70 @@ algorithm
   end for;
 end getFunctionOutputs;
 
-// TODO FIXME! how do we handle vectorization? maybe using the commented out code in NFTypeCheck.mo?
-function typeNormalFunction
-  input Absyn.ComponentRef functionName;
-  input Absyn.FunctionArgs functionArgs;
+function createAndFillSlots
+  input Absyn.ComponentRef funcName;
   input Prefix prefix;
-  input InstNode classNode;
-  input Type classType;
-  input SCode.Element cls;
-  input InstNode scope;
+  input list<InstNode> funcInputs;
+  input Absyn.FunctionArgs callArgs;
+  input InstNode callScope;
   input SourceInfo info;
-  output Expression typedExp;
-  output Type ty;
-  output DAE.Const variability;
+  output list<FunctionSlot> filledSlots;
 protected
-  String fn_name, argName;
-  Absyn.Path fn, fn_1;
-  InstNode fakeComponent, ty_node;
-  Component c;
-  NFExpression.CallAttributes ca;
-  Type resultType;
-  list<DAE.FuncArg> funcArg;
-  DAE.FunctionAttributes functionAttributes;
-  list<DAE.Var> vars;
-  Absyn.Exp arg;
-  list<Absyn.Exp> args;
-  list<Absyn.NamedArg> nargs;
-  list<Expression> dargs, dnargs; // dae args, dae named args
-  list<Type> dargstys = {}, dnargstys = {}; // dae args types, dae named args types
-  list<DAE.Const> dargsvrs = {}, dnargsvrs = {}; // dae args variability, dae named args variability
-  list<String> dnargsnames = {}; // the named args names
-  DAE.FunctionBuiltin isBuiltin;
-  Boolean builtin;
-  DAE.InlineType inlineType;
-  list<InstNode> inputs;
-  list<Expression> dargs;
-  Expression darg;
-  Type dty;
-  DAE.Const dvr;
-  list<FunctionSlot> slots = {}, tslots = {};
-  FunctionSlot s;
-  Component.Attributes attr;
-  DAE.VarKind vk;
-  Binding b;
-  Option<Binding> ob;
-  String sname "the name of the slot";
-  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<Binding> sdefault "the default value from binding of the input component in the function";
-  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
-
+  Component comp;
+  DAE.VarKind vari;
+  DAE.Const consts;
+  list<Absyn.Exp> posargs;
+  list<Absyn.NamedArg> namedargs;
+  FunctionSlot sl;
+  list<FunctionSlot> slots, posfilled;
+  Expression argExp;
+  Type argTy;
+  DAE.Const argConst;
 algorithm
 
-  fn := Absyn.crefToPath(functionName);
-
-  Absyn.FUNCTIONARGS(args = args, argNames = nargs) := functionArgs;
-
-  inputs := getFunctionInputs(classNode);
-
-  // create the slots
-  for i in inputs loop
-    argName := InstNode.name(i);
-    c := InstNode.component(i);
-    attr := Component.getAttributes(c);
-    Component.ATTRIBUTES(variability = vk) := attr;
-    dvr := Typing.variabilityToConst(NFInstUtil.daeToSCodeVariability(vk));
-    b := Component.getBinding(c);
-    ob := match b case Binding.TYPED_BINDING() then SOME(b); else then NONE(); end match;
-    ty := Component.getType(c);
-    slots := SLOT(argName, NONE(), ob, SOME((ty, dvr)), false)::slots;
+  slots := {};
+  for compnode in funcInputs loop
+    comp := InstNode.component(compnode);
+    vari := Component.variability(comp);
+    consts := Typing.variabilityToConst(NFInstUtil.daeToSCodeVariability(vari));
+    slots := SLOT(InstNode.name(compnode),
+                  NONE(),
+                  Component.getBinding(comp),
+                  SOME((Component.getType(comp), consts)),
+                  false)::slots;
   end for;
   slots := listReverse(slots);
 
+  Absyn.FUNCTIONARGS(args = posargs, argNames = namedargs) := callArgs;
+
+  posfilled := {};
   // handle positional args
-  for a in args loop
-    (darg, dty, dvr) := Typing.typeExp(a, scope, info);
-    s::slots := slots;
-    // replace sarg in the slot
-    SLOT(sname, sarg, sdefault, sexpected, _) := s;
-    sarg := SOME((darg, dty, dvr));
-    s := SLOT(sname, sarg, sdefault, sexpected, true);
-    tslots := s::tslots;
+  for arg in posargs loop
+    (argExp, argTy, argConst) := Typing.typeExp(arg, callScope, info);
+    sl::slots := slots;
+    sl := fillPosSlotWithArg(sl,(argExp, argTy, argConst));
+    posfilled := sl::posfilled;
   end for;
-  slots := listAppend(listReverse(tslots), slots);
+  slots := listAppend(listReverse(posfilled), slots);
 
   // handle named args
-  for n in nargs loop
-    Absyn.NAMEDARG(argName = argName, argValue = arg) := n;
-    (darg, dty, dvr) := Typing.typeExp(arg, scope, info);
-    slots := fillNamedSlot(slots, argName, (darg, dty, dvr), fn, prefix, info);
+  for narg in namedargs loop
+    Absyn.NAMEDARG() := narg;
+    (argExp, argTy, argConst) := Typing.typeExp(narg.argValue, callScope, info);
+    slots := fillNamedSlot(slots, narg.argName, (argExp, argTy, argConst), Absyn.crefToPath(funcName), prefix, info);
   end for;
 
-  // check that there are no unfilled slots and the types of actual arguments agree with the type of function arguments
-  typeCheckFunctionSlots(slots, fn, prefix, info);
+  filledSlots := slots;
+end createAndFillSlots;
 
-  (dargs, variability) := argsFromSlots(slots);
-
-  Type.COMPLEX(cls = ty_node) := classType;
-  functionAttributes := getFunctionAttributes(ty_node);
-  ty := makeFunctionType(ty_node, functionAttributes);
-
-  Type.FUNCTION(resultType = resultType) := ty;
-
-  (isBuiltin, builtin, fn) := isBuiltinFunc(fn, functionAttributes);
-  inlineType := Static.inlineBuiltin(isBuiltin,functionAttributes.inline);
-
-  ca := CallAttributes.CALL_ATTR(
-          resultType,
-          Type.isTuple(resultType),
-          builtin,
-          functionAttributes.isImpure or (not functionAttributes.isOpenModelicaPure),
-          functionAttributes.isFunctionPointer,
-          inlineType,DAE.NO_TAIL());
-
-  typedExp := Expression.CALL(fn, Expression.CREF(classNode, prefix), dargs, ca);
-end typeNormalFunction;
-
-function argsFromSlots
-  input list<FunctionSlot> slots;
-  output list<Expression> args = {};
-  output DAE.Const c = DAE.C_CONST();
-protected
-  Integer d;
-  Expression arg;
-  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<Binding> sdefault "the default value from binding of the input component in the function";
-  DAE.Const const;
+function fillPosSlotWithArg
+  input output FunctionSlot inSlot;
+  input tuple<Expression, Type, DAE.Const> newArg;
 algorithm
-  for s in slots loop
-    SLOT(arg = sarg, default = sdefault) := s;
-    if isSome(sarg) then
-      SOME((arg, _, const)) := sarg;
-      c := Types.constAnd(c, const);
-    else
-      // TODO FIXME what do we do with the propagatedDims?
-      SOME(Binding.TYPED_BINDING(bindingExp = arg, variability = const, propagatedDims = d)) := sdefault;
-      c := Types.constAnd(c, const);
-    end if;
-    args := arg :: args;
-  end for;
-  args := listReverse(args);
-end argsFromSlots;
-
-function typeCheckFunctionSlots
-  input list<FunctionSlot> slots;
-  input Absyn.Path fn;
-  input Prefix prefix;
-  input SourceInfo info;
-algorithm
-protected
-  String str1, str2, s1, s2, s3, s4, s5;
-  Boolean b, found = false;
-  String sname "the name of the slot";
-  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<Binding> sdefault "the default value from binding of the input component in the function";
-  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
-  Boolean sisFilled;
-  Expression expActual;
-  DAE.Const vrActual, vrExpected;
-  Type tyActual, tyExpected;
-  Integer position = 0;
-algorithm
-  for s in slots loop
-    position := position + 1;
-    SLOT(sname, sarg, sdefault, sexpected, sisFilled) := s;
-
-    // slot not filled and there is no default
-    if not sisFilled and not isSome(sdefault) then
-      Error.addSourceMessage(Error.UNFILLED_SLOT, {sname}, info);
-      fail();
-    end if;
-
-    SOME((expActual, tyActual, vrActual)) := sarg;
-    SOME((tyExpected, vrExpected)) := sexpected;
-
-    // check the typing
-    try
-      //_ := Types.matchType(expActual, tyActual, tyExpected, true);
-    else
-      s1 := intString(position);
-      s2 := Absyn.pathStringNoQual(fn);
-      s3 := Expression.toString(expActual);
-      s4 := Type.toString(tyActual);
-      s5 := Type.toString(tyExpected);
-      Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,sname,s3,s4,s5}, info);
-      fail();
-    end try;
-
-    // fail if the variability is wrong
-    if not Types.constEqualOrHigher(vrActual, vrExpected) then
-      str1 := Expression.toString(expActual);
-      str2 := DAEUtil.constStrFriendly(vrExpected);
-      Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY, {sname, str1, str2}, info);
-    end if;
-  end for;
-end typeCheckFunctionSlots;
+  SLOT() := inSlot;
+  inSlot.arg := SOME(newArg);
+  inSlot.isFilled := true;
+end fillPosSlotWithArg;
 
 function fillNamedSlot
   input list<FunctionSlot> islots;
@@ -412,7 +336,7 @@ protected
   Boolean b, found = false;
   String sname "the name of the slot";
   Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
-  Option<Binding> sdefault "the default value from binding of the input component in the function";
+  Binding sdefault "the default value from binding of the input component in the function";
   Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
   Boolean sisFilled;
 algorithm
@@ -435,6 +359,352 @@ algorithm
     Error.addSourceMessageAndFail(Error.NO_SUCH_ARGUMENT, {str, name}, info);
   end if;
 end fillNamedSlot;
+
+function argsFromSlots
+  input list<FunctionSlot> slots;
+  output list<Expression> args = {};
+  output DAE.Const c = DAE.C_CONST();
+protected
+  Integer d;
+  Expression arg;
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
+  Binding sdefault "the default value from binding of the input component in the function";
+  DAE.Const const;
+algorithm
+  for s in slots loop
+    SLOT(arg = sarg, default = sdefault) := s;
+    if isSome(sarg) then
+      SOME((arg, _, const)) := sarg;
+      c := Types.constAnd(c, const);
+    else
+      _ := match sdefault
+      // TODO FIXME what do we do with the propagatedDims?
+        case Binding.TYPED_BINDING()
+          algorithm
+            c := Types.constAnd(c, sdefault.variability);
+            arg := sdefault.bindingExp;
+          then ();
+        else
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {"NFFunc.argsFromSlots failed."});
+          then fail();
+        end match;
+    end if;
+    args := arg :: args;
+  end for;
+  args := listReverse(args);
+end argsFromSlots;
+
+function typeCheckFunctionSlots
+  input list<FunctionSlot> slots;
+  input Absyn.Path fn;
+  input Prefix prefix;
+  input SourceInfo info;
+  output list<FunctionSlot> outslots;
+  output list<Dimension> vectDims;
+algorithm
+protected
+  String str1, str2, s1, s2, s3, s4, s5;
+  Boolean b, found = false;
+  String sname "the name of the slot";
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
+  Binding sdefault "the default value from binding of the input component in the function";
+  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
+  Boolean sisFilled, compatible;
+  Expression expActual, expMatched;
+  DAE.Const vrActual, vrExpected;
+  Type tyActual, tyExpected, tyMatched, ty1,ty2;
+  list<Dimension> dims1,dims2;
+  Integer position = 0;
+
+algorithm
+  outslots := {};
+  vectDims := {};
+
+  for s in slots loop
+    position := position + 1;
+    SLOT(sname, sarg, sdefault, sexpected, sisFilled) := s;
+
+    // slot is filled, i.e, an argument has been specified.
+    if sisFilled then
+	    SOME((expActual, tyActual, vrActual)) := sarg;
+	    SOME((tyExpected, vrExpected)) := sexpected;
+
+	    // fail if the variability is wrong
+	    if not Types.constEqualOrHigher(vrActual, vrExpected) then
+	      str1 := Expression.toString(expActual);
+	      str2 := DAEUtil.constStrFriendly(vrExpected);
+	      Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY, {sname, str1, str2}, info);
+	    end if;
+
+	    // check the types match
+	    (expMatched, tyMatched, compatible) := TypeCheck.matchTypes(tyActual, tyExpected, expActual, false);
+
+	    // If types don't match check the element types to see if it is a dimension issue. If so we try vectorization
+	    if not compatible then
+	      ty1 := Type.elementType(tyActual);
+	      ty2 := Type.elementType(tyExpected);
+	      (expMatched, tyMatched, compatible) := TypeCheck.matchTypes(ty1, ty2, expActual, false);
+
+	      // if even the element types are different then fail.
+	      if not compatible then
+		      s1 := intString(position);
+		      s2 := Absyn.pathStringNoQual(fn);
+		      s3 := Expression.toString(expActual);
+		      s4 := Type.toString(tyActual);
+		      s5 := Type.toString(tyExpected);
+		      Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,sname,s3,s4,s5}, info);
+		      fail();
+		    // If the element types are the same then try to find a vectorization dim.
+		    // Matching RESTARTS from the first argument again in vectorize mode.
+	      else
+	        dims1 := Type.getTypeDims(tyActual);
+	        dims2 := Type.getTypeDims(tyExpected);
+	        vectDims := findVectorizationDim(dims1,dims2);
+	        outslots := vectorizeTypeCheckFunctionSlots(slots, fn, prefix, info, vectDims);
+	        return;
+	      end if;
+	    end if;
+
+	  // Argument has not been given but there is a default value.
+	  // Right now bindings are not typechecked with the declaration when they reach here.
+	  // That will change soon so this is just enough.
+    elseif Binding.isBound(sdefault) then
+      Binding.TYPED_BINDING(expMatched, tyMatched, vrActual) := sdefault;
+    // No argument. No default value.
+    else
+      Error.addSourceMessage(Error.UNFILLED_SLOT, {sname}, info);
+      fail();
+    end if;
+
+    outslots := SLOT(sname, SOME((expMatched, tyMatched, vrActual)), sdefault, sexpected, sisFilled)::outslots;
+
+  end for;
+
+  outslots := listReverse(outslots);
+end typeCheckFunctionSlots;
+
+function vectorizeTypeCheckFunctionSlots
+  input list<FunctionSlot> slots;
+  input Absyn.Path fn;
+  input Prefix prefix;
+  input SourceInfo info;
+  input list<Dimension> vectDims;
+  output list<FunctionSlot> outslots;
+algorithm
+protected
+  String str1, str2, s1, s2, s3, s4, s5;
+  Boolean b, found = false;
+  String sname "the name of the slot";
+  Option<tuple<Expression, Type, DAE.Const>> sarg "the argument given by the function call";
+  Binding sdefault "the default value from binding of the input component in the function";
+  Option<tuple<Type, DAE.Const>> sexpected "the actual type of the input component, what we expect to get";
+  Boolean sisFilled, compatible;
+  Expression expActual, expMatched;
+  DAE.Const vrActual, vrExpected;
+  Type tyActual, tyExpected, tyMatched, ty1,ty2;
+  Dimension dim;
+  list<Dimension> dims1,dims2;
+  Integer position = 0;
+
+algorithm
+  outslots := {};
+
+  for s in slots loop
+    position := position + 1;
+    SLOT(sname, sarg, sdefault, sexpected, sisFilled) := s;
+
+    // slot is filled
+    if sisFilled then
+	    SOME((expActual, tyActual, vrActual)) := sarg;
+	    SOME((tyExpected, vrExpected)) := sexpected;
+
+	        // fail if the variability is wrong
+	    if not Types.constEqualOrHigher(vrActual, vrExpected) then
+	      str1 := Expression.toString(expActual);
+	      str2 := DAEUtil.constStrFriendly(vrExpected);
+	      Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY, {sname, str1, str2}, info);
+	    end if;
+
+	    // check the typing
+	    (expMatched, tyMatched, compatible) := TypeCheck.matchTypes(tyActual, tyExpected, expActual, false);
+	    // If the original argument is type compatible then it needs to be repeated
+	    // for each call. Create an array of it.
+	    if compatible then
+	      dims1 := listReverse(vectDims);
+	      for vdim in dims1 loop
+	        tyMatched := Type.liftArrayLeft(tyMatched,vdim);
+	        expMatched := Expression.ARRAY(tyMatched,List.fill(expMatched, Dimension.size(vdim)));
+	      end for;
+	    // If it is not compatible see if it is a dimension issue.
+	    // We can still have actual type mismathc here because we try vectorization
+	    // immidiately when we have dim mistmatch in normal mode. There might be unchecked
+	    // args.
+	    else
+	      ty1 := Type.elementType(tyActual);
+	      ty2 := Type.elementType(tyExpected);
+	      (expMatched, tyMatched, compatible) := TypeCheck.matchTypes(ty1, ty2, expActual, false);
+	      // if even the element types are different then fail.
+	      if not compatible then
+	        s1 := intString(position);
+	        s2 := Absyn.pathStringNoQual(fn);
+	        s3 := Expression.toString(expActual);
+	        s4 := Type.toString(tyActual);
+	        s5 := Type.toString(tyExpected);
+	        Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,sname,s3,s4,s5}, info);
+	        fail();
+	      // if the element types are the same then lift the expected argument with the
+	      // vectorization dim and mathc it again. If this passes then vectorization is possible
+	      // for this argument.
+	      else
+	        ty2 := Type.liftArrayLeftList(tyExpected,vectDims);
+	        dims2 := Type.getTypeDims(ty2);
+          dims1 := Type.getTypeDims(tyActual);
+	        if Dimension.allEqual(dims1,dims2) then
+	          (expMatched, tyMatched, compatible) := TypeCheck.matchTypes(tyActual, ty2, expActual, false);
+	        else
+	          fail();
+	        end if;
+	      end if;
+	    end if;
+
+	  // Argument is not given but there is a default value.
+	  // Create an array of the default value for each call.
+	  elseif Binding.isBound(sdefault) then
+      Binding.TYPED_BINDING(expMatched, tyMatched, vrActual) := sdefault;
+      dims1 := listReverse(vectDims);
+      for vdim in dims1 loop
+        tyMatched := Type.liftArrayLeft(tyMatched,vdim);
+        expMatched := Expression.ARRAY(tyMatched,List.fill(expMatched, Dimension.size(vdim)));
+      end for;
+    // No argument give and no default value.
+    else
+      Error.addSourceMessage(Error.UNFILLED_SLOT, {sname}, info);
+      fail();
+    end if;
+
+    outslots := SLOT(sname, SOME((expMatched, tyMatched, vrActual)), sdefault, sexpected, sisFilled)::outslots;
+
+  end for;
+
+  outslots := listReverse(outslots);
+end vectorizeTypeCheckFunctionSlots;
+
+function vectorizeCall
+  input Absyn.Path inFnName;
+  input InstNode classNode;
+  input Prefix prefix;
+  input list<Expression> inArgs;
+  input CallAttributes inAttrs;
+  input list<Dimension> vecDims;
+  output list<Expression> outCalls;
+protected
+  list<list<Subscript>> vectsubs;
+  list<list<Expression>> vecargslst;
+algorithm
+
+  // Create combinations of each dims subs, i.e., expand an array[dims]
+  vectsubs := vectorizeDims(vecDims);
+
+  // Apply the set of subs to each argument, i.e., expand each arg.
+  vecargslst := {};
+  for currsubs in vectsubs loop
+    vecargslst := list(Expression.subscript(arg, currsubs) for arg in inArgs)::vecargslst;
+  end for;
+
+
+  outCalls := {};
+  for args in vecargslst loop
+    outCalls := Expression.CALL(inFnName, Expression.CREF(classNode, prefix), args, inAttrs)::outCalls;
+  end for;
+
+  /*
+  for dim in vecDims loop
+    for idx in 1:dimSize
+      vargs := {};
+      for arg in args loop
+        vargs := Expression.subscriptExp(arg,{DAE.INDEX(idx)})::vargs
+      end for;
+      vargs := listReverse(vargs);
+      vargslist := vargslist::vargs;
+      vcalls := Expression.CALL(fn, vargs, ca)::vcalls;
+    end for;
+    vcalls := listReverse(vcalls);
+  end for;
+  */
+end vectorizeCall;
+
+function vectorizeDims
+  "This should go either in NFDimension or NFSubscript."
+  input list<Dimension> vecDims;
+  output list<list<Subscript>> vectsubs;
+protected
+  list<Integer> dimsizes;
+  list<Subscript> subs;
+  list<list<Subscript>> subslstlst;
+algorithm
+
+  // Get the size of each vectorization dim
+  dimsizes := list(Dimension.size(d) for d in vecDims);
+
+  // Expand each dim to subscripts
+  subslstlst := {};
+  for dimsize in dimsizes loop
+    subslstlst := list(Subscript.INDEX(Expression.INTEGER(i)) for i in 1:dimsize)::subslstlst;
+  end for;
+  subslstlst := listReverse(subslstlst);
+
+  // Create combinations of each dims subs, i.e., expand an array[dims]
+  vectsubs := List.combination(subslstlst);
+end vectorizeDims;
+
+public function findVectorizationDim
+"@mahge:
+TODO: rewirite me
+This function basically finds the diff between two dims. The resulting dimension
+is used for vectorizing calls.
+
+e.g. dim1=[2,3,4,2]  dim2=[4,2], findVectorizationDim(dim1,dim2) => [2,3]
+     dim1=[2,3,4,2]  dim2=[3,4,2], findVectorizationDim(dim1,dim2) => [2]
+     dim1=[2,3,4,2]  dim2=[4,3], fail
+"
+ input list<Dimension> inGivenDims;
+ input list<Dimension> inExpectedDims;
+ output list<Dimension> outVectDims;
+algorithm
+ outVectDims := matchcontinue(inGivenDims, inExpectedDims)
+   local
+     list<Dimension> dims1;
+     Dimension dim1;
+
+   case(_, {}) then inGivenDims;
+
+   case(_, _)
+     equation
+       true = Dimension.allEqual(inGivenDims, inExpectedDims);
+     then
+       {};
+
+   case(dim1::dims1, _)
+     equation
+       true = listLength(inGivenDims) > listLength(inExpectedDims);
+       dims1 = findVectorizationDim(dims1,inExpectedDims);
+     then
+       dim1::dims1;
+
+   case(_::_, _)
+     equation
+        assert(false, getInstanceName() + " failed.");
+       /* with dimensions: [" +
+        ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") + "] vs [" +
+        ExpressionDump.printListStr(inExpectedDims,ExpressionDump.dimensionString,",") + "].");
+        */
+     then
+       fail();
+
+ end matchcontinue;
+
+end findVectorizationDim;
 
 protected function isSpecialBuiltinFunctionName
 "@author: adrpo
@@ -1027,7 +1297,7 @@ algorithm
     // hopefully all the other ones have a complete entry in ModelicaBuiltin.mo
     case (_, _)
       algorithm
-        (typedExp, ty, vr) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, cls, scope, info);
+        (typedExp, ty, vr) := typeNormalFunction(functionName, functionArgs, prefix, classNode, classType, scope, info);
       then
         (typedExp, ty, vr);
 
@@ -1249,7 +1519,7 @@ protected
 algorithm
   Class.INSTANCED_CLASS(components = params) := InstNode.getClass(funcNode);
   in_params := list(InstNode.component(p) for p guard InstNode.isInput(p) in params);
-  out_params := list(InstNode.component(p) for p guard InstNode.isInput(p) in params);
+  out_params := list(InstNode.component(p) for p guard InstNode.isOutput(p) in params);
 
   ret_ty := match out_params
     case {} then Type.NORETCALL();

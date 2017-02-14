@@ -232,6 +232,16 @@ uniontype Component
     end match;
   end getBinding;
 
+  function hasBinding
+    input Component component;
+    output Boolean b;
+  algorithm
+    b := match getBinding(component)
+      case UNBOUND() then false;
+      else true;
+    end match;
+  end hasBinding;
+
   function attr2DaeAttr
     input Attributes attr;
     output DAE.Attributes daeAttr;
@@ -278,6 +288,49 @@ uniontype Component
       else false;
     end match;
   end isOutput;
+
+  function variability
+    input Component component;
+    output DAE.VarKind variability;
+  algorithm
+    variability := match component
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
+      else fail();
+    end match;
+  end variability;
+
+  function isConst
+    input Component component;
+    output Boolean isConst;
+  algorithm
+    isConst := match variability(component)
+      case DAE.VarKind.CONST() then true;
+      else false;
+    end match;
+  end isConst;
+
+  function visibility
+    input Component component;
+    output DAE.VarVisibility visibility;
+  algorithm
+    visibility := match component
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(visibility = visibility)) then visibility;
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(visibility = visibility)) then visibility;
+      else fail();
+    end match;
+  end visibility;
+
+  function isPublic
+    input Component component;
+    output Boolean isInput;
+  algorithm
+    isInput := match visibility(component)
+      case DAE.VarVisibility.PUBLIC() then true;
+      else false;
+    end match;
+  end isPublic;
+
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

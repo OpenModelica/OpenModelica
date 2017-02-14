@@ -292,6 +292,17 @@ public
     end match;
   end arrayDims;
 
+  function getTypeDims
+    input Type ty;
+    output list<Dimension> dims;
+  algorithm
+    try
+      dims := arrayDims(ty);
+    else
+      dims := {};
+    end try;
+  end getTypeDims;
+
   function dimensionCount
     input Type ty;
     output Integer dimCount;

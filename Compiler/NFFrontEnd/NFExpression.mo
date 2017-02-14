@@ -36,6 +36,7 @@ import NFInstNode.InstNode;
 import NFPrefix.Prefix;
 import Operator = NFOperator;
 import Subscript = NFSubscript;
+import Dimension = NFDimension;
 import Type = NFType;
 
 protected
@@ -104,6 +105,12 @@ uniontype Expression
     Option<Expression> step;
     Expression stop;
   end RANGE;
+
+  record RECORD
+    Absyn.Path path; // Maybe not needed since the type contains the name. Prefix?
+    Type ty;
+    list<Expression> elements;
+  end RECORD;
 
   record CALL
     Absyn.Path path;
@@ -513,6 +520,52 @@ uniontype Expression
     end match;
   end arrayElement;
 
+  function arrayFromList
+    input list<Expression> inExps;
+    input Type elemTy;
+    input list<Dimension> inDims;
+    output Expression outExp;
+  algorithm
+    outExp := arrayFromList_impl(inExps, elemTy, listReverse(inDims));
+  end arrayFromList;
+
+  function arrayFromList_impl
+    input list<Expression> inExps;
+    input Type elemTy;
+    input list<Dimension> inDims;
+    output Expression outExp;
+  protected
+    Dimension ldim;
+    list<Dimension> restdims;
+    Type ty;
+    list<Expression> newlst;
+    list<list<Expression>> partexps;
+    Integer dimsize;
+  algorithm
+
+    assert(listLength(inDims) > 0, "Empty dimension list given in arrayFromList.");
+
+    ldim::restdims := inDims;
+    dimsize := Dimension.size(ldim);
+    ty := Type.liftArrayLeft(elemTy, ldim);
+
+    if listLength(inDims) == 1 then
+      assert(dimsize == listLength(inExps), "Length mismatch in arrayFromList.");
+      outExp := ARRAY(ty,inExps);
+      return;
+    end if;
+
+    partexps := List.partition(inExps, dimsize);
+
+    newlst := {};
+    for arrexp in partexps loop
+      newlst := ARRAY(ty,arrexp)::newlst;
+    end for;
+
+    newlst := listReverse(newlst);
+    outExp := arrayFromList(newlst, ty, restdims);
+  end arrayFromList_impl;
+
   function toInteger
     input Expression exp;
     output Integer i;
@@ -580,6 +633,7 @@ uniontype Expression
     dexp := match exp
       local
         Type ty;
+        InstNode clsnode;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -594,6 +648,10 @@ uniontype Expression
       case ARRAY()
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
           list(toDAE(e) for e in exp.elements));
+
+      case RECORD()
+        then DAE.RECORD(exp.path, list(toDAE(e) for e in exp.elements), {}, Type.toDAE(exp.ty));
+
 
       case RANGE()
         then DAE.RANGE(
