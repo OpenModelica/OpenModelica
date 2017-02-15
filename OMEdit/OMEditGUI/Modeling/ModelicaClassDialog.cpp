@@ -1386,7 +1386,7 @@ void SaveChangesDialog::listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem)
 {
   for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (!pChildLibraryTreeItem->isSystemLibrary()) {
+    if (pChildLibraryTreeItem && !pChildLibraryTreeItem->isSystemLibrary()) {
       if (!pChildLibraryTreeItem->isSaved()) {
         QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
         if (pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -1411,8 +1411,9 @@ void SaveChangesDialog::saveChanges()
   bool saveResult = true;
   for (int i = 0; i < mpUnsavedClassesListWidget->count(); i++) {
     QListWidgetItem *pListItem = mpUnsavedClassesListWidget->item(i);
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListItem->text());
-    if (!MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem)) {
+    LibraryTreeItem *pLibraryTreeItem;
+    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListItem->text());
+    if (pLibraryTreeItem && !MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem)) {
       saveResult = false;
     }
   }
