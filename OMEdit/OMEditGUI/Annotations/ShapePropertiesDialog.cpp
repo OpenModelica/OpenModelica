@@ -183,6 +183,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Text Group Box
   mpTextGroupBox = new QGroupBox(tr("Text"));
   mpTextTextBox = new QLineEdit(mpShapeAnnotation->getTextString());
+  mpTextTextBox->setToolTip(tr("Use \\n for multi-line text"));
   // set the Text Group Box layout
   QHBoxLayout *pTextGroupBoxLayout = new QHBoxLayout;
   pTextGroupBoxLayout->addWidget(mpTextTextBox);
