@@ -51,8 +51,9 @@ class CrashReportDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CrashReportDialog();
+  CrashReportDialog(QString stacktrace);
 private:
+  QString mStackTrace;
   Label *mpCrashReportHeading;
   QFrame *mpHorizontalLine;
   Label *mpEmailLabel;
@@ -66,6 +67,8 @@ private:
   QPushButton *mpSendReportButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void createGDBBacktrace();
 public slots:
   void sendReport();
   void reportSent(QNetworkReply *pNetworkReply);

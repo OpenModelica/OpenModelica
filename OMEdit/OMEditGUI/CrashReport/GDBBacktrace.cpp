@@ -39,9 +39,8 @@
 #endif
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
-#include "CrashReportDialog.h"
 
-#include <QTemporaryFile>
+#include <QProcess>
 #include <QFile>
 
 /*!
@@ -55,17 +54,6 @@
 GDBBacktrace::GDBBacktrace(QObject *parent)
   : QObject(parent)
 {
-  // GDB process
-  mpGDBProcess = new QProcess;
-  connect(mpGDBProcess, SIGNAL(readyRead()), SLOT(readGDBOutput()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-  connect(mpGDBProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
-#else
-  connect(mpGDBProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
-#endif
-  connect(mpGDBProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(handleGDBProcessFinished(int,QProcess::ExitStatus)));
-  connect(mpGDBProcess, SIGNAL(finished(int,QProcess::ExitStatus)), mpGDBProcess, SLOT(deleteLater()));
-  mpGDBProcess->setProcessChannelMode(QProcess::MergedChannels);
   QString program = QLatin1String("gdb");
 #ifdef WIN32
   program = Utilities::getGDBPath();
@@ -73,12 +61,28 @@ GDBBacktrace::GDBBacktrace(QObject *parent)
 #else
   const qint64 processId = getpid();
 #endif
-  mGDBArguments.clear();
-  mGDBArguments << "-q" << "--nw" << "--nx" << "--batch" << "--command" << createTemporaryCommandsFile() << "--pid" << QString::number(processId);
-  mOutput.clear();
-  mErrorOccurred = false;
-  mpGDBProcess->start(program, mGDBArguments);
-  mpGDBProcess->waitForFinished(-1);
+  QStringList gdbArguments;
+  QString errorString;
+  QString gdbCommandsFilePath = createCommandsFile(&errorString);
+  if (gdbCommandsFilePath.isEmpty()) {
+    mOutput = errorString;
+    mErrorOccurred = true;
+  } else {
+    // GDB process
+    QProcess gdbProcess;
+    gdbProcess.setProcessChannelMode(QProcess::MergedChannels);
+    gdbProcess.setStandardOutputFile(QString("%1/openmodelica.stacktrace.%2").arg(Utilities::tempDirectory()).arg(Helper::OMCServerName));
+    gdbArguments << "-q" << "--nw" << "--nx" << "--batch" << "--command" << gdbCommandsFilePath << "--pid" << QString::number(processId);
+    gdbProcess.start(program, gdbArguments);
+    gdbProcess.waitForFinished(-1);
+    if (gdbProcess.exitStatus() == QProcess::NormalExit && gdbProcess.exitCode() == 0) {
+      mOutput = "";
+      mErrorOccurred = false;
+    } else {
+      mOutput = gdbProcess.errorString();
+      mErrorOccurred = true;
+    }
+  }
 }
 
 /*!
@@ -86,91 +90,27 @@ GDBBacktrace::GDBBacktrace(QObject *parent)
  * Creates a temporary file for GDB commands.
  * \return
  */
-QString GDBBacktrace::createTemporaryCommandsFile()
+QString GDBBacktrace::createCommandsFile(QString *errorString)
 {
-  QTemporaryFile *pCommandsFile = new QTemporaryFile;
-  if (!pCommandsFile->open()) {
-    mOutput.append("Error: Could not create temporary commands file.");
-    return QString();
-  }
-  connect(this, SIGNAL(finished()), pCommandsFile, SLOT(deleteLater()));
-  const char GdbBatchCommands[] =
-      "set height 0\n"
-      "set width 0\n"
-      "thread\n"
-      "thread apply all bt full\n";
-  if (pCommandsFile->write(GdbBatchCommands) == -1) {
-    pCommandsFile->close();
-    mOutput.append("Error: Could not write temporary commands file.");
-    return QString();
-  }
-  pCommandsFile->close();
-  return pCommandsFile->fileName();
-}
-
-/*!
- * \brief GDBBacktrace::showCrashReportDialog
- * Writes the stack trace file and shows the CrashReportDialog
- */
-void GDBBacktrace::showCrashReportDialog()
-{
-  // Dump a stack trace to a file.
-  QFile stackTraceFile;
-  stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(Utilities::tempDirectory()).arg(Helper::OMCServerName));
-  if (stackTraceFile.open(QIODevice::WriteOnly)) {
-    QTextStream out(&stackTraceFile);
+  const char gdbBatchCommands[] = "set height 0\n"
+                                  "set width 0\n"
+                                  "thread\n"
+                                  "thread apply all bt full\n"
+                                  "thread apply all bt full\n"
+                                  "thread apply all bt full\n";
+  QFile gdbBacktraceCommandsFile;
+  QString gdbBacktraceCommandsFilePath = QString("%1omeditbacktracecommands.txt").arg(Utilities::tempDirectory());
+  gdbBacktraceCommandsFile.setFileName(gdbBacktraceCommandsFilePath);
+  if (gdbBacktraceCommandsFile.open(QIODevice::WriteOnly)) {
+    QTextStream out(&gdbBacktraceCommandsFile);
     out.setCodec(Helper::utf8.toStdString().data());
     out.setGenerateByteOrderMark(false);
-    out << mOutput;
+    out << gdbBatchCommands;
     out.flush();
-    stackTraceFile.close();
-  }
-  CrashReportDialog *pCrashReportDialog = new CrashReportDialog;
-  pCrashReportDialog->exec();
-  emit finished();
-}
-
-/*!
- * \brief GDBBacktrace::readGDBOutput
- * Reads the GDB output.
- */
-void GDBBacktrace::readGDBOutput()
-{
-  QString msg = QString(mpGDBProcess->readAll());
-  // if we are unable to attach then set error occurred to true.
-  if (msg.startsWith("Could not attach to process", Qt::CaseInsensitive)) {
-    mErrorOccurred = true;
-  }
-  mOutput.append(msg);
-}
-
-/*!
- * \brief GDBBacktrace::handleGDBProcessError
- * Handles the GDB process error.
- * \param error
- */
-void GDBBacktrace::handleGDBProcessError(QProcess::ProcessError error)
-{
-  Q_UNUSED(error);
-  mErrorOccurred = true;
-  mOutput.append(GUIMessages::getMessage(GUIMessages::GDB_ERROR).arg(mpGDBProcess->errorString()).arg(mGDBArguments.join(" ")));
-}
-
-/*!
- * \brief GDBBacktrace::handleGDBProcessFinished
- * Handles the GDB process finished.
- * \param exitCode
- * \param exitStatus
- */
-void GDBBacktrace::handleGDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-  QString exitCodeStr = tr("GDB process failed. Exited with code %1.").arg(exitCode);
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    if (!mErrorOccurred) {
-      showCrashReportDialog();
-    }
+    gdbBacktraceCommandsFile.close();
+    return gdbBacktraceCommandsFilePath;
   } else {
-    mErrorOccurred = true;
-    mOutput.append(mpGDBProcess->errorString() + "\n" + exitCodeStr);
+    *errorString = QString("Error: Could not create commands file %1.").arg(gdbBacktraceCommandsFilePath);
+    return "";
   }
 }

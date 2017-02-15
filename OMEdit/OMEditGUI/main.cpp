@@ -59,7 +59,6 @@
 
 #include "MainWindow.h"
 #include "Util/Helper.h"
-#include "CrashReport/GDBBacktrace.h"
 #include "CrashReport/CrashReportDialog.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "meta/meta_modelica.h"
@@ -72,135 +71,72 @@
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG
-/*!
- * \brief writeGDBErrorFile
- * Writes the gdberror.log file if gdb based stack trace has failed.
- * \param output
- */
-static inline void writeGDBErrorFile(QString output)
-{
-  QFile gdbErrorFile;
-  gdbErrorFile.setFileName(QString("%1gdberror.log").arg(Utilities::tempDirectory()));
-  if (gdbErrorFile.open(QIODevice::WriteOnly)) {
-    QTextStream out(&gdbErrorFile);
-    out.setCodec(Helper::utf8.toStdString().data());
-    out.setGenerateByteOrderMark(false);
-    out << output;
-    out.flush();
-    gdbErrorFile.close();
-  }
-}
-
 #ifdef WIN32
 #include "CrashReport/backtrace.h"
 
 static char *g_output = NULL;
 LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 {
-  GDBBacktrace *pGDBBacktrace = new GDBBacktrace;
-  if (pGDBBacktrace->errorOccurred()) {
-    /* gdb backtrace has failed fallback to normal one.
-     * write a file gdberror.log to see why gdb backtrace has failed.
-     */
-    writeGDBErrorFile(pGDBBacktrace->output());
-    if (g_output == NULL) {
-      g_output = (char*) malloc(BUFFER_MAX);
-    }
-    struct output_buffer ob;
-    output_init(&ob, g_output, BUFFER_MAX);
-    if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
-      output_print(&ob,"Failed to init symbol context\n");
-    } else {
-      bfd_init();
-      struct bfd_set *set = (bfd_set*)calloc(1,sizeof(*set));
-      _backtrace(&ob , set , 128 , info->ContextRecord);
-      release_set(set);
-      SymCleanup(GetCurrentProcess());
-    }
-    // Dump a stack trace to a file.
-    QFile stackTraceFile;
-    stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(Utilities::tempDirectory()).arg(Helper::OMCServerName));
-    if (stackTraceFile.open(QIODevice::WriteOnly)) {
-      QTextStream out(&stackTraceFile);
-      out.setCodec(Helper::utf8.toStdString().data());
-      out.setGenerateByteOrderMark(false);
-      out << g_output;
-      out.flush();
-      stackTraceFile.close();
-    }
-    CrashReportDialog *pCrashReportDialog = new CrashReportDialog;
-    pCrashReportDialog->exec();
+  if (g_output == NULL) {
+    g_output = (char*) malloc(BUFFER_MAX);
   }
+  struct output_buffer ob;
+  output_init(&ob, g_output, BUFFER_MAX);
+  if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
+    output_print(&ob,"Failed to init symbol context\n");
+  } else {
+    bfd_init();
+    struct bfd_set *set = (bfd_set*)calloc(1,sizeof(*set));
+    _backtrace(&ob , set , 128 , info->ContextRecord);
+    release_set(set);
+    SymCleanup(GetCurrentProcess());
+  }
+  // show the CrashReportDialog
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog(QString(g_output));
+  pCrashReportDialog->exec();
   exit(1);
 }
 #else // Unix
 #include <signal.h>
 #include <execinfo.h>
 
-static inline void printStackTrace(QFile *pFile, int signalNumber, const char* signalName, unsigned int max_frames = 50)
+void signalHandler(int signalNumber)
 {
-  QTextStream out(pFile);
-  out.setCodec(Helper::utf8.toStdString().data());
-  out.setGenerateByteOrderMark(false);
-  if (signalName) {
-    out << QString("Caught signal %1 (%2)\n").arg(QString::number(signalNumber)).arg(signalName);
-  } else {
-    out << QString("Caught signal %1\n").arg(QString::number(signalNumber));
+  // associate each signal with a signal name string.
+  const char* signalName = NULL;
+  switch (signalNumber) {
+    case SIGABRT: signalName = "SIGABRT";  break;
+    case SIGSEGV: signalName = "SIGSEGV";  break;
+    case SIGILL:  signalName = "SIGILL";   break;
+    case SIGFPE:  signalName = "SIGFPE";   break;
+    default:  break;
   }
-  out.flush();
+  QString stackTrace;
+  if (signalName) {
+    stackTrace.append(QString("Caught signal %1 (%2)\n").arg(QString::number(signalNumber)).arg(signalName));
+  } else {
+    stackTrace.append(QString("Caught signal %1\n").arg(QString::number(signalNumber)));
+  }
   // storage array for stack trace address data
+  unsigned int max_frames = 50;
   void* addrlist[max_frames+1];
   // retrieve current stack addresses
   int addrlen = backtrace(addrlist, sizeof(addrlist) / sizeof(void*));
   if (addrlen == 0) {
-    out << "Stack address length is empty.\n";
-    return;
-  }
-  // create readable strings to each frame.
-  backtrace_symbols_fd(addrlist, addrlen, pFile->handle());
-  /* backtrace_symbols uses malloc. Its better to use backtrace_symbols_fd. */
-  /*char** symbollist = backtrace_symbols(addrlist, addrlen);
-  // print the stack trace.
-  for (int i = 4; i < addrlen; i++)
-  {
-    out << QString("%1\n").arg(symbollist[i]);
-  }
-  free(symbollist);*/
-}
-
-void signalHandler(int signum)
-{
-  GDBBacktrace *pGDBBacktrace = new GDBBacktrace;
-  if (pGDBBacktrace->errorOccurred()) {
-    /* gdb backtrace has failed fallback to normal one.
-     * write a file gdberror.log to see why gdb backtrace has failed.
-     */
-    writeGDBErrorFile(pGDBBacktrace->output());
-    // associate each signal with a signal name string.
-    const char* name = NULL;
-    switch(signum) {
-      case SIGABRT: name = "SIGABRT";  break;
-      case SIGSEGV: name = "SIGSEGV";  break;
-      case SIGILL:  name = "SIGILL";   break;
-      case SIGFPE:  name = "SIGFPE";   break;
-      default:  break;
+    stackTrace.append("Stack address length is empty.\n");
+  } else {
+    // create readable strings to each frame.
+    char** symbollist = backtrace_symbols(addrlist, addrlen);
+    // print the stack trace.
+    for (int i = 4; i < addrlen; i++) {
+      stackTrace.append(QString("%1\n").arg(symbollist[i]));
     }
-    // Dump a stack trace to a file.
-    QFile stackTraceFile;
-    stackTraceFile.setFileName(QString("%1openmodelica.stacktrace.%2").arg(Utilities::tempDirectory()).arg(Helper::OMCServerName));
-    if (stackTraceFile.open(QIODevice::WriteOnly)) {
-      printStackTrace(&stackTraceFile, signum, name);
-      stackTraceFile.close();
-    }
-    if (name) {
-      fprintf(stderr, "Caught signal %d", signum);
-    } else {
-      fprintf(stderr, "Caught signal %d (%s)", signum, name);
-    }
-    CrashReportDialog *pCrashReportDialog = new CrashReportDialog;
-    pCrashReportDialog->exec();
+    free(symbollist);
   }
-  exit(signum);
+  // show the CrashReportDialog
+  CrashReportDialog *pCrashReportDialog = new CrashReportDialog(stackTrace);
+  pCrashReportDialog->exec();
+  exit(signalNumber);
 }
 #endif // #ifdef WIN32
 #endif // #ifdef QT_NO_DEBUG

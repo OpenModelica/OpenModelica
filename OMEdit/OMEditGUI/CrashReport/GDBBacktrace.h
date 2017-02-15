@@ -35,7 +35,6 @@
 #define GDBBACKTRACE_H
 
 #include <QObject>
-#include <QProcess>
 
 class GDBBacktrace : public QObject
 {
@@ -45,19 +44,10 @@ public:
   QString output() {return mOutput;}
   bool errorOccurred() {return mErrorOccurred;}
 private:
-  QProcess *mpGDBProcess;
-  QStringList mGDBArguments;
   QString mOutput;
   bool mErrorOccurred;
 
-  QString createTemporaryCommandsFile();
-  void showCrashReportDialog();
-signals:
-  void finished();
-public slots:
-  void readGDBOutput();
-  void handleGDBProcessError(QProcess::ProcessError error);
-  void handleGDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  QString createCommandsFile(QString *errorString);
 };
 
 #endif // GDBBACKTRACE_H

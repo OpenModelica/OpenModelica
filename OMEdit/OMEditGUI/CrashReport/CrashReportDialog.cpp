@@ -34,6 +34,7 @@
 #include "CrashReportDialog.h"
 #include "Util/Helper.h"
 #include "omc_config.h"
+#include "GDBBacktrace.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -45,13 +46,17 @@
 /*!
  * \brief CrashReportDialog::CrashReportDialog
  */
-CrashReportDialog::CrashReportDialog()
+CrashReportDialog::CrashReportDialog(QString stacktrace)
   : QDialog(0)
 {
   // flush all streams before making a crash report so we get full logs.
   fflush(NULL);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::crashReport));
   setAttribute(Qt::WA_DeleteOnClose);
+  // brief stack trace
+  mStackTrace = stacktrace;
+  // create the GDB stack trace
+  createGDBBacktrace();
   // set heading
   mpCrashReportHeading = Utilities::getHeadingLabel(Helper::crashReport);
   // set separator line
@@ -142,6 +147,71 @@ CrashReportDialog::CrashReportDialog()
   }
   pMainLayout->addWidget(mpButtonBox, index, 0, 1, 1, Qt::AlignRight);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief CrashReportDialog::createGDBBacktrace
+ * Creates the detailed gdb backtrace. If it fails to create one then uses the simple backtrace.
+ */
+void CrashReportDialog::createGDBBacktrace()
+{
+  QString errorString;
+  bool error = false;
+  QString OMStackTraceFilePath = QString("%1/openmodelica.stacktrace.%2").arg(Utilities::tempDirectory()).arg(Helper::OMCServerName);
+  // create the GDBBacktrace object
+  GDBBacktrace *pGDBBacktrace = new GDBBacktrace;
+  if (pGDBBacktrace->errorOccurred()) {
+    errorString = pGDBBacktrace->output();
+    error = true;
+  } else {
+    QFile file(OMStackTraceFilePath);
+    if (file.open(QIODevice::ReadOnly)) {
+      char buf[1024];
+      qint64 lineLength = file.readLine(buf, sizeof(buf));
+      if (lineLength != -1) {
+        QString lineText(buf);
+        // if we are unable to attach then set error occurred to true.
+        if (lineText.startsWith("Could not attach to process", Qt::CaseInsensitive)) {
+          errorString = lineText + QString(file.readAll());
+          error = true;
+        }
+      }
+      file.close();
+    } else {
+      errorString = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(OMStackTraceFilePath);
+      error = true;
+    }
+  }
+  // if some error has occurred
+  if (error) {
+    QMessageBox *pMessageBox = new QMessageBox;
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
+    pMessageBox->setIcon(QMessageBox::Critical);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(tr("Following error has occurred while retrieving detailed gdb backtrace,\n\n%1").arg(errorString));
+    pMessageBox->addButton(tr("Try again"), QMessageBox::AcceptRole);
+    pMessageBox->addButton(tr("Send brief backtrace"), QMessageBox::RejectRole);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::AcceptRole:
+        createGDBBacktrace();
+        return;
+      case QMessageBox::RejectRole:
+      default:
+        break;
+    }
+    // create a brief backtrace file
+    QFile stackTraceFile;
+    stackTraceFile.setFileName(OMStackTraceFilePath);
+    if (stackTraceFile.open(QIODevice::WriteOnly)) {
+      QTextStream out(&stackTraceFile);
+      out.setCodec(Helper::utf8.toStdString().data());
+      out.setGenerateByteOrderMark(false);
+      out << mStackTrace;
+      out.flush();
+      stackTraceFile.close();
+    }
+  }
 }
 
 /*!
