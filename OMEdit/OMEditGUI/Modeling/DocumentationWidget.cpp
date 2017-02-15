@@ -1138,7 +1138,8 @@ void DocumentationViewer::createActions()
 void DocumentationViewer::resetZoom()
 {
   QWidget *pScreenWidget = QApplication::desktop()->screen();
-  setZoomFactor(pScreenWidget->logicalDpiX() / 96);
+  qreal zoomFactor = pScreenWidget->logicalDpiX() / 96;
+  setZoomFactor(zoomFactor < 1 ? 1 : zoomFactor);
 }
 
 /*!
