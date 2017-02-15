@@ -46,6 +46,7 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QProgressBar>
 
 class CrashReportDialog : public QDialog
 {
@@ -67,6 +68,8 @@ private:
   QPushButton *mpSendReportButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  Label *mpProgressLabel;
+  QProgressBar *mpProgressBar;
 
   void createGDBBacktrace();
 public slots:
