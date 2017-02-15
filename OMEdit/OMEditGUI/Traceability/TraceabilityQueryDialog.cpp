@@ -124,6 +124,7 @@ void TraceabilityQueryDialog::queryTraceabilityInformation()
 void TraceabilityQueryDialog::readTraceabilityInformation(QNetworkReply *pNetworkReply)
 {
   QString strReply = (QString)pNetworkReply->readAll();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QJsonDocument doc = QJsonDocument::fromJson(strReply.toUtf8());
   QString formattedJsonString = doc.toJson(QJsonDocument::Indented);
   mpTraceabilityInformationTextBox->setPlainText(formattedJsonString);
@@ -134,5 +135,7 @@ void TraceabilityQueryDialog::readTraceabilityInformation(QNetworkReply *pNetwor
   }
   else
     pNetworkReply->deleteLater();
+#else // Qt4
+#endif
 //  accept();
 }

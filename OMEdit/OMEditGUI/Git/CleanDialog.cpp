@@ -51,8 +51,11 @@ CleanDialog::CleanDialog(QWidget *pParent)
   mpButtonBox->addButton(mpCleanRepositoryButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   //
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   connect(mpSelectAllCheckBox, &QAbstractButton::clicked, this, &CleanDialog::selectAllItems);
   connect(mpCleanFilesTreeView, &QAbstractItemView::clicked, this, &CleanDialog::updateSelectAllCheckBox);
+#else // Qt4
+#endif
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
