@@ -106,10 +106,27 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
+
+  ComponentInfo *pInfo = getStartComponent()->getComponentInfo();
+  bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
+  int dimensions = pInfo->getDimensions();
+
   setDelay("1e-4");
-  setZf("10000");
-  setZfr("100");
-  setAlpha("0.2");
+  if(tlm && dimensions>1) {         //3D connection, use Zf and Zfr
+    setZf("10000");
+    setZfr("100");
+    setAlpha("0.2");
+  }
+  else if(tlm && dimensions == 1) { //1D connection, only Zf
+    setZf("10000");
+    setZfr("");
+    setAlpha("0.2");
+  }
+  else {                            //Signal connection, no TLM parameters
+    setZf("");
+    setZfr("");
+    setAlpha("");
+  }
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)

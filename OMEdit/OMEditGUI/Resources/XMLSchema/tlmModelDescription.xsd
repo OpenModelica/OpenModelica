@@ -142,8 +142,8 @@
       <xs:attribute name="From" type="xs:string" use="required"/>
       <xs:attribute name="To" type="xs:string" use="required"/>
       <xs:attribute name="Delay" type="xs:string" use="required"/>
-      <xs:attribute name="Zf" type="xs:string" use="required"/>
-      <xs:attribute name="Zfr" type="xs:string" use="required"/>
+      <xs:attribute name="Zf" type="xs:string" use="optional"/>
+      <xs:attribute name="Zfr" type="xs:string" use="optional"/>
       <xs:attribute name="alpha" type="xs:string" use="optional"/>
   </xs:complexType>
 </xs:schema>

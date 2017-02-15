@@ -1709,6 +1709,10 @@ CompositeModelConnectionAttributes::CompositeModelConnectionAttributes(GraphicsV
                                                              bool edit, QWidget *pParent)
   : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mEdit(edit)
 {
+  ComponentInfo *pInfo = mpConnectionLineAnnotation->getStartComponent()->getComponentInfo();
+  bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
+  int dimensions = pInfo->getDimensions();
+
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::connectionAttributes));
   setAttribute(Qt::WA_DeleteOnClose);
   // heading
@@ -1752,12 +1756,16 @@ CompositeModelConnectionAttributes::CompositeModelConnectionAttributes(GraphicsV
   pMainLayout->addWidget(mpConnectionEndLabel, 3, 1);
   pMainLayout->addWidget(mpDelayLabel, 4, 0);
   pMainLayout->addWidget(mpDelayTextBox, 4, 1);
-  pMainLayout->addWidget(mpZfLabel,5, 0);
-  pMainLayout->addWidget(mpZfTextBox, 5, 1);
-  pMainLayout->addWidget(mpZfrLabel, 6, 0);
-  pMainLayout->addWidget(mpZfrTextBox, 6, 1);
-  pMainLayout->addWidget(mpAlphapLabel, 7, 0);
-  pMainLayout->addWidget(mpAlphaTextBox, 7, 1);
+  if(tlm) {     //Only show TLM parameter widgets if it is a TLM connection
+    pMainLayout->addWidget(mpZfLabel,5, 0);
+    pMainLayout->addWidget(mpZfTextBox, 5, 1);
+    if(dimensions > 1) {        //Only show rotational impedance box for 3D connections
+      pMainLayout->addWidget(mpZfrLabel, 6, 0);
+      pMainLayout->addWidget(mpZfrTextBox, 6, 1);
+    }
+    pMainLayout->addWidget(mpAlphapLabel, 7, 0);
+    pMainLayout->addWidget(mpAlphaTextBox, 7, 1);
+  }
   pMainLayout->addWidget(mpButtonBox, 8, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
@@ -1769,6 +1777,9 @@ CompositeModelConnectionAttributes::CompositeModelConnectionAttributes(GraphicsV
  */
 void CompositeModelConnectionAttributes::createCompositeModelConnection()
 {
+  ComponentInfo *pInfo = mpConnectionLineAnnotation->getStartComponent()->getComponentInfo();
+  bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
+  int dimensions = pInfo->getDimensions();
   if (mEdit) {
     CompositeModelConnection oldCompositeModelConnection;
     oldCompositeModelConnection.mDelay = mpConnectionLineAnnotation->getDelay();
@@ -1777,17 +1788,26 @@ void CompositeModelConnectionAttributes::createCompositeModelConnection()
     oldCompositeModelConnection.mAlpha = mpConnectionLineAnnotation->getAlpha();
     CompositeModelConnection newCompositeModelConnection;
     newCompositeModelConnection.mDelay = mpDelayTextBox->text();
-    newCompositeModelConnection.mZf = mpZfTextBox->text();
-    newCompositeModelConnection.mZfr = mpZfrTextBox->text();
-    newCompositeModelConnection.mAlpha = mpAlphaTextBox->text();
+    if(tlm) { //Only update TLM parameters if this is a TLM connection
+      newCompositeModelConnection.mZf = mpZfTextBox->text();
+      if(dimensions>1) { //Only update rotational impedance if this is a 3D connection
+        newCompositeModelConnection.mZfr = mpZfrTextBox->text();
+      }
+      newCompositeModelConnection.mAlpha = mpAlphaTextBox->text();
+    }
+
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateCompositeModelConnection(mpConnectionLineAnnotation,
                                                                                               oldCompositeModelConnection,
                                                                                               newCompositeModelConnection));
   } else {
     mpConnectionLineAnnotation->setDelay(mpDelayTextBox->text());
-    mpConnectionLineAnnotation->setZf(mpZfTextBox->text());
-    mpConnectionLineAnnotation->setZfr(mpZfrTextBox->text());
-    mpConnectionLineAnnotation->setAlpha(mpAlphaTextBox->text());
+    if(tlm) { //Only update TLM parameters if this is a TLM connection
+      mpConnectionLineAnnotation->setZf(mpZfTextBox->text());
+      if(dimensions > 1) { //Only update rotational impedance if this is a 3D connection
+        mpConnectionLineAnnotation->setZfr(mpZfrTextBox->text());
+      }
+      mpConnectionLineAnnotation->setAlpha(mpAlphaTextBox->text());
+    }
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
   }

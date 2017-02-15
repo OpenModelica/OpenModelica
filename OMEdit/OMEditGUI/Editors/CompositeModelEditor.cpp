@@ -443,9 +443,15 @@ bool CompositeModelEditor::createConnection(LineAnnotation *pConnectionLineAnnot
     connection.setAttribute("From", pConnectionLineAnnotation->getStartComponentName());
     connection.setAttribute("To", pConnectionLineAnnotation->getEndComponentName());
     connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
-    connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
-    connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
-    connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
+    if(!pConnectionLineAnnotation->getAlpha().isEmpty()) {
+      connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
+    }
+    if(!pConnectionLineAnnotation->getZf().isEmpty()) {
+      connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
+    }
+    if(!pConnectionLineAnnotation->getZfr().isEmpty()) {
+      connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
+    }
     // create Annotation Element
     QDomElement annotation = mXmlDocument.createElement("Annotation");
     annotation.setAttribute("Points", pConnectionLineAnnotation->getCompositeModelShapeAnnotation());
@@ -528,9 +534,15 @@ void CompositeModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnot
     if (connection.attribute("From").compare(pConnectionLineAnnotation->getStartComponentName()) == 0 &&
         connection.attribute("To").compare(pConnectionLineAnnotation->getEndComponentName()) == 0) {
       connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
-      connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
-      connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
-      connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
+      if(!pConnectionLineAnnotation->getAlpha().isEmpty()) {
+        connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
+      }
+      if(!pConnectionLineAnnotation->getZf().isEmpty()) {
+        connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
+      }
+      if(!pConnectionLineAnnotation->getZfr().isEmpty()) {
+        connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
+      }
       QDomNodeList connectionChildren = connection.childNodes();
       bool annotationFound = false;
       for (int j = 0 ; j < connectionChildren.size() ; j++) {
