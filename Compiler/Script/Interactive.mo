@@ -47,57 +47,60 @@ encapsulated package Interactive
   - Modelica models in SCode form (to speed up instantiation. not impl. yet)"
 
 //public imports
-public import Absyn;
-public import ConnectionGraph;
-public import DAE;
-public import FCore;
-public import Global;
-public import GlobalScript;
-public import SCode;
-public import SCodeUtil;
-public import Settings;
-public import Values;
+import Absyn;
+import ConnectionGraph;
+import DAE;
+import FCore;
+import Global;
+import GlobalScript;
+import SCode;
+import SCodeUtil;
+import Settings;
+import Values;
 
 // protected imports
-protected import Ceval;
-protected import CevalScript;
-protected import ClassInf;
-protected import ClockIndexes;
-protected import Config;
-protected import Connect;
-protected import Constants;
-protected import DAEUtil;
-protected import Debug;
-protected import Dump;
-protected import Error;
-protected import ErrorExt;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import FBuiltin;
-protected import Flags;
-protected import FGraph;
-protected import GlobalScriptDump;
-protected import GlobalScriptUtil;
-protected import InnerOuter;
-protected import Inst;
-protected import InstUtil;
-protected import InstTypes;
-protected import List;
-protected import Lookup;
-protected import MetaUtil;
-protected import Mod;
-protected import Parser;
-protected import Prefix;
-protected import Print;
-protected import Refactor;
-protected import Static;
-protected import StaticScript;
-protected import StringUtil;
-protected import System;
-protected import Types;
-protected import UnitAbsyn;
-protected import Util;
-protected import ValuesUtil;
+protected
+
+import Ceval;
+import CevalScript;
+import ClassInf;
+import ClockIndexes;
+import Config;
+import Connect;
+import Constants;
+import DAEUtil;
+import Debug;
+import DoubleEndedList;
+import Dump;
+import Error;
+import ErrorExt;
+import ExpressionDump;
+import ExpressionSimplify;
+import FBuiltin;
+import Flags;
+import FGraph;
+import GlobalScriptDump;
+import GlobalScriptUtil;
+import InnerOuter;
+import Inst;
+import InstUtil;
+import InstTypes;
+import List;
+import Lookup;
+import MetaUtil;
+import Mod;
+import Parser;
+import Prefix;
+import Print;
+import Refactor;
+import Static;
+import StaticScript;
+import StringUtil;
+import System;
+import Types;
+import UnitAbsyn;
+import Util;
+import ValuesUtil;
 import MetaModelica.Dangerous;
 
 protected uniontype AnnotationType
@@ -12022,9 +12025,12 @@ public function getClassnamesInElts
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Boolean includeConstants;
   output list<String> outStringLst;
+protected
+  DoubleEndedList<String> delst;
 algorithm
-  outStringLst:=
-  matchcontinue (inAbsynElementItemLst,includeConstants)
+  delst := DoubleEndedList.fromList({});
+  for elt in inAbsynElementItemLst loop
+  _ := match elt
     local
       list<String> res;
       String id;
@@ -12033,36 +12039,28 @@ algorithm
       list<Absyn.ComponentItem> lst;
       list<String> names;
 
-    case ({},_) then {};
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
+                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id)))))
+      algorithm
+        DoubleEndedList.push_back(delst, id);
+      then ();
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))))) :: rest),c)
-      equation
-        res = getClassnamesInElts(rest,c);
-      then
-        (id :: res);
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
+                 Absyn.CLASS(name = id))))
+      algorithm
+        DoubleEndedList.push_back(delst, id);
+      then ();
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(name = id)))) :: rest),c)
-      equation
-        res = getClassnamesInElts(rest,c);
-      then
-        (id :: res);
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()),
+                 components = lst))) guard includeConstants
+      algorithm
+        DoubleEndedList.push_list_back(delst, getComponentItemsName(lst,false));
+      then ();
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()),
-                 components = lst))) :: rest),true)
-      equation
-        names = getComponentItemsName(lst,false);
-        res = getClassnamesInElts(rest,true);
-      then
-        listAppend(names, res);
-
-    case ((_ :: rest),c)
-      equation
-        res = getClassnamesInElts(rest,c);
-      then
-        res;
-  end matchcontinue;
+    else ();
+  end match;
+  end for;
+  outStringLst := DoubleEndedList.toListAndClear(delst);
 end getClassnamesInElts;
 
 protected function getBaseClasses
