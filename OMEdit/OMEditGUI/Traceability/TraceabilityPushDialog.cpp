@@ -60,57 +60,66 @@ void TraceabilityPushDialog::translateURIToJsonMessageFormat()
   QString nameStructure = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getNameStructure();
   QFileInfo info(filePath);
   QFile URIFile(info.absolutePath() + "/" + nameStructure +".md");
-
-  QString fileNameURI, activityURI, agentURI, toolURI;
-  QString Test;
+  QString fileNameURI , activityURI, agentURI, toolURI, readURI;
   QStringList URIList;
-  URIFile.open(QIODevice::ReadOnly | QIODevice::Text);
-  Test = URIFile.readAll();
-  URIList = Test.split(',');
-  URIFile.close();
-  for (int i = 0; i < URIList.size(); ++i){
-      fileNameURI = URIList.at(0);
-      activityURI = URIList.at(1);
-      agentURI = URIList.at(2);
-      toolURI =URIList.at(3);
-    }
 
- QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
-                                          "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
-                                          "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
-                                          "      \"messageFormatVersion\": \"0.1\",\n"
-                                          "      \"prov:Entity\": [\n"
-                                          "            {\n"
-                                          "            \"rdf:about\": \"%4\",\n"
-                                          "            \"type\": \"softwareTool\",\n"
-                                          "            \"name\": \"OpenModelica\"\n"
-                                          "            },\n"
-                                          "            {\n"
-                                          "            \"rdf:about\" : \"%1\",\n"
-                                          "            \"path\" : \"%1\",\n"
-                                          "            \"type\" : \"%2\",\n"
-                                          "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
-                                          "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%2\"}}\n"
-                                          "            }\n"
-                                          "      ],\n "
-                                          "     \"prov:Agent\": [\n"
-                                          "            {\n"
-                                          "            \"rdf:about\": \"%3\",\n"
-                                          "            \"name\": \"Alachew Mengist\",\n"
-                                          "            \"email\": \"alachew.mengist@liu.se\"\n"
-                                          "            }\n"
-                                          "     ],\n"
-                                          "     \"prov:Activity\": [\n"
-                                          "            {\n"
-                                          "            \"type\": \"activity\",\n"
-                                          "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
-                                          "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%4\"}},\n"
-                                          "            \"rdf:about\": \"%2\"\n"
-                                          "            }\n"
-                                          "     ]\n"
-                                          "}}").arg(fileNameURI.simplified()).arg(activityURI.simplified()).arg(agentURI.simplified()).arg(toolURI.simplified());
-
-  mpTraceabilityInformationTextBox->setPlainText(jsonMessageFormat);
+  if (URIFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    readURI = URIFile.readAll();
+    URIList = readURI.split(',');
+    URIFile.close();
+    for (int i = 0; i < URIList.size(); ++i){
+      if (i == 0)
+        fileNameURI = URIList.at(0);
+      if (i == 1)
+        activityURI = URIList.at(1);
+      if (i == 2)
+        agentURI = URIList.at(2);
+      if (i == 3)
+        toolURI = URIList.at(3);
+      if (i > 3)
+        return;
+   }
+   if (fileNameURI.isEmpty()||activityURI.isEmpty()||agentURI.isEmpty()||toolURI.isEmpty()) {
+       QMessageBox::information(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                                QString("The traceability information is not complete. The dialog with incomplete information will pop up."), Helper::ok);
+   }
+   QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
+                                        "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
+                                        "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
+                                        "      \"messageFormatVersion\": \"0.1\",\n"
+                                        "      \"prov:Entity\": [\n"
+                                        "            {\n"
+                                        "            \"rdf:about\": \"%4\",\n"
+                                        "            \"type\": \"softwareTool\",\n"
+                                        "            \"name\": \"OpenModelica\"\n"
+                                        "            },\n"
+                                        "            {\n"
+                                        "            \"rdf:about\" : \"%1\",\n"
+                                        "            \"path\" : \"%1\",\n"
+                                        "            \"type\" : \"%2\",\n"
+                                        "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
+                                        "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%2\"}}\n"
+                                        "            }\n"
+                                        "      ],\n "
+                                        "     \"prov:Agent\": [\n"
+                                        "            {\n"
+                                        "            \"rdf:about\": \"%3\",\n"
+                                        "            \"name\": \"%3\"\n"
+                                        "            }\n"
+                                        "     ],\n"
+                                        "     \"prov:Activity\": [\n"
+                                        "            {\n"
+                                        "            \"type\": \"activity\",\n"
+                                        "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
+                                        "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%4\"}},\n"
+                                        "            \"rdf:about\": \"%2\"\n"
+                                        "            }\n"
+                                        "     ]\n"
+                                        "}}").arg(fileNameURI.simplified()).arg(activityURI.simplified()).arg(agentURI.simplified()).arg(toolURI.simplified());
+    mpTraceabilityInformationTextBox->setPlainText(jsonMessageFormat);
+  } else {
+      mpTraceabilityInformationTextBox->setPlainText("The file " + URIFile.fileName() +" not found");
+   }
 }
 /*!
  * \brief TraceabilityPushDialog::sendTraceabilityInformation
