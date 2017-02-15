@@ -95,8 +95,6 @@ QString GDBBacktrace::createCommandsFile(QString *errorString)
   const char gdbBatchCommands[] = "set height 0\n"
                                   "set width 0\n"
                                   "thread\n"
-                                  "thread apply all bt full\n"
-                                  "thread apply all bt full\n"
                                   "thread apply all bt full\n";
   QFile gdbBacktraceCommandsFile;
   QString gdbBacktraceCommandsFilePath = QString("%1omeditbacktracecommands.txt").arg(Utilities::tempDirectory());
