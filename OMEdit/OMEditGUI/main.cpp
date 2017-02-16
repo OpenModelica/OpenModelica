@@ -55,17 +55,10 @@
  * - Adrian Pop - <a href="mailto:adrian.pop@liu.se">adrian.pop@liu.se</a>
  */
 
-#include <locale.h>
-
 #include "OMEditApplication.h"
 #include "CrashReport/CrashReportDialog.h"
 #include "meta/meta_modelica.h"
 
-#ifndef WIN32
-#include "omc_config.h"
-#endif
-
-#include <QApplication>
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG

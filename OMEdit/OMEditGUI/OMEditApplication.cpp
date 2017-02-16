@@ -36,7 +36,11 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
+#ifndef WIN32
+#include "omc_config.h"
+#endif
 
+#include <locale.h>
 #include <QMessageBox>
 
 OMEditApplication::OMEditApplication(int &argc, char **argv)
