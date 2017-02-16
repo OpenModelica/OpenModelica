@@ -5538,6 +5538,8 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     'data->simulationInfo->clocksData[clockIndex].interval'
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
     '<%cref(crefPrefixPrevious(arg.componentRef))%>'
+  case CALL(path=IDENT(name="firstTick")) then
+    '(data->simulationInfo->clocksData[clockIndex].cnt == 0)'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
     'fireClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
 
