@@ -34,9 +34,14 @@ protected
   import Subscript = NFSubscript;
 
   import DAE;
+  import List;
 
 public
   import NFExpression.Expression;
+
+  record UNTYPED
+    Expression exp;
+  end UNTYPED;
 
   record INDEX
     Expression index;
@@ -48,6 +53,16 @@ public
 
   record WHOLE end WHOLE;
 
+  function fromExp
+    input Expression exp;
+    output Subscript subscript;
+  algorithm
+    subscript := match exp
+      case Expression.INTEGER() then INDEX(exp);
+      else UNTYPED(exp);
+    end match;
+  end fromExp;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;
@@ -56,6 +71,11 @@ public
       case INDEX() then DAE.INDEX(Expression.toDAE(subscript.index));
       case SLICE() then DAE.SLICE(Expression.toDAE(subscript.slice));
       case WHOLE() then DAE.WHOLEDIM();
+      else
+        algorithm
+          assert(false, getInstanceName() + " failed on unknown subscript");
+        then
+          fail();
     end match;
   end toDAE;
 
@@ -64,11 +84,19 @@ public
     output String string;
   algorithm
     string := match subscript
+      case UNTYPED() then Expression.toString(subscript.exp);
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);
       case WHOLE() then ":";
     end match;
   end toString;
+
+  function toStringList
+    input list<Subscript> subscripts;
+    output String string;
+  algorithm
+    string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
+  end toStringList;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

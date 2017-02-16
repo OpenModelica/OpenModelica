@@ -52,7 +52,7 @@ public
   end RAW_BINDING;
 
   record UNTYPED_BINDING
-    Absyn.Exp bindingExp;
+    Expression bindingExp;
     Boolean isProcessing;
     InstNode scope;
     Integer propagatedDims;
@@ -103,7 +103,7 @@ public
 
   function untypedExp
     input Binding binding;
-    output Option<Absyn.Exp> exp;
+    output Option<Expression> exp;
   algorithm
     exp := match binding
       case UNTYPED_BINDING() then SOME(binding.bindingExp);
@@ -153,7 +153,7 @@ public
     string := match binding
       case UNBOUND() then "";
       case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
-      case UNTYPED_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
+      case UNTYPED_BINDING() then prefix + Expression.toString(binding.bindingExp);
       case TYPED_BINDING() then prefix + Expression.toString(binding.bindingExp);
     end match;
   end toString;

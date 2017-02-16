@@ -93,10 +93,6 @@ uniontype Class
     array<InstNode> extendsNodes;
     array<InstNode> components;
     Modifier modifier;
-    list<Equation> equations;
-    list<Equation> initialEquations;
-    list<list<Statement>> algorithms;
-    list<list<Statement>> initialAlgorithms;
   end EXPANDED_CLASS;
 
   record INSTANCED_CLASS
@@ -129,65 +125,8 @@ uniontype Class
     input ClassTree.Tree classes;
     output Class cls;
   algorithm
-    cls := EXPANDED_CLASS(classes, listArray({}), listArray({}), Modifier.NOMOD(), {}, {}, {}, {});
+    cls := EXPANDED_CLASS(classes, listArray({}), listArray({}), Modifier.NOMOD());
   end initExpandedClass;
-
-  function instExpandedClass
-    input array<InstNode> components;
-    input array<InstNode> extendsNodes;
-    input Class expandedClass;
-    output Class instancedClass;
-  protected
-    list<Equation> eqs;
-    list<Equation> ieqs;
-    list<list<Statement>> algs;
-    list<list<Statement>> ialgs;
-  algorithm
-    instancedClass := match expandedClass
-      case EXPANDED_CLASS()
-        algorithm
-          eqs := expandedClass.equations;
-          ieqs := expandedClass.initialEquations;
-          algs := expandedClass.algorithms;
-          ialgs := expandedClass.initialAlgorithms;
-
-          // ***TODO***: Sections should *not* be appended here, they need to be
-          // instantiated and typed in the correct scope. They should be
-          // collected from the extends nodes when flattening the class.
-        then
-          INSTANCED_CLASS(expandedClass.elements, extendsNodes, components, eqs, ieqs, algs, ialgs);
-    end match;
-  end instExpandedClass;
-
-  function collectInherited
-    input InstNode cls;
-    input list<Equation> i_eqs;
-    input list<Equation> i_ieqs;
-    input list<list<Statement>> i_algs;
-    input list<list<Statement>> i_ialgs;
-    output list<Equation> eqs;
-    output list<Equation> ieqs;
-    output list<list<Statement>> algs;
-    output list<list<Statement>> ialgs;
-  protected
-    Class inheritedClass;
-  algorithm
-    inheritedClass := InstNode.getClass(cls);
-    (eqs, ieqs, algs, ialgs) :=
-      match inheritedClass
-        case EXPANDED_CLASS()
-          algorithm
-            eqs := listAppend(i_eqs, inheritedClass.equations);
-            ieqs := listAppend(i_ieqs, inheritedClass.initialEquations);
-            algs := listAppend(i_algs, inheritedClass.algorithms);
-            ialgs := listAppend(i_ialgs, inheritedClass.initialAlgorithms);
-            for ext in inheritedClass.extendsNodes loop
-              (eqs, ieqs, algs, ialgs) := collectInherited(ext, eqs, ieqs, algs, ialgs);
-            end for;
-          then
-            (eqs, ieqs, algs, ialgs);
-      end match;
-  end collectInherited;
 
   function components
     input Class cls;
@@ -267,10 +206,6 @@ uniontype Class
     input output Class cls;
   algorithm
     cls := match cls
-      case EXPANDED_CLASS()
-        then EXPANDED_CLASS(cls.elements, cls.extendsNodes, cls.components,
-          cls.modifier, equations, initialEquations, algorithms, initialAlgorithms);
-
       case INSTANCED_CLASS()
         then INSTANCED_CLASS(cls.elements, cls.extendsNodes, cls.components,
           equations, initialEquations, algorithms, initialAlgorithms);

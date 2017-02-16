@@ -33,11 +33,11 @@ encapsulated package NFExpression
 
 import DAE;
 import NFInstNode.InstNode;
-import NFPrefix.Prefix;
 import Operator = NFOperator;
 import Subscript = NFSubscript;
 import Dimension = NFDimension;
 import Type = NFType;
+import ComponentRef = NFComponentRef;
 
 protected
 import Util;
@@ -90,8 +90,7 @@ uniontype Expression
   end ENUM_LITERAL;
 
   record CREF
-    InstNode component;
-    Prefix prefix;
+    ComponentRef cref;
   end CREF;
 
   record ARRAY
@@ -114,9 +113,9 @@ uniontype Expression
 
   record CALL
     Absyn.Path path;
-    Expression cref "a pointer to the class of the function and the prefix, Expression.CREF";
+    ComponentRef cref;
     list<Expression> arguments;
-    CallAttributes attr;
+    Option<CallAttributes> attr;
   end CALL;
 
   record SIZE
@@ -213,7 +212,7 @@ uniontype Expression
         Real r;
         String s;
         Boolean b;
-        InstNode c;
+        ComponentRef cr;
         Type ty;
         list<Expression> expl;
         Expression e1, e2, e3;
@@ -247,11 +246,9 @@ uniontype Expression
 
       case CREF()
         algorithm
-          CREF(component = c) := exp2;
-          b := referenceEq(InstNode.component(c), InstNode.component(exp1.component));
-          // TODO: Check prefix too.
+          CREF(cref = cr) := exp2;
         then
-          if b then 0 else 1;
+          ComponentRef.compare(exp1.cref, cr);
 
       case ARRAY()
         algorithm
@@ -507,15 +504,15 @@ uniontype Expression
   algorithm
     element := match array
       local
-        Prefix pre;
+        ComponentRef cref;
 
       case ARRAY() then listGet(array.elements, index);
 
-      case CREF(prefix = pre)
+      case CREF()
         algorithm
-          pre := Prefix.addSubscript(Subscript.INDEX(INTEGER(index)), pre);
+          cref := ComponentRef.addSubscript(Subscript.INDEX(INTEGER(index)), array.cref);
         then
-          CREF(array.component, pre);
+          CREF(cref);
 
     end match;
   end arrayElement;
@@ -593,7 +590,7 @@ uniontype Expression
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then Absyn.pathString(t.typePath) + "." + exp.name;
 
-      case CREF() then Prefix.toString(exp.prefix);
+      case CREF() then ComponentRef.toString(exp.cref);
       case ARRAY() then "{" + stringDelimitList(List.map(exp.elements, toString), ", ") + "}";
 
       case RANGE() then toString(exp.start) +
@@ -633,7 +630,7 @@ uniontype Expression
     dexp := match exp
       local
         Type ty;
-        InstNode clsnode;
+        CallAttributes attr;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -643,7 +640,7 @@ uniontype Expression
         then DAE.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
 
       case CREF()
-        then DAE.CREF(Prefix.toCref(exp.prefix), DAE.T_UNKNOWN_DEFAULT);
+        then DAE.CREF(ComponentRef.toDAE(exp.cref), DAE.T_UNKNOWN_DEFAULT);
 
       case ARRAY()
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
@@ -651,7 +648,6 @@ uniontype Expression
 
       case RECORD()
         then DAE.RECORD(exp.path, list(toDAE(e) for e in exp.elements), {}, Type.toDAE(exp.ty));
-
 
       case RANGE()
         then DAE.RANGE(
@@ -662,8 +658,8 @@ uniontype Expression
                else NONE(),
                toDAE(exp.stop));
 
-      case CALL()
-        then DAE.CALL(exp.path, List.map(exp.arguments, toDAE), toDAECallAtributes(exp.attr));
+      case CALL(attr = SOME(attr))
+        then DAE.CALL(exp.path, List.map(exp.arguments, toDAE), toDAECallAtributes(attr));
 
       case SIZE()
         then DAE.SIZE(toDAE(exp.exp),
@@ -719,31 +715,31 @@ uniontype Expression
     fattr := DAE.CALL_ATTR(Type.toDAE(ty), tuple_, builtin, isImpure, isFunctionPointerCall, inlineType, tailCall);
   end toDAECallAtributes;
 
-  function makeBuiltinCall
-    "Create a CALL with the given data for a call to a builtin function."
-    input String name;
-    input Expression cref "pointer to class and prefix";
-    input list<Expression> args;
-    input Type result_type;
-    input Boolean isImpure;
-    output Expression call;
-    annotation(__OpenModelica_EarlyInline = true);
-  algorithm
-    call := Expression.CALL(Absyn.IDENT(name), cref, args,
-      CallAttributes.CALL_ATTR(result_type, false, true, isImpure, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
-  end makeBuiltinCall;
+  //function makeBuiltinCall
+  //  "Create a CALL with the given data for a call to a builtin function."
+  //  input String name;
+  //  input Expression cref "pointer to class and prefix";
+  //  input list<Expression> args;
+  //  input Type result_type;
+  //  input Boolean isImpure;
+  //  output Expression call;
+  //  annotation(__OpenModelica_EarlyInline = true);
+  //algorithm
+  //  call := Expression.CALL(Absyn.IDENT(name), cref, args,
+  //    CallAttributes.CALL_ATTR(result_type, false, true, isImpure, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+  //end makeBuiltinCall;
 
-  function makePureBuiltinCall
-    "Create a CALL with the given data for a call to a builtin function."
-    input String name;
-    input Expression cref "pointer to class and prefix";
-    input list<Expression> args;
-    input Type result_type;
-    output Expression call;
-    annotation(__OpenModelica_EarlyInline = true);
-  algorithm
-    call := makeBuiltinCall(name, cref, args, result_type, false);
-  end makePureBuiltinCall;
+  //function makePureBuiltinCall
+  //  "Create a CALL with the given data for a call to a builtin function."
+  //  input String name;
+  //  input Expression cref "pointer to class and prefix";
+  //  input list<Expression> args;
+  //  input Type result_type;
+  //  output Expression call;
+  //  annotation(__OpenModelica_EarlyInline = true);
+  //algorithm
+  //  call := makeBuiltinCall(name, cref, args, result_type, false);
+  //end makePureBuiltinCall;
 end Expression;
 
 annotation(__OpenModelica_Interface="frontend");

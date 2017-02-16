@@ -32,16 +32,10 @@
 encapsulated package NFStatement
 
 import Absyn;
-import DAE;
+import Type = NFType;
 import NFExpression.Expression;
 
 public uniontype Statement
-  record UNTYPED_ASSIGNMENT
-    Absyn.Exp lhs;
-    Absyn.Exp rhs;
-    SourceInfo info;
-  end UNTYPED_ASSIGNMENT;
-
   record ASSIGNMENT
     Expression lhs "The asignee";
     Expression rhs "The expression";
@@ -50,30 +44,18 @@ public uniontype Statement
 
   record FUNCTION_ARRAY_INIT "Used to mark in which order local array variables in functions should be initialized"
     String name;
-    DAE.Type ty;
+    Type ty;
     SourceInfo info;
   end FUNCTION_ARRAY_INIT;
-
-  record UNTYPED_FOR
-    String name;
-    Option<Absyn.Exp> range;
-    list<Statement> body;
-    SourceInfo info;
-  end UNTYPED_FOR;
 
   record FOR
     String name "The name of the iterator variable.";
     Integer index "The index of the scope of the iterator variable.";
-    DAE.Type indexType "The type of the index/iterator variable.";
+    Type indexType "The type of the index/iterator variable.";
     Option<Expression> range "The range expression to loop over.";
     list<Statement> body "The body of the for loop.";
     SourceInfo info;
   end FOR;
-
-  record UNTYPED_IF
-    list<tuple<Absyn.Exp, list<Statement>>> branches;
-    SourceInfo info;
-  end UNTYPED_IF;
 
   record IF
     list<tuple<Expression, list<Statement>>> branches
@@ -81,23 +63,11 @@ public uniontype Statement
     SourceInfo info;
   end IF;
 
-  record UNTYPED_WHEN
-    list<tuple<Absyn.Exp, list<Statement>>> branches;
-    SourceInfo info;
-  end UNTYPED_WHEN;
-
   record WHEN
     list<tuple<Expression, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
     SourceInfo info;
   end WHEN;
-
-  record UNTYPED_ASSERT
-    Absyn.Exp condition;
-    Absyn.Exp message;
-    Absyn.Exp level;
-    SourceInfo info;
-  end UNTYPED_ASSERT;
 
   record ASSERT
     Expression condition "The assert condition.";
@@ -106,21 +76,10 @@ public uniontype Statement
     SourceInfo info;
   end ASSERT;
 
-  record UNTYPED_TERMINATE
-    Absyn.Exp message;
-    SourceInfo info;
-  end UNTYPED_TERMINATE;
-
   record TERMINATE
     Expression message "The message to display if the terminate triggers.";
     SourceInfo info;
   end TERMINATE;
-
-  record UNTYPED_REINIT
-    Absyn.ComponentRef cref;
-    Absyn.Exp reinitExp;
-    SourceInfo info;
-  end UNTYPED_REINIT;
 
   record REINIT
     Expression cref "The variable to reinitialize.";
@@ -128,21 +87,10 @@ public uniontype Statement
     SourceInfo info;
   end REINIT;
 
-  record UNTYPED_NORETCALL
-    Absyn.Exp exp;
-    SourceInfo info;
-  end UNTYPED_NORETCALL;
-
   record NORETCALL
     Expression exp;
     SourceInfo info;
   end NORETCALL;
-
-  record UNTYPED_WHILE
-    Absyn.Exp condition;
-    list<Statement> body;
-    SourceInfo info;
-  end UNTYPED_WHILE;
 
   record WHILE
     Expression condition;

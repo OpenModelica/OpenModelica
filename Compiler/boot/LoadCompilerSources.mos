@@ -90,7 +90,9 @@ if true then /* Suppress output */
   // "NFFrontEnd";
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltin.mo",
+    "../NFFrontEnd/NFCeval.mo",
     "../NFFrontEnd/NFComponent.mo",
+    "../NFFrontEnd/NFComponentRef.mo",
     //"../NFFrontEnd/NFConnect2.mo",
     //"../NFFrontEnd/NFConnectCheck.mo",
     //"../NFFrontEnd/NFConnectEquations.mo",
@@ -113,7 +115,6 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFLookupState.mo",
     "../NFFrontEnd/NFMod.mo",
     "../NFFrontEnd/NFOperator.mo",
-    "../NFFrontEnd/NFPrefix.mo",
     "../NFFrontEnd/NFRecord.mo",
     "../NFFrontEnd/NFStatement.mo",
     "../NFFrontEnd/NFSubscript.mo",

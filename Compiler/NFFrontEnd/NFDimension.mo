@@ -41,9 +41,10 @@ public
   import NFExpression.Expression;
   import NFInstNode.InstNode;
   import Type = NFType;
+  import ComponentRef = NFComponentRef;
 
   record UNTYPED
-    Absyn.Exp dimension;
+    Expression dimension;
     Boolean isProcessing;
   end UNTYPED;
 
@@ -65,20 +66,21 @@ public
   record UNKNOWN
   end UNKNOWN;
 
-  function fromTypedExp
+  function fromExp
     input Expression exp;
     output Dimension dim;
   algorithm
     dim := match exp
       local
         Class cls;
+        ComponentRef cref;
 
       case Expression.INTEGER() then INTEGER(exp.value);
 
-      case Expression.CREF()
+      case Expression.CREF(cref = cref as ComponentRef.CREF())
         algorithm
-          if InstNode.isClass(exp.component) then
-            cls := InstNode.getClass(exp.component);
+          if InstNode.isClass(cref.node) then
+            cls := InstNode.getClass(cref.node);
 
             dim := match cls
               case Class.PARTIAL_BUILTIN(ty = Type.BOOLEAN())
@@ -89,7 +91,7 @@ public
 
               else
                 algorithm
-                  assert(false, getInstanceName() + " got non-typename class.");
+                  assert(false, getInstanceName() + " got non-typename class");
                 then
                   fail();
             end match;
@@ -101,7 +103,7 @@ public
 
       else Dimension.EXP(exp);
     end match;
-  end fromTypedExp;
+  end fromExp;
 
   function toDAE
     input Dimension dim;
@@ -191,7 +193,7 @@ end allEqual;
       case ENUM(enumType = ty as Type.ENUMERATION()) then Absyn.pathString(ty.typePath);
       case EXP() then Expression.toString(dim.exp);
       case UNKNOWN() then ":";
-      case UNTYPED() then Dump.printExpStr(dim.dimension);
+      case UNTYPED() then Expression.toString(dim.dimension);
     end match;
   end toString;
 

@@ -44,7 +44,6 @@ import Inst = NFInst;
 import NFClass.Class;
 import NFInstNode.InstNode;
 import NFLookupState.LookupState;
-import NFPrefix.Prefix;
 import Type = NFType;
 import NFMod.Modifier;
 
@@ -116,11 +115,12 @@ function lookupFunctionName
   input InstNode scope "The scope to look in.";
   input SourceInfo info;
   output InstNode func;
+  output list<InstNode> nodes;
   output InstNode foundScope;
 protected
   LookupState state;
 algorithm
-  (func, _, foundScope, state) := lookupCref(cref, scope, info);
+  (func, nodes, foundScope, state) := lookupCref(cref, scope, info);
   LookupState.assertFunction(state, func, cref, info);
 end lookupFunctionName;
 
@@ -207,6 +207,8 @@ algorithm
         node := match cr.name
           case "time" then NFBuiltin.TIME;
           case "Boolean" then NFBuiltin.BOOLEAN_TYPE;
+          case "Integer" algorithm state := LookupState.STATE_FUNC(); then NFBuiltin.INT_TYPE;
+          case "String" algorithm state := LookupState.STATE_FUNC(); then NFBuiltin.STRING_TYPE;
           case "StateSelect" then NFBuiltin.STATESELECT_TYPE;
           else
             algorithm

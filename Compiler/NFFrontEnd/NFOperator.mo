@@ -36,6 +36,8 @@ protected
 
 public
   import Type = NFType;
+  import Absyn;
+  import DAE;
 
   record ADD
     Type ty;
@@ -177,6 +179,39 @@ public
       else Util.intCompare(valueConstructor(op1), valueConstructor(op2));
     end match;
   end compare;
+
+  function fromAbsyn
+    input Absyn.Operator inOperator;
+    output Operator outOperator;
+  algorithm
+    outOperator := match(inOperator)
+      case Absyn.ADD() then Operator.ADD(Type.UNKNOWN());
+      case Absyn.SUB() then Operator.SUB(Type.UNKNOWN());
+      case Absyn.MUL() then Operator.MUL(Type.UNKNOWN());
+      case Absyn.DIV() then Operator.DIV(Type.UNKNOWN());
+      case Absyn.POW() then Operator.POW(Type.UNKNOWN());
+      case Absyn.UPLUS() then Operator.ADD(Type.UNKNOWN());
+      case Absyn.UMINUS() then Operator.UMINUS(Type.UNKNOWN());
+      case Absyn.ADD_EW() then Operator.ADD_ARR(Type.UNKNOWN());
+      case Absyn.SUB_EW() then Operator.SUB_ARR(Type.UNKNOWN());
+      case Absyn.MUL_EW() then Operator.MUL_ARR(Type.UNKNOWN());
+      case Absyn.DIV_EW() then Operator.DIV_ARR(Type.UNKNOWN());
+      case Absyn.POW_EW() then Operator.POW_ARR2(Type.UNKNOWN());
+      case Absyn.UPLUS_EW() then Operator.ADD(Type.UNKNOWN());
+      case Absyn.UMINUS_EW() then Operator.UMINUS(Type.UNKNOWN());
+      // logical have boolean type
+      case Absyn.AND() then Operator.AND(Type.BOOLEAN());
+      case Absyn.OR() then Operator.OR(Type.BOOLEAN());
+      case Absyn.NOT() then Operator.NOT(Type.BOOLEAN());
+      // relational have boolean type too
+      case Absyn.LESS() then Operator.LESS(Type.BOOLEAN());
+      case Absyn.LESSEQ() then Operator.LESSEQ(Type.BOOLEAN());
+      case Absyn.GREATER() then Operator.GREATER(Type.BOOLEAN());
+      case Absyn.GREATEREQ() then Operator.GREATEREQ(Type.BOOLEAN());
+      case Absyn.EQUAL() then Operator.EQUAL(Type.BOOLEAN());
+      case Absyn.NEQUAL() then Operator.NEQUAL(Type.BOOLEAN());
+    end match;
+  end fromAbsyn;
 
   function toDAE
     input Operator op;

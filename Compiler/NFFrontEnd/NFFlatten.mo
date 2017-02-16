@@ -46,7 +46,6 @@ import NFEquation.Equation;
 import NFExpression.Expression;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
-import NFPrefix.Prefix;
 import NFStatement.Statement;
 
 import ComponentReference;
@@ -60,6 +59,7 @@ import DAEExpression = Expression;
 import Dimension = NFDimension;
 import Subscript = NFSubscript;
 import Type = NFType;
+import ComponentRef = NFComponentRef;
 
 protected
 import DAEUtil;
@@ -67,7 +67,7 @@ import DAEUtil;
 public
 partial function ExpandScalarFunc<ElementT>
   input ElementT element;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements;
 end ExpandScalarFunc;
 
@@ -87,7 +87,7 @@ end flatten;
 
 function flattenNode
   input InstNode node;
-  input Prefix prefix = Prefix.NO_PREFIX();
+  input ComponentRef prefix = ComponentRef.EMPTY();
   input list<DAE.Element> inElements = {};
   output list<DAE.Element> elements;
 algorithm
@@ -96,7 +96,7 @@ end flattenNode;
 
 function flattenClass
   input Class instance;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements;
 algorithm
   _ := match instance
@@ -119,7 +119,7 @@ algorithm
 
     else
       algorithm
-        print("Got non-instantiated component " + Prefix.toString(prefix) + "\n");
+        print("Got non-instantiated component " + ComponentRef.toString(prefix) + "\n");
       then
         ();
 
@@ -128,18 +128,20 @@ end flattenClass;
 
 function flattenComponent
   input InstNode component;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements;
+
+  import Origin = NFComponentRef.Origin;
 protected
   Component c = InstNode.component(component);
-  Prefix new_pre;
+  ComponentRef new_pre;
   Type ty;
 algorithm
   _ := match c
     case Component.TYPED_COMPONENT()
       algorithm
         ty := Component.getType(c);
-        new_pre := Prefix.addNode(component, prefix);
+        new_pre := ComponentRef.CREF(component, {}, ty, Origin.SCOPE, prefix);
 
         elements := match ty
           case Type.ARRAY()
@@ -161,20 +163,20 @@ end flattenComponent;
 function flattenArray<ElementT>
   input ElementT element;
   input list<Dimension> dimensions;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
   input list<Subscript> subscripts = {};
 protected
   Dimension dim;
   list<Dimension> rest_dims;
-  Prefix sub_pre;
+  ComponentRef sub_pre;
   Option<Expression> oe;
   Expression e;
   Integer i;
 algorithm
   if listEmpty(dimensions) then
-    sub_pre := Prefix.setSubscripts(listReverse(subscripts), prefix);
+    sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
     elements := scalarFunc(element, sub_pre, elements);
   else
     dim :: rest_dims := dimensions;
@@ -194,7 +196,7 @@ algorithm
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown dimension.");
+          assert(false, getInstanceName() + " got unknown dimension");
         then
           fail();
 
@@ -206,7 +208,7 @@ function flattenArrayIntDim<ElementT>
   input ElementT element;
   input Integer dimSize;
   input list<Dimension> restDims;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input list<Subscript> subscripts;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
@@ -222,7 +224,7 @@ end flattenArrayIntDim;
 function flattenArrayBoolDim<ElementT>
   input ElementT element;
   input list<Dimension> restDims;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input list<Subscript> subscripts;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
@@ -239,7 +241,7 @@ function flattenArrayEnumDim<ElementT>
   input ElementT element;
   input Type enumType;
   input list<Dimension> restDims;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input list<Subscript> subscripts;
   input ExpandScalarFunc scalarFunc;
   input output list<DAE.Element> elements;
@@ -269,7 +271,7 @@ end flattenArrayEnumDim;
 
 function flattenScalar
   input Component component;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements;
 algorithm
   _ := match component
@@ -291,7 +293,7 @@ algorithm
         elements := match i
           case Class.INSTANCED_BUILTIN()
             algorithm
-              cref := Prefix.toCref(prefix);
+              cref := ComponentRef.toDAE(prefix);
               binding_exp := flattenBinding(component.binding, prefix);
               attr := component.attributes;
               var_attr := makeVarAttributes(i.attributes, component.ty);
@@ -329,7 +331,7 @@ end flattenScalar;
 
 function flattenBinding
   input Binding binding;
-  input Prefix prefix;
+  input ComponentRef prefix;
   output Option<DAE.Exp> bindingExp;
 algorithm
   bindingExp := match binding
@@ -344,7 +346,7 @@ algorithm
         if binding.propagatedDims <= 0 then
           bindingExp := SOME(Expression.toDAE(binding.bindingExp));
         else
-          subs := List.lastN(List.flatten(Prefix.allSubscripts(prefix)), binding.propagatedDims);
+          subs := List.lastN(List.flatten(ComponentRef.allSubscripts(prefix)), binding.propagatedDims);
           bindingExp := SOME(Expression.toDAE(Expression.subscript(binding.bindingExp, subs)));
         end if;
       then
@@ -361,7 +363,7 @@ end flattenBinding;
 
 function flattenEquation
   input Equation eq;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements = {};
 protected
   list<DAE.Element> els = {}, els1, els2;
@@ -446,7 +448,7 @@ end flattenEquation;
 
 function flattenEquations
   input list<Equation> equations;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements = {};
 algorithm
   elements := List.fold1(equations, flattenEquation, prefix, elements);
@@ -454,7 +456,7 @@ end flattenEquations;
 
 function flattenInitialEquation
   input Equation eq;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements;
 algorithm
   elements := match eq
@@ -477,7 +479,7 @@ end flattenInitialEquation;
 
 function flattenInitialEquations
   input list<Equation> equations;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements = {};
 algorithm
   elements := List.fold1(equations, flattenInitialEquation, prefix, elements);
@@ -485,7 +487,7 @@ end flattenInitialEquations;
 
 function flattenIfEquation
   input list<tuple<Expression, list<Equation>>> ifBranches;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input SourceInfo info;
   input Boolean isInitial;
   output DAE.Element ifEquation;
@@ -524,7 +526,7 @@ end flattenIfEquation;
 
 function flattenWhenEquation
   input list<tuple<Expression, list<Equation>>> whenBranches;
-  input Prefix prefix;
+  input ComponentRef prefix;
   input SourceInfo info;
   output DAE.Element whenEquation;
 protected
@@ -579,7 +581,7 @@ algorithm
 
     case Statement.FUNCTION_ARRAY_INIT()
       then
-        DAE.STMT_ARRAY_INIT(alg.name, alg.ty, ElementSource.createElementSource(alg.info)) :: stmts;
+        DAE.STMT_ARRAY_INIT(alg.name, Type.toDAE(alg.ty), ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.FOR()
       algorithm
@@ -592,7 +594,7 @@ algorithm
           de := DAE.SCONST("NO RANGE GIVEN TODO FIXME");
         end if;
       then
-        DAE.STMT_FOR(alg.indexType, false, alg.name, alg.index, de, sts, ElementSource.createElementSource(alg.info)) :: stmts;
+        DAE.STMT_FOR(Type.toDAE(alg.indexType), false, alg.name, alg.index, de, sts, ElementSource.createElementSource(alg.info)) :: stmts;
 
     case Statement.IF()
       then flattenIfStatement(alg.branches, alg.info) :: stmts;
@@ -748,13 +750,13 @@ algorithm
 end flattenWhenStatement;
 
 function applyExpPrefix
-  input Prefix prefix;
+  input ComponentRef prefix;
   input output Expression exp;
 algorithm
   exp := match exp
     case Expression.CREF()
       algorithm
-        exp.prefix := Prefix.transferSubscripts(prefix, exp.prefix);
+        exp.cref := ComponentRef.transferSubscripts(prefix, exp.cref);
       then
         exp;
 
@@ -968,7 +970,9 @@ algorithm
         SOME(lookupStateSelectMember(exp.name));
 
     case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(
-        bindingExp = exp as Expression.CREF(component = node)))
+        bindingExp = Expression.CREF(cref = ComponentRef.CREF(
+          ty = Type.ENUMERATION(typePath = Absyn.IDENT("StateSelect")),
+          node = node))))
       then
         SOME(lookupStateSelectMember(InstNode.name(node)));
 

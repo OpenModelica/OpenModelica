@@ -34,7 +34,6 @@ encapsulated package NFInstNode
 import NFComponent.Component;
 import NFClass.Class;
 import NFMod.Modifier;
-import NFPrefix.Prefix;
 import SCode;
 import Absyn;
 import Type = NFType;
@@ -355,6 +354,19 @@ uniontype InstNode
     end match;
   end replaceComponent;
 
+  function replaceClass
+    input Class cls;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          node.cls := arrayCreate(1, cls);
+        then
+          ();
+    end match;
+  end replaceClass;
+
   function nodeType
     input InstNode node;
     output InstNodeType nodeType;
@@ -493,11 +505,12 @@ uniontype InstNode
     end match;
   end componentApply;
 
-  function prefix
+  function scopeList
     input InstNode node;
-    input output Prefix pre = Prefix.NO_PREFIX();
+    input list<InstNode> accumScopes = {};
+    output list<InstNode> scopes;
   algorithm
-    pre := match node
+    scopes := match node
       local
         InstNodeType it;
 
@@ -507,28 +520,17 @@ uniontype InstNode
         then
           match it
             case InstNodeType.NORMAL_CLASS()
-              algorithm
-                pre := prefix(node.parentScope, pre);
-              then
-                Prefix.addNode(node, pre);
-
+              then scopeList(node.parentScope, node :: accumScopes);
             case InstNodeType.BASE_CLASS()
-              then prefix(it.parent, pre);
-
-            else pre;
+              then scopeList(it.parent, accumScopes);
+            else accumScopes;
           end match;
 
-      case COMPONENT_NODE(parent = EMPTY_NODE()) then pre;
+      case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
 
-      case COMPONENT_NODE()
-        algorithm
-          pre := prefix(node.parent, pre);
-        then
-          Prefix.addNode(node, pre);
-
-      else pre;
+      case COMPONENT_NODE() then scopeList(node.parent, node :: accumScopes);
     end match;
-  end prefix;
+  end scopeList;
 
   function path
     input InstNode node;
