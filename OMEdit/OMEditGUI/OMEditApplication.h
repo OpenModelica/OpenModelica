@@ -35,11 +35,14 @@
 #define OMEDITAPPLICATION_H
 
 #include <QApplication>
+#include <QStringList>
 
 class OMEditApplication : public QApplication
 {
 public:
   OMEditApplication(int& argc, char**argv);
+private:
+  QStringList mFilesToOpenList;
 protected:
   virtual bool event(QEvent *pEvent);
 };

@@ -141,6 +141,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv)
   foreach (QString fileName, fileNames) {
     pMainwindow->getLibraryWidget()->openFile(fileName);
   }
+  // open the files recieved by QFileOpenEvent
+  foreach (QString fileToOpen, mFilesToOpenList) {
+    pMainwindow->getLibraryWidget()->openFile(fileToOpen);
+  }
+
   // finally show the main window
   pMainwindow->show();
   // hide the splash screen
@@ -149,11 +154,22 @@ OMEditApplication::OMEditApplication(int &argc, char **argv)
 
 bool OMEditApplication::event(QEvent *pEvent)
 {
+  /* Ticket:4164
+   * Open the file passed as an argument to OSX.
+   * QFileOpenEvent is only available in OSX.
+   */
   switch (pEvent->type()) {
     case QEvent::FileOpen: {
       QFileOpenEvent *pFileOpenEvent = static_cast<QFileOpenEvent*>(pEvent);
-      if (pFileOpenEvent) {
-        MainWindow::instance()->getLibraryWidget()->openFile(pFileOpenEvent->file());
+      if (pFileOpenEvent && !pFileOpenEvent->file().isEmpty()) {
+        // if path is relative make it absolute
+        QFileInfo fileInfo (pFileOpenEvent->file());
+        QString fileName = pFileOpenEvent->file();
+        if (fileInfo.isRelative()) {
+          fileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
+        }
+        fileName = fileName.replace("\\", "/");
+        mFilesToOpenList.append(fileName);
         return true;
       }
       break;
