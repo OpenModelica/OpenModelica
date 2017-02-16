@@ -184,7 +184,8 @@ SOURCES += main.cpp \
   Git/RevertCommitsDialog.cpp \
   Git/CleanDialog.cpp \
   Traceability/TraceabilityPushDialog.cpp \
-  Traceability/TraceabilityQueryDialog.cpp
+  Traceability/TraceabilityQueryDialog.cpp \
+    OMEditApplication.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -258,7 +259,8 @@ HEADERS  += Util/Helper.h \
   Git/RevertCommitsDialog.h \
   Git/CleanDialog.h \
   Traceability/TraceabilityPushDialog.h \
-  Traceability/TraceabilityQueryDialog.h
+  Traceability/TraceabilityQueryDialog.h \
+    OMEditApplication.h
 
 CONFIG(osg) {
 

@@ -57,10 +57,8 @@
 
 #include <locale.h>
 
-#include "MainWindow.h"
-#include "Util/Helper.h"
+#include "OMEditApplication.h"
 #include "CrashReport/CrashReportDialog.h"
-#include "Modeling/LibraryTreeWidget.h"
 #include "meta/meta_modelica.h"
 
 #ifndef WIN32
@@ -175,105 +173,6 @@ int main(int argc, char *argv[])
     }
   }
   Q_INIT_RESOURCE(resource_omedit);
-  QApplication a(argc, argv);
-  // set the stylesheet
-  a.setStyleSheet("file:///:/Resources/css/stylesheet.qss");
-#if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-  QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
-  QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
-#endif
-#ifndef WIN32
-  QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
-#endif
-  a.setAttribute(Qt::AA_DontShowIconsInMenus, false);
-  // Localization
-  //*a.severin/ add localization
-  const char *omhome = getenv("OPENMODELICAHOME");
-#ifdef WIN32
-  if (!omhome) {
-    QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::OPENMODELICAHOME_NOT_FOUND), Helper::ok);
-    a.quit();
-    exit(1);
-  }
-#else /* unix */
-  omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
-#endif
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  QLocale settingsLocale = QLocale(pSettings->value("language").toString());
-  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
-  QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
-  /* set the default locale of the application so that QSpinBox etc show values according to the locale. */
-  QLocale::setDefault(settingsLocale);
-
-  QString translationDirectory = omhome + QString("/share/omedit/nls");
-  // install Qt's default translations
-  QTranslator qtTranslator;
-#ifdef Q_OS_WIN
-  qtTranslator.load("qt_" + locale, translationDirectory);
-#else
-  qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-#endif
-  a.installTranslator(&qtTranslator);
-  // install application translations
-  QTranslator translator;
-  translator.load("OMEdit_" + locale, translationDirectory);
-  a.installTranslator(&translator);
-  // Splash Screen
-  QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
-  SplashScreen *pSplashScreen = SplashScreen::instance();
-  pSplashScreen->setPixmap(pixmap);
-  pSplashScreen->show();
-  Helper::initHelperVariables();
-  /* Force C-style doubles */
-  setlocale(LC_NUMERIC, "C");
-  // if user has requested to open the file by passing it in argument then,
-  bool debug = false;
-  QString fileName = "";
-  QStringList fileNames;
-  if (a.arguments().size() > 1) {
-    for (int i = 1; i < a.arguments().size(); i++) {
-      if (strncmp(a.arguments().at(i).toStdString().c_str(), "--Debug=",8) == 0) {
-        QString debugArg = a.arguments().at(i);
-        debugArg.remove("--Debug=");
-        if (0 == strcmp("true", debugArg.toStdString().c_str())) {
-          debug = true;
-        } else {
-          debug = false;
-        }
-      } else {
-        fileName = a.arguments().at(i);
-        if (!fileName.isEmpty()) {
-          // if path is relative make it absolute
-          QFileInfo file (fileName);
-          QString absoluteFileName = fileName;
-          if (file.isRelative()) {
-            absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
-          }
-          absoluteFileName = absoluteFileName.replace("\\", "/");
-          if (QFile::exists(absoluteFileName)) {
-            fileNames << absoluteFileName;
-          } else {
-            printf("Invalid command line argument: %s %s\n", fileName.toStdString().c_str(), absoluteFileName.toStdString().c_str());
-          }
-        }
-      }
-    }
-  }
-  // MainWindow Initialization
-  MainWindow *pMainwindow = MainWindow::instance(debug);
-  pMainwindow->setUpMainWindow();
-  if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
-    a.quit();
-    exit(1);
-  }
-  // open the files passed as command line arguments
-  foreach (QString fileName, fileNames) {
-    pMainwindow->getLibraryWidget()->openFile(fileName);
-  }
-  // finally show the main window
-  pMainwindow->show();
-  // hide the splash screen
-  pSplashScreen->finish(pMainwindow);
+  OMEditApplication a(argc, argv);
   return a.exec();
 }
