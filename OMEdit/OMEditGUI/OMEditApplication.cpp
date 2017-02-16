@@ -43,6 +43,15 @@
 #include <locale.h>
 #include <QMessageBox>
 
+/*!
+ * \class OMEditApplication
+ * \brief It is a subclass for QApplication so that we can handle QFileOpenEvent sent by OSX at startup.
+ */
+/*!
+ * \brief OMEditApplication::OMEditApplication
+ * \param argc
+ * \param argv
+ */
 OMEditApplication::OMEditApplication(int &argc, char **argv)
   : QApplication(argc, argv)
 {
@@ -152,6 +161,16 @@ OMEditApplication::OMEditApplication(int &argc, char **argv)
   pSplashScreen->finish(pMainwindow);
 }
 
+/*!
+ * \brief OMEditApplication::event
+ * Handles the QFileOpenEvent. Since the event is sent at startup and we don't have MainWindow created.
+ * So we put the file name information in mFilesToOpenList and
+ * open it later in the OMEditApplication constructor when MainWindow is available.
+ * When OMEdit is already running and this event is sent then it is handled in ModelWidgetContainer::eventFilter().
+ * \param pEvent
+ * \return
+ * \sa ModelWidgetContainer::eventFilter()
+ */
 bool OMEditApplication::event(QEvent *pEvent)
 {
   /* Ticket:4164
