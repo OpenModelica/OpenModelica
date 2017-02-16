@@ -44,6 +44,7 @@
 #include <osg/Matrix>
 #include <osg/Uniform>
 
+#include <QColor>
 
 class ShapeObjectAttribute
 {
@@ -52,12 +53,15 @@ class ShapeObjectAttribute
   ShapeObjectAttribute(float value);
   ~ShapeObjectAttribute() = default;
   std::string getValueString() const;
+  void setConstValue(float e){exp=e, isConst=true;}
  public:
   bool isConst;
   float exp;
   std::string cref;
   unsigned int fmuValueRef;
 };
+
+enum class stateSetAction {update, modify};
 
 class ShapeObject
 {
@@ -67,9 +71,16 @@ class ShapeObject
   ShapeObject(const ShapeObject&) = default;
   ShapeObject& operator=(const ShapeObject&) = default;
   void dumpVisAttributes() const;
-  //void fetchVisAttributes(rapidxml::xml_node<>* node, ModelicaMatReader matReader,/* fmi1_import_t* fmu,*/ double time, bool useFMU);
-  void setTransparency(float transp){mTransparent = transp;}
-  float getTransparency(){return mTransparent;}
+  void setTransparency(float transp) {mTransparent = transp;}
+  float getTransparency() {return mTransparent;}
+  void setTextureImagePath(std::string imagePath) {mTextureImagePath = imagePath;}
+  std::string getTextureImagePath() {return mTextureImagePath;}
+  void setColor(QColor col) {_color[0].setConstValue(col.red());
+                             _color[1].setConstValue(col.green());
+                             _color[2].setConstValue(col.blue());}
+  QColor getColor() {return QColor(_color[0].exp, _color[1].exp, _color[2].exp);}
+  void setStateSetAction(stateSetAction action) {mStateSetAction = action;}
+  stateSetAction getStateSetAction() {return mStateSetAction;}
  public:
   std::string _id;
   std::string _type;
@@ -88,6 +99,8 @@ class ShapeObject
   ShapeObjectAttribute _extra;
 private:
   float mTransparent;
+  std::string mTextureImagePath;
+  stateSetAction mStateSetAction;
 };
 
 struct rAndT

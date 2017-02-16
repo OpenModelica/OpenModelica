@@ -45,6 +45,8 @@
 #include <osg/ShapeDrawable>
 #include <osg/Material>
 #include <osgDB/ReadFile>
+#include <osg/Texture2D>
+#include <osg/TexMat>
 
 #include "AnimationUtil.h"
 #include "ExtraShapes.h"
@@ -67,6 +69,9 @@ class UpdateVisitor : public osg::NodeVisitor
   virtual void apply(osg::Geode& node);
   virtual void apply(osg::MatrixTransform& node);
   void makeTransparent(osg::Geode& node, float transpCoeff);
+  void applyTexture(osg::StateSet* ss, std::string imagePath);
+  void changeColor(osg::StateSet* ss, float r, float g, float b);
+  osg::Image* convertImage(const QImage& iImage);
 public:
   ShapeObject _shape;
 };
@@ -130,6 +135,7 @@ class OMVisualBase
   rapidxml::xml_node<>* getFirstXMLNode() const;
   const std::string getXMLFileName() const;
   ShapeObject* getShapeObjectByID(std::string shapeID);
+  int getShapeObjectIndexByID(std::string shapeID);
 private:
   void appendVisVariable(const rapidxml::xml_node<>* node, std::vector<std::string>& visVariables) const;
 public:
@@ -154,6 +160,7 @@ class VisualizerAbstract
   virtual void initializeVisAttributes(const double time) = 0;
   virtual void updateVisAttributes(const double time) = 0;
   void sceneUpdate();
+  void modifyShape(std::string shapeName);
   virtual void simulate(TimeManager& omvm) = 0;
   virtual void updateScene(const double time) = 0;
 
