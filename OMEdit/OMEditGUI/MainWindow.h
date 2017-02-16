@@ -78,6 +78,7 @@ class Label;
 class FileDataNotifier;
 class LibraryTreeItem;
 class GitCommands;
+class CommitChangesDialog;
 
 
 class MainWindow : public QMainWindow
@@ -116,6 +117,7 @@ public:
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   GitCommands* getGitCommands() {return mpGitCommands;}
+  CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
   QStatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -241,6 +243,7 @@ private:
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   GitCommands *mpGitCommands;
+  CommitChangesDialog *mpCommitChangesDialog;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;

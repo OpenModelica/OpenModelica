@@ -292,3 +292,17 @@ void GitCommands::commitFiles(QString repositoryPath, QString commitMessage)
   mpGitProcess->start("git", QStringList() << "commit" <<"-m" << commitMessage);
   mpGitProcess->waitForFinished();
 }
+
+/*!
+ * \brief GitCommands::getGitHash
+ * Returns the git hash of the file .
+ * \return
+ */
+QString GitCommands::commitAndGetFileHash(QString fileName, QString activity)
+{
+  mpGitProcess->start("git", QStringList() << "add" << fileName);
+  mpGitProcess->waitForFinished();
+  mpGitProcess->start("git", QStringList() << "commit" << fileName <<"-m" << activity);
+  mpGitProcess->waitForFinished();
+  return getGitHash(fileName);
+}

@@ -51,76 +51,147 @@ TraceabilityPushDialog::TraceabilityPushDialog(QWidget *pParent)
   setLayout(pMainLayout);
 
   translateURIToJsonMessageFormat();
-
 }
 
-void TraceabilityPushDialog::translateURIToJsonMessageFormat()
-{
+void TraceabilityPushDialog::translateURIToJsonMessageFormat() {
+
   QString filePath = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName();
   QString nameStructure = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getNameStructure();
   QFileInfo info(filePath);
   QFile URIFile(info.absolutePath() + "/" + nameStructure +".md");
-  QString fileNameURI , activityURI, agentURI, toolURI, readURI;
   QStringList URIList;
-
   if (URIFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    readURI = URIFile.readAll();
+    QString readURI = URIFile.readAll();
     URIList = readURI.split(',');
+    if (URIList.at(0).compare("Model Creation") == 0)
+       translateModelCreationURIToJsonMessageFormat(URIList);
+    else if (URIList.at(0).compare("FMU Export") == 0 || URIList.at(0).compare("Model Modification") == 0)
+       translateFMUExportURIToJsonMessageFormat(URIList);
+    else
+      mpTraceabilityInformationTextBox->setPlainText("Unknown Modeling activity");
     URIFile.close();
-    for (int i = 0; i < URIList.size(); ++i){
-      if (i == 0)
-        fileNameURI = URIList.at(0);
-      if (i == 1)
-        activityURI = URIList.at(1);
-      if (i == 2)
-        agentURI = URIList.at(2);
-      if (i == 3)
-        toolURI = URIList.at(3);
-      if (i > 3)
-        return;
-   }
-   if (fileNameURI.isEmpty()||activityURI.isEmpty()||agentURI.isEmpty()||toolURI.isEmpty()) {
-       QMessageBox::information(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                                QString("The traceability information is not complete. The dialog with incomplete information will pop up."), Helper::ok);
-   }
-   QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
-                                        "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
-                                        "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
-                                        "      \"messageFormatVersion\": \"0.1\",\n"
-                                        "      \"prov:Entity\": [\n"
-                                        "            {\n"
-                                        "            \"rdf:about\": \"%4\",\n"
-                                        "            \"type\": \"softwareTool\",\n"
-                                        "            \"name\": \"OpenModelica\"\n"
-                                        "            },\n"
-                                        "            {\n"
-                                        "            \"rdf:about\" : \"%1\",\n"
-                                        "            \"path\" : \"%1\",\n"
-                                        "            \"type\" : \"%2\",\n"
-                                        "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
-                                        "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%2\"}}\n"
-                                        "            }\n"
-                                        "      ],\n "
-                                        "     \"prov:Agent\": [\n"
-                                        "            {\n"
-                                        "            \"rdf:about\": \"%3\",\n"
-                                        "            \"name\": \"%3\"\n"
-                                        "            }\n"
-                                        "     ],\n"
-                                        "     \"prov:Activity\": [\n"
-                                        "            {\n"
-                                        "            \"type\": \"activity\",\n"
-                                        "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
-                                        "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%4\"}},\n"
-                                        "            \"rdf:about\": \"%2\"\n"
-                                        "            }\n"
-                                        "     ]\n"
-                                        "}}").arg(fileNameURI.simplified()).arg(activityURI.simplified()).arg(agentURI.simplified()).arg(toolURI.simplified());
-    mpTraceabilityInformationTextBox->setPlainText(jsonMessageFormat);
-  } else {
-      mpTraceabilityInformationTextBox->setPlainText("The file " + URIFile.fileName() +" not found");
-   }
+  }
+  else {
+    mpTraceabilityInformationTextBox->setPlainText("The file " + URIFile.fileName() +" not found");
+  }
 }
+
+void TraceabilityPushDialog::translateModelCreationURIToJsonMessageFormat(QStringList modelCreationURIList)
+{
+  QString userName = OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
+  QString email = OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
+  QString fileNameURI , activityURI, agentURI, toolURI;
+  for (int i = 0; i < modelCreationURIList.size(); ++i) {
+    if (i == 1)
+      toolURI = modelCreationURIList.at(1);
+    if (i == 2)
+      agentURI = modelCreationURIList.at(2);
+    if (i == 3)
+      activityURI = modelCreationURIList.at(3);
+    if (i == 4)
+      fileNameURI = modelCreationURIList.at(4);
+  }
+  if (fileNameURI.isEmpty()|| activityURI.isEmpty()|| agentURI.isEmpty()|| toolURI.isEmpty()) {
+    QMessageBox::information(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                             QString("The traceability information is not complete. The dialog with incomplete information will pop up."), Helper::ok);
+  }
+  QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
+                                       "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
+                                       "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
+                                       "      \"messageFormatVersion\": \"0.1\",\n"
+                                       "      \"prov:Entity\": [\n"
+                                       "            {\n"
+                                       "            \"rdf:about\": \"%4\",\n"
+                                       "            \"type\": \"softwareTool\",\n"
+                                       "            \"name\": \"OpenModelica\"\n"
+                                       "            },\n"
+                                       "            {\n"
+                                       "            \"rdf:about\" : \"%1\",\n"
+                                       "            \"path\" : \"%1\",\n"
+                                       "            \"type\" : \"Model Creation\",\n"
+                                       "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
+                                       "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%2\"}}\n"
+                                       "            }\n"
+                                       "      ],\n "
+                                       "     \"prov:Agent\": [\n"
+                                       "            {\n"
+                                       "            \"rdf:about\": \"%3\",\n"
+                                       "            \"name\": \"%5\",\n"
+                                       "            \"Email\": \"%6\"\n"
+                                       "            }\n"
+                                       "     ],\n"
+                                       "     \"prov:Activity\": [\n"
+                                       "            {\n"
+                                       "            \"type\": \"Model Creation\",\n"
+                                       "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
+                                       "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%4\"}},\n"
+                                       "            \"rdf:about\": \"%2\"\n"
+                                       "            }\n"
+                                       "     ]\n"
+                                       "}}").arg(fileNameURI.simplified()).arg(activityURI.simplified()).arg(agentURI.simplified()).arg(toolURI.simplified()).arg(userName).arg(email);
+  mpTraceabilityInformationTextBox->setPlainText(jsonMessageFormat);
+}
+
+void TraceabilityPushDialog::translateFMUExportURIToJsonMessageFormat(QStringList fmuExportURIList)
+{
+  QString toolURI, activityURI, agentURI, modelingActivity, sourceModelFileNameURI, fmuFileNameURI, email, userName;
+  userName = OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
+  email = OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
+  for (int i = 0; i < fmuExportURIList.size(); ++i) {
+    if (i == 0)
+       modelingActivity = fmuExportURIList.at(0);
+    if (i == 1)
+      toolURI = fmuExportURIList.at(1);
+    if (i == 2)
+      fmuFileNameURI = fmuExportURIList.at(2);
+    if (i == 3)
+      agentURI = fmuExportURIList.at(3);
+    if (i == 4)
+      activityURI = fmuExportURIList.at(4);
+    if (i == 5)
+      sourceModelFileNameURI = fmuExportURIList.at(5);
+  }
+  if (sourceModelFileNameURI.isEmpty()|| activityURI.isEmpty()|| agentURI.isEmpty()|| toolURI.isEmpty() || modelingActivity.isEmpty()|| fmuFileNameURI.isEmpty()) {
+    QMessageBox::information(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                             QString("The traceability information is not complete. The dialog with incomplete information will pop up."), Helper::ok);
+  }
+  QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
+                                       "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
+                                       "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
+                                       "      \"messageFormatVersion\": \"0.1\",\n"
+                                       "      \"prov:Entity\": [\n"
+                                       "            {\n"
+                                       "            \"rdf:about\": \"%2\",\n"
+                                       "            \"type\": \"softwareTool\",\n"
+                                       "            \"name\": \"OpenModelica\"\n"
+                                       "            },\n"
+                                       "            {\n"
+                                       "            \"rdf:about\" : \"%3\",\n"
+                                       "            \"type\" : \"%1\",\n"
+                                       "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%4\"}},\n"
+                                       "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%5\"}},\n"
+                                       "            \"prov:wasDerivedFrom\": [{\"prov:Entity\": {\"rdf:about\": \"%6\"}}]\n"
+                                       "            }\n"
+                                       "      ],\n "
+                                       "     \"prov:Agent\": [\n"
+                                       "            {\n"
+                                       "            \"rdf:about\": \"%4\",\n"
+                                       "            \"name\": \"%7\",\n"
+                                       "            \"Email\": \"%8\"\n"
+                                       "            }\n"
+                                       "     ],\n"
+                                       "     \"prov:Activity\": [\n"
+                                       "            {\n"
+                                       "            \"type\": \"%1\",\n"
+                                       "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%4\"}},\n"
+                                       "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%2\"}},\n"
+                                       "            \"rdf:about\": \"%5\"\n"
+                                       "            }\n"
+                                       "     ]\n"
+                                       "}}").arg(modelingActivity.simplified()).arg(toolURI.simplified()).arg(fmuFileNameURI.simplified()).arg(agentURI.simplified()).arg(activityURI.simplified()).arg(sourceModelFileNameURI.simplified()).arg(userName).arg(email);
+  mpTraceabilityInformationTextBox->setPlainText(jsonMessageFormat);
+}
+
 /*!
  * \brief TraceabilityPushDialog::sendTraceabilityInformation
  * Slot activated when mpPushTraceabilitytButton clicked signal is raised.\n

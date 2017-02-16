@@ -877,12 +877,21 @@ public:
   QGroupBox* getTraceabilityGroupBox() {return mpTraceabilityGroupBox;}
 //  QLineEdit* getFMUOutputDirectory() {return mpFMUOutputDirectoryTextBox;}
 //  QPushButton *mpBrowseFMUOutputDirectoryButton;
+  QPushButton *mpBrowseGitRepositoryButton;
   QLineEdit* getTraceabilityDaemonIpAdress() {return mpTraceabilityDaemonIpAdressTextBox;}
   QLineEdit* getTraceabilityDaemonPort() {return mpTraceabilityDaemonPortTextBox;}
+  QLineEdit* getUserName() {return mpUserNameTextBox;}
+  QLineEdit* getEmail() {return mpEmailTextBox;}
+  QLineEdit* getGitRepository() {return mpGitRepositoryTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpTraceabilityGroupBox;
-//  QCheckBox *mpTraceabilityCheckBox;
+  Label *mpUserNameLabel;
+  QLineEdit *mpUserNameTextBox;
+  Label *mpEmailLabel;
+  QLineEdit *mpEmailTextBox;
+  Label *mpGitRepositoryLabel;
+  QLineEdit *mpGitRepositoryTextBox;
 //  Label *mpFMUOutputDirectoryLabel;
 //  QLineEdit *mpFMUOutputDirectoryTextBox;
   Label *mpTraceabilityDaemonIpAdressLabel;
@@ -891,6 +900,8 @@ private:
   QLineEdit *mpTraceabilityDaemonPortTextBox;
 private slots:
 //  void browseFMUOutputDirectory();
+  void browseGitRepository();
+
 };
 
 #endif // OPTIONSDIALOG_H

@@ -33,6 +33,7 @@ public:
   QString getEmailName();
   QString getGitHash(QString fileName);
   void commitFiles(QString repositoryPath, QString commitMessage);
+  QString commitAndGetFileHash(QString fileName, QString activity);
 private:
   QProcess *mpGitProcess;
   QString mGitProgram;

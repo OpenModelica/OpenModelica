@@ -22,6 +22,8 @@ public:
   TraceabilityPushDialog(QWidget *pParent = 0);
 private:
   void translateURIToJsonMessageFormat();
+  void translateModelCreationURIToJsonMessageFormat(QStringList modelCreationURIList);
+  void translateFMUExportURIToJsonMessageFormat(QStringList fmuExportURIList);
   Label *mpTraceabilityInformationLabel;
   QPlainTextEdit *mpTraceabilityInformationTextBox;
   Label *mpFilesDescriptionLabel;

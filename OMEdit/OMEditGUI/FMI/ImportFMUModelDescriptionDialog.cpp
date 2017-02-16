@@ -36,6 +36,8 @@
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Options/OptionsDialog.h"
+#include "Git/CommitChangesDialog.h"
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"
 
@@ -118,6 +120,11 @@ void ImportFMUModelDescriptionDialog::importFMUModelDescription()
 
   if (!fmuFileName.isEmpty()) {
     MainWindow::instance()->getLibraryWidget()->openFile(fmuFileName);
+  }
+  //trace import modeldescription
+  if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
+
+    MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("ModelDescription Import", mpOutputDirectoryTextBox->text(), mpFmuModelDescriptionTextBox->text(), fmuFileName);
   }
   accept();
 }
