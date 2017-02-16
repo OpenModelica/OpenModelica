@@ -31,8 +31,8 @@ end M;
 //   enumeration(one, two, three) e = E.one;
 //   enumeration(one, two, three) me = ME.two;
 //   enumeration(one, two, three) pe = P.PE.three;
-//   enumeration(one, two, three) m2.m2e = m2.M2E.one;
-//   enumeration(one, two, three) m2.m2e2 = m2.M2E.two;
-//   enumeration(one, two, three) m2.e = m2.m2e;
+//   enumeration(one, two, three) m2.m2e(start = E.two) = m2.M2E.one;
+//   enumeration(one, two, three) m2.m2e2(start = E.two) = m2.M2E.two;
+//   enumeration(one, two, three) m2.e(start = E.two) = m2.m2e;
 // end M;
 // endResult

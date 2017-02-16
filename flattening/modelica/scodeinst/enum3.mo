@@ -7,6 +7,7 @@
 
 model M
   type E = enumeration(one, two, three);
+  class A end A;
   E e[E];
 end M;
 

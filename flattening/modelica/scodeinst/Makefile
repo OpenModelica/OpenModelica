@@ -12,6 +12,10 @@ BooleanDim.mo \
 builtinmod.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
+dim1.mo \
+dim3.mo \
+dim8.mo \
+dim13.mo \
 ClassAsComponentError.mo \
 ComponentAsTypeError.mo \
 cond4.mo \
@@ -36,11 +40,13 @@ eq1.mo \
 eq7.mo \
 eq10.mo \
 extends3.mo \
+ExtendSections.mo \
 ih1.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNested1.mo \
 ImportQualified1.mo \
+inst2.mo \
 inst4.mo \
 inst5.mo \
 lookup1.mo \
@@ -59,9 +65,12 @@ mod9.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 ParameterBug.mos \
+redeclare11.mo \
+redeclare12.mo \
 redeclare13.mo \
 redeclare2.mo \
 redeclare6.mo \
+redeclare9.mo \
 type2.mo \
 usertype1.mo \
 usertype2.mo \
@@ -94,11 +103,9 @@ ConstantConnector2.mo \
 ConstantConnector3.mo \
 dim7.mo \
 dim10.mo \
-dim13.mo \
 dim14.mo \
 dim16.mo \
 dim18.mo \
-dim1.mo \
 enum6.mo \
 eq2.mo \
 eq3.mo \
@@ -109,7 +116,6 @@ eq8.mo \
 eq9.mo \
 expconn4.mo \
 expconn7.mo \
-ExtendSections.mo \
 ExtendsVisibility.mo \
 for3.mo \
 func1.mo \
@@ -158,8 +164,6 @@ RecursiveExtends1.mo \
 RecursiveExtends2.mo \
 redeclare4.mo \
 redeclare5.mo \
-redeclare11.mo \
-redeclare12.mo \
 type1.mo \
 type3.mo \
 type4.mo \
@@ -168,12 +172,10 @@ classextends1.mo \
 classextends2.mo \
 classextends3.mo \
 inst1.mo \
-inst2.mo \
 PropagateRedeclareMod1.mo \
 redeclare1.mo \
 redeclare7.mo \
 redeclare8.mo \
-redeclare9.mo \
 RedeclaredFunction1.mo \
 cond1.mo \
 cond3.mo \
@@ -188,7 +190,6 @@ const6.mo \
 const11.mo \
 const12.mo \
 dim2.mo \
-dim3.mo \
 dim4.mo \
 dim5.mo \
 dim6.mo \
