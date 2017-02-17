@@ -32,6 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include <QApplication>
 #include <QSplashScreen>
 #include <QMdiArea>
 #include <QLineEdit>
@@ -75,6 +76,12 @@ private:
   static SplashScreen *mpInstance;
 public:
   static SplashScreen *instance();
+public slots:
+  void showMessage(const QString &message, int alignment = Qt::AlignLeft, const QColor &color = Qt::black)
+  {
+    QSplashScreen::showMessage(message, alignment, color);
+    qApp->processEvents();
+  }
 };
 
 //! @brief Used to create platform independent sleep for the application.
