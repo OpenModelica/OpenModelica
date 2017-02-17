@@ -824,16 +824,23 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
         QStyleOptionViewItemV2 styleOptionViewItem;
         styleOptionViewItem.rect = foldingMarkerBox;
         styleOptionViewItem.state = QStyle::State_Active | QStyle::State_Item | QStyle::State_Children;
+        /* For some reason QStyle::PE_IndicatorBranch is not showing up in MAC.
+         * So I use QStyle::PE_IndicatorArrowDown and QStyle::PE_IndicatorArrowRight
+         * Perhaps this is fixed in newer Qt versions. We will see when we use Qt 5 for MAC.
+         */
+#ifndef Q_OS_MAC
         if (expanded) {
           styleOptionViewItem.state |= QStyle::State_Open;
         }
-        // QGtkStyle needs a small correction to draw the marker in the right place
-        if (!qstrcmp(pStyle->metaObject()->className(), "QGtkStyle")) {
-          styleOptionViewItem.rect.translate(-2, 0);
-        } else if (!qstrcmp(pStyle->metaObject()->className(), "QMacStyle")) {
-          styleOptionViewItem.rect.translate(-1, 0);
-        }
         pStyle->drawPrimitive(QStyle::PE_IndicatorBranch, &styleOptionViewItem, &painter, mpLineNumberArea);
+#else
+        styleOptionViewItem.rect.translate(-1, 0);
+        if (expanded) {
+          pStyle->drawPrimitive(QStyle::PE_IndicatorArrowDown, &styleOptionViewItem, &painter, mpLineNumberArea);
+        } else {
+          pStyle->drawPrimitive(QStyle::PE_IndicatorArrowRight, &styleOptionViewItem, &painter, mpLineNumberArea);
+        }
+#endif
       }
       painter.restore();
     }
