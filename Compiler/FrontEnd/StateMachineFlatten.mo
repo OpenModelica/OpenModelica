@@ -458,7 +458,27 @@ algorithm
   outElems := List.fold2(flatSmLst, flatSmToDataFlow, SOME(componentRef), SOME(inEnclosingFlatSmSemantics), outElems);
 end smCompToDataFlow;
 
-protected function addStateActivationAndReset
+protected function addStateActivationAndReset "
+Author: BTH
+The function has following purpose:
+1. Make equations conditional so that they are only active if enclosing state is active
+2. Add reset equations for discrete-time states declared in the component
+
+FIXME 2017-02-17: There is problem with the approach taken in this function of transforming s.th. similar to
+  Real x(start=1.1);
+  x = previous(x) + 1
+to something like
+  x = if stateActive then x_previous + 1 else x_previous;
+  x_previous = if active and (activeReset or activeResetStates[1]) then 1.1 else previous(x);
+While this gives the correct reset semantics for x, one gets a wrong result for previous(x) at the reset instant:
+'x_previous' is set to the correct result value, but during the reset instant in general there will be 'previous(x) != x_previous'!
+The transformation below replaces all occurances of 'previous(x)' within the state's equations to 'x_previous', so that the
+state machine will show the correct behavior. However, if 'x' is accessed with 'previous(x)' from outside the state, it will hold
+the wrong value. Also, when plotting 'previous(x)' will show a wrong value during reset.
+Hence, one needs another mechanism to reset 'previous(x)' correctly, but I don't see how this can be easily done by an equation
+transformation to standard clocked synchronous equations in the front-end. Probably one could add a dedicated internal marker/operator
+which is then handled specially in the back-end.
+"
   input DAE.Element inEqn;
   input DAE.Element inEnclosingSMComp "The state component enclosing the equation";
   input FlatSmSemantics inEnclosingFlatSmSemantics "The flat state machine semantics structure governing the state component";
