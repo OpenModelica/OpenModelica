@@ -65,7 +65,7 @@ void TraceabilityPushDialog::translateURIToJsonMessageFormat() {
     URIList = readURI.split(',');
     if (URIList.at(0).compare("Model Creation") == 0)
        translateModelCreationURIToJsonMessageFormat(URIList);
-    else if (URIList.at(0).compare("FMU Export") == 0 || URIList.at(0).compare("Model Modification") == 0)
+    else if (URIList.at(0).compare("FMU Export") == 0 || URIList.at(0).compare("Model Modification") == 0 || URIList.at(0).compare("ModelDescription Import") == 0)
        translateFMUExportURIToJsonMessageFormat(URIList);
     else
       mpTraceabilityInformationTextBox->setPlainText("Unknown Modeling activity");

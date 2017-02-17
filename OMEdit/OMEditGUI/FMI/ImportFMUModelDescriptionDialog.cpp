@@ -123,8 +123,10 @@ void ImportFMUModelDescriptionDialog::importFMUModelDescription()
   }
   //trace import modeldescription
   if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
-
-    MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("ModelDescription Import", mpOutputDirectoryTextBox->text(), mpFmuModelDescriptionTextBox->text(), fmuFileName);
+    QFileInfo file(fmuFileName);
+    // Get the name of the file without the extension
+    QString base_name = file.baseName();
+    MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("ModelDescription Import", fmuFileName, base_name, mpFmuModelDescriptionTextBox->text());
   }
   accept();
 }

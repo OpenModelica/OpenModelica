@@ -233,7 +233,7 @@ void CommitChangesDialog::generateTraceabilityURI(QString nameStructure, QString
     if(activity.compare("Model Modification")== 0){
        sourceFileNameURI =  "Entity.model:" + fileURI + "#"+ MainWindow::instance()->getGitCommands()->getGitHash(fileName);
        textSstream << activity << "," << toolURI << "," << fileNameURI << "," << agentURI << "," << activityURI <<"," << sourceFileNameURI;
-    } else {
+    }else {
         textSstream << activity << "," << toolURI << "," << agentURI << "," << activityURI <<"," << fileNameURI;
       }
 
@@ -256,9 +256,14 @@ void CommitChangesDialog::generateFMUTraceabilityURI(QString activity, QString m
   // open the file for writing
   if (uriFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     QDateTime time = QDateTime::currentDateTime();
-    /*for writing line by line to text file */
-    fmuFileNameURI = "Entity.fmu: " + dir.relativeFilePath(fmuFileName) + "#" + MainWindow::instance()->getGitCommands()->commitAndGetFileHash(fmuFileName, activity);
-    sourceModelFileNameURI = "Entity.model:" + dir.relativeFilePath(modelFileName) + "#" + MainWindow::instance()->getGitCommands()->getGitHash(modelFileName);
+    if(activity.compare("ModelDescription Import")== 0) {
+       qDebug("something here");
+      fmuFileNameURI = "Entity.model: " + dir.relativeFilePath(modelFileName) + "#" + MainWindow::instance()->getGitCommands()->commitAndGetFileHash(modelFileName, activity);
+      sourceModelFileNameURI = "Entity.modelDescription xml:" + dir.relativeFilePath(fmuFileName) + "#" + MainWindow::instance()->getGitCommands()->getGitHash(fmuFileName);
+    }else {
+      fmuFileNameURI = "Entity.fmu: " + dir.relativeFilePath(fmuFileName) + "#" + MainWindow::instance()->getGitCommands()->commitAndGetFileHash(fmuFileName, activity);
+      sourceModelFileNameURI = "Entity.model:" + dir.relativeFilePath(modelFileName) + "#" + MainWindow::instance()->getGitCommands()->getGitHash(modelFileName);
+    }
     toolURI = "Entity.softwareTool: " + MainWindow::instance()->getOMCProxy()->getVersion();
     agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
     activityURI = "Activity."+ activity +":" + time.toString("yyyy-MM-dd-hh-mm-ss");
