@@ -82,8 +82,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv)
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
   QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
-  /* set the default locale of the application so that QSpinBox etc show values according to the locale. */
-  QLocale::setDefault(settingsLocale);
+  /* Set the default locale of the application so that QSpinBox etc show values according to the locale.
+   * Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
+   */
+  QLocale::setDefault(QLocale::c());
 
   QString translationDirectory = omhome + QString("/share/omedit/nls");
   // install Qt's default translations
