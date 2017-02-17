@@ -15,6 +15,7 @@ class CommitChangesDialog : public QDialog
   Q_OBJECT
 public:
   CommitChangesDialog(QWidget *pParent = 0);
+  void generateFMUTraceabilityURI(QString activity, QString modelFileName, QString nameStructure, QString fmuFileName);
 private:
   QStandardItemModel *mpCommitChangedFilesModel;
   QTreeView * mpCommitChangedFilesTreeView;
@@ -40,7 +41,7 @@ private:
 private slots:
   void commitFiles();
   void commitDescriptionTextChanged();
-  void generateTraceabilityURI(QString fileName, QString filePath, QString activity, QString fileURI);
+  void generateTraceabilityURI(QString nameStructure, QString filePath, QString fileName, QString activity, QString fileURI);
 };
 
 #endif // COMMITCHANGESDIALOG_H

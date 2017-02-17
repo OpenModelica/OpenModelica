@@ -788,6 +788,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
                                                           GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
                                                           Helper::scriptingKind, Helper::notificationLevel));
   }
+  //trace export FMU
+  if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
+    MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("FMU Export", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
+  }
   // hide progress bar
   hideProgressBar();
   // clear the status bar message

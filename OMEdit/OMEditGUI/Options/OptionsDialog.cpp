@@ -765,6 +765,18 @@ void OptionsDialog::readTraceabilitySettings()
   if (mpSettings->contains("traceability/Traceability")) {
     mpTraceabilityPage->getTraceabilityGroupBox()->setChecked(mpSettings->value("traceability/Traceability").toBool());
   }
+  // read user name
+  if (mpSettings->contains("traceability/UserName")) {
+    mpTraceabilityPage->getUserName()->setText(mpSettings->value("traceability/UserName").toString());
+  }
+  // read Email
+  if (mpSettings->contains("traceability/Email")) {
+    mpTraceabilityPage->getEmail()->setText(mpSettings->value("traceability/Email").toString());
+  }
+  // read Git repository
+  if (mpSettings->contains("traceability/GitRepository")) {
+    mpTraceabilityPage->getGitRepository()->setText(mpSettings->value("traceability/GitRepository").toString());
+  }
   // read the  traceability daemon IP-adress
   if (mpSettings->contains("traceability/IPAdress")) {
     mpTraceabilityPage->getTraceabilityDaemonIpAdress()->setText(mpSettings->value("traceability/IPAdress").toString());
@@ -1179,8 +1191,14 @@ void OptionsDialog::saveTLMSettings()
  */
 void OptionsDialog::saveTraceabilitySettings()
 {
-  // read traceability checkBox
+  // save traceability checkBox
   mpSettings->setValue("traceability/Traceability", mpTraceabilityPage->getTraceabilityGroupBox()->isChecked());
+  // save user name
+  mpSettings->setValue("traceability/UserName", mpTraceabilityPage->getUserName()->text());
+  // save email
+  mpSettings->setValue("traceability/Email", mpTraceabilityPage->getEmail()->text());
+  // save Git repository
+  mpSettings->setValue("traceability/GitRepository", mpTraceabilityPage->getGitRepository()->text());
   // save the traceability daemon IP-Adress
   mpSettings->setValue("traceability/IPAdress", mpTraceabilityPage->getTraceabilityDaemonIpAdress()->text());
   // save the traceability daemon port
@@ -4374,6 +4392,18 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
   mpTraceabilityGroupBox = new QGroupBox(tr("Traceability"));
   mpTraceabilityGroupBox->setCheckable(true);
   mpTraceabilityGroupBox->setChecked(false);
+  // User name
+  mpUserNameLabel = new Label(tr("User Name:"));
+  mpUserNameTextBox = new QLineEdit;
+  // Email
+  mpEmailLabel = new Label(tr("Email:"));
+  mpEmailTextBox = new QLineEdit;
+  // Git repository
+  mpGitRepositoryLabel = new Label(tr("Git Repository:"));
+  mpGitRepositoryTextBox = new QLineEdit;
+  mpBrowseGitRepositoryButton = new QPushButton(Helper::browse);
+  mpBrowseGitRepositoryButton->setAutoDefault(false);
+  connect(mpBrowseGitRepositoryButton, SIGNAL(clicked()), SLOT(browseGitRepository()));
   // Traceability Daemon Ip Adress
   mpTraceabilityDaemonIpAdressLabel = new Label(tr("Traceability Daemon IP Adress:"));
   mpTraceabilityDaemonIpAdressTextBox = new QLineEdit;
@@ -4383,10 +4413,17 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
    // set the layout
   QGridLayout *pTraceabilityGroupBoxLayout = new QGridLayout;
   pTraceabilityGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressLabel, 0, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressTextBox, 0, 1);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortLabel, 1, 0);
-  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortTextBox, 1, 1);
+  pTraceabilityGroupBoxLayout->addWidget(mpUserNameLabel, 0, 0);
+  pTraceabilityGroupBoxLayout->addWidget(mpUserNameTextBox, 0, 1);
+  pTraceabilityGroupBoxLayout->addWidget(mpEmailLabel, 1, 0);
+  pTraceabilityGroupBoxLayout->addWidget(mpEmailTextBox, 1, 1);
+  pTraceabilityGroupBoxLayout->addWidget(mpGitRepositoryLabel, 2, 0);
+  pTraceabilityGroupBoxLayout->addWidget(mpGitRepositoryTextBox, 2, 1);
+  pTraceabilityGroupBoxLayout->addWidget(mpBrowseGitRepositoryButton, 2, 2);
+  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressLabel, 3, 0);
+  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonIpAdressTextBox, 3, 1);
+  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortLabel, 4, 0);
+  pTraceabilityGroupBoxLayout->addWidget(mpTraceabilityDaemonPortTextBox, 4, 1);
   mpTraceabilityGroupBox->setLayout(pTraceabilityGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
@@ -4404,3 +4441,13 @@ TraceabilityPage::TraceabilityPage(OptionsDialog *pOptionsDialog)
 //  mpFMUOutputDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
 //                                                                         .arg(Helper::chooseDirectory), NULL));
 //}
+
+/*!
+ * \brief TraceabilityPage::browseFMUOutputDirectory
+ * Browse FMU Output Directory.
+ */
+void TraceabilityPage::browseGitRepository()
+{
+  mpGitRepositoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                         .arg(Helper::chooseDirectory), NULL));
+}
