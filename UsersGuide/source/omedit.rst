@@ -3,8 +3,8 @@ OMEdit – OpenModelica Connection Editor
 
 OMEdit – OpenModelica Connection Editor is the new Graphical User
 Interface for graphical model editing in OpenModelica. It is implemented
-in C++ using the Qt 4.8 graphical user interface library and supports
-the Modelica Standard Library version 3.1 that is included in the latest
+in C++ using the Qt graphical user interface library and supports
+the Modelica Standard Library that is included in the latest
 OpenModelica installation. This chapter gives a brief introduction to
 OMEdit and also demonstrates how to create a DCMotor model using the
 editor.
@@ -82,22 +82,22 @@ The MainWindow contains several dockable browsers,
 
 The default location of the browsers are shown in :numref:`omedit-mainwindow-browsers`.
 All browsers except for Message Browser can be docked into left or right
-column. The Messages Browser can be docked into left,right or bottom
+column. The Messages Browser can be docked into top or bottom
 areas. If you want OMEdit to remember the new docked position of the
 browsers then you must enable Preserve User's GUI Customizations option,
 see section :ref:`omedit-settings-general`.
 
-Search Classes
+Filter Classes
 ~~~~~~~~~~~~~~
 
-To search a class click Edit->Search Classes or press keyboard
-shortcut Ctrl+Shift+F. The loaded Modelica classes can be searched by
+To filter a class click Edit > Filter Classes or press keyboard
+shortcut Ctrl+Shift+F. The loaded Modelica classes can be filtered by
 typing any part of the class name.
 
 Libraries Browser
 ~~~~~~~~~~~~~~~~~
 
-To view the Libraries Browser click View->Windows->Libraries Browser.
+To view the Libraries Browser click View > Windows > Libraries Browser.
 Shows the list of loaded Modelica classes. Each item of the Libraries
 Browser has right click menu for easy manipulation and usage of the
 class. The classes are shown in a tree structure with name and icon. The
@@ -113,9 +113,10 @@ Documentation Browser
 ~~~~~~~~~~~~~~~~~~~~~
 
 Displays the HTML documentation of Modelica classes. It contains the
-navigation buttons for moving forward and backward. To see documentation
-of any class, right click the Modelica class in Libraries Browser and
-choose View Documentation.
+navigation buttons for moving forward and backward. It also contains
+a WYSIWYG editor which allows writing class documentation in HTML format.
+To see documentation of any class, right click the Modelica class
+in Libraries Browser and choose View Documentation.
 
 .. figure :: media/omedit-documentation-browser.png
 
@@ -172,6 +173,8 @@ The perspective tabs are loacted at the bottom right of the MainWindow:
 
 -  Plotting Perspective
 
+-  Debugging Perspective
+
 Welcome Perspective
 ~~~~~~~~~~~~~~~~~~~
 
@@ -216,6 +219,18 @@ two different modes, the tabbed view and subwindow view, see section
 
   OMEdit Plotting Perspective.
 
+Debugging Perspective
+~~~~~~~~~~~~~~~~~~~~~
+
+The application automatically switches to Debugging Perpective
+when user simulates the class with algorithmic debugger.
+The prespective shows the list of stack frames, breakpoints and variables.
+
+.. figure :: media/omedit-debugging-perspective.png
+  :name: omedit-debugging-perspective
+
+  OMEdit Debugging Perspective.
+
 Modeling a Model
 ----------------
 
@@ -230,7 +245,7 @@ Choose any of the following methods,
 -  Click on New Modelica Class toolbar button.
 
 -  Click on the Create New Modelica Class button available at the left
-       bottom of Welcome Perspective.
+   bottom of Welcome Perspective.
 
 -  Press Ctrl+N.
 
@@ -244,7 +259,7 @@ Choose any of the following methods to open a Modelica file,
 -  Click on Open Model/Library File(s) toolbar button.
 
 -  Click on the Open Model/Library File(s) button available at the right
-       bottom of Welcome Perspective.
+   bottom of Welcome Perspective.
 
 -  Press Ctrl+O.
 
@@ -295,13 +310,13 @@ Simulating a Model
 The OMEdit Simulation Dialog can be launched by,
 
 -  Selecting Simulation > Simulation Setup from the menu. (requires a
-       model to be active in ModelWidget)
+   model to be active in ModelWidget)
 
 -  Clicking on the Simulation Setup toolbar button. (requires a model to
-       be active in ModelWidget)
+   be active in ModelWidget)
 
 -  Right clicking the model from the Libraries Browser and choosing
-       Simulation Setup.
+   Simulation Setup.
 
 General Tab
 ~~~~~~~~~~~
@@ -324,7 +339,7 @@ General Tab
 
   -  *Jacobian* - the jacobain method to use.
 
-  -  DASSL Options
+  -  DASSL/IDA Options
 
     -  *Root Finding* - Activates the internal root finding procedure of dassl.
 
@@ -375,10 +390,10 @@ Simulation Flags Tab
 -  *Initialization Method (Optional)* – specifies the initialization method.
 
 -  *Equation System Initialization File (Optional)* – specifies an
-       external file for the initialization of the model.
+   external file for the initialization of the model.
 
 -  *Equation System Initialization Time (Optional)* – specifies a time
-       for the initialization of the model.
+   for the initialization of the model.
 
 -  *Clock (Optional)* – the type of clock to use.
 
@@ -387,10 +402,10 @@ Simulation Flags Tab
 -  *Non Linear Solver (Optional)* – specifies the nonlinear solver.
 
 -  *Linearization Time (Optional)* – specifies a time where the
-       linearization of the model should be performed.
+   linearization of the model should be performed.
 
 -  *Output Variables (Optional)* – outputs the variables a, b and c at
-       the end of the simulation to the standard output.
+   the end of the simulation to the standard output.
 
 -  *Profiling* – creates a profiling HTML file.
 
@@ -436,7 +451,7 @@ Simulation Flags Tab
   -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
 
 -  *Additional Simulation Flags (Optional)* – specify any other
-       simulation flag.
+   simulation flag.
 
 Archived Simulations Tab
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -690,6 +705,7 @@ General
   -  *Language* – Sets the application language.
 
   -  *Working Directory* – Sets the application working directory.
+     All files are generated in this directory.
 
   -  *Toolbar Icon Size* – Sets the size for toolbar icons.
 
@@ -697,6 +713,7 @@ General
      remember its windows and toolbars positions and sizes.
 
   -  *Terminal Command* – Sets the terminal command.
+     When user clicks on Tools > Open Terminal then this command is executed.
 
   -  *Terminal Command Arguments* – Sets the terminal command arguments.
 
@@ -706,7 +723,7 @@ General
 
   -  *Library Icon Size* – Sets the size for library icons.
 
-  -  *Show Protected Classes* – Sets the application language.
+  -  *Show Protected Classes* – If enabled then Libraries Browser will also list the protected classes.
 
 -  Modeling View Mode
 
@@ -740,17 +757,17 @@ Libraries
 ~~~~~~~~~
 
 -  *System Libraries* – The list of system libraries that should be
-       loaded every time OMEdit starts.
+   loaded every time OMEdit starts.
 
 -  *Force loading of Modelica Standard Library* – If true then Modelica
-       and ModelicaReference will always load even if user has removed
-       them from the list of system libraries.
+   and ModelicaReference will always load even if user has removed
+   them from the list of system libraries.
 
 -  *Load OpenModelica library on startup* – If true then OpenModelica
-       package will be loaded when OMEdit is started.
+   package will be loaded when OMEdit is started.
 
 -  *User Libraries* – The list of user libraries/files that should be
-       loaded every time OMEdit starts.
+   loaded every time OMEdit starts.
 
 Text Editor
 ~~~~~~~~~~~
@@ -772,17 +789,22 @@ Text Editor
 
   -  *Enable Syntax Highlighting* – Enable/Disable the syntax highlighting.
 
-    -  *Enable Code Folding* - Enable/Disable the code folding.
+    -  *Enable Code Folding* - Enable/Disable the code folding. When code
+       folding is enabled multi-line annotations are collapsed into a
+       compact icon (a rectangle containing "...)"). A marker containing
+       a "+" sign becomes available at the left-side of the involved line,
+       allowing the code to be expanded/re-collapsed at will.
 
-    -  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parenthese within comments and quotes.
+    -  *Match Parentheses within Comments and Quotes* – Enable/Disable the matching of parentheses within comments and quotes.
 
   -  *Enable Line Wrapping* – Enable/Disable the line wrapping.
 
 -  Font
 
-  -  *Font Family* – Contains the names list of available fonts.
+  -  *Font Family* – Shows the names list of available fonts.
+     Sets the font for the editor.
 
-  -  *Font Size* – Sets the font size.
+  -  *Font Size* – Sets the font size for the editor.
   
 Modelica Editor
 ~~~~~~~~~~~~~~~
@@ -1087,7 +1109,7 @@ By default OMEdit loads the Modelica Standard Library (MSL) as a system library.
 If you want to edit MSL you need to load it as user library instead of system library. We don't recommend editing 
 MSL but if you really need to and understand the consequences then follow these steps,
 
--  Go to *Tools->Options->Libraries*.
+-  Go to *Tools > Options > Libraries*.
 -  Remove Modelica & ModelicaReference from list of system libraries.
 -  Uncheck *force loading of Modelica Standard Library*.
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
