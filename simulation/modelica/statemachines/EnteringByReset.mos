@@ -1,0 +1,48 @@
+// name:     EnteringByReset
+// keywords: state machines
+// status: correct
+//
+
+loadString("
+model EnteringByReset
+  Real u;
+  StateX state1(xfoox=1.0);
+  StateX state2(xfoox=u);
+equation
+  u = sample(time, Clock(1,10));
+  initialState(state1);
+  transition(state1, state2, true, reset=true, immediate=false);
+  transition(state2, state1, true, reset=true, immediate=false);
+end EnteringByReset;
+
+model StateX
+  input Real xfoox;
+  Real y;
+  Boolean enteringOfState(start=true);
+  Real x(start=1.1);
+equation
+  x = previous(x) + xfoox;
+  enteringOfState = false;
+  y = if previous(enteringOfState) then previous(x) else previous(y);
+end StateX;
+"); getErrorString();
+
+echo(false);
+setCommandLineOptions({"+simCodeTarget=Cpp"}); getErrorString();
+simulate(EnteringByReset, startTime=0, stopTime=1.0, numberOfIntervals = 0); getErrorString();
+echo(true);
+val(state2.active, 0.25);
+val(state2.active, 0.95);
+val(state2.x, 1.0);
+val(state2.y,1.0);
+
+
+// Result:
+// true
+// ""
+// true
+// 0.0
+// 1
+// 2.0
+// 1.1
+// endResult
