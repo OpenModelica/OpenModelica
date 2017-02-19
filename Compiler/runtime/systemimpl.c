@@ -3045,10 +3045,10 @@ done:
 
 void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
   *file = "dladdr failed";
   *name = "not available on Windows";
-#else
+#else /* mingw & Linux */
   Dl_info info;
   void *ptr = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(symbol), 1)));
   if (0 == dladdr(ptr, &info)) {

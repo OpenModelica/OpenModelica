@@ -1031,7 +1031,7 @@ protected function tokFileText
   input StringToken inStringToken;
   input Boolean doHandleTok=true;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.File file = File.File(getTextOpaqueFile(inText), File.getFilename(getTextOpaqueFile(inText)), false);
   Integer nchars, aind;
   Boolean isstart;
 algorithm
@@ -2462,7 +2462,7 @@ public function redirectToFile
   input output Text text;
   input String fileName;
 protected
-  File.File file = File.File();
+  File.File file = File.File(NONE(), fileName, true);
 algorithm
   if Config.getRunningTestsuite() then
     System.appendFile(Config.getRunningTestsuiteFile(), fileName + "\n");
@@ -2475,7 +2475,7 @@ public function closeFile
 "Magic sourceInfo() function implementation"
   input output Text text;
 protected
-  File.File file = File.File(getTextOpaqueFile(text));
+  File.File file = File.File(getTextOpaqueFile(text), File.getFilename(getTextOpaqueFile(text)), false);
 algorithm
   File.releaseReference(file);
   text := emptyTxt;
@@ -2507,7 +2507,7 @@ protected function stringFile "Like ST_STRING or ST_LINE"
   input Boolean line;
   input Boolean recurseSeparator=true;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.File file = File.File(getTextOpaqueFile(inText), File.getFilename(getTextOpaqueFile(inText)), false);
   Integer nchars;
   IterOptions iopts;
   StringToken septok;
@@ -2543,7 +2543,7 @@ end stringFile;
 protected function newlineFile "Like ST_NEWLINE"
   input Text inText;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.File file = File.File(getTextOpaqueFile(inText), File.getFilename(getTextOpaqueFile(inText)), false);
   Integer nchars;
 algorithm
   _ := match inText
@@ -2560,7 +2560,7 @@ protected function textFileTell
   input Text inText;
   output Integer tell;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.File file = File.File(getTextOpaqueFile(inText), File.getFilename(getTextOpaqueFile(inText)), false);
 algorithm
   tell := File.tell(file);
 end textFileTell;
@@ -2568,7 +2568,7 @@ end textFileTell;
 protected function handleTok "Handle a new token, for example separators"
   input Text txt;
 protected
-  // File.File file = File.File(getTextOpaqueFile(inText));
+  // File.File file = File.File(getTextOpaqueFile(inText), File.getFilename(getTextOpaqueFile(inText)), false);
   StringToken septok;
   array<Option<StringToken>> aseptok;
 algorithm
@@ -2598,7 +2598,7 @@ protected function handleSeparatorTextFile
   input Text txt;
   input IterOptions iopts;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.File file = File.File(getTextOpaqueFile(inText), File.getFilename(getTextOpaqueFile(inText)), false);
   Integer nchars, aind;
   Boolean isstart;
 algorithm

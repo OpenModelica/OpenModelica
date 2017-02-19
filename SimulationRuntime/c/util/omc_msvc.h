@@ -126,24 +126,58 @@ unsigned int alarm (unsigned int seconds);
 #endif
 
 #if (defined(__MINGW32__) || defined(_MSC_VER)) && !defined(OMC_MINIMAL_RUNTIME)
+
 static int RTLD_LAZY __attribute__((unused)) = 0;
+
+/** definition of the return data for dladdr().
+ */
+typedef struct {
+	/** Filename of defining DLL or EXE */
+	const char *dli_fname;
+
+	/** Load address of the DLL or EXE that defines the object */
+	void *dli_fbase;
+
+	/** Name of nearest Symbol, string memory allocated possibly allocated
+	 *  on the heap. See #dli_salloc;
+	 */
+	const char *dli_sname;
+
+	/** Exact value of nearest symbol (Not implemented on Windows) */
+	void *dli_saddr;
+
+	/** Non-zero if the memory for dli_sname was allocated on the heap */
+	int dli_salloc;
+
+} Dl_info;
+
 char* mkdtemp(char *tpl);
 void* omc_dlopen(const char *filename, int flag);
 char* omc_dlerror();
 void* omc_dlsym(void *handle, const char *symbol);
 int omc_dlclose(void *handle);
+int omc_dladdr(void *addr, Dl_info *info);
+
 static OMC_INLINE void* dlopen(const char *filename, int flag) {
   return omc_dlopen(filename, flag);
 }
+
 static OMC_INLINE char* dlerror() {
   return omc_dlerror();
 }
+
 static OMC_INLINE void* dlsym(void *handle, const char *symbol) {
   return omc_dlsym(handle, symbol);
 }
+
 static OMC_INLINE int dlclose(void *handle) {
   return omc_dlclose(handle);
 }
+
+static OMC_INLINE int dladdr(void *addr, Dl_info *info) {
+  return omc_dladdr(addr, info);
+}
+
 #endif
 
 #ifdef __cplusplus

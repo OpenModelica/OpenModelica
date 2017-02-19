@@ -66,7 +66,7 @@ function serializeWork "Always succeeds in order to clean-up external objects"
   output Boolean success; // We always need to return in order to clean up external objects
   output String fileName;
 protected
-  File.File file = File.File();
+  File.File file = File.File(NONE(), code.fileNamePrefix + "_info.json", true);
 algorithm
   (success,fileName) := matchcontinue code
     local
