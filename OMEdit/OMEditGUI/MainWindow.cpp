@@ -1488,48 +1488,63 @@ void MainWindow::setShowGridLines(bool showLines)
   }
 }
 
-//! Tells the current model to reset zoom to 100%.
-//! @see zoomIn()
-//! @see zoomOut()
+/*!
+ * \brief MainWindow::resetZoom
+ * Tells the current model to reset zoom to 100%.
+ * \sa MainWindow::zoomIn()
+ * \sa MainWindow::zoomOut()
+ */
 void MainWindow::resetZoom()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible())
+  if (pModelWidget) {
+    if (pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pModelWidget->getDiagramGraphicsView()->resetZoom();
-    else if (pModelWidget->getIconGraphicsView()->isVisible())
+    } else if (pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->resetZoom();
+    } else if (pModelWidget->getEditor()->isVisible()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->resetZoom();
+    }
   }
 }
 
-//! Tells the current model to increase its zoom factor.
-//! @see resetZoom()
-//! @see zoomOut()
+/*!
+ * \brief MainWindow::zoomIn
+ * Tells the current model to increase its zoom factor.
+ * \sa MainWindow::resetZoom()
+ * \sa MainWindow::zoomOut()
+ */
 void MainWindow::zoomIn()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible())
+  if (pModelWidget) {
+    if (pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pModelWidget->getDiagramGraphicsView()->zoomIn();
-    else if (pModelWidget->getIconGraphicsView()->isVisible())
+    } else if (pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->zoomIn();
+    } else if (pModelWidget->getEditor()->isVisible()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->zoomIn();
+    }
   }
 }
 
-//! Tells the current model to decrease its zoom factor.
-//! @see resetZoom()
-//! @see zoomIn()
+/*!
+ * \brief MainWindow::zoomOut
+ * Tells the current model to decrease its zoom factor.
+ * \sa MainWindow::resetZoom()
+ * \sa MainWindow::zoomIn()
+ */
 void MainWindow::zoomOut()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible())
+  if (pModelWidget) {
+    if (pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pModelWidget->getDiagramGraphicsView()->zoomOut();
-    else if (pModelWidget->getIconGraphicsView()->isVisible())
+    } else if (pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->zoomOut();
+    } else if (pModelWidget->getEditor()->isVisible()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->zoomOut();
+    }
   }
 }
 

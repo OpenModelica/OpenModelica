@@ -5152,9 +5152,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel));
+  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel));
+  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel));
   MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());

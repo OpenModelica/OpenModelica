@@ -1124,6 +1124,43 @@ void BaseEditor::PlainTextEdit::ensureCursorVisible()
 }
 
 /*!
+ * \brief BaseEditor::PlainTextEdit::resetZoom
+ * Resets the document font size.
+ */
+void BaseEditor::PlainTextEdit::resetZoom()
+{
+  QFont font = document()->defaultFont();
+  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  document()->setDefaultFont(font);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::zoomIn
+ * Increases the document font size.
+ */
+void BaseEditor::PlainTextEdit::zoomIn()
+{
+  QFont font = document()->defaultFont();
+  qreal fontSize = font.pointSizeF();
+  fontSize = fontSize  + 1;
+  font.setPointSizeF(fontSize);
+  document()->setDefaultFont(font);
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::zoomOut
+ * Decreases the document font size.
+ */
+void BaseEditor::PlainTextEdit::zoomOut()
+{
+  QFont font = document()->defaultFont();
+  qreal fontSize = font.pointSizeF();
+  fontSize = fontSize <= 6 ? fontSize : fontSize - 1;
+  font.setPointSizeF(fontSize);
+  document()->setDefaultFont(font);
+}
+
+/*!
  * \brief BaseEditor::PlainTextEdit::highlightCurrentLine
  * Hightlights the current line.
  */
@@ -1227,6 +1264,18 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     // ctrl+k is pressed.
     mpBaseEditor->toggleCommentSelection();
     return;
+//  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_Plus) {
+//    // ctrl++ is pressed.
+//    zoomIn();
+//    return;
+//  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_Underscore) {
+//    // ctrl+- is pressed.
+//    zoomOut();
+//    return;
+//  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_0) {
+//    // ctrl+0 is pressed.
+//    resetZoom();
+//    return;
   } else if (pEvent->modifiers().testFlag(Qt::ShiftModifier) && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
     /* Ticket #2273. Change shift+enter to enter. */
     pEvent->setModifiers(Qt::NoModifier);
@@ -1440,6 +1489,22 @@ void BaseEditor::PlainTextEdit::paintEvent(QPaintEvent *e)
     top = bottom;
     bottom = top + blockBoundingRect(block).height();
   }
+}
+
+/*!
+ * \brief BaseEditor::PlainTextEdit::wheelEvent
+ * \param event
+ */
+void BaseEditor::PlainTextEdit::wheelEvent(QWheelEvent *event)
+{
+  if (event->modifiers() & Qt::ControlModifier) {
+    if (event->delta() > 0) {
+      zoomIn();
+    } else {
+      zoomOut();
+    }
+  }
+  QPlainTextEdit::wheelEvent(event);
 }
 
 /*!

@@ -219,6 +219,9 @@ private:
     void indentOrUnindent(bool doIndent);
     void moveCursorVisible(bool ensureVisible = true);
     void ensureCursorVisible();
+    void resetZoom();
+    void zoomIn();
+    void zoomOut();
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;
@@ -236,6 +239,7 @@ private:
     virtual void focusInEvent(QFocusEvent *event);
     virtual void focusOutEvent(QFocusEvent *event);
     void paintEvent(QPaintEvent *e);
+    void wheelEvent(QWheelEvent *event);
   };
 public:
   BaseEditor(QWidget *pParent);
