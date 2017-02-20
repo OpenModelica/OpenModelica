@@ -1,0 +1,27 @@
+// name:     AccessFromOutside
+// keywords: state machines
+// status: correct
+//
+
+loadFile("AccessFromOutside.mo");
+echo(false);
+setCommandLineOptions({"+simCodeTarget=Cpp"}); getErrorString();
+simulate(AccessFromOutside, startTime=0, stopTime=10, numberOfIntervals = 0); getErrorString();
+echo(true);
+val(state1.i,4.0);
+val(y,4.0);
+val(state1.i,5.0);
+val(y,5.0);
+val(state1.i,6.0);
+val(y,6.0);
+
+// Result:
+// true
+// true
+// 12.0
+// 10.0
+// 12.0
+// 12.0
+// 4.0
+// 2.0
+// endResult

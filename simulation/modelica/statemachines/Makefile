@@ -15,7 +15,7 @@ EnteringByReset.mos \
 # Run make failingtest
 FAILINGTESTFILES = \
 SingleState.mos \
-
+AccessFromOutside.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
