@@ -3324,7 +3324,17 @@ void MainWindow::switchToWelcomePerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+  // hide toolbars
+  mpEditToolBar->setVisible(false);
+  mpViewToolBar->setVisible(false);
+  mpShapesToolBar->setVisible(false);
+  mpModelSwitcherToolBar->setVisible(false);
+  mpCheckToolBar->setVisible(false);
+  mpSimulationToolBar->setVisible(false);
+  mpReSimulationToolBar->setVisible(false);
+  mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
+  mpTLMSimulationToolbar->setVisible(false);
 }
 
 /*!
@@ -3338,7 +3348,17 @@ void MainWindow::switchToModelingPerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
+  // show/hide toolbars
+  mpEditToolBar->setVisible(true);
+  mpViewToolBar->setVisible(true);
+  mpShapesToolBar->setVisible(true);
+  mpModelSwitcherToolBar->setVisible(true);
+  mpCheckToolBar->setVisible(true);
+  mpSimulationToolBar->setVisible(true);
+  mpReSimulationToolBar->setVisible(false);
+  mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
+  mpTLMSimulationToolbar->setVisible(true);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3377,7 +3397,17 @@ void MainWindow::switchToPlottingPerspective()
     mpPlotWindowContainer->addPlotWindow(true);
   }
   mpVariablesDockWidget->show();
+  // show/hide toolbars
+  mpEditToolBar->setVisible(false);
+  mpViewToolBar->setVisible(false);
+  mpShapesToolBar->setVisible(false);
+  mpModelSwitcherToolBar->setVisible(false);
+  mpCheckToolBar->setVisible(false);
+  mpSimulationToolBar->setVisible(false);
+  mpReSimulationToolBar->setVisible(true);
+  mpPlotToolBar->setVisible(true);
   mpPlotToolBar->setEnabled(true);
+  mpTLMSimulationToolbar->setVisible(false);
   // In case user has tabbed the dock widgets then make VariablesWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3401,7 +3431,17 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
+  // show/hide toolbars
+  mpEditToolBar->setVisible(true);
+  mpViewToolBar->setVisible(true);
+  mpShapesToolBar->setVisible(true);
+  mpModelSwitcherToolBar->setVisible(true);
+  mpCheckToolBar->setVisible(true);
+  mpSimulationToolBar->setVisible(true);
+  mpReSimulationToolBar->setVisible(false);
+  mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
+  mpTLMSimulationToolbar->setVisible(true);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
