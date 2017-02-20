@@ -122,6 +122,30 @@ uniontype InstNode
     node := COMPONENT_NODE(name, definition, c, parent);
   end newComponent;
 
+  function newExtends
+    input InstNode node;
+    input InstNode scope;
+    output InstNode extendsNode;
+  algorithm
+    extendsNode := match node
+      local
+        array<Class> cls;
+
+      case CLASS_NODE()
+        algorithm
+          cls := arrayCreate(1, Class.NOT_INSTANTIATED());
+        then
+          CLASS_NODE("$extends." + node.name, node.definition, cls,
+            node.parentScope, InstNodeType.BASE_CLASS(scope));
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got non-class");
+        then
+          fail();
+    end match;
+  end newExtends;
+
   function fromComponent
     input String name;
     input Component component;

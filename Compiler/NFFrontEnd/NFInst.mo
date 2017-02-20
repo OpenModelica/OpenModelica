@@ -452,20 +452,13 @@ algorithm
           is_builtin := Class.isBuiltin(InstNode.getClass(ext_node));
 
           if not is_builtin then
-            // TODO: Reinstantiating the class might not be needed any more.
-            // TODO: Inherited components need unique scopes, so the class needs
-            //       to at least be cloned.
-            ext_node := InstNode.updateClass(Class.NOT_INSTANTIATED(), ext_node);
-            ext_node := InstNode.setNodeType(InstNodeType.BASE_CLASS(currentScope), ext_node);
-            ext_node := InstNode.rename(ext_node, "$extends." + InstNode.name(ext_node));
+            ext_node := InstNode.newExtends(ext_node, currentScope);
             ext_node := expand(ext_node);
           end if;
 
-          //ext_node := InstNode.setDefinition(e, ext_node);
 
           // Initialize the modifiers from the extends clause.
           mod_scope := ModifierScope.EXTENDS_SCOPE(e.baseClassPath);
-          // adrpo: TODO! FIXME! the modifier scope of the extends clause should be the currentScope not ext_node??!!
           mod := Modifier.create(e.modifications, "", mod_scope, currentScope);
 
           // Apply the modifier from the extends clause to the expanded class.
