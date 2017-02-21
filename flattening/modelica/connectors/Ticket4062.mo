@@ -485,7 +485,4 @@ end Ticket4062;
 //   serialReceive.pkgOut.userPkgBitSize = unpackInt.pkgIn.userPkgBitSize;
 //   integerToReal.u = unpackInt.y;
 // end Ticket4062;
-// [flattening/modelica/connectors/Ticket4062.mo:85:38-85:147:writable] Warning: OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but if autoBufferSize then bufferSize else userBufferSize is a variable.
-// [flattening/modelica/connectors/Ticket4062.mo:88:9-88:206:writable] Warning: OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but if autoBufferSize then bufferSize else userBufferSize is a variable.
-//
 // endResult

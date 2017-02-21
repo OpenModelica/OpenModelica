@@ -8821,7 +8821,7 @@ end System2;
 //   final parameter Real timTab.t_min(quantity = "Time", unit = "s", fixed = false);
 //   final parameter Real timTab.t_max(quantity = "Time", unit = "s", fixed = false);
 //   protected final parameter Real timTab.p_offset[1] = timTab.offset[1];
-//   protected Modelica.Blocks.Types.ExternalCombiTimeTable timTab.tableID = Modelica.Blocks.Types.ExternalCombiTimeTable.constructor("NoName", "NoName", {{0.0, 0.0}, {28800.0, 0.0}, {28800.0, 4000.0}, {64800.0, 4000.0}, {64800.0, 0.0}, {86400.0, 0.0}}, timTab.startTime, {timTab.columns[1]}, timTab.smoothness, timTab.extrapolation);
+//   protected Modelica.Blocks.Types.ExternalCombiTimeTable timTab.tableID = Modelica.Blocks.Types.ExternalCombiTimeTable.constructor(if timTab.tableOnFile then timTab.tableName else "NoName", if timTab.tableOnFile and timTab.fileName <> "NoName" and not Modelica.Utilities.Strings.isEmpty(timTab.fileName) then timTab.fileName else "NoName", {{timTab.table[1,1], timTab.table[1,2]}, {timTab.table[2,1], timTab.table[2,2]}, {timTab.table[3,1], timTab.table[3,2]}, {timTab.table[4,1], timTab.table[4,2]}, {timTab.table[5,1], timTab.table[5,2]}, {timTab.table[6,1], timTab.table[6,2]}}, timTab.startTime, {timTab.columns[1]}, timTab.smoothness, timTab.extrapolation);
 //   protected discrete Real timTab.nextTimeEvent(quantity = "Time", unit = "s", start = 0.0, fixed = true);
 //   protected parameter Real timTab.tableOnFileRead(fixed = false);
 //   parameter Boolean rad.allowFlowReversal = system.allowFlowReversal;

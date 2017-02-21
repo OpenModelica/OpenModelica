@@ -33,7 +33,6 @@ EndIllegal.mo \
 EndUnknown.mo \
 ExtObjError.mo \
 ExtObjError2.mo \
-ExternalObjectVariable.mo \
 FaultNonPropagation.mo \
 FlexibleShaftNonLinearTotal.mo \
 FlowInvalid1.mo \

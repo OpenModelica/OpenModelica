@@ -181,7 +181,5 @@ instantiateModel(Bug4124); getErrorString();
 //   unpackInt.pkgOut[1].userPkgBitSize = unpackInt1.pkgIn.userPkgBitSize;
 // end Bug4124;
 // "
-// "[flattening/modelica/equations/Bug4124.mo:80:38-80:147:writable] Warning: OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but if autoBufferSize then bufferSize else userBufferSize is a variable.
-// [flattening/modelica/equations/Bug4124.mo:83:9-83:206:writable] Warning: OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but if autoBufferSize then bufferSize else userBufferSize is a variable.
-// "
+// ""
 // endResult
