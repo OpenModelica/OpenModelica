@@ -4,7 +4,7 @@
 //
 // OpenModelica Development Course at PELAB
 //
-setCommandLineOptions({"+d=rml,noevalfunc","+g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
 loadFile("SymbolicDerivative.mo");
 loadFile("Parse.mo");
 getErrorString();
@@ -26,8 +26,8 @@ getErrorString();
 // true
 // ""
 // [Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
-// 
-// 
+//
+//
 // ""
 // f(x) = (((3*sin((x*1)))-(-cos(x)^2))+(x/2))
 // [Differentiating expression]
