@@ -72,7 +72,7 @@ protected
   ModelInfo modelInfo;
   VarInfo vi;
   SimulationSettings s;
-  File.File file = File.File(NONE(), simCode.fileNamePrefix + "_init.xml", true);
+  File.File file = File.File();
 algorithm
   try
   File.open(file, simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
