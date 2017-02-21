@@ -797,6 +797,8 @@ protected
   array<Integer> secondary;
   BackendDAE.Var p;
   DAE.Exp bindExp;
+  HashSet.HashSet hs;
+  list<DAE.ComponentRef> crefs;
 algorithm
   outInitVars := selectInitializationVariables(dae.eqs);
   outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectInitializationVariables2, outInitVars);
@@ -840,19 +842,22 @@ algorithm
     //BackendDump.dumpMatchingVars(secondary);
 
     // get primary and secondary parameters
+    hs := HashSet.emptyHashSetSized(2*nParam+1);
     for i in flatComps loop
       p := BackendVariable.getVarAt(allParameters, i);
-      if 1 == secondary[i] then
+      bindExp := BackendVariable.varBindExpStartValueNoFail(p);
+      crefs := Expression.getAllCrefs(bindExp);
+      if 1 == secondary[i] or not BaseHashSet.hasAll(crefs, hs) then
         otherVariables := BackendVariable.addVar(p, otherVariables);
         p := BackendVariable.setVarFixed(p, false);
         outInitVars := BackendVariable.addVar(p, outInitVars);
         outGlobalKnownVars := BackendVariable.addVar(p, outGlobalKnownVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
-        bindExp := BackendVariable.varBindExpStartValueNoFail(p);
         if (not Expression.isConst(bindExp)) or BackendVariable.isFinalOrProtectedVar(p) or BackendVariable.isExtObj(p) then
           outPrimaryParameters := p::outPrimaryParameters "this is used in SimCode to generate parameter equations";
         end if;
+        hs := BaseHashSet.add(BackendVariable.varCref(p), hs);
       end if;
     end for;
 
@@ -994,8 +999,8 @@ algorithm
 
     // external object with binding
     case (BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp)), (vars, eqns, otherVars)) equation
-    var = BackendVariable.setVarFixed(inVar, true);
-    vars = BackendVariable.addVar(var, vars);
+      var = BackendVariable.setVarFixed(inVar, true);
+      vars = BackendVariable.addVar(var, vars);
 
       cref = BackendVariable.varCref(inVar);
       crefExp = Expression.crefExp(cref);
@@ -2238,6 +2243,13 @@ algorithm
       vars = BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, hs, allPrimaryParameters));
 
+    // external objects
+    case (var as BackendDAE.VAR(varKind=BackendDAE.EXTOBJ()), (vars, fixvars, eqns, hs, allPrimaryParameters)) equation
+      //var = BackendVariable.setVarFixed(var, false);
+      //var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      vars = BackendVariable.addVar(var, vars);
+    then (var, (vars, fixvars, eqns, hs, allPrimaryParameters));
+
     // skip constant
     case (var as BackendDAE.VAR(varKind=BackendDAE.CONST()), _) // equation
       // fixvars = BackendVariable.addVar(var, fixvars);
@@ -2424,6 +2436,12 @@ algorithm
     // no binding
     case (var as BackendDAE.VAR(bindExp=NONE()), _) equation
     then (var, inTpl);
+
+    // external object with binding
+    case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varKind=BackendDAE.EXTOBJ(), source=source), (eqns, reeqns)) equation
+      eqn = BackendDAE.SOLVED_EQUATION(cr, bindExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqns = BackendEquation.addEquation(eqn, eqns);
+    then (var, (eqns, reeqns));
 
     // binding
     case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns)) equation
