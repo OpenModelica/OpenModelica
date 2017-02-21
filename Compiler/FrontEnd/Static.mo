@@ -612,7 +612,7 @@ algorithm
     (outCache, {tty}) := Lookup.lookupFunctionsInEnv(inCache, inEnv, path, inInfo);
     tty := Types.makeFunctionPolymorphicReference(tty);
     (outCache, args, consts, _, tty, _, slots) := elabTypes(outCache, inEnv, pos_args,
-      named_args, {tty}, true, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
+      named_args, {tty}, true, true, inImplicit,
       NONE(), inPrefix, inInfo);
     if not Types.isFunctionPointer(tty) then
       (outCache, path) := Inst.makeFullyQualified(outCache, inEnv, path);
@@ -5819,7 +5819,7 @@ algorithm
       slots := val_slot :: STRING_ARG_MINLENGTH :: STRING_ARG_LEFTJUSTIFIED :: slots;
 
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
-          slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
+          slots, false, true, inImplicit,
           NONE(), inPrefix, inInfo, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
     else
       // Try the String(val, format = s) format.
@@ -5842,7 +5842,7 @@ algorithm
       end if;
 
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
-          slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
+          slots, false, true, inImplicit,
           NONE(), inPrefix, inInfo, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
     end try;
 
@@ -6992,14 +6992,14 @@ algorithm
            Lookup.lookupClassIdent(cache, env, "GraphicalAnnotationsProgram____");
         (cache,cl as SCode.CLASS( restriction = SCode.R_RECORD(_)),env_1) = Lookup.lookupClass(cache, env, fn);
         (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache, env_1 /* env */, fn);
-        (_,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
+        (_,_::names) = SCode.getClassComponents(cl); // remove the first one as it is the result!
         /*
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1)
           = Lookup.lookupType(cache, env, fn, SOME(info));
         */
         fargs = List.map(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,_,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn,true);
+        (cache,_,newslots,_,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl, st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn,true);
         (cache,newslots2,_,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
         args_2 = slotListArgs(newslots2);
 
@@ -7020,7 +7020,7 @@ algorithm
 
 
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),st,pre,info,tp1,path);
+        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl,st,pre,info,tp1,path);
 
         (args_2, newslots2) = addDefaultArgs(newslots, info);
         vect_dims = slotsVectorizable(newslots2, info);
@@ -7110,7 +7110,7 @@ algorithm
       equation
         (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn, info);
         (cache,args_1,_,_,functype,_,_) =
-          elabTypes(cache, env, args, nargs, typelist, true, false/* Do not check types*/, impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info);
+          elabTypes(cache, env, args, nargs, typelist, true, false/* Do not check types*/,impl,st,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = Absyn.pathString(fn) + "(" + argStr + ")\nof type\n  " + Types.unparseType(functype);
@@ -7231,11 +7231,8 @@ protected
   FCore.Cache cache;
   Boolean didInline;
   Boolean b,onlyOneFunction,isFunctionPointer;
-  IsExternalObject isExternalObject;
 algorithm
   onlyOneFunction := listLength(typelist) == 1;
-  (cache,b) := isExternalObjectFunction(inCache,inEnv,fn);
-  isExternalObject := if b and not FGraph.inFunctionScope(inEnv) then IS_EXTERNAL_OBJECT_MODEL_SCOPE() else NOT_EXTERNAL_OBJECT_MODEL_SCOPE();
   (cache,
    args_1,
    constlist,
@@ -7246,7 +7243,7 @@ algorithm
                                                                          isFunctionPointer=isFunctionPointer,
                                                                          functionParallelism=funcParal)),
    vect_dims,
-   slots) := elabTypes(cache, inEnv, args, nargs, typelist, onlyOneFunction, true/* Check types*/, impl,isExternalObject,st,pre,info)
+   slots) := elabTypes(inCache, inEnv, args, nargs, typelist, onlyOneFunction, true/* Check types*/, impl, st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
 
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
@@ -7575,7 +7572,7 @@ algorithm
         fargs := list(Types.makeDefaultFuncArg(n, t) threaded for n in field_names, t in tys);
         slots := makeEmptySlots(fargs);
         (outCache, _, slots, const_lst, bindings) := elabInputArgs(inCache, inEnv, inPosArgs,
-          inNamedArgs, slots, true, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
+          inNamedArgs, slots, true, true, inImplicit,
           inST, inPrefix, inInfo, inType, inType.utPath);
         const := List.fold(const_lst, Types.constAnd, DAE.C_CONST());
         ty_const := elabConsts(inType, const);
@@ -8355,7 +8352,6 @@ protected function elabTypes
   input Boolean inOnlyOneFunction "if true, we can report errors as soon as possible";
   input Boolean inCheckTypes "if true, checks types";
   input Boolean inImplicit;
-  input IsExternalObject isExternalObject;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
@@ -8379,6 +8375,7 @@ protected
   DAE.Exp arg;
   Integer numArgs;
   DAE.FuncArg funcarg;
+  constant Boolean debug=false;
 algorithm
   if listLength(rest_tys)>1 then
     // Filter out some interesting candidates first; this makes us not
@@ -8396,12 +8393,14 @@ algorithm
 
     DAE.T_FUNCTION(funcArg = params, funcResultType = res_ty,
       functionAttributes = func_attr, path = path) := func_ty;
-
+    if debug then
+      print("elabTypes, try: " + Types.unparseType(func_ty) + "\n");
+    end if;
     try
       slots := makeEmptySlots(params);
       (outCache, outArgs, outSlots, outConsts, pb) := elabInputArgs(inCache, inEnv,
         inPosArgs, inNamedArgs, slots, inOnlyOneFunction, inCheckTypes, inImplicit,
-        isExternalObject, inST, inPrefix, inInfo, func_ty, path);
+        inST, inPrefix, inInfo, func_ty, path);
       pb := Types.solvePolymorphicBindings(pb, inInfo, path);
       res_ty := Types.fixPolymorphicRestype(res_ty, pb, inInfo);
       (outArgs, outSlots, params, res_ty) := match func_attr.isBuiltin
@@ -8425,6 +8424,9 @@ algorithm
       // Only created when not checking types for error msg.
       outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes);
       success := true;
+    if debug then
+      print("elabTypes success for " + Types.unparseType(func_ty) + ": "+Types.unparseType(outFunctionType)+"=>"+Types.unparseType(outResultType)+"\n");
+    end if;
     else
       // The type didn't match, try next function type.
     end try;
@@ -9139,7 +9141,6 @@ protected function elabInputArgs
   input Boolean inOnlyOneFunction;
   input Boolean inCheckTypes "if true, check types";
   input Boolean inImplicit;
-  input IsExternalObject isExternalObject;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
@@ -9166,13 +9167,13 @@ algorithm
     // Elaborate positional arguments.
     (outCache, outSlots, consts1, outPolymorphicBindings) :=
       elabPositionalInputArgs(outCache, inEnv, inPosArgs, fargs, outSlots,
-        inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
+        inOnlyOneFunction, inCheckTypes, inImplicit,
         outPolymorphicBindings, inST, inPrefix, inInfo, inPath, isGraphicsExp);
 
     // Elaborate named arguments.
     (outCache, outSlots, consts2, outPolymorphicBindings) :=
       elabNamedInputArgs(outCache, inEnv, inNamedArgs, fargs, outSlots,
-        inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
+        inOnlyOneFunction, inCheckTypes, inImplicit,
         outPolymorphicBindings, inST, inPrefix, inInfo, inPath, isGraphicsExp);
 
     outConsts := listAppend(consts1, consts2);
@@ -9345,71 +9346,6 @@ algorithm
   end match;
 end printSlotsStr;
 
-protected uniontype IsExternalObject
-  record IS_EXTERNAL_OBJECT_MODEL_SCOPE end IS_EXTERNAL_OBJECT_MODEL_SCOPE;
-  record NOT_EXTERNAL_OBJECT_MODEL_SCOPE end NOT_EXTERNAL_OBJECT_MODEL_SCOPE;
-end IsExternalObject;
-
-protected function elabExternalObjectInput
-  "External Object is constructed once before its first use and
-   before the initialization of bound parameters.
-   Keep free parameters and force evaluation of bound parameters.
-   Issue a warning if an input is not constant or parameter."
-  input IsExternalObject isExternalObject;
-  input DAE.Type ty;
-  input DAE.Const const;
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-algorithm
-  (outCache, outExp) := matchcontinue isExternalObject
-    local
-      String str;
-      Values.Value val;
-
-    case NOT_EXTERNAL_OBJECT_MODEL_SCOPE()
-      then (inCache,inExp);
-
-    // keep expressions of free parameters inExp
-    case _
-      guard
-        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
-      algorithm
-        (true, outCache) := isFreeParameterExp(inExp, inCache, inEnv);
-      then
-        (outCache, inExp);
-
-    // evaluate parameter inExp if we are unable to do better
-    case _
-      guard
-        Types.isParameterOrConstant(const) and not Expression.isConst(inExp)
-      algorithm
-        (outCache, val, _) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
-        outExp := ValuesUtil.valueExp(val);
-      then
-        (outCache, outExp);
-
-    // keep constant inExp
-    case _
-      guard
-        Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp)
-      then
-        (inCache, inExp);
-
-    // keep inExp and notify about possible problem
-    else
-      algorithm
-        str := ExpressionDump.printExpStr(inExp);
-        Error.addSourceMessage(Error.EVAL_EXTERNAL_OBJECT_CONSTRUCTOR, {str}, info);
-      then
-        (inCache, inExp);
-
-  end matchcontinue;
-end elabExternalObjectInput;
-
 protected function isFreeParameterExp
  "Checks if inExp is a an expression of free parameters."
   input DAE.Exp inExp;
@@ -9536,7 +9472,6 @@ protected function elabPositionalInputArgs
   input Boolean inOnlyOneFunction;
   input Boolean inCheckTypes "if true, check types";
   input Boolean inImplicit;
-  input IsExternalObject isExternalObject;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
@@ -9558,7 +9493,7 @@ algorithm
 
     (outCache, outSlots, c, outPolymorphicBindings) :=
       elabPositionalInputArg(outCache, inEnv, arg, farg, position, outSlots,
-          inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
+          inOnlyOneFunction, inCheckTypes, inImplicit,
           outPolymorphicBindings, inST, inPrefix, inInfo, inPath, isGraphicsExp);
 
     position := position + 1;
@@ -9581,7 +9516,6 @@ protected function elabPositionalInputArg
   input Boolean onlyOneFunction;
   input Boolean checkTypes "if true, check types";
   input Boolean impl;
-  input IsExternalObject isExternalObject;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
@@ -9596,7 +9530,7 @@ protected
   Integer numErrors = Error.getNumErrorMessages();
 algorithm
   (outCache,outSlotLst,outConst,outPolymorphicBindings):=
-  matchcontinue (inCache,inEnv,inExp,farg,position,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path,numErrors)
+  matchcontinue (inCache,inEnv,inExp,farg,position,inSlotLst,onlyOneFunction,checkTypes,impl,inPolymorphicBindings,st,inPrefix)
     local
       list<Slot> slots,slots_1,newslots;
       DAE.Exp e_1,e_2;
@@ -9618,7 +9552,7 @@ algorithm
       InstTypes.PolymorphicBindings polymorphicBindings;
       String s1,s2,s3,s4,s5;
 
-    case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct),par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct),par=pr), _, slots, _, true, _, polymorphicBindings,_,pre)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,st,info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info);
@@ -9626,45 +9560,42 @@ algorithm
         (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
     // exact match
-    case (cache, env, e, DAE.FUNCARG(name=id,ty=vt,par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty=vt,par=pr), _, slots, _, true, _, polymorphicBindings,_,pre)
       equation
         (cache,e_1,props,_) = elabExpInExpression(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
         vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
-        (cache,e_1) = elabExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info) "no vectorized dim" ;
       then
         (cache,slots_1,c1,polymorphicBindings);
 
     // check if vectorized argument
-    case (cache, env, e, DAE.FUNCARG(name=id,ty=vt,par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty=vt,par=pr), _, slots, _, true, _, polymorphicBindings,_,pre)
       equation
         (cache,e_1,props,_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
         vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
-        (cache,e_1) = elabExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
     // not checking types
-    case (cache, env, e, DAE.FUNCARG(name=id,par=pr), _, slots, _, false, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,par=pr), _, slots, _, false, _, polymorphicBindings,_,pre)
       equation
         (cache,e_1,props,_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
-        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         /* fill slot with actual type for error message*/
         slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
     // check types and display error
-    case (cache,env,e,DAE.FUNCARG(name=id,ty=vt),_,_, true /* 1 function */,true /* checkTypes */,_,_,_,_,pre,_,_,_)
+    case (cache,env,e,DAE.FUNCARG(name=id,ty=vt),_,_, true /* 1 function */,true /* checkTypes */,_,_,_,pre)
       equation
         true = Error.getNumErrorMessages() == numErrors;
         (cache,e_1,prop,_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
@@ -9694,7 +9625,6 @@ protected function elabNamedInputArgs
   input Boolean onlyOneFunction;
   input Boolean checkTypes "if true, check types";
   input Boolean impl;
-  input IsExternalObject isExternalObject;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
@@ -9707,7 +9637,7 @@ protected function elabNamedInputArgs
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
-  match (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path)
+  match (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,inPolymorphicBindings)
     local
       DAE.Exp e_1,e_2;
       DAE.Type t,vt;
@@ -9728,15 +9658,15 @@ algorithm
       InstTypes.PolymorphicBindings polymorphicBindings;
 
     // the empty case
-    case (cache,_,{},_,slots,_,_,_,_,_,_,_,_,_)
+    case (cache,_,{},_,slots,_)
       then (cache,slots,{},inPolymorphicBindings);
 
-    case (cache, env, na :: nas, farg, slots, _, _, _, _, polymorphicBindings, _, _, _, _)
+    case (cache, env, na :: nas, farg, slots, polymorphicBindings)
       equation
         (cache,slots,c1,polymorphicBindings) =
-        elabNamedInputArg(cache, env, na, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, inPrefix, info, path, Error.getNumErrorMessages(), isGraphicsExp);
+        elabNamedInputArg(cache, env, na, farg, slots, onlyOneFunction, checkTypes, impl, polymorphicBindings, st, inPrefix, info, path, Error.getNumErrorMessages(), isGraphicsExp);
         (cache,slots,clist,polymorphicBindings) =
-        elabNamedInputArgs(cache, env, nas, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, inPrefix, info, path, isGraphicsExp);
+        elabNamedInputArgs(cache, env, nas, farg, slots, onlyOneFunction, checkTypes, impl, polymorphicBindings, st, inPrefix, info, path, isGraphicsExp);
       then
         (cache,slots,c1::clist,polymorphicBindings);
 
@@ -9758,7 +9688,6 @@ protected function elabNamedInputArg
   input Boolean onlyOneFunction;
   input Boolean checkTypes "if true, check types";
   input Boolean impl;
-  input IsExternalObject isExternalObject;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
@@ -9772,7 +9701,7 @@ protected function elabNamedInputArg
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
-  matchcontinue (inCache,inEnv,inNamedArg,inTypesFuncArgLst,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path,numErrors)
+  matchcontinue (inCache,inEnv,inNamedArg,inTypesFuncArgLst,inSlotLst,onlyOneFunction,checkTypes,impl,inPolymorphicBindings,st,inPrefix)
     local
       DAE.Exp e_1,e_2;
       DAE.Type t,vt;
@@ -9793,7 +9722,7 @@ algorithm
       DAE.Properties prop;
       String s1,s2,s3,s4;
 
-    case (cache, env, Absyn.NAMEDARG(argName = id,argValue = e), farg, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, Absyn.NAMEDARG(argName = id,argValue = e), farg, slots, _, true, _, polymorphicBindings,_,pre)
       equation
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
@@ -9802,38 +9731,35 @@ algorithm
       then (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
     // check types exact match
-    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,true,_,_,polymorphicBindings,_,pre,_,_,_)
+    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,true,_,polymorphicBindings,_,pre)
       equation
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
-        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // check types vectorized argument
-    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,true,_,_,polymorphicBindings,_,pre,_,_,_)
+    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,true,_,polymorphicBindings,_,pre)
       equation
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
-        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // do not check types
-    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,false,_,_,polymorphicBindings,_,pre,_,_,_)
+    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,slots,_,false,_,polymorphicBindings,_,pre)
       equation
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
-        (cache,e_1) = elabExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
-    case (cache, _, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, _, polymorphicBindings,_,_,_,_,_)
+    case (cache, _, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, polymorphicBindings,_,_)
       equation
         failure(_ = findNamedArgType(id, farg));
         s1 = Absyn.pathStringNoQual(path);
@@ -9842,7 +9768,7 @@ algorithm
       then (cache,slots,DAE.C_CONST(),polymorphicBindings);
 
     // failure
-    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,_,true /* 1 function */,true /* checkTypes */,_,_,_,_,pre,_,_,_)
+    case (cache,env,Absyn.NAMEDARG(argName = id,argValue = e),farg,_,true /* 1 function */,true /* checkTypes */,_,_,_,pre)
       equation
         true = Error.getNumErrorMessages() == numErrors;
         vt = findNamedArgType(id, farg);
