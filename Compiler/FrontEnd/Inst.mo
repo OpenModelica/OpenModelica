@@ -2071,8 +2071,9 @@ algorithm
 
         (compelts_1, eqs_1, initeqs_1, alg_1, initalg_1) =
           InstUtil.extractConstantPlusDepsTpl(compelts_1, instSingleCref, {}, className, eqs_1, initeqs_1, alg_1, initalg_1);
-
-        compelts_1 = InstUtil.addGhostCells(compelts_1, eqs_1);
+        if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
+          compelts_1 = InstUtil.addGhostCells(compelts_1, eqs_1);
+        end if;
 
         //(csets, env2, ih) = InstUtil.addConnectionCrefsFromEqs(csets, eqs_1, pre, env2, ih);
 
@@ -3115,7 +3116,7 @@ public function instElement2
   output ClassInf.State outState = inState;
   output list<DAE.Var> outVars = {};
   output ConnectionGraph.ConnectionGraph outGraph = inGraph;
-  output InstUtil.DomainFieldOpt outFieldDomOpt;
+  output InstUtil.DomainFieldOpt outFieldDomOpt = NONE();
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
