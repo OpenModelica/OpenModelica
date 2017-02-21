@@ -3526,7 +3526,7 @@ algorithm
   outDAE:=
   match (b, inDAE)
     local
-      BackendDAE.Variables globalKnownVars;
+      BackendDAE.Variables globalKnownVars, externalObjects;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray inieqns;
       list<DAE.Constraint> constraintsLst;
@@ -3539,8 +3539,8 @@ algorithm
       BackendDAE.Shared shared;
 
     case (false, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( globalKnownVars=globalKnownVars, aliasVars=aliasVars,
-                                                                   constraints=constraintsLst, classAttrs=clsAttrsLst )))
+    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, externalObjects=externalObjects, aliasVars=aliasVars,
+                                                                  constraints=constraintsLst, classAttrs=clsAttrsLst)))
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
           BackendVarTransform.dumpReplacements(repl);
@@ -3553,6 +3553,7 @@ algorithm
         shared.aliasVars = aliasVars;
 
         (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars, replaceVarTraverser, repl);
+        (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(externalObjects, replaceVarTraverser, repl);
 
         ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(shared.initialEqs, replaceEquationTraverser, (repl, {}, false));
         shared.initialEqs = if b1 then BackendEquation.listEquation(eqnslst) else shared.initialEqs;
