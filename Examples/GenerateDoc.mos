@@ -517,7 +517,7 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . -name '*.html' -print0 | tar cJf ModelicaDocumentation.tar.xz --dereference --null style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+cmd := "find . -maxdepth 1 -name '*.html' -print0 | tar cJf ModelicaDocumentation.tar.xz --dereference --null style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
 
@@ -530,6 +530,6 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
