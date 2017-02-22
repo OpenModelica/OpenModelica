@@ -35,6 +35,7 @@ end B;
 // Result:
 // class B
 //   Real m1_a.x;
+//   Real m1_a.y;
 //   Real m2_a.x;
 //   Real m2_a.y;
 //   Real m1_b.x;
