@@ -225,7 +225,7 @@ NotebookWindow::NotebookWindow(Document *subject,
   * 2006-01-05 AF, added code so all inputcells are added to the
   * removelist in the highlighter
   * 2006-01-27 AF, remove this notebook window from the list of
-  * notebook windows in the main applicaiton
+  * notebook windows in the main application
   * 2006-08-24 AF, delete replace action
   */
 NotebookWindow::~NotebookWindow()
@@ -2153,12 +2153,17 @@ void NotebookWindow::updateWindowMenu()
   // add new menu items
   vector<DocumentView *> windowViews = application()->documentViewList();
   vector<DocumentView *>::iterator v_iter = windowViews.begin();
+  int k = 1;
   while( v_iter != windowViews.end() )
   {
     QString title = (*v_iter)->windowTitle();
     title.remove( "OMNotebook: " );
 
     QAction *action = new QAction( title, windowMenu );
+    if (k < 10 ) {
+      action->setShortcut( QKeySequence::fromString("Ctrl+"+QString::number(k)) );
+      k++;
+    }
     windows_[action] = (*v_iter);
     windowMenu->addAction( action );
     ++v_iter;
@@ -2502,7 +2507,7 @@ void NotebookWindow::closeFile()
   * \date 2006-01-19
   *
   * \brief Reimplemented closeEvent so all close event are handled
-  * correctly. If the document is unsaved, the applicaiton will ask
+  * correctly. If the document is unsaved, the application will ask
   * the user if he/she wants to save before closing the document.
   */
 void NotebookWindow::closeEvent( QCloseEvent *event )

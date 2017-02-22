@@ -186,7 +186,7 @@ namespace IAEX
     delete factory_;
 
     // 2006-01-16 AF (update), remove all images in memory and add
-    // the temporary images to removelist in the main applicaiton
+    // the temporary images to removelist in the main application
     QHash<QString, QImage*>::iterator i_iter = images_.begin();
     while( i_iter != images_.end() )
     {

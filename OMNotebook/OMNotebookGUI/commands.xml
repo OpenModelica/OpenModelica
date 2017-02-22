@@ -7,7 +7,7 @@
 
 <!--	HINT: Every field specified by $ followed by an integer, 	-->
 <!--	for example $1,	can be selected in the program to make 		-->
-<!--	editing easier for the user.The field name must start with	-->
+<!--	editing easier for the user. The field name must start with	-->
 <!--	the integer 0, followed by 1, and the next 2... and so on.	-->
 <!--	The fields will be selected in the same order as the field	-->
 <!-- 	names, starting with 0.						-->
@@ -46,6 +46,10 @@
 	<command name="loadFile($0)">
 		<field name="$0">strFile</field>
 		<helptext>Load modelica file given as string argument. Ex: loadFile("../myLibrary/myModels.mo").</helptext>
+	</command>
+	<command name="loadFiles({$0})">
+		<field name="$0">strFiles</field>
+		<helptext>Load modelica files given as string arrray. Ex: loadFile({"modelA.mo", "modelB.mo").</helptext>
 	</command>
 	<command name="loadModel($0)">
 		<field name="$0">name</field>
@@ -96,7 +100,7 @@
 		<field name="$1">0</field>
 		<field name="$2">1</field>
 		<field name="$3">500</field>
-		<field name="$4">1e-4</field>
+		<field name="$4">1e-6</field>
     <field name="$5">"dassl"</field>
     <field name="$6">"mat"</field>
 		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
@@ -106,11 +110,11 @@
 		<field name="$1">0</field>
 		<field name="$2">1</field>
 		<field name="$3">500</field>
-		<field name="$4">1e-4</field>
+		<field name="$4">1e-6</field>
 		<field name="$5">false</field>
     <field name="$6">"dassl"</field>
     <field name="$7">"mat"</field>
-		<helptext>Translates a model and simulates it. Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
+		<helptext>Translates a model and build it. It does not run the code! Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="system($0)">
 		<field name="$0">str</field>
@@ -123,6 +127,11 @@
 	<command name="typeOf($0)">
 		<field name="$0">variable</field>
 		<helptext>Returns the type of the variable as a string. Ex: typeOf(R1.v).</helptext>
+	</command>
+	<command name="val($0, timePoint=$1)">
+		<field name="$0">variable</field>
+		<field name="$1">0.0</field>
+		<helptext>Returns the value of the variable at given point in time as a string. Ex: val(R1.v, 10.0).</helptext>
 	</command>
 	<command name="quit()">
 		<helptext>Leave OpenModelica and kill the process.</helptext>

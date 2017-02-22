@@ -142,7 +142,7 @@ namespace IAEX
     mainWindow = new QMainWindow();
     QDir dir;
 
-    // when last window closed, the applicaiton should quit also
+    // when last window closed, the application should quit also
     QObject::connect(app_, SIGNAL(lastWindowClosed()), app_, SLOT(quit()));
 
     //Create a commandCenter.
@@ -400,7 +400,7 @@ namespace IAEX
    * \author Ingemar Axelsson and Anders Fernström
    * \date 2006-05-03 (update)
    *
-   * \brief Open an file, and display the content of hte file
+   * \brief Open an file, and display the content of the file
    *
    * 2005-09-22 AF, added the filename to the NotebookWindow() call
    * 2005-10-11 AF, Porting, added resize call, so all cells get the
@@ -446,6 +446,14 @@ namespace IAEX
       v->raise();  // for MacOS
       v->activateWindow(); // for Windows
 
+      vector<DocumentView *> windowViews = documentViewList();
+      vector<DocumentView *>::iterator v_iter = windowViews.begin();
+      while( v_iter != windowViews.end() )
+      {
+        ((NotebookWindow *)*v_iter)->updateWindowMenu();
+        ++v_iter;
+      }
+
       QDesktopWidget dw;
       v->move(0, 0);
       v->resize(dw.geometry().width(),dw.geometry().height());
@@ -466,7 +474,7 @@ namespace IAEX
   * \date 2006-01-16
   *
   * \brief Add filename to a list of temporary files that should
-  * be deleted when the applicaiton quits.
+  * be deleted when the application quits.
   */
   void CellApplication::removeTempFiles(QString filename)
   {
@@ -477,7 +485,7 @@ namespace IAEX
   * \author Anders Fernström
   * \date 2006-01-27
   *
-  * \brief returns list of all current doucment views
+  * \brief returns list of all current document views
   */
   vector<DocumentView *> CellApplication::documentViewList()
   {
@@ -515,6 +523,12 @@ namespace IAEX
       }
       else
         ++dv_iter;
+    }
+    dv_iter = views_.begin();
+    while( dv_iter != views_.end() )
+    {
+      ((NotebookWindow *)*dv_iter)->updateWindowMenu();
+      ++dv_iter;
     }
   }
 
