@@ -24,7 +24,7 @@ FMIINCLUDE = ../../3rdParty/FMIL/install/include
 GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CJSONINCLUDE = ../../3rdParty/cJSON/
-OMBUILDDIR = ../../build
+OMBUILDDIR = ../../../build
 LPSOLVEINCLUDE = ../../3rdParty/lpsolve/build/include/
 SQLITE3INCLUDE = ../../3rdParty/sqlite3/build/include/
 OMC=$(OMBUILDDIR)/bin/omc
@@ -46,7 +46,7 @@ OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 SHELL	= /bin/sh
 CC	= gcc
 CXX = g++
-override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I../ $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(LPSOLVEINCLUDE) -I$(SQLITE3INCLUDE)
+override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(LPSOLVEINCLUDE) -I$(SQLITE3INCLUDE)
 CXXFLAGS = $(CFLAGS)
 
 include Makefile.common
