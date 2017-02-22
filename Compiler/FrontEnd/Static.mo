@@ -9763,7 +9763,7 @@ algorithm
       equation
         failure(_ = findNamedArgType(id, farg));
         s1 = Absyn.pathStringNoQual(path);
-        Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {s1,id}, info);
+        Error.addSourceMessage(Error.NO_SUCH_PARAMETER, {s1,id}, info);
         true = isGraphicsExp;
       then (cache,slots,DAE.C_CONST(),polymorphicBindings);
 
@@ -9859,7 +9859,7 @@ algorithm
       // Fail if the slot is already filled.
       if filled then
         pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_ALLREADY_FILLED,
+        Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_ALREADY_FILLED,
           {fa2, pre_str}, inInfo);
       end if;
 
@@ -9880,7 +9880,7 @@ algorithm
     outSlotLst := slot :: outSlotLst;
   end while;
 
-  Error.addSourceMessageAndFail(Error.NO_SUCH_ARGUMENT, {"", fa1}, inInfo);
+  Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER, {"", fa1}, inInfo);
 end fillSlot;
 
 public function elabCref "

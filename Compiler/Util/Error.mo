@@ -284,10 +284,10 @@ public constant Message NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = MESSAGE(77, TR
   Util.gettext("No matching function found for %s."));
 public constant Message FUNCTION_COMPS_MUST_HAVE_DIRECTION = MESSAGE(78, TRANSLATION(), ERROR(),
   Util.gettext("Component %s in function is neither input nor output."));
-public constant Message FUNCTION_SLOT_ALLREADY_FILLED = MESSAGE(79, TRANSLATION(), ERROR(),
+public constant Message FUNCTION_SLOT_ALREADY_FILLED = MESSAGE(79, TRANSLATION(), ERROR(),
   Util.gettext("Slot %s already filled in a function call in component %s."));
-public constant Message NO_SUCH_ARGUMENT = MESSAGE(80, TRANSLATION(), ERROR(),
-  Util.gettext("Function %s has no argument named %s."));
+public constant Message NO_SUCH_PARAMETER = MESSAGE(80, TRANSLATION(), ERROR(),
+  Util.gettext("Function %s has no parameter named %s."));
 public constant Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = MESSAGE(81, TRANSLATION(), ERROR(),
   Util.gettext("%s is a constant or parameter with a non-constant initializer %s."));
 public constant Message WRONG_DIMENSION_TYPE = MESSAGE(82, TRANSLATION(), ERROR(),
@@ -531,7 +531,7 @@ public constant Message NON_FORMAL_PUBLIC_FUNCTION_VAR = MESSAGE(201, TRANSLATIO
 public constant Message PROTECTED_FORMAL_FUNCTION_VAR = MESSAGE(202, TRANSLATION(), ERROR(),
   Util.gettext("Invalid protected variable %s, function variables that are input/output must be public."));
 public constant Message UNFILLED_SLOT = MESSAGE(203, TRANSLATION(), ERROR(),
-  Util.gettext("Function argument %s was not given by the function call, and does not have a default value."));
+  Util.gettext("Function parameter %s was not given by the function call, and does not have a default value."));
 public constant Message SAME_CONNECT_INSTANCE = MESSAGE(204, TRANSLATION(), WARNING(),
   Util.gettext("connect(%s, %s) connects the same connector instance! The connect equation will be ignored."));
 public constant Message STACK_OVERFLOW = MESSAGE(205, SCRIPTING(), ERROR(),
