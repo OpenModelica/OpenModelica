@@ -57,6 +57,7 @@ void MetaModelicaEditor::setPlainText(const QString &text)
     mForceSetPlainText = true;
     mpPlainTextEdit->setPlainText(text);
     mForceSetPlainText = false;
+    foldAll();
   }
 }
 
@@ -70,6 +71,9 @@ void MetaModelicaEditor::showContextMenu(QPoint point)
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpFoldAllAction);
+  pMenu->addAction(mpUnFoldAllAction);
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }
@@ -244,21 +248,31 @@ void MetaModelicaHighlighter::initializeSettings()
   }
 }
 
-//! Highlights the multilines text.
-//! Quoted text or multiline comments.
+/*!
+ * \brief MetaModelicaHighlighter::highlightMultiLine
+ * Highlights the multilines text.
+ * Quoted text or multiline comments.
+ * \param text
+ */
 void MetaModelicaHighlighter::highlightMultiLine(const QString &text)
 {
   /* Hand-written recognizer beats the crap known as QRegEx ;) */
   int index = 0, startIndex = 0;
   int blockState = previousBlockState();
-//  bool foldingState = false;
-//  QTextBlock previousTextBlck = currentBlock().previous();
-//  TextBlockUserData *pPreviousTextBlockUserData = BaseEditorDocumentLayout::userData(previousTextBlck);
-//  if (pPreviousTextBlockUserData) {
-//    foldingState = pPreviousTextBlockUserData->foldingState();
-//  }
-//  QRegExp annotationRegExp("\\bannotation\\b");
-//  int annotationIndex = annotationRegExp.indexIn(text);
+  int foldingIndent = 0;
+  bool foldingEndState = false;
+  bool foldingEnd = false;
+  bool previousFoldingEnd = false;
+  int foldingStartIndex = -1;
+  int previousFoldingStartIndex = -1;
+  QTextBlock previousTextBlck = currentBlock().previous();
+  TextBlockUserData *pPreviousTextBlockUserData = BaseEditorDocumentLayout::userData(previousTextBlck);
+  if (pPreviousTextBlockUserData) {
+    foldingIndent = pPreviousTextBlockUserData->foldingIndent();
+    foldingEndState = pPreviousTextBlockUserData->foldingEndState();
+    previousFoldingEnd = pPreviousTextBlockUserData->foldingEnd();
+    previousFoldingStartIndex = pPreviousTextBlockUserData->foldingStartIndex();
+  }
   // store parentheses info
   Parentheses parentheses;
   TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(currentBlock());
@@ -267,8 +281,7 @@ void MetaModelicaHighlighter::highlightMultiLine(const QString &text)
     pTextBlockUserData->setFoldingIndent(0);
     pTextBlockUserData->setFoldingEndIncluded(false);
   }
-  while (index < text.length())
-  {
+  while (index < text.length()) {
     switch (blockState) {
       /* if the block already has single line comment then don't check for multi line comment and quotes. */
       case 1:
@@ -314,57 +327,88 @@ void MetaModelicaHighlighter::highlightMultiLine(const QString &text)
         parentheses.append(Parenthesis(Parenthesis::Closed, text[index], index));
       }
     }
-//    if (foldingState) {
-//      // if no single line comment, no multi line comment and no quotes then check for annotation end
-//      if (blockState < 1 || blockState > 3) {
-//        if (text[index] == ';') {
-//          if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
-//            if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
-//              pTextBlockUserData->setFoldingIndent(1);
-//            }
-//            pTextBlockUserData->setFoldingEndIncluded(true);
-//          } else {
-//            pTextBlockUserData->setFoldingIndent(0);
-//          }
-//          foldingState = false;
-//        } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
-//          pTextBlockUserData->setFoldingIndent(1);
-//        }
-//      } else if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
-//        pTextBlockUserData->setFoldingIndent(1);
-//      } else if (startIndex < annotationIndex) {  // if we have annotation word before quote or comment block is starting then fold.
-//        pTextBlockUserData->setFoldingIndent(1);
-//      }
-//    } else {
-//      // if no single line comment, no multi line comment and no quotes then check for annotation start
-//      if (blockState < 1 || blockState > 3) {
-//        if (text[index] == 'a' && index+9<text.length() && text[index+1] == 'n' && text[index+2] == 'n' && text[index+3] == 'o'
-//            && text[index+4] == 't' && text[index+5] == 'a' && text[index+6] == 't' && text[index+7] == 'i' && text[index+8] == 'o'
-//            && text[index+9] == 'n') {
-//          if (index+9 == text.length() - 1) { // if we just have annotation keyword in the line
-//            index = index + 8;
-//            foldingState = true;
-//          } else if (index+10<text.length() && (text[index+10] == '(' || text[index+10] == ' ')) { // if annotation keyword is followed by '(' or space.
-//            index = index + 9;
-//            foldingState = true;
-//          }
-//        }
-//      }
-//    }
+    if (pTextBlockUserData) {
+      // if no single line comment, no multi line comment and no quotes then check for block start and end
+      if (blockState < 1 || blockState > 3) {
+        if (!foldingEndState) {
+          if (Utilities::containsWord(text, index, "function")) {
+            foldingStartIndex = index;
+            index = index + QString("function").length();
+          } else if (Utilities::containsWord(text, index, "package")) {
+            foldingStartIndex = index;
+            index = index + QString("package").length();
+          } else if (Utilities::containsWord(text, index, "record")) {
+            foldingStartIndex = index;
+            index = index + QString("record").length();
+          } else if (Utilities::containsWord(text, index, "uniontype")) {
+            foldingStartIndex = index;
+            index = index + QString("uniontype").length();
+          } else if (Utilities::containsWord(text, index, "match", true)) {
+            foldingStartIndex = index;
+            index = index + QString("match").length();
+          } else if (Utilities::containsWord(text, index, "matchcontinue", true)) {
+            foldingStartIndex = index;
+            index = index + QString("matchcontinue").length();
+          } else if (Utilities::containsWord(text, index, "for")) {
+            foldingStartIndex = index;
+            index = index + QString("for").length();
+          } else if (Utilities::containsWord(text, index, "while")) {
+            foldingStartIndex = index;
+            index = index + QString("while").length();
+          } else if (Utilities::containsWord(text, index, "if")) {
+            foldingStartIndex = index;
+            index = index + QString("if").length();
+          } else if (Utilities::containsWord(text, index, "try")) {
+            foldingStartIndex = index;
+            index = index + QString("try").length();
+          }
+        }
+        if (Utilities::containsWord(text, index, "end")) {
+          index = index + QString("end").length();
+          foldingEndState = true;
+        }
+        if ((foldingEndState || foldingStartIndex > -1) && text[index] == ';') {
+          foldingEndState = false;
+          foldingEnd = true;
+        }
+      }
+    }
     index++;
   }
   if (pTextBlockUserData) {
     pTextBlockUserData->setParentheses(parentheses);
-//    if (foldingState) {
-//      pTextBlockUserData->setFoldingState(true);
-//      // Hanldle empty blocks inside annotaiton section
-//      if (text.isEmpty() && foldingState) {
-//        pTextBlockUserData->setFoldingIndent(1);
-//      }
-//    }
+    pTextBlockUserData->setFoldingEndState(foldingEndState);
+    pTextBlockUserData->setFoldingEnd(foldingEnd);
+    pTextBlockUserData->setFoldingStartIndex(foldingStartIndex);
+    if (previousFoldingStartIndex < 0) {
+      pTextBlockUserData->setFoldingIndent(previousFoldingEnd ? foldingIndent - 1 : foldingIndent);
+    } else {
+      pTextBlockUserData->setFoldingIndent(previousFoldingEnd ? foldingIndent : foldingIndent + 1);
+    }
     // set text block user data
     setCurrentBlockUserData(pTextBlockUserData);
+//    qDebug() << text << pTextBlockUserData->foldingIndent() << pTextBlockUserData->foldingEnd() << pTextBlockUserData->foldingStartIndex();
   }
+
+//  int currentState = currentBlockState();
+//  if (currentState != -1) {
+//    QTextBlock block = currentBlock();
+//    QTextBlock nextBlock = block.next();
+//    while (nextBlock.isValid()) {
+//      TextBlockUserData *pCurrentTextBlockUserData = BaseEditorDocumentLayout::userData(block);
+//      TextBlockUserData *pNextTextBlockUserData = BaseEditorDocumentLayout::userData(nextBlock);
+
+//      if (pCurrentTextBlockUserData->foldingStartIndex() < 0) {
+//        pNextTextBlockUserData->setFoldingIndent(foldingIndent);
+//      } else {
+//        pNextTextBlockUserData->setFoldingIndent(foldingIndent + 1);
+//      }
+//      qDebug() << pCurrentTextBlockUserData->foldingStartIndex() << pNextTextBlockUserData->foldingIndent();
+//      block = nextBlock;
+//      nextBlock = block.next();
+//    }
+//  }
+
   switch (blockState) {
     case 2:
       setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);

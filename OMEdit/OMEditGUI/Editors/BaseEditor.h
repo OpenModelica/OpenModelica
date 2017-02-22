@@ -102,6 +102,9 @@ public:
     , mFolded(false)
     , mFoldingEndIncluded(false)
     , mFoldingState(false)
+    , mFoldingEndState(false)
+    , mFoldingEnd(false)
+    , mFoldingStartIndex(-1)
     , mLeadingSpaces(-1)
   {}
   ~TextBlockUserData();
@@ -143,6 +146,12 @@ public:
   inline bool foldingEndIncluded() const {return mFoldingEndIncluded;}
   inline void setFoldingState(bool foldingState) {mFoldingState = foldingState;}
   inline bool foldingState() const {return mFoldingState;}
+  inline void setFoldingEndState(bool foldingEndState) {mFoldingEndState = foldingEndState;}
+  inline bool foldingEndState() const {return mFoldingEndState;}
+  inline void setFoldingEnd(bool foldingEnd) {mFoldingEnd = foldingEnd;}
+  inline bool foldingEnd() const {return mFoldingEnd;}
+  inline void setFoldingStartIndex(int foldingStartIndex) {mFoldingStartIndex = foldingStartIndex;}
+  inline int foldingStartIndex() const {return mFoldingStartIndex;}
 
   inline void setLeadingSpaces(int leadingSpaces) {mLeadingSpaces = leadingSpaces;}
   inline int getLeadingSpaces() {return mLeadingSpaces;}
@@ -153,6 +162,9 @@ private:
   bool mFolded;
   bool mFoldingEndIncluded;
   bool mFoldingState;
+  bool mFoldingEndState;
+  bool mFoldingEnd;
+  int mFoldingStartIndex;
   int mLeadingSpaces;
 };
 

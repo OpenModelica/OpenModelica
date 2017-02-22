@@ -802,7 +802,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       TextBlockUserData *nextBlockUserData = BaseEditorDocumentLayout::testUserData(nextBlock);
       bool drawFoldingControl = nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) < nextBlockUserData->foldingIndent();
       bool drawLine = BaseEditorDocumentLayout::foldingIndent(block) > 0;
-      bool drawEnd = drawLine && nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) > nextBlockUserData->foldingIndent();
+      bool drawEnd = drawLine && (!nextBlockUserData || (nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) > nextBlockUserData->foldingIndent()));
       int boxWidth = foldBoxWidth(fm);
       int size = boxWidth / 4;
       QRect foldingMarkerBox(lineNumbersWidth + size, top + size, 2 * (size) + 1, 2 * (size) + 1);

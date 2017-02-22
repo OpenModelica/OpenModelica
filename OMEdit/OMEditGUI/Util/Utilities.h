@@ -469,6 +469,8 @@ namespace Utilities {
     QIcon icon(const QFileInfo &info);
   } // namespace FileIconProvider
 
+  bool containsWord(QString text, int index, QString keyword, bool checkParenthesis = false);
+
 } // namespace Utilities
 
 #endif // UTILITIES_H

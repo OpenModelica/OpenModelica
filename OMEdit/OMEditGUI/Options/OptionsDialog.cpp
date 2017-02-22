@@ -2468,12 +2468,13 @@ MetaModelicaEditorPage::MetaModelicaEditorPage(OptionsDialog *pOptionsDialog)
   previewText.append("function HelloWorld /* block\n"
                      "comment */\n"
                      "\tinput Integer request; // Line comment\n"
-                     "\toutput String str;"
+                     "\toutput String str;\n"
                      "algorithm\n"
                      "\tstr := match (request)\n"
                      "\t\tcase (1) then \"Hi\";\n"
                      "\t\tcase (2) then \"Hey\";\n"
                      "\t\tcase (3) then \"Hello\";\n"
+                     "\tend match;\n"
                      "end HelloWorld;\n");
   mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
   // highlight preview textbox

@@ -468,7 +468,6 @@ void ModelicaHighlighter::initializeSettings()
  * Highlights the multilines text.
  * Quoted text or multiline comments.
  * \param text
- * \param text
  */
 void ModelicaHighlighter::highlightMultiLine(const QString &text)
 {

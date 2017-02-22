@@ -871,3 +871,18 @@ QIcon Utilities::FileIconProvider::icon(const QFileInfo &info)
 {
   return instance()->icon(info);
 }
+
+bool Utilities::containsWord(QString text, int index, QString keyword, bool checkParenthesis)
+{
+  if (index + keyword.length() > text.length()) {
+    return false;
+  }
+  QString textToMatch = text.mid(index, keyword.length());
+  QRegExp keywordRegExp("\\b" + keyword + "\\b");
+  if (keywordRegExp.indexIn(textToMatch) != -1 && (index + keyword.length() == text.length() ||
+                                                   text[index + keyword.length()].isSpace() ||
+                                                   (checkParenthesis && text[index + keyword.length()] == '('))) {
+    return true;
+  }
+  return false;
+}
