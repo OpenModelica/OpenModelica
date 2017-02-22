@@ -10,7 +10,7 @@ getErrorString();
 // Result:
 // true
 // 
-// "[flattening/modelica/mosfiles/ErrorFunctionCallNumArgs.mo:12:3-12:12:writable] Error: Function argument i was not given by the function call, and does not have a default value.
+// "[flattening/modelica/mosfiles/ErrorFunctionCallNumArgs.mo:12:3-12:12:writable] Error: Function parameter i was not given by the function call, and does not have a default value.
 // "
 // "1"
 // ""
