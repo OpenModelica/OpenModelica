@@ -1,6 +1,7 @@
 // name: PropagateExtends.mo
 // keywords:
 // status: correct
+// cflags:   -d=newInst
 //
 
 model A
@@ -31,8 +32,8 @@ end F;
 
 // Result:
 // class F
-//   Real e.x(unit = "kg", start = 1.0);
-//   Real e.y(start = 1.0);
+//   Real e.x(unit = "kg", start = 1);
+//   Real e.y(start = 1);
 //   Real d.x(unit = "kg");
 //   Real d.y;
 // end F;
