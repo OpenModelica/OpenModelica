@@ -67,6 +67,7 @@ mod9.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 ParameterBug.mos \
+PropagateExtends.mo \
 redeclare11.mo \
 redeclare12.mo \
 redeclare13.mo \
