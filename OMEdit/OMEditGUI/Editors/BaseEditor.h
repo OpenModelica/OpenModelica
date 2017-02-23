@@ -234,6 +234,7 @@ private:
     void resetZoom();
     void zoomIn();
     void zoomOut();
+    void handleHomeKey(bool keepAnchor);
   private:
     BaseEditor *mpBaseEditor;
     LineNumberArea *mpLineNumberArea;

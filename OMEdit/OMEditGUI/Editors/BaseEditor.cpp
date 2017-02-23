@@ -1161,6 +1161,38 @@ void BaseEditor::PlainTextEdit::zoomOut()
 }
 
 /*!
+ * \brief BaseEditor::PlainTextEdit::handleHomeKey
+ * Handles the home key.\n
+ * Moves the cursor to the start of the line.\n
+ * Skips the trailing spaces.
+ * \param keepAnchor
+ */
+void BaseEditor::PlainTextEdit::handleHomeKey(bool keepAnchor)
+{
+  QTextCursor cursor = textCursor();
+  QTextCursor::MoveMode mode = keepAnchor ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor;
+  const int initpos = cursor.position();
+  int pos = cursor.block().position();
+  QChar character = document()->characterAt(pos);
+  const QLatin1Char tab = QLatin1Char('\t');
+  // loop until we have some character
+  while (character == tab || character.category() == QChar::Separator_Space) {
+    ++pos;
+    if (pos == initpos) {
+      break;
+    }
+    character = document()->characterAt(pos);
+  }
+  // Go to the start of the block when we're already at the start of the text
+  if (pos == initpos) {
+    pos = cursor.block().position();
+  }
+  // set the cursor position
+  cursor.setPosition(pos, mode);
+  setTextCursor(cursor);
+}
+
+/*!
  * \brief BaseEditor::PlainTextEdit::highlightCurrentLine
  * Hightlights the current line.
  */
@@ -1236,12 +1268,14 @@ void BaseEditor::PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
 }
 
 /*!
- * \brief BaseEditor::keyPressEvent
+ * \brief BaseEditor::PlainTextEdit::keyPressEvent
  * Reimplementation of keyPressEvent.
  * \param pEvent
  */
 void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
+  bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
+  bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
   if (pEvent->key() == Qt::Key_Escape) {
     if (mpBaseEditor->getFindReplaceWidget()->isVisible()) {
       mpBaseEditor->getFindReplaceWidget()->close();
@@ -1252,31 +1286,25 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     // tab or backtab is pressed.
     indentOrUnindent(pEvent->key() == Qt::Key_Tab);
     return;
-  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_F) {
+  } else if (controlModifier && pEvent->key() == Qt::Key_F) {
     // ctrl+f is pressed.
     mpBaseEditor->showFindReplaceWidget();
     return;
-  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_L) {
+  } else if (controlModifier && pEvent->key() == Qt::Key_L) {
     // ctrl+l is pressed.
     mpBaseEditor->showGotoLineNumberDialog();
     return;
-  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K) {
+  } else if (controlModifier && pEvent->key() == Qt::Key_K) {
     // ctrl+k is pressed.
     mpBaseEditor->toggleCommentSelection();
     return;
-//  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_Plus) {
-//    // ctrl++ is pressed.
-//    zoomIn();
-//    return;
-//  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_Underscore) {
-//    // ctrl+- is pressed.
-//    zoomOut();
-//    return;
-//  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_0) {
-//    // ctrl+0 is pressed.
-//    resetZoom();
-//    return;
-  } else if (pEvent->modifiers().testFlag(Qt::ShiftModifier) && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
+  } else if (shiftModifier && pEvent->key() == Qt::Key_Home) {
+    handleHomeKey(true);
+    return;
+  } else if (pEvent->key() == Qt::Key_Home) {
+    handleHomeKey(false);
+    return;
+  } else if (shiftModifier && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
     /* Ticket #2273. Change shift+enter to enter. */
     pEvent->setModifiers(Qt::NoModifier);
   }
