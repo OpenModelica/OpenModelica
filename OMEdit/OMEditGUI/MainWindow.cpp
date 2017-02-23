@@ -2339,6 +2339,7 @@ void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::enableReSimulationToolbar(bool visible)
 {
+  mpReSimulationToolBar->setVisible(visible);
   if (visible) {
     mpReSimulationToolBar->setEnabled(!mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   } else {
@@ -3331,7 +3332,6 @@ void MainWindow::switchToWelcomePerspective()
   mpModelSwitcherToolBar->setVisible(false);
   mpCheckToolBar->setVisible(false);
   mpSimulationToolBar->setVisible(false);
-  mpReSimulationToolBar->setVisible(false);
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(false);
@@ -3355,7 +3355,6 @@ void MainWindow::switchToModelingPerspective()
   mpModelSwitcherToolBar->setVisible(true);
   mpCheckToolBar->setVisible(true);
   mpSimulationToolBar->setVisible(true);
-  mpReSimulationToolBar->setVisible(false);
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(true);
@@ -3404,7 +3403,6 @@ void MainWindow::switchToPlottingPerspective()
   mpModelSwitcherToolBar->setVisible(false);
   mpCheckToolBar->setVisible(false);
   mpSimulationToolBar->setVisible(false);
-  mpReSimulationToolBar->setVisible(true);
   mpPlotToolBar->setVisible(true);
   mpPlotToolBar->setEnabled(true);
   mpTLMSimulationToolbar->setVisible(false);
@@ -3438,7 +3436,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpModelSwitcherToolBar->setVisible(true);
   mpCheckToolBar->setVisible(true);
   mpSimulationToolBar->setVisible(true);
-  mpReSimulationToolBar->setVisible(false);
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(true);
