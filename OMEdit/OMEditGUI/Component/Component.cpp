@@ -1434,7 +1434,7 @@ void Component::createClassShapes()
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mComponentType == Component::Root) {
+    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mComponentType != Component::Port) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
         pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
