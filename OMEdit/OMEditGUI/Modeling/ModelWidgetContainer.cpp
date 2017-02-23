@@ -1209,6 +1209,17 @@ void GraphicsView::addConnection(Component *pComponent)
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
+    /* Ticket:4196
+     * If we are starting connection from expandable connector or array connector
+     * then set the line thickness to 0.5
+     */
+    if ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+        (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+        (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+        (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+        (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
+      mpConnectionLineAnnotation->setLineThickness(0.5);
+    }
   } else if (isCreatingConnection()) { // When clicking the end component
     mpConnectionLineAnnotation->setEndComponent(pComponent);
     // update the last point to the center of component

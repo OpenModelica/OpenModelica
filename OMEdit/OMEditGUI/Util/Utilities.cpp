@@ -38,6 +38,7 @@
 #include "Modeling/LibraryTreeWidget.h"
 
 #include <QApplication>
+#include <QDesktopWidget>
 #include <QGridLayout>
 #include <QStylePainter>
 #include <QPainter>
@@ -885,4 +886,17 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
     return true;
   }
   return false;
+}
+
+/*!
+ * \brief Utilities::convertMMToPixel
+ * Converts the value from mm to pixels
+ * pixel = (dpi * mm / 1 inch)
+ * 1 inch is 25.4
+ * \param value
+ * \return
+ */
+qreal Utilities::convertMMToPixel(qreal value)
+{
+  return (QApplication::desktop()->screen()->logicalDpiX() * value) / 25.4;
 }

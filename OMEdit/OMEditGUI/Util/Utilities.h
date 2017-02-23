@@ -470,6 +470,7 @@ namespace Utilities {
   } // namespace FileIconProvider
 
   bool containsWord(QString text, int index, QString keyword, bool checkParenthesis = false);
+  qreal convertMMToPixel(qreal value);
 
 } // namespace Utilities
 

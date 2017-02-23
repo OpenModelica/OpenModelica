@@ -473,14 +473,21 @@ QRectF ShapeAnnotation::getBoundingRect() const
 }
 
 /*!
-  Applies the shape line pattern.
-  \param painter - pointer to QPainter
-  */
+ * \brief ShapeAnnotation::applyLinePattern
+ * Applies the shape line pattern.
+ * \param painter - pointer to QPainter
+ */
 void ShapeAnnotation::applyLinePattern(QPainter *painter)
 {
-  qreal thicknessFactor = mLineThickness / 0.5;
-  qreal thickness = thicknessFactor < 1 ? 1.0 : thicknessFactor;
+  qreal thickness = Utilities::convertMMToPixel(mLineThickness);
   QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
+  /* The specification doesn't say anything about it.
+   * But just to keep this consist with Dymola we use Qt::BevelJoin for Line shapes.
+   * All other shapes use Qt::MiterJoin
+   */
+  if (dynamic_cast<LineAnnotation*>(this)) {
+    pen.setJoinStyle(Qt::BevelJoin);
+  }
   /* Ticket #3222
    * Make all the shapes use cosmetic pens so that they perserve their pen widht when scaled i.e zoomed in/out.
    * Only shapes with border patterns raised & sunken don't use cosmetic pens. We need better handling of border patterns.
@@ -488,15 +495,15 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   if (mBorderPattern != StringHandler::BorderRaised && mBorderPattern != StringHandler::BorderSunken) {
     pen.setCosmetic(true);
   }
-  if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    /* Ticket #2272, Ticket #2268.
-     * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
-     */
-    if (thickness <= 2) {
-      pen.setCosmetic(true);
-    } else {
-      pen.setCosmetic(false);
-    }
+  /* Ticket #2272, Ticket #2268.
+   * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
+   */
+  if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap() && thickness > 2) {
+    pen.setCosmetic(false);
+  }
+  // if thickness is greater than 1 pixel then use antialiasing.
+  if (thickness > 1) {
+    painter->setRenderHint(QPainter::Antialiasing);
   }
   painter->setPen(pen);
 }
