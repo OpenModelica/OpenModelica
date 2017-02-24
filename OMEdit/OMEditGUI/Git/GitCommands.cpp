@@ -162,14 +162,17 @@ bool GitCommands::isGitInstalled()
  */
 bool GitCommands::isSavedUnderGitRepository(QString filePath)
 {
-  QFileInfo fileInfo(filePath);
-  QString repository = fileInfo.absoluteDir().absolutePath();
-  mpGitProcess->setWorkingDirectory(repository);
-  mpGitProcess->start("git", QStringList() << "rev-parse" << "--is-inside-work-tree");
-  mpGitProcess->waitForFinished();
-  QString isGitRepository =  mpGitProcess->readAllStandardOutput();
-  if(!isGitRepository.isEmpty())
-     return true;
+  if (!filePath.isEmpty()) {
+    QFileInfo fileInfo(filePath);
+    QString repository = fileInfo.absoluteDir().absolutePath();
+    mpGitProcess->setWorkingDirectory(repository);
+    mpGitProcess->start("git", QStringList() << "rev-parse" << "--is-inside-work-tree");
+    mpGitProcess->waitForFinished();
+    QString isGitRepository =  mpGitProcess->readAllStandardOutput();
+    if (!isGitRepository.isEmpty()) {
+      return true;
+    }
+  }
   return false;
 }
 
