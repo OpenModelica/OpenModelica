@@ -718,6 +718,7 @@ void Kinsol::solveNLS()
 		idid = KINSol(_kinMem, _Kin_y, method, _Kin_yScale, _Kin_fScale);
 
 		KINGetFuncNorm(_kinMem, &_fnorm);
+		if(!_fValid && (idid==KIN_FIRST_SYSFUNC_ERR)) throw ModelicaSimulationError(ALGLOOP_SOLVER,"Algloop could not be evaluated! Evaluation failed at the first call.");
 		//if(_fnorm/euclidNorm(_dimSys,_yScale) < 1e-4)
 		if(idid != KIN_SUCCESS &&  _fnorm < locTol && _fnorm < _currentIterateNorm)
 		{
