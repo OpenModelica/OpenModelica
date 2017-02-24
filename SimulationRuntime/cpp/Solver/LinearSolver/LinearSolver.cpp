@@ -206,15 +206,11 @@ void LinearSolver::solve()
 
     memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
 
+    // scale Jacobian
+    std::fill(_fNominal, _fNominal + _dimSys, 1e-6);
     for (int j = 0, idx = 0; j < _dimSys; j++) {
       for (int i = 0; i < _dimSys; i++, idx++) {
         _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
-      }
-    }
-
-    for (int i=0; i<_dimSys; i++) {
-      if (_fNominal[i] == 0.0) {
-        _fNominal[i]==1.0;// if the row contains only zeros, there is no need to scale that row.
       }
     }
 
@@ -226,8 +222,6 @@ void LinearSolver::solve()
 
     for (int i = 0; i < _dimSys; i++)
       _b[i] /= _fNominal[i];
-
-
 
     if (_generateoutput) {
       std::cout << std::endl;
