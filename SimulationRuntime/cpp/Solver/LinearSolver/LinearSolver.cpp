@@ -17,6 +17,8 @@ LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings
   : _algLoop            (algLoop)
   , _dimSys             (0)
 
+  , _yNames             (NULL)
+  , _yNominal           (NULL)
   , _y                  (NULL)
   , _y0                 (NULL)
   , _y_old              (NULL)
@@ -47,6 +49,8 @@ LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings
 
 LinearSolver::~LinearSolver()
 {
+  if (_yNames)           delete [] _yNames;
+  if (_yNominal)         delete [] _yNominal;
   if (_y)                delete [] _y;
   if (_y0)               delete [] _y0;
   if (_y_old)            delete [] _y_old;
@@ -90,6 +94,8 @@ void LinearSolver::initialize()
 
     if (_dimSys>0) {
       // Initialization of vector of unknowns
+      if (_yNames)          delete [] _yNames;
+      if (_yNominal)        delete [] _yNominal;
       if (_y)               delete [] _y;
       if (_y0)              delete [] _y0;
       if (_y_old)           delete [] _y_old;
@@ -102,6 +108,8 @@ void LinearSolver::initialize()
       if (_scale)           delete [] _scale;
       if (_fNominal)        delete [] _fNominal;
 
+      _yNames           = new const char* [_dimSys];
+      _yNominal         = new double[_dimSys];
       _y                = new double[_dimSys];
       _y0               = new double[_dimSys];
       _y_old            = new double[_dimSys];
@@ -114,6 +122,8 @@ void LinearSolver::initialize()
       _scale            = new double[_dimSys];
       _fNominal         = new double[_dimSys];
 
+      _algLoop->getNamesReal(_yNames);
+      _algLoop->getNominalReal(_yNominal);
       _algLoop->getReal(_y);
       _algLoop->getReal(_y0);
       _algLoop->getReal(_y_new);
@@ -159,7 +169,12 @@ void LinearSolver::initialize()
       _iterationStatus = SOLVERERROR;
     }
   }
-  LOGGER_WRITE("LinearSolver: initialized", LC_LS, LL_DEBUG);
+
+  LOGGER_WRITE_BEGIN("LinearSolver: eq" + to_string(_algLoop->getEquationIndex()) +
+                     " initialized", LC_LS, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("yNames", _yNames, _dimSys, LC_LS, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("yNominal", _yNominal, _dimSys, LC_LS, LL_DEBUG);
+  LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
 void LinearSolver::solve()
@@ -169,6 +184,10 @@ void LinearSolver::solve()
   }
 
   _iterationStatus = CONTINUE;
+
+  LOGGER_WRITE_BEGIN("LinearSolver: eq" + to_string(_algLoop->getEquationIndex()) +
+                     " at time " + to_string(_algLoop->getSimTime()) + ":",
+                     LC_LS, LL_DEBUG);
 
   if (_algLoop->isLinearTearing())
     _algLoop->setReal(_zeroVec); //if the system is linear tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
@@ -199,6 +218,7 @@ void LinearSolver::solve()
       }
     }
 
+    LOGGER_WRITE_VECTOR("fNominal", _fNominal, _dimSys, LC_LS, LL_DEBUG);
 
     for (int j = 0, idx = 0; j < _dimSys; j++)
       for (int i = 0; i < _dimSys; i++, idx++)
@@ -338,6 +358,9 @@ void LinearSolver::solve()
   _algLoop->setReal(_y);
   if (_algLoop->isLinearTearing())
     _algLoop->evaluate();//resets the right hand side to zero in the case of linear tearing. Otherwise, the b vector on the right hand side needs no update.
+
+  LOGGER_WRITE_VECTOR("y*", _y, _dimSys, LC_LS, LL_DEBUG);
+  LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
 IAlgLoopSolver::ITERATIONSTATUS LinearSolver::getIterationStatus()
