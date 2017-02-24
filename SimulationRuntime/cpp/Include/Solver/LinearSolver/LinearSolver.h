@@ -5,7 +5,7 @@
  */
 
 #if defined(klu)
-	#include <../../../../build/include/omc/c/suitesparse/Include/klu.h>
+  #include <../../../../build/include/omc/c/suitesparse/Include/klu.h>
 #endif
 
 class LinearSolver : public IAlgLoopSolver
@@ -44,25 +44,25 @@ private:
   bool
     _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
 
-  long int *_ihelpArray,	//pivot indices for lapackroutine
-	  *_jhelpArray;			//pivot indices for lapackroutine
+  long int *_ihelpArray,  //pivot indices for lapackroutine
+    *_jhelpArray;       //pivot indices for lapackroutine
 
   double
-	  *_y,                  ///< Temp   - Unknowns
-	  *_y0,                 ///< Temp   - Auxillary variables
-      *_y_old,				//stores old solution
-      *_y_new,				//stores new solution
-	  *_b,                  ///< right hand side
-	  *_A,				///coefficients of linear system
-	  *_zeroVec,			///zero vector
-	  *_fNominal,// klu scales the matrix entries already
-	  *_scale;				//scaling parameter to prevent overflow in singular systems
+    *_y,                ///< Temp   - Unknowns
+    *_y0,               ///< Temp   - Auxillary variables
+    *_y_old,            //stores old solution
+    *_y_new,            //stores new solution
+    *_b,                ///< right hand side
+    *_A,                ///coefficients of linear system
+    *_zeroVec,          ///zero vector
+    *_fNominal,         // klu scales the matrix entries already
+    *_scale;            //scaling parameter to prevent overflow in singular systems
   bool _sparse;
-  bool _generateoutput;		//prints nothing, if set to false. Prints Matrix, right hand side, and solution of the linear system, if set to true.
+  bool _generateoutput;   //prints nothing, if set to false. Prints Matrix, right hand side, and solution of the linear system, if set to true.
 #if defined(klu)
-  klu_symbolic* _kluSymbolic ;
-  klu_numeric* _kluNumeric ;
-  klu_common* _kluCommon ;
+  klu_symbolic* _kluSymbolic;
+  klu_numeric* _kluNumeric;
+  klu_common* _kluCommon;
   int* _Ai;
   int* _Ap;
   double* _Ax;
