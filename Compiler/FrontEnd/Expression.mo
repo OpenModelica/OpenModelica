@@ -12952,5 +12952,34 @@ algorithm
   end match;
 end compare;
 
+public function isInvariantExpNoTraverse "For use with traverseExp"
+  input output DAE.Exp e;
+  input output Boolean b;
+algorithm
+  if not b then
+    return;
+  end if;
+  b := match e
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.SCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.BINARY() then true;
+    case DAE.UNARY() then true;
+    case DAE.LBINARY() then true;
+    case DAE.LUNARY() then true;
+    case DAE.RELATION() then true;
+    case DAE.IFEXP() then true;
+    case DAE.CALL(path=Absyn.FULLYQUALIFIED()) then true;
+    case DAE.PARTEVALFUNCTION(path=Absyn.FULLYQUALIFIED()) then true;
+    case DAE.ARRAY() then true;
+    case DAE.MATRIX() then true;
+    case DAE.RANGE() then true;
+    case DAE.CONS() then true;
+    case DAE.LIST() then true;
+    else false;
+  end match;
+end isInvariantExpNoTraverse;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

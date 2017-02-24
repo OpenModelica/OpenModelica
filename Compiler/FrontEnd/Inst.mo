@@ -2281,7 +2281,7 @@ algorithm
 
         if match r
             case SCode.Restriction.R_PACKAGE() then false;
-            else if SCode.restrictionEqual(r,re) then Mod.isInvariantMod(mod) else false;
+            else if SCode.restrictionEqual(r,re) then Mod.isInvariantMod(mod) and Mod.isInvariantDAEMod(mods) else false;
           end match then
           // Is a very simple modification on an operator record; we do not need to handle it by adding SCode.EXTENDS
           // print("Short-circuit: " + SCodeDump.restrString(r)+" "+SCodeDump.restrString(re)+" : "+SCodeDump.printModStr(mod)+"\n");

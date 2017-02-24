@@ -1651,6 +1651,13 @@ algorithm
       Graph gclass;
       SCode.Element c;
 
+    /*
+    case (_, _, _, _, _, _, _)
+      equation
+        print(Absyn.pathString(PrefixUtil.prefixToPath(inPrefix)) + " S:" + getGraphNameStr(inSourceEnv) + "/" + inSourceName + " ||| " + "T:" + getGraphNameStr(inTargetClassEnv) + "/" + SCode.elementName(inTargetClass) + "\n");
+      then
+        fail();*/
+
     // case (_, _, _, _, _, _, _) then (inTargetClassEnv, inTargetClass, inIH);
 
     // don't do this if there is no modifications on the class
