@@ -1,0 +1,24 @@
+// name:     Ticket4258a.mos [BUG: #4258]
+// keywords: proper unique scopes for redeclares
+// cflags: -d=nogen
+// status:   correct
+// treardown_command: rm -rf Eco*
+//
+// Checks the redeclares create unique scopes
+//
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("Ticket4258b.mo"); getErrorString();
+buildModel(Eco); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"Eco","Eco_init.xml"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

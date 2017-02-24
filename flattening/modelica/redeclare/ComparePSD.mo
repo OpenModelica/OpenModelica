@@ -754,6 +754,17 @@ end ComparePSD;
 //   end for;
 // end Noise.PRNG$Linear.Seed;
 //
+// function Noise.PRNG$WhiteNoise.PSD.PDF
+//   input Real instance(quantity = "Time", unit = "s");
+//   input Integer[:] states_in;
+//   output Real rand;
+//   input Real[2] interval = {-1.0, 1.0};
+//   output Integer[size(states_in, 1)] states_out;
+// algorithm
+//   (rand, states_out) := Noise.PRNG$WhiteNoise.RNG(instance, states_in, 1);
+//   rand := rand * (interval[2] - interval[1]) + interval[1];
+// end Noise.PRNG$WhiteNoise.PSD.PDF;
+//
 // function Noise.PRNG$WhiteNoise.RNG
 //   input Real instance(quantity = "Time", unit = "s");
 //   input Integer[:] states_in;
@@ -835,17 +846,6 @@ end ComparePSD;
 //     states[i] := internal_states[i];
 //   end for;
 // end Noise.PRNG$WhiteNoise.Seed;
-//
-// function Noise.PSD.PDF
-//   input Real instance(quantity = "Time", unit = "s");
-//   input Integer[:] states_in;
-//   output Real rand;
-//   input Real[2] interval = {-1.0, 1.0};
-//   output Integer[size(states_in, 1)] states_out;
-// algorithm
-//   (rand, states_out) := Noise.PRNG$WhiteNoise.RNG(instance, states_in, 1);
-//   rand := rand * (interval[2] - interval[1]) + interval[1];
-// end Noise.PSD.PDF;
 //
 // function Noise.RNG.SampleBased.RNG_MRG
 //   input Real instance(quantity = "Time", unit = "s");

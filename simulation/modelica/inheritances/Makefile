@@ -3,8 +3,8 @@ TEST = ../../../rtest -v
 TESTFILES = \
 MoonLanding.mos \
 OneArgBaseFunction.mos \
-
-
+Ticket4258a.mos \
+Ticket4258b.mos \
 
 
 # test that currently fail. Move up when fixed. 
