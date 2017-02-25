@@ -724,6 +724,7 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(heading).arg(mpLibraryTreeItem->getNameStructure()));
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpLibraryTreeItem->getName());
+  mpNameTextBox->selectAll();
   mpPathLabel = new Label(Helper::path);
   mpPathTextBox = new QLineEdit;
   mpPathBrowseButton = new QPushButton(Helper::browse);
@@ -1786,6 +1787,7 @@ ComponentNameDialog::ComponentNameDialog(QString name, GraphicsView *pGraphicsVi
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(name);
+  mpNameTextBox->selectAll();
   // don't show this message again checkbox.
   mpDontShowThisMessageAgainCheckBox = new QCheckBox(Helper::dontShowThisMessageAgain);
   // Create the buttons
