@@ -3842,7 +3842,7 @@ end checkInterfaceOfPackages;
 
 function sortStrings
   input String arr[:];
-  output String sorted;
+  output String sorted[:];
   external "builtin";
 annotation(
   Documentation(info="<html>
