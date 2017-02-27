@@ -34,7 +34,9 @@
 
 #include "Visualizer.h"
 
-#include <QImage>
+#if (QT_VERSION < QT_VERSION_CHECK(5, 2, 0))
+#include <QGLWidget>
+#endif
 #include <osg/Image>
 #include <osg/Shape>
 #include <osg/Node>
@@ -629,21 +631,24 @@ void UpdateVisitor::applyTexture(osg::StateSet* ss, std::string imagePath)
   }
 }
 
-
 osg::Image* UpdateVisitor::convertImage(const QImage& iImage)
 {
-   osg::Image* osgImage = new osg::Image();
-   if (false == iImage.isNull()) {
-      QImage glImage = iImage.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
-      if (false == glImage.isNull()) {
-         unsigned char* data = new unsigned char[glImage.byteCount()];
-         for(int i=0; i < glImage.byteCount(); ++i) {
-            data[i] = glImage.bits()[i];
-         }
-         osgImage->setImage(glImage.width(), glImage.height(), 1, 4, GL_RGBA, GL_UNSIGNED_BYTE, data, osg::Image::USE_NEW_DELETE, 1);
+  osg::Image* osgImage = new osg::Image();
+  if (false == iImage.isNull()) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 2, 0))
+    QImage glImage = iImage.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
+#else
+    QImage glImage = QGLWidget::convertToGLFormat(iImage);
+#endif
+    if (false == glImage.isNull()) {
+      unsigned char* data = new unsigned char[glImage.byteCount()];
+      for(int i=0; i < glImage.byteCount(); ++i) {
+        data[i] = glImage.bits()[i];
       }
-   }
-   return osgImage;
+      osgImage->setImage(glImage.width(), glImage.height(), 1, 4, GL_RGBA, GL_UNSIGNED_BYTE, data, osg::Image::USE_NEW_DELETE, 1);
+    }
+  }
+  return osgImage;
 }
 
 

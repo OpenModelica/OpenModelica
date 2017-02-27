@@ -39,6 +39,7 @@
 #include <memory.h>
 #include <iostream>
 
+#include <QImage>
 #include <osg/NodeVisitor>
 #include <osg/Geode>
 #include <osg/MatrixTransform>
