@@ -2525,7 +2525,19 @@ function simulate "simulates a modelica model by generating c code, build it and
   input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
-  output String simulationResults;
+  output SimulationResult simulationResults;
+  record SimulationResult
+    String resultFile;
+    String simulationOptions;
+    String messages;
+    Real timeFrontend;
+    Real timeBackend;
+    Real timeSimCode;
+    Real timeTemplates;
+    Real timeCompile;
+    Real timeSimulation;
+    Real timeTotal;
+  end SimulationResult;
 external "builtin";
 annotation(preferredView="text");
 end simulate;
