@@ -635,7 +635,7 @@ osg::Image* UpdateVisitor::convertImage(const QImage& iImage)
 {
    osg::Image* osgImage = new osg::Image();
    if (false == iImage.isNull()) {
-      QImage glImage = QGLWidget::convertToGLFormat(iImage);
+      QImage glImage = iImage.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
       if (false == glImage.isNull()) {
          unsigned char* data = new unsigned char[glImage.byteCount()];
          for(int i=0; i < glImage.byteCount(); ++i) {

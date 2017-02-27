@@ -246,7 +246,7 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
   QMenu contextMenu(tr("Context menu"), this);
   QMenu shapeMenu(name, this);
   shapeMenu.setIcon(QIcon(":/Resources/icons/animation.svg"));
-  QAction action0(QIcon(":/Resources/icons/undo.svg"), tr("Reset All Shapes"), this);
+  QAction action0(QIcon(":/Resources/icons/undo.svg"), tr("Reset Transparency and Texture"), this);
   QAction action1(QIcon(":/Resources/icons/transparency.svg"), tr("Change Transparency"), this);
   QAction action2(QIcon(":/Resources/icons/invisible.svg"), tr("Make Shape Invisible"), this);
   QAction action3(QIcon(":/Resources/icons/changeColor.svg"), tr("Change Color"), this);
@@ -387,8 +387,8 @@ void ViewerWidget::changeShapeColor()
     else
     {
       QColor currentColor = shape->getColor();
-      QColor color = QColorDialog::getColor(currentColor, this,"Shape Color",  QColorDialog::DontUseNativeDialog);
-      if(currentColor.isValid())
+      QColor color = QColorDialog::getColor(currentColor, this,"Shape Color");
+      if(color.isValid())
       {
         shape->setColor(color);
       }
