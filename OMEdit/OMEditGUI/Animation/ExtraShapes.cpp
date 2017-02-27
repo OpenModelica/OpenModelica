@@ -161,10 +161,10 @@ Pipecylinder::Pipecylinder(float rI, float rO, float l) :
     normals->push_back(normalizeVec(osg::Vec3(sin(phiN)*rO, cos(phiN)*rO, 0)));
     normals->push_back(normalizeVec(osg::Vec3(sin(phiN)*rO, cos(phiN)*rO, 0)));
     //the texture coordinates
-    texcoords->push_back(osg::Vec2(1.0f*i/(nEdges), 0.0f));
-    texcoords->push_back(osg::Vec2(1.0f*j/(nEdges), 0.0f));
-    texcoords->push_back(osg::Vec2(1.0f*j/(nEdges), 1.0f));
     texcoords->push_back(osg::Vec2(1.0f*i/(nEdges), 1.0f));
+    texcoords->push_back(osg::Vec2(1.0f*j/(nEdges), 1.0f));
+    texcoords->push_back(osg::Vec2(1.0f*j/(nEdges), 0.0f));
+    texcoords->push_back(osg::Vec2(1.0f*i/(nEdges), 0.0f));
     //the planes
     basePlane = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
     basePlane->push_back(vertIdx);
