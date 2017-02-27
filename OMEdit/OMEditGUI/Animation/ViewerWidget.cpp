@@ -252,21 +252,25 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
   QAction action3(QIcon(":/Resources/icons/changeColor.svg"), tr("Change Color"), this);
   QAction action4(QIcon(":/Resources/icons/checkered.svg"), tr("Apply Check Texture"), this);
   QAction action5(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
+  QAction action6(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
 
   //if a shape is picked, we can set it transparent
   if (0 != QString::compare(name,QString(""))) {
     contextMenu.addMenu(&shapeMenu);
     shapeMenu.addAction( &action1);
     shapeMenu.addAction( &action2);
+    shapeMenu.addSeparator();
     shapeMenu.addAction( &action3);
+    shapeMenu.addSeparator();
     shapeMenu.addAction( &action4);
     shapeMenu.addAction( &action5);
+    shapeMenu.addAction( &action6);
     connect(&action1, SIGNAL(triggered()), this, SLOT(changeShapeTransparency()));
     connect(&action2, SIGNAL(triggered()), this, SLOT(makeShapeInvisible()));
     connect(&action3, SIGNAL(triggered()), this, SLOT(changeShapeColor()));
     connect(&action4, SIGNAL(triggered()), this, SLOT(applyCheckTexture()));
     connect(&action5, SIGNAL(triggered()), this, SLOT(applyCustomTexture()));
-
+    connect(&action6, SIGNAL(triggered()), this, SLOT(removeTexture()));
   }
   contextMenu.addAction(&action0);
   connect(&action0, SIGNAL(triggered()), this, SLOT(removeTransparencyForAllShapes()));
@@ -275,7 +279,7 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
 
 /*!
  * \brief ViewerWidget::applyCheckTexture
- * changes the transparency selection of a shape
+ * adds a checkered texture to the shape
  */
 void ViewerWidget::applyCheckTexture()
 {
@@ -298,8 +302,32 @@ void ViewerWidget::applyCheckTexture()
 }
 
 /*!
+ * \brief ViewerWidget::removeTexture
+ * removes the texture of the shape
+ */
+void ViewerWidget::removeTexture()
+{
+    ShapeObject* shape = nullptr;
+    if ((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape)))
+    {
+      if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
+      {
+        QString msg = tr("Texture feature for CAD-Files is not applicable.");
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+                                                                    Helper::notificationLevel));
+      }
+      else
+      {
+        shape->setTextureImagePath("");
+        mpAnimationWidget->getVisualizer()->modifyShape(mSelectedShape);
+        mSelectedShape = "";
+      }
+    }
+}
+
+/*!
  * \brief ViewerWidget::applyCustomTexture
- * changes the transparency selection of a shape
+ * adds a user-defiend texture to the shape
  */
 void ViewerWidget::applyCustomTexture()
 {
@@ -316,9 +344,12 @@ void ViewerWidget::applyCustomTexture()
       {
         QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseFile),
                                                               NULL, Helper::bitmapFileTypes, NULL);
-        shape->setTextureImagePath(fileName.toStdString());
-        mpAnimationWidget->getVisualizer()->modifyShape(mSelectedShape);
-        mSelectedShape = "";
+        if(fileName.compare(""))
+        {
+          shape->setTextureImagePath(fileName.toStdString());
+          mpAnimationWidget->getVisualizer()->modifyShape(mSelectedShape);
+          mSelectedShape = "";
+        }
       }
     }
 }

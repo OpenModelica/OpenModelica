@@ -101,6 +101,7 @@ public slots:
   void makeShapeInvisible();
   void applyCheckTexture();
   void applyCustomTexture();
+  void removeTexture();
   void changeShapeColor();
 
 };

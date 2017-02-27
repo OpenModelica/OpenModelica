@@ -34,7 +34,6 @@
 
 #include "Visualizer.h"
 
-#include <QGLWidget>
 #include <QImage>
 #include <osg/Image>
 #include <osg/Shape>
