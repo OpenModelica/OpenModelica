@@ -678,6 +678,9 @@ algorithm
     (outEqs, oInlined, shared) := inlineEquationOptArrayAppend(inEquationArray, fns, shared);
     outEquationArray := BackendDAE.EQUATION_ARRAY(size,i1,eqarr);
  else
+   outEquationArray := inEquationArray;
+   oInlined := false;
+   outEqs := BackendDAEUtil.createEqSystem( BackendVariable.listVar({}), BackendEquation.listEquation({}));
    if Flags.isSet(Flags.FAILTRACE) then
       Debug.trace("BackendInline.inlineEquationArrayAppend failed\n");
    end if;

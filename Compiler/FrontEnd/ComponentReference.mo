@@ -849,10 +849,10 @@ protected function crefLexicalCompareSubsAtEnd2
   Helper function for crefLexicalCompareubsAtEnd
   compares subs. However only if the crefs with out subs are equal.
   (i.e. identsCompared is 0)
-  otheriwse just returns"
+  otherwise just returns"
   input list<Integer> inSubs1;
   input list<Integer> inSubs2;
-  output Integer res;
+  output Integer res = 0;
 protected
   list<Integer> rest=inSubs2;
 algorithm
@@ -1840,7 +1840,7 @@ end crefDims;
 
 public function crefSubs "
 function: crefSubs
-  Return the all subscripts of a ComponentRef"
+  Return all subscripts of a ComponentRef"
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm

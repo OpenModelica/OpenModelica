@@ -1021,7 +1021,7 @@ algorithm
       list<BackendDAE.WhenOperator> rest;
       T extArg;
       DAE.ElementSource source;
-      Boolean b;
+      Boolean b = false;
 
     case {} then (inCont,inTypeA);
     case (BackendDAE.ASSIGN(left = e1, right = e2)::rest)
