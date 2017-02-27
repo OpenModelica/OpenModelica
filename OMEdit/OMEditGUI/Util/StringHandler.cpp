@@ -655,40 +655,63 @@ QComboBox* StringHandler::getEndArrowComboBox()
   return pEndArrowComboBox;
 }
 
+/*!
+ * \brief StringHandler::getFontWeight
+ * \param styleList
+ * Returns the font weight
+ * \return
+ */
 int StringHandler::getFontWeight(QList<StringHandler::TextStyle> styleList)
 {
-  foreach (StringHandler::TextStyle textStyle, styleList)
-  {
-    if (textStyle == StringHandler::TextStyleBold)
+  foreach (StringHandler::TextStyle textStyle, styleList) {
+    if (textStyle == StringHandler::TextStyleBold) {
       return QFont::Bold;
+    }
   }
   return QFont::Normal;
 }
 
+/*!
+ * \brief StringHandler::getFontItalic
+ * \param styleList
+ * Returns true if font is italic.
+ * \return
+ */
 bool StringHandler::getFontItalic(QList<StringHandler::TextStyle> styleList)
 {
-  foreach (StringHandler::TextStyle textStyle, styleList)
-  {
-    if (textStyle == StringHandler::TextStyleItalic)
+  foreach (StringHandler::TextStyle textStyle, styleList) {
+    if (textStyle == StringHandler::TextStyleItalic) {
       return true;
+    }
   }
   return false;
 }
 
+/*!
+ * \brief StringHandler::getFontUnderline
+ * \param styleList
+ * Returns true is font is underline.
+ * \return
+ */
 bool StringHandler::getFontUnderline(QList<StringHandler::TextStyle> styleList)
 {
-  foreach (StringHandler::TextStyle textStyle, styleList)
-  {
-    if (textStyle == StringHandler::TextStyleUnderLine)
+  foreach (StringHandler::TextStyle textStyle, styleList) {
+    if (textStyle == StringHandler::TextStyleUnderLine) {
       return true;
+    }
   }
   return false;
 }
 
+/*!
+ * \brief StringHandler::getTextAlignment
+ * \param alignment
+ * Returns the text alignment
+ * \return
+ */
 Qt::Alignment StringHandler::getTextAlignment(StringHandler::TextAlignment alignment)
 {
-  switch (alignment)
-  {
+  switch (alignment) {
     case StringHandler::TextAlignmentLeft:
       return Qt::AlignLeft;
     case StringHandler::TextAlignmentCenter:
@@ -700,22 +723,34 @@ Qt::Alignment StringHandler::getTextAlignment(StringHandler::TextAlignment align
   }
 }
 
+/*!
+ * \brief StringHandler::getTextAlignmentType
+ * \param alignment
+ * Returns the text alignment type.
+ * \return
+ */
 StringHandler::TextAlignment StringHandler::getTextAlignmentType(QString alignment)
 {
-  if (alignment.compare("TextAlignment.Left") == 0)
+  if (alignment.compare("TextAlignment.Left") == 0) {
     return StringHandler::TextAlignmentLeft;
-  else if (alignment.compare("TextAlignment.Center") == 0)
+  } else if (alignment.compare("TextAlignment.Center") == 0) {
     return StringHandler::TextAlignmentCenter;
-  else if (alignment.compare("TextAlignment.Right") == 0)
+  } else if (alignment.compare("TextAlignment.Right") == 0) {
     return StringHandler::TextAlignmentRight;
-  else
+  } else {
     return StringHandler::TextAlignmentCenter;
+  }
 }
 
+/*!
+ * \brief StringHandler::getTextAlignmentString
+ * \param alignment
+ * Returns the text alignment as string.
+ * \return
+ */
 QString StringHandler::getTextAlignmentString(StringHandler::TextAlignment alignment)
 {
-  switch (alignment)
-  {
+  switch (alignment) {
     case StringHandler::TextAlignmentLeft:
       return "TextAlignment.Left";
     case StringHandler::TextAlignmentCenter:
@@ -727,10 +762,15 @@ QString StringHandler::getTextAlignmentString(StringHandler::TextAlignment align
   }
 }
 
+/*!
+ * \brief StringHandler::getTextStyleString
+ * \param textStyle
+ * Returns the text syle.
+ * \return
+ */
 QString StringHandler::getTextStyleString(StringHandler::TextStyle textStyle)
 {
-  switch (textStyle)
-  {
+  switch (textStyle) {
     case StringHandler::TextStyleBold:
       return "TextStyle.Bold";
     case StringHandler::TextStyleItalic:
@@ -747,8 +787,7 @@ QString StringHandler::getTextStyleString(StringHandler::TextStyle textStyle)
 QString StringHandler::removeFirstLastCurlBrackets(QString value)
 {
   value = value.trimmed();
-  if (value.length() > 1 && value.at(0) == '{' && value.at(value.length() - 1) == '}')
-  {
+  if (value.length() > 1 && value.at(0) == '{' && value.at(value.length() - 1) == '}') {
     value = value.mid(1, (value.length() - 2));
   }
   return value;
@@ -759,8 +798,7 @@ QString StringHandler::removeFirstLastCurlBrackets(QString value)
 QString StringHandler::removeFirstLastBrackets(QString value)
 {
   value = value.trimmed();
-  if (value.length() > 1 && value.at(0) == '(' && value.at(value.length() - 1) == ')')
-  {
+  if (value.length() > 1 && value.at(0) == '(' && value.at(value.length() - 1) == ')') {
     value = value.mid(1, (value.length() - 2));
   }
   return value;
@@ -771,8 +809,7 @@ QString StringHandler::removeFirstLastBrackets(QString value)
 QString StringHandler::removeFirstLastQuotes(QString value)
 {
   value = value.trimmed();
-  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"')
-  {
+  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
     value = value.mid(1, (value.length() - 2));
   }
   return value;

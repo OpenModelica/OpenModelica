@@ -247,22 +247,26 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   if (mFontSize > 0) {
     font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
     // set font underline
-    if(StringHandler::getFontUnderline(mTextStyles)) {
+    if (StringHandler::getFontUnderline(mTextStyles)) {
       font.setUnderline(true);
     }
-    font.setPointSizeF(mFontSize/4);
+    font.setPointSizeF(mFontSize / painter->transform().m11());
     painter->setFont(font);
   } else {
     font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
     // set font underline
-    if(StringHandler::getFontUnderline(mTextStyles)) {
+    if (StringHandler::getFontUnderline(mTextStyles)) {
       font.setUnderline(true);
     }
     painter->setFont(font);
     QRect fontBoundRect = painter->fontMetrics().boundingRect(boundingRect().toRect(), Qt::TextDontClip, mTextString);
     float xFactor = boundingRect().width() / fontBoundRect.width();
     float yFactor = boundingRect().height() / fontBoundRect.height();
-    float factor = xFactor < yFactor ? xFactor : yFactor;
+    /* Ticket:4256
+     * Text aspect when x1=x2 i.e, width is 0.
+     * Use height.
+     */
+    float factor = (boundingRect().width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
     QFont f = painter->font();
     qreal fontSizeFactor = f.pointSizeF()*factor;
     if ((fontSizeFactor < 12) && mpComponent) {
