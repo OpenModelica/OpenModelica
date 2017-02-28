@@ -112,8 +112,7 @@ uniontype Expression
   end RECORD;
 
   record CALL
-    Absyn.Path path;
-    ComponentRef cref;
+    ComponentRef ref;
     list<Expression> arguments;
     Option<CallAttributes> attr;
   end CALL;
@@ -272,8 +271,8 @@ uniontype Expression
 
       case CALL()
         algorithm
-          CALL(path = p, arguments = expl) := exp2;
-          comp := Absyn.pathCompare(exp1.path, p);
+          CALL(ref = cr, arguments = expl) := exp2;
+          comp := ComponentRef.compare(exp1.ref, cr);
         then
           if comp == 0 then compareList(exp1.arguments, expl) else comp;
 
@@ -599,7 +598,7 @@ uniontype Expression
                         then ":" + toString(Util.getOption(exp.step))
                         else ""
                         ) + ":" + toString(exp.stop);
-      case CALL() then Absyn.pathString(exp.path) + "(" + stringDelimitList(List.map(exp.arguments, toString), ", ") + ")";
+      case CALL() then ComponentRef.toString(exp.ref) + "(" + stringDelimitList(List.map(exp.arguments, toString), ", ") + ")";
       case SIZE() then "size(" + toString(exp.exp) +
                         (
                         if isSome(exp.dimIndex)
@@ -659,7 +658,8 @@ uniontype Expression
                toDAE(exp.stop));
 
       case CALL(attr = SOME(attr))
-        then DAE.CALL(exp.path, List.map(exp.arguments, toDAE), toDAECallAtributes(attr));
+        then DAE.CALL(ComponentRef.toPath(exp.ref),
+          List.map(exp.arguments, toDAE), toDAECallAtributes(attr));
 
       case SIZE()
         then DAE.SIZE(toDAE(exp.exp),

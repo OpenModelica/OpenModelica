@@ -37,6 +37,7 @@ import NFMod.Modifier;
 import SCode;
 import Absyn;
 import Type = NFType;
+import NFFunction.Function;
 
 public
 uniontype InstNodeType
@@ -58,11 +59,40 @@ uniontype InstNodeType
   end ROOT_CLASS;
 end InstNodeType;
 
+uniontype CachedData
+  record NO_CACHE end NO_CACHE;
+
+  record FUNCTION
+    list<Function> funcs;
+    Boolean typed;
+  end FUNCTION;
+
+  function empty
+    output array<CachedData> cache = arrayCreate(1, NO_CACHE());
+  end empty;
+
+  function addFunc
+    input Function fn;
+    input output CachedData cache;
+  algorithm
+    cache := match cache
+      case NO_CACHE() then FUNCTION({fn}, false);
+      case FUNCTION() then FUNCTION(fn :: cache.funcs, false);
+      else
+        algorithm
+          assert(false, getInstanceName() + ": Invalid cache for function");
+        then
+          fail();
+    end match;
+  end addFunc;
+end CachedData;
+
 uniontype InstNode
   record CLASS_NODE
     String name;
     SCode.Element definition;
     array<Class> cls;
+    array<CachedData> cached;
     InstNode parentScope;
     InstNodeType nodeType;
   end CLASS_NODE;
@@ -87,8 +117,8 @@ uniontype InstNode
   algorithm
     node := match definition
       case SCode.CLASS()
-        then CLASS_NODE(definition.name, definition,
-          arrayCreate(1, Class.NOT_INSTANTIATED()), parent, NORMAL_CLASS());
+        then CLASS_NODE(definition.name, definition, arrayCreate(1, Class.NOT_INSTANTIATED()),
+          CachedData.empty(), parent, NORMAL_CLASS());
       case SCode.COMPONENT()
         then COMPONENT_NODE(definition.name, definition,
           arrayCreate(1, Component.COMPONENT_DEF(Modifier.NOMOD())), parent);
@@ -106,7 +136,7 @@ uniontype InstNode
   algorithm
     SCode.CLASS(name = name) := definition;
     i := arrayCreate(1, Class.NOT_INSTANTIATED());
-    node := CLASS_NODE(name, definition, i, parent, nodeType);
+    node := CLASS_NODE(name, definition, i, CachedData.empty(), parent, nodeType);
   end newClass;
 
   function newComponent
@@ -136,7 +166,7 @@ uniontype InstNode
           cls := arrayCreate(1, Class.NOT_INSTANTIATED());
         then
           CLASS_NODE("$extends." + node.name, node.definition, cls,
-            node.parentScope, InstNodeType.BASE_CLASS(scope));
+            node.cached, node.parentScope, InstNodeType.BASE_CLASS(scope));
 
       else
         algorithm
@@ -467,27 +497,22 @@ uniontype InstNode
   end getType;
 
   function clone
-    input InstNode node;
-    output InstNode clone;
+    input output InstNode node;
   algorithm
-    clone := match node
-      local
-        array<Class> i;
-
+    () := match node
       case CLASS_NODE()
         algorithm
-          i := arrayCreate(1, Class.clone(node.cls[1]));
-          //i := arrayCopy(node.cls);
+          node.cls := arrayCreate(1, Class.clone(node.cls[1]));
         then
-          CLASS_NODE(node.name, node.definition, i, node.parentScope, node.nodeType);
+          ();
 
       case COMPONENT_NODE()
         algorithm
           node.component := arrayCopy(node.component);
         then
-          node;
+          ();
 
-      else node;
+      else ();
     end match;
   end clone;
 
@@ -592,6 +617,48 @@ uniontype InstNode
       else false;
     end match;
   end isOutput;
+
+  function cachedData
+    input InstNode node;
+    output CachedData cached;
+  algorithm
+    cached := match node
+      case CLASS_NODE() then node.cached[1];
+      else CachedData.NO_CACHE();
+    end match;
+  end cachedData;
+
+  function setCachedData
+    input CachedData cached;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          arrayUpdate(node.cached, 1, cached);
+        then
+          ();
+    end match;
+  end setCachedData;
+
+  function cacheAddFunc
+    input Function fn;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          arrayUpdate(node.cached, 1, CachedData.addFunc(fn, node.cached[1]));
+        then
+          ();
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got node without cache");
+        then
+          fail();
+    end match;
+  end cacheAddFunc;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

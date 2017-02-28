@@ -579,7 +579,7 @@ public constant Message REINIT_MUST_BE_VAR = MESSAGE(225, TRANSLATION(), ERROR()
 public constant Message CONNECT_TWO_SOURCES = MESSAGE(226, TRANSLATION(), WARNING(),
   Util.gettext("Connecting two signal sources while connecting %s to %s."));
 public constant Message INNER_OUTER_FORMAL_PARAMETER = MESSAGE(227, TRANSLATION(), ERROR(),
-  Util.gettext("Invalid prefix %son formal parameter %s."));
+  Util.gettext("Invalid prefix %s on formal parameter %s."));
 public constant Message REDECLARE_NONEXISTING_ELEMENT = MESSAGE(228, TRANSLATION(), ERROR(),
   Util.gettext("Illegal redeclare of element %s, no inherited element with that name exists."));
 public constant Message INVALID_ARGUMENT_TYPE_FIRST_ARRAY = MESSAGE(229, TRANSLATION(), ERROR(),

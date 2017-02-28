@@ -128,21 +128,25 @@ end Elements;
 constant InstNode REAL_TYPE = InstNode.CLASS_NODE("Real",
   Elements.REAL,
   listArray({Class.PARTIAL_BUILTIN(Type.REAL(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  listArray({NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode INT_TYPE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER,
   listArray({Class.PARTIAL_BUILTIN(Type.INTEGER(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  listArray({NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode BOOLEAN_TYPE = InstNode.CLASS_NODE("Boolean",
   Elements.BOOLEAN,
   listArray({Class.PARTIAL_BUILTIN(Type.BOOLEAN(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  listArray({NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
   Elements.STRING,
   listArray({Class.PARTIAL_BUILTIN(Type.STRING(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  listArray({NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant Type STATESELECT_TYPE_TYPE = Type.ENUMERATION(
@@ -151,6 +155,7 @@ constant Type STATESELECT_TYPE_TYPE = Type.ENUMERATION(
 constant InstNode STATESELECT_TYPE = InstNode.CLASS_NODE("StateSelect",
   Elements.STATESELECT,
   listArray({Class.PARTIAL_BUILTIN(STATESELECT_TYPE_TYPE, ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  listArray({NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant Binding STATESELECT_NEVER_BINDING =

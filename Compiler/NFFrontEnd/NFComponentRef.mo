@@ -228,6 +228,29 @@ public
     end match;
   end toString;
 
+  function toPath
+    input ComponentRef cref;
+    output Absyn.Path path;
+  algorithm
+    path := match cref
+      case CREF()
+        then toPath_impl(cref.restCref, Absyn.IDENT(InstNode.name(cref.node)));
+    end match;
+  end toPath;
+
+  function toPath_impl
+    input ComponentRef cref;
+    input Absyn.Path accumPath;
+    output Absyn.Path path;
+  algorithm
+    path := match cref
+      case CREF()
+        then toPath_impl(cref.restCref,
+          Absyn.QUALIFIED(InstNode.name(cref.node), accumPath));
+      else accumPath;
+    end match;
+  end toPath_impl;
+
   function fromNodeList
     input list<InstNode> nodes;
     output ComponentRef cref = ComponentRef.EMPTY();

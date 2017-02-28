@@ -90,6 +90,7 @@ if true then /* Suppress output */
   // "NFFrontEnd";
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltin.mo",
+    "../NFFrontEnd/NFCall.mo",
     "../NFFrontEnd/NFCeval.mo",
     "../NFFrontEnd/NFComponent.mo",
     "../NFFrontEnd/NFComponentRef.mo",
@@ -105,7 +106,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFExpression.mo",
     "../NFFrontEnd/NFExtend.mo",
     "../NFFrontEnd/NFFlatten.mo",
-    "../NFFrontEnd/NFFunc.mo",
+    "../NFFrontEnd/NFFunction.mo",
     "../NFFrontEnd/NFImport.mo",
     "../NFFrontEnd/NFInst.mo",
     "../NFFrontEnd/NFClass.mo",

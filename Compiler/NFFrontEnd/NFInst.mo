@@ -74,7 +74,7 @@ import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
 import System;
-import Func = NFFunc;
+import Call = NFCall;
 
 public
 function instClassInProgram
@@ -1171,7 +1171,7 @@ algorithm
         Expression.IF(e1, e2, e3);
 
     case Absyn.Exp.CALL()
-      then Func.instCall(absynExp.function_, absynExp.functionArgs, scope, info);
+      then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
 
     else
       algorithm

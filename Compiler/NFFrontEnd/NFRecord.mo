@@ -58,7 +58,6 @@ import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Types;
 import Typing = NFTyping;
-import Func = NFFunc;
 import NFInstUtil;
 
 public

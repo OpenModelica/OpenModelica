@@ -3568,6 +3568,18 @@ algorithm
   end match;
 end unparseVarDirection;
 
+function unparseVarInnerOuter
+  input DAE.VarInnerOuter io;
+  output String str;
+algorithm
+  str := match io
+    case DAE.VarInnerOuter.INNER() then "inner";
+    case DAE.VarInnerOuter.OUTER() then "outer";
+    case DAE.VarInnerOuter.INNER_OUTER() then "inner outer";
+    else "";
+  end match;
+end unparseVarInnerOuter;
+
 public function getSourceInformationStr
 "@author: adrpo
  display the source information as string"

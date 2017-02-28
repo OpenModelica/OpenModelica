@@ -57,7 +57,7 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import ClassInf;
 import InstUtil = NFInstUtil;
-import Func = NFFunc;
+import Call = NFCall;
 import NFClass.ClassTree;
 import ComponentRef = NFComponentRef;
 import Ceval = NFCeval;
@@ -432,11 +432,8 @@ algorithm
       then
         TypeCheck.checkIfExpression(e1, ty1, var1, e2, ty2, var2, e3, ty3, var3, info);
 
-//    case Absyn.Exp.CALL()
-//      algorithm
-//        (typedExp, ty, variability) := Func.typeFunctionCall(untypedExp.function_, untypedExp.functionArgs, scope, info);
-//      then
-//        (typedExp, ty, variability);
+    case Expression.CALL()
+      then Call.typeCall(exp, scope, info);
 
     else
       algorithm
@@ -446,6 +443,26 @@ algorithm
 
   end match;
 end typeExp;
+
+function typeExpl
+  input list<Expression> expl;
+  input InstNode scope;
+  input SourceInfo info;
+  output list<Expression> explTyped = {};
+  output list<Type> tyl = {};
+  output list<DAE.Const> varl = {};
+protected
+  Expression exp;
+  DAE.Const var;
+  Type ty;
+algorithm
+  for e in listReverse(expl) loop
+    (exp, ty, var) := typeExp(e, scope, info);
+    explTyped := exp :: explTyped;
+    tyl := ty :: tyl;
+    varl := var :: varl;
+  end for;
+end typeExpl;
 
 function typeCref
   input ComponentRef cref;
