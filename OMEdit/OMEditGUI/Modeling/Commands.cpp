@@ -160,9 +160,9 @@ void DeleteShapeCommand::undo()
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
-AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                                         QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject, bool openingClass,
-                                         GraphicsView *pGraphicsView, QUndoCommand *pParent)
+AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
+                                         ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
+                                         QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -180,13 +180,10 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // first create the component for Icon View
-    mpIconComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
-                                    mpIconGraphicsView);
-    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
-                                       mpDiagramGraphicsView);
+    mpIconComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
   } else {
-    mpDiagramComponent = new Component(name, pLibraryTreeItem, transformationString, position, dialogAnnotation, pComponentInfo,
-                                       mpDiagramGraphicsView);
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
   }
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {

@@ -71,9 +71,8 @@ private:
 class AddComponentCommand : public QUndoCommand
 {
 public:
-  AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                      QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject, bool openingClass,
-                      GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ComponentInfo *pComponentInfo,
+                      bool addObject, bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
   Component* getComponent() {return mpDiagramComponent;}
   void redo();
   void undo();

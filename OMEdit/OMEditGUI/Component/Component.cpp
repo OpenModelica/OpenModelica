@@ -425,8 +425,8 @@ bool ComponentInfo::isModiferClassRecord(QString modifierName, Component *pCompo
   return result;
 }
 
-Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, QStringList dialogAnnotation,
-                     ComponentInfo *pComponentInfo, GraphicsView *pGraphicsView)
+Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ComponentInfo *pComponentInfo,
+                     GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(0), mpParentComponent(0)
 {
   setZValue(2000);
@@ -439,7 +439,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   mpGraphicsView = pGraphicsView;
   mIsInheritedComponent = false;
   mComponentType = Component::Root;
-  mTransformationString = transformation;
+  mTransformationString = StringHandler::getPlacementAnnotation(annotation);
   // Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
   mpResizerRectangle->setZValue(-5000);  // set to a very low value
@@ -462,8 +462,8 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
   }
   // transformation
   mTransformation = Transformation(mpGraphicsView->getViewType(), this);
-  mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
-  if (transformation.isEmpty()) {
+  mTransformation.parseTransformationString(mTransformationString, boundingRect().width(), boundingRect().height());
+  if (mTransformationString.isEmpty()) {
     // snap to grid while creating component
     position = mpGraphicsView->snapPointToGrid(position);
     mTransformation.setOrigin(position);
@@ -474,7 +474,8 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString tr
     mTransformation.setRotateAngle(0.0);
   }
   setTransform(mTransformation.getTransformationMatrix());
-  setDialogAnnotation(dialogAnnotation);
+  setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
+  setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
   // create actions
   createActions();
   mpOriginItem = new OriginItem(this);
@@ -540,6 +541,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
+  mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
   mpResizerRectangle = 0;
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
@@ -576,6 +578,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   mComponentType = Component::Root;
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
+  mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
   //Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
   mpResizerRectangle->setZValue(5000);  // set to a very high value
@@ -626,6 +629,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpGraphicsView = mpParentComponent->getGraphicsView();
   mTransformationString = "";
   mDialogAnnotation.clear();
+  mChoicesAnnotation.clear();
   mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
@@ -2090,12 +2094,10 @@ void Component::duplicate()
     name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(getName()));
   }
   QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
-  QString transformationString = getOMCPlacementAnnotation(gridStep);
   // add component
-  QStringList dialogAnnotation;
   ComponentInfo *pComponentInfo = new ComponentInfo(mpComponentInfo);
   pComponentInfo->setName(name);
-  mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, transformationString, QPointF(0, 0), dialogAnnotation, pComponentInfo, true, true);
+  mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, getOMCPlacementAnnotation(gridStep), QPointF(0, 0), pComponentInfo, true, true);
   // set component modifiers and attributes for Diagram Layer component.
   Component *pDiagramComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
   // save the old ComponentInfo

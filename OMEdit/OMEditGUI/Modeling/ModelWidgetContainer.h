@@ -170,8 +170,8 @@ public:
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool addComponent(QString className, QPointF position);
-  void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformationString, QPointF position,
-                          QStringList dialogAnnotation, ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
+  void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
+                          ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
   void addComponentToList(Component *pComponent) {mComponentsList.append(pComponent);}
   void addInheritedComponentToList(Component *pComponent) {mInheritedComponentsList.append(pComponent);}
   void addComponentToClass(Component *pComponent);

@@ -1344,7 +1344,7 @@ QString StringHandler::getLastOpenDirectory()
   return mLastOpenDir;
 }
 
-QStringList StringHandler::getDialogAnnotation(QString componentAnnotation)
+QStringList StringHandler::getAnnotation(QString componentAnnotation, QString annotationName)
 {
   if (componentAnnotation.toLower().contains("error")) {
     return QStringList();
@@ -1355,8 +1355,8 @@ QStringList StringHandler::getDialogAnnotation(QString componentAnnotation)
   }
   QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
   foreach (QString annotation, annotations) {
-    if (annotation.startsWith("Dialog")) {
-      annotation = annotation.mid(QString("Dialog").length());
+    if (annotation.startsWith(annotationName)) {
+      annotation = annotation.mid(QString(annotationName).length());
       annotation = StringHandler::removeFirstLastBrackets(annotation);
       return StringHandler::getStrings(annotation);
     }

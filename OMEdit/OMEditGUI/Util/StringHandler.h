@@ -138,7 +138,7 @@ public:
   static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = "", QString * dir = 0);
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();
-  static QStringList getDialogAnnotation(QString componentAnnotation);
+  static QStringList getAnnotation(QString componentAnnotation, QString annotationName);
   static QString getPlacementAnnotation(QString componentAnnotation);
   static qreal getNormalizedAngle(qreal angle);
   static QStringList splitStringWithSpaces(QString value);

@@ -171,8 +171,8 @@ public:
     Extend,  /* Inherited Component. */
     Port  /* Port Component. */
   };
-  Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString transformation, QPointF position, QStringList dialogAnnotation,
-            ComponentInfo *pComponentInfo, GraphicsView *pGraphicsView);
+  Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ComponentInfo *pComponentInfo,
+            GraphicsView *pGraphicsView);
   Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent);
   Component(Component *pComponent, Component *pParentComponent, Component *pRootParentComponent);
   Component(Component *pComponent, GraphicsView *pGraphicsView);
@@ -194,6 +194,8 @@ public:
   QString getTransformationString() {return mTransformationString;}
   void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
+  void setChoicesAnnotation(QStringList choicesAnnotation) {mChoicesAnnotation = choicesAnnotation;}
+  QStringList getChoicesAnnotation() {return mChoicesAnnotation;}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
@@ -248,6 +250,7 @@ private:
   ComponentType mComponentType;
   QString mTransformationString;
   QStringList mDialogAnnotation;
+  QStringList mChoicesAnnotation;
   QString mParameterValue;
   QGraphicsRectItem *mpResizerRectangle;
   LineAnnotation *mpNonExistingComponentLine;
