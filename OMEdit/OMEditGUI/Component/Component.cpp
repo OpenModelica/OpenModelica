@@ -634,32 +634,26 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   createNonExistingComponent();
   createDefaultComponent();
 
-  if(mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
-    if(mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Mechanical)) {
-        mpDefaultComponentRectangle->setFillColor(QColor(100, 100, 255));   //Mechanical = blue
+  if (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
+    if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Mechanical)) {
+      mpDefaultComponentRectangle->setFillColor(QColor(100, 100, 255));   //Mechanical = blue
+    } else if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Electric)) {
+      mpDefaultComponentRectangle->setFillColor(QColor(255, 255, 100));   //Hydraulic = yellow
+    } else if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Hydraulic)) {
+      mpDefaultComponentRectangle->setFillColor(QColor(100, 255, 100));   //Hydraulic = green
+    } else if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Pneumatic)) {
+      mpDefaultComponentRectangle->setFillColor(QColor(100, 255, 255));   //Pneumatic = turquoise
+    } else if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Magnetic)) {
+      mpDefaultComponentRectangle->setFillColor(QColor(255, 100, 255));   //Magnetic = purple
     }
-    else if(mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Electric)) {
-        mpDefaultComponentRectangle->setFillColor(QColor(255, 255, 100));   //Hydraulic = yellow
-    }
-    else if(mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Hydraulic)) {
-        mpDefaultComponentRectangle->setFillColor(QColor(100, 255, 100));   //Hydraulic = green
-    }
-    else if(mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Pneumatic)) {
-        mpDefaultComponentRectangle->setFillColor(QColor(100, 255, 255));   //Pneumatic = turquoise
-    }
-    else if(mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Magnetic)) {
-        mpDefaultComponentRectangle->setFillColor(QColor(255, 100, 255));   //Magnetic = purple
-    }
-    mpDefaultComponentText->setTextString(QString::number(mpComponentInfo->getDimensions())+"D");
-  }
-  else if((mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMInput)) |
-          (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMOutput))) {
+    mpDefaultComponentText->setTextString(QString::number(mpComponentInfo->getDimensions())+ "D");
+  } else if ((mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMInput)) ||
+             (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMOutput))) {
     mpDefaultComponentRectangle->setFillColor(QColor(255, 100, 100));       //Signal = red
-    if(mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMInput)) {
-        mpDefaultComponentText->setTextString("in");
-    }
-    else {
-        mpDefaultComponentText->setTextString("out");
+    if (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMInput)) {
+      mpDefaultComponentText->setTextString("in");
+    } else {
+      mpDefaultComponentText->setTextString("out");
     }
   }
   mpDefaultComponentRectangle->setLineColor(QColor(0, 0, 0));
@@ -667,10 +661,8 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpDefaultComponentRectangle->setFillPattern(StringHandler::FillSolid);
   mpDefaultComponentRectangle->setFillPattern(StringHandler::FillSolid);
   mpDefaultComponentRectangle->setVisible(true);
-  mpDefaultComponentText->setFontSize(300);
+  mpDefaultComponentText->setFontSize(5);
   mpDefaultComponentText->setVisible(true);
-
-
   // transformation
   qreal yPosition = 80 - mpParentComponent->getComponentsList().size() * 40;
   QString transformation = QString("Placement(true,110.0,%1,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(yPosition);
