@@ -427,6 +427,10 @@ record Selector
   parameter String caption=\"\";
 end Selector;
 
+record choices
+  Boolean checkbox;
+end choices;
+
 //
 // connector Frame \"Frame of a mechanical system\"
 //   ...
