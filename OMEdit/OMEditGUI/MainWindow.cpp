@@ -275,13 +275,15 @@ void MainWindow::setUpMainWindow()
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
 #if !defined(WITHOUT_OSG)
-  // create an object of ThreeDViewer
-  mpThreeDViewer = new ThreeDViewer(this);
+  /* Ticket #4252
+   * Do not create an object of ThreeDViewer by default.
+   * Only create it when user really use it.
+   */
+  mpThreeDViewer = 0;
   // Create ThreeDViewer dock
   mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer Browser"), this);
   mpThreeDViewerDockWidget->setObjectName("3DViewer");
   mpThreeDViewerDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
   addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
   mpThreeDViewerDockWidget->hide();
   connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
@@ -383,6 +385,23 @@ void MainWindow::setUpMainWindow()
     mpAutoSaveTimer->start();
   }
 }
+
+#if !defined(WITHOUT_OSG)
+/*!
+ * \brief MainWindow::getThreeDViewer
+ * Returns the ThreeDViewer object. Initializes it if its not initialized.
+ * \return
+ */
+ThreeDViewer* MainWindow::getThreeDViewer()
+{
+  // create an object of ThreeDViewer
+  if (!mpThreeDViewer) {
+    mpThreeDViewer = new ThreeDViewer(this);
+    mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
+  }
+  return mpThreeDViewer;
+}
+#endif
 
 /*!
  * \brief MainWindow::addRecentFile
@@ -2401,7 +2420,7 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 {
 #if !defined(WITHOUT_OSG)
   if (visible) {
-    mpThreeDViewer->getViewerWidget()->update();
+    getThreeDViewer()->getViewerWidget()->update();
   }
 #else
   Q_UNUSED(visible);

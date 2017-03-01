@@ -109,7 +109,7 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
 #if !defined(WITHOUT_OSG)
-  ThreeDViewer* getThreeDViewer() {return mpThreeDViewer;}
+  ThreeDViewer* getThreeDViewer();
   QDockWidget* getThreeDViewerDockWidget() {return mpThreeDViewerDockWidget;}
 #endif
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
