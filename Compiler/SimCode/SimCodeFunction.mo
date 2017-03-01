@@ -274,9 +274,9 @@ algorithm
       equation
         // Create FunctionCode
         (daeElements,literals) = SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs,libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs,libPaths, true);
+        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
@@ -286,8 +286,8 @@ algorithm
       equation
         // Create FunctionCode
         (daeElements,literals) = SimCodeFunctionUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs,libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs,libPaths, true);
+        (fns, extraRecordDecls, includes, includeDirs, libs, libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         // remove OpenModelica.threadData.ThreadData
         fns = removeThreadDataFunction(fns, {});
         extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});

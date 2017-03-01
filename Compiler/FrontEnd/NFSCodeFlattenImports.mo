@@ -633,6 +633,7 @@ algorithm
       Absyn.ForIterators iters;
       SourceInfo info;
       tuple<Env, SourceInfo> tup;
+      Absyn.ReductionIterType iterType;
 
     case (Absyn.CREF(componentRef = cref), tup as (env, info))
       equation
@@ -640,11 +641,13 @@ algorithm
       then
         (Absyn.CREF(cref), tup);
 
-    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), (env, info))
+    case (Absyn.CALL(function_ = cref, functionArgs = args as Absyn.FOR_ITER_FARG(exp = exp, iterType = iterType, iterators = iters)), (env, info))
       equation
+        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        exp = flattenExp(exp, env, info);
       then
-        (inExp, (env, info));
+        (Absyn.CALL(cref, Absyn.FOR_ITER_FARG(exp, iterType, iters)), (env, info));
 
     case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _)
       then (inExp,inTuple);

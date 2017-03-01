@@ -1952,6 +1952,9 @@ algorithm
     local
       String name;
 
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name = name))))
+      then List.consOnTrue(not listMember(name, inAcc), name, inAcc);
+
     case DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name = name)),
                   attr = DAE.CALL_ATTR(builtin = false))
       then List.consOnTrue(not listMember(name, inAcc), name, inAcc);
