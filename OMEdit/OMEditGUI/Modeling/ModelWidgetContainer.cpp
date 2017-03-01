@@ -4069,13 +4069,16 @@ void ModelWidget::drawModelIconComponents()
       if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
+      QString annotation;
       if (mComponentsAnnotationsList.size() >= i) {
-        if (StringHandler::getPlacementAnnotation(mComponentsAnnotationsList.at(i)).isEmpty()) {
-          mComponentsAnnotationsList.append("Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)");
+        annotation = mComponentsAnnotationsList.at(i);
+        if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
+          annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
+          annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
         }
       }
-      mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, mComponentsAnnotationsList.at(i), QPointF(0, 0),
-                                             pComponentInfo, false, true);
+      mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
+                                             false, true);
     }
     i++;
   }
@@ -4107,13 +4110,16 @@ void ModelWidget::drawModelDiagramComponents()
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
     }
+    QString annotation;
     if (mComponentsAnnotationsList.size() >= i) {
-      if (StringHandler::getPlacementAnnotation(mComponentsAnnotationsList.at(i)).isEmpty()) {
-        mComponentsAnnotationsList.append("Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)");
+      annotation = mComponentsAnnotationsList.at(i);
+      if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
+        annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
+        annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
       }
     }
-    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, mComponentsAnnotationsList.at(i), QPointF(0, 0),
-                                              pComponentInfo, false, true);
+    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
+                                              false, true);
     i++;
   }
 }

@@ -71,7 +71,11 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   // set the value type based on component type.
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   if (mpComponent->getComponentInfo()->getClassName().compare("Boolean") == 0) {
-    mValueType = Parameter::Boolean;
+    if (mpComponent->getChoicesAnnotation().size() > 0 && mpComponent->getChoicesAnnotation().at(0).compare("true") == 0) {
+      mValueType = Parameter::CheckBox;
+    } else {
+      mValueType = Parameter::Boolean;
+    }
   } else if (pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
     mValueType = Parameter::Normal;
   } else if (pOMCProxy->isWhat(StringHandler::Enumeration, mpComponent->getComponentInfo()->getClassName())) {
@@ -79,6 +83,8 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   } else {
     mValueType = Parameter::Normal;
   }
+  mValueCheckBoxModified = false;
+  mDefaultValue = "";
   createValueWidget();
   /* Get unit value
    * First check if unit is defined with in the component modifier.
@@ -159,6 +165,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       }
     }
   }
+  mDefaultValue = defaultValue;
   QFontMetrics fm = QFontMetrics(QFont());
   switch (mValueType) {
     case Parameter::Boolean:
@@ -172,6 +179,9 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       /* Set the minimum width so that the value text will be readable */
       fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
       mpValueComboBox->setMinimumWidth(fm.width(value) + 50);
+      break;
+    case Parameter::CheckBox:
+      mpValueCheckBox->setChecked(value.compare("true") == 0);
       break;
     case Parameter::Normal:
     default:
@@ -195,18 +205,27 @@ QWidget* Parameter::getValueWidget()
     case Parameter::Boolean:
     case Parameter::Enumeration:
       return mpValueComboBox;
+    case Parameter::CheckBox:
+      return mpValueCheckBox;
     case Parameter::Normal:
     default:
       return mpValueTextBox;
   }
 }
 
+/*!
+ * \brief Parameter::isValueModified
+ * Returns true if value widget is changed.
+ * \return
+ */
 bool Parameter::isValueModified()
 {
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
       return mpValueComboBox->lineEdit()->isModified();
+    case Parameter::CheckBox:
+      return mValueCheckBoxModified;
     case Parameter::Normal:
     default:
       return mpValueTextBox->isModified();
@@ -224,6 +243,8 @@ QString Parameter::getValue()
     case Parameter::Boolean:
     case Parameter::Enumeration:
       return mpValueComboBox->lineEdit()->text().trimmed();
+    case Parameter::CheckBox:
+      return mpValueCheckBox->isChecked() ? "true" : "false";
     case Parameter::Normal:
     default:
       return mpValueTextBox->text().trimmed();
@@ -237,14 +258,7 @@ QString Parameter::getValue()
  */
 QString Parameter::getDefaultValue()
 {
-  switch (mValueType) {
-    case Parameter::Boolean:
-    case Parameter::Enumeration:
-      return mpValueComboBox->lineEdit()->placeholderText().trimmed();
-    case Parameter::Normal:
-    default:
-      return mpValueTextBox->placeholderText().trimmed();
-  }
+  return mDefaultValue;
 }
 
 void Parameter::setFixedState(QString fixed, bool defaultValue)
@@ -310,6 +324,9 @@ void Parameter::setEnabled(bool enable)
     case Parameter::Enumeration:
       mpValueComboBox->setEnabled(enable);
       break;
+    case Parameter::CheckBox:
+      mpValueCheckBox->setEnabled(enable);
+      break;
     case Parameter::Normal:
     default:
       mpValueTextBox->setEnabled(enable);
@@ -341,6 +358,10 @@ void Parameter::createValueWidget()
         mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      break;
+    case Parameter::CheckBox:
+      mpValueCheckBox = new QCheckBox;
+      connect(mpValueCheckBox, SIGNAL(toggled(bool)), SLOT(valueCheckBoxChanged(bool)));
       break;
     case Parameter::Normal:
     default:
@@ -378,6 +399,17 @@ void Parameter::valueComboBoxChanged(int index)
 {
   mpValueComboBox->lineEdit()->setText(mpValueComboBox->itemData(index).toString());
   mpValueComboBox->lineEdit()->setModified(true);
+}
+
+/*!
+ * \brief Parameter::valueCheckBoxChanged
+ * SLOT activated when mpValueCheckBox toggled(bool) SIGNAL is raised.\n
+ * Marks the item modified.
+ * \param toggle
+ */
+void Parameter::valueCheckBoxChanged(bool toggle)
+{
+  mValueCheckBoxModified = true;
 }
 
 void Parameter::showFixedMenu()

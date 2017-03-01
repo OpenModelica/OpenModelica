@@ -46,6 +46,7 @@ public:
   enum ValueType {
     Normal,  /* Integer, Real etc. */
     Boolean,
+    CheckBox,
     Enumeration
   };
   Parameter(Component *pComponent, bool showStartAttribute, QString tab, QString groupBox);
@@ -85,8 +86,11 @@ private:
   FixedCheckBox *mpFixedCheckBox;
   QString mOriginalFixedValue;
   ValueType mValueType;
+  bool mValueCheckBoxModified;
+  QString mDefaultValue;
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
+  QCheckBox *mpValueCheckBox;
   QString mUnit;
   QString mDisplayUnit;
   QString mPreviousUnit;
@@ -97,6 +101,7 @@ private:
 public slots:
   void unitComboBoxChanged(QString text);
   void valueComboBoxChanged(int index);
+  void valueCheckBoxChanged(bool toggle);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();
