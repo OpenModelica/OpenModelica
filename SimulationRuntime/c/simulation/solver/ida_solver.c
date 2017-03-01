@@ -64,20 +64,12 @@
 #include <idas/idas_spbcgs.h>
 #include <idas/idas_sptfqmr.h>
 
-
-static int jacobianOwnNumColoredIDA(long int Neq, realtype tt, realtype cj,
-    N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, void *user_data,
-    N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
-
-static int jacobianOwnNumIDA(long int Neq, realtype tt, realtype cj,
-    N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, void *user_data,
+static int callDenseNumJac(long int Neq, double tt, double cj,
+    N_Vector yy, N_Vector yp, N_Vector rr,
+    DlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
 static int jacobianSparseNum(realtype tt, realtype cj,
-    N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, void *user_data,
-    N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
-
-static int jacobiancoloredKLUNum(realtype tt, realtype cj,
     N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
@@ -446,12 +438,9 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       infoStreamPrint(LOG_STDOUT, 0, "The symbolic jacobian is not implemented, yet! Switch back to internal.");
       break;
     case COLOREDNUMJAC:
-      /* set jacobian function */
-      flag = IDADlsSetDenseJacFn(idaData->ida_mem, jacobianOwnNumColoredIDA);
-      break;
     case NUMJAC:
       /* set jacobian function */
-      flag = IDADlsSetDenseJacFn(idaData->ida_mem, jacobianOwnNumIDA);
+      flag = IDADlsSetDenseJacFn(idaData->ida_mem, callDenseNumJac);
       break;
     case INTERNALNUMJAC:
       break;
@@ -1183,49 +1172,6 @@ int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat
 }
 
 /*
- * Wrapper function jacOwnNumColoredIDA
- *  function calculates a jacobian matrix by
- *  numerical method finite differences with coloring
- *  into a dense DlsMat matrix
- */
-static int jacobianOwnNumColoredIDA(long int Neq, double tt, double cj,
-    N_Vector yy, N_Vector yp, N_Vector rr,
-    DlsMat Jac, void *user_data,
-    N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
-{
-  TRACE_PUSH
-
-  IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
-  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->simData)->threadData);
-
-  if(jacOwnNumColoredIDA(tt, yy, yp, rr, Jac, cj, user_data))
-  {
-    throwStreamPrint(threadData, "Error, can not get Matrix A ");
-    TRACE_POP
-    return 1;
-  }
-
-  /* debug */
-  if (ACTIVE_STREAM(LOG_JAC)){
-    infoStreamPrint(LOG_JAC, 0, "##IDA## Matrix A.");
-    PrintMat(Jac);
-  }
-
-  /* add cj to diagonal elements and store in Jac */
-  if (!idaData->daeMode)
-  {
-    long int i;
-    for(i = 0; i < Neq; i++)
-    {
-      DENSE_ELEM(Jac, i, i) -= (double) cj;
-    }
-  }
-
-  TRACE_POP
-  return 0;
-}
-
-/*
  *  function calculates a jacobian matrix by
  *  numerical method finite differences without coloring
  *  into a dense DlsMat matrix
@@ -1298,7 +1244,7 @@ int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, d
 /*
  * provides a numerical Jacobian to be used with DASSL
  */
-static int jacobianOwnNumIDA(long int Neq, double tt, double cj,
+static int callDenseNumJac(long int Neq, double tt, double cj,
     N_Vector yy, N_Vector yp, N_Vector rr,
     DlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
@@ -1306,13 +1252,22 @@ static int jacobianOwnNumIDA(long int Neq, double tt, double cj,
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->simData)->threadData);
+  int retVal;
 
-  if(jacOwnNumIDA(tt, yy, yp, rr, Jac, cj, user_data))
+  /* profiling */
+  rt_tick(SIM_TIMER_JACOBIAN);
+
+  if (idaData->jacobianMethod == COLOREDNUMJAC)
   {
-    throwStreamPrint(threadData, "Error, can not get Matrix A ");
-    TRACE_POP
-    return 1;
+    retVal = jacOwnNumColoredIDA(tt, yy, yp, rr, Jac, cj, user_data);
   }
+  else if (idaData->jacobianMethod == NUMJAC)
+  {
+    retVal = jacOwnNumIDA(tt, yy, yp, rr, Jac, cj, user_data);
+  }
+
+  /* profiling */
+  rt_accumulate(SIM_TIMER_JACOBIAN);
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
@@ -1332,7 +1287,7 @@ static int jacobianOwnNumIDA(long int Neq, double tt, double cj,
   }
 
   TRACE_POP
-  return 0;
+  return retVal;
 }
 
 /* Element function for sparse matrix set */
@@ -1481,12 +1436,18 @@ static int jacobianSparseNum(double tt, double cj,
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->simData)->threadData);
 
+  /* profiling */
+  rt_tick(SIM_TIMER_JACOBIAN);
+
   if(jacobianSparseNumIDA(tt, yy, yp, rr, Jac, cj, user_data))
   {
     throwStreamPrint(threadData, "Error, can not get Matrix A ");
     TRACE_POP
     return 1;
   }
+
+  /* profiling */
+  rt_accumulate(SIM_TIMER_JACOBIAN);
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){

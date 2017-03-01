@@ -74,9 +74,10 @@ typedef struct DASSL_DATA{
   double *stateDer;
   double *states;
 
-  /* function pointer of provied functions */
+  /* function pointer of provided functions */
   int (*residualFunction)(double *t, double *x, double *xprime, double *cj, double *delta, int *ires, double *rpar, int* ipar);
-  void* jacobianFunction;
+  int (*jacobianFunction)(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+     double *rpar, int* ipar);
   void* zeroCrossingFunction;
 } DASSL_DATA;
 

@@ -588,9 +588,9 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   }
 
   if(0 == retVal && create_linearmodel) {
-    rt_tick(SIM_TIMER_LINEARIZE);
+    rt_tick(SIM_TIMER_JACOBIAN);
     retVal = linearize(data, threadData);
-    rt_accumulate(SIM_TIMER_LINEARIZE);
+    rt_accumulate(SIM_TIMER_JACOBIAN);
     infoStreamPrint(LOG_STDOUT, 0, "Linear model is created!");
   }
 

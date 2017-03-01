@@ -73,14 +73,16 @@ dummy_zeroCrossing(int *neqm, double *t, double *y, double *yp,
   return 0;
 }
 
-static int JacobianSymbolic(double *t, double *y, double *yprime,  double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, int* ipar);
-static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, int* ipar);
-static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, int* ipar);
-static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, int* ipar);
+static int callJacobian(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar);
+static int jacA_num(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar);
+static int jacA_numColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar);
+static int jacA_sym(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+       double *rpar, int* ipar);
+static int jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+       double *rpar, int* ipar);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -345,17 +347,17 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   switch (dasslData->dasslJacobian){
     case COLOREDNUMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
-      dasslData->jacobianFunction =  JacobianOwnNumColored;
+      dasslData->jacobianFunction =  jacA_numColored;
       break;
     case COLOREDSYMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.maxColors;
-      dasslData->jacobianFunction =  JacobianSymbolicColored;
+      dasslData->jacobianFunction =  jacA_symColored;
       break;
     case SYMJAC:
-      dasslData->jacobianFunction =  JacobianSymbolic;
+      dasslData->jacobianFunction =  jacA_sym;
       break;
     case NUMJAC:
-      dasslData->jacobianFunction =  JacobianOwnNum;
+      dasslData->jacobianFunction =  jacA_num;
       break;
     case INTERNALNUMJAC:
       dasslData->jacobianFunction =  dummy_Jacobian;
@@ -603,7 +605,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
             &solverInfo->currentTime, states, stateDer, &tout,
             dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
             dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-            (double*) (void*) dasslData->rpar, dasslData->ipar, dasslData->jacobianFunction, dummy_precondition,
+            (double*) (void*) dasslData->rpar, dasslData->ipar, callJacobian, dummy_precondition,
             dasslData->zeroCrossingFunction, (int*) &dasslData->ng, dasslData->jroot);
 
     /* closing new step message */
@@ -969,10 +971,19 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   return 0;
 }
 
-
-int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
+/* \fn jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function calculates symbolically the jacobian matrix and exploiting the coloring.
+ */
+int jacA_symColored(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
   TRACE_PUSH
+  DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
+  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,l,k,ii;
 
@@ -993,7 +1004,7 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
         {
           l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo->analyticJacobians[index].sizeRows + l;
-          jac[k] = data->simulationInfo->analyticJacobians[index].resultVars[l];
+          matrixA[k] = data->simulationInfo->analyticJacobians[index].resultVars[l];
           ii++;
         };
       }
@@ -1007,10 +1018,18 @@ int functionJacAColored(DATA* data, threadData_t *threadData, double* jac)
   return 0;
 }
 
-
-int functionJacASym(DATA* data, threadData_t *threadData, double* jac)
+/* \fn jacA_sym(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function calculates symbolically the jacobian matrix.
+ */
+int jacA_sym(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
   TRACE_PUSH
+  DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
+  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,k;
 
@@ -1023,7 +1042,7 @@ int functionJacASym(DATA* data, threadData_t *threadData, double* jac)
 
     for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
     {
-      jac[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
+      matrixA[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
     }
 
     data->simulationInfo->analyticJacobians[index].seedVars[i] = 0.0;
@@ -1033,105 +1052,19 @@ int functionJacASym(DATA* data, threadData_t *threadData, double* jac)
   return 0;
 }
 
-/*
- * provides a analytical Jacobian to be used with DASSL
+/* \fn jacA_num(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function calculates a jacobian matrix by
+ * numerical with forward finite differences.
  */
-
-static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-         double *rpar, int* ipar)
+int jacA_num(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
-  double* backupStates;
-  double timeBackup;
-  int i;
-  int j;
-
-  setContext(data, t, CONTEXT_JACOBIAN);
-
-  backupStates = data->localData[0]->realVars;
-  timeBackup = data->localData[0]->timeValue;
-
-  data->localData[0]->timeValue = *t;
-  data->localData[0]->realVars = y;
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-  /* eval ode*/
-  data->callback->functionODE(data, threadData);
-  functionJacAColored(data, threadData, pd);
-
-  /* add cj to the diagonal elements of the matrix */
-  j = 0;
-  for(i = 0; i < data->modelData->nStates; i++)
-  {
-    pd[j] -= (double) *cj;
-    j += data->modelData->nStates + 1;
-  }
-  data->localData[0]->realVars = backupStates;
-  data->localData[0]->timeValue = timeBackup;
-
-  unsetContext(data);
-
-  TRACE_POP
-  return 0;
-}
-
-/*
- * provides a analytical Jacobian to be used with DASSL
- */
-static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-         double *rpar, int* ipar)
-{
-  TRACE_PUSH
-  DATA* data = (DATA*)(void*)((double**)rpar)[0];
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
-  double* backupStates;
-  double timeBackup;
-  int i;
-  int j;
-
-  setContext(data, t, CONTEXT_JACOBIAN);
-
-  backupStates = data->localData[0]->realVars;
-  timeBackup = data->localData[0]->timeValue;
-
-  data->localData[0]->timeValue = *t;
-  data->localData[0]->realVars = y;
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-  /* eval ode*/
-  data->callback->functionODE(data, threadData);
-  functionJacASym(data, threadData, pd);
-
-  /* add cj to the diagonal elements of the matrix */
-  j = 0;
-  for(i = 0; i < data->modelData->nStates; i++)
-  {
-    pd[j] -= (double) *cj;
-    j += data->modelData->nStates + 1;
-  }
-  data->localData[0]->realVars = backupStates;
-  data->localData[0]->timeValue = timeBackup;
-
-  unsetContext(data);
-
-  TRACE_POP
-  return 0;
-}
-
-/*
- *  function calculates a jacobian matrix by
- *  numerical method finite differences
- */
-int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
-{
-  TRACE_PUSH
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
 
   double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hh,delta_hhh, deltaInv;
@@ -1179,59 +1112,22 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   return 0;
 }
 
-/*
- * provides a numerical Jacobian to be used with DASSL
+/* \fn jacA_numColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function calculates a jacobian matrix by
+ * numerical with forward finite differences and exploiting the coloring.
  */
-static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-    double *rpar, int* ipar)
+int jacA_numColored(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
   TRACE_PUSH
+
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
-  setContext(data, t, CONTEXT_JACOBIAN);
-
-  if(jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
-  {
-    throwStreamPrint(threadData, "Error, can not get Matrix A ");
-    TRACE_POP
-    return 1;
-  }
-
-  /* debug */
-  if (ACTIVE_STREAM(LOG_JAC)){
-    _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
-    _omc_printMatrix(dumpJac, "DASSL-Solver: Matrix A", LOG_JAC);
-    _omc_destroyMatrix(dumpJac);
-  }
-
-
-  /* add cj to diagonal elements and store in pd */
-  if (!dasslData->daeMode){
-    int i, j = 0;
-    for(i = 0; i < dasslData->N; i++)
-    {
-      pd[j] -= (double) *cj;
-      j += dasslData->N + 1;
-    }
-  }
-  unsetContext(data);
-
-  TRACE_POP
-  return 0;
-}
-
-
-/*
- *  function calculates a jacobian matrix by
- *  numerical method finite differences
- */
-int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
-{
-  TRACE_PUSH
   const int index = data->callback->INDEX_JAC_A;
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hhh;
   int ires;
@@ -1294,10 +1190,14 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   return 0;
 }
 
-/*
- * provides a numerical Jacobian to be used with DASSL
+/* \fn callJacobian(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function is called by dassl to calculate the jacobian matrix.
+ *
  */
-static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+static int callJacobian(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, int* ipar)
 {
   TRACE_PUSH
@@ -1305,14 +1205,21 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
+  /* set context for the start values extrapolation of non-linear algebraic loops */
   setContext(data, t, CONTEXT_JACOBIAN);
 
-  if(jacA_numColored(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
+  /* profiling */
+  rt_tick(SIM_TIMER_JACOBIAN);
+
+  if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
     throwStreamPrint(threadData, "Error, can not get Matrix A ");
     TRACE_POP
     return 1;
   }
+
+  /* profiling */
+  rt_accumulate(SIM_TIMER_JACOBIAN);
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
@@ -1331,6 +1238,7 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
       j += dasslData->N + 1;
     }
   }
+  /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
 
   TRACE_POP

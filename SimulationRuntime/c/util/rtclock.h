@@ -56,7 +56,7 @@ static inline double rt_tock(int ix) {return 0.0;}
 #define SIM_TIMER_STEP           2
 #define SIM_TIMER_OUTPUT         3
 #define SIM_TIMER_EVENT          4
-#define SIM_TIMER_LINEARIZE      5
+#define SIM_TIMER_JACOBIAN       5
 #define SIM_TIMER_PREINIT        6
 #define SIM_TIMER_OVERHEAD       7
 #define SIM_TIMER_FUNCTION_ODE   8

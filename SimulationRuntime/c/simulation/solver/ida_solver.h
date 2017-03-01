@@ -63,7 +63,6 @@ typedef struct IDA_SOLVER
   unsigned int stepsFreq;        /* value specifies the output frequency regarding to time steps. Used in internal steps mode. */
   double stepsTime;              /* value specifies the time increment when output happens. Used in internal steps mode. */
 
-
   /* ### work arrays ### */
   N_Vector y;
   N_Vector yp;
@@ -78,6 +77,7 @@ typedef struct IDA_SOLVER
 
   /* ### ida internal data */
   void* ida_mem;
+  int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
   IDA_USERDATA* simData;
   SlsMat tmpJac;
   DlsMat denseJac;
@@ -88,7 +88,6 @@ typedef struct IDA_SOLVER
   long int NNZ;
   double *states;
   double *statesDer;
-  int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
 
   /* ### ida sensitivities ### */
   int idaSmode;

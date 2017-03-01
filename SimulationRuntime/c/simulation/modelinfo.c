@@ -381,7 +381,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
   indent(fout, 2); fprintf(fout, "<initTime>%f</initTime>\n", rt_accumulated(SIM_TIMER_INIT));
   indent(fout, 2); fprintf(fout, "<eventTime>%f</eventTime>\n", rt_accumulated(SIM_TIMER_EVENT));
   indent(fout, 2); fprintf(fout, "<outputTime>%f</outputTime>\n", rt_accumulated(SIM_TIMER_OUTPUT));
-  indent(fout, 2); fprintf(fout, "<linearizeTime>%f</linearizeTime>\n", rt_accumulated(SIM_TIMER_LINEARIZE));
+  indent(fout, 2); fprintf(fout, "<jacobianTime>%f</jacobianTime>\n", rt_accumulated(SIM_TIMER_JACOBIAN));
   indent(fout, 2); fprintf(fout, "<totalTime>%f</totalTime>\n", rt_accumulated(SIM_TIMER_TOTAL));
   indent(fout, 2); fprintf(fout, "<totalStepsTime>%f</totalStepsTime>\n", rt_total(SIM_TIMER_STEP));
   indent(fout, 2); fprintf(fout, "<numStep>%d</numStep>\n", (int) rt_ncall_total(SIM_TIMER_STEP));
@@ -595,7 +595,7 @@ int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *filenam
   fprintf(fout, ",\n\"initTime\":%g",rt_accumulated(SIM_TIMER_INIT));
   fprintf(fout, ",\n\"eventTime\":%g",rt_accumulated(SIM_TIMER_EVENT));
   fprintf(fout, ",\n\"outputTime\":%g",rt_accumulated(SIM_TIMER_OUTPUT));
-  fprintf(fout, ",\n\"linearizeTime\":%g",rt_accumulated(SIM_TIMER_LINEARIZE));
+  fprintf(fout, ",\n\"jacobianTime\":%g",rt_accumulated(SIM_TIMER_JACOBIAN));
   fprintf(fout, ",\n\"totalTime\":%g",rt_accumulated(SIM_TIMER_TOTAL));
   fprintf(fout, ",\n\"totalStepsTime\":%g",rt_accumulated(SIM_TIMER_STEP));
   fprintf(fout, ",\n\"totalTimeProfileBlocks\":%g",totalTimeEqs); /* The overhead the profiling is huge if small equations are profiled */

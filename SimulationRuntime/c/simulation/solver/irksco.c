@@ -335,6 +335,9 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
 
     int i,j,l;
 
+    /* profiling */
+    rt_tick(SIM_TIMER_JACOBIAN);
+
     ((DATA_IRKSCO*)userdata)->evalJacobians++;
 
     for(i = 0; i < *n; i++)
@@ -356,6 +359,9 @@ int wrapper_fvec_irksco(int* n, double* x, double* fvec, void* userdata, int fj)
       }
       x[i] = xsave;
     }
+
+    /* profiling */
+    rt_accumulate(SIM_TIMER_JACOBIAN);
   }
   return 0;
 }
@@ -605,7 +611,7 @@ void irksco_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solver
 
   for (i=0; i<data->modelData->nStates; i++)
   {
-    sc = Atol + abs(sDataOld->realVars[i])*Rtol;
+    sc = Atol + fabs(sDataOld->realVars[i])*Rtol;
     d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
     d1 += ((stateDer[i] * stateDer[i]) / (sc*sc));
   }
@@ -644,7 +650,7 @@ void irksco_first_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solver
 
   for (i=0; i<data->modelData->nStates; i++)
   {
-    sc = Atol + abs(userdata->radauVars[i])*Rtol;
+    sc = Atol + fabs(userdata->radauVars[i])*Rtol;
     d2 += ((stateDer[i]-userdata->der_x0[i])*(stateDer[i]-userdata->der_x0[i])/(sc*sc));
   }
 
