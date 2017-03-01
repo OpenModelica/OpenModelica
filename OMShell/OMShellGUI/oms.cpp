@@ -968,20 +968,20 @@ void OMS::closeEvent( QCloseEvent *event )
 
 void OMS::cut()
 {
-  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
-  ((MyTextEdit*)moshEdit_)->sendKey( key );
+  QKeyEvent key = QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
+  ((MyTextEdit*)moshEdit_)->sendKey( &key );
 }
 
 void OMS::copy()
 {
-  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
-  ((MyTextEdit*)moshEdit_)->sendKey( key );
+  QKeyEvent key = QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
+  ((MyTextEdit*)moshEdit_)->sendKey( &key );
 }
 
 void OMS::paste()
 {
-  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier, "v" );
-  ((MyTextEdit*)moshEdit_)->sendKey( key );
+  QKeyEvent key = QKeyEvent( QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier, "v" );
+  ((MyTextEdit*)moshEdit_)->sendKey( &key );
 }
 
 QString OMS::organization = "openmodelica";  /* case-sensitive string. Don't change it. Used by ini settings file. */
@@ -999,4 +999,3 @@ QSettings* OMS::getApplicationSettings()
   }
   return pSettings;
 }
-
