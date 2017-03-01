@@ -352,6 +352,9 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
     if(ACTIVE_STREAM(LOG_NLS_RES))
       infoStreamPrint(LOG_NLS_RES, 0, "-- begin calculating jacobian --");
 
+    /* performance measurement */
+    rt_ext_tp_tick(&systemData->jacobianTimeClock);
+
     /* call apropreated jacobian function */
     if(systemData->jacobianIndex != -1){
       integer iflagtmp = 1;
@@ -385,6 +388,11 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
     /* reset residual function again */
     if(continuous)
       data->simulationInfo->solveContinuous = 1;
+
+    /* performance measurement and statistics */
+    systemData->jacobianTime += rt_ext_tp_tock(&(systemData->jacobianTimeClock));
+    systemData->numberOfJEval++;
+
     break;
 
   default:

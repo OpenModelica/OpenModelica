@@ -264,6 +264,7 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
                                (((double) linsys[sysNumber].nnz) / ((double)(linsys[sysNumber].size*linsys[sysNumber].size)))*100 );
   infoStreamPrint(logLevel, 0, " number of calls                : %ld", linsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " average time per call          : %g", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " time of jacobian evaluations   : %g", linsys[sysNumber].jacobianTime);
   infoStreamPrint(logLevel, 0, " total time                     : %g", linsys[sysNumber].totalTime);
   messageClose(logLevel);
 }

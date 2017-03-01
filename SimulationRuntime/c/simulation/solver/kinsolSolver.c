@@ -331,6 +331,9 @@ int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, DlsMat Jac, void *use
 
   long int i,j;
 
+  /* performance measurement */
+  rt_ext_tp_tick(&nlsData->jacobianTimeClock);
+
   for(i = 0; i < N; i++)
   {
     xsave = x[i];
@@ -357,6 +360,11 @@ int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, DlsMat Jac, void *use
     infoStreamPrint(LOG_NLS_JAC, 0, "##KINSOL## omc dense matrix.");
     PrintMat(Jac);
   }
+
+  /* performance measurement and statistics */
+  nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
+  nlsData->numberOfJEval++;
+
   return 0;
 }
 
@@ -414,6 +422,9 @@ int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Ve
   long int i,j,ii;
   int nth = 0;
 
+  /* performance measurement */
+  rt_ext_tp_tick(&nlsData->jacobianTimeClock);
+
   /* reset matrix */
   SlsSetToZero(Jac);
 
@@ -460,6 +471,11 @@ int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Ve
     nlsKinsolJacSumSparse(Jac);
     messageClose(LOG_NLS_JAC);
   }
+
+  /* performance measurement and statistics */
+  nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
+  nlsData->numberOfJEval++;
+
   return 0;
 }
 

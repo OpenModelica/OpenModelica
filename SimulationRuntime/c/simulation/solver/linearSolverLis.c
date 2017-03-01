@@ -203,6 +203,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
   LIS_INT err;
 
   int indexes[2] = {1,eqSystemNumber};
+  double tmpJacEvalTime;
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Lis Solver",
          eqSystemNumber, (int) systemData->size,
          data->localData[0]->timeValue);
@@ -243,8 +244,9 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
       err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], solverData->b);
     }
   }
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
-
+  tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
+  systemData->jacobianTime += tmpJacEvalTime;
+  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   err = lis_solve(solverData->A,solverData->b,solverData->x,solverData->solver);

@@ -395,6 +395,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
    * We want to look it up among all equations. */
   /* int eqSystemNumber = systemData->equationIndex; */
   int success = 1;
+  double tmpJacEvalTime;
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Total Pivot Solver",
          eqSystemNumber, (int) systemData->size,
@@ -429,7 +430,9 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
     /* calculate vector b (rhs) -> -b is last column of matrix Ab */
     wrapper_fvec_totalpivot(systemData->x, solverData->Ab + n*n, dataAndThreadData, sysNumber);
   }
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
+  tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
+  systemData->jacobianTime += tmpJacEvalTime;
+  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
   debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
 
   rt_ext_tp_tick(&(solverData->timeClock));

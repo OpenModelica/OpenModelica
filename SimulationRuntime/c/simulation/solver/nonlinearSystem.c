@@ -560,6 +560,8 @@ void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLev
   infoStreamPrint(logLevel, 0, " number of calls                : %ld", nonlinsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " number of iterations           : %ld", nonlinsys[sysNumber].numberOfIterations);
   infoStreamPrint(logLevel, 0, " number of function evaluations : %ld", nonlinsys[sysNumber].numberOfFEval);
+  infoStreamPrint(logLevel, 0, " number of jacobian evaluations : %ld", nonlinsys[sysNumber].numberOfJEval);
+  infoStreamPrint(logLevel, 0, " time of jacobian evaluations   : %f", nonlinsys[sysNumber].jacobianTime);
   infoStreamPrint(logLevel, 0, " average time per call          : %f", nonlinsys[sysNumber].totalTime/nonlinsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " total time                     : %f", nonlinsys[sysNumber].totalTime);
   messageClose(logLevel);

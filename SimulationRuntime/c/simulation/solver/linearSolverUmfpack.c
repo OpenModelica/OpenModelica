@@ -197,6 +197,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
+  double tmpJacEvalTime;
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
    eqSystemNumber, (int) systemData->size,
@@ -235,8 +236,9 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
     memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
     wrapper_fvec_umfpack(solverData->work, systemData->b, dataAndThreadData, sysNumber);
   }
-
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
+  tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
+  systemData->jacobianTime += tmpJacEvalTime;
+  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   if (ACTIVE_STREAM(LOG_LS_V))
   {

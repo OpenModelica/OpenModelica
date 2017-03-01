@@ -139,6 +139,9 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
   if (fj) {
     (data->simulationInfo->nonlinearSystemData[currentSys].residualFunc)(dataAndThreadData, x, fvec, iflag);
   } else {
+    /* performance measurement */
+    rt_ext_tp_tick(&systemData->jacobianTimeClock);
+
     if(systemData->jacobianIndex != -1) {
       getAnalyticalJacobianNewton(data, uData->threadData, solverData->fjac, currentSys);
     } else {
@@ -166,6 +169,9 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
         x[i] = xsave;
       }
     }
+    /* performance measurement and statistics */
+    systemData->jacobianTime += rt_ext_tp_tock(&(systemData->jacobianTimeClock));
+    systemData->numberOfJEval++;
   }
   return *iflag;
 }

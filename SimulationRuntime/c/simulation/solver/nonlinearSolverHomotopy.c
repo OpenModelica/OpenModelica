@@ -858,6 +858,10 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
 {
   int i;
   int jacobianIndex = (&(solverData->data->simulationInfo->nonlinearSystemData[solverData->sysNumber]))->jacobianIndex;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(solverData->data->simulationInfo->nonlinearSystemData[solverData->sysNumber]);
+
+  /* performance measurement */
+  rt_ext_tp_tick(&nonlinsys->jacobianTimeClock);
 
   /* calculate jacobian */
   if(jacobianIndex != -1)
@@ -883,6 +887,9 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
     debugDouble(LOG_NLS_JAC_TEST,"relative error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
     messageClose(LOG_NLS_JAC_TEST);
   }
+  /* performance measurement and statistics */
+  nonlinsys->jacobianTime += rt_ext_tp_tock(&(nonlinsys->jacobianTimeClock));
+  nonlinsys->numberOfJEval++;
 
   return 0;
 }

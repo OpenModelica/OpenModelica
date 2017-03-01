@@ -294,9 +294,12 @@ typedef struct NONLINEAR_SYSTEM_DATA
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
   unsigned long numberOfFEval;         /* number of function evaluations of this system */
+  unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
   unsigned long numberOfIterations;    /* number of iteration of non-linear solvers of this system */
   double totalTime;                    /* save the totalTime */
   rtclock_t totalTimeClock;            /* time clock for the totalTime  */
+  double jacobianTime;                 /* save the time to calculate jacobians */
+  rtclock_t jacobianTimeClock;         /* time clock for the jacobianTime  */
   void* csvData;                       /* information to save csv data */
 } NONLINEAR_SYSTEM_DATA;
 #else
@@ -345,8 +348,10 @@ typedef struct LINEAR_SYSTEM_DATA
 
   /* statistics */
   unsigned long numberOfCall;           /* number of solving calls of this system */
+  unsigned long numberOfJEval;          /* number of jacobian evaluations of this system */
   double totalTime;                     /* save the totalTime */
   rtclock_t totalTimeClock;             /* time clock for the totalTime  */
+  double jacobianTime;                  /* save the time to calculate jacobians */
 }LINEAR_SYSTEM_DATA;
 #else
 typedef void* LINEAR_SYSTEM_DATA;

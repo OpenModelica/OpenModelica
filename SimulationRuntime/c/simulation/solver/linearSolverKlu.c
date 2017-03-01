@@ -181,6 +181,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
   DATA_KLU* solverData = (DATA_KLU*)systemData->solverData;
 
   int i, j, status = 0, success = 0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
+  double tmpJacEvalTime;
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Klu Solver",
    eqSystemNumber, (int) systemData->size,
@@ -218,8 +219,9 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
     memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
     residual_wrapper(solverData->work, systemData->b, dataAndThreadData, sysNumber);
   }
-
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
+  tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
+  systemData->jacobianTime += tmpJacEvalTime;
+  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   if (ACTIVE_STREAM(LOG_LS_V))
   {
