@@ -109,6 +109,7 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
 #if !defined(WITHOUT_OSG)
+  bool isThreeDViewerInitialized();
   ThreeDViewer* getThreeDViewer();
   QDockWidget* getThreeDViewerDockWidget() {return mpThreeDViewerDockWidget;}
 #endif

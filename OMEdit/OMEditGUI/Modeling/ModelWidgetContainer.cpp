@@ -5057,7 +5057,9 @@ void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
       MainWindow::instance()->getThreeDViewer()->clearView();
     }
   } else {
-    MainWindow::instance()->getThreeDViewer()->clearView();
+    if (MainWindow::instance()->isThreeDViewerInitialized()) {
+      MainWindow::instance()->getThreeDViewer()->clearView();
+    }
   }
 }
 #endif
@@ -5239,7 +5241,9 @@ void ModelWidgetContainer::updateThreeDViewer(QMdiSubWindow *pSubWindow)
 {
 #if !defined(WITHOUT_OSG)
   if (!pSubWindow) {
-    MainWindow::instance()->getThreeDViewer()->clearView();
+    if (MainWindow::instance()->isThreeDViewerInitialized()) {
+      MainWindow::instance()->getThreeDViewer()->clearView();
+    }
     return;
   }
   ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());

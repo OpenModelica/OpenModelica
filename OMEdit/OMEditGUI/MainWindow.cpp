@@ -388,6 +388,16 @@ void MainWindow::setUpMainWindow()
 
 #if !defined(WITHOUT_OSG)
 /*!
+ * \brief MainWindow::isThreeDViewerInitialized
+ * Returns true if ThreeDViewer is initialized.
+ * \return
+ */
+bool MainWindow::isThreeDViewerInitialized()
+{
+  return mpThreeDViewer ? true : false;
+}
+
+/*!
  * \brief MainWindow::getThreeDViewer
  * Returns the ThreeDViewer object. Initializes it if its not initialized.
  * \return
