@@ -467,9 +467,24 @@ algorithm
         if BaseHashTable.hasKey(call, HT) then
           exIndex := BaseHashTable.get(call, HT);
           cseEquation := ExpandableArray.get(exIndex, exarray);
-    //print("cref1: " + ExpressionDump.printExpStr(cseEquation.cse) + "\n");
-    //print("cref2: " + ExpressionDump.printExpStr(cref) + "\n");
+          //print("cref1: " + ExpressionDump.printExpStr(cseEquation.cse) + "\n");
+          //print("cref2: " + ExpressionDump.printExpStr(cref) + "\n");
           cseEquation.cse := mergeCSETuples(cseEquation.cse, cref);
+          exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
+        elseif not isSkipCase(call, functionTree) then
+          index := index + 1;
+          HT := BaseHashTable.add((call, index), HT);
+          exarray := ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
+        end if;
+
+      elseif isCallAndRecord(lhs, rhs) then
+        (cref, call) := getTheRightPattern(lhs, rhs);
+        if BaseHashTable.hasKey(call, HT) then
+          exIndex := BaseHashTable.get(call, HT);
+          cseEquation := ExpandableArray.get(exIndex, exarray);
+          //print("cref old: " + ExpressionDump.printExpStr(cseEquation.cse) + "\n");
+          //print("cref new: " + ExpressionDump.printExpStr(cref) + "\n");
+          cseEquation.cse := cref;
           exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
         elseif not isSkipCase(call, functionTree) then
           index := index + 1;
@@ -665,6 +680,9 @@ algorithm
     case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(lhs), right=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs))
     then isEquationRedundant2(lhs, rhs);
 
+    case BackendDAE.COMPLEX_EQUATION(left = exp1 as DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))), right = exp2 as DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))))
+    then Expression.expEqual(exp1, exp2);
+
     else false;
   end match;
 end isEquationRedundant;
@@ -742,6 +760,18 @@ algorithm
     else false;
   end match;
 end isCallAndTuple;
+
+protected function isCallAndRecord
+  input DAE.Exp inExp;
+  input DAE.Exp inExp2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inExp, inExp2)
+    case (DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))), DAE.CALL()) then true;
+    case (DAE.CALL(), DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
+    else false;
+  end match;
+end isCallAndRecord;
 
 protected function mergeCSETuples
   input DAE.Exp inCref1;
