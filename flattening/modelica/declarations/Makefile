@@ -70,6 +70,8 @@ ScopeDeclaration3.mo \
 ScopeModification1.mo \
 ScopeModification2.mo \
 TestPackageConstantHandling.mo \
+Ticket4276a.mo \
+Ticket4276b.mo \
 
 
 # test that currently fail. Move up when fixed. 
