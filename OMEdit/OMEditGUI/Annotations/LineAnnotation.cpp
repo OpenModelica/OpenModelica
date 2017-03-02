@@ -302,47 +302,27 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
   applyLinePattern(painter);
   // draw start arrow
   if (mPoints.size() > 1) {
-    if (mArrow.at(0) == StringHandler::ArrowFilled) {
-      painter->save();
-      painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
-      painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0)));
-      painter->restore();
-    } else {
-      painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0)));
-    }
+    drawArrow(painter, mPoints.at(0), mPoints.at(1), mArrowSize, mArrow.at(0));
   }
   painter->drawPath(getShape());
   // draw end arrow
   if (mPoints.size() > 1) {
-    if (mArrow.at(1) == StringHandler::ArrowFilled) {
-      painter->save();
-      painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
-      painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1)));
-      painter->restore();
-    } else {
-      painter->drawPolygon(drawArrow(mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1)));
-    }
+    drawArrow(painter, mPoints.at(mPoints.size() - 1), mPoints.at(mPoints.size() - 2), mArrowSize, mArrow.at(1));
   }
 }
 
-QPolygonF LineAnnotation::drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const
+void LineAnnotation::drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const
 {
   double xA = size / 2;
   double yA = size * sqrt(3) / 2;
   double xB = -xA;
   double yB = yA;
-  switch (arrowType) {
-    case StringHandler::ArrowFilled:
-      break;
-    case StringHandler::ArrowHalf:
-      xB = 0;
-      break;
-    case StringHandler::ArrowNone:
-      return QPolygonF();
-    case StringHandler::ArrowOpen:
-      break;
-  }
   double angle = 0.0f;
+
+  if (arrowType == StringHandler::ArrowHalf) {
+    xB = 0;
+  }
+
   if (endPos.x() - startPos.x() == 0) {
     if (endPos.y() - startPos.y() >= 0) {
       angle = 0;
@@ -368,14 +348,36 @@ QPolygonF LineAnnotation::drawArrow(QPointF startPos, QPointF endPos, qreal size
   QTransform t1(m11, m12, m13, m21, m22, m23, m31, m32, m33);
   QTransform t2(xA, 1, 1, yA, 1, 1, 1, 1, 1);
   QTransform t3 = t1 * t2;
-  QPolygonF polygon;
-  polygon << startPos;
-  polygon << QPointF(t3.m11(), t3.m21());
+  QPolygonF arrowPolygon;
+  arrowPolygon << startPos;
+  arrowPolygon << QPointF(t3.m11(), t3.m21());
   t2.setMatrix(xB, 1, 1, yB, 1, 1, 1, 1, 1);
   t3 = t1 * t2;
-  polygon << QPointF(t3.m11(), t3.m21());
-  polygon << startPos;
-  return polygon;
+  arrowPolygon << QPointF(t3.m11(), t3.m21());
+  arrowPolygon << startPos;
+  // draw arrow
+  switch (arrowType) {
+    case StringHandler::ArrowFilled:
+      painter->save();
+      painter->setBrush(QBrush(mLineColor, Qt::SolidPattern));
+      painter->drawPolygon(arrowPolygon);
+      painter->restore();
+      break;
+    case StringHandler::ArrowOpen:
+      if (arrowPolygon.size() > 2) {
+        painter->drawLine(arrowPolygon.at(0), arrowPolygon.at(1));
+        painter->drawLine(arrowPolygon.at(0), arrowPolygon.at(2));
+      }
+      break;
+    case StringHandler::ArrowHalf:
+      if (arrowPolygon.size() > 1) {
+        painter->drawLine(arrowPolygon.at(0), arrowPolygon.at(1));
+      }
+      break;
+    case StringHandler::ArrowNone:
+    default:
+      break;
+  }
 }
 
 /*!

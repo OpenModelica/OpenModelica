@@ -10,7 +10,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    sodipodi:docname="arrow-start-open-half.svg"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.48.5 r10040"
    version="1.1"
    id="svg4638"
    height="16px"
@@ -23,14 +23,14 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.5"
-     inkscape:cx="-14.210924"
-     inkscape:cy="32"
+     inkscape:cx="-1.4836513"
+     inkscape:cy="0"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:document-units="px"
      inkscape:grid-bbox="true"
      inkscape:window-width="1600"
-     inkscape:window-height="838"
+     inkscape:window-height="837"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1" />
@@ -128,19 +128,18 @@
        width="57"
        height="13"
        x="0.5"
-       y="-14.5"
-       transform="scale(1,-1)" />
+       y="1.5" />
     <path
        sodipodi:nodetypes="cc"
        style="fill:none;stroke:#0056c1;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-start:none"
-       d="m 3.5,8.5 48,0"
+       d="m 3.5,7.5 48,0"
        id="path4113"
        inkscape:connector-curvature="0" />
     <path
-       sodipodi:nodetypes="cccc"
-       style="fill:none;stroke:#0056c1;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 3.5,8.5 10,3.5 0,-3.5 z"
-       id="path3012"
-       inkscape:connector-curvature="0" />
+       style="fill:none;stroke:#0056c1;stroke-width:1px;stroke-linecap:round;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 13.5,11 3.5,7.5"
+       id="path3000"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
   </g>
 </svg>

@@ -10,7 +10,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    sodipodi:docname="arrow-start-open.svg"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.48.5 r10040"
    version="1.1"
    id="svg4638"
    height="16px"
@@ -23,14 +23,14 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.5"
-     inkscape:cx="-14.210924"
-     inkscape:cy="32"
+     inkscape:cx="7.6363636"
+     inkscape:cy="-2.5454545"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:document-units="px"
      inkscape:grid-bbox="true"
      inkscape:window-width="1600"
-     inkscape:window-height="838"
+     inkscape:window-height="837"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1" />
@@ -137,10 +137,16 @@
        id="path4113"
        inkscape:connector-curvature="0" />
     <path
-       sodipodi:nodetypes="cccc"
-       style="fill:none;stroke:#0056c1;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 3.5,8.5 10,3.5 0,-7 z"
-       id="path3012"
-       inkscape:connector-curvature="0" />
+       style="fill:none;stroke:#0056c1;stroke-width:1px;stroke-linecap:round;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 13.5,5 3.5,8.5"
+       id="path3000"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#0056c1;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       d="M 13.5,12 3.5,8.5"
+       id="path3000-1"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
   </g>
 </svg>

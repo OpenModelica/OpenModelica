@@ -72,7 +72,7 @@ public:
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawLineAnnotaion(QPainter *painter);
-  QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
+  void drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
   QString getCompositeModelShapeAnnotation();
