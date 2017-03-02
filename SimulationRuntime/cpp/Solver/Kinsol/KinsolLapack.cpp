@@ -85,7 +85,15 @@ static int KINLapackCompletePivotingSetup(KINMem kin_mem)
  *  \return Return_Description
  *  \details Details
  */
+
+
+
+
+#if(SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 6)
+static int KINLapackCompletePivotingFree(KINMem kin_mem)
+#else
 static void KINLapackCompletePivotingFree(KINMem kin_mem)
+#endif
 {
 	linSysData* data = (linSysData*)kin_mem->kin_lmem;
 
@@ -94,6 +102,9 @@ static void KINLapackCompletePivotingFree(KINMem kin_mem)
 	delete [] data->ihelpArray;
 	delete [] data->jhelpArray;
 	delete data;
+	#if (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 6)
+    return 0;
+	#endif
 }
 /**\brief Brief callback function to solve linear system
  *  \param [in] kin_mem Parameter_Description
