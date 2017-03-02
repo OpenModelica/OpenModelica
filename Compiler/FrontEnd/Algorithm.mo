@@ -367,6 +367,51 @@ algorithm
   end match;
 end makeAssignmentsList;
 
+public function checkLHSWritable
+"@author: adrpo
+ check if the parameters on rhs have fixed = false
+ and fail otherwise"
+  input list<DAE.Exp> lhs;
+  input list<DAE.Properties> props;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+protected
+  DAE.Type ty;
+  Integer i = 1;
+  String c, l, r;
+algorithm
+  for p in props loop
+    _ := matchcontinue p
+      // variables is fine
+      case DAE.PROP(constFlag = DAE.C_VAR()) then ();
+      // constant
+      case DAE.PROP(ty, DAE.C_CONST())
+        equation
+          l = stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
+          r = ExpressionDump.printExpStr(rhs);
+          Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {l, r}, ElementSource.getElementSourceFileInfo(source));
+          fail();
+        then
+          ();
+      // parameters
+      case DAE.PROP(ty, DAE.C_PARAM())
+        equation
+          if Types.getFixedVarAttributeParameterOrConstant(ty) then
+            l = stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
+            r = ExpressionDump.printExpStr(rhs);
+            c = ExpressionDump.printExpStr(listGet(lhs, i));
+            Error.addSourceMessage(Error.ASSIGN_PARAM_FIXED_ERROR, {c, l, r}, ElementSource.getElementSourceFileInfo(source));
+            fail();
+          end if;
+        then
+          ();
+      // tuples? TODO! FIXME! can we get tuple here? maybe only for MetaModelica
+      case DAE.PROP_TUPLE(ty, _) then ();
+    end matchcontinue;
+    i := i + 1;
+  end for;
+end checkLHSWritable;
+
 public function makeTupleAssignment "This function creates an `DAE.STMT_TUPLE_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match."
@@ -390,6 +435,7 @@ algorithm
       list<DAE.Type> lhrtypes, tpl;
       list<DAE.TupleConst> clist;
       DAE.Type ty;
+      DAE.Const const;
 
     case (lhs, lprop, rhs, _, _, _)
       equation
@@ -416,8 +462,7 @@ algorithm
     // a normal prop in rhs that contains a T_TUPLE!
     case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(types = tpl)), _, _)
       equation
-        bvals = List.map(lhprops, Types.propAnyConst);
-        DAE.C_VAR() = List.reduce(bvals, Types.constOr);
+        checkLHSWritable(expl, lhprops, rhs, source);
         lhrtypes = List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of
@@ -426,8 +471,7 @@ algorithm
     // a tuple in rhs
     case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST()), _, _)
       equation
-        bvals = List.map(lhprops, Types.propAnyConst);
-        DAE.C_VAR() = List.reduce(bvals, Types.constOr);
+        checkLHSWritable(expl, lhprops, rhs, source);
         lhrtypes = List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */

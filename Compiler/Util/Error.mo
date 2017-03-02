@@ -866,6 +866,8 @@ public constant Message USER_TEARING_VARS = MESSAGE(578, SYMBOLIC(), NOTIFICATIO
   Util.gettext("Following iteration variables are selected by the user for strong component %s (DAE kind: %s):\n%s"));
 public constant Message CLASS_EXTENDS_TARGET_NOT_FOUND = MESSAGE(579, TRANSLATION(), ERROR(),
   Util.gettext("Base class targeted by class extends %s not found in the inherited classes."));
+public constant Message ASSIGN_PARAM_FIXED_ERROR = MESSAGE(580, TRANSLATION(), ERROR(),
+  Util.gettext("Trying to assign to parameter component %s(fixed=true) in %s := %s"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
