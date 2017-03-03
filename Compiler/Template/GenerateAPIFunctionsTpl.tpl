@@ -283,15 +283,29 @@ template getQtInArgBoxed(Text name, DAE.Type ty)
     else error(sourceInfo(), 'getQtInArgBoxed failed for <%unparseType(ty)%>')
 end getQtInArgBoxed;
 
-template getQtCommandLogText(Text name, DAE.Type ty)
+template getQtCommandLogText(Text name, DAE.Type ty, Text commandLog)
 ::=
   match ty
-    case T_CODE(ty=C_TYPENAME(__)) then '<%name%>'
-    case T_STRING(__) then 'QString("\""+<%name%>+"\"")'
+    case T_CODE(ty=C_TYPENAME(__)) then '<%commandLog%>.append(<%name%>);' + "\n"
+    case T_STRING(__) then '<%commandLog%>.append("\"" + <%name%> + "\"");' + "\n"
     case T_INTEGER(__)
-    case T_REAL(__) then 'QString::number(<%name%>)'
-    case T_BOOL(__) then 'QString(<%name%> ? "true" : "false")'
-    case aty as T_ARRAY(__) then 'QString("### Handle array arguments ###")'
+    case T_REAL(__) then '<%commandLog%>.append(QString::number(<%name%>));' + "\n"
+    case T_BOOL(__) then '<%commandLog%>.append(<%name%> ? "true" : "false");' + "\n"
+    case aty as T_ARRAY(__) then
+    let elt = '<%name%>_elt'
+    let counter = '<%name%>_i'
+    <<
+    <%commandLog%>.append("{");
+    int <%counter%> = 0;
+    foreach(<%getQtType(aty.ty)%> <%elt%>, <%name%>) {
+      if (<%counter%>) {
+        <%commandLog%>.append(",");
+      }
+      <%getQtCommandLogText(elt, aty.ty, commandLog)%>
+      <%counter%>++;
+    }
+    <%commandLog%>.append("}");
+    >>
     else error(sourceInfo(), 'getQtCommandLogText failed for <%unparseType(ty)%>')
 end getQtCommandLogText;
 
@@ -352,7 +366,7 @@ template getQtResponseLogText(Text name, DAE.Type ty, Text responseLog)
     int <%counter%> = 0;
     foreach(<%getQtType(aty.ty)%> <%elt%>, <%name%>) {
       if (<%counter%>) {
-        responseLog.append(",");
+        <%responseLog%>.append(",");
       }
       <%getQtResponseLogText(elt, aty.ty, responseLog)%>
       <%counter%>++;
@@ -368,7 +382,8 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   let &responseLog = buffer ""
   let &postCall = buffer ""
   let inArgs = args |> arg as FUNCARG(__) => ', <%getQtInArg(arg.name, arg.ty, varDecl)%>'
-  let commandArgs = args |> arg as FUNCARG(__) => getQtCommandLogText(arg.name, arg.ty) ; separator='+"," +'
+  let &commandLog = buffer ""
+  let &commandLog += args |> arg as FUNCARG(__) => getQtCommandLogText(arg.name, arg.ty, 'commandLog') ; separator='commandLog.append(",");' + "\n"
   let outArgs = (match res
     case T_NORETCALL(__) then
       ""
@@ -386,7 +401,15 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   {
     QTime commandTime;
     commandTime.start();
-    emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
+    <%if intGt(listLength(args), 0) then
+    <<
+    QString commandLog;
+    <%commandLog%>
+    emit logCommand("<%replaceDotAndUnderscore(name)%>("+commandLog+")", &commandTime);
+    >> else
+    <<
+    emit logCommand("<%replaceDotAndUnderscore(name)%>()", &commandTime);
+    >>%>
 
     <%varDecl%>
 
