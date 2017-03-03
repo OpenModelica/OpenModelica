@@ -73,7 +73,7 @@ namespace IAEX
 
   /*!
    * \brief Reads a given file and tries to construct a DOM tree
-    * from that file. If the file is corrupt a exception will be throwed.
+    * from that file. If the file is corrupt a exception will be thrown.
    * \author Ingemar Axelsson (large part of this function is untouched)
    *
    * \param filename The file that will be read.
@@ -86,7 +86,7 @@ namespace IAEX
     QFile file(filename);
     if(!file.open(QIODevice::ReadOnly))
     {
-      // 2005-10-03 AF, thorw exception insted of exit
+      // 2005-10-03 AF, throw exception instead of exit
       string tmp = "Could not open file: " + filename.toStdString();
       throw runtime_error( tmp.c_str() );
     }
@@ -96,7 +96,7 @@ namespace IAEX
     {
       file.close();
 
-      // 2005-10-26 AF, thorw exception insted of exit
+      // 2005-10-26 AF, throw exception instead of exit
       string tmp = "Could not read content from file: " +
         filename.toStdString() +
         " Probably some syntax error in the xml file";

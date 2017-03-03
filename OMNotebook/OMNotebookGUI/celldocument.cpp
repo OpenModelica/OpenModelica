@@ -854,7 +854,7 @@ namespace IAEX
               pos = 0;
 
             // set new scrollvalue
-            cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+            //cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
             scroll_->verticalScrollBar()->setValue( pos );
           }
           // DOWN

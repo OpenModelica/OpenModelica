@@ -96,7 +96,7 @@ namespace IAEX
    *
    * 2005-11-03 AF, Updated the function to reflect the changes made
    * in qt (from v3 to v4). The function now takes a QUrl as parameter
-   * insted of a QString (in qt3).
+   * instead of a QString (in qt3).
    */
   void MyTextBrowser::setSource(const QUrl &name)
   {

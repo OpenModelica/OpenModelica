@@ -3627,10 +3627,8 @@ void Graph_Scene::new_Scene()
 }
 
 
-void Graph_Scene::save_Scene(QString file_name)
-{
-
-     files.writeXml(objects,file_name);
+void Graph_Scene::save_Scene(QString file_name) {
+  files.writeXml(objects,file_name);
 }
 
 void Graph_Scene::save_xml_Scene(QString file_name)

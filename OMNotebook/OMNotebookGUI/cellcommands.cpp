@@ -98,7 +98,7 @@ namespace IAEX
       }
 
       // 2005-11-21 AF, Added check if the current cell is a
-      // inputcell, set style to 'text' insted.
+      // inputcell, set style to 'text' instead.
       // 2006-02-03 AF, added check if the current cell is a
       // groupcell
       if( style.name() == "input" || style.name() == "Input" || style.name() == "ModelicaInput" ||

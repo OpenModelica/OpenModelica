@@ -180,7 +180,6 @@ namespace IAEX
 
     // 2005-12-17 AF, Create instance (load styles) of stylesheet
     // 2006-04-10 AF, use environment variable to find stylesheet.xml
-    Stylesheet *sheet;
     try
     {
       QString stylesheetfile;
@@ -189,7 +188,7 @@ namespace IAEX
       else
         stylesheetfile = openmodelica + "/share/omnotebook/stylesheet.xml";
 
-      sheet = Stylesheet::instance( stylesheetfile );
+      Stylesheet::instance( stylesheetfile );
     }
     catch( exception &e )
     {
@@ -428,7 +427,7 @@ namespace IAEX
       DocumentView *v = new NotebookWindow(d, filename);
       add(v);
 
-      // 2006-01-31 AF, Open window minimized insted of normal
+      // 2006-01-31 AF, Open window minimized instead of normal
 
       //v->showMinimized();
 

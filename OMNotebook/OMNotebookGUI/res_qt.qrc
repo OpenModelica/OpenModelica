@@ -61,5 +61,10 @@
         <file>Resources/toolbarIcons/down.png</file>
         <file>Resources/toolbarIcons/up.png</file>
         <file>Resources/toolbarIcons/updown.png</file>
+        <file>Resources/sketchIcons/new.svg</file>
+        <file>Resources/sketchIcons/save.svg</file>
+        <file>Resources/sketchIcons/saveas.svg</file>
+        <file>Resources/sketchIcons/import.svg</file>
+        <file>Resources/sketchIcons/export.svg</file>
     </qresource>
 </RCC>

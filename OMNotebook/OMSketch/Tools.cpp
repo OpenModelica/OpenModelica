@@ -8,7 +8,10 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     editMenu = new QMenu;
     toolMenu = new QMenu;
 
-    tool_bar = new QToolBar();
+    tool_bar1 = new QToolBar();
+    tool_bar2 = new QToolBar();
+    tool_bar3 = new QToolBar();
+    tool_bar4 = new QToolBar();
     rect = new QToolButton();
     hlayout = new QVBoxLayout;
     main_widget = new QWidget;
@@ -18,17 +21,11 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
     files = new Sketch_Files();
 
-    //message Box
-    msg = new QMessageBox(this);
-    msg_save = new QPushButton;
-    msg_dnt_save = new QPushButton;
-    msg_cancle = new QPushButton;
-
     edit=false;
     isSaved=false;
 
-    tabWidget = new QTabWidget();
     add_components();
+    addToolBarBreak();
 
     statusBar = new QStatusBar();
 
@@ -36,8 +33,6 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
 
     setStatusBar(statusBar);
-
-    hlayout->addWidget(tabWidget);
 
     //if(application =="Sketch")
     {
@@ -65,11 +60,6 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     button_action();
     menu();
     draw_shapes();
-
-    msg->setText("Do you want to save file.");
-    msg_save=msg->addButton("Save",QMessageBox::AcceptRole);
-    msg_dnt_save=msg->addButton("Don't Save",QMessageBox::AcceptRole);
-    msg_cancle=msg->addButton("Cancel",QMessageBox::AcceptRole);
 
     filenames.clear();
     onbfilenames.clear();
@@ -131,6 +121,10 @@ void Tools::button_action()
 
     file_save = new QAction(tr("&Save"),this);
     connect(file_save,SIGNAL(triggered()), this, SLOT(draw_save()));
+
+    close_me = new QAction(tr("&Close"),this);
+    close_me->setShortcut(QKeySequence("Ctrl+W"));
+    connect(close_me,SIGNAL(triggered()), this, SLOT(close()));
 
     file_image_save = new QAction(tr("&Export Image"),this);
     connect(file_image_save,SIGNAL(triggered()), this, SLOT(draw_image_save()));
@@ -368,33 +362,25 @@ void Tools::draw_text()
 
 void Tools::draw_new()
 {
-    if(!isSaved)
-    {
-        msg->exec();
-
-        if(msg->clickedButton()==msg_save)
-        {
-            QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
-            //file_dialog->deleteLater();
-            if(file_name.contains(".png"))
-                writeImage(file_name);
-            scene->new_Scene();
-            isSaved=true;
-        }
-
-        if(msg->clickedButton()==msg_dnt_save)
-        {
-            scene->new_Scene();
-            isSaved=false;
-        }
+  if(!isSaved) {
+    int opt=QMessageBox::question(this,"Save file",tr("Do you want to save file."),QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+    if(opt==QMessageBox::Cancel) {
+      return;
+    } else if(opt==QMessageBox::Yes) {
+      QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
+      //file_dialog->deleteLater();
+      if(file_name.contains(".png")) {
+        writeImage(file_name);
+      }
     }
+  }
 
-    scene->new_Scene();
-    statusBar->showMessage("New Scene");
+  scene->new_Scene();
+  isSaved=true;
+  statusBar->showMessage("New Scene");
 }
 
-void Tools::draw_save()
-{
+void Tools::draw_save() {
     //if(application=="Sketch")
     {
         while(!isSaved)
@@ -516,12 +502,8 @@ void Tools::draw_open()
 }
 
 
-void Tools::draw_image_save()//exporting of image
-{
-    //QRgb rgb;
-
-    //qDebug()<<"scene object size "<<scene->getObjects().size()<<"\n";
-
+//exporting of image
+void Tools::draw_image_save() {
     QDir dir;
     QVector<QPointF> objectsPos;
     QPointF minPos,maxPos;
@@ -530,14 +512,13 @@ void Tools::draw_image_save()//exporting of image
 
     scene->getObjectsPos(objectsPos);
 
-    for(int i=0;i<scene->getObjects().size();i++)
-      scene->getObjects().at(i)->print();
+    // Debug output:
+    //for(int i=0;i<scene->getObjects().size();i++)
+    //  scene->getObjects().at(i)->print();
 
-    QPointF pnt,pnt1;
+    QPointF pnt = scene->getDim();
 
-    scene->getDim();
-
-    QImage *image = new QImage(scene->getDim().x()+1, scene->getDim().y()+1, QImage::Format_ARGB32_Premultiplied);
+    QImage *image = new QImage(pnt.x()+1, pnt.y()+1, QImage::Format_ARGB32_Premultiplied);
     image->fill(qRgb(255,255,255));
 
     scene->getMinPosition(minPos);
@@ -556,8 +537,7 @@ void Tools::draw_image_save()//exporting of image
 
     //p->end();
     isSaved=false;
-    if(edit==false)
-    {
+    if(edit==false) {
         QString num;
 
         QSize size;
@@ -609,10 +589,7 @@ void Tools::draw_image_save()//exporting of image
                 statusBar->showMessage("Image Exported ",10000);
             }
         }
-    }
-
-    if(edit==true)
-    {
+    } else { // edit==true
         QSize size;
         QString num1;
 
@@ -810,11 +787,11 @@ void Tools::readXml(QString file_name)
 
   if(QFileInfo(file_name1).isFile())
   {
-     QFile fd(file_name1);//It is a data file from which we are taking the data
-     fd.open(QFile::ReadWrite);
-     QXmlStreamReader xr(&fd);
+    QFile fd(file_name1);//It is a data file from which we are taking the data
+    fd.open(QFile::ReadWrite);
+    QXmlStreamReader xr(&fd);
 
-     bool ok;
+    bool ok;
 
      //QMessageBox::about(this,"entered","Entered reading files");
 
@@ -824,37 +801,23 @@ void Tools::readXml(QString file_name)
 
      while(!xr.atEnd())
      {
-          //QMessageBox::about(this,"entered","Entered reading file contents");
-        if(xr.name()=="FileName")
-        {
+       QStringRef name = xr.name();
 
+        //QMessageBox::about(this,"entered","Entered reading file contents");
+        if(name=="FileName") {
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          filenames1.push_back(num1);
-
-        }
-
-        if(xr.name()=="OnbFileName")
-        {
+       } else if(name=="OnbFileName") {
 
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          onbfilenames1.push_back(num1);
-        }
-
-
-        if(xr.name()=="Position")
-        {
+       } else if(name=="Position") {
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          positions1.push_back(num1);
-        }
-
-        if(xr.name()=="Text")
-        {
+       } else if(name=="Text") {
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          texts1.push_back(num1);
-        }
-
-        if(xr.name()=="CellId")
-        {
+       } else if(name=="CellId") {
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          cellIds1.push_back(num1);
         }
@@ -921,7 +884,7 @@ void Tools::readXml(QString file_name)
       {
              //QMessageBox::about(this,"attrib",filenames1[j]+" "+positions1[j]+" "+texts1[j]+" "+cellIds1[j]+" "+img.imageName);
 
-             img.imageName=filenames1[j];
+        img.imageName=filenames1[j];
        img.cursor_position=positions1[j];
        img.cell_text=texts1[j];
        img.cellId=cellIds1[j];
@@ -995,58 +958,36 @@ void Tools::mousePressEvent(QMouseEvent *event)
       isSaved=false;
 
   }
-
-
 }
 
-void Tools::menu()
-{
-    fileMenu=menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(file_new);
-    fileMenu->addAction(file_open);
-    fileMenu->addAction(file_save);
-    fileMenu->addAction(file_image_save);
+void Tools::menu() {
+  fileMenu=menuBar()->addMenu(tr("&File"));
+  fileMenu->addAction(file_new);
+  fileMenu->addAction(file_open);
+  fileMenu->addAction(file_save);
+  fileMenu->addAction(file_image_save);
+  fileMenu->addAction(close_me);
 
-    editMenu=menuBar()->addMenu(tr("&Edit"));
-    editMenu->addAction(copy);
-    editMenu->addAction(cut);
-    editMenu->addAction(paste);
+  editMenu=menuBar()->addMenu(tr("&Edit"));
+  editMenu->addAction(copy);
+  editMenu->addAction(cut);
+  editMenu->addAction(paste);
 }
 
-void Tools::draw_shapes()
-{
-    tool_bar->addAction(arc);
-    tool_bar->addAction(arrow);
-    tool_bar->addAction(line);
-    tool_bar->addAction(linearrow);
-    tool_bar->addAction(rectangle);
-    tool_bar->addAction(round_rectangle);
-    tool_bar->addAction(ellipse);
-    tool_bar->addAction(polygon);
-    tool_bar->addAction(triangle);
-    tool_bar->addAction(text);
-    tool_bar->setCursor(Qt::ArrowCursor);
-    addToolBar(tool_bar);
-
-    addToolBar(tool_bar);
-
-
+void Tools::draw_shapes() {
+  tool_bar1->addAction(arc);
+  tool_bar1->addAction(arrow);
+  tool_bar1->addAction(line);
+  tool_bar1->addAction(linearrow);
+  tool_bar1->addAction(rectangle);
+  tool_bar1->addAction(round_rectangle);
+  tool_bar1->addAction(ellipse);
+  tool_bar1->addAction(polygon);
+  tool_bar1->addAction(triangle);
+  tool_bar1->addAction(text);
+  tool_bar1->setCursor(Qt::ArrowCursor);
+  addToolBar(tool_bar1);
 }
-
-void Tools::msg_save_file()
-{
-   qDebug()<<"Entered \n";
-   QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),"*.skh");
-   scene->save_Scene(file_name);
-   scene->new_Scene();
-
-}
-
-void Tools::msg_dnt_save_file()
-{
-    scene->new_Scene();
-}
-
 
 void Tools::openFile()
 {
@@ -1389,175 +1330,142 @@ void Tools::setColors()
 
 }
 
-void Tools::setPenStyles(int indx)
-{
-  switch(indx)
-    {
-      case 0:
-          pen_lineSolidStyle();
-         break;
-      case 1:
-          pen_lineDashStyle();
-          break;
-      case 2:
-          pen_lineDotStyle();
-          break;
-      case 3:
-          pen_lineDashDotStyle();
-          break;
-      case 4:
-          pen_lineDashDotDotStyle();
-          break;
-      default:
-          break;
-    }
+void Tools::setPenStyles(int indx) {
+  switch(indx) {
+    case 0:
+      pen_lineSolidStyle();
+      break;
+    case 1:
+      pen_lineDashStyle();
+      break;
+    case 2:
+      pen_lineDotStyle();
+      break;
+    case 3:
+      pen_lineDashDotStyle();
+      break;
+    case 4:
+      pen_lineDashDotDotStyle();
+      break;
+    default:
+      break;
+  }
+  isSaved = false;
+}
+
+void Tools::setPenWidths(int width) {
+  //setting different pen widths
+  scene->setPenWidth(width);
+  if (width >= 0 && width <= 4) {
+    pen.setWidth(width+1);
+  }
   isSaved=false;
 }
 
-void Tools::setPenWidths(int width)
-{
-    //setting different pen widths
-    scene->setPenWidth(width);
-    switch(width)
-    {
-      case 0:
-         pen.setWidth(1);
-         break;
-      case 1:
-         pen.setWidth(2);
-         break;
-      case 2:
-         pen.setWidth(3);
-         break;
-      case 3:
-         pen.setWidth(4);
-         break;
-      case 4:
-         pen.setWidth(5);
-         break;
-      default:
-         break;
-    }
-  isSaved=false;
-}
-
-void Tools::setBrushStyles(int indx)
-{
-    scene->setBrushStyle(indx);
-     switch(indx)
-     {
-       case 0:
-          brush.setStyle(Qt::NoBrush);
-          break;
-       case 1:
-          brush.setStyle(Qt::SolidPattern);
-          break;
-       case 2:
-          brush.setStyle(Qt::Dense1Pattern);
-          break;
-       case 3:
-          brush.setStyle(Qt::Dense2Pattern);
-          break;
-       case 4:
-          brush.setStyle(Qt::Dense3Pattern);
-          break;
-       case 5:
-          brush.setStyle(Qt::Dense4Pattern);
-          break;
-       case 6:
-          brush.setStyle(Qt::Dense5Pattern);
-          break;
-       case 7:
-          brush.setStyle(Qt::Dense6Pattern);
-          break;
-       case 8:
-          brush.setStyle(Qt::Dense7Pattern);
-          break;
-       case 9:
-          brush.setStyle(Qt::HorPattern);
-          break;
-       case 10:
-          brush.setStyle(Qt::VerPattern);
-          break;
-       case 11:
-          brush.setStyle(Qt::CrossPattern);
-          break;
-       case 12:
-          brush.setStyle(Qt::BDiagPattern);
-          break;
-       case 13:
-          brush.setStyle(Qt::FDiagPattern);
-          break;
-       case 14:
-          brush.setStyle(Qt::DiagCrossPattern);
-          break;
-       default:
-          break;
-      }
-    isSaved=false;
+void Tools::setBrushStyles(int indx) {
+  scene->setBrushStyle(indx);
+  switch(indx) {
+    case 0:
+      brush.setStyle(Qt::NoBrush);
+      break;
+    case 1:
+      brush.setStyle(Qt::SolidPattern);
+      break;
+    case 2:
+      brush.setStyle(Qt::Dense1Pattern);
+      break;
+    case 3:
+      brush.setStyle(Qt::Dense2Pattern);
+      break;
+    case 4:
+      brush.setStyle(Qt::Dense3Pattern);
+      break;
+    case 5:
+      brush.setStyle(Qt::Dense4Pattern);
+      break;
+    case 6:
+      brush.setStyle(Qt::Dense5Pattern);
+      break;
+    case 7:
+      brush.setStyle(Qt::Dense6Pattern);
+      break;
+    case 8:
+      brush.setStyle(Qt::Dense7Pattern);
+      break;
+    case 9:
+      brush.setStyle(Qt::HorPattern);
+      break;
+    case 10:
+      brush.setStyle(Qt::VerPattern);
+      break;
+    case 11:
+      brush.setStyle(Qt::CrossPattern);
+      break;
+    case 12:
+      brush.setStyle(Qt::BDiagPattern);
+      break;
+    case 13:
+      brush.setStyle(Qt::FDiagPattern);
+      break;
+    case 14:
+      brush.setStyle(Qt::DiagCrossPattern);
+      break;
+    default:
+      break;
+  }
+  isSaved = false;
 }
 
 
 
-void Tools::pen_lineSolidStyle()
-{
-  //QMessageBox::about(this,"Hi", "Entered solid styles ");
+void Tools::pen_lineSolidStyle() {
   scene->setPenStyle(1);
   pen.setStyle(Qt::SolidLine);
   scene->setPen(pen);
-  isSaved=false;
+  isSaved = false;
 }
 
-void Tools::pen_lineDashStyle()
-{
-  //QMessageBox::about(this,"Hi", "Entered dash styles ");
+void Tools::pen_lineDashStyle() {
   scene->setPenStyle(2);
   pen.setStyle(Qt::DashLine);
   scene->setPen(pen);
-  isSaved=false;
+  isSaved = false;
 }
 
-void Tools::pen_lineDotStyle()
-{
-   scene->setPenStyle(3);
-   pen.setStyle(Qt::DotLine);
-   scene->setPen(pen);
-   isSaved=false;
+void Tools::pen_lineDotStyle() {
+  scene->setPenStyle(3);
+  pen.setStyle(Qt::DotLine);
+  scene->setPen(pen);
+  isSaved = false;
 }
 
-void Tools::pen_lineDashDotStyle()
-{
+void Tools::pen_lineDashDotStyle() {
   scene->setPenStyle(4);
-    pen.setStyle(Qt::DashDotLine);
+  pen.setStyle(Qt::DashDotLine);
   scene->setPen(pen);
-  isSaved=false;
+  isSaved = false;
 }
 
-void Tools::pen_lineDashDotDotStyle()
-{
+void Tools::pen_lineDashDotDotStyle() {
   scene->setPenStyle(5);
-    pen.setStyle(Qt::DashDotDotLine);
+  pen.setStyle(Qt::DashDotDotLine);
   scene->setPen(pen);
-  isSaved=false;
+  isSaved = false;
 }
 
-void Tools::brush_color()
-{
-    color=color_dialog->getColor(QColor(255,255,255),this);
-    if(color.isValid())
-    {
-       brush.setColor(color);
-       brush.setStyle(Qt::SolidPattern);
-
-       scene->setBrush(brush);
+void Tools::brush_color() {
+  color=color_dialog->getColor(QColor(255,255,255),this);
+  if(color.isValid())
+  {
+    brush.setColor(color);
+    brush.setStyle(Qt::SolidPattern);
+    scene->setBrush(brush);
     //scene->setBackgroundBrush(brush.color());
-     isSaved=false;
-    }
+    isSaved = false;
+  }
 }
 
-void Tools::readFileAttributes(QVector<QString> &subStrings)
-{
-
+void Tools::readFileAttributes(QVector<QString> &subStrings) {
   int id;
   bool ok;
   QString str,str1;
@@ -1907,377 +1815,273 @@ void Tools::updateImages()
 }
 
 
-void Tools::writeImage(QString filename)
-{
-  //QRgb rgb;
-  if(!scene->getObjects().isEmpty())
-  {
-       QVector<QPointF> objectsPos;
-       QPointF minPos,maxPos;
-       objectsPos.clear();
-     QString text = QString();
+void Tools::writeImage(QString filename) {
+  if(!scene->getObjects().isEmpty()) {
+    QVector<QPointF> objectsPos;
+    QPointF minPos,maxPos;
+    objectsPos.clear();
+    QString text = QString();
     //QString str_x,str_y,str_x1,str_y1;
     //QString color_r,color_g,color_b;
     //int r,g,b;
 
-      scene->getObjectsPos(objectsPos);
+    scene->getObjectsPos(objectsPos);
 
 
     for(int i=0;i<scene->getObjects().size();i++)
-       scene->getObjects().at(i)->print();
+      scene->getObjects().at(i)->print();
 
-    QPointF pnt,pnt1;
-
+    QPointF pnt;
     scene->getDim();
 
     scene->getMaxPosition(pnt);
-    qDebug()<<"max point"<<pnt<<"\n";
     QImage *image = new QImage(scene->getDim().x()+1, scene->getDim().y()+1, QImage::Format_ARGB32_Premultiplied);
     //QImage *image = new QImage(1200,800, QImage::Format_ARGB32_Premultiplied);
     //QImage *image = new QImage(ceil(pnt.x())+1.0, ceil(pnt.y())+1.0, QImage::Format_ARGB32_Premultiplied);
-      image->fill(qRgb(255,255,255));
+    image->fill(qRgb(255,255,255));
 
     scene->getMinPosition(minPos);
-      scene->getMaxPosition(maxPos);
+    scene->getMaxPosition(maxPos);
 
-      QPainter* p = new QPainter(image);
+    QPainter* p = new QPainter(image);
 
-      qDebug()<<"min position "<<minPos<<"\n";
+    qDebug()<<"min position "<<minPos<<"\n";
     scene->writeToImage(p,text,-(minPos));
 
-    if(filename.contains(".png"))
-    {
-        QImageWriter writer_img(filename,"png");
-          writer_img.setDescription( "Temporary OMNotebook image" );
-        writer_img.setQuality( 100 );
+    if(filename.contains(".png")) {
+      QImageWriter writer_img(filename,"png");
+      writer_img.setDescription( "Temporary OMNotebook image" );
+      writer_img.setQuality( 100 );
       writer_img.setText("Shapes",text);
-        writer_img.write( *image );
+      writer_img.write( *image );
     }
 
-    if(filename.contains(".jpg"))
-    {
+    if(filename.contains(".jpg")) {
       QImageWriter writer_img(filename,"jpg");
-          writer_img.setDescription( "Temporary OMNotebook image" );
-        writer_img.setQuality( 100 );
+      writer_img.setDescription( "Temporary OMNotebook image" );
+      writer_img.setQuality( 100 );
       //writer_img.setText("Shapes",text);
-        qDebug()<<"image written "<<writer_img.write( *image )<<"\n";
+      qDebug()<<"image written "<<writer_img.write( *image )<<"\n";
     }
 
-    if(filename.contains(".bmp"))
-    {
-        QImageWriter writer_img(filename,"bmp");
-          writer_img.setDescription( "Temporary OMNotebook image" );
-        writer_img.setQuality( 100 );
+    if(filename.contains(".bmp")) {
+      QImageWriter writer_img(filename,"bmp");
+      writer_img.setDescription( "Temporary OMNotebook image" );
+      writer_img.setQuality( 100 );
       writer_img.setText("Shapes",text);
-        writer_img.write( *image );
+      writer_img.write( *image );
     }
-
-
 
     p->end();
-  }
-  else
-  {
+  } else {
     QImage *image = new QImage(1200,800, QImage::Format_ARGB32_Premultiplied);
-      image->fill(qRgb(255,255,255));
+    image->fill(qRgb(255,255,255));
 
     QImageWriter writer_img(filename,"png");
-      writer_img.setDescription( "Temporary OMNotebook image" );
+    writer_img.setDescription( "Temporary OMNotebook image" );
     writer_img.setQuality( 100 );
     writer_img.write( *image );
   }
-
-
-}
-void Tools::add_components()
-{
-    tab_widget =new QWidget();
-    tab_layout = new QHBoxLayout();
-    size.setWidth(25);
-    size.setHeight(25);
-    file_components();
-    edit_components();
-    color_pen_components();
-
-    tab_widget->setLayout(tab_layout);
-    tabWidget->addTab(tab_widget,"Home");
 }
 
-void Tools::file_components()
-{
-    QGroupBox *file_box = new QGroupBox(tr("File"));
-    file_box->setToolTip("File");
-
-    file_layout = new QGridLayout();
-
-    new_file = new QPushButton(QIcon(":/Resources/sketchIcons/filenew.png"),tr("New"));
-    open_file = new QPushButton(QIcon(":/Resources/sketchIcons/fileopen.png"),tr("Open"));
-
-    save_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Save"));
-    saveas_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Saveas"));
-
-    export_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Export"));
-    import_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Import"));
-
-    new_file->setFlat(true);
-    new_file->setIconSize(size);
-    new_file->setToolTip("New File");
-
-    open_file->setFlat(true);
-    open_file->setIconSize(size);
-    open_file->setToolTip("Open File");
-
-    save_file->setFlat(true);
-    save_file->setIconSize(size);
-    save_file->setToolTip("Save File");
-
-    saveas_file->setFlat(true);
-    saveas_file->setIconSize(size);
-    saveas_file->setToolTip("Saveas File");
-
-    export_file->setFlat(true);
-    export_file->setIconSize(size);
-    export_file->setToolTip("Export File to  modelica");
-
-    import_file->setFlat(true);
-    import_file->setIconSize(size);
-    import_file->setToolTip("Import File");
-
-
-    file_layout->addWidget(new_file,0,0,1,1,Qt::AlignLeft);
-    file_layout->addWidget(open_file,1,0,2,1,Qt::AlignLeft);
-
-    file_layout->addWidget(save_file,0,1,1,1,Qt::AlignLeft);
-    file_layout->addWidget(saveas_file,1,1,2,1,Qt::AlignLeft);
-
-    file_layout->addWidget(export_file,0,2,1,1,Qt::AlignLeft);
-    file_layout->addWidget(import_file,1,2,2,1,Qt::AlignLeft);
-
-    //events
-    connect(new_file,SIGNAL(clicked()),SLOT(draw_new()));
-    connect(save_file,SIGNAL(clicked()),SLOT(draw_save()));
-    connect(open_file,SIGNAL(clicked()),SLOT(draw_open()));
-    connect(export_file,SIGNAL(clicked()),SLOT(draw_image_save()));
-
-    file_box->setLayout(file_layout);
-    file_box->setMaximumSize(250,200);
-
-    tab_layout->addWidget(file_box);
-
-    tab_widget->setCursor(Qt::ArrowCursor);
-
+void Tools::add_components() {
+  size.setWidth(25);
+  size.setHeight(25);
+  file_components();
+  edit_components();
+  color_pen_components();
 }
 
-void Tools::edit_components()
-{
-    QGroupBox *edit_box = new QGroupBox(tr("Edit"));
-    edit_box->setToolTip("Edit");
+void Tools::file_components() {
+  new_file = new QToolButton(this);
+  new_file->setIcon(QIcon(":/Resources/sketchIcons/new.svg"));
+  open_file = new QToolButton(this);
+  open_file->setIcon(QIcon(":/Resources/sketchIcons/fileopen.png"));
 
-    edit_layout = new QGridLayout();
+  save_file = new QToolButton(this);
+  save_file->setIcon(QIcon(":/Resources/sketchIcons/save.svg"));
+  saveas_file = new QToolButton(this);
+  saveas_file->setIcon(QIcon(":/Resources/sketchIcons/saveas.svg"));
 
-    cut_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editcut.png"),tr("Cut"));
-    copy_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editcopy.png"),tr("Copy"));
-    paste_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editpaste.png"),tr("Paste"));
-    redo_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editredo.png"),tr("Redo"));
-    undo_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editundo.png"),tr("Undo"));
+  export_file = new QToolButton(this);
+  export_file->setIcon(QIcon(":/Resources/sketchIcons/export.svg"));
+  import_file = new QToolButton(this);
+  import_file->setIcon(QIcon(":/Resources/sketchIcons/import.svg"));
 
-    cut_shape->setFlat(true);
-    cut_shape->setIconSize(size);
-    cut_shape->setToolTip("Cut Shape");
+  new_file->setIconSize(size);
+  new_file->setToolTip("New File");
 
-    copy_shape->setFlat(true);
-    copy_shape->setIconSize(size);
-    copy_shape->setToolTip("Copy Shape");
+  open_file->setIconSize(size);
+  open_file->setToolTip("Open File");
 
-    paste_shape->setFlat(true);
-    paste_shape->setIconSize(size);
-    paste_shape->setToolTip("Paste Shape");
+  save_file->setIconSize(size);
+  save_file->setToolTip("Save File");
 
-    redo_shape->setFlat(true);
-    redo_shape->setIconSize(size);
-    redo_shape->setToolTip("Redo");
+  saveas_file->setIconSize(size);
+  saveas_file->setToolTip("Saveas File");
 
-    undo_shape->setFlat(true);
-    undo_shape->setIconSize(size);
-    undo_shape->setToolTip("Undo");
+  export_file->setIconSize(size);
+  export_file->setToolTip("Export File to  modelica");
 
+  import_file->setIconSize(size);
+  import_file->setToolTip("Import File");
 
-    edit_layout->addWidget(cut_shape,0,0,1,1,Qt::AlignLeft);
-    edit_layout->addWidget(copy_shape,1,0,2,1,Qt::AlignLeft);
+  tool_bar2->addWidget(new_file);
+  tool_bar2->addWidget(open_file);
+  tool_bar2->addWidget(save_file);
+  tool_bar2->addWidget(saveas_file);
+  tool_bar2->addWidget(import_file);
+  tool_bar2->addWidget(export_file);
+  addToolBar(tool_bar2);
 
-    edit_layout->addWidget(paste_shape,0,1,1,1,Qt::AlignLeft);
-
-    edit_layout->addWidget(redo_shape,0,2,1,1,Qt::AlignLeft);
-    edit_layout->addWidget(undo_shape,1,2,1,1,Qt::AlignLeft);
-
-    //events
-    connect(cut_shape,SIGNAL(clicked()),SLOT(draw_cut()));
-    connect(copy_shape,SIGNAL(clicked()),SLOT(draw_copy()));
-    connect(paste_shape,SIGNAL(clicked()),SLOT(draw_paste()));
-
-    edit_box->setLayout(edit_layout);
-    edit_box->setMaximumSize(250,200);
-
-    tab_layout->addWidget(edit_box);
-
+  //events
+  connect(new_file,SIGNAL(clicked()),SLOT(draw_new()));
+  connect(save_file,SIGNAL(clicked()),SLOT(draw_save()));
+  connect(open_file,SIGNAL(clicked()),SLOT(draw_open()));
+  connect(export_file,SIGNAL(clicked()),SLOT(draw_image_save()));
 }
 
-void Tools::color_pen_components()
-{
-    QGroupBox *color_pen_box = new QGroupBox(tr("Color And PenStyles"));
-    color_pen_box->setToolTip("Color & PenStyles");
+void Tools::edit_components() {
+  cut_shape = new QToolButton(this);
+  cut_shape->setIcon(QIcon(":/Resources/sketchIcons/editcut.png"));
+  cut_shape->setIconSize(size);
+  cut_shape->setToolTip(tr("Cut Shape"));
+  copy_shape = new QToolButton(this);
+  copy_shape->setIcon(QIcon(":/Resources/sketchIcons/editcopy.png"));
+  copy_shape->setIconSize(size);
+  copy_shape->setToolTip(tr("Copy Shape"));
+  paste_shape = new QToolButton(this);
+  paste_shape->setIcon(QIcon(":/Resources/sketchIcons/editpaste.png"));
+  paste_shape->setIconSize(size);
+  paste_shape->setToolTip(tr("Paste Shape"));
+  redo_shape = new QToolButton(this);
+  redo_shape->setIcon(QIcon(":/Resources/sketchIcons/editredo.png"));
+  redo_shape->setIconSize(size);
+  redo_shape->setToolTip(tr("Redo"));
+  undo_shape = new QToolButton(this);
+  undo_shape->setIcon(QIcon(":/Resources/sketchIcons/editundo.png"));
+  undo_shape->setIconSize(size);
+  undo_shape->setToolTip(tr("Undo"));
 
-    color_pen_layout = new QGridLayout();
+  tool_bar3->addWidget(cut_shape);
+  tool_bar3->addWidget(copy_shape);
+  tool_bar3->addWidget(paste_shape);
+  tool_bar3->addWidget(redo_shape);
+  tool_bar3->addWidget(undo_shape);
+  addToolBar(tool_bar3);
 
-    select_color = new QPushButton(QIcon(":/Resources/sketchIcons/paint.png"),"Colors");
-    select_color->setFlat(true);
-    select_color->setIconSize(size);
-    select_color->setToolTip("Select Colors");
-  select_color->setEnabled(false);
+  //events
+  connect(cut_shape,SIGNAL(clicked()),SLOT(draw_cut()));
+  connect(copy_shape,SIGNAL(clicked()),SLOT(draw_copy()));
+  connect(paste_shape,SIGNAL(clicked()),SLOT(draw_paste()));
+}
 
-    fill_color = new QPushButton(QIcon(":/Resources/sketchIcons/fillcolor.png"),"Fill Colors");
-    fill_color->setFlat(true);
-    fill_color->setIconSize(size);
-    fill_color->setToolTip("Select Fill Colors");
-  fill_color->setEnabled(false);
+void Tools::color_pen_components() {
+  select_color = new QToolButton(this);
+  select_color->setIcon(QIcon(":/Resources/sketchIcons/paint.png"));
+  select_color->setIconSize(size);
+  select_color->setToolTip("Select Colors");
 
-    select_pen = new QComboBox();
-    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Solid Line");
-    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Line");
-    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dot Line");
-    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Dot Line");
-    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Dot Dot Line");
-    select_pen->setIconSize(size);
-    select_pen->setToolTip("Select Pen Styles");
-  select_pen->setEnabled(false);
+  fill_color = new QToolButton(this);
+  fill_color->setIcon(QIcon(":/Resources/sketchIcons/fillcolor.png"));
+  fill_color->setIconSize(size);
+  fill_color->setToolTip("Select Fill Colors");
 
-    select_brush = new QComboBox();
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/brush.png"),"No Brush");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/solidpattern.png"),"Solid Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense1pattern.png"),"Dense 1 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense2pattern.png"),"Dense 2 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense3pattern.png"),"Dense 3 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense4pattern.png"),"Dense 4 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense5pattern.png"),"Dense 5 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense6pattern.png"),"Dense 6 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense7pattern.png"),"Dense 7 Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/horpattern.png"),"Hor Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/verpattern.png"),"Ver Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/crosspattern.png"),"Cross Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/bdiagpattern.png"),"BDiag Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/fdiagpattern.png"),"FDiag Fill");
-    select_brush->addItem(QIcon(":/Resources/sketchIcons/diagcrosspattern.png"),"Diag Cross Fill");
-    select_brush->setIconSize(size);
-    select_brush->setToolTip("Select Brush Styles");
-  select_brush->setEnabled(false);
+  select_pen = new QComboBox();
+  select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Solid Line");
+  select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Line");
+  select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dot Line");
+  select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Dot Line");
+  select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Dot Dot Line");
+  select_pen->setIconSize(size);
+  select_pen->setToolTip("Select Pen Styles");
 
-    QHBoxLayout *penWidthLayout = new QHBoxLayout();
+  select_brush = new QComboBox();
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/brush.png"),"No Brush");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/solidpattern.png"),"Solid Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense1pattern.png"),"Dense 1 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense2pattern.png"),"Dense 2 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense3pattern.png"),"Dense 3 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense4pattern.png"),"Dense 4 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense5pattern.png"),"Dense 5 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense6pattern.png"),"Dense 6 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/dense7pattern.png"),"Dense 7 Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/horpattern.png"),"Hor Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/verpattern.png"),"Ver Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/crosspattern.png"),"Cross Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/bdiagpattern.png"),"BDiag Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/fdiagpattern.png"),"FDiag Fill");
+  select_brush->addItem(QIcon(":/Resources/sketchIcons/diagcrosspattern.png"),"Diag Cross Fill");
+  select_brush->setIconSize(size);
+  select_brush->setToolTip("Select Brush Styles");
 
-    QLabel *label = new QLabel("Pen Widths");
-    label->setToolTip("Select Pen Width");
+  QLabel *label = new QLabel(tr("Pen Width"));
+  label->setToolTip(tr("Select Pen Width"));
+  penWidth = new QSpinBox();
+  penWidth->setMinimum(1);
+  penWidth->setMaximum(5);
+  penWidth->setToolTip(tr("Select Pen Width"));
 
+  tool_bar4->addWidget(label);
+  tool_bar4->addWidget(penWidth);
+  tool_bar4->addWidget(select_color);
+  tool_bar4->addWidget(fill_color);
+  tool_bar4->addWidget(select_pen);
+  tool_bar4->addWidget(select_brush);
+  tool_bar4->setEnabled(false);
+  addToolBar(tool_bar4);
 
-    penWidth = new QSpinBox();
-    penWidth->setMinimum(1);
-    penWidth->setMaximum(5);
-    penWidth->setToolTip("Select Pen Width");
-  penWidth->setEnabled(false);
-
-    penWidthLayout->addWidget(label);
-    penWidthLayout->addWidget(penWidth);
-
-
-    color_pen_layout->addWidget(select_color,0,0,1,1,Qt::AlignLeft);
-    color_pen_layout->addWidget(fill_color,1,0,1,1,Qt::AlignLeft);
-
-    color_pen_layout->addLayout(penWidthLayout,0,1,1,1,Qt::AlignLeft);
-
-    color_pen_layout->addWidget(select_pen,0,2,1,1,Qt::AlignLeft);
-    color_pen_layout->addWidget(select_brush,1,2,1,1,Qt::AlignLeft);
-
-    connect(select_color,SIGNAL(clicked()),SLOT(setColors()));
-    connect(fill_color,SIGNAL(clicked()),SLOT(brush_color()));
-
+  connect(select_color,SIGNAL(clicked()),SLOT(setColors()));
+  connect(fill_color,SIGNAL(clicked()),SLOT(brush_color()));
   connect(select_pen,SIGNAL(activated(int)),SLOT(setPenStyles(int)));
-    connect(select_brush,SIGNAL(activated(int)),SLOT(setBrushStyles(int)));
-
-    connect(penWidth,SIGNAL(valueChanged(int)),SLOT(setPenWidths(int)));
-
-    color_pen_box->setLayout(color_pen_layout);
-
-    tab_layout->addWidget(color_pen_box);
-    tab_layout->setAlignment(color_pen_box,Qt::AlignLeft);
-
+  connect(select_brush,SIGNAL(activated(int)),SLOT(setBrushStyles(int)));
+  connect(penWidth,SIGNAL(valueChanged(int)),SLOT(setPenWidths(int)));
 }
 
-void Tools::reloadShapesProerties()
-{
-
+void Tools::reloadShapesProerties() {
   select_pen->setCurrentIndex(0);
   select_brush->setCurrentIndex(0);
   penWidth->setValue(0);
   pen.setColor(QColor(0,0,0,255));
-
 }
 
-void Tools::enableProperties()
-{
-  if(!select_color->isEnabled())
-      select_color->setEnabled(true);
-  if(!fill_color->isEnabled())
-     fill_color->setEnabled(true);
-  if(!select_pen->isEnabled())
-       select_pen->setEnabled(true);
-  if(!select_brush->isEnabled())
-      select_brush->setEnabled(true);
-  if(!penWidth->isEnabled())
-      penWidth->setEnabled(true);
+void Tools::enableProperties() {
+  tool_bar4->setEnabled(true);
 }
 
-void Tools::item_selected(Graph_Scene* scene_item)
-{
-    if(!scene_item->getObjects().isEmpty())
-    {
-       for(int i=0;i<scene_item->getObjects().size();i++)
-       {
-           qDebug()<<"enntered \n";
-       }
-    }
+void Tools::disableProperties() {
+  tool_bar4->setEnabled(false);
 }
 
-void Tools::mouseReleaseEvent(QMouseEvent *event)
-{
-    if(event->button()==Qt::LeftButton)
-    {
-    if(scene->isMultipleSelected==true)
-    {
-            setCursor(Qt::ArrowCursor);
-            pen.setStyle(Qt::SolidLine);
-            brush.setStyle(Qt::NoBrush);
+void Tools::item_selected(Graph_Scene* scene_item) {
+  if(!scene_item->getObjects().isEmpty()) {
+    for(int i=0;i<scene_item->getObjects().size();i++) {
+      qDebug()<<"entered \n";
     }
-
-
-    }
-
-
+  }
 }
 
-void Tools::keyPressEvent(QKeyEvent *event)
-{
-    //setCursor(Qt::SizeAllCursor);
-    if(event->key()==Qt::Key_Control)
-    {
-       scene->isMultipleSelected=true;
-     qDebug()<<"multiple selected "<<scene->isMultipleSelected<<"\n";
+void Tools::mouseReleaseEvent(QMouseEvent *event) {
+  if(event->button()==Qt::LeftButton) {
+    if(scene->isMultipleSelected==true) {
+      setCursor(Qt::ArrowCursor);
+      pen.setStyle(Qt::SolidLine);
+      brush.setStyle(Qt::NoBrush);
     }
+  }
 }
 
-void Tools::keyReleaseEvent(QKeyEvent* event)
-{
-    //setCursor(Qt::ArrowCursor);
-    if(event->key()==Qt::Key_Control)
-    {
-       scene->isMultipleSelected=false;
+void Tools::keyPressEvent(QKeyEvent *event) {
+  //setCursor(Qt::SizeAllCursor);
+  if(event->key()==Qt::Key_Control) {
+    scene->isMultipleSelected=true;
+    //qDebug()<<"multiple selected "<<scene->isMultipleSelected<<"\n";
+  }
+}
 
-    }
+void Tools::keyReleaseEvent(QKeyEvent* event) {
+  //setCursor(Qt::ArrowCursor);
+  if(event->key()==Qt::Key_Control) {
+     scene->isMultipleSelected=false;
+  }
 }

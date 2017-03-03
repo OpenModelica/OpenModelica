@@ -85,12 +85,10 @@ class Tools:public QMainWindow
            void draw_save();
            void draw_open();
            void draw_shapes();
-           void msg_save_file();
-           void msg_dnt_save_file();
 
            //write the shapes to the images and exports to OMNotebook
            void draw_image_save();
-       void draw_xml_save(){}
+           void draw_xml_save(){}
 
            void draw_copy();
            void draw_cut();
@@ -110,6 +108,7 @@ class Tools:public QMainWindow
        void imageinfo(QString filename);
 
        void enableProperties();
+       void disableProperties();
 
 
 
@@ -144,12 +143,15 @@ class Tools:public QMainWindow
        QString application;
        QString file_name,onb_file_name,img_file_name;
 
-       QToolBar *tool_bar;
+       QToolBar *tool_bar1;
+       QToolBar *tool_bar2;
+       QToolBar *tool_bar3;
+       QToolBar *tool_bar4;
        QToolButton *rect;
        QMenu *fileMenu,*editMenu,*toolMenu;
        QAction *arc,*arrow,*rectangle,*round_rectangle,*line,*linearrow,*ellipse,*polygon,*triangle,*text,*new_scene,*save_scene,*open_scene;
        //Action for file items
-       QAction *file_new,*file_open,*file_save,*file_close,*file_xml_save,*file_image_save;
+       QAction *close_me,*file_new,*file_open,*file_save,*file_close,*file_xml_save,*file_image_save;
 
        //Action for copy,cut and paste
        QAction *copy,*cut,*paste;
@@ -160,14 +162,6 @@ class Tools:public QMainWindow
        //Color dialog box
        QColorDialog *color_dialog;
 
-       //Message Box
-       QMessageBox *msg;
-       //Message buttons
-       QPushButton *msg_save,*msg_dnt_save,*msg_cancle;
-       //Xml Message buttons
-       QPushButton *msg_xml_save;
-       //Message Box buttons Action
-       QAction *msg_bt_save,*msg_bt_dnt_save;
        QLabel *label;
        QLayout *layout;
        QVBoxLayout *main_layout;
@@ -221,14 +215,12 @@ class Tools:public QMainWindow
        QColor color;
 
 
-     QTabWidget *tabWidget;
-
        //push buttons for file managment
-       QPushButton *new_file,*open_file,*save_file,*saveas_file,*export_file,*import_file;
+       QToolButton *new_file,*open_file,*save_file,*saveas_file,*export_file,*import_file;
        //push buttons for editing
-       QPushButton *cut_shape,*copy_shape,*paste_shape,*redo_shape,*undo_shape;
+       QToolButton *cut_shape,*copy_shape,*paste_shape,*redo_shape,*undo_shape;
        //push button for color dialog
-       QPushButton *select_color,*fill_color;
+       QToolButton *select_color,*fill_color;
 
        //combobox for penstyles
        QComboBox *select_pen,*select_brush;
@@ -236,9 +228,6 @@ class Tools:public QMainWindow
        //spinbox for line thickness
        QSpinBox *penWidth;
 
-       QGridLayout *file_layout,*edit_layout,*color_pen_layout;
-       QHBoxLayout *tab_layout;
-       QWidget *tab_widget;
        QSize size;
 
      Sketch_Files* files;

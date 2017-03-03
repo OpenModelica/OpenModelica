@@ -2737,12 +2737,12 @@ void NotebookWindow::saveas()
   * \author Anders Fernström and Ingemar Axelsson
   *
   * Added a check that controlls if the user have saved before,
-  * if not the function saveas should be used insted. //AF
+  * if not the function saveas should be used instead. //AF
   */
 void NotebookWindow::save()
 {
   // Added a check to see if the document has been saved before,
-  // if the document havn't been saved before - call saveas() insted.
+  // if the document havn't been saved before - call saveas() instead.
   if( !subject_->isSaved() )
   {
     saveas();
