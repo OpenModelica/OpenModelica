@@ -6965,7 +6965,7 @@ algorithm
   end match;
 end artificialVarKind;
 
-protected function replaceCrefWithStartValue"replaces a cref with its constant start value. Only if the BackendDAE.Varkind is not artificial in order to avoid guess-start values
+protected function replaceCrefWithStartValue "replaces a cref with its constant start value. Only if the BackendDAE.Varkind is not artificial in order to avoid guess-start values
 Waurich 2015-01"
   input DAE.Exp expIn;
   input BackendDAE.Variables varsIn;
@@ -6994,14 +6994,17 @@ algorithm
       // print("VAR: "+BackendDump.varString(var)+" -->");
        if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
          exp = BackendVariable.varBindExp(var);
-         exp = replaceCrefWithStartValue(exp,varsIn);
+         if 0 <> Expression.compare(exp, expIn) then
+           // Or should this be an error? Replacing the start-value by itself...
+           exp = replaceCrefWithStartValue(exp,varsIn);
+         end if;
        elseif BackendVariable.varHasStartValue(var) then
          exp = BackendVariable.varStartValue(var);
        else
          exp = expIn;
        end if;
        //print(" has START:"+ ExpressionDump.printExpStr(exp)+"\n");
-       true = Expression.isConst(exp);
+       exp = if Expression.isConst(exp) then exp else expIn;
      then (exp,varsIn);
 
    case(DAE.CALL(path=Absyn.IDENT("sample"), expLst=expLst),_)

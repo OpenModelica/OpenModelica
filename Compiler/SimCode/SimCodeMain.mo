@@ -56,6 +56,7 @@ import SimCode;
 protected
 import AvlSetString;
 import BackendDAECreate;
+import BackendDump;
 import Builtin;
 import ClockIndexes;
 import CevalScriptBackend;
@@ -77,6 +78,7 @@ import DAEUtil;
 import Debug;
 import Error;
 import ErrorExt;
+import ExecStat;
 import Flags;
 import FMI;
 import GC;
@@ -87,11 +89,10 @@ import TaskSystemDump;
 import SerializeInitXML;
 import Serializer;
 import SimCodeUtil;
+import StackOverflow;
 import StringUtil;
 import System;
 import Util;
-import BackendDump;
-import ExecStat;
 
 public function createSimulationSettings
   input Real startTime;
@@ -420,7 +421,11 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   list<tuple<String, String>> program;
+  Integer numCheckpoints;
 algorithm
+  numCheckpoints:=ErrorExt.getNumCheckpoints();
+  try
+  StackOverflow.clearStacktraceMessages();
   if Flags.isSet(Flags.GRAPHML) then
     HpcOmTaskGraph.dumpTaskGraph(inBackendDAE, filenamePrefix);
   end if;
@@ -442,6 +447,15 @@ algorithm
   callTargetTemplates(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
   ExecStat.execStat("Templates");
+  return;
+  else
+  setGlobalRoot(Global.stackoverFlowIndex, NONE());
+  ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+  Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  /* Do not fail or we can loop too much */
+  StackOverflow.clearStacktraceMessages();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+  fail();
 end generateModelCode;
 
 protected function createSimCode "
@@ -900,11 +914,11 @@ algorithm
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
       Real fsize;
 
-    case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
+    case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) algorithm
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
-      (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
+      (cache, graph, dae, st) := CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
       ExecStat.execStat("FrontEnd");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -915,10 +929,10 @@ algorithm
         ExecStat.execStat("Serialize FrontEnd");
       end if;
 
-      timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+      timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae = DAEUtil.transformationsBeforeBackend(cache, graph, dae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, dae);
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -926,15 +940,15 @@ algorithm
         ExecStat.execStat("Serialize DAE (2)");
       end if;
 
-      generateFunctions = Flags.set(Flags.GEN, false);
+      generateFunctions := Flags.set(Flags.GEN, false);
       // We should not need to lookup constants and classes in the backend,
       // so let's free up the old graph and just make it the initial environment.
       if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
-        (cache,graph) = Builtin.initialGraph(cache);
+        (cache,graph) := Builtin.initialGraph(cache);
       end if;
 
-      description = DAEUtil.daeDescription(dae);
-      dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
+      description := DAEUtil.daeDescription(dae);
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
       GC.free(dae);
 
@@ -944,8 +958,8 @@ algorithm
       end if;
 
       //BackendDump.printBackendDAE(dlow);
-      (dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
-      timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+      (dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
+      timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, filenameprefix, "simDAE");
@@ -957,10 +971,9 @@ algorithm
         ExecStat.execStat("Serialize solved system");
       end if;
 
-      (libs, file_dir, timeSimCode, timeTemplates) =
-        generateModelCode(dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
+      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, p, className, filenameprefix, inSimSettingsOpt, args);
 
-      resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
+      resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                       ("timeSimCode", Values.REAL(timeSimCode)),
                       ("timeBackend", Values.REAL(timeBackend)),
                       ("timeFrontend", Values.REAL(timeFrontend))};

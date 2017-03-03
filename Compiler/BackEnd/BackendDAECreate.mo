@@ -42,41 +42,45 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendVarTransform;
-protected import BaseHashTable;
-protected import CheckModel;
-protected import ComponentReference;
-protected import Config;
-protected import ClassInf;
-protected import DAEDump;
-protected import DAEUtil;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import Flags;
-protected import Global;
-protected import HashTableExpToExp;
-protected import HashTableExpToIndex;
-protected import HashTable;
-protected import HashTableCrToExpSourceTpl;
-protected import Inline;
-protected import List;
-protected import ExecStat.execStat;
-protected import SCode;
-protected import System;
-protected import Types;
-protected import Util;
-protected import VarTransform;
-protected import Vectorization;
-protected import ZeroCrossings;
+protected
+
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import BackendVarTransform;
+import BaseHashTable;
+import CheckModel;
+import ComponentReference;
+import Config;
+import ClassInf;
+import DAEDump;
+import DAEUtil;
+import Debug;
+import ElementSource;
+import Error;
+import ErrorExt;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import ExpressionSolve;
+import Flags;
+import Global;
+import HashTableExpToExp;
+import HashTableExpToIndex;
+import HashTable;
+import HashTableCrToExpSourceTpl;
+import Inline;
+import List;
+import ExecStat.execStat;
+import SCode;
+import StackOverflow;
+import System;
+import Types;
+import Util;
+import VarTransform;
+import Vectorization;
+import ZeroCrossings;
 
 protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
@@ -111,8 +115,11 @@ protected
   DAE.FunctionTree functionTree;
   list<BackendDAE.TimeEvent> timeEvents;
   String neqStr,nvarStr;
-  Integer varSize, eqnSize;
+  Integer varSize, eqnSize, numCheckpoints;
 algorithm
+  numCheckpoints:=ErrorExt.getNumCheckpoints();
+  try
+  StackOverflow.clearStacktraceMessages();
   // reset dumped file sequence number
   System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
   System.tmpTickResetIndex(1, Global.backendDAE_cseIndex);
@@ -173,6 +180,15 @@ algorithm
 
   Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
   execStat("Generate backend data structure");
+  return;
+  else
+    setGlobalRoot(Global.stackoverFlowIndex, NONE());
+    ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    /* Do not fail or we can loop too much */
+    StackOverflow.clearStacktraceMessages();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+  fail();
 end lower;
 
 protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.

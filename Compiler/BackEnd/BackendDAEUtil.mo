@@ -80,6 +80,7 @@ import DumpGraphML;
 import DynamicOptimization;
 import ElementSource;
 import Error;
+import ErrorExt;
 import EvaluateFunctions;
 import EvaluateParameter;
 import ExecStat.execStat;
@@ -103,6 +104,7 @@ import RemoveSimpleEquations;
 import ResolveLoops;
 import SCode;
 import Sorting;
+import StackOverflow;
 import StateMachineFeatures;
 import SymbolicImplicitSolver;
 import SymbolicJacobian;
@@ -6801,7 +6803,11 @@ protected
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.InlineData inlineData;
   BackendDAE.Variables globalKnownVars;
+  Integer numCheckpoints;
 algorithm
+  numCheckpoints:=ErrorExt.getNumCheckpoints();
+  try
+  StackOverflow.clearStacktraceMessages();
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
@@ -6881,6 +6887,15 @@ algorithm
     BackendDump.dumpLoops(outSimDAE);
   end if;
   checkBackendDAEWithErrorMsg(outSimDAE);
+  return;
+  else
+  setGlobalRoot(Global.stackoverFlowIndex, NONE());
+  ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+  Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  /* Do not fail or we can loop too much */
+  StackOverflow.clearStacktraceMessages();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+  fail();
 end getSolvedSystem;
 
 public function preOptimizeBackendDAE "
