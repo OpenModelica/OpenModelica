@@ -3222,15 +3222,14 @@ void Graph_Scene::draw_text_state(QPointF pnt,QPointF pnt1)
 
 void Graph_Scene::setObject(int object_id)
 {
-    objectToDraw=object_id;
-    qDebug()<<"object to draw "<<objectToDraw<<"\n";
+  objectToDraw=object_id;
+  //qDebug()<<"object to draw "<<objectToDraw<<"\n";
 
   polygon=new Draw_Polygon();
-    polygon->set_draw_mode(false);
+  polygon->set_draw_mode(false);
 
   line = new Draw_Line();
   line->set_draw_mode(false);
-
 
   rect = new Draw_Rectangle();
   rect->setMode(false);
@@ -3251,69 +3250,56 @@ void Graph_Scene::setObject(int object_id)
   arrow  = new Draw_Arrow();
   arrow->setMode(false);
 
-
   triangle = new Draw_Triangle();
   triangle->setMode(false);
-
 
   linearrow = new Draw_LineArrow();
   linearrow->setMode(false);
 
-  if(!lines.isEmpty())
-  {
+  if(!lines.isEmpty()) {
     for(int i=0;i<lines.size();i++)
       lines[i]->isObjectSelected=false;
   }
 
-  if(!rects.isEmpty())
-  {
+  if(!rects.isEmpty()) {
     for(int i=0;i<rects.size();i++)
       rects[i]->isObjectSelected=false;
   }
 
-  if(!round_rects.isEmpty())
-  {
+  if(!round_rects.isEmpty()) {
     for(int i=0;i<round_rects.size();i++)
       round_rects[i]->isObjectSelected=false;
   }
 
-  if(!elleps.isEmpty())
-  {
+  if(!elleps.isEmpty()) {
     for(int i=0;i<elleps.size();i++)
       elleps[i]->isObjectSelected=false;
   }
 
-  if(!polygons.isEmpty())
-  {
+  if(!polygons.isEmpty()) {
     for(int i=0;i<polygons.size();i++)
       polygons[i]->isObjectSelected=false;
   }
 
-
-  if(!arcs.isEmpty())
-  {
+  if(!arcs.isEmpty()) {
     for(int i=0;i<arcs.size();i++)
       arcs[i]->isObjectSelected=false;
   }
 
-  if(!linearrows.isEmpty())
-  {
+  if(!linearrows.isEmpty()) {
     for(int i=0;i<linearrows.size();i++)
       linearrows[i]->isObjectSelected=false;
   }
 
-  if(!triangles.isEmpty())
-  {
+  if(!triangles.isEmpty()) {
     for(int i=0;i<triangles.size();i++)
       triangles[i]->isObjectSelected=false;
   }
 
-  if(!arrows.isEmpty())
-  {
+  if(!arrows.isEmpty()) {
     for(int i=0;i<arrows.size();i++)
       arrows[i]->isObjectSelected=false;
   }
-
 }
 
 
@@ -4608,367 +4594,339 @@ void Graph_Scene::cut_object()
 }
 
 //paste objects
-void Graph_Scene::paste_object()
-{
-    paste_selected_objects.clear();
+void Graph_Scene::paste_object() {
+  paste_selected_objects.clear();
 
-    //qDebug()<<"entered paste size "<<temp_copy_objects.size()<<"\n";
-    if((!temp_copy_objects.isEmpty()))
-    {
-       hide_object_edges();
-       for(int i=0;i<temp_copy_objects.size();i++)
-       {
-           Scene_Objects *object =  new Scene_Objects();
-           Draw_Arc *arc2 = new Draw_Arc();
-       Draw_Arrow *arrow2 = new Draw_Arrow();
-       Draw_LineArrow *linearrow2 = new Draw_LineArrow();
-           Draw_Line *line2 = new Draw_Line();
-           Draw_Rectangle *rect2 = new Draw_Rectangle();
-           Draw_Ellipse *ellep2 = new Draw_Ellipse();
-           Draw_RoundRect *round_rect2 = new Draw_RoundRect();
-           Draw_Polygon *polygon2 = new Draw_Polygon();
-       Draw_Triangle *triangle2 = new Draw_Triangle();
+  //qDebug()<<"entered paste size "<<temp_copy_objects.size()<<"\n";
+  if((!temp_copy_objects.isEmpty())) {
+    hide_object_edges();
+    for(int i=0;i<temp_copy_objects.size();i++) {
+      Scene_Objects *object =  new Scene_Objects();
 
-           if(temp_copy_objects[i]->ObjectId==1)
-           {
-              line2->poly_pnts=temp_copy_objects[i]->pnts;
+      if(temp_copy_objects[i]->ObjectId==1) {
+        Draw_Line *line2 = new Draw_Line();
 
-              lines.push_back(line2);
-
+        line2->poly_pnts=temp_copy_objects[i]->pnts;
+        lines.push_back(line2);
         line2->item = new QGraphicsPathItem(line2->getPolyLine());
-              line2->setPen(objects[i]->getpen().color());
-              line2->setPenStyle(objects[i]->getpen().style());
-              line2->setPenWidth(objects[i]->getpen().width());
-              addItem(line2->item);
+        line2->setPen(objects[i]->getpen().color());
+        line2->setPenStyle(objects[i]->getpen().style());
+        line2->setPenWidth(objects[i]->getpen().width());
+        addItem(line2->item);
 
+        if(!line2->edge_items.isEmpty()) {
+          for(int i=0;i<line2->edge_items.size();i++) {
+            addItem(line2->edge_items[i]);
+          }
+        }
 
+        addItem(line2->Rot_Rect);
+        if(temp_copy_objects[i]->rotation!=0) {
+          line2->rotateShape(temp_copy_objects[i]->rotation);
+        }
 
-              if(!line2->edge_items.isEmpty())
-              {
-          for(int i=0;i<line2->edge_items.size();i++)
-                  {
-                       addItem(line2->edge_items[i]);
-                  }
-       }
+        line2->hideHandles();
+        objectToEdit=1;
+        line2->setPolyLineDrawn(true);
+        linemode=true;
+        line2->lines.clear();
+        lines.push_back(line2);
 
-       addItem(line2->Rot_Rect);
-       if(temp_copy_objects[i]->rotation!=0)
-       {
-        line2->rotateShape(temp_copy_objects[i]->rotation);
-       }
+        QRectF poly_line=line2->item->boundingRect();
+        object->ObjectStrtPnt=poly_line.topLeft();
+        object->ObjectEndPnt=poly_line.bottomRight();
+        object->pnts=line2->poly_pnts;
+        object->setObjects(1,lines.size()-1);
+        object->ObjectIndx=lines.size()-1;
+        objects.push_back(object);
+        objectToDraw=0;
+        objectToEdit=1;
+        paste_selected_objects.push_back(object);
+      }
 
-       line2->hideHandles();
-       objectToEdit=1;
-             line2->setPolyLineDrawn(true);
-             linemode=true;
-             line2->lines.clear();
-             lines.push_back(line2);
+      if(temp_copy_objects[i]->ObjectId==2) {
+        Draw_Rectangle *rect2 = new Draw_Rectangle();
 
-             QRectF poly_line=line2->item->boundingRect();
-             object->ObjectStrtPnt=poly_line.topLeft();
-             object->ObjectEndPnt=poly_line.bottomRight();
-             object->pnts=line2->poly_pnts;
-             object->setObjects(1,lines.size()-1);
-             object->ObjectIndx=lines.size()-1;
-             objects.push_back(object);
-       objectToDraw=0;
-       objectToEdit=1;
-       paste_selected_objects.push_back(object);
+        rect2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+        rect2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        rect2->setState(0);
+        rect2->setMode(true);
 
-           }
-
-           if(temp_copy_objects[i]->ObjectId==2)
-           {
-              rect2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-              rect2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
-              rect2->setState(0);
-              rect2->setMode(true);
-
-              rect2->item =  new QGraphicsPathItem(rect2->getRect(temp_copy_objects[i]->ObjectStrtPnt,temp_copy_objects[i]->ObjectEndPnt));
-              if(isCopySelected)
-              {
-                 rect2->setTranslate(QPointF(5,5),QPointF(20,20));
-                 rect2->item->setPath(rect2->getRect(rect2->getStartPnt(),rect2->getEndPnt()));
-              }
-              rect2->setPen(temp_copy_objects[i]->getpen().color());
-              rect2->setPenStyle(temp_copy_objects[i]->getpen().style());
-              rect2->setPenWidth(temp_copy_objects[i]->getpen().width());
-              rect2->setBrush(temp_copy_objects[i]->getbrush());
-              rect2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
-              addItem(rect2->item);
-              rect2->setEdgeRects();
-              addItem(rect2->Strt_Rect);
-              addItem(rect2->End_Rect);
-              addItem(rect2->Rot_Rect);
+        rect2->item =  new QGraphicsPathItem(rect2->getRect(temp_copy_objects[i]->ObjectStrtPnt,temp_copy_objects[i]->ObjectEndPnt));
+        if(isCopySelected) {
+          rect2->setTranslate(QPointF(5,5),QPointF(20,20));
+          rect2->item->setPath(rect2->getRect(rect2->getStartPnt(),rect2->getEndPnt()));
+        }
+        rect2->setPen(temp_copy_objects[i]->getpen().color());
+        rect2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        rect2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        rect2->setBrush(temp_copy_objects[i]->getbrush());
+        rect2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
+        addItem(rect2->item);
+        rect2->setEdgeRects();
+        addItem(rect2->Strt_Rect);
+        addItem(rect2->End_Rect);
+        addItem(rect2->Rot_Rect);
 
         if(temp_copy_objects[i]->rotation!=0)
-            rect2->rotateShape(temp_copy_objects[i]->rotation);
+        rect2->rotateShape(temp_copy_objects[i]->rotation);
 
-              rect2->Rot_Rect->hide();
-              rects.push_back(rect2);
+        rect2->Rot_Rect->hide();
+        rects.push_back(rect2);
 
+        object->ObjectId=2;
+        object->setObjectPos(rect2->getStartPnt(),rect2->getEndPnt());
+        object->setpen(rect2->getPen());
+        object->setbrush(rect2->getBrush());
+        object->setObjects(2,rects.size()-1);
+        object->ObjectIndx=rects.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
 
-              object->ObjectId=2;
-              object->setObjectPos(rect2->getStartPnt(),rect2->getEndPnt());
-              object->setpen(rect2->getPen());
-              object->setbrush(rect2->getBrush());
-              object->setObjects(2,rects.size()-1);
-              object->ObjectIndx=rects.size()-1;
-              objects.push_back(object);
-              paste_selected_objects.push_back(object);
+      if(temp_copy_objects[i]->ObjectId==3) {
+        Draw_Ellipse *ellep2 = new Draw_Ellipse();
 
-           }
+        ellep2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+        ellep2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        ellep2->setState(0);
+        ellep2->setMode(true);
 
-           if(temp_copy_objects[i]->ObjectId==3)
-           {
+        ellep2->item =  new QGraphicsPathItem(ellep2->getEllep(temp_copy_objects[i]->ObjectStrtPnt,temp_copy_objects[i]->ObjectEndPnt));
+        if(isCopySelected) {
+          ellep2->setTranslate(QPointF(5,5),QPointF(20,20));
+          ellep2->item->setPath(ellep2->getEllep(ellep2->getStartPnt(),ellep2->getEndPnt()));
+        }
+        ellep2->setPen(temp_copy_objects[i]->getpen().color());
+        ellep2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        ellep2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        ellep2->setBrush(temp_copy_objects[i]->getbrush());
+        ellep2->setPen(temp_copy_objects[i]->getbrush().style());
+        addItem(ellep2->item);
+        ellep2->setEdgeRects();
+        addItem(ellep2->Strt_Rect);
+        addItem(ellep2->End_Rect);
+        addItem(ellep2->Rot_Rect);
+        elleps.push_back(ellep2);
 
-               ellep2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-               ellep2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
-               ellep2->setState(0);
-               ellep2->setMode(true);
+        if(temp_copy_objects[i]->rotation!=0)
+        ellep2->rotateShape(temp_copy_objects[i]->rotation);
 
-               ellep2->item =  new QGraphicsPathItem(ellep2->getEllep(temp_copy_objects[i]->ObjectStrtPnt,temp_copy_objects[i]->            ObjectEndPnt));
-               if(isCopySelected)
-               {
-                  ellep2->setTranslate(QPointF(5,5),QPointF(20,20));
-                  ellep2->item->setPath(ellep2->getEllep(ellep2->getStartPnt(),ellep2->getEndPnt()));
-               }
-               ellep2->setPen(temp_copy_objects[i]->getpen().color());
-               ellep2->setPenStyle(temp_copy_objects[i]->getpen().style());
-               ellep2->setPenWidth(temp_copy_objects[i]->getpen().width());
-               ellep2->setBrush(temp_copy_objects[i]->getbrush());
-               ellep2->setPen(temp_copy_objects[i]->getbrush().style());
-               addItem(ellep2->item);
-               ellep2->setEdgeRects();
-               addItem(ellep2->Strt_Rect);
-               addItem(ellep2->End_Rect);
-         addItem(ellep2->Rot_Rect);
-               elleps.push_back(ellep2);
+        object->ObjectId=3;
+        object->setObjectPos(ellep2->getStartPnt(),ellep2->getEndPnt());
+        object->setpen(ellep2->getPen());
+        object->setbrush(ellep2->getBrush());
+        object->setObjects(3,elleps.size()-1);
+        object->ObjectIndx=elleps.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
 
-         if(temp_copy_objects[i]->rotation!=0)
-             ellep2->rotateShape(temp_copy_objects[i]->rotation);
+      if(temp_copy_objects[i]->ObjectId==4) {
+        Draw_Polygon *polygon2 = new Draw_Polygon();
 
+        polygon2->poly_pnts = temp_copy_objects[i]->pnts;
+        polygon2->item = new QGraphicsPathItem(polygon2->getPolygon());
 
-               object->ObjectId=3;
-               object->setObjectPos(ellep2->getStartPnt(),ellep2->getEndPnt());
-               object->setpen(ellep2->getPen());
-               object->setbrush(ellep2->getBrush());
-               object->setObjects(3,elleps.size()-1);
-               object->ObjectIndx=elleps.size()-1;
-               objects.push_back(object);
-               paste_selected_objects.push_back(object);
+        if(isCopySelected) {
+          polygon2->setTranslate(QPointF(5,5),QPointF(20,20));
+        }
 
-           }
-
-           if(temp_copy_objects[i]->ObjectId==4)
-           {
-              polygon2->poly_pnts = temp_copy_objects[i]->pnts;
-              polygon2->item = new QGraphicsPathItem(polygon2->getPolygon());
-
-              if(isCopySelected)
-              {
-                 polygon2->setTranslate(QPointF(5,5),QPointF(20,20));
-              }
-
-              addItem(polygon2->item);
-              polygon2->setPen(temp_copy_objects[i]->getpen().color());
-              polygon2->setPenStyle(temp_copy_objects[i]->getpen().style());
-              polygon2->setPenWidth(temp_copy_objects[i]->getpen().width());
-              polygon2->setBrush(temp_copy_objects[i]->getbrush());
+        addItem(polygon2->item);
+        polygon2->setPen(temp_copy_objects[i]->getpen().color());
+        polygon2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        polygon2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        polygon2->setBrush(temp_copy_objects[i]->getbrush());
         polygon2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
 
-              if(!polygon2->edge_items.isEmpty())
-              {
-                  for(int i=0;i<polygon2->edge_items.size();i++)
-                  {
-                      addItem(polygon2->edge_items[i]);
-                  }
-              }
+        if(!polygon2->edge_items.isEmpty())
+        {
+          for(int i=0;i<polygon2->edge_items.size();i++)
+          {
+            addItem(polygon2->edge_items[i]);
+          }
+        }
 
         addItem(polygon2->Rot_Rect);
-              polygon2->setPolygonDrawn(true);
-              mode=true;
-              polygons.push_back(polygon2);
+        polygon2->setPolygonDrawn(true);
+        mode=true;
+        polygons.push_back(polygon2);
 
         if(temp_copy_objects[i]->rotation!=0)
-           polygon2->rotateShape(temp_copy_objects[i]->rotation);
+        polygon2->rotateShape(temp_copy_objects[i]->rotation);
 
-              object->ObjectId=4;
-              object->setObjectPos(polygon2->item->boundingRect().topLeft(),polygon2->item->boundingRect().bottomRight());
-              object->setpen(polygon2->getPen());
-              object->setbrush(polygon2->getBrush());
-              object->pnts=polygon2->poly_pnts;
-              object->setObjects(4,polygons.size()-1);
-              object->ObjectIndx=polygons.size()-1;
-              objects.push_back(object);
-              paste_selected_objects.push_back(object);
+        object->ObjectId=4;
+        object->setObjectPos(polygon2->item->boundingRect().topLeft(),polygon2->item->boundingRect().bottomRight());
+        object->setpen(polygon2->getPen());
+        object->setbrush(polygon2->getBrush());
+        object->pnts=polygon2->poly_pnts;
+        object->setObjects(4,polygons.size()-1);
+        object->ObjectIndx=polygons.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
 
-           }
+      if(temp_copy_objects[i]->ObjectId==5) {
+        Draw_RoundRect *round_rect2 = new Draw_RoundRect();
+        //qDebug()<<"round copy selected "<<isCopySelected<<"\n";
+        round_rect2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+        round_rect2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        round_rect2->setState(0);
+        round_rect2->setMode(true);
 
-           if(temp_copy_objects[i]->ObjectId==5)
-           {
-         qDebug()<<"round copy selected "<<isCopySelected<<"\n";
-               round_rect2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-               round_rect2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
-               round_rect2->setState(0);
-               round_rect2->setMode(true);
+        round_rect2->item = new QGraphicsPathItem(round_rect2->getRoundRect(temp_copy_objects[i]->ObjectStrtPnt,temp_copy_objects[i]->ObjectEndPnt));
+        if(isCopySelected) {
+          round_rect2->setTranslate(QPointF(5,5),QPointF(20,20));
+          round_rect2->item->setPath(round_rect2->getRoundRect(round_rect2->getStartPnt(),round_rect2->getEndPnt()));
+        }
+        round_rect2->setPen(temp_copy_objects[i]->getpen().color());
+        round_rect2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        round_rect2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        round_rect2->setBrush(temp_copy_objects[i]->getbrush());
+        round_rect2->setPen(temp_copy_objects[i]->getbrush().style());
+        addItem(round_rect2->item);
+        round_rect2->setEdgeRects();
+        addItem(round_rect2->Strt_Rect);
+        addItem(round_rect2->End_Rect);
+        addItem(round_rect2->Rot_Rect);
+        round_rect2->Rot_Rect->hide();
 
-               round_rect2->item = new QGraphicsPathItem(round_rect2->getRoundRect(temp_copy_objects[i]->ObjectStrtPnt,temp_copy_objects[i]->ObjectEndPnt));
-               if(isCopySelected)
-               {
-                  round_rect2->setTranslate(QPointF(5,5),QPointF(20,20));
-                  round_rect2->item->setPath(round_rect2->getRoundRect(round_rect2->getStartPnt(),round_rect2->getEndPnt()));
-               }
-               round_rect2->setPen(temp_copy_objects[i]->getpen().color());
-               round_rect2->setPenStyle(temp_copy_objects[i]->getpen().style());
-               round_rect2->setPenWidth(temp_copy_objects[i]->getpen().width());
-               round_rect2->setBrush(temp_copy_objects[i]->getbrush());
-               round_rect2->setPen(temp_copy_objects[i]->getbrush().style());
-               addItem(round_rect2->item);
-               round_rect2->setEdgeRects();
-               addItem(round_rect2->Strt_Rect);
-               addItem(round_rect2->End_Rect);
-               addItem(round_rect2->Rot_Rect);
-               round_rect2->Rot_Rect->hide();
+        if(temp_copy_objects[i]->rotation!=0)
+        round_rect2->rotateShape(temp_copy_objects[i]->rotation);
 
-         if(temp_copy_objects[i]->rotation!=0)
-            round_rect2->rotateShape(temp_copy_objects[i]->rotation);
+        round_rects.push_back(round_rect2);
 
-               round_rects.push_back(round_rect2);
+        object->ObjectId=5;
+        object->setObjectPos(round_rect2->getStartPnt(),round_rect2->getEndPnt());
+        object->setpen(round_rect2->getPen());
+        object->setbrush(round_rect2->getBrush());
+        object->setObjects(5,round_rects.size()-1);
+        object->ObjectIndx=round_rects.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
 
-               object->ObjectId=5;
-               object->setObjectPos(round_rect2->getStartPnt(),round_rect2->getEndPnt());
-               object->setpen(round_rect2->getPen());
-               object->setbrush(round_rect2->getBrush());
-               object->setObjects(5,round_rects.size()-1);
-               object->ObjectIndx=round_rects.size()-1;
-               objects.push_back(object);
-               paste_selected_objects.push_back(object);
+      if(temp_copy_objects[i]->ObjectId==6)
+      {
+        Draw_Arc *arc2 = new Draw_Arc();
 
-           }
+        arc2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+        arc2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        arc2->setCurvePoint(temp_copy_objects[i]->pnts[0]);
+        arc2->setState(0);
+        arc2->setMode(true);
 
-           if(temp_copy_objects[i]->ObjectId==6)
-           {
-               arc2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-               arc2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
-               arc2->setCurvePoint(temp_copy_objects[i]->pnts[0]);
-               arc2->setState(0);
-               arc2->setMode(true);
+        arc2->item = new QGraphicsPathItem(arc2->getArc());
+        if(isCopySelected) {
+          arc2->setTranslate(QPointF(5,5),QPointF(20,20));
+          arc2->item->setPath(arc2->getArc());
+        }
+        arc2->setPen(temp_copy_objects[i]->getpen().color());
+        arc2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        arc2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        addItem(arc2->item);
+        arc2->setEdgeRects();
+        addItem(arc2->Strt_Rect);
+        addItem(arc2->End_Rect);
+        addItem(arc2->Curve_Rect);
+        addItem(arc2->Rot_Rect);
 
-               arc2->item = new QGraphicsPathItem(arc2->getArc());
-               if(isCopySelected)
-               {
-                  arc2->setTranslate(QPointF(5,5),QPointF(20,20));
-                  arc2->item->setPath(arc2->getArc());
-               }
-               arc2->setPen(temp_copy_objects[i]->getpen().color());
-               arc2->setPenStyle(temp_copy_objects[i]->getpen().style());
-               arc2->setPenWidth(temp_copy_objects[i]->getpen().width());
-               addItem(arc2->item);
-               arc2->setEdgeRects();
-               addItem(arc2->Strt_Rect);
-               addItem(arc2->End_Rect);
-               addItem(arc2->Curve_Rect);
-         addItem(arc2->Rot_Rect);
+        if(temp_copy_objects[i]->rotation!=0) {
+          arc2->rotateShape(temp_copy_objects[i]->rotation);
+        }
 
-         if(temp_copy_objects[i]->rotation!=0)
-            arc2->rotateShape(temp_copy_objects[i]->rotation);
+        arcs.push_back(arc2);
 
-               arcs.push_back(arc2);
+        object->ObjectId=6;
+        object->setObjectPos(arc2->getStartPnt(),arc2->getEndPnt());
+        object->setBoundPos(arc2->item->boundingRect().topLeft(),arc2->item->boundingRect().bottomRight());
+        object->pnts.push_back(arc2->getCurvePnt());
+        object->setpen(arc2->getPen());
+        object->setObjects(6,arcs.size()-1);
+        object->ObjectIndx=arcs.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
 
-               object->ObjectId=6;
-               object->setObjectPos(arc2->getStartPnt(),arc2->getEndPnt());
-               object->setBoundPos(arc2->item->boundingRect().topLeft(),arc2->item->boundingRect().bottomRight());
-               object->pnts.push_back(arc2->getCurvePnt());
-               object->setpen(arc2->getPen());
-               object->setObjects(6,arcs.size()-1);
-               object->ObjectIndx=arcs.size()-1;
-               objects.push_back(object);
-               paste_selected_objects.push_back(object);
-           }
+      if(temp_copy_objects[i]->ObjectId==7) {
+        Draw_LineArrow *linearrow2 = new Draw_LineArrow();
 
+        linearrow2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+        linearrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
 
-       if(temp_copy_objects[i]->ObjectId==7)
-           {
-               linearrow2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-               linearrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        QPointF pnt;
 
+        pnt.setX(linearrow2->getEndPnt().x()-5.0);
+        pnt.setY(linearrow2->getEndPnt().y());
 
-         QPointF pnt;
+        linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(pnt));
 
-         pnt.setX(linearrow2->getEndPnt().x()-5.0);
-         pnt.setY(linearrow2->getEndPnt().y());
+        pnt.setX(linearrow2->getEndPnt().x()-5.0);
+        pnt.setY(linearrow2->getEndPnt().y());
 
-
-         linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(pnt));
-
-         pnt.setX(linearrow2->getEndPnt().x()-5.0);
-         pnt.setY(linearrow2->getEndPnt().y());
-
-               if(isCopySelected)
-               {
-                  linearrow2->setTranslate(QPointF(5,5),QPointF(20,20));
+        if(isCopySelected) {
+          linearrow2->setTranslate(QPointF(5,5),QPointF(20,20));
           linearrow2->item->setPath(linearrow2->getLineArrow(pnt));
-               }
-               linearrow2->setPen(temp_copy_objects[i]->getpen().color());
-               linearrow2->setPenStyle(temp_copy_objects[i]->getpen().style());
-               linearrow2->setPenWidth(temp_copy_objects[i]->getpen().width());
-               addItem(linearrow2->item);
-               linearrow2->setEdgeRects();
-               addItem(linearrow2->Strt_Rect);
-               addItem(linearrow2->End_Rect);
-         addItem(linearrow2->Rot_Rect);
+        }
+        linearrow2->setPen(temp_copy_objects[i]->getpen().color());
+        linearrow2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        linearrow2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        addItem(linearrow2->item);
+        linearrow2->setEdgeRects();
+        addItem(linearrow2->Strt_Rect);
+        addItem(linearrow2->End_Rect);
+        addItem(linearrow2->Rot_Rect);
 
-         if(temp_copy_objects[i]->rotation!=0)
-            linearrow2->rotateShape(temp_copy_objects[i]->rotation);
+        if(temp_copy_objects[i]->rotation!=0)
+        linearrow2->rotateShape(temp_copy_objects[i]->rotation);
 
-         linearrow2->setState(0);
-               linearrow2->setMode(true);
-               linearrows.push_back(linearrow2);
+        linearrow2->setState(0);
+        linearrow2->setMode(true);
+        linearrows.push_back(linearrow2);
 
-               object->ObjectId=7;
-               object->setObjectPos(linearrow2->getStartPnt(),linearrow2->getEndPnt());
-               object->setBoundPos(linearrow2->item->boundingRect().topLeft(),linearrow2->item->boundingRect().bottomRight());
-               object->setpen(linearrow2->getPen());
-               object->setObjects(7,linearrows.size()-1);
-               object->ObjectIndx= linearrows.size()-1;
-               objects.push_back(object);
-               paste_selected_objects.push_back(object);
-           }
+        object->ObjectId=7;
+        object->setObjectPos(linearrow2->getStartPnt(),linearrow2->getEndPnt());
+        object->setBoundPos(linearrow2->item->boundingRect().topLeft(),linearrow2->item->boundingRect().bottomRight());
+        object->setpen(linearrow2->getPen());
+        object->setObjects(7,linearrows.size()-1);
+        object->ObjectIndx= linearrows.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
 
-       if(temp_copy_objects[i]->ObjectId==8)
-       {
-              triangle2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+      if(temp_copy_objects[i]->ObjectId==8) {
+        Draw_Triangle *triangle2 = new Draw_Triangle();
+
+        triangle2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
         triangle2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
         triangle2->setState(0);
         triangle2->setMode(false);
-              triangle2->item = new QGraphicsPathItem(triangle2->getTriangle());
+        triangle2->item = new QGraphicsPathItem(triangle2->getTriangle());
         triangle2->setEdgeRects();
 
         addItem(triangle2->item);
         addItem(triangle2->Strt_Rect);
-          addItem(triangle2->End_Rect);
+        addItem(triangle2->End_Rect);
         addItem(triangle2->Height_Rect);
         addItem(triangle2->Bounding_Rect);
         addItem(triangle2->Rot_Rect);
 
-        if(isCopySelected)
-        {
-                  triangle2->setTranslate(QPointF(5,5),QPointF(20,20));
+        if(isCopySelected) {
+          triangle2->setTranslate(QPointF(5,5),QPointF(20,20));
           triangle2->item->setPath(triangle2->getTriangle());
+        }
 
-              }
-
-          triangle2->setPen(temp_copy_objects[i]->getpen().color());
-              triangle2->setPenStyle(temp_copy_objects[i]->getpen().style());
-              triangle2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        triangle2->setPen(temp_copy_objects[i]->getpen().color());
+        triangle2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        triangle2->setPenWidth(temp_copy_objects[i]->getpen().width());
         triangle2->setBrush(temp_copy_objects[i]->getbrush().color());
         triangle2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
-              triangle2->setMode(true);
+        triangle2->setMode(true);
         triangle2->Bounding_Rect->hide();
 
-        if(temp_copy_objects[i]->rotation!=0)
-           triangle2->rotateShape(temp_copy_objects[i]->rotation);
+        if(temp_copy_objects[i]->rotation!=0) {
+          triangle2->rotateShape(temp_copy_objects[i]->rotation);
+        }
 
         triangles.push_back(triangle2);
         object->setObjectPos(triangle2->getStartPnt(),triangle2->getEndPnt());
@@ -4981,79 +4939,72 @@ void Graph_Scene::paste_object()
         object->setpen(triangle2->getPen());
         object->setbrush(triangle2->getBrush());
         objects.push_back(object);
-       }
+      }
 
-       if(temp_copy_objects[i]->ObjectId==9)
-           {
-               arrow2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-         arrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
-               arrow2->setState(0);
-               arrow2->setMode(false);
+      if(temp_copy_objects[i]->ObjectId==9) {
+        Draw_Arrow *arrow2 = new Draw_Arrow();
 
-         arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
-               if(isCopySelected)
-               {
-                  arrow2->setTranslate(QPointF(5,5),QPointF(20,20));
-                  arrow2->item->setPath(arrow2->getArrow());
-               }
-               arrow2->setPen(temp_copy_objects[i]->getpen().color());
-               arrow2->setPenStyle(temp_copy_objects[i]->getpen().style());
-               arrow2->setPenWidth(temp_copy_objects[i]->getpen().width());
-         arrow2->setBrush(temp_copy_objects[i]->getbrush().color());
-         arrow2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
-               addItem(arrow2->item);
-               arrow2->setEdgeRects();
-               addItem(arrow2->Strt_Rect);
-               addItem(arrow2->End_Rect);
-         addItem(arrow2->Bounding_Rect);
-               addItem(arrow2->Rot_Rect);
-         arrow2->Bounding_Rect->hide();
-         arrow2->setMode(true);
+        arrow2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
+        arrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        arrow2->setState(0);
+        arrow2->setMode(false);
 
-         if(temp_copy_objects[i]->rotation!=0)
-            arrow2->rotateShape(temp_copy_objects[i]->rotation);
+        arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
+        if(isCopySelected) {
+          arrow2->setTranslate(QPointF(5,5),QPointF(20,20));
+          arrow2->item->setPath(arrow2->getArrow());
+        }
+        arrow2->setPen(temp_copy_objects[i]->getpen().color());
+        arrow2->setPenStyle(temp_copy_objects[i]->getpen().style());
+        arrow2->setPenWidth(temp_copy_objects[i]->getpen().width());
+        arrow2->setBrush(temp_copy_objects[i]->getbrush().color());
+        arrow2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
+        addItem(arrow2->item);
+        arrow2->setEdgeRects();
+        addItem(arrow2->Strt_Rect);
+        addItem(arrow2->End_Rect);
+        addItem(arrow2->Bounding_Rect);
+        addItem(arrow2->Rot_Rect);
+        arrow2->Bounding_Rect->hide();
+        arrow2->setMode(true);
 
-               arrows.push_back(arrow2);
+        if(temp_copy_objects[i]->rotation!=0) {
+          arrow2->rotateShape(temp_copy_objects[i]->rotation);
+        }
 
-               object->ObjectId=9;
-               object->setObjectPos(arrow2->getStartPnt(),arrow2->getEndPnt());
-               object->setBoundPos(arrow2->item->boundingRect().topLeft(),arrow2->item->boundingRect().bottomRight());
-               object->setpen(arrow2->getPen());
-         object->setbrush(arrow2->getBrush());
-               object->setObjects(9,arrows.size()-1);
-               object->ObjectIndx=arrows.size()-1;
-               objects.push_back(object);
-               paste_selected_objects.push_back(object);
+        arrows.push_back(arrow2);
 
-
-           }
-       }
-
+        object->ObjectId=9;
+        object->setObjectPos(arrow2->getStartPnt(),arrow2->getEndPnt());
+        object->setBoundPos(arrow2->item->boundingRect().topLeft(),arrow2->item->boundingRect().bottomRight());
+        object->setpen(arrow2->getPen());
+        object->setbrush(arrow2->getBrush());
+        object->setObjects(9,arrows.size()-1);
+        object->ObjectIndx=arrows.size()-1;
+        objects.push_back(object);
+        paste_selected_objects.push_back(object);
+      }
     }
+  }
 
-    temp_copy_objects.clear();
-    temp_copy_objects.reserve(paste_selected_objects.size());
+  temp_copy_objects.clear();
+  temp_copy_objects.reserve(paste_selected_objects.size());
 
-    for(int i=0;i<paste_selected_objects.size();i++)
-    {
-        Scene_Objects* object = new Scene_Objects;
-        object = paste_selected_objects[i];
-        object->setpen(paste_selected_objects[i]->getpen());
-        object->setbrush(paste_selected_objects[i]->getbrush());
-        temp_copy_objects.insert(i,object);
-    }
+  for(int i=0;i<paste_selected_objects.size();i++) {
+    Scene_Objects* object = new Scene_Objects;
+    object = paste_selected_objects[i];
+    object->setpen(paste_selected_objects[i]->getpen());
+    object->setbrush(paste_selected_objects[i]->getbrush());
+    temp_copy_objects.insert(i,object);
+  }
 
-    paste_selected_objects.clear();
-
+  paste_selected_objects.clear();
 }
-
-
 
 
 QPointF Graph_Scene::getDim()
 {
-
-    QPointF dim;
+  QPointF dim;
 
   selectedObjects();
 
@@ -5061,7 +5012,6 @@ QPointF Graph_Scene::getDim()
   {
        minPos.setX(objects[0]->ObjectStrtPnt.x());
        minPos.setY(objects[0]->ObjectStrtPnt.y());
-
 
        for(int i=1;i<objects.size();i++)
        {
@@ -5078,7 +5028,6 @@ QPointF Graph_Scene::getDim()
               minPos.setY(objects[i]->ObjectStrtPnt.y());
           }
       }
-
 
       for(int i=0;i<objects.size();i++)
       {
