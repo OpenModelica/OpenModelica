@@ -61,6 +61,7 @@ import Call = NFCall;
 import NFClass.ClassTree;
 import ComponentRef = NFComponentRef;
 import Ceval = NFCeval;
+import SimplifyExp = NFSimplifyExp;
 
 public
 function typeClass
@@ -178,12 +179,11 @@ algorithm
         // TODO: Improve this error message:
         // "Dimension %s of %s is not a parameter expression."
         if not Types.isParameterOrConstant(var) then
-          Error.addSourceMessageAndFail(Error.DIMENSION_NOT_KNOWN,
-            {Expression.toString(exp)}, info);
+          Error.addSourceMessageAndFail(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
         end if;
 
-        exp := Ceval.evalExp(exp,
-          Ceval.EvalTarget.DIMENSION(elementName, index, exp, info));
+        exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(elementName, index, exp, info));
+        exp := SimplifyExp.simplifyExp(exp);
       then
         Dimension.fromExp(exp);
 

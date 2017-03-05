@@ -35,7 +35,7 @@ encapsulated package NFFlatten
   description: Flattening
 
 
-  New instantiation, enable with +d=newInst.
+  New instantiation, enable with -d=newInst.
 "
 
 import Inst = NFInst;
@@ -153,7 +153,7 @@ algorithm
 
     else
       algorithm
-        assert(false, "flattenComponent got unknown component");
+        assert(false, getInstanceName() + " got unknown component");
       then
         fail();
 
@@ -171,9 +171,6 @@ protected
   Dimension dim;
   list<Dimension> rest_dims;
   ComponentRef sub_pre;
-  Option<Expression> oe;
-  Expression e;
-  Integer i;
 algorithm
   if listEmpty(dimensions) then
     sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
@@ -196,7 +193,7 @@ algorithm
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown dimension");
+          assert(false, getInstanceName() + " got unknown dimension " + NFDimension.toString(dim));
         then
           fail();
 

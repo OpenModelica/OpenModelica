@@ -117,6 +117,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFMod.mo",
     "../NFFrontEnd/NFOperator.mo",
     "../NFFrontEnd/NFRecord.mo",
+    "../NFFrontEnd/NFSimplifyExp.mo",
     "../NFFrontEnd/NFStatement.mo",
     "../NFFrontEnd/NFSubscript.mo",
     "../NFFrontEnd/NFType.mo",
