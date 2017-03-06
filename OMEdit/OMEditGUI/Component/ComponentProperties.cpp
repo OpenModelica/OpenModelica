@@ -71,7 +71,8 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   // set the value type based on component type.
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   if (mpComponent->getComponentInfo()->getClassName().compare("Boolean") == 0) {
-    if (mpComponent->getChoicesAnnotation().size() > 0 && mpComponent->getChoicesAnnotation().at(0).compare("true") == 0) {
+    if (mpComponent->getChoicesAnnotation().size() > 0 &&
+        (mpComponent->getChoicesAnnotation().at(0).compare("true") == 0 || mpComponent->getChoicesAnnotation().at(1).compare("true") == 0)) {
       mValueType = Parameter::CheckBox;
     } else {
       mValueType = Parameter::Boolean;
