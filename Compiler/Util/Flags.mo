@@ -447,8 +447,8 @@ constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(136, "buildExternalLibs", true,
   Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
 constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(137, "runtimeStaticLinking", false,
   Util.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
-constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(138, "sortEqnsAndVars", false,
-  Util.gettext("Heuristic sorting for equations and variables. Influenced: removeSimpleEquations and tearing.\nDeprecated flag: Use --preOptModules+=sortEqnsVars instead."));
+constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(138, "dumpSortEqnsAndVars", false,
+  Util.gettext("Dumps debug output for the modules sortEqnsVars."));
 constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(139, "dumpSimplifyLoops", false,
   Util.gettext("Dump between steps of simplifyLoops"));
 constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(140, "dumpRecursiveTearing", false,
@@ -786,7 +786,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("resolveLoops", Util.gettext("resolves linear equations in loops")),
     ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
-    ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables. This module requires +d=sortEqnsAndVars.")),
+    ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables.")),
     ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
     ("unitChecking", Util.gettext("Does advanced unit checking which consists of two parts: 1. calculation of unspecified unit information for variables; 2. consistency check for all equations based on unit information. Please note: This module is still experimental.")),
     ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))

@@ -4129,8 +4129,11 @@ algorithm
         algorithm
           (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree));
           //debug
-          //BackendDump.dumpIncidenceMatrix(m);
-          //BackendDump.dumpIncidenceMatrixT(mT);
+          if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
+            BackendDump.dumpIncidenceMatrix(m);
+            BackendDump.dumpIncidenceMatrixT(mT);
+          end if;
+
           BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = varOptArr, numberOfElements = nv)) := vars;
           BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr, numberOfElement = ne) := eqns;
           //init weights
@@ -4152,7 +4155,7 @@ algorithm
           //sort eqns
           tplIndexWeight := list((i, w_eqns[i]) for i in 1:ne);
           //sorted eqns
-          tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntLt);
+          tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntGt);
           //new order eqns indexs
           indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
           eqn_lst := list(BackendEquation.equationNth1(eqns, i) for i in indexs);
@@ -4160,10 +4163,14 @@ algorithm
           eqns := BackendEquation.listEquation(eqn_lst);
           syst1.orderedEqs := eqns;
           syst1.orderedVars := vars;
+
           //debug
-          //(_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree));
-          //BackendDump.dumpIncidenceMatrix(m);
-          //BackendDump.dumpIncidenceMatrixT(mT);
+          if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
+            (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree));
+            BackendDump.dumpIncidenceMatrix(m);
+            BackendDump.dumpIncidenceMatrixT(mT);
+          end if;
+
           GC.free(w_vars);
           GC.free(w_eqns);
         then BackendDAEUtil.clearEqSyst(syst1);
