@@ -514,38 +514,36 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   */
 void ShapeAnnotation::applyFillPattern(QPainter *painter)
 {
-  switch (mFillPattern)
-  {
+  QRectF boundingRectangle;
+  if (dynamic_cast<PolygonAnnotation*>(this)) {
+    boundingRectangle = boundingRect();
+  } else {
+    boundingRectangle = getBoundingRect();
+  }
+  QLinearGradient linearGradient;
+  QRadialGradient radialGradient;
+  switch (mFillPattern) {
     case StringHandler::FillHorizontalCylinder:
-    {
-      QLinearGradient gradient(getBoundingRect().center().x(), getBoundingRect().center().y(),
-                               getBoundingRect().center().x(), getBoundingRect().y());
-      gradient.setColorAt(0.0, mFillColor);
-      gradient.setColorAt(1.0, mLineColor);
-      gradient.setSpread(QGradient::ReflectSpread);
-      painter->setBrush(gradient);
+      linearGradient = QLinearGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.center().x(), boundingRectangle.y());
+      linearGradient.setColorAt(0.0, mFillColor);
+      linearGradient.setColorAt(1.0, mLineColor);
+      linearGradient.setSpread(QGradient::ReflectSpread);
+      painter->setBrush(linearGradient);
       break;
-    }
     case StringHandler::FillVerticalCylinder:
-    {
-      QLinearGradient gradient(getBoundingRect().center().x(), getBoundingRect().center().y(),
-                               getBoundingRect().x(), getBoundingRect().center().y());
-      gradient.setColorAt(0.0, mFillColor);
-      gradient.setColorAt(1.0, mLineColor);
-      gradient.setSpread(QGradient::ReflectSpread);
-      painter->setBrush(gradient);
+      linearGradient = QLinearGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.x(), boundingRectangle.center().y());
+      linearGradient.setColorAt(0.0, mFillColor);
+      linearGradient.setColorAt(1.0, mLineColor);
+      linearGradient.setSpread(QGradient::ReflectSpread);
+      painter->setBrush(linearGradient);
       break;
-    }
     case StringHandler::FillSphere:
-    {
-      QRadialGradient gradient(getBoundingRect().center().x(), getBoundingRect().center().y(),
-                               getBoundingRect().width());
-      gradient.setColorAt(0.0, mFillColor);
-      gradient.setColorAt(1.0, mLineColor);
-      //gradient.setSpread(QGradient::ReflectSpread);
-      painter->setBrush(gradient);
+      radialGradient = QRadialGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.width());
+      radialGradient.setColorAt(0.0, mFillColor);
+      radialGradient.setColorAt(1.0, mLineColor);
+      //radialGradient.setSpread(QGradient::ReflectSpread);
+      painter->setBrush(radialGradient);
       break;
-    }
     case StringHandler::FillSolid:
       painter->setBrush(QBrush(mFillColor, StringHandler::getFillPatternType(mFillPattern)));
       break;
