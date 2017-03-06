@@ -428,8 +428,8 @@ record Selector
 end Selector;
 
 record choices
-  Boolean checkBox;
-  Boolean __Dymola_checkBox;
+  Boolean checkBox = false;
+  Boolean __Dymola_checkBox = false;
 end choices;
 
 //
