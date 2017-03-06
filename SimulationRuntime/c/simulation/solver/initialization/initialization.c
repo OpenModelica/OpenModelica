@@ -574,7 +574,6 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   if(!(pInitFile && strcmp(pInitFile, ""))) {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
-    setAllVarsToStart(data);
   }
 
   /* update static data of linear/non-linear system solvers */

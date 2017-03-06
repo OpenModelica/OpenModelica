@@ -2946,6 +2946,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
       <<
       <%crefAttributes(cref)%>.min = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.min);
+      <%cref(cref)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
     %>
@@ -2959,6 +2960,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
       <<
       <%crefAttributes(cref)%>.max = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.max);
+      <%cref(cref)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
     %>
@@ -2972,6 +2974,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
       <<
       <%crefAttributes(cref)%>.nominal = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.nominal);
+      <%cref(cref)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
     %>
