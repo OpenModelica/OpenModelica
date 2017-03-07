@@ -10,6 +10,7 @@ class Scene_Objects
   public:
     Scene_Objects();
     ~Scene_Objects();
+    Scene_Objects *clone();
     void setObjects(int Object_type,int position);
     void setBoundPos(QPointF pnt, QPointF pnt1);
     void setObjectPos(QPointF pnt, QPointF pnt1);
@@ -19,6 +20,7 @@ class Scene_Objects
     bool getSelected();
 
     void setColor(int r, int g,int b);
+    void setColor(const QColor rgb);
     QColor getColor();
 
     void setpen(const QPen pen);
@@ -35,17 +37,14 @@ class Scene_Objects
     void print();
     QPointF ObjectStrtPnt,ObjectEndPnt,pnt,ObjectStrtBoundPnt,ObjectEndBoundPnt;
     bool selected;
-  QVector<QPointF> pnts;
+    QVector<QPointF> pnts;
     int ObjectId,ObjectPos,ObjectState,ObjectIndx;
-  int rotation;
+    int rotation;
     QGraphicsPathItem *item;
     QGraphicsRectItem *Strt_Rect,*End_Rect;
     QGraphicsEllipseItem *Rot_Rect;
     QPen pen;
     QBrush brush;
-
-
-
 };
 
 #endif // SCENE_OBJECTS_H

@@ -2,18 +2,31 @@
 
 Scene_Objects::Scene_Objects()
 {
-    ObjectId=0;
-    ObjectPos=0;
-    pnts.clear();
-    pen = QPen();
-    brush = QBrush();
+  ObjectId=0;
+  ObjectPos=0;
+  pnts.clear();
+  pen = QPen();
+  brush = QBrush();
 
-    QPointF pnt1(0,0);
+  QPointF pnt1(0,0);
 
-    ObjectStrtBoundPnt=pnt1;
-    ObjectEndBoundPnt=pnt1;
+  ObjectStrtBoundPnt=pnt1;
+  ObjectEndBoundPnt=pnt1;
 
   rotation=0;
+}
+
+Scene_Objects * Scene_Objects::clone() {
+  Scene_Objects * obj = new Scene_Objects();
+  obj->setpen(pen);
+  obj->setbrush(brush);
+  obj->ObjectId = ObjectId;
+  obj->ObjectPos = ObjectPos;
+  obj->pnts = pnts;
+  obj->rotation = rotation;
+  obj->ObjectStrtBoundPnt = ObjectStrtBoundPnt;
+  obj->ObjectEndBoundPnt = ObjectEndBoundPnt;
+  return obj;
 }
 
 void Scene_Objects::setObjectPos(QPointF pnt,QPointF pnt1)
@@ -72,158 +85,94 @@ void Scene_Objects::CheckPnt(QPointF curr_pnt)
     pnt=curr_pnt;
 }
 
-int Scene_Objects::getObject(int &position)
-{
-    qDebug()<<"position "<<ObjectStrtPnt<<"   "<<ObjectEndPnt<<" "<<pnt<<"\n";
-    //if(ObjectId!=6)
-    {
-       if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=pnt.y())&&(ObjectEndPnt.y()>=pnt.y()))
-       {
-       if(ObjectId==1)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-           if(ObjectId==2)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-           if(ObjectId==3)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-           if(ObjectId==4)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-           if(ObjectId==5)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-           if(ObjectId==7)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-
-           if(ObjectId==9)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-       }
-
-     if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=ObjectEndPnt.y())&&(ObjectEndPnt.y()>=pnt.y()))
-       {
-       qDebug()<<"Entered the arc condition\n";
-
-       if(ObjectId==6)
-           {
-              position=ObjectPos;
-              return ObjectId;
-           }
-
-       if(ObjectId==8)
-           {
-        position=ObjectPos;
-              return ObjectId;
-           }
-
-     }
-
+int Scene_Objects::getObject(int &position) {
+  if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=pnt.y())&&(ObjectEndPnt.y()>=pnt.y())) {
+    if ((ObjectId==1) || (ObjectId==2) || (ObjectId==3) || (ObjectId==4) || (ObjectId==5) || (ObjectId==7) || (ObjectId==9)) {
+      position=ObjectPos;
+      return ObjectId;
+    }
   }
-
+  if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=ObjectEndPnt.y())&&(ObjectEndPnt.y()>=pnt.y())) {
+    //qDebug()<<"Entered the arc condition\n";
+    if((ObjectId==6) || (ObjectId==8)) {
+      position=ObjectPos;
+      return ObjectId;
+    }
+  }
   return 0;
 }
 
-void Scene_Objects::setSelected(bool selected)
-{
-    this->selected=selected;
+void Scene_Objects::setSelected(bool selected) {
+  this->selected=selected;
 }
 
-bool Scene_Objects::getSelected()
-{
+bool Scene_Objects::getSelected() {
     return selected;
 }
 
 void Scene_Objects::print()
 {
-    qDebug()<<"ObjectId "<<ObjectId<<"\n";
-    qDebug()<<"Start & End Pnts "<<ObjectStrtPnt<<" "<<ObjectEndPnt<<"\n";
+  qDebug()<<"ObjectId "<<ObjectId<<"\n";
+  qDebug()<<"Start & End Pnts "<<ObjectStrtPnt<<" "<<ObjectEndPnt<<"\n";
 }
 
-void Scene_Objects::setpen(const QPen pen)
-{
-        this->pen=pen;
+void Scene_Objects::setpen(const QPen pen) {
+  this->pen = pen;
 }
 
-void Scene_Objects::setPenColor(const int r,const int g,const int b)
-{
-    this->pen.setColor(QColor(r,g,b));
+void Scene_Objects::setPenColor(const int r,const int g,const int b) {
+  this->pen.setColor(QColor(r,g,b));
 }
 
-void Scene_Objects::setPenStyle(const int style)
-{
-    switch(style)
-    {
-      case 1:
-          this->pen.setStyle(Qt::SolidLine);
-          break;
-      case 2:
-          this->pen.setStyle(Qt::DashLine);
-          break;
-      case 3:
-          this->pen.setStyle(Qt::DotLine);
-          break;
-      case 4:
-          this->pen.setStyle(Qt::DashDotLine);
-          break;
-      case 5:
-          this->pen.setStyle(Qt::DashDotDotLine);
-          break;
-      default:
-          break;
-    }
+void Scene_Objects::setPenStyle(const int style) {
+  switch(style)
+  {
+    case 1:
+      this->pen.setStyle(Qt::SolidLine);
+      break;
+    case 2:
+      this->pen.setStyle(Qt::DashLine);
+      break;
+    case 3:
+      this->pen.setStyle(Qt::DotLine);
+      break;
+    case 4:
+      this->pen.setStyle(Qt::DashDotLine);
+      break;
+    case 5:
+      this->pen.setStyle(Qt::DashDotDotLine);
+      break;
+    default:
+      break;
+  }
 }
 
-void Scene_Objects::setPenWidth(const int width)
-{
+void Scene_Objects::setPenWidth(const int width) {
     this->pen.setWidth(width);
 }
 
-void Scene_Objects::setColor(int r,int g,int b)
-{
-        pen.setColor(QColor(r,g,b));
+void Scene_Objects::setColor(int r,int g,int b) {
+  pen.setColor(QColor(r,g,b));
 }
 
-QColor Scene_Objects::getColor()
-{
-        return pen.color();
+void Scene_Objects::setColor(const QColor rgb) {
+  pen.setColor(rgb);
 }
 
-QPen Scene_Objects::getpen()
-{
-        return this->pen;
+QColor Scene_Objects::getColor() {
+  return pen.color();
 }
 
-void Scene_Objects::setbrush(const QBrush brush)
-{
-        this->brush=brush;
+QPen Scene_Objects::getpen() {
+  return this->pen;
 }
 
-void Scene_Objects::setBrushColor(const int r,const int g,const int b)
-{
-    this->brush.setColor(QColor(r,g,b));
+void Scene_Objects::setbrush(const QBrush brush) {
+  this->brush=brush;
+}
+
+void Scene_Objects::setBrushColor(const int r,const int g,const int b) {
+  this->brush.setColor(QColor(r,g,b));
 }
 
 void Scene_Objects::setBrushStyle(const int style)
@@ -280,13 +229,10 @@ void Scene_Objects::setBrushStyle(const int style)
    }
 }
 
-QBrush Scene_Objects::getbrush()
-{
-        return this->brush;
+QBrush Scene_Objects::getbrush() {
+  return this->brush;
 }
 
-
-Scene_Objects::~Scene_Objects()
-{
+Scene_Objects::~Scene_Objects() {
 
 }

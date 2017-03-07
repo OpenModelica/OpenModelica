@@ -43,181 +43,156 @@ class Graph_Scene:public QGraphicsScene
     //Returns the postion of the objects
     void getObjectsPos(QVector<QPointF> &objectsPos);
 
-   //Returns the objects in the scene
-   QVector<Scene_Objects*> getObjects();
+    //Returns the objects in the scene
+    QVector<Scene_Objects*> getObjects();
 
-   //Retunrs the minimum and maximum of the overall objects
-   void getMinPosition(QPointF &pnt);
-   void getMaxPosition(QPointF &pnt1);
+    //Retunrs the minimum and maximum of the overall objects
+    void getMinPosition(QPointF &pnt);
+    void getMaxPosition(QPointF &pnt1);
 
-   void setPen(const QPen Pen);
-   void setPenStyle(const int style);
-   void setPenWidth(const int width);
-   QPen getPen();
+    void setPen(const QPen Pen);
+    void setPenStyle(const int style);
+    void setPenWidth(const int width);
+    QPen getPen();
 
-   void setBrush(const QBrush brush);
-   void setBrushStyle(const int style);
-   QBrush getBrush();
+    void setBrush(const QBrush brush);
+    void setBrushStyle(const int style);
+    QBrush getBrush();
 
-   //method to write to an image
-   void writeToImage(QPainter *painter,QString &text,QPointF point);
+    //method to write to an image
+    void writeToImage(QPainter *painter,QString &text,QPointF point);
 
+    bool isMultipleSelected;
 
-   bool isMultipleSelected;
+    //hides the shapes handles
+    void hide_object_edges();
 
-   //hides the shapes handles
-   void hide_object_edges();
-
-   void getSelectedShapeProperties(QPen &shapePen,QBrush &shapeBrush);
+    void getSelectedShapeProperties(QPen &shapePen,QBrush &shapeBrush);
 
     Draw_Rectangle *rect;
+    bool isObjectEdited;
+    bool isShapeImported;
 
-  bool isObjectEdited;
-
-  bool isShapeImported;
-
-   signals:
-      void item_selected(Graph_Scene* scene_item);
-
+  signals:
+    void item_selected(Graph_Scene* scene_item);
 
   protected:
-     void mousePressEvent(QGraphicsSceneMouseEvent *);
-     void mouseMoveEvent(QGraphicsSceneMouseEvent *);
-     void mouseReleaseEvent(QGraphicsSceneMouseEvent *);
-     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *);
+    void mousePressEvent(QGraphicsSceneMouseEvent *);
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *);
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *);
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *);
 
-     void keyPressEvent(QKeyEvent *);
-     void keyReleaseEvent(QKeyEvent *);
+    void keyPressEvent(QKeyEvent *);
+    void keyReleaseEvent(QKeyEvent *);
 
   private:
-     void draw_objects();
+    void draw_objects();
+    void updateObjects();
+    void selectedObjects();
+    void deleteShapes();
 
-     void updateObjects();
-     void selectedObjects();
+    //object_indx stores the index of the object in objects vector.
+    //index stores the index of slected object that is line,rectangle,ellipse.
+    int object_indx,indx;
+    bool linemode,mode,isCopySelected,line_drawn;
+    int polyline_indx,polygon_indx;
 
-   void deleteShapes();
+    //variables to store the minimum and maximum position among the objects in the scene
+    QPointF minPos,maxPos;
 
-     //object_indx stores the index of the object in objects vector.
-     //index stores the index of slected object that is line,rectangle,ellipse.
-     int object_indx,indx;
-     bool linemode,mode,isCopySelected,line_drawn;
-     int polyline_indx,polygon_indx;
+    void draw_line();
+    void draw_line_move(QPointF pnt,QPointF pnt1);
+    void draw_line_state(QPointF pnt,QPointF pnt1);
+    int  check_intersection(QPointF pnt,QPointF pnt1);
 
+    void draw_rect();
+    void draw_rect_move(QPointF pnt,QPointF pnt1);
+    void draw_rect_state(QPointF pnt,QPointF pnt1);
 
-     //variables to store the minimum and maximum position among the objects in the scene
-     QPointF minPos,maxPos;
+    void draw_round_rect();
+    void draw_round_rect_move(QPointF pnt,QPointF pnt1);
+    void draw_round_rect_state(QPointF pnt,QPointF pnt1);
 
+    void draw_ellep();
+    void draw_ellep_move(QPointF pnt,QPointF pnt1);
+    void draw_ellep_state(QPointF pnt,QPointF pnt1);
 
-     void draw_line();
-     void draw_line_move(QPointF pnt,QPointF pnt1);
-     void draw_line_state(QPointF pnt,QPointF pnt1);
-     int  check_intersection(QPointF pnt,QPointF pnt1);
+    void draw_polygon();
+    void draw_polygon_move(QPointF pnt,QPointF pnt1);
+    void draw_polygon_state(QPointF pnt,QPointF pnt1);
 
-     void draw_rect();
-     void draw_rect_move(QPointF pnt,QPointF pnt1);
-     void draw_rect_state(QPointF pnt,QPointF pnt1);
+    void draw_arc();
+    void draw_arc_move(QPointF pnt,QPointF pnt1);
+    void draw_arc_state(QPointF pnt,QPointF pnt1);
 
+    void draw_arrow();
+    void draw_arrow_move(QPointF pnt,QPointF pnt1);
+    void draw_arrow_state(QPointF pnt,QPointF pnt1);
 
-     void draw_round_rect();
-     void draw_round_rect_move(QPointF pnt,QPointF pnt1);
-     void draw_round_rect_state(QPointF pnt,QPointF pnt1);
+    void draw_linearrow();
+    void draw_linearrow_move(QPointF pnt,QPointF pnt1);
+    void draw_linearrow_state(QPointF pnt,QPointF pnt1);
 
+    void draw_triangle();
+    void draw_triangle_move(QPointF pnt,QPointF pnt1);
+    void draw_triangle_state(QPointF pnt,QPointF pnt1);
 
-     void draw_ellep();
-     void draw_ellep_move(QPointF pnt,QPointF pnt1);
-     void draw_ellep_state(QPointF pnt,QPointF pnt1);
+    void draw_text();
+    void draw_text_move(QPointF pnt,QPointF pnt1);
+    void draw_text_state(QPointF pnt,QPointF pnt1);
+    bool check_object(QPointF pnt,Draw_Text* text1);
 
+    void select_objects(Scene_Objects objects1);
 
-     void draw_polygon();
-     void draw_polygon_move(QPointF pnt,QPointF pnt1);
-     void draw_polygon_state(QPointF pnt,QPointF pnt1);
+    void getDist(QPointF &vertex,float &dist);
 
+    template<class T> void setMinMax(T* &object, int objectId,QPointF pnt,QPointF pnt1);
 
-     void draw_arc();
-     void draw_arc_move(QPointF pnt,QPointF pnt1);
-     void draw_arc_state(QPointF pnt,QPointF pnt1);
+    //Arc class variables
+    Draw_Arc *arc,*temp_arc;
+    QVector<Draw_Arc*> arcs;
 
+    Draw_Arrow *arrow;
+    QVector<Draw_Arrow*> arrows;
 
-     void draw_arrow();
-     void draw_arrow_move(QPointF pnt,QPointF pnt1);
-     void draw_arrow_state(QPointF pnt,QPointF pnt1);
+    QPointF strt_pnt,strt1_pnt;
+    QPointF last_pnt,objectPnt,objectPnt1;
 
+    Draw_Line *line,*polygon_line;
+    QVector<Draw_Line*> lines,poly_lines;
 
+    Draw_LineArrow *linearrow;
+    QVector<Draw_LineArrow*> linearrows;
 
-     void draw_linearrow();
-     void draw_linearrow_move(QPointF pnt,QPointF pnt1);
-     void draw_linearrow_state(QPointF pnt,QPointF pnt1);
+    QVector<Draw_Rectangle*> rects;
 
+    //Round Rectangle variables
+    Draw_RoundRect *round_rect,*temp_round_rect;
+    QVector<Draw_RoundRect*> round_rects;
 
-     void draw_triangle();
-     void draw_triangle_move(QPointF pnt,QPointF pnt1);
-     void draw_triangle_state(QPointF pnt,QPointF pnt1);
+    Draw_Ellipse *ellep;
+    QVector<Draw_Ellipse*> elleps;
 
+    Draw_Polygon *polygon,*temp_polygon;
+    QVector<Draw_Polygon*> polygons;
+    int poly_indx,next_line_indx,prev_line_indx;
 
-     void draw_text();
-     void draw_text_move(QPointF pnt,QPointF pnt1);
-     void draw_text_state(QPointF pnt,QPointF pnt1);
-     bool check_object(QPointF pnt,Draw_Text* text1);
+    Draw_Triangle *triangle;
+    QVector<Draw_Triangle*> triangles;
 
-   void select_objects(Scene_Objects objects1);
+    Draw_Text *text;
+    QVector<Draw_Text*> texts;
 
-     void getDist(QPointF &vertex,float &dist);
+    Scene_Objects *object1,*object2,*object3,*object4,*object5,*object6,*object7,*object8,*object9,*object10;
+    QVector<Scene_Objects*> objects,copy_objects,temp_copy_objects,paste_selected_objects;
 
-     template<class T> void setMinMax(T* &object, int objectId,QPointF pnt,QPointF pnt1);
+    QVector<QPointF> pnts;
 
-     //Arc class variables
-     Draw_Arc *arc,*temp_arc;
-     QVector<Draw_Arc*> arcs;
+    QGraphicsLineItem *line_item;
 
-     Draw_Arrow *arrow;
-     QVector<Draw_Arrow*> arrows;
-
-     QPointF strt_pnt,strt1_pnt;
-     QPointF last_pnt,objectPnt,objectPnt1;
-
-     Draw_Line *line,*polygon_line;
-     QVector<Draw_Line*> lines,poly_lines;
-
-     Draw_LineArrow *linearrow;
-     QVector<Draw_LineArrow*> linearrows;
-
-
-     QVector<Draw_Rectangle*> rects;
-
-     //Round Rectangle variables
-     Draw_RoundRect *round_rect,*temp_round_rect;
-     QVector<Draw_RoundRect*> round_rects;
-
-     Draw_Ellipse *ellep;
-     QVector<Draw_Ellipse*> elleps;
-
-     Draw_Polygon *polygon,*temp_polygon;
-     QVector<Draw_Polygon*> polygons;
-     int poly_indx,next_line_indx,prev_line_indx;
-
-     Draw_Triangle *triangle;
-     QVector<Draw_Triangle*> triangles;
-
-     Draw_Text *text;
-     QVector<Draw_Text*> texts;
-
-     QVector<QLineF> p_lines;
-     QLineF p_line;
-     QGraphicsLineItem *p_item;
-
-     Scene_Objects *object1,*object2,*object3,*object4,*object5,*object6,*object7,*object8,*object9,*object10,*copy_object1,*multi_copy_object;
-     QVector<Scene_Objects*> objects,copy_objects,temp_copy_objects,paste_selected_objects;
-
-   QVector<QPointF> pnts;
-
-
-
-     QGraphicsLineItem *line_item;
-
-     QPen pen;
-     QBrush brush;
-     Sketch_Files files;
-
+    QPen pen;
+    QBrush brush;
+    Sketch_Files files;
 };
 
 #endif // GRAPH_SCENE_H

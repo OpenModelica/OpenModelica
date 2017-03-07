@@ -305,15 +305,14 @@ void Tools::draw_ellipse()
     scene->setObject(3);
 }
 
-void Tools::draw_polygon()
-{
+void Tools::draw_polygon() {
     isSaved=false;
     if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
+      copy_shape->setDisabled(false);
     if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
+      cut_shape->setDisabled(false);
     if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
+      paste_shape->setDisabled(false);
 
     itemSelected=true;
     scene->hide_object_edges();
@@ -914,11 +913,11 @@ void Tools::readXml(QString file_name)
  }
 
 
-void Tools::draw_copy()
-{
-   if(cut_shape->isEnabled())
-       cut_shape->setDisabled(true);
-   scene->copy_object();
+void Tools::draw_copy() {
+  if(cut_shape->isEnabled()) {
+    cut_shape->setDisabled(true);
+  }
+  scene->copy_object();
 }
 
 void Tools::draw_cut()

@@ -677,4 +677,3 @@ void Draw_Rectangle::print()
      this->pnt=pnt;
      this->pnt1=pnt1;
 }*/
-
