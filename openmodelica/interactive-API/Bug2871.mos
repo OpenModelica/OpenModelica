@@ -104,29 +104,29 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 // true
 // 0
 // 5
-// {pipe1.port_a,pipe2.port_a, ""}
+// {"pipe1.port_a","pipe2.port_a",""}
 // "model"
 // true
 // "model"
 // true
 // {Line(true, {0.0, 0.0}, 0, {{-60, -20}, {-60, -40}, {0, -40}, {0, -30}, {0, -20}}, {0, 127, 255}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}
-// {pipe2.port_a,pipe3.port_a, ""}
+// {"pipe2.port_a","pipe3.port_a",""}
 // "model"
 // true
 // "model"
 // true
 // {Line(true, {0.0, 0.0}, 0, {{0, -20}, {0, -20}, {0, -40}, {60, -40}, {60, -30}}, {0, 127, 255}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}
-// {pipe3.port_b,tank3.ports[1], ""}
+// {"pipe3.port_b","tank3.ports[1]",""}
 // "model"
 // true
 // "model"
 // true
 // {Line(true, {0.0, 0.0}, 0, {{60, -10}, {60, -10}, {60, 10}}, {0, 127, 255}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}
-// {pipe1.port_b,tank1.ports[1], ""}
+// {"pipe1.port_b","tank1.ports[1]",""}
 // "model"
 // true
 // {Line(true, {0.0, 0.0}, 0, {{-60, 0}, {-60, 10}, {-60, 20}}, {0, 127, 255}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}
-// {pipe2.port_b,tank2.ports[1], ""}
+// {"pipe2.port_b","tank2.ports[1]",""}
 // "model"
 // true
 // "model"

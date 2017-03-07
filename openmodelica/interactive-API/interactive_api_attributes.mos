@@ -185,7 +185,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthConnection(A, 1)
-// {a,b, ""}
+// {"a","b",""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthConnectionAnnotation(A, 1)
@@ -325,7 +325,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthConnection(A, 1)
-// {a,b, ""}
+// {"a","b",""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNthConnectionAnnotation(A, 1)

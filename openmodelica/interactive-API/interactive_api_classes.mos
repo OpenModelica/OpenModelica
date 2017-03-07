@@ -170,7 +170,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
 // Ok
 // Evaluating: getNthConnection(A.test, 1)
-// {a.n[1],b.z[2], ""}
+// {"a.n[1]","b.z[2]",""}
 // Evaluating: getClassNames(A)
 // {test}
 // Evaluating: clear()
@@ -251,7 +251,7 @@ getClassNames(B, includeConstants=true);
 // Evaluating: addConnection(a.n[1], b.z[2], A.test)
 // Ok
 // Evaluating: getNthConnection(A.test, 1)
-// {a.n[1],b.z[2], ""}
+// {"a.n[1]","b.z[2]",""}
 // Evaluating: getClassNames(A)
 // {test}
 // Evaluating: loadString("model M
