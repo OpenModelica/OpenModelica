@@ -63,8 +63,7 @@ SOURCES += \
     ../OMSketch/Draw_line.cpp \
     ../OMSketch/Draw_Ellipse.cpp \
     ../OMSketch/Draw_Arrow.cpp \
-    ../OMSketch/Draw_Arc.cpp \
-    ../OMSketch/CustomDailog.cpp
+    ../OMSketch/Draw_Arc.cpp
 
 HEADERS += \
     application.h \
@@ -139,7 +138,6 @@ HEADERS += \
     ../OMSketch/Draw_ellipse.h \
     ../OMSketch/Draw_Arrow.h \
     ../OMSketch/Draw_Arc.h \
-    ../OMSketch/CustomDialog.h \
     ../OMSketch/basic.h
 
 FORMS += ImageSizeDlg.ui \
@@ -190,4 +188,3 @@ CONFIG += warn_off
 ICON = Resources/OMNotebook_icon.icns
 
 QMAKE_INFO_PLIST = Info.plist
-
