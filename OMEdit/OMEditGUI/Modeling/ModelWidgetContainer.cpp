@@ -4169,18 +4169,16 @@ void ModelWidget::getModelConnections()
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
   for (int i = 1 ; i <= connectionCount ; i++) {
     // get the connection from OMC
-    QString connectionString;
-    QStringList connectionList;
-    connectionString = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
-    connectionList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionString));
+    QStringList connectionList = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
+    QString connectionString = QString("{%1}").arg(connectionList.join(","));
     // if the connectionString only contains two items then continue the loop,
     // because connection is not valid then
     if (connectionList.size() < 3) {
       continue;
     }
     // get start and end components
-    QStringList startComponentList = connectionList.at(0).split(".");
-    QStringList endComponentList = connectionList.at(1).split(".");
+    QStringList startComponentList = StringHandler::makeVariableParts(connectionList.at(0));
+    QStringList endComponentList = StringHandler::makeVariableParts(connectionList.at(1));
     // get start component
     Component *pStartComponent = 0;
     if (startComponentList.size() > 0) {

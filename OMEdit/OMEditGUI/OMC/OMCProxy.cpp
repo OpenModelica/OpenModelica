@@ -1113,16 +1113,15 @@ int OMCProxy::getConnectionCount(QString className)
 }
 
 /*!
-  Returns the connection at a specific index from a model.
-  \param className - is the name of the model.
-  \param num - is the index of connection.
-  \return the connection
-  */
-QString OMCProxy::getNthConnection(QString className, int num)
+ * \brief OMCProxy::getNthConnection
+ * Returns the connection at a specific index from a model.
+ * \param className - is the name of the model.
+ * \param index - is the index of connection.
+ * \return the connection list i.e, {from, to, comment}
+ */
+QList<QString> OMCProxy::getNthConnection(QString className, int index)
 {
-  QString expression = "getNthConnection(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression);
-  return getResult();
+  return mpOMCInterface->getNthConnection(className, index);
 }
 
 /*!

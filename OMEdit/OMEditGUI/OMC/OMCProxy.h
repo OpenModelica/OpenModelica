@@ -134,7 +134,7 @@ public:
   QString getIconAnnotation(QString className);
   QString getDiagramAnnotation(QString className);
   int getConnectionCount(QString className);
-  QString getNthConnection(QString className, int num);
+  QList<QString> getNthConnection(QString className, int index);
   QString getNthConnectionAnnotation(QString className, int num);
   int getInheritanceCount(QString className);
   QString getNthInheritedClass(QString className, int num);
