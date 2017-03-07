@@ -6,10 +6,11 @@ class Draw_Text: public QGraphicsTextItem
 {
    public:
      Draw_Text();
+     Draw_Text(QPointF strt_pnt);
 
      //Getting and setting lines initial and last positions
-     QPointF getStartPnt();
-     QPointF getEndPnt();
+     QPointF getStartPnt() {return StrtPnt;}
+     QPointF getEndPnt() {return EndPnt;}
 
      void setStartPoint(QPointF strt_pnt);
      void setEndPoint(QPointF lst_pnt);
@@ -22,6 +23,11 @@ class Draw_Text: public QGraphicsTextItem
 
      int getState();
      void setState(int State);
+
+     //show handles
+     void showHandles();
+     //hide handles
+     void hideHandles();
 
      //checking the mouse position to resize and move rectangle
      bool getStrtEdge(const QPointF pnt);
@@ -36,12 +42,12 @@ class Draw_Text: public QGraphicsTextItem
      void setRotate(const QPointF &pnt,const QPointF &pnt1);
      void setScale(float x,float y);
 
-
      QGraphicsTextItem* item;
      QGraphicsRectItem *Strt_Rect,*End_Rect,*Bounding_Rect;
      QGraphicsEllipseItem *Rot_Rect;
 
      float angle;
+     bool isObjectSelected;
 
    private:
       QPointF StrtPnt,EndPnt;

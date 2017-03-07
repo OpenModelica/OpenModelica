@@ -1,62 +1,51 @@
 #include "Draw_Rectangle.h"
 
-Draw_Rectangle::Draw_Rectangle()
-{
-    draw_state=0;
-    draw_mode=false;
-    angle=0;
-    //setFlag(QGraphicsItem::ItemIsSelectable,true);
+Draw_Rectangle::Draw_Rectangle(){
+  draw_state=0;
+  draw_mode=false;
+  angle=0;
+  //setFlag(QGraphicsItem::ItemIsSelectable,true);
 
-    pen =  QPen();
-    pen.setColor(QColor(0,0,0));
-    pen.setStyle(Qt::SolidLine);
-    pen.setWidth(1);
+  pen =  QPen();
+  pen.setColor(QColor(0,0,0));
+  pen.setStyle(Qt::SolidLine);
+  pen.setWidth(1);
 
-    brush = QBrush();
-    brush.setColor(QColor(255,255,255));
-    brush.setStyle(Qt::NoBrush);
+  brush = QBrush();
+  brush.setColor(QColor(255,255,255));
+  brush.setStyle(Qt::NoBrush);
 
   isObjectSelected=false;
-
 }
 
-
-void Draw_Rectangle::setStartPoint(QPointF strt_pnt)
-{
-    StrtPnt=strt_pnt;
+void Draw_Rectangle::setStartPoint(QPointF strt_pnt) {
+  StrtPnt=strt_pnt;
 }
 
-void Draw_Rectangle::setEndPoint(QPointF lst_pnt)
-{
-    EndPnt=lst_pnt;
+void Draw_Rectangle::setEndPoint(QPointF lst_pnt) {
+  EndPnt=lst_pnt;
 }
 
+QPainterPath Draw_Rectangle::getRect(QPointF pnt,QPointF pnt1) {
+  StrtPnt=pnt;
+  EndPnt=pnt1;
+  QPainterPath path;
+  path.addRect(QRectF(StrtPnt,EndPnt));
 
-QPainterPath Draw_Rectangle::getRect(QPointF pnt,QPointF pnt1)
-{
-        StrtPnt=pnt;
-        EndPnt=pnt1;
-        QPainterPath path;
-    path.addRect(QRectF(StrtPnt,EndPnt));
-
-        return path;
+  return path;
 }
 
-QPainterPath Draw_Rectangle::getRotRect(QPointF pnt,QPointF pnt1)
-{
-        StrtPnt=pnt;
-        EndPnt=pnt1;
-        QPainterPath path;
-    qDebug()<<"roated point "<<pnt<<"\n";
-    path.addRect(QRectF(pnt,EndPnt));
-    qDebug()<<"rectangle points "<<path.boundingRect().left()<<"  "<<path.boundingRect().bottom()<<"  "<<path.boundingRect().right()<<"\n";
-    return path;
+QPainterPath Draw_Rectangle::getRotRect(QPointF pnt,QPointF pnt1) {
+  StrtPnt=pnt;
+  EndPnt=pnt1;
+  QPainterPath path;
+  //qDebug()<<"roated point "<<pnt<<"\n";
+  path.addRect(QRectF(pnt,EndPnt));
+  //qDebug()<<"rectangle points "<<path.boundingRect().left()<<"  "<<path.boundingRect().bottom()<<"  "<<path.boundingRect().right()<<"\n";
+  return path;
 }
 
-
-void Draw_Rectangle::drawImage(QPainter *painter,QString &text,QPointF point)
-{
-
+void Draw_Rectangle::drawImage(QPainter *painter,QString &text,QPointF point) {
     QString str_x,str_y,str_x1,str_y1;
     QString color_r,color_g,color_b;
   QPointF pnt,pnt1;
@@ -70,10 +59,7 @@ void Draw_Rectangle::drawImage(QPainter *painter,QString &text,QPointF point)
 
      pnt+=point;
        pnt1+=point;
-  }
-
-  if(!item->rotation()==0)
-  {
+  } else {
      pnt=item->boundingRect().topLeft();
      pnt1=item->boundingRect().bottomRight();
 

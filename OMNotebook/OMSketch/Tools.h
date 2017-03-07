@@ -127,6 +127,7 @@ class Tools:public QMainWindow
            void button_action();
            void action();
            void menu();
+           void draw_element(int id);
 
            void openFile();
 

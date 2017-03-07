@@ -152,212 +152,65 @@ void Tools::action()
     rect->addAction(open_scene);*/
 }
 
-void Tools::draw_arc()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-
-    //select_pen->clear();
-    //select_brush->clear();
-    //penWidth->clear();
-
-    itemSelected=true;
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->setObject(6);
+void Tools::draw_element(int id) {
+  isSaved=false;
+  if(!copy_shape->isEnabled())
+    copy_shape->setDisabled(false);
+  if(!cut_shape->isEnabled())
+    cut_shape->setDisabled(false);
+  if(!paste_shape->isEnabled())
+    paste_shape->setDisabled(false);
+  itemSelected=true;
+  scene->hide_object_edges();
+  enableProperties();
+  reloadShapesProerties();
+  scene->setObject(id);
 }
 
-void Tools::draw_arrow()
-{
+void Tools::draw_arc() {
+  draw_element(3);
+  //select_pen->clear();
+  //select_brush->clear();
+  //penWidth->clear();
+}
+
+void Tools::draw_arrow() {
     QMessageBox::about(this,"Arrow","In Process");
     //in process
-    /*isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-    itemSelected=true;
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->hide_object_edges();
-
-    scene->setObject(9);*/
+    //draw_element(9);
 }
 
-
-void Tools::draw_rect()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-    itemSelected=true;
-
-    enableProperties();
-
-    scene->hide_object_edges();
-
-    reloadShapesProerties();
-
-    scene->setObject(2);
+void Tools::draw_rect() {
+  draw_element(2);
 }
 
-void Tools::draw_round_rect()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-    itemSelected=true;
-    enableProperties();
-
-    scene->hide_object_edges();
-
-    reloadShapesProerties();
-
-    scene->setObject(5);
+void Tools::draw_round_rect() {
+  draw_element(5);
 }
 
-
-void Tools::draw_line()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-    itemSelected=true;
-
-    scene->hide_object_edges();
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->setObject(1);
+void Tools::draw_line() {
+  draw_element(1);
 }
 
-void Tools::draw_linearrow()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-    itemSelected=true;
-
-    scene->hide_object_edges();
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->setObject(7);
+void Tools::draw_linearrow() {
+  draw_element(7);
 }
 
-
-void Tools::draw_ellipse()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-
-    itemSelected=true;
-    scene->hide_object_edges();
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->setObject(3);
+void Tools::draw_ellipse() {
+  draw_element(3);
 }
 
 void Tools::draw_polygon() {
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-      copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-      cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-      paste_shape->setDisabled(false);
-
-    itemSelected=true;
-    scene->hide_object_edges();
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->setObject(4);
+  draw_element(4);
 }
 
-void Tools::draw_triangle()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-    itemSelected=true;
-    scene->hide_object_edges();
-
-    enableProperties();
-
-    reloadShapesProerties();
-
-    scene->setObject(8);
+void Tools::draw_triangle() {
+  draw_element(8);
 }
 
-void Tools::draw_text()
-{
-    isSaved=false;
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    if(!paste_shape->isEnabled())
-        paste_shape->setDisabled(false);
-    itemSelected=true;
-    reloadShapesProerties();
-
-    scene->setObject(10);
+void Tools::draw_text() {
+  draw_element(10);
 }
-
 
 void Tools::draw_new()
 {

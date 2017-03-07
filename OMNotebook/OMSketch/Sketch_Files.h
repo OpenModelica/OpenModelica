@@ -6,7 +6,7 @@
 
 class Sketch_Files
 {
-   public:
+  public:
     Sketch_Files();
     void readXml(QString Filename);
     void readXml(QString Filename,QVector<QString> &subStrings);
@@ -18,11 +18,10 @@ class Sketch_Files
     void parseText(QString text, QVector<int> &values,QVector<float> &value);
     void parseText(QString text,QVector<QString> &subStrings);
 
-   private:
-     void parseText(QString text);
-     QVector<int> values;
-     Scene_Objects* object;
-
+  private:
+    void parseText(QString text);
+    QVector<int> values;
+    Scene_Objects* object;
 };
 
 #endif // SKETCH_FILES_H

@@ -2,14 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.0" language="de_DE">
 <context>
-    <name>CustomDialog</name>
-    <message>
-        <location filename="../../../OMSketch/CustomDailog.cpp" line="99"/>
-        <source>Styles</source>
-        <translation>Stile</translation>
-    </message>
-</context>
-<context>
     <name>IAEX::AboutDialog</name>
     <message>
         <location filename="../../notebook.cpp" line="2561"/>
