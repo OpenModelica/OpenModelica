@@ -3070,6 +3070,16 @@ annotation(
   preferredView="text");
 end removeExtendsModifiers;
 
+function getNthConnection "Returns the Nth connection.
+  Example command:
+  getNthConnection(A) => {\"from\", \"to\", \"comment\"}"
+  input TypeName className;
+  input Integer index;
+  output String[:] result;
+external "builtin";
+annotation(preferredView="text");
+end getNthConnection;
+
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
   output Integer count;

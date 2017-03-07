@@ -2333,6 +2333,14 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,_,"getNthConnection",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        vals = Interactive.getNthConnection(Absyn.pathToCref(path), p, n);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+
+    case (cache,_,"getNthConnection",_,st,_) then (cache,ValuesUtil.makeArray({}),st);
+
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
@@ -6890,13 +6898,13 @@ algorithm
       Option<Absyn.Comment> cmt;
     case (Absyn.PARTS(comment = SOME(str))) then str;
     case (Absyn.DERIVED(comment = cmt))
-      then Interactive.getStringComment2(cmt);
+      then Interactive.getStringComment(cmt);
     case (Absyn.ENUMERATION(comment = cmt))
-      then Interactive.getStringComment2(cmt);
+      then Interactive.getStringComment(cmt);
     case (Absyn.ENUMERATION(comment = cmt))
-      then Interactive.getStringComment2(cmt);
+      then Interactive.getStringComment(cmt);
     case (Absyn.OVERLOAD(comment = cmt))
-      then Interactive.getStringComment2(cmt);
+      then Interactive.getStringComment(cmt);
     case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
     else "";
   end matchcontinue;

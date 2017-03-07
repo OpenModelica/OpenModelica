@@ -1180,12 +1180,6 @@ algorithm
       then
         getConnectionCount(cr, p);
 
-    case "getNthConnection"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthConnection(cr, p, n);
-
     case "setConnectionComment"
       algorithm
         {Absyn.CREF(componentRef = cr),
@@ -10275,23 +10269,24 @@ algorithm
   end matchcontinue;
 end getConnectionCount;
 
-protected function getNthConnection "
+public function getNthConnection "
   This function takes a `ComponentRef\' and a `Program\' and an int and
   returns a comma separated string for the nth connection, e.g. \"R1.n,C.p\".
 "
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
   input Integer inInteger;
-  output String outString;
+  output list<Values.Value> outValue;
 algorithm
-  outString:=
+  outValue:=
   matchcontinue (inComponentRef,inProgram,inInteger)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
       Absyn.Equation eq;
       Option<Absyn.Comment> cmt;
-      String str2,str,res;
+      list<Values.Value> vals;
+      String str,s1,s2;
       Absyn.ComponentRef model_;
       Absyn.Program p;
       Integer n;
@@ -10300,28 +10295,16 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) = getNthConnectionitemInClass(cdef, n);
-        str2 = getStringComment(cmt);
-        str = getConnectionStr(eq);
-        res = stringAppendList({"{",str,", ",str2,"}"});
+        str = getStringComment(cmt);
+        (s1, s2) = getConnectionStr(eq);
+        vals = {Values.STRING(s1), Values.STRING(s2), Values.STRING(str)};
       then
-        res;
-    else "Error";
+        vals;
+    else {};
   end matchcontinue;
 end getNthConnection;
 
-protected function getStringComment "
-  Returns the string comment or empty string from a Comment option.
-"
-  input Option<Absyn.Comment> cmt;
-  output String res;
-protected
-  String s;
-algorithm
-  s := getStringComment2(cmt);
-  res := stringAppendList({"\"",s,"\""});
-end getStringComment;
-
-public function getStringComment2
+public function getStringComment
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
@@ -10331,7 +10314,7 @@ algorithm
     case (SOME(Absyn.COMMENT(_,SOME(str)))) then str;
     else "";
   end match;
-end getStringComment2;
+end getStringComment;
 
 protected function addConnection "
   Adds a connect equation to the model, i..e connect(c1,c2)
@@ -13207,6 +13190,7 @@ algorithm
     local
       Absyn.EquationItem eq;
       list<Absyn.EquationItem> xs;
+      list<Absyn.EquationItem> forEqList;
       Integer newn,n;
 
     case (((eq as Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT())) :: _),1) then eq;
@@ -13215,6 +13199,17 @@ algorithm
       equation
         newn = n - 1;
         eq = getNthConnectionitemInEquations(xs, newn);
+      then
+        eq;
+
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR(forEquations = forEqList)) :: xs), n)
+      algorithm
+        try
+          eq := getNthConnectionitemInEquations(forEqList, n);
+        else
+          newn := n - listLength(forEqList);
+          eq := getNthConnectionitemInEquations(xs, newn);
+        end try;
       then
         eq;
 
@@ -13234,9 +13229,10 @@ protected function getConnectionStr
    returns a comma separated string of componentreferences, e.g \"R1.n,C.p\"
    for  connect(R1.n,C.p)."
   input Absyn.Equation inEquation;
-  output String outString;
+  output String outFromString;
+  output String outToString;
 algorithm
-  outString := match (inEquation)
+  (outFromString, outToString) := match (inEquation)
     local
       String s1,s2,str;
       Absyn.ComponentRef cr1,cr2;
@@ -13245,9 +13241,8 @@ algorithm
       equation
         s1 = Dump.printComponentRefStr(cr1);
         s2 = Dump.printComponentRefStr(cr2);
-        str = stringAppendList({s1,",",s2});
       then
-        str;
+        (s1, s2);
   end match;
 end getConnectionStr;
 
@@ -13321,10 +13316,17 @@ algorithm
     local
       Integer r1,res;
       list<Absyn.EquationItem> xs;
+      list<Absyn.EquationItem> forEqList;
 
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT()) :: xs))
       then
         countConnectionsInEquations(xs, inInteger + 1);
+
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR(forEquations = forEqList)) :: xs))
+      equation
+        outInteger = countConnectionsInEquations(forEqList, inInteger);
+      then
+        countConnectionsInEquations(xs, outInteger);
 
     case ((_ :: xs))
       then
