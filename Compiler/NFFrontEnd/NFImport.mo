@@ -70,6 +70,7 @@ import System;
 
 public
 function addImportsToScope
+  // adrpo: hm, i don't know if this is correct as imports are not inherited
   input list<SCode.Element> imports;
   input InstNode currentScope;
   input output ClassTree.Tree scope;
@@ -77,6 +78,8 @@ protected
   Absyn.Import i;
   InstNode node, top_scope;
   SourceInfo info;
+  Class cls;
+  ClassTree.Tree els;
 algorithm
   if listEmpty(imports) then
     return;
@@ -93,6 +96,8 @@ algorithm
       case Absyn.NAMED_IMPORT()
         algorithm
           node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
+          // TODO! FIXME! check if there is a local definition with the same name and if prefix of path is a package
+          // how about importing constants not just classes?!
           scope := NFInst.addClassToScope(i.name, ClassTree.Entry.CLASS(node), info, scope);
         then
           ();
@@ -100,7 +105,21 @@ algorithm
       case Absyn.QUAL_IMPORT()
         algorithm
           node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
+          // TODO! FIXME! check if there is a local definition with the same name and if prefix of path is a package
+          // how about importing constants not just classes?!
           scope := NFInst.addClassToScope(Absyn.pathLastIdent(i.path), ClassTree.Entry.CLASS(node), info, scope);
+        then
+          ();
+
+      case Absyn.UNQUAL_IMPORT()
+        algorithm
+          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
+          node := NFInst.expand(node);
+          // TODO! FIXME! check that the path is a package!
+          // how about importing constants not just classes?!
+          // add all the definitions from node to current scope
+          // using addInheritedElements here as is basically similar
+          scope := NFInst.addInheritedElements({node}, scope);
         then
           ();
 
