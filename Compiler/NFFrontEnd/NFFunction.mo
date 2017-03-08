@@ -32,7 +32,7 @@
 encapsulated package NFFunction
 
 import Absyn;
-import NFExpression.Expression;
+import Expression = NFExpression;
 import NFInstNode.InstNode;
 import Type = NFType;
 
@@ -47,6 +47,8 @@ import NFClass.Class;
 import NFComponent.Component;
 import NFComponent.Component.Attributes;
 import Typing = NFTyping;
+import TypeCheck = NFTypeCheck;
+import Util;
 
 public
 type SlotType = enumeration(
@@ -62,7 +64,35 @@ uniontype Slot
     Option<Expression> default;
     Option<Expression> arg;
   end SLOT;
+
+  function positional
+    input Slot slot;
+    output Boolean pos;
+  algorithm
+    pos := match slot.ty
+      case SlotType.POSITIONAL then true;
+      case SlotType.GENERIC then true;
+      else false;
+    end match;
+  end positional;
+
+  function named
+    input Slot slot;
+    output Boolean pos;
+  algorithm
+    pos := match slot.ty
+      case SlotType.NAMED then true;
+      case SlotType.GENERIC then true;
+      else false;
+    end match;
+  end named;
 end Slot;
+
+type FuncType = enumeration(
+  NORMAL,
+  SPECIAL_MATCHING,
+  SPECIAL_TYPING
+);
 
 uniontype Function
   record FUNCTION
@@ -74,49 +104,154 @@ uniontype Function
     list<Slot> slots;
     Type returnType;
     DAE.FunctionAttributes attributes;
+    Util.StatefulBoolean collected "Whether this function has already been added to the function tree or not.";
   end FUNCTION;
 
   function new
     input Absyn.Path path;
     input InstNode node;
-    output Function func;
+    output Function fn;
   protected
     Class cls;
     list<InstNode> inputs, outputs, locals;
     list<Slot> slots;
     DAE.FunctionAttributes attr;
+    array<Boolean> collected;
   algorithm
-    (inputs, outputs, locals) := collectVars(node);
+    (inputs, outputs, locals) := collectParams(node);
     slots := makeSlots(inputs);
     attr := makeAttributes(node, inputs, outputs);
-    func := FUNCTION(path, node, inputs, outputs, locals, slots, Type.UNKNOWN(), attr);
+    collected := Util.makeStatefulBoolean(false);
+    fn := FUNCTION(path, node, inputs, outputs, locals, slots, Type.UNKNOWN(), attr, collected);
+
+    // Make sure builtin functions aren't added to the function tree.
+    if isBuiltin(fn) then
+      collect(fn);
+    end if;
   end new;
 
-  function path
-    input Function func;
-    output Absyn.Path path = func.path;
-  end path;
+  function isCollected
+    "Returns true if this function has already been added to the function tree
+     (or shouldn't be added, e.g. if it's builtin), otherwise false."
+    input Function fn;
+    output Boolean collected = Util.getStatefulBoolean(fn.collected);
+  end isCollected;
+
+  function collect
+    "Marks this function as collected for addition to the function tree."
+    input Function fn;
+  algorithm
+    Util.setStatefulBoolean(fn.collected, true);
+  end collect;
+
+  function name
+    input Function fn;
+    output Absyn.Path path = fn.path;
+  end name;
+
+  function signatureString
+    "Constructs a signature string for a function, e.g. Real func(Real x, Real y)"
+    input Function fn;
+    input Boolean printTypes = true;
+    output String str;
+  protected
+    String input_str, output_str;
+    list<String> inputs_strl = {};
+    list<InstNode> inputs = fn.inputs;
+    Component c;
+    Expression def_exp;
+  algorithm
+    for s in fn.slots loop
+      input_str := "";
+      c := InstNode.component(listHead(inputs));
+      inputs := listRest(inputs);
+
+      // Add the default expression if it has any.
+      if isSome(s.default) then
+        SOME(def_exp) := s.default;
+        input_str := " = " + Expression.toString(def_exp);
+      end if;
+
+      // Add the name from the slot and not the node, since some builtin
+      // functions don't bother using proper names for the nodes.
+      input_str := s.name + input_str;
+
+      // Add a $ in front of the name if the parameter only takes positional
+      // arguments.
+      input_str := match s.ty
+        case SlotType.POSITIONAL then "$" + input_str;
+        else input_str;
+      end match;
+
+      // Add the type if the parameter has been typed.
+      if printTypes and Component.isTyped(c) then
+        input_str := Type.toString(Component.getType(c)) + " " + input_str;
+      end if;
+
+      inputs_strl := input_str :: inputs_strl;
+    end for;
+
+    input_str := stringDelimitList(listReverse(inputs_strl), ", ");
+    output_str := if printTypes and isTyped(fn) then " => " + Type.toString(fn.returnType) else "";
+    str := Absyn.pathString(fn.path) + "(" + input_str + ")" + output_str;
+  end signatureString;
+
+  function callString
+    "Constructs a string representing a call, for use in error messages."
+    input Function fn;
+    input list<Expression> posArgs;
+    input list<tuple<String, Expression>> namedArgs;
+    output String str;
+  algorithm
+    str := stringDelimitList(list(Expression.toString(arg) for arg in posArgs), ", ");
+
+    if not listEmpty(namedArgs) then
+      str := str + ", " + stringDelimitList(
+        list(Util.tuple21(arg) + " = " + Expression.toString(Util.tuple22(arg))
+          for arg in namedArgs), ", ");
+    end if;
+
+    str := Absyn.pathString(fn.path) + "(" + str + ")";
+  end callString;
+
+  function instance
+    input Function fn;
+    output InstNode node = fn.node;
+  end instance;
+
+  function returnType
+    input Function fn;
+    output Type ty = fn.returnType;
+  end returnType;
+
+  function getSlots
+    input Function fn;
+    output list<Slot> slots = fn.slots;
+  end getSlots;
 
   function matchArgs
     "Matches the given arguments to the slots in a function, and returns the
      arguments sorted in the order of the function parameters."
     input list<Expression> posArgs;
     input list<tuple<String, Expression>> namedArgs;
-    input Function func;
+    input Function fn;
     input Option<SourceInfo> info;
     output list<Expression> args = posArgs;
     output Boolean matching;
   protected
+    Slot slot;
     list<Slot> slots;
     list<Expression> named_args;
   algorithm
-    slots := func.slots;
+    slots := fn.slots;
 
     // Make sure we have enough slots for at least the positional arguments.
     if listLength(posArgs) > listLength(slots) then
       if isSome(info) then
+        // TODO: Remove "in component" from error message.
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-          {Absyn.pathString(func.path), "", signatureString(func)}, Util.getOption(info));
+          {callString(fn, posArgs, namedArgs), "<REMOVE ME>",
+           ":\n  " + signatureString(fn)}, Util.getOption(info));
       end if;
 
       matching := false;
@@ -128,12 +263,18 @@ uniontype Function
     // anyway. This makes it a bit slower to figure out what error to give if a
     // named argument is wrong, but faster for the most common case of
     // everything being correct.
-    for arg in posArgs loop
-      slots := listRest(slots);
+    for arg in args loop
+      slot :: slots := slots;
+
+      if not Slot.positional(slot) then
+        // Slot doesn't allow positional arguments (used for some builtin functions).
+        matching := false;
+        return;
+      end if;
     end for;
 
     // Fill the remaining slots with the named arguments.
-    (named_args, matching) := fillNamedSlots(namedArgs, slots, func, info);
+    (named_args, matching) := fillNamedSlots(namedArgs, slots, fn, info);
 
     // Append the now ordered named arguments to the positional arguments.
     if matching then
@@ -141,60 +282,156 @@ uniontype Function
     end if;
   end matchArgs;
 
+  function typeCheckArgs
+    "Checks that the given arguments is type compatible with the function input
+     parameters. Also adds default arguments from the function to the list of
+     arguments if needed."
+    input Function fn;
+    input output list<Expression> args;
+    input list<Type> types;
+    input list<DAE.Const> variabilities;
+    input Option<SourceInfo> info;
+          output Boolean correct;
+  protected
+    InstNode i;
+    list<InstNode> rest_i = fn.inputs;
+    Component c;
+    Type ty;
+    list<Type> rest_ty = types;
+    DAE.Const var;
+    list<DAE.Const> rest_vars = variabilities;
+    list<Expression> checked_args = {};
+    list<Slot> rest_slots = fn.slots;
+    Slot slot;
+    Integer idx;
+  algorithm
+    // This should be caught during argument matching.
+    assert(listLength(args) <= listLength(fn.inputs),
+      getInstanceName() + " got too many arguments");
+
+    for arg in args loop
+      i :: rest_i := rest_i;
+      ty :: rest_ty := rest_ty;
+      var :: rest_vars := rest_vars;
+      slot :: rest_slots := rest_slots;
+      c := InstNode.component(i);
+
+      (arg, _, correct) := TypeCheck.matchTypes(ty, Component.getType(c), arg);
+
+      // Type mismatch, print an error.
+      if not correct then
+        if isSome(info) then
+          idx := listLength(fn.slots) - listLength(rest_slots);
+          Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
+            intString(idx), Absyn.pathString(fn.path), slot.name, Expression.toString(arg),
+            Type.toString(ty), Type.toString(Component.getType(c))
+          }, Util.getOption(info));
+        end if;
+
+        return;
+      end if;
+
+      correct := TypeCheck.checkConstVariability(var, Component.variability(c));
+
+      // Variability mismatch, print an error.
+      if not correct then
+        if isSome(info) then
+          idx := listLength(fn.slots) - listLength(rest_slots);
+          Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
+            slot.name, Expression.toString(arg), DAEDump.dumpKindStr(Component.variability(c))
+          }, Util.getOption(info));
+          return;
+        end if;
+      end if;
+
+      checked_args := arg :: checked_args;
+    end for;
+
+    // If we still have slots left, add their default arguments to the list of
+    // arguments.
+    for s in rest_slots loop
+      // Should be caught by the instantiation.
+      assert(isSome(s.default), getInstanceName() + " found slot without default value");
+      checked_args := Util.getOption(s.default) :: checked_args;
+    end for;
+
+    correct := true;
+    args := listReverse(checked_args);
+  end typeCheckArgs;
+
   function isTyped
-    input Function func;
+    input Function fn;
     output Boolean isTyped;
   algorithm
-    isTyped := match func.returnType
+    isTyped := match fn.returnType
       case Type.UNKNOWN() then false;
       else true;
     end match;
   end isTyped;
 
   function typeFunction
-    input output Function func;
+    input output Function fn;
   protected
     DAE.FunctionAttributes attr;
   algorithm
-    if not isTyped(func) then
-      Typing.typeClass(func.node);
-      func.returnType := makeReturnType(func);
+    if not isTyped(fn) then
+      Typing.typeClass(fn.node);
+      checkParamTypes(fn);
+      fn.returnType := makeReturnType(fn);
     end if;
   end typeFunction;
 
   function isBuiltin
-    input Function func;
+    input Function fn;
     output Boolean isBuiltin;
   algorithm
-    isBuiltin := match func.attributes.isBuiltin
+    isBuiltin := match fn.attributes.isBuiltin
       case DAE.FunctionBuiltin.FUNCTION_NOT_BUILTIN() then false;
       else true;
     end match;
   end isBuiltin;
 
   function isImpure
-    input Function func;
-    output Boolean isImpure = func.attributes.isImpure;
+    input Function fn;
+    output Boolean isImpure = fn.attributes.isImpure;
   end isImpure;
 
   function isFunctionPointer
-    input Function func;
-    output Boolean isPointer = func.attributes.isFunctionPointer;
+    input Function fn;
+    output Boolean isPointer = fn.attributes.isFunctionPointer;
   end isFunctionPointer;
 
   function inlineBuiltin
-    input Function func;
+    input Function fn;
     output DAE.InlineType inlineType;
   algorithm
-    inlineType := match func.attributes.isBuiltin
+    inlineType := match fn.attributes.isBuiltin
       case DAE.FunctionBuiltin.FUNCTION_BUILTIN_PTR()
-        then DAE.BUILTIN_EARLY_INLINE();
-      else func.attributes.inline;
+        then DAE.InlineType.BUILTIN_EARLY_INLINE();
+      else fn.attributes.inline;
     end match;
   end inlineBuiltin;
 
+  function toDAE
+    input Function fn;
+    input list<DAE.FunctionDefinition> defs;
+    output DAE.Function daeFn;
+  protected
+    SCode.Visibility vis;
+    Boolean par, impr;
+    DAE.InlineType ity;
+  algorithm
+    vis := SCode.PUBLIC(); // TODO: Use the actual visibility.
+    par := false; // TODO: Use the actual partial prefix.
+    impr := fn.attributes.isImpure;
+    ity := fn.attributes.inline;
+    daeFn := DAE.FUNCTION(fn.path, defs, Type.toDAE(fn.returnType), vis,
+      par, impr, ity, DAE.emptyElementSource, NONE());
+  end toDAE;
+
 protected
-  function collectVars
+  function collectParams
+    "Sorts all the function parameters as inputs, outputs and locals."
     input InstNode node;
     input output list<InstNode> inputs = {};
     input output list<InstNode> outputs = {};
@@ -220,7 +457,7 @@ protected
                 case DAE.VarDirection.BIDIR() algorithm locals := n :: locals; then ();
               end match;
             else
-              (inputs, outputs, locals) := collectVars(n, inputs, outputs, locals);
+              (inputs, outputs, locals) := collectParams(n, inputs, outputs, locals);
             end if;
           end for;
         then
@@ -232,7 +469,7 @@ protected
         then
           fail();
     end match;
-  end collectVars;
+  end collectParams;
 
   function paramDirection
     input InstNode component;
@@ -298,14 +535,25 @@ protected
 
   function makeSlots
     input list<InstNode> inputs;
-    output list<Slot> slots;
+    output list<Slot> slots = {};
+  protected
+    Boolean has_default, default_required = false;
+    Slot s;
   algorithm
-    slots := list(makeSlot(c) for c in inputs);
+    for i in inputs loop
+      (s, has_default) := makeSlot(i, default_required);
+      slots := s :: slots;
+      default_required := default_required or has_default;
+    end for;
+
+    slots := listReverse(slots);
   end makeSlots;
 
   function makeSlot
     input InstNode component;
+    input Boolean defaultRequired;
     output Slot slot;
+    output Boolean hasDefault;
   protected
     Component comp;
     Option<Expression> default;
@@ -315,6 +563,15 @@ protected
       comp := InstNode.component(component);
       default := Binding.untypedExp(Component.getBinding(comp));
       name := InstNode.name(component);
+      hasDefault := isSome(default);
+
+      // All parameters with default arguments should be declared last in a
+      // function, otherwise it's useless to have default arguments. Modelica
+      // does not seem to strictly forbid this, so we just give a warning.
+      if defaultRequired and not hasDefault then
+        Error.addSourceMessage(Error.MISSING_DEFAULT_ARG,
+          {name}, InstNode.info(component));
+      end if;
 
       // Remove $in_ for OM input output arguments.
       if stringGet(name, 1) == 36 /*$*/ then
@@ -336,7 +593,7 @@ protected
      the matching output being false."
     input list<tuple<String, Expression>> namedArgs;
     input list<Slot> slots;
-    input Function func;
+    input Function fn;
     input Option<SourceInfo> info;
     output list<Expression> args = {};
     output Boolean matching = true;
@@ -347,7 +604,7 @@ protected
   algorithm
     for narg in namedArgs loop
       (name, arg) := narg;
-      (slots_arr, matching) := fillNamedSlot(name, arg, slots_arr, func, info);
+      (slots_arr, matching) := fillNamedSlot(name, arg, slots_arr, fn, info);
 
       if not matching then
         return;
@@ -358,10 +615,12 @@ protected
   end fillNamedSlots;
 
   function fillNamedSlot
+    "Looks up a slot with the given name and tries to fill it with the given
+     argument expression."
     input String argName;
     input Expression argExp;
     input output array<Slot> slots;
-    input Function func;
+    input Function fn "For error reporting";
     input Option<SourceInfo> info;
           output Boolean matching = true;
   protected
@@ -372,7 +631,10 @@ protected
       s := slots[i];
 
       if s.name == argName then
-        if isNone(s.arg) then
+        if not Slot.named(s) then
+          // Slot doesn't allow named argument (used for some builtin functions).
+          matching := false;
+        elseif isNone(s.arg) then
           s.arg := SOME(argExp);
           slots[i] := s;
         else
@@ -394,7 +656,7 @@ protected
       // A slot with the given name couldn't be found. This means it doesn't
       // exist, or we removed it when handling positional argument. We need to
       // search through all slots to be sure.
-      for s in func.slots loop
+      for s in fn.slots loop
         if argName == s.name then
           // We found a slot, so it must have already been filled.
           Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
@@ -405,11 +667,12 @@ protected
 
       // No slot could be found, so it doesn't exist.
       Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
-        {InstNode.name(func.node), argName}, Util.getOption(info));
+        {InstNode.name(instance(fn)), argName}, Util.getOption(info));
     end if;
   end fillNamedSlot;
 
   function collectArgs
+    "Collects the arguments from the given slots."
     input array<Slot> slots;
     input Option<SourceInfo> info;
     output list<Expression> args = {};
@@ -424,7 +687,7 @@ protected
 
       args := match (default, arg)
         case (_, SOME(e)) then e :: args; // Use the argument from the call if one was given.
-        case (SOME(e), _) then e :: args; // Otherwise, use the default value for the parameter.
+        case (SOME(_), _) then args; // Otherwise, check that a default value exists.
         else // Give an error if no argument was given and there's no default value.
           algorithm
             if isSome(info) then
@@ -436,6 +699,8 @@ protected
             args;
       end match;
     end for;
+
+    args := listReverse(args);
   end collectArgs;
 
   function hasOMPure
@@ -543,41 +808,81 @@ protected
     end matchcontinue;
   end makeAttributes;
 
-  function makeReturnType
-    input Function func;
-    output Type funcType;
-  protected
-    array<InstNode> params;
-    list<Component> in_params, out_params;
-    Type ret_ty;
-    list<Type> ret_tyl;
-    Component c;
+  function checkParamTypes
+    "Checks that all the function parameters have types which are allowed in a
+     function."
+    input Function fn;
   algorithm
-    Class.INSTANCED_CLASS(components = params) := InstNode.getClass(func.node);
-    //in_params := list(InstNode.component(i) for i in func.inputs);
-    //out_params := list(InstNode.component(o) for o in func.outputs);
+    checkParamTypes2(fn.inputs);
+    checkParamTypes2(fn.outputs);
+    checkParamTypes2(fn.locals);
+  end checkParamTypes;
 
-    ret_tyl := list(InstNode.getType(o) for o in func.outputs);
+  function checkParamTypes2
+    input list<InstNode> params;
+  protected
+    Type ty;
+  algorithm
+    for p in params loop
+      ty := InstNode.getType(p);
 
-    ret_ty := match ret_tyl
+      if not isValidParamType(ty) then
+        Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
+          {Type.toString(ty), InstNode.name(p)}, InstNode.info(p));
+        fail();
+      end if;
+    end for;
+  end checkParamTypes2;
+
+  function isValidParamType
+    input Type ty;
+    output Boolean isValid;
+  algorithm
+    isValid := match ty
+      case Type.INTEGER() then true;
+      case Type.REAL() then true;
+      case Type.STRING() then true;
+      case Type.BOOLEAN() then true;
+      case Type.CLOCK() then true;
+      case Type.ENUMERATION() then true;
+      case Type.ENUMERATION_ANY() then true;
+      case Type.ARRAY() then isValidParamType(ty.elementType);
+      case Type.COMPLEX() then isValidParamState(ty.cls);
+    end match;
+  end isValidParamType;
+
+  function isValidParamState
+    input InstNode cls;
+    output Boolean isValid;
+  protected
+    SCode.Restriction res;
+  algorithm
+    // TODO: Use derived restriction instead, since classes can inherit restrictions.
+    res := SCode.getClassRestriction(InstNode.definition(cls));
+
+    isValid := match res
+      case SCode.Restriction.R_RECORD() then true;
+      case SCode.Restriction.R_TYPE() then true;
+      case SCode.Restriction.R_OPERATOR() then true;
+      case SCode.Restriction.R_FUNCTION() then true;
+      else false;
+    end match;
+  end isValidParamState;
+
+  function makeReturnType
+    input Function fn;
+    output Type returnType;
+  protected
+    list<Type> ret_tyl;
+  algorithm
+    ret_tyl := list(InstNode.getType(o) for o in fn.outputs);
+
+    returnType := match ret_tyl
       case {} then Type.NORETCALL();
-      case {ret_ty} then ret_ty;
+      case {returnType} then returnType;
       else Type.TUPLE(ret_tyl, NONE());
     end match;
-
-    funcType := Type.FUNCTION(ret_ty, func.attributes);
   end makeReturnType;
-
-  function signatureString
-    input Function func;
-    output String str;
-  protected
-    String arg_str;
-  algorithm
-    // TODO: Print parameter types and return type too.
-    arg_str := stringDelimitList(list(InstNode.name(i) for i in func.inputs), ", ");
-    str := InstNode.name(func.node) + "(" + arg_str + ")";
-  end signatureString;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

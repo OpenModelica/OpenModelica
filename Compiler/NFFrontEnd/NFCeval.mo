@@ -35,10 +35,11 @@ import Binding = NFBinding;
 import ComponentRef = NFComponentRef;
 import Error;
 import NFComponent.Component;
-import NFExpression.Expression;
+import Expression = NFExpression;
 import NFInstNode.InstNode;
 import Operator = NFOperator;
 import Typing = NFTyping;
+import NFCall.Call;
 
 uniontype EvalTarget
   record DIMENSION
@@ -61,6 +62,7 @@ algorithm
       Binding binding;
       Expression exp1, exp2, exp3;
       list<Expression> expl = {};
+      Call call;
 
     case Expression.CREF(cref=ComponentRef.CREF(node=c as InstNode.COMPONENT_NODE()))
       algorithm
@@ -90,13 +92,11 @@ algorithm
         assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
       then fail();
 
-    case Expression.CALL()
+    case Expression.CALL(call = call as Call.TYPED_CALL())
       algorithm
-        for e in exp.arguments loop
-          exp1 := evalExp(e, target);
-          expl := exp1 :: expl;
-        end for;
-      then Expression.CALL(exp.ref, listReverse(expl), exp.attr);
+        call.arguments := list(evalExp(e, target) for e in call.arguments);
+      then
+        Expression.CALL(call);
 
     case Expression.SIZE()
       algorithm

@@ -29,44 +29,25 @@
  *
  */
 
-encapsulated package NFExpression
-
-import DAE;
-import NFInstNode.InstNode;
-import Operator = NFOperator;
-import Subscript = NFSubscript;
-import Dimension = NFDimension;
-import Type = NFType;
-import ComponentRef = NFComponentRef;
-
+encapsulated uniontype NFExpression
 protected
-import Util;
-import Absyn;
-import List;
+  import Util;
+  import Absyn;
+  import List;
+
+  import Expression = NFExpression;
 
 public
-uniontype CallAttributes
-  record CALL_ATTR
-    Type ty "The type of the return value, if several return values this is undefined";
-    Boolean tuple_ "tuple" ;
-    Boolean builtin "builtin Function call" ;
-    Boolean isImpure "if the function has prefix *impure* is true, else false";
-    Boolean isFunctionPointerCall;
-    DAE.InlineType inlineType;
-    DAE.TailCall tailCall "Input variables of the function if the call is tail-recursive";
-  end CALL_ATTR;
-end CallAttributes;
+  import Absyn.Path;
+  import DAE;
+  import NFInstNode.InstNode;
+  import Operator = NFOperator;
+  import Subscript = NFSubscript;
+  import Dimension = NFDimension;
+  import Type = NFType;
+  import ComponentRef = NFComponentRef;
+  import NFCall.Call;
 
-public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(Type.BOOLEAN(),false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(Type.INTEGER(),false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(Type.REAL(),false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinString = CALL_ATTR(Type.STRING(),false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(Type.UNKNOWN(),false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(Type.BOOLEAN(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(Type.INTEGER(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(Type.REAL(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-
-uniontype Expression
   record INTEGER
     Integer value;
   end INTEGER;
@@ -106,15 +87,13 @@ uniontype Expression
   end RANGE;
 
   record RECORD
-    Absyn.Path path; // Maybe not needed since the type contains the name. Prefix?
+    Path path; // Maybe not needed since the type contains the name. Prefix?
     Type ty;
     list<Expression> elements;
   end RECORD;
 
   record CALL
-    ComponentRef ref;
-    list<Expression> arguments;
-    Option<CallAttributes> attr;
+    Call call;
   end CALL;
 
   record SIZE
@@ -216,8 +195,9 @@ uniontype Expression
         list<Expression> expl;
         Expression e1, e2, e3;
         Option<Expression> oe;
-        Absyn.Path p;
+        Path p;
         Operator op;
+        Call c;
 
       case INTEGER()
         algorithm
@@ -271,10 +251,9 @@ uniontype Expression
 
       case CALL()
         algorithm
-          CALL(ref = cr, arguments = expl) := exp2;
-          comp := ComponentRef.compare(exp1.ref, cr);
+          CALL(call = c) := exp2;
         then
-          if comp == 0 then compareList(exp1.arguments, expl) else comp;
+          Call.compare(exp1.call, c);
 
       case SIZE()
         algorithm
@@ -583,7 +562,7 @@ uniontype Expression
     str := match exp
       case INTEGER() then String(exp.value);
       case REAL() then String(exp.value);
-      case STRING() then exp.value;
+      case STRING() then "\"" + exp.value + "\"";
       case BOOLEAN() then String(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
@@ -598,7 +577,7 @@ uniontype Expression
                         then ":" + toString(Util.getOption(exp.step))
                         else ""
                         ) + ":" + toString(exp.stop);
-      case CALL() then ComponentRef.toString(exp.ref) + "(" + stringDelimitList(List.map(exp.arguments, toString), ", ") + ")";
+      case CALL() then Call.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
                         (
                         if isSome(exp.dimIndex)
@@ -629,7 +608,6 @@ uniontype Expression
     dexp := match exp
       local
         Type ty;
-        CallAttributes attr;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -657,9 +635,7 @@ uniontype Expression
                else NONE(),
                toDAE(exp.stop));
 
-      case CALL(attr = SOME(attr))
-        then DAE.CALL(ComponentRef.toPath(exp.ref),
-          List.map(exp.arguments, toDAE), toDAECallAtributes(attr));
+      case CALL() then Call.toDAE(exp.call);
 
       case SIZE()
         then DAE.SIZE(toDAE(exp.exp),
@@ -698,49 +674,6 @@ uniontype Expression
 
     end match;
   end toDAE;
-
-  function toDAECallAtributes
-    input CallAttributes attr;
-    output DAE.CallAttributes fattr;
-  protected
-    Type ty "The type of the return value, if several return values this is undefined";
-    Boolean tuple_ "tuple";
-    Boolean builtin "builtin Function call";
-    Boolean isImpure "if the function has prefix *impure* is true, else false";
-    Boolean isFunctionPointerCall;
-    DAE.InlineType inlineType;
-    DAE.TailCall tailCall "Input variables of the function if the call is tail-recursive";
-  algorithm
-    CALL_ATTR(ty, tuple_, builtin, isImpure, isFunctionPointerCall, inlineType, tailCall) := attr;
-    fattr := DAE.CALL_ATTR(Type.toDAE(ty), tuple_, builtin, isImpure, isFunctionPointerCall, inlineType, tailCall);
-  end toDAECallAtributes;
-
-  //function makeBuiltinCall
-  //  "Create a CALL with the given data for a call to a builtin function."
-  //  input String name;
-  //  input Expression cref "pointer to class and prefix";
-  //  input list<Expression> args;
-  //  input Type result_type;
-  //  input Boolean isImpure;
-  //  output Expression call;
-  //  annotation(__OpenModelica_EarlyInline = true);
-  //algorithm
-  //  call := Expression.CALL(Absyn.IDENT(name), cref, args,
-  //    CallAttributes.CALL_ATTR(result_type, false, true, isImpure, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
-  //end makeBuiltinCall;
-
-  //function makePureBuiltinCall
-  //  "Create a CALL with the given data for a call to a builtin function."
-  //  input String name;
-  //  input Expression cref "pointer to class and prefix";
-  //  input list<Expression> args;
-  //  input Type result_type;
-  //  output Expression call;
-  //  annotation(__OpenModelica_EarlyInline = true);
-  //algorithm
-  //  call := makeBuiltinCall(name, cref, args, result_type, false);
-  //end makePureBuiltinCall;
-end Expression;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

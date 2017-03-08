@@ -45,7 +45,7 @@ import Binding = NFBinding;
 import NFComponent.Component;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
-import NFExpression.Expression;
+import Expression = NFExpression;
 import NFClass.ClassTree;
 import NFClass.Class;
 import NFInstNode.InstNode;
@@ -74,7 +74,7 @@ import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
 import System;
-import Call = NFCall;
+import NFCall.Call;
 
 public
 function instClassInProgram
@@ -83,6 +83,7 @@ function instClassInProgram
   input Absyn.Path classPath;
   input SCode.Program program;
   output DAE.DAElist dae;
+  output DAE.FunctionTree funcs;
 protected
   InstNode top, cls, inst_cls;
   Component top_comp;
@@ -113,7 +114,7 @@ algorithm
   execStat("NFTyping.typeClass("+ name +")");
 
   // Flatten the class into a DAE.
-  dae := Flatten.flatten(inst_cls);
+  (dae, funcs) := Flatten.flatten(inst_cls);
   execStat("NFFlatten.flatten("+ name +")");
 end instClassInProgram;
 
@@ -346,16 +347,15 @@ algorithm
       SCode.ClassDef cdef;
       ClassTree.Tree scope;
       list<SCode.Element> elements;
-      list<InstNode> components;
+      list<InstNode> components, nodes;
       Integer idx;
       list<Equation> eq, ieq;
       list<list<Statement>> alg, ialg;
-      InstNode n;
+      InstNode n, builtin_comp, parent;
       Modifier mod;
       list<InstNode> ext_nodes;
       array<InstNode> ext_arr;
       Option<InstNode> builtin_ext;
-      InstNode builtin_comp;
       SCode.Ident name;
       SCode.Prefixes prefixes;
       SCode.Comment cmt;
@@ -409,6 +409,23 @@ algorithm
         print(getInstanceName() + " got class extends: " + def.name + "\n");
       then
         fail();
+
+    // OpenModelica $overload extension.
+    case SCode.CLASS(classDef = cdef as SCode.OVERLOAD())
+      algorithm
+        parent := InstNode.parent(node);
+        nodes := {};
+
+        for path in cdef.pathLst loop
+          n := Lookup.lookupClassName(path, parent, def.info);
+          n := expand(n);
+          nodes := n :: nodes;
+        end for;
+
+        c := Class.OVERLOADED_CLASS(listReverse(nodes));
+        node := InstNode.updateClass(c, node);
+      then
+        node;
 
     else
       algorithm
@@ -822,6 +839,13 @@ algorithm
       then
         ();
 
+    case Class.OVERLOADED_CLASS()
+      algorithm
+        cls.overloads := list(instClass(o, Modifier.NOMOD(), parent) for o in cls.overloads);
+        node := InstNode.updateClass(cls, node);
+      then
+        ();
+
     // Any other type of class is already instantiated.
     else ();
   end match;
@@ -1007,6 +1031,14 @@ algorithm
 
     case Class.PARTIAL_BUILTIN() then ();
     case Class.INSTANCED_BUILTIN() then ();
+
+    case Class.OVERLOADED_CLASS()
+      algorithm
+        for o in cls.overloads loop
+          instExpressions(o);
+        end for;
+      then
+        ();
 
     else
       algorithm

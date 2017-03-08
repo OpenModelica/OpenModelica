@@ -58,6 +58,9 @@ public
     list<String> literals;
   end ENUMERATION;
 
+  record ENUMERATION_ANY "enumeration(:)"
+  end ENUMERATION_ANY;
+
   record ARRAY
     Type elementType;
     list<Dimension> dimensions;
@@ -174,6 +177,7 @@ public
   algorithm
     isEnum := match ty
       case ENUMERATION() then true;
+      case ENUMERATION_ANY() then true;
       else false;
     end match;
   end isEnumeration;
@@ -232,6 +236,7 @@ public
       case BOOLEAN() then true;
       case CLOCK() then true;
       case ENUMERATION() then true;
+      case ENUMERATION_ANY() then true;
       case FUNCTION() then isScalarBuiltin(ty.resultType);
     end match;
   end isScalarBuiltin;
@@ -339,13 +344,14 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.ENUMERATION() then "enumeration()";
+      case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.CLOCK() then "Clock";
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
       case Type.TUPLE() then "tuple(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
       case Type.NORETCALL() then "noretcall()";
       case Type.UNKNOWN() then "unknown()";
-      case Type.COMPLEX() then "complex()";
+      case Type.COMPLEX() then InstNode.name(ty.cls);
       else
         algorithm
           assert(false, getInstanceName() + " got unknown type: " + anyString(ty));
@@ -365,7 +371,6 @@ public
       case Type.BOOLEAN() then DAE.T_BOOL_DEFAULT;
       case Type.ENUMERATION() then DAE.T_ENUMERATION(NONE(), ty.typePath, ty.literals, {}, {});
       case Type.CLOCK() then DAE.T_CLOCK_DEFAULT;
-      case Type.ENUMERATION() then DAE.T_ENUMERATION_DEFAULT;
       case Type.ARRAY()
         then DAE.T_ARRAY(toDAE(ty.elementType),
           list(Dimension.toDAE(d) for d in ty.dimensions));

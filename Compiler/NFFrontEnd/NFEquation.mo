@@ -32,7 +32,7 @@
 encapsulated package NFEquation
 
 import Absyn;
-import NFExpression.Expression;
+import Expression = NFExpression;
 import Type = NFType;
 
 public uniontype Equation

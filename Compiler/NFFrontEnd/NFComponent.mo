@@ -195,6 +195,16 @@ uniontype Component
     end match;
   end setType;
 
+  function isTyped
+    input Component component;
+    output Boolean isTyped;
+  algorithm
+    isTyped := match component
+      case TYPED_COMPONENT() then true;
+      else false;
+    end match;
+  end isTyped;
+
   function unliftType
     input output Component component;
   algorithm

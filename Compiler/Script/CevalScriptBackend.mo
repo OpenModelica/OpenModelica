@@ -2833,30 +2833,23 @@ algorithm
         (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
     case (_, _, _, GlobalScript.SYMBOLTABLE(p, _, _, _, _, _), _, _)
-      equation
-        false = Flags.isSet(Flags.GRAPH_INST);
-        true = Flags.isSet(Flags.SCODE_INST);
-        scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        // remove extends Modelica.Icons.*
-        //scodeP = SCodeSimplify.simplifyProgram(scodeP);
+      algorithm
+        false := Flags.isSet(Flags.GRAPH_INST);
+        true := Flags.isSet(Flags.SCODE_INST);
+        scodeP := SCodeUtil.translateAbsyn2SCode(p);
 
-       (_,scode_builtin) = FBuiltin.getInitialFunctions();
-       scodeP = listAppend(scode_builtin, scodeP);
+        (_,scode_builtin) := FBuiltin.getInitialFunctions();
+        scodeP := listAppend(scode_builtin, scodeP);
 
-       // nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
-       // (dae, funcs) = NFInst.instClass(className, nfenv);
+        (dae, funcs) := NFInst.instClassInProgram(className, scodeP);
 
-       // cache = FCore.emptyCache();
-       // cache = FCore.setCachedFunctionTree(cache, funcs);
-       // env = FGraph.empty();
+        cache := FCore.setCachedFunctionTree(FCore.emptyCache(), funcs);
+        env := FGraph.empty();
+        st := inInteractiveSymbolTable;
+
        // ic_1 = Interactive.addInstantiatedClass(ic,
        //   GlobalScript.INSTCLASS(className, dae, env));
        // st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
-        dae = NFInst.instClassInProgram(className, scodeP);
-
-        cache = FCore.emptyCache();
-        env = FGraph.empty();
-        st = inInteractiveSymbolTable;
       then
         (cache, env, dae, st);
 

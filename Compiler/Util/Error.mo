@@ -438,6 +438,8 @@ public constant Message WRONG_NUMBER_OF_SUBSCRIPTS = MESSAGE(154, TRANSLATION(),
   Util.gettext("Wrong number of subscripts in %s (%s subscripts for %s dimensions)."));
 public constant Message FUNCTION_ELEMENT_WRONG_KIND = MESSAGE(155, TRANSLATION(), ERROR(),
   Util.gettext("Element is not allowed in function context: %s"));
+public constant Message MISSING_DEFAULT_ARG = MESSAGE(156, TRANSLATION(), WARNING(),
+  Util.gettext("Missing default argument on function parameter %s."));
 public constant Message DUPLICATE_CLASSES_TOP_LEVEL = MESSAGE(157, TRANSLATION(), ERROR(),
   Util.gettext("Duplicate classes on top level is not allowed (got %s)."));
 public constant Message WHEN_EQ_LHS = MESSAGE(158, TRANSLATION(), ERROR(),

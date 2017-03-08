@@ -32,7 +32,7 @@
 encapsulated uniontype NFBinding
 public
   import DAE;
-  import NFExpression.Expression;
+  import Expression = NFExpression;
   import NFInstNode.InstNode;
   import SCode;
   import Type = NFType;

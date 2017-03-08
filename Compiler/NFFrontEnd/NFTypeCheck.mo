@@ -40,7 +40,7 @@ encapsulated package NFTypeCheck
 
 import DAE;
 import Dimension = NFDimension;
-import NFExpression.Expression;
+import Expression = NFExpression;
 
 protected
 import Debug;
@@ -1458,6 +1458,8 @@ algorithm
       then
         actualType;
 
+    case Type.ENUMERATION_ANY() then actualType;
+
     case Type.ARRAY()
       algorithm
         // Check that the element types are compatible.
@@ -1759,11 +1761,16 @@ function matchTypes_cast
         output Boolean compatible = true;
 algorithm
   compatibleType := match(actualType, expectedType)
+    // Integer can be cast to Real.
     case (Type.INTEGER(), Type.REAL())
       algorithm
         expression := Expression.typeCastElements(expression, expectedType);
       then
         expectedType;
+
+    // Any enumeration is compatible with enumeration(:).
+    case (Type.ENUMERATION(), Type.ENUMERATION_ANY())
+      then actualType;
 
     // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
     case (Type.UNKNOWN(), _)
@@ -2210,6 +2217,20 @@ algorithm
   outType := thenType;
   outVar := Types.constAnd(thenVar, elseVar);
 end checkIfExpression;
+
+function checkConstVariability
+  input DAE.Const actualVar;
+  input DAE.VarKind expectedVar;
+  output Boolean matching;
+algorithm
+  matching := match (actualVar, expectedVar)
+    case (DAE.Const.C_CONST(), _) then true;
+    case (_, DAE.VarKind.CONST()) then false;
+    case (DAE.Const.C_PARAM(), _) then true;
+    case (_, DAE.VarKind.PARAM()) then false;
+    else true;
+  end match;
+end checkConstVariability;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

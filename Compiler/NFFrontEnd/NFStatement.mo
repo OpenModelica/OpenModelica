@@ -33,7 +33,7 @@ encapsulated package NFStatement
 
 import Absyn;
 import Type = NFType;
-import NFExpression.Expression;
+import Expression = NFExpression;
 
 public uniontype Statement
   record ASSIGNMENT

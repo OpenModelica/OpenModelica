@@ -37,7 +37,7 @@ protected
   import List;
 
 public
-  import NFExpression.Expression;
+  import Expression = NFExpression;
 
   record UNTYPED
     Expression exp;

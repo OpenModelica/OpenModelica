@@ -48,11 +48,12 @@ import Binding = NFBinding;
 import NFClass.Class;
 import NFClass.ClassTree;
 import NFComponent.Component;
-import NFExpression.Expression;
+import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import NFMod.Modifier;
 import Type = NFType;
+import BuiltinFuncs = NFBuiltinFuncs;
 
 encapsulated package Elements
   import SCode;
@@ -86,23 +87,27 @@ encapsulated package Elements
   constant SCode.Element REAL = SCode.CLASS("Real",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment,Absyn.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element INTEGER = SCode.CLASS("Integer",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment,Absyn.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element BOOLEAN = SCode.CLASS("Boolean",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment,Absyn.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element STRING = SCode.CLASS("String",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment,Absyn.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
+  constant SCode.Element ENUMERATION = SCode.CLASS("enumeration",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element STATESELECT = SCode.CLASS("StateSelect",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
@@ -134,7 +139,7 @@ constant InstNode REAL_TYPE = InstNode.CLASS_NODE("Real",
 constant InstNode INT_TYPE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER,
   listArray({Class.PARTIAL_BUILTIN(Type.INTEGER(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
-  listArray({NFInstNode.CachedData.NO_CACHE()}),
+  listArray({NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true)}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode BOOLEAN_TYPE = InstNode.CLASS_NODE("Boolean",
@@ -146,6 +151,15 @@ constant InstNode BOOLEAN_TYPE = InstNode.CLASS_NODE("Boolean",
 constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
   Elements.STRING,
   listArray({Class.PARTIAL_BUILTIN(Type.STRING(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
+  listArray({NFInstNode.CachedData.FUNCTION({
+    NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
+    NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
+    NFBuiltinFuncs.STRING_REAL_FORMAT}, true)}),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
+constant InstNode ENUM_TYPE = InstNode.CLASS_NODE("enumeration",
+  Elements.ENUMERATION,
+  listArray({Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), ClassTree.EMPTY(), listArray({}), Modifier.NOMOD())}),
   listArray({NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 

@@ -43,7 +43,7 @@ import NFComponent.Component;
 import Dimension = NFDimension;
 import NFEquation.Equation;
 import NFClass.Class;
-import NFExpression.Expression;
+import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFStatement.Statement;
@@ -57,7 +57,7 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import ClassInf;
 import InstUtil = NFInstUtil;
-import Call = NFCall;
+import NFCall.Call;
 import NFClass.ClassTree;
 import ComponentRef = NFComponentRef;
 import Ceval = NFCeval;
@@ -480,6 +480,7 @@ algorithm
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
         comp := InstNode.component(cref.node);
+        assert(Component.isTyped(comp), getInstanceName() + " got untyped component ");
         ty := Component.getType(comp);
         variability := ComponentRef.getVariability(cref);
         exp := Expression.CREF(ComponentRef.setType(ty, cref));

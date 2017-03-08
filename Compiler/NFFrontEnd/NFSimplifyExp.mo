@@ -31,9 +31,10 @@
 
 encapsulated package NFSimplifyExp
 
-import NFExpression.Expression;
+import Expression = NFExpression;
 import Operator = NFOperator;
 import Type = NFType;
+import NFCall.Call;
 
 function simplifyExp
   input output Expression exp;
@@ -49,6 +50,7 @@ function preSimplify
 protected
   Expression exp1, exp2, exp3;
   list<Expression> expl = {};
+  Call call;
 algorithm
   exp := match exp
     case Expression.ARRAY()
@@ -69,13 +71,11 @@ algorithm
         assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
       then fail();
 
-    case Expression.CALL()
+    case Expression.CALL(call = call as Call.TYPED_CALL())
       algorithm
-        for e in exp.arguments loop
-          exp1 := simplifyExp(e);
-          expl := exp1 :: expl;
-        end for;
-      then Expression.CALL(exp.ref, listReverse(expl), exp.attr);
+        call.arguments := list(simplifyExp(e) for e in call.arguments);
+      then
+        Expression.CALL(call);
 
     case Expression.SIZE()
       algorithm
