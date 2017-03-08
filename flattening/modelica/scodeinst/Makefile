@@ -95,6 +95,7 @@ redeclare2.mo \
 redeclare6.mo \
 redeclare9.mo \
 type2.mo \
+UImport.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \
