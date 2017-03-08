@@ -12,6 +12,9 @@ BooleanDim.mo \
 builtinmod.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
+ceval1.mo \
+ceval2.mo \
+ceval6.mo \
 dim1.mo \
 dim3.mo \
 dim8.mo \
@@ -86,6 +89,9 @@ when1.mo
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ceval3.mo \
+ceval4.mo \
+ceval5.mo \
 compfunc.mo \
 conn3.mo \
 conn5.mo \
