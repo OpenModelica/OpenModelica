@@ -1,9 +1,11 @@
-// name: func3.mo
+// name: FuncWildcard
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
-
+// Checks that _ can be used as a function name, since the Modelica grammar
+// actually allows that.
+//
 
 function _
   input Real x;
@@ -12,9 +14,9 @@ algorithm
   y := x;
 end _;
 
-model A
+model FuncWildcard
   Real x = _(3.0);
-end A;
+end FuncWildcard;
 
 // Result:
 // function _
@@ -24,7 +26,7 @@ end A;
 //   y := x;
 // end _;
 //
-// class A
+// class FuncWildcard
 //   Real x = _(3.0);
-// end A;
+// end FuncWildcard;
 // endResult

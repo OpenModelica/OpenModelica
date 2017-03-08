@@ -1,8 +1,9 @@
-// name: compfunc.mo
+// name: FuncViaComp
 // keywords:
 // status: correct
-// cflags:   -d=newInst
-// teardown_command: rm -rf B_a____f*
+// cflags: -d=newInst
+//
+// Checks that functions can be called via components.
 //
 
 
@@ -13,20 +14,18 @@ model A
   end f;
 end A;
 
-model B
+model FuncViaComp
   A a;
   Real x = a.f(1);
-end B;
+end FuncViaComp;
 
 // Result:
 // function a.f
 //   input Integer n;
-//   output Real x;
-// algorithm
-//   x := 2.0;
+//   output Real x = 2;
 // end a.f;
 //
-// class B
+// class FuncViaComp
 //   Real x = a.f(1);
-// end B;
+// end FuncViaComp;
 // endResult
