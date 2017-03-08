@@ -81,6 +81,7 @@ extern double nonlinearSparseSolverMaxDensity;
 extern int nonlinearSparseSolverMinSize;
 extern double newtonXTol;
 extern double newtonFTol;
+extern double steadyStateTol;
 extern const size_t SIZERINGBUFFER;
 extern int compiledInDAEMode;
 extern int compiledWithSymSolver;

@@ -57,6 +57,7 @@ double nonlinearSparseSolverMaxDensity = 0.2;
 int nonlinearSparseSolverMinSize = 10001;
 double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
+double steadyStateTol = 1e-3;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
 int compiledWithSymSolver = 0;

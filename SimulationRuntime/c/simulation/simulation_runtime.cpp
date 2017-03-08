@@ -863,6 +863,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
   }
 
+  if(omc_flag[FLAG_STEADY_STATE_TOL]) {
+    steadyStateTol = atof(omc_flagValue[FLAG_STEADY_STATE_TOL]);
+    infoStreamPrint(LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);
+  }
+
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(data->modelData, data->simulationInfo);
   rt_accumulate(SIM_TIMER_INIT_XML);

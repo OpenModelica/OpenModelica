@@ -361,6 +361,27 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     }
 #endif
 
+    /* check for steady state */
+    if (omc_flag[FLAG_STEADY_STATE])
+    {
+      if (0 < data->modelData->nStates)
+      {
+        int i;
+        double maxDer = 0.0;
+        double currDer;
+        for(i=data->modelData->nStates; i<2*data->modelData->nStates; ++i)
+        {
+          currDer = fabs(data->localData[0]->realVars[i] / data->modelData->realVarsData[i].attribute.nominal);
+          if(maxDer < currDer)
+            maxDer = currDer;
+        }
+        if(maxDer < steadyStateTol)
+          throwStreamPrint(threadData, "steady state reached at time = %g\n  * max(|d(x_i)/dt|/nominal(x_i)) = %g\n  * relative tolerance = %g", solverInfo->currentTime, maxDer, steadyStateTol);
+      }
+      else
+        throwStreamPrint(threadData, "No states in model. Flag -steadyState can only be used if states are present.");
+    }
+
     omc_alloc_interface.collect_a_little();
 
     /* try */
@@ -471,6 +492,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   } /* end while solver */
 
   fmtClose(&fmt);
+
+  if (omc_flag[FLAG_STEADY_STATE])
+    warningStreamPrint(LOG_STDOUT, 0, "Steady state has not been reached.\nThis may be due to too restrictive relative tolerance (%g) or short stopTime (%g).", steadyStateTol, simInfo->stopTime);
 
   TRACE_POP
   return retValue;

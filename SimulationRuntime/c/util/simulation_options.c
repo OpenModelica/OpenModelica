@@ -109,6 +109,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_RT */                    "rt",
   /* FLAG_S */                     "s",
   /* FLAG_SOLVER_STEPS */          "steps",
+  /* FLAG_STEADY_STATE */          "steadyState",
+  /* FLAG_STEADY_STATE_TOL */      "steadyStateTol",
   /* FLAG_UP_HESSIAN */            "keepHessian",
   /* FLAG_W */                     "w",
 
@@ -194,6 +196,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_RT */                    "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                     "value specifies the integration method",
   /* FLAG_SOLVER_STEPS */          "dumps the number of integration steps into the result file",
+  /* FLAG_STEADY_STATE */          "aborts if steady state is reached",
+  /* FLAG_STEADY_STATE_TOL */      "[double (default 1e-3)] This relative tolerance is used to detect steady state.",
   /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
 
@@ -416,6 +420,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the integration method.",
   /* FLAG_SOLVER_STEPS */
   "  dumps the number of integration steps into the result file",
+  /* FLAG_STEADY_STATE */
+  "  Aborts the simulation if steady state is reached.",
+  /* FLAG_STEADY_STATE_TOL */
+  "This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol",
   /* FLAG_UP_HESSIAN */
   "  Value specifies the number of steps, which keep Hessian matrix constant.",
   /* FLAG_W */
@@ -503,6 +511,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_RT */                    FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
   /* FLAG_SOLVER_STEPS */          FLAG_TYPE_FLAG,
+  /* FLAG_STEADY_STATE */          FLAG_TYPE_FLAG,
+  /* FLAG_STEADY_STATE_TOL */      FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */            FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
 };
