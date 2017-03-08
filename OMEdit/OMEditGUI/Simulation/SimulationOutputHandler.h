@@ -100,7 +100,6 @@ private:
   int mLevel;
   SimulationMessage* mpSimulationMessage;
   QMap<int, SimulationMessage*> mSimulationMessagesLevelMap;
-  QString mOutputBuffer;
   SimulationMessageModel *mpSimulationMessageModel;
   QXmlSimpleReader mXmlSimpleReader;
   QXmlInputSource *mpXmlInputSource;
