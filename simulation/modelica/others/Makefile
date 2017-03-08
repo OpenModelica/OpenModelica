@@ -48,6 +48,7 @@ sample3.mos \
 SimResultScripting.mos \
 simulation.mos \
 SliceAssignment.mos \
+steadyState.mos \
 StringTest.mos \
 SyncFilter.mos \
 Switch.mos \
