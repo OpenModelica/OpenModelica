@@ -1704,3 +1704,17 @@ bool StringHandler::containsSpace(QString str)
   }
   return false;
 }
+
+/*!
+ * \brief StringHandler::joinDerivativeAndPreviousVariable
+ * Joins the variable. For example, if we have variable like der(der(mass.flange_a.s)) we need to display der(der(s)).
+ * \param fullVariableName
+ * \param variableName
+ * \param derivativeOrPrevious
+ * \return
+ */
+QString StringHandler::joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious)
+{
+  int times = (fullVariableName.lastIndexOf(derivativeOrPrevious) / derivativeOrPrevious.size()) + 1;
+  return QString("%1%2%3").arg(QString(derivativeOrPrevious).repeated(times), variableName, QString(")").repeated(times));
+}

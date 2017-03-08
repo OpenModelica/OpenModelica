@@ -557,11 +557,23 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QString findVariable;
       /* if last item */
       if (variables.size() == count && plotVariable.startsWith("der(")) {
-        findVariable = parentVariable.isEmpty() ? fileName + ".der(" + variable + ")" : fileName + "." + parentVariable + ".der(" + variable + ")";
+        if (parentVariable.isEmpty()) {
+          findVariable = QString("%1.%2").arg(fileName , StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der("));
+        } else {
+          findVariable = QString("%1.%2.%3").arg(fileName, parentVariable, StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der("));
+        }
       } else if (variables.size() == count && plotVariable.startsWith("previous(")) {
-        findVariable = parentVariable.isEmpty() ? fileName + ".previous(" + variable + ")" : fileName + "." + parentVariable + ".previous(" + variable + ")";
+        if (parentVariable.isEmpty()) {
+          findVariable = QString("%1.%2").arg(fileName , StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous("));
+        } else {
+          findVariable = QString("%1.%2.%3").arg(fileName, parentVariable, StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous("));
+        }
       } else {
-        findVariable = parentVariable.isEmpty() ? fileName + "." + variable : fileName + "." + parentVariable + "." + variable;
+        if (parentVariable.isEmpty()) {
+          findVariable = QString("%1.%2").arg(fileName, variable);
+        } else {
+          findVariable = QString("%1.%2.%3").arg(fileName, parentVariable, variable);
+        }
       }
       if ((pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem)) != NULL) {
         if (count == 1) {
@@ -584,9 +596,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QVector<QVariant> variableData;
       /* if last item */
       if (variables.size() == count && plotVariable.startsWith("der(")) {
-        variableData << filePath << fileName << fileName + "." + plotVariable << "der(" + variable + ")";
+        variableData << filePath << fileName << fileName + "." + plotVariable << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
       } else if (variables.size() == count && plotVariable.startsWith("previous(")) {
-        variableData << filePath << fileName << fileName + "." + plotVariable << "previous(" + variable + ")";
+        variableData << filePath << fileName << fileName + "." + plotVariable << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
       } else {
         variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + variable << variable;
       }

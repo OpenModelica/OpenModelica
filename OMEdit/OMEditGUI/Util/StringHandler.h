@@ -157,6 +157,7 @@ public:
   static int getLeadingSpacesSize(QString str);
   static bool isFileWritAble(QString filePath);
   static bool containsSpace(QString str);
+  static QString joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious);
 protected:
   static QString mLastOpenDir;
 };

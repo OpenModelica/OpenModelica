@@ -313,7 +313,11 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
       QString findVariable;
       /* if last item */
       if (tVariables.size() == count && variable.name.startsWith("der(")) {
-        findVariable = parentTVariable.isEmpty() ? "der(" + tVariable + ")" : parentTVariable + ".der(" + tVariable + ")";
+        if (parentTVariable.isEmpty()) {
+          findVariable = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
+        } else {
+          findVariable = QString("%1.%2").arg(parentTVariable, StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der("));
+        }
       } else {
         findVariable = parentTVariable.isEmpty() ? tVariable : parentTVariable + "." + tVariable;
       }
@@ -341,7 +345,7 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
       parentVarName = parentVarName.isEmpty() ? parentVarName : parentVarName.append(".");
       /* if last item */
       if (tVariables.size() == count && variable.name.startsWith("der(")) {
-        tVariableData << variable.name << "der(" + tVariable + ")" << variable.comment << variable.info.lineStart << variable.info.file;
+        tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(") << variable.comment << variable.info.lineStart << variable.info.file;
       } else {
         tVariableData << parentVarName + tVariable << tVariable << variable.comment << variable.info.lineStart << variable.info.file;
       }
