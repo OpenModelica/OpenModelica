@@ -33,11 +33,12 @@ encapsulated package NFCeval
 
 import Binding = NFBinding;
 import ComponentRef = NFComponentRef;
+import Error;
 import NFComponent.Component;
 import NFExpression.Expression;
 import NFInstNode.InstNode;
+import Operator = NFOperator;
 import Typing = NFTyping;
-import Error;
 
 uniontype EvalTarget
   record DIMENSION
@@ -58,16 +59,94 @@ algorithm
     local
       InstNode c;
       Binding binding;
+      Expression exp1, exp2, exp3;
+      list<Expression> expl = {};
 
-    case Expression.CREF(cref = ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
+    case Expression.CREF(cref=ComponentRef.CREF(node=c as InstNode.COMPONENT_NODE()))
       algorithm
         Typing.typeComponentBinding(c, InstNode.parent(c));
         binding := Component.getBinding(InstNode.component(c));
       then
         evalBinding(binding, exp, target);
 
-    case Expression.CREF(cref = ComponentRef.CREF(node = c as InstNode.CLASS_NODE()))
+    case Expression.CREF(cref=ComponentRef.CREF(node=c as InstNode.CLASS_NODE()))
       then evalTypename(c, exp, target);
+
+    case Expression.ARRAY()
+      algorithm
+        for e in exp.elements loop
+          exp1 := evalExp(e, target);
+          expl := exp1 :: expl;
+        end for;
+      then Expression.ARRAY(exp.ty, listReverse(expl));
+
+    case Expression.RANGE()
+      algorithm
+        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+      then fail();
+
+    case Expression.RECORD()
+      algorithm
+        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+      then fail();
+
+    case Expression.CALL()
+      algorithm
+        for e in exp.arguments loop
+          exp1 := evalExp(e, target);
+          expl := exp1 :: expl;
+        end for;
+      then Expression.CALL(exp.ref, listReverse(expl), exp.attr);
+
+    case Expression.SIZE()
+      algorithm
+        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+      then fail();
+
+    case Expression.BINARY()
+      algorithm
+        exp1 := evalExp(exp.exp1, target);
+        exp2 := evalExp(exp.exp2, target);
+      then Expression.BINARY(exp1, exp.operator, exp2);
+
+    case Expression.UNARY()
+      algorithm
+        exp1 := evalExp(exp.exp, target);
+      then Expression.UNARY(exp.operator, exp1);
+
+    case Expression.LBINARY()
+      algorithm
+        exp1 := evalExp(exp.exp1, target);
+        exp2 := evalExp(exp.exp2, target);
+      then Expression.LBINARY(exp1, exp.operator, exp2);
+
+    case Expression.LUNARY()
+      algorithm
+        exp1 := evalExp(exp.exp, target);
+      then Expression.LUNARY(exp.operator, exp1);
+
+    case Expression.RELATION()
+      algorithm
+        exp1 := evalExp(exp.exp1, target);
+        exp2 := evalExp(exp.exp2, target);
+      then Expression.RELATION(exp1, exp.operator, exp2);
+
+    case Expression.IF()
+      algorithm
+        exp1 := evalExp(exp.condition, target);
+        exp2 := evalExp(exp.trueBranch, target);
+        exp3 := evalExp(exp.falseBranch, target);
+      then Expression.IF(exp1, exp2, exp3);
+
+    case Expression.CAST()
+      algorithm
+        exp1 := evalExp(exp.exp, target);
+      then Expression.CAST(exp.ty, exp1);
+
+    case Expression.UNBOX()
+      algorithm
+        exp1 := evalExp(exp.exp, target);
+      then Expression.UNBOX(exp1, exp.ty);
 
     else exp;
   end match;
