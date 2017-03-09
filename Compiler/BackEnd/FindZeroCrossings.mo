@@ -161,7 +161,7 @@ algorithm
       Integer index, indexOrig, size, sizePre;
       BackendDAE.EquationArray equationArray;
       DAE.Algorithm alg_;
-      list<DAE.Statement> stmts, preStmts;
+      list<DAE.Statement> stmts, preStmts, allPreStmts, allStmts;
       HashTableExpToIndex.HashTable ht;
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes attr;
@@ -176,20 +176,27 @@ algorithm
     then (eqn, (equationArray, vars, eqns, index, ht));
 
     // removed algorithm
-    case (BackendDAE.ALGORITHM(size=0, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht)) equation
-      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
-      size = -index;
-      (stmts, preStmts, index) = encapsulateWhenConditions_Algorithms(stmts, vars, index);
-      sizePre = listLength(preStmts);
-      size = size+index-sizePre;
+    case (BackendDAE.ALGORITHM(size=0, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht)) algorithm
+      DAE.ALGORITHM_STMTS(statementLst=stmts) := alg_;
+      size := -index;
+      allPreStmts := {};
+      allStmts := {};
+      for stmt in stmts loop
+        (stmts, preStmts, index) := encapsulateWhenConditions_Algorithms({stmt}, vars, index);
+        allPreStmts := listAppend(preStmts,allPreStmts);
+        allStmts := listAppend(stmts,allStmts);
+      end for;
+      stmts := listReverse(allStmts);
+      sizePre := listLength(allPreStmts);
+      size := size+index-sizePre;
 
-      alg_ = DAE.ALGORITHM_STMTS(stmts);
-      eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
-      equationArray = BackendEquation.addEquation(eqn, equationArray);
+      alg_ := DAE.ALGORITHM_STMTS(stmts);
+      eqn := BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
+      equationArray := BackendEquation.addEquation(eqn, equationArray);
 
       if sizePre > 0 then
-        alg_ = DAE.ALGORITHM_STMTS(preStmts);
-        eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand, attr);
+        alg_ := DAE.ALGORITHM_STMTS(allPreStmts);
+        eqn2 := BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand, attr);
         DoubleEndedList.push_front(eqns, eqn2);
       end if;
     then (eqn, (equationArray, vars, eqns, index, ht));
