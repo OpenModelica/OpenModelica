@@ -44,6 +44,7 @@ public:
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
+  int mIndex;
 };
 
 class UpdateShapeCommand : public QUndoCommand
@@ -66,6 +67,7 @@ public:
   void undo();
 private:
   ShapeAnnotation *mpShapeAnnotation;
+  int mIndex;
 };
 
 class AddComponentCommand : public QUndoCommand

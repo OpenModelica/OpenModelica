@@ -40,6 +40,7 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
+  mIndex = -1;
   if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
     setText("Add Line Shape");
   } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
@@ -61,10 +62,11 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoCommand
  */
 void AddShapeCommand::redo()
 {
-  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
 
 /*!
@@ -73,10 +75,11 @@ void AddShapeCommand::redo()
  */
 void AddShapeCommand::undo()
 {
-  mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
+  mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
 
 UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QString oldAnnotaton, QString newAnnotation, QUndoCommand *pParent)
@@ -134,6 +137,7 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoC
   : QUndoCommand(pParent)
 {
   mpShapeAnnotation = pShapeAnnotation;
+  mIndex = -1;
 }
 
 /*!
@@ -142,10 +146,11 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, QUndoC
  */
 void DeleteShapeCommand::redo()
 {
-  mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
+  mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
 
 /*!
@@ -154,10 +159,11 @@ void DeleteShapeCommand::redo()
  */
 void DeleteShapeCommand::undo()
 {
-  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
+  mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
 
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,

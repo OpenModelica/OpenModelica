@@ -609,6 +609,20 @@ void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnota
 }
 
 /*!
+ * \brief GraphicsView::addShapeToList
+ * \param pShape
+ * \param index
+ */
+void GraphicsView::addShapeToList(ShapeAnnotation *pShape, int index)
+{
+  if (index <= -1) {
+    mShapesList.append(pShape);
+  } else {
+    mShapesList.insert(index, pShape);
+  }
+}
+
+/*!
  * \brief GraphicsView::deleteShape
  * Deletes the shape from the icon/diagram layer.
  * \param pShapeAnnotation
@@ -617,6 +631,18 @@ void GraphicsView::deleteShape(ShapeAnnotation *pShapeAnnotation)
 {
   pShapeAnnotation->setSelected(false);
   mpModelWidget->getUndoStack()->push(new DeleteShapeCommand(pShapeAnnotation));
+}
+
+/*!
+ * \brief GraphicsView::deleteShapeFromList
+ * \param pShape
+ * \return
+ */
+int GraphicsView::deleteShapeFromList(ShapeAnnotation *pShape)
+{
+  int index = mShapesList.indexOf(pShape);
+  mShapesList.removeOne(pShape);
+  return index;
 }
 
 /*!
@@ -727,7 +753,6 @@ void GraphicsView::createLineShape(QPointF point)
   if (!isCreatingLineShape()) {
     mpLineShapeAnnotation = new LineAnnotation("", this);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpLineShapeAnnotation));
-    reOrderShapes();
     setIsCreatingLineShape(true);
     mpLineShapeAnnotation->addPoint(point);
     mpLineShapeAnnotation->addPoint(point);
@@ -745,7 +770,6 @@ void GraphicsView::createPolygonShape(QPointF point)
   if (!isCreatingPolygonShape()) {
     mpPolygonShapeAnnotation = new PolygonAnnotation("", this);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpPolygonShapeAnnotation));
-    reOrderShapes();
     setIsCreatingPolygonShape(true);
     mpPolygonShapeAnnotation->addPoint(point);
     mpPolygonShapeAnnotation->addPoint(point);
@@ -764,7 +788,6 @@ void GraphicsView::createRectangleShape(QPointF point)
   if (!isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation = new RectangleAnnotation("", this);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpRectangleShapeAnnotation));
-    reOrderShapes();
     setIsCreatingRectangleShape(true);
     mpRectangleShapeAnnotation->replaceExtent(0, point);
     mpRectangleShapeAnnotation->replaceExtent(1, point);
@@ -797,7 +820,6 @@ void GraphicsView::createEllipseShape(QPointF point)
   if (!isCreatingEllipseShape()) {
     mpEllipseShapeAnnotation = new EllipseAnnotation("", this);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpEllipseShapeAnnotation));
-    reOrderShapes();
     setIsCreatingEllipseShape(true);
     mpEllipseShapeAnnotation->replaceExtent(0, point);
     mpEllipseShapeAnnotation->replaceExtent(1, point);
@@ -830,7 +852,6 @@ void GraphicsView::createTextShape(QPointF point)
   if (!isCreatingTextShape()) {
     mpTextShapeAnnotation = new TextAnnotation("", this);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpTextShapeAnnotation));
-    reOrderShapes();
     setIsCreatingTextShape(true);
     mpTextShapeAnnotation->setTextString("text");
     mpTextShapeAnnotation->replaceExtent(0, point);
@@ -865,7 +886,6 @@ void GraphicsView::createBitmapShape(QPointF point)
   if (!isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeItem()->getFileName(), "", this);
     mpModelWidget->getUndoStack()->push(new AddShapeCommand(mpBitmapShapeAnnotation));
-    reOrderShapes();
     setIsCreatingBitmapShape(true);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
     mpBitmapShapeAnnotation->replaceExtent(1, point);

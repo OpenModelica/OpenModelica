@@ -193,10 +193,10 @@ public:
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
-  void addShapeToList(ShapeAnnotation *pShape) {mShapesList.append(pShape);}
+  void addShapeToList(ShapeAnnotation *pShape, int index = -1);
   void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
   void deleteShape(ShapeAnnotation *pShapeAnnotation);
-  void deleteShapeFromList(ShapeAnnotation *pShape) {mShapesList.removeOne(pShape);}
+  int deleteShapeFromList(ShapeAnnotation *pShape);
   void deleteInheritedShapeFromList(ShapeAnnotation *pShape) {mInheritedShapesList.removeOne(pShape);}
   void reOrderShapes();
   void bringToFront(ShapeAnnotation *pShape);
