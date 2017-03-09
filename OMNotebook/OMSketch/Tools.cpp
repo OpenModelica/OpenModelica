@@ -83,34 +83,34 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
 void Tools::button_action()
 {
-    arc = new QAction(QIcon(":/Resources/sketchIcons/qpainter-arc.png"),tr("&Arc"),this);
+    arc = new QAction(QIcon(":/Resources/sketchIcons/qpainter-arc.svg"),tr("&Arc"),this);
     connect(arc,SIGNAL(triggered()), this, SLOT(draw_arc()));
 
-    arrow = new QAction(QIcon(":/Resources/sketchIcons/arrow.png"),tr("&Arrow"),this);
+    arrow = new QAction(QIcon(":/Resources/sketchIcons/arrow.svg"),tr("&Arrow"),this);
     connect(arrow,SIGNAL(triggered()), this, SLOT(draw_arrow()));
 
-    line = new QAction(QIcon(":/Resources/sketchIcons/qpainter-line.png"),tr("&Line"),this);
+    line = new QAction(QIcon(":/Resources/sketchIcons/qpainter-line.svg"),tr("&Line"),this);
     connect(line,SIGNAL(triggered()), this, SLOT(draw_line()));
 
-    rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-rectangle.png"),tr("&Rectangle"),this);
+    rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-rectangle.svg"),tr("&Rectangle"),this);
     connect(rectangle,SIGNAL(triggered()), this, SLOT(draw_rect()));
 
-    round_rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-roundrect.png"),tr("&Rounded Rectangle"),this);
+    round_rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-roundrect.svg"),tr("&Rounded Rectangle"),this);
     connect(round_rectangle,SIGNAL(triggered()), this, SLOT(draw_round_rect()));
 
-    ellipse = new QAction(QIcon(":/Resources/sketchIcons/qpainter-ellipse.png"),tr("&Ellipse"),this);
+    ellipse = new QAction(QIcon(":/Resources/sketchIcons/qpainter-ellipse.svg"),tr("&Ellipse"),this);
     connect(ellipse,SIGNAL(triggered()), this, SLOT(draw_ellipse()));
 
-    polygon = new QAction(QIcon(":/Resources/sketchIcons/qpainter-polygon.png"),tr("&Polygon"),this);
+    polygon = new QAction(QIcon(":/Resources/sketchIcons/qpainter-polygon.svg"),tr("&Polygon"),this);
     connect(polygon,SIGNAL(triggered()), this, SLOT(draw_polygon()));
 
-    linearrow = new QAction(QIcon(":/Resources/sketchIcons/linearrow.png"),tr("&LineArrow"),this);
+    linearrow = new QAction(QIcon(":/Resources/sketchIcons/linearrow.svg"),tr("&LineArrow"),this);
     connect(linearrow,SIGNAL(triggered()), this, SLOT(draw_linearrow()));
 
-    triangle = new QAction(QIcon(":/Resources/sketchIcons/triangle.png"),tr("&Triangle"),this);
+    triangle = new QAction(QIcon(":/Resources/sketchIcons/triangle.svg"),tr("&Triangle"),this);
     connect(triangle,SIGNAL(triggered()), this, SLOT(draw_triangle()));
 
-    text = new QAction(QIcon(":/Resources/sketchIcons/text.png"),tr("&Text"),this);
+    text = new QAction(QIcon(":/Resources/sketchIcons/text.svg"),tr("&Text"),this);
     connect(text,SIGNAL(triggered()), this, SLOT(draw_text()));
 
     file_new = new QAction(tr("&New"),this);
