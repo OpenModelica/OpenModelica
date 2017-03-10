@@ -2115,9 +2115,6 @@ algorithm
         if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
           eqs_1 = List.fold1(eqs_1, InstUtil.discretizePDE, domainFieldsLst, {});
         end if;
-        if className == "ghostTest" then
-          print("GhostTest");
-        end if;
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
           instList(cache, env5, ih, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph);

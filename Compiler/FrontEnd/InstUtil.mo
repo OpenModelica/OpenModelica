@@ -8317,12 +8317,12 @@ algorithm
         //remove domain from the subModLst:
         subModLst = List.filterOnFalse(subModLst,isSubModDomainOrStart);
 
-        ghostL = (SCode.COMPONENT(stringAppend(name,"_ghostL"), prefixes,
+        ghostL = (SCode.COMPONENT(stringAppend(name,"$ghostL"), prefixes,
               SCode.ATTR(arrayDims,connectorType,parallelism,
              variability, direction, Absyn.NONFIELD()), typeSpec,
              SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2),
              comment, condition, info),daeMod);
-        ghostR = (SCode.COMPONENT(stringAppend(name,"_ghostR"), prefixes,
+        ghostR = (SCode.COMPONENT(stringAppend(name,"$ghostR"), prefixes,
              SCode.ATTR(arrayDims,connectorType,parallelism,
              variability, direction, Absyn.NONFIELD()), typeSpec,
              SCode.MOD(finalPrefix, eachPrefix,subModLst,binding,info2),
@@ -8535,9 +8535,6 @@ public function discretizePDE
   output List<SCode.Equation> outDiscretizedEQs;
   protected List<SCode.Equation> newDiscretizedEQs;
 algorithm
-    newDiscretizedEQs := {inEQ};
-    //TODO: fix:
-
     newDiscretizedEQs := match inEQ
       local
         Absyn.Exp lhs_exp, rhs_exp;
@@ -8549,9 +8546,6 @@ algorithm
         Absyn.Ident name;
         list<Absyn.Subscript> subscripts;
 
-      //Normal equation withhout domain specified, no field variables present:
-      case SCode.EQUATION(SCode.EQ_EQUALS())
-      then {inEQ};
       //PDE with domain specified, allow for field variables:
       case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))
@@ -8591,6 +8585,14 @@ algorithm
           (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
         then
           {newEQFun(N, lhs_exp, rhs_exp, domainCr1, N, true, fieldLst, comment, info)};
+      //Unhandled pde
+      case SCode.EQUATION(SCode.EQ_PDE())
+        equation
+          print("Unhandled type of EQ_PDE in discretizePDE\n");
+          fail();
+      then {};
+      //Other than EQ_PDE:
+      else {inEQ};
     end match;
 
   outDiscretizedEQs := listAppend(inDiscretizedEQs, newDiscretizedEQs);
@@ -8858,9 +8860,9 @@ algorithm
       equation
         true = List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual);
         exp = (if isBC and i == 1 then
-                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostL"), subscripts))  //left BC
+                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))  //left BC
               elseif isBC and i == N then
-                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostR"), subscripts))  //right BC
+                Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostR"), subscripts))  //right BC
               else
                 Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts))  //no BC
               );
@@ -8875,12 +8877,12 @@ algorithm
         end if;
         //skip = true
         leftVar = (if i == 1 then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostL"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
         rightVar = (if i == N then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostR"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostR"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
                   );
@@ -8903,13 +8905,13 @@ algorithm
         end if;
         //skip = true
         leftVar = (if i == 1 then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostL"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
         actualVar = Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
         rightVar = (if i == N then
-                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"_ghostR"), subscripts))
+                     Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostR"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
                   );
