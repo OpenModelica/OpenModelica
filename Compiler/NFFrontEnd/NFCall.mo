@@ -48,6 +48,8 @@ import Typing = NFTyping;
 import Types;
 import List;
 import NFClass.Class;
+import ErrorExt;
+import Util;
 
 public
 uniontype CallAttributes
@@ -79,12 +81,25 @@ public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(Type.BOOLEA
 public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(Type.INTEGER(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
 public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(Type.REAL(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
 
+protected
+type NamedArg = tuple<String, Expression>;
+type TypedArg = tuple<Expression, Type, DAE.Const>;
+type TypedNamedArg = tuple<String, Expression, Type, DAE.Const>;
+
+public
 uniontype Call
   record UNTYPED_CALL
     ComponentRef ref;
     list<Integer> matchingFuncs;
     list<Expression> arguments;
+    list<NamedArg> named_args;
   end UNTYPED_CALL;
+
+  record ARG_TYPED_CALL
+    ComponentRef ref;
+    list<TypedArg> arguments;
+    list<TypedNamedArg> named_args;
+  end ARG_TYPED_CALL;
 
   record TYPED_CALL
     Function fn;
@@ -97,7 +112,7 @@ uniontype Call
     input Absyn.FunctionArgs functionArgs;
     input InstNode scope;
     input SourceInfo info;
-          output Expression callExp;
+    output Expression callExp;
   protected
     InstNode fn_node;
     Function fn;
@@ -106,46 +121,62 @@ uniontype Call
     ComponentRef fn_ref;
     Absyn.Path fn_path;
   algorithm
-    // Look up the the function.
-    (fn_node, fn_ref, fn_path) := lookupFunction(functionName, scope, info);
-    cache := InstNode.cachedData(fn_node);
-
-    // Check if a cached instantiation of this function already exists.
-    fnl := match cache
-      case CachedData.FUNCTION() then cache.funcs;
-
-      else // Not yet instantiated, instantiate it and cache it in the node.
-        algorithm
-          // Function components shouldn't be prefixed, so mark the node as root class.
-          fn_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(), fn_node);
-          fn_node := Inst.instantiate(fn_node);
-          Inst.instExpressions(fn_node);
-          fnl := makeFunctions(fn_path, fn_node);
-          fn_node := InstNode.setCachedData(CachedData.FUNCTION(fnl, false), fn_node);
-        then
-          fnl;
-    end match;
-
-    callExp := makeCall(fn_ref, fnl, functionArgs, scope, info);
+    (fn_ref, fn_node) := Function.instFunc(functionName,scope,info);
+    callExp := makeCall(fn_ref, Function.getCachedFuncs(fn_node), functionArgs, scope, info);
   end instantiate;
 
-  function makeFunctions
-    input Absyn.Path path;
-    input InstNode node;
-    output list<Function> funcs;
+  function makeCall
+    input ComponentRef fnRef;
+    input list<Function> funcs;
+    input Absyn.FunctionArgs callArgs;
+    input InstNode scope;
+    input SourceInfo info;
+    output Expression call;
   protected
-    Class cls = InstNode.getClass(node);
+    list<Expression> args;
+    list<NamedArg> named_args;
+    list<Integer> matching_funcs;
   algorithm
-    funcs := match cls
-      case Class.OVERLOADED_CLASS()
-        algorithm
-          funcs := list(Function.new(path, o) for o in cls.overloads);
-        then
-          funcs;
+    (args, named_args) := instArgs(callArgs, scope, info);
+    // (_, matching_funcs) := matchArgs(args, named_args, funcs, info);
+    call := Expression.CALL(UNTYPED_CALL(fnRef, {}, args, named_args));
+  end makeCall;
 
-      else {Function.new(path, node)};
+  function instArgs
+    input Absyn.FunctionArgs args;
+    input InstNode scope;
+    input SourceInfo info;
+    output list<Expression> posArgs;
+    output list<NamedArg> namedArgs;
+  algorithm
+    (posArgs, namedArgs) := match args
+      case Absyn.FUNCTIONARGS()
+        algorithm
+          posArgs := list(Inst.instExp(a, scope, info) for a in args.args);
+          namedArgs := list(instNamedArg(a, scope, info) for a in args.argNames);
+        then
+          (posArgs, namedArgs);
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown function args");
+        then
+          fail();
     end match;
-  end makeFunctions;
+  end instArgs;
+
+  function instNamedArg
+    input Absyn.NamedArg absynArg;
+    input InstNode scope;
+    input SourceInfo info;
+    output NamedArg arg;
+  protected
+    String name;
+    Absyn.Exp exp;
+  algorithm
+    Absyn.NAMEDARG(argName = name, argValue = exp) := absynArg;
+    arg := (name, Inst.instExp(exp, scope, info));
+  end instNamedArg;
 
   function typeCall
     input output Expression callExp;
@@ -154,7 +185,7 @@ uniontype Call
           output Type ty;
           output DAE.Const variability;
   protected
-    Call call;
+    Call call, argtycall;
     InstNode fn_node;
     list<Function> fnl;
     Boolean fn_typed;
@@ -163,6 +194,7 @@ uniontype Call
     list<Type> arg_ty;
     list<DAE.Const> arg_var;
     CallAttributes ca;
+    list<TypedArg> tyArgs;
   algorithm
     (callExp, ty, variability) := match callExp
       case Expression.CALL(call = call as UNTYPED_CALL(ref = ComponentRef.CREF(node = fn_node)))
@@ -176,18 +208,13 @@ uniontype Call
             InstNode.setCachedData(CachedData.FUNCTION(fnl, true), fn_node);
           end if;
 
-          // The instantiation should make sure this never happens.
-          assert(not listEmpty(fnl), getInstanceName() + " couldn't find a cached function");
-
           // Type the arguments.
-          (args, arg_ty, arg_var) := Typing.typeExpl(call.arguments, scope, info);
+          argtycall := typeArgs(call,scope,info);
+          // Match the arguments with the expeted ones.
+          (fn,tyArgs) := matchArgs(argtycall,info);
 
-          // TODO: Figure out why this segfaults.
-          //variability := Types.constAnd(v for v in arg_var);
-          variability := List.fold(arg_var, Types.constAnd, DAE.C_CONST());
-
-          // Type check the arguments.
-          (args, fn) := typeCheckCall(fnl, call.matchingFuncs, args, arg_ty, arg_var, info);
+          args := list(Util.tuple31(a) for a in tyArgs);
+          variability := Types.constAnd(Util.tuple33(a) for a in tyArgs);
 
           // Construct the call expression.
           ty := Function.returnType(fn);
@@ -211,6 +238,100 @@ uniontype Call
           fail();
     end match;
   end typeCall;
+
+  function typeArgs
+    input output Call call;
+    input InstNode scope;
+    input SourceInfo info;
+  algorithm
+
+    call := match call
+      local
+        Expression arg;
+      Type arg_ty;
+        DAE.Const arg_const;
+      list<TypedArg> typedArgs;
+      list<TypedNamedArg> typedNamedArgs;
+        String name;
+
+      case UNTYPED_CALL() algorithm
+      typedArgs := {};
+      for arg in call.arguments loop
+        (arg, arg_ty, arg_const) := Typing.typeExp(arg,scope,info);
+        typedArgs := (arg, arg_ty, arg_const)::typedArgs;
+      end for;
+
+      typedArgs := listReverse(typedArgs);
+
+      typedNamedArgs := {};
+      for narg in call.named_args loop
+        (name,arg) := narg;
+        (arg, arg_ty, arg_const) := Typing.typeExp(arg,scope,info);
+        typedNamedArgs := (name, arg, arg_ty, arg_const)::typedNamedArgs;
+      end for;
+      listReverse(typedNamedArgs);
+
+    then
+      ARG_TYPED_CALL(call.ref, typedArgs, typedNamedArgs);
+    end match;
+  end typeArgs;
+
+  function matchArgs
+    input Call call;
+    input SourceInfo info;
+    output Function outFunc;
+    output list<TypedArg> args;
+  protected
+		Boolean slotmatched, typematched;
+		list<Function> allfuncs, matchingFuncs;
+		InstNode fn_node;
+  algorithm
+    ErrorExt.setCheckpoint("NFCall:matchArgs");
+    matchingFuncs := {};
+
+    _ := match call
+      case ARG_TYPED_CALL(ref = ComponentRef.CREF(node = fn_node)) algorithm
+        allfuncs := Function.getCachedFuncs(fn_node);
+        for fn in allfuncs loop
+          (args, slotmatched) := Function.fillArgs(call.arguments, call.named_args, fn, SOME(info));
+          if slotmatched then
+            (args, typematched) := Function.matchArgs(fn, args, SOME(info));
+            if(typematched) then
+              matchingFuncs := fn::matchingFuncs;
+              end if;
+
+          end if;
+        end for;
+      then
+        ();
+    end match;
+
+    if listEmpty(matchingFuncs) then
+      // TODO: Remove "in component" from error message.
+      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
+        {toString(call), "<REMOVE ME>",
+         ":\n  " + stringDelimitList(list(Function.signatureString(fn, true) for fn in allfuncs), "\n  ")},
+        info);
+      fail();
+      ErrorExt.delCheckpoint("NFCall:matchArgs");
+    end if;
+
+    ErrorExt.rollBack("NFCall:matchArgs");
+    if listLength(matchingFuncs) == 1 then
+      outFunc ::_ := matchingFuncs;
+      return;
+    end if;
+
+
+    if listLength(matchingFuncs) > 1 then
+      // TODO: FIX ME: Add proper error messagse.
+      print("Ambegious call. Candidates:\n  ");
+      print(stringDelimitList(list(Function.signatureString(fn, true) for fn in matchingFuncs), "\n  "));
+      print("\n");
+      fail();
+    end if;
+
+  end matchArgs;
 
   function arguments
     input Call call;
@@ -268,13 +389,25 @@ uniontype Call
     input Call call;
     output String str;
   protected
-    String name, arg_str;
+    String name, arg_str,c;
+    Expression argexp;
   algorithm
     str := match call
       case UNTYPED_CALL()
         algorithm
           name := ComponentRef.toString(call.ref);
           arg_str := stringDelimitList(list(Expression.toString(arg) for arg in call.arguments), ", ");
+        then
+          name + "(" + arg_str + ")";
+
+      case ARG_TYPED_CALL()
+        algorithm
+          name := ComponentRef.toString(call.ref);
+          arg_str := stringDelimitList(list(Expression.toString(Util.tuple31(arg)) for arg in call.arguments), ", ");
+          c := if arg_str == "" then "" else ", ";
+          for arg in call.named_args loop
+            arg_str := arg_str + c + Util.tuple41(arg) + " = " + Expression.toString(Util.tuple42(arg));
+          end for;
         then
           name + "(" + arg_str + ")";
 
@@ -300,206 +433,6 @@ uniontype Call
           fail();
     end match;
   end typedFunction;
-
-  //function makeBuiltinCall
-  //  "Create a CALL with the given data for a call to a builtin function."
-  //  input String name;
-  //  input Expression cref "pointer to class and prefix";
-  //  input list<Expression> args;
-  //  input Type result_type;
-  //  input Boolean isImpure;
-  //  output Expression call;
-  //  annotation(__OpenModelica_EarlyInline = true);
-  //algorithm
-  //  call := Expression.CALL(Absyn.IDENT(name), cref, args,
-  //    CallAttributes.CALL_ATTR(result_type, false, true, isImpure, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
-  //end makeBuiltinCall;
-
-  //function makePureBuiltinCall
-  //  "Create a CALL with the given data for a call to a builtin function."
-  //  input String name;
-  //  input Expression cref "pointer to class and prefix";
-  //  input list<Expression> args;
-  //  input Type result_type;
-  //  output Expression call;
-  //  annotation(__OpenModelica_EarlyInline = true);
-  //algorithm
-  //  call := makeBuiltinCall(name, cref, args, result_type, false);
-  //end makePureBuiltinCall;
-protected
-  function lookupFunction
-    input Absyn.ComponentRef functionName;
-    input InstNode scope;
-    input SourceInfo info;
-    output InstNode node;
-    output ComponentRef functionRef;
-    output Absyn.Path functionPath;
-  protected
-    list<InstNode> nodes;
-    InstNode found_scope;
-  algorithm
-    try
-      // Make sure the name is a path.
-      functionPath := Absyn.crefToPath(functionName);
-    else
-      Error.addSourceMessageAndFail(Error.SUBSCRIPTED_FUNCTION_CALL,
-        {Dump.printComponentRefStr(functionName)}, info);
-    end try;
-
-    // Look up the function and create a cref for it.
-    (node, nodes, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
-
-    for s in InstNode.scopeList(found_scope) loop
-      functionPath := Absyn.QUALIFIED(InstNode.name(s), functionPath);
-    end for;
-
-    functionRef := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-    functionRef := Inst.makeCref(functionName, nodes, scope, info, functionRef);
-  end lookupFunction;
-
-  function makeCall
-    input ComponentRef fnRef;
-    input list<Function> funcs;
-    input Absyn.FunctionArgs callArgs;
-    input InstNode scope;
-    input SourceInfo info;
-    output Expression call;
-  protected
-    list<Expression> args;
-    list<tuple<String, Expression>> named_args;
-    list<Integer> matching_funcs;
-  algorithm
-    (args, named_args) := instArgs(callArgs, scope, info);
-    (args, matching_funcs) := matchArgs(args, named_args, funcs, info);
-    call := Expression.CALL(UNTYPED_CALL(fnRef, matching_funcs, args));
-  end makeCall;
-
-  function instArgs
-    input Absyn.FunctionArgs args;
-    input InstNode scope;
-    input SourceInfo info;
-    output list<Expression> posArgs;
-    output list<tuple<String, Expression>> namedArgs;
-  algorithm
-    (posArgs, namedArgs) := match args
-      case Absyn.FUNCTIONARGS()
-        algorithm
-          posArgs := list(Inst.instExp(a, scope, info) for a in args.args);
-          namedArgs := list(instNamedArg(a, scope, info) for a in args.argNames);
-        then
-          (posArgs, namedArgs);
-
-      else
-        algorithm
-          assert(false, getInstanceName() + " got unknown function args");
-        then
-          fail();
-    end match;
-  end instArgs;
-
-  function instNamedArg
-    input Absyn.NamedArg absynArg;
-    input InstNode scope;
-    input SourceInfo info;
-    output tuple<String, Expression> arg;
-  protected
-    String name;
-    Absyn.Exp exp;
-  algorithm
-    Absyn.NAMEDARG(argName = name, argValue = exp) := absynArg;
-    arg := (name, Inst.instExp(exp, scope, info));
-  end instNamedArg;
-
-  function matchArgs
-    input list<Expression> posArgs;
-    input list<tuple<String, Expression>> namedArgs;
-    input list<Function> funcs;
-    input SourceInfo info;
-    output list<Expression> args;
-    output list<Integer> matchingFuncs = {};
-  protected
-    Function fn;
-    Boolean matching;
-    list<Expression> argl;
-    Integer i;
-
-    String fn_name, fn_defs, args_str;
-  algorithm
-    if listLength(funcs) == 1 then
-      (args, true) := Function.matchArgs(posArgs, namedArgs, listHead(funcs), SOME(info));
-    else
-      i := 1;
-
-      for fn in funcs loop
-        (argl, matching) := Function.matchArgs(posArgs, namedArgs, fn, NONE());
-
-        if matching then
-          args := argl;
-          matchingFuncs := i :: matchingFuncs;
-        end if;
-
-        i := i + 1;
-      end for;
-
-      // No matching function, print an error message.
-      if listEmpty(matchingFuncs) then
-        // TODO: Remove "in component" from error message.
-        Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-          {Function.callString(listHead(funcs), posArgs, namedArgs), "<REMOVE ME>",
-           ":\n  " + stringDelimitList(list(Function.signatureString(fn, false) for fn in funcs), "\n  ")},
-          info);
-
-        fail();
-      end if;
-
-      matchingFuncs := listReverse(matchingFuncs);
-    end if;
-  end matchArgs;
-
-  function typeCheckCall
-    input list<Function> funcs;
-    input list<Integer> matchingFuncs;
-    input output list<Expression> args;
-    input list<Type> types;
-    input list<DAE.Const> variabilities;
-    input SourceInfo info;
-    output Function fn;
-  protected
-    list<Integer> matching_funcs;
-    Integer i = 1, idx;
-    Boolean correct;
-  algorithm
-    if listLength(funcs) == 1 then
-      fn := listHead(funcs);
-      (args, true) := Function.typeCheckArgs(fn, args, types, variabilities, SOME(info));
-    else
-      idx :: matching_funcs := matchingFuncs;
-
-      for func in funcs loop
-        if idx == i then
-          (args, correct) := Function.typeCheckArgs(func, args, types, variabilities, NONE());
-
-          if correct then
-            fn := func;
-            return;
-          elseif listEmpty(matching_funcs) then
-            break;
-          else
-            idx :: matching_funcs := matching_funcs;
-          end if;
-        end if;
-
-        i := i + 1;
-      end for;
-
-      // TODO: Remove "in component" from error message.
-      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-        {Function.callString(listHead(funcs), args, {}), "<REMOVE ME>",
-         ":\n  " + stringDelimitList(list(Function.signatureString(fn) for fn in funcs), "\n  ")},
-        info);
-      fail();
-    end if;
-  end typeCheckCall;
 
 end Call;
 

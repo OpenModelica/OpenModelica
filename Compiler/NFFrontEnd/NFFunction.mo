@@ -37,6 +37,7 @@ import NFInstNode.InstNode;
 import Type = NFType;
 
 protected
+import Inst = NFInst;
 import Binding = NFBinding;
 import Config;
 import DAE;
@@ -49,6 +50,14 @@ import NFComponent.Component.Attributes;
 import Typing = NFTyping;
 import TypeCheck = NFTypeCheck;
 import Util;
+import ComponentRef = NFComponentRef;
+import NFInstNode.CachedData;
+import Lookup = NFLookup;
+
+public
+type NamedArg = tuple<String, Expression>;
+type TypedArg = tuple<Expression, Type, DAE.Const>;
+type TypedNamedArg = tuple<String, Expression, Type, DAE.Const>;
 
 public
 type SlotType = enumeration(
@@ -62,7 +71,7 @@ uniontype Slot
     String name;
     SlotType ty;
     Option<Expression> default;
-    Option<Expression> arg;
+    Option<TypedArg> arg;
   end SLOT;
 
   function positional
@@ -95,6 +104,7 @@ type FuncType = enumeration(
 );
 
 uniontype Function
+
   record FUNCTION
     Absyn.Path path;
     InstNode node;
@@ -119,16 +129,120 @@ uniontype Function
     array<Boolean> collected;
   algorithm
     (inputs, outputs, locals) := collectParams(node);
-    slots := makeSlots(inputs);
+    // Slots should be created after typing
+    // slots := makeSlots(inputs);
     attr := makeAttributes(node, inputs, outputs);
     collected := Util.makeStatefulBoolean(false);
-    fn := FUNCTION(path, node, inputs, outputs, locals, slots, Type.UNKNOWN(), attr, collected);
+    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
 
     // Make sure builtin functions aren't added to the function tree.
     if isBuiltin(fn) then
       collect(fn);
     end if;
   end new;
+
+  protected
+  function lookupFunction
+    input Absyn.ComponentRef functionName;
+    input InstNode scope;
+    input SourceInfo info;
+    output InstNode node;
+    output ComponentRef functionRef;
+    output Absyn.Path functionPath;
+  protected
+    list<InstNode> nodes;
+    InstNode found_scope;
+  algorithm
+    try
+      // Make sure the name is a path.
+      functionPath := Absyn.crefToPath(functionName);
+    else
+      Error.addSourceMessageAndFail(Error.SUBSCRIPTED_FUNCTION_CALL,
+        {Dump.printComponentRefStr(functionName)}, info);
+    end try;
+
+    // Look up the function and create a cref for it.
+    (node, nodes, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
+
+    for s in InstNode.scopeList(found_scope) loop
+      functionPath := Absyn.QUALIFIED(InstNode.name(s), functionPath);
+    end for;
+
+    functionRef := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
+    functionRef := Inst.makeCref(functionName, nodes, scope, info, functionRef);
+  end lookupFunction;
+
+  public
+  function instFunc
+    input Absyn.ComponentRef functionName;
+    input InstNode scope;
+    input SourceInfo info;
+    output ComponentRef fn_ref;
+    output InstNode fn_node;
+  protected
+    CachedData cache;
+    Absyn.Path fn_path;
+  algorithm
+    // Look up the the function.
+    (fn_node, fn_ref, fn_path) := lookupFunction(functionName, scope, info);
+    cache := InstNode.cachedData(fn_node);
+
+    // Check if a cached instantiation of this function already exists.
+    fn_node := match cache
+      case CachedData.FUNCTION() then fn_node;
+      else instFunc2(fn_path,fn_node, info);
+    end match;
+  end instFunc;
+
+  protected
+  function instFunc2
+    input Absyn.Path fnPath;
+    input output InstNode fnNode;
+    input SourceInfo info;
+  algorithm
+
+    fnNode := match InstNode.definition(fnNode)
+      local
+        SCode.ClassDef cdef;
+        Function fn;
+        Absyn.ComponentRef cr;
+        InstNode sub_fnNode;
+
+      case SCode.CLASS(classDef = cdef as SCode.PARTS())
+        algorithm
+          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
+          fnNode := Inst.instantiate(fnNode);
+          Inst.instExpressions(fnNode);
+          fn := Function.new(fnPath, fnNode);
+          fnNode := InstNode.cacheAddFunc(fn, fnNode);
+        then fnNode;
+
+      case SCode.CLASS(classDef = cdef as SCode.OVERLOAD())
+        algorithm
+          for p in cdef.pathLst loop
+            cr := Absyn.pathToCref(p);
+            (_,sub_fnNode) := instFunc(cr,fnNode /*This should be the scope right?*/,info);
+            for f in getCachedFuncs(sub_fnNode) loop
+              fnNode := InstNode.cacheAddFunc(f, fnNode);
+            end for;
+          end for;
+        then fnNode;
+    end match;
+  end instFunc2;
+
+  public
+  function getCachedFuncs
+    input InstNode inNode;
+    output list<Function> outFuncs;
+  protected
+    CachedData cache;
+  algorithm
+    cache := InstNode.cachedData(inNode);
+    outFuncs := match cache
+      case CachedData.FUNCTION() then cache.funcs;
+      else fail();
+    end match;
+  end getCachedFuncs;
 
   function isCollected
     "Returns true if this function has already been added to the function tree
@@ -229,34 +343,21 @@ uniontype Function
     output list<Slot> slots = fn.slots;
   end getSlots;
 
-  function matchArgs
+  function fillArgs
     "Matches the given arguments to the slots in a function, and returns the
      arguments sorted in the order of the function parameters."
-    input list<Expression> posArgs;
-    input list<tuple<String, Expression>> namedArgs;
+    input list<TypedArg> posArgs;
+    input list<TypedNamedArg> namedArgs;
     input Function fn;
     input Option<SourceInfo> info;
-    output list<Expression> args = posArgs;
+    output list<TypedArg> args = posArgs;
     output Boolean matching;
   protected
     Slot slot;
     list<Slot> slots;
-    list<Expression> named_args;
+    list<TypedArg> filled_named_args;
   algorithm
     slots := fn.slots;
-
-    // Make sure we have enough slots for at least the positional arguments.
-    if listLength(posArgs) > listLength(slots) then
-      if isSome(info) then
-        // TODO: Remove "in component" from error message.
-        Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-          {callString(fn, posArgs, namedArgs), "<REMOVE ME>",
-           ":\n  " + signatureString(fn)}, Util.getOption(info));
-      end if;
-
-      matching := false;
-      return;
-    end if;
 
     // Remove as many slots as there are positional arguments. We don't actually
     // need to fill the slots, the positional arguments will always be first
@@ -274,90 +375,196 @@ uniontype Function
     end for;
 
     // Fill the remaining slots with the named arguments.
-    (named_args, matching) := fillNamedSlots(namedArgs, slots, fn, info);
+    (filled_named_args, matching) := fillNamedArgs(namedArgs, slots, fn, info);
 
     // Append the now ordered named arguments to the positional arguments.
     if matching then
-      args := listAppend(posArgs, named_args);
+      args := listAppend(posArgs, filled_named_args);
     end if;
-  end matchArgs;
+  end fillArgs;
 
-  function typeCheckArgs
-    "Checks that the given arguments is type compatible with the function input
-     parameters. Also adds default arguments from the function to the list of
-     arguments if needed."
+  function fillNamedArgs
+    "Sorts a list of named arguments based on the given slots, and returns the
+     arguments for the slots if the arguments are correct. If the arguments
+     are not correct the list of expressions returned is undefined, along with
+     the matching output being false."
+    input list<TypedNamedArg> namedArgs;
+    input list<Slot> slots;
     input Function fn;
-    input output list<Expression> args;
-    input list<Type> types;
-    input list<DAE.Const> variabilities;
+    input Option<SourceInfo> info;
+    output list<TypedArg> args = {};
+    output Boolean matching = true;
+  protected
+    array<Slot> slots_arr = listArray(slots);
+    String name;
+    Expression arg;
+  algorithm
+    for narg in namedArgs loop
+      (slots_arr, matching) := fillNamedArg(narg, slots_arr, fn, info);
+
+      if not matching then
+        return;
+      end if;
+    end for;
+
+    (args, matching) := collectArgsNew(slots_arr, info);
+  end fillNamedArgs;
+
+  function fillNamedArg
+    "Looks up a slot with the given name and tries to fill it with the given
+     argument expression."
+    input TypedNamedArg inArg;
+    input output array<Slot> slots;
+    input Function fn "For error reporting";
+    input Option<SourceInfo> info;
+          output Boolean matching = true;
+  protected
+    Slot s;
+    String argName;
+    Type ty;
+    Expression argExp;
+    DAE.Const var;
+  algorithm
+    // Try to find a slot and fill it with the argument expression.
+    for i in 1:arrayLength(slots) loop
+      s := slots[i];
+
+      (argName, argExp, ty, var) := inArg;
+
+      if s.name == argName then
+        if not Slot.named(s) then
+          // Slot doesn't allow named argument (used for some builtin functions).
+          matching := false;
+        elseif isNone(s.arg) then
+          s.arg := SOME((argExp,ty,var));
+          slots[i] := s;
+        else
+          // TODO: Improve the error message, should mention function name.
+          Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
+            {argName, ""}, Util.getOption(info));
+          matching := false;
+        end if;
+
+        return;
+      end if;
+    end for;
+
+    // No slot could be found.
+    matching := false;
+
+    // Only print error if info is given.
+    if isSome(info) then
+      // A slot with the given name couldn't be found. This means it doesn't
+      // exist, or we removed it when handling positional argument. We need to
+      // search through all slots to be sure.
+      for s in fn.slots loop
+        if argName == s.name then
+          // We found a slot, so it must have already been filled.
+          Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
+            {argName, ""}, Util.getOption(info));
+          return;
+        end if;
+      end for;
+
+      // No slot could be found, so it doesn't exist.
+      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+        {InstNode.name(instance(fn)), argName}, Util.getOption(info));
+    end if;
+  end fillNamedArg;
+
+  function collectArgsNew
+    "Collects the arguments from the given slots."
+    input array<Slot> slots;
+    input Option<SourceInfo> info;
+    output list<TypedArg> args = {};
+    output Boolean matching = true;
+  protected
+    Option<Expression> default;
+    Expression e;
+    Option<TypedArg> arg;
+    TypedArg a;
+    String name;
+  algorithm
+    for s in slots loop
+      SLOT(name = name, default = default, arg = arg) := s;
+
+      args := match (default, arg)
+        case (_, SOME(a)) then a :: args; // Use the argument from the call if one was given.
+        // TODO: save this info in the defaults in slots (the type we can get from the exp manually but the variability is lost.).
+        case (SOME(e), _) then (e,Expression.typeOf(e),DAE.C_CONST()) ::args; // Otherwise, check that a default value exists.
+        else // Give an error if no argument was given and there's no default value.
+          algorithm
+            if isSome(info) then
+              Error.addSourceMessage(Error.UNFILLED_SLOT, {name}, Util.getOption(info));
+            end if;
+
+            matching := false;
+          then
+            args;
+      end match;
+    end for;
+
+    args := listReverse(args);
+  end collectArgsNew;
+
+  function matchArgs
+    input Function func;
+    input output list<TypedArg> args;
     input Option<SourceInfo> info;
           output Boolean correct;
   protected
-    InstNode i;
-    list<InstNode> rest_i = fn.inputs;
-    Component c;
-    Type ty;
-    list<Type> rest_ty = types;
+    Component comp;
+    InstNode inputnode;
+    list<InstNode> inputs;
+    Expression argexp, margexp;
+    Type ty, mty;
     DAE.Const var;
-    list<DAE.Const> rest_vars = variabilities;
-    list<Expression> checked_args = {};
-    list<Slot> rest_slots = fn.slots;
-    Slot slot;
+    list<TypedArg> checked_args;
     Integer idx;
   algorithm
-    // This should be caught during argument matching.
-    assert(listLength(args) <= listLength(fn.inputs),
-      getInstanceName() + " got too many arguments");
+
+    checked_args := {};
+    idx := 1;
+    inputs := func.inputs;
 
     for arg in args loop
-      i :: rest_i := rest_i;
-      ty :: rest_ty := rest_ty;
-      var :: rest_vars := rest_vars;
-      slot :: rest_slots := rest_slots;
-      c := InstNode.component(i);
+      (argexp,ty,var) := arg;
+      inputnode :: inputs := inputs;
+      comp := InstNode.component(inputnode);
 
-      (arg, _, correct) := TypeCheck.matchTypes(ty, Component.getType(c), arg);
+      (margexp, mty, correct) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp);
 
       // Type mismatch, print an error.
       if not correct then
         if isSome(info) then
-          idx := listLength(fn.slots) - listLength(rest_slots);
           Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
-            intString(idx), Absyn.pathString(fn.path), slot.name, Expression.toString(arg),
-            Type.toString(ty), Type.toString(Component.getType(c))
+            intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
+            Type.toString(ty), Type.toString(Component.getType(comp))
           }, Util.getOption(info));
         end if;
 
         return;
       end if;
 
-      correct := TypeCheck.checkConstVariability(var, Component.variability(c));
+      correct := TypeCheck.checkConstVariability(var, Component.variability(comp));
 
       // Variability mismatch, print an error.
       if not correct then
         if isSome(info) then
-          idx := listLength(fn.slots) - listLength(rest_slots);
           Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
-            slot.name, Expression.toString(arg), DAEDump.dumpKindStr(Component.variability(c))
+            InstNode.name(inputnode), Expression.toString(argexp), DAEDump.dumpKindStr(Component.variability(comp))
           }, Util.getOption(info));
           return;
         end if;
       end if;
 
-      checked_args := arg :: checked_args;
-    end for;
-
-    // If we still have slots left, add their default arguments to the list of
-    // arguments.
-    for s in rest_slots loop
-      // Should be caught by the instantiation.
-      assert(isSome(s.default), getInstanceName() + " found slot without default value");
-      checked_args := Util.getOption(s.default) :: checked_args;
+      checked_args := (margexp,mty,var) :: checked_args;
+      idx := idx + 1;
     end for;
 
     correct := true;
     args := listReverse(checked_args);
-  end typeCheckArgs;
+  end matchArgs;
 
   function isTyped
     input Function fn;
@@ -377,6 +584,7 @@ uniontype Function
     if not isTyped(fn) then
       Typing.typeClass(fn.node);
       checkParamTypes(fn);
+      fn.slots := makeSlots(fn.inputs);
       fn.returnType := makeReturnType(fn);
     end if;
   end typeFunction;
@@ -561,10 +769,16 @@ protected
   algorithm
     try
       comp := InstNode.component(component);
-      default := Binding.untypedExp(Component.getBinding(comp));
+      default := Binding.typedExp(Component.getBinding(comp));
       name := InstNode.name(component);
       hasDefault := isSome(default);
 
+      // function F
+      //   input Real a = 1;
+      //   input Real b;
+      // end F;
+      // F(b=2);  is a valid call
+      /*
       // All parameters with default arguments should be declared last in a
       // function, otherwise it's useless to have default arguments. Modelica
       // does not seem to strictly forbid this, so we just give a warning.
@@ -572,6 +786,7 @@ protected
         Error.addSourceMessage(Error.MISSING_DEFAULT_ARG,
           {name}, InstNode.info(component));
       end if;
+      */
 
       // Remove $in_ for OM input output arguments.
       if stringGet(name, 1) == 36 /*$*/ then
@@ -585,123 +800,6 @@ protected
       assert(false, getInstanceName() + " got invalid component");
     end try;
   end makeSlot;
-
-  function fillNamedSlots
-    "Sorts a list of named arguments based on the given slots, and returns the
-     arguments for the slots if the arguments are correct. If the arguments
-     are not correct the list of expressions returned is undefined, along with
-     the matching output being false."
-    input list<tuple<String, Expression>> namedArgs;
-    input list<Slot> slots;
-    input Function fn;
-    input Option<SourceInfo> info;
-    output list<Expression> args = {};
-    output Boolean matching = true;
-  protected
-    array<Slot> slots_arr = listArray(slots);
-    String name;
-    Expression arg;
-  algorithm
-    for narg in namedArgs loop
-      (name, arg) := narg;
-      (slots_arr, matching) := fillNamedSlot(name, arg, slots_arr, fn, info);
-
-      if not matching then
-        return;
-      end if;
-    end for;
-
-    (args, matching) := collectArgs(slots_arr, info);
-  end fillNamedSlots;
-
-  function fillNamedSlot
-    "Looks up a slot with the given name and tries to fill it with the given
-     argument expression."
-    input String argName;
-    input Expression argExp;
-    input output array<Slot> slots;
-    input Function fn "For error reporting";
-    input Option<SourceInfo> info;
-          output Boolean matching = true;
-  protected
-    Slot s;
-  algorithm
-    // Try to find a slot and fill it with the argument expression.
-    for i in 1:arrayLength(slots) loop
-      s := slots[i];
-
-      if s.name == argName then
-        if not Slot.named(s) then
-          // Slot doesn't allow named argument (used for some builtin functions).
-          matching := false;
-        elseif isNone(s.arg) then
-          s.arg := SOME(argExp);
-          slots[i] := s;
-        else
-          // TODO: Improve the error message, should mention function name.
-          Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-            {argName, ""}, Util.getOption(info));
-          matching := false;
-        end if;
-
-        return;
-      end if;
-    end for;
-
-    // No slot could be found.
-    matching := false;
-
-    // Only print error if info is given.
-    if isSome(info) then
-      // A slot with the given name couldn't be found. This means it doesn't
-      // exist, or we removed it when handling positional argument. We need to
-      // search through all slots to be sure.
-      for s in fn.slots loop
-        if argName == s.name then
-          // We found a slot, so it must have already been filled.
-          Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-            {argName, ""}, Util.getOption(info));
-          return;
-        end if;
-      end for;
-
-      // No slot could be found, so it doesn't exist.
-      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
-        {InstNode.name(instance(fn)), argName}, Util.getOption(info));
-    end if;
-  end fillNamedSlot;
-
-  function collectArgs
-    "Collects the arguments from the given slots."
-    input array<Slot> slots;
-    input Option<SourceInfo> info;
-    output list<Expression> args = {};
-    output Boolean matching = true;
-  protected
-    Option<Expression> default, arg;
-    Expression e;
-    String name;
-  algorithm
-    for s in slots loop
-      SLOT(name = name, default = default, arg = arg) := s;
-
-      args := match (default, arg)
-        case (_, SOME(e)) then e :: args; // Use the argument from the call if one was given.
-        case (SOME(_), _) then args; // Otherwise, check that a default value exists.
-        else // Give an error if no argument was given and there's no default value.
-          algorithm
-            if isSome(info) then
-              Error.addSourceMessage(Error.UNFILLED_SLOT, {name}, Util.getOption(info));
-            end if;
-
-            matching := false;
-          then
-            args;
-      end match;
-    end for;
-
-    args := listReverse(args);
-  end collectArgs;
 
   function hasOMPure
     input SCode.Element def;

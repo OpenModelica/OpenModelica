@@ -77,7 +77,8 @@ uniontype CachedData
   algorithm
     cache := match cache
       case NO_CACHE() then FUNCTION({fn}, false);
-      case FUNCTION() then FUNCTION(fn :: cache.funcs, false);
+      // Append to end so the error messages are ordered properly.
+      case FUNCTION() then FUNCTION(listAppend(cache.funcs,{fn}), false);
       else
         algorithm
           assert(false, getInstanceName() + ": Invalid cache for function");

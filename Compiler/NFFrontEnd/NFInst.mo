@@ -410,6 +410,7 @@ algorithm
       then
         fail();
 
+    /*
     // OpenModelica $overload extension.
     case SCode.CLASS(classDef = cdef as SCode.OVERLOAD())
       algorithm
@@ -426,6 +427,7 @@ algorithm
         node := InstNode.updateClass(c, node);
       then
         node;
+    */
 
     else
       algorithm
@@ -839,12 +841,14 @@ algorithm
       then
         ();
 
+    /*
     case Class.OVERLOADED_CLASS()
       algorithm
         cls.overloads := list(instClass(o, Modifier.NOMOD(), parent) for o in cls.overloads);
         node := InstNode.updateClass(cls, node);
       then
         ();
+    */
 
     // Any other type of class is already instantiated.
     else ();
@@ -1032,6 +1036,7 @@ algorithm
     case Class.PARTIAL_BUILTIN() then ();
     case Class.INSTANCED_BUILTIN() then ();
 
+    /*
     case Class.OVERLOADED_CLASS()
       algorithm
         for o in cls.overloads loop
@@ -1039,6 +1044,7 @@ algorithm
         end for;
       then
         ();
+     */
 
     else
       algorithm

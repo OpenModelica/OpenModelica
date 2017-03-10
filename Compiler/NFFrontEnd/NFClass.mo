@@ -119,9 +119,11 @@ uniontype Class
     list<Modifier> attributes;
   end INSTANCED_BUILTIN;
 
+  /*
   record OVERLOADED_CLASS
     list<InstNode> overloads;
   end OVERLOADED_CLASS;
+  */
 
   type Element = ClassTree.Entry;
 
