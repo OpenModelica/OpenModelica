@@ -452,7 +452,9 @@ nox: 3rdParty/trilinos-nox/CMakeLists.txt
 	$(MAKE) -C 3rdParty/trilinos-nox/build install
 	rm -r 3rdParty/trilinos-nox/build/lib/cmake
 	mkdir -p "$(builddir_lib_omc)/cpp"
-	cp -pf 3rdParty/trilinos-nox/build/lib/* "$(builddir_lib_omc)/cpp"
+	(test `uname` = Darwin || test `uname` = Linux) \
+	  && cp -pf 3rdParty/trilinos-nox/build/lib/* "$(builddir_lib_omc)/cpp" \
+	  || cp -pf 3rdParty/trilinos-nox/build/bin/* "$(builddir_lib_omc)/cpp"
 
 clean-nox:
 	test -d 3rdParty/trilinos-nox/build && cd 3rdParty/trilinos-nox/build && make clean
