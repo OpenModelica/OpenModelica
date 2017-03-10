@@ -25,6 +25,7 @@ sample1.mos \
 sample2.mos \
 ServerWithQueue.mos \
 TestNoEventsFlags.mos \
+whenInAlgorithm.mos \
 whenTest1.mos \
 whenTest2.mos \
 ZeroCrossing.mos \
