@@ -3252,8 +3252,10 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   der(plant.CombustionChamber1.Tm) = 0.0;
 //   plant.PressDrop1.Kf = plant.PressDrop1.dpnom * plant.PressDrop1.rhonom * plant.PressDrop1.wnom ^ -2.0 * plant.PressDrop1.Kfc;
 //   plant.PressDrop1.Kfl = plant.PressDrop1.wnom * plant.PressDrop1.wnf * plant.PressDrop1.Kf;
+//   assert(plant.PressDrop1.Kf >= 0.0, \"Negative friction coefficient\");
 //   plant.PressDrop2.Kf = plant.PressDrop2.dpnom * plant.PressDrop2.rhonom * plant.PressDrop2.wnom ^ -2.0 * plant.PressDrop2.Kfc;
 //   plant.PressDrop2.Kfl = plant.PressDrop2.wnom * plant.PressDrop2.wnf * plant.PressDrop2.Kf;
+//   assert(plant.PressDrop2.Kf >= 0.0, \"Negative friction coefficient\");
 //   der(plant.gasFlowActuator.y) = 0.0;
 //   der(plant.powerSensor1.y) = 0.0;
 //   der(pID.I) = 0.0;
@@ -3808,7 +3810,6 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.stateOutletCC.outlet.Xi_outflow[3] = plant.PressDrop1.outlet.Xi_outflow[3];
 //   plant.stateOutletCC.outlet.Xi_outflow[4] = plant.PressDrop1.outlet.Xi_outflow[4];
 //   plant.stateOutletCC.outlet.Xi_outflow[5] = plant.PressDrop1.outlet.Xi_outflow[5];
-//   assert(plant.PressDrop1.Kf >= 0.0, \"Negative friction coefficient\");
 //   assert(plant.PressDrop2.gas.T >= 200.0 and plant.PressDrop2.gas.T <= 6000.0, \"
 //               Temperature T (=\" + String(plant.PressDrop2.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
@@ -3861,7 +3862,6 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.compressor.outlet.Xi_outflow[2] = plant.PressDrop2.outlet.Xi_outflow[2];
 //   plant.compressor.outlet.Xi_outflow[3] = plant.PressDrop2.outlet.Xi_outflow[3];
 //   plant.compressor.outlet.Xi_outflow[4] = plant.PressDrop2.outlet.Xi_outflow[4];
-//   assert(plant.PressDrop2.Kf >= 0.0, \"Negative friction coefficient\");
 //   plant.powerSensor.flange_a.phi = plant.powerSensor.flange_b.phi;
 //   plant.powerSensor.power = plant.powerSensor.flange_a.tau * der(plant.powerSensor.flange_a.phi);
 //   0.0 = plant.powerSensor.flange_a.tau + plant.powerSensor.flange_b.tau;

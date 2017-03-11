@@ -5,7 +5,9 @@ AssertTest.mo \
 AssertTest1.mo \
 AssertTest2.mo \
 EncapsulatedAssert.mo \
-StaticAssertSuccess.mo 
+StaticAssertSuccess.mo \
+Ticket4304.mo \
+
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
