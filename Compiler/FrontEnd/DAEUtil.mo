@@ -449,7 +449,17 @@ algorithm
         (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
+    case(DAE.DAE((e as DAE.INITIAL_ASSERT())::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+
     case(DAE.DAE((e as DAE.TERMINATE())::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+
+    case(DAE.DAE((e as DAE.INITIAL_TERMINATE())::elts))
       equation
         (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
@@ -2435,12 +2445,29 @@ algorithm
         e_3 = toModelicaFormExp(e3);
       then
         (DAE.ASSERT(e_1,e_2,e_3,source)::elts_1);
+
+    case ((DAE.INITIAL_ASSERT(condition = e1,message=e2,level=e3,source = source)::elts))
+      equation
+        elts_1 = toModelicaFormElts(elts);
+        e_1 = toModelicaFormExp(e1);
+        e_2 = toModelicaFormExp(e2);
+        e_3 = toModelicaFormExp(e3);
+      then
+        (DAE.INITIAL_ASSERT(e_1,e_2,e_3,source)::elts_1);
+
     case ((DAE.TERMINATE(message = e1,source = source)::elts))
       equation
         elts_1 = toModelicaFormElts(elts);
         e_1 = toModelicaFormExp(e1);
       then
         (DAE.TERMINATE(e_1,source)::elts_1);
+
+    case ((DAE.INITIAL_TERMINATE(message = e1,source = source)::elts))
+      equation
+        elts_1 = toModelicaFormElts(elts);
+        e_1 = toModelicaFormExp(e1);
+      then
+        (DAE.INITIAL_TERMINATE(e_1,source)::elts_1);
   end match;
 end toModelicaFormElts;
 
@@ -4137,7 +4164,25 @@ algorithm
       then
         ();
 
+    case DAE.INITIAL_ASSERT(condition = e1, message = e2, level = e3)
+      algorithm
+        (new_e1, arg) := func(e1, arg);
+        if not referenceEq(e1, new_e1) then element.condition := new_e1; end if;
+        (new_e2, arg) := func(e2, arg);
+        if not referenceEq(e2, new_e2) then element.message := new_e2; end if;
+        (new_e3, arg) := func(e3, arg);
+        if not referenceEq(e3, new_e3) then element.level := new_e3; end if;
+      then
+        ();
+
     case DAE.TERMINATE(message = e1)
+      algorithm
+        (new_e1, arg) := func(e1, arg);
+        if not referenceEq(e1, new_e1) then element.message := new_e1; end if;
+      then
+        ();
+
+    case DAE.INITIAL_TERMINATE(message = e1)
       algorithm
         (new_e1, arg) := func(e1, arg);
         if not referenceEq(e1, new_e1) then element.message := new_e1; end if;
@@ -5051,6 +5096,7 @@ algorithm
     _ := match e
       case DAE.VAR()
         algorithm variables := e :: variables; then ();
+
       case DAE.INITIALEQUATION()
         algorithm initialEquations := e :: initialEquations; then ();
       case DAE.INITIAL_ARRAY_EQUATION()
@@ -5061,6 +5107,15 @@ algorithm
         algorithm initialEquations := e :: initialEquations; then ();
       case DAE.INITIAL_IF_EQUATION()
         algorithm initialEquations := e :: initialEquations; then ();
+      case DAE.INITIAL_ASSERT()
+        algorithm initialEquations := e :: initialEquations; then ();
+      case DAE.INITIAL_TERMINATE()
+        algorithm initialEquations := e :: initialEquations; then ();
+      case DAE.INITIAL_NORETCALL()
+        algorithm initialEquations := e :: initialEquations; then ();
+      case DAE.INITIALALGORITHM()
+        algorithm initialAlgorithms := e :: initialAlgorithms; then ();
+
       case DAE.EQUATION()
         algorithm equations := e :: equations; then ();
       case DAE.EQUEQUATION()
@@ -5073,6 +5128,8 @@ algorithm
         algorithm equations := e :: equations; then ();
       case DAE.ASSERT()
         algorithm equations := e :: equations; then ();
+      case DAE.TERMINATE()
+        algorithm equations := e :: equations; then ();
       case DAE.IF_EQUATION()
         algorithm equations := e :: equations; then ();
       case DAE.WHEN_EQUATION()
@@ -5081,10 +5138,7 @@ algorithm
         algorithm equations := e :: equations; then ();
       case DAE.NORETCALL()
         algorithm equations := e :: equations; then ();
-      case DAE.INITIAL_NORETCALL()
-        algorithm initialEquations := e :: initialEquations; then ();
-      case DAE.INITIALALGORITHM()
-        algorithm initialAlgorithms := e :: initialAlgorithms; then ();
+
       case DAE.ALGORITHM()
         algorithm algorithms := e :: algorithms; then ();
       case DAE.CONSTRAINT()

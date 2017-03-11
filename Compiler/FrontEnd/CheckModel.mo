@@ -253,8 +253,15 @@ algorithm
     case DAE.ASSERT()
       then inArg;
 
+    // assert in equation
+    case DAE.INITIAL_ASSERT()
+      then inArg;
+
     // terminate in equation section is converted to ALGORITHM
     case DAE.TERMINATE()
+      then inArg;
+
+    case DAE.INITIAL_TERMINATE()
       then inArg;
 
     case DAE.NORETCALL()

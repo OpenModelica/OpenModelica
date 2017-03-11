@@ -268,10 +268,22 @@ interface package GraphvizDumpTV
         DAE.ElementSource source "the origin of the component/equation/algorithm";
       end ASSERT;
 
+      record INITIAL_ASSERT
+        DAE.Exp condition;
+        DAE.Exp message;
+        DAE.Exp level;
+        DAE.ElementSource source "the origin of the component/equation/algorithm";
+      end INITIAL_ASSERT;
+
       record TERMINATE " The Modelica builtin terminate(msg)"
         DAE.Exp message;
         DAE.ElementSource source "the origin of the component/equation/algorithm";
       end TERMINATE;
+
+      record INITIAL_TERMINATE " The Modelica builtin terminate(msg)"
+        DAE.Exp message;
+        DAE.ElementSource source "the origin of the component/equation/algorithm";
+      end INITIAL_TERMINATE;
 
       record NORETCALL "call with no return value, i.e. no equation.
         Typically sideeffect call of external function but also
@@ -325,7 +337,7 @@ interface package GraphvizDumpTV
       record RESIDUAL_EQUATION
         DAE.Exp exp "not present from FrontEnd" ;
         DAE.ElementSource source "origin of equation";
-         Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+        Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
       end RESIDUAL_EQUATION;
 
       record ALGORITHM

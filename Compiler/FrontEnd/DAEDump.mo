@@ -896,8 +896,10 @@ algorithm
       list<DAE.Element> xs1,xs2;
       list<list<DAE.Element>> trueBranches;
       list<DAE.Exp> conds;
-      String  s;
+      String  s,s1,s2,sourceStr;
       IOStream.IOStream str;
+      DAE.ElementSource src;
+      list<SCode.Comment> cmt;
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2))
       equation
@@ -951,6 +953,27 @@ algorithm
         Print.printBuf("  else\n");
         List.map_0(xs2,dumpInitialEquation);
         Print.printBuf("end if;\n");
+      then
+        ();
+
+    case (DAE.INITIAL_ASSERT(condition=e1,message = e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        s = stringAppendList({"  assert(",s1, ",",s2,") ", sourceStr, ";\n"});
+        Print.printBuf(s);
+      then
+        ();
+
+    case (DAE.INITIAL_TERMINATE(message=e1,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s = stringAppendList({"  terminate(",s1,") ", sourceStr, ";\n"});
+        Print.printBuf(s);
       then
         ();
 
@@ -2156,9 +2179,25 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    case DAE.INITIAL_ASSERT(condition = e1,message = e2)
+      equation
+        Print.printBuf("INITIAL_ASSERT(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(",");
+        ExpressionDump.printExp(e2);
+        Print.printBuf(")");
+      then
+        ();
     case DAE.TERMINATE(message = e1)
       equation
         Print.printBuf("TERMINATE(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(")");
+      then
+        ();
+    case DAE.INITIAL_TERMINATE(message = e1)
+      equation
+        Print.printBuf("INITIAL_TERMINATE(");
         ExpressionDump.printExp(e1);
         Print.printBuf(")");
       then
@@ -2935,17 +2974,6 @@ algorithm
       then
         str;
 
-    case ((DAE.ASSERT(condition=e1, message = e2, level = e3, source = src) :: xs), str)
-      equation
-        sourceStr = getSourceInformationStr(src);
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(e3);
-        str = IOStream.appendList(str, {"  assert(",s1,",",s2,",",s3,")",sourceStr,";\n"});
-        str = dumpEquationsStream(xs, str);
-      then
-        str;
-
     case (DAE.TERMINATE(message=e1, source = src) :: xs, str)
       equation
         sourceStr = getSourceInformationStr(src);
@@ -3075,13 +3103,14 @@ protected function dumpInitialEquationsStream "Dump initial equations to a strea
 algorithm
   outStream := matchcontinue (inElementLst, inStream)
     local
-      String s1,s2;
+      String s1,s2,sourceStr;
       DAE.Exp e1,e2,e;
       list<DAE.Element> xs,xs1,xs2;
       list<list<DAE.Element>> trueBranches;
       DAE.ComponentRef c;
       IOStream.IOStream str;
       list<DAE.Exp> conds;
+      DAE.ElementSource src;
 
     case ({}, str) then str;
 
@@ -3140,6 +3169,25 @@ algorithm
         s1 = ExpressionDump.printExpStr(e);
         str = IOStream.appendList(str, {"  ",s1, ";\n"});
         str = dumpInitialEquationsStream(xs, str);
+      then
+        str;
+
+    case ((DAE.INITIAL_ASSERT(condition=e1, message = e2, level = DAE.ENUM_LITERAL(index=1), source = src) :: xs), str)
+      equation
+        sourceStr = getSourceInformationStr(src);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = IOStream.appendList(str, {"  assert(",s1,",",s2,")", sourceStr, ";\n"});
+        str = dumpEquationsStream(xs, str);
+      then
+        str;
+
+    case (DAE.INITIAL_TERMINATE(message=e1, source = src) :: xs, str)
+      equation
+        sourceStr = getSourceInformationStr(src);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = IOStream.appendList(str, {"  terminate(",s1,")", sourceStr, ";\n"});
+        str = dumpEquationsStream(xs, str);
       then
         str;
 
@@ -3888,12 +3936,31 @@ algorithm
       then
         str;
 
+    case (DAE.INITIAL_ASSERT(condition=e1,message = e2,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = stringAppendList({"  /* initial */ assert(",s1, ",",s2,") ", sourceStr, ";\n"});
+      then
+        str;
+
     case (DAE.TERMINATE(message=e1,source = src))
       equation
         cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         str = stringAppendList({"  terminate(",s1,") ", sourceStr, ";\n"});
+      then
+        str;
+
+    case (DAE.INITIAL_TERMINATE(message=e1,source = src))
+      equation
+        cmt = ElementSource.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = stringAppendList({"  /* initial */ terminate(",s1,") ", sourceStr, ";\n"});
       then
         str;
 

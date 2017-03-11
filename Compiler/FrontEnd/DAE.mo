@@ -320,10 +320,22 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm" ;
   end ASSERT;
 
+  record INITIAL_ASSERT " The Modelica builtin assert"
+    Exp condition;
+    Exp message;
+    Exp level;
+    ElementSource source "the origin of the component/equation/algorithm" ;
+  end INITIAL_ASSERT;
+
   record TERMINATE " The Modelica builtin terminate(msg)"
     Exp message;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end TERMINATE;
+
+  record INITIAL_TERMINATE " The Modelica builtin terminate(msg)"
+    Exp message;
+    ElementSource source "the origin of the component/equation/algorithm" ;
+  end INITIAL_TERMINATE;
 
   record REINIT " reinit operator for reinitialization of states"
     ComponentRef componentRef;

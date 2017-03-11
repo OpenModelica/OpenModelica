@@ -372,7 +372,9 @@ algorithm
     case DAE.COMP() then element.source;
     case DAE.EXTOBJECTCLASS() then element.source;
     case DAE.ASSERT() then element.source;
+    case DAE.INITIAL_ASSERT() then element.source;
     case DAE.TERMINATE() then element.source;
+    case DAE.INITIAL_TERMINATE() then element.source;
     case DAE.REINIT() then element.source;
     case DAE.NORETCALL() then element.source;
     case DAE.CONSTRAINT() then element.source;

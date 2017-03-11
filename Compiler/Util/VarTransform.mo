@@ -254,11 +254,25 @@ algorithm
         /* TODO: Add operation to source */
       then DAE.ASSERT(e11,e22,e32,source);
 
+    case DAE.INITIAL_ASSERT(e1,e2,e3,source)
+      equation
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        (e22,_) = replaceExp(e2, repl, condExpFunc);
+        (e32,_) = replaceExp(e3, repl, condExpFunc);
+        /* TODO: Add operation to source */
+      then DAE.INITIAL_ASSERT(e11,e22,e32,source);
+
     case DAE.TERMINATE(e1,source)
       equation
         (e11,_) = replaceExp(e1, repl, condExpFunc);
         /* TODO: Add operation to source */
       then DAE.TERMINATE(e11,source);
+
+    case DAE.INITIAL_TERMINATE(e1,source)
+      equation
+        (e11,_) = replaceExp(e1, repl, condExpFunc);
+        /* TODO: Add operation to source */
+      then DAE.INITIAL_TERMINATE(e11,source);
 
     case DAE.REINIT(cr,e1,source)
       equation

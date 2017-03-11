@@ -495,8 +495,22 @@ algorithm
         then
           ();
 
+      case DAE.INITIAL_ASSERT()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+           lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
+        then
+          ();
+
       // terminate in equation section is converted to ALGORITHM
       case DAE.TERMINATE()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+           lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
+        then
+          ();
+
+      case DAE.INITIAL_TERMINATE()
         algorithm
           (outEqns, outREqns, outIEqns) :=
            lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
@@ -2573,13 +2587,24 @@ algorithm
     case DAE.ASSERT(condition=DAE.BCONST(true))
     then (inEquations, inREquations, inIEquations);
 
+    case DAE.INITIAL_ASSERT(condition=DAE.BCONST(true))
+    then (inEquations, inREquations, inIEquations);
+
     case DAE.ASSERT(condition=cond, message=msg, level=level, source=source) equation
       BackendDAEUtil.checkAssertCondition(cond, msg, level, ElementSource.getElementSourceFileInfo(source));
       alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
     then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
+    case DAE.INITIAL_ASSERT(condition=cond, message=msg, level=level, source=source) equation
+      BackendDAEUtil.checkAssertCondition(cond, msg, level, ElementSource.getElementSourceFileInfo(source));
+      alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
+    then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inREquations, inIEquations);
+
     case DAE.TERMINATE(message=msg, source=source)
     then (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
+
+    case DAE.INITIAL_TERMINATE(message=msg, source=source)
+    then (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inREquations, inIEquations);
 
     case DAE.NORETCALL(exp=e, source=source) equation
       alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});

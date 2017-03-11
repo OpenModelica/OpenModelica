@@ -514,7 +514,11 @@ algorithm
             inEEquation.level, inImpl, DAE.T_ASSERTIONLEVEL, "assert", "level", 3, info);
 
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
-        outDae := DAE.DAE({DAE.ASSERT(cond_exp, msg_exp, level_exp, source)});
+        if SCode.isInitial(inInitial) then
+          outDae := DAE.DAE({DAE.INITIAL_ASSERT(cond_exp, msg_exp, level_exp, source)});
+        else
+          outDae := DAE.DAE({DAE.ASSERT(cond_exp, msg_exp, level_exp, source)});
+        end if;
       then
         (outDae, inState);
 
@@ -524,7 +528,11 @@ algorithm
             inEEquation.message, inImpl, DAE.T_STRING_DEFAULT, "terminate", "message", 1, info);
 
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
-        outDae := DAE.DAE({DAE.TERMINATE(msg_exp, source)});
+        if SCode.isInitial(inInitial) then
+          outDae := DAE.DAE({DAE.INITIAL_TERMINATE(msg_exp, source)});
+        else
+          outDae := DAE.DAE({DAE.TERMINATE(msg_exp, source)});
+        end if;
       then
         (outDae, inState);
 

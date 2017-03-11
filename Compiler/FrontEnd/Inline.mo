@@ -378,11 +378,26 @@ algorithm
       then
         (DAE.ASSERT(exp1_1,exp2_1,exp3_1,source),true);
 
+    case(DAE.INITIAL_ASSERT(exp1,exp2,exp3,source) ,fns)
+      equation
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
+        (exp3_1,source,b3,_) = inlineExp(exp3,fns,source);
+        true = b1 or b2 or b3;
+      then
+        (DAE.INITIAL_ASSERT(exp1_1,exp2_1,exp3_1,source),true);
+
     case(DAE.TERMINATE(exp,source),fns)
       equation
         (exp_1,source,true,_) = inlineExp(exp,fns,source);
       then
         (DAE.TERMINATE(exp_1,source),true);
+
+    case(DAE.INITIAL_TERMINATE(exp,source),fns)
+      equation
+        (exp_1,source,true,_) = inlineExp(exp,fns,source);
+      then
+        (DAE.INITIAL_TERMINATE(exp_1,source),true);
 
     case(DAE.REINIT(componentRef,exp,source),fns)
       equation
