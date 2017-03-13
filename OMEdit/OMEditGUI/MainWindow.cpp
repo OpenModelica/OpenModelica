@@ -3354,6 +3354,9 @@ void MainWindow::switchToWelcomePerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#if !defined(WITHOUT_OSG)
+  mpThreeDViewerDockWidget->hide();
+#endif
   // hide toolbars
   mpEditToolBar->setVisible(false);
   mpViewToolBar->setVisible(false);
@@ -3445,6 +3448,9 @@ void MainWindow::switchToPlottingPerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
+#if !defined(WITHOUT_OSG)
+  mpThreeDViewerDockWidget->hide();
+#endif
 }
 
 /*!
