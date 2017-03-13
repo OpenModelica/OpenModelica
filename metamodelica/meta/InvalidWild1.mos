@@ -1,0 +1,27 @@
+// name: InvalidWild1
+// cflags: -g=MetaModelica
+// status: correct
+
+loadString("
+  function test
+    input Real x;
+    output Real y = x;
+  end test;
+
+  function test2
+  protected
+    Real x;
+  algorithm
+    x := test(_);
+  end test2;
+"); getErrorString();
+
+test2(); getErrorString();
+
+// Result:
+// true
+// ""
+//
+// "[<interactive>:11:5-11:17:writable] Warning: _ was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// "
+// endResult
