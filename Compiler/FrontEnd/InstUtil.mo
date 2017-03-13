@@ -8053,6 +8053,12 @@ algorithm
     case (exp as DAE.SIZE(),arg) then (exp,false,arg);
     case (exp as DAE.CALL(path=Absyn.IDENT("isPresent"), attr = DAE.CALL_ATTR(builtin = true)),arg)
       then (exp,false,arg);
+    case (DAE.CREF(componentRef = DAE.WILD()), (_, info))
+      algorithm
+        // _ shouldn't be allowed to be used like a variable, but until that's
+        // enforced just give an error message here instead of just failing.
+        Error.addSourceMessage(Error.WARNING_DEF_USE, {"_"}, info);
+      then (inExp, true, inTpl);
     case (exp as DAE.CREF(componentRef=cr),(unbound,info))
       equation
         b = listMember(ComponentReference.crefFirstIdent(cr),unbound);
