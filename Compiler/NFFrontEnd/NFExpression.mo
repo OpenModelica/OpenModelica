@@ -436,9 +436,12 @@ public
         then
           ARRAY(t, el);
 
-      case (_, Type.REAL())
+      case (UNARY(), _)
+        then UNARY(exp.operator, typeCastElements(exp.exp, ty));
+
+      else
         then
-          CAST(Type.REAL(), exp);
+          CAST(ty, exp);
 
     end match;
   end typeCastElements;

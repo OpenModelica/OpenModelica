@@ -749,12 +749,13 @@ end getInstanceName;
 
 function spatialDistribution "Not yet implemented"
   input Real in0;
-  input Real x;
-  input Real initialPoints[:];
-  input Real initialValues[size(initialPoints)];
   input Real in1;
+  input Real x;
   input Boolean positiveVelocity;
-  output Real val;
+  parameter input Real initialPoints[:](each min = 0, each max = 1) = {0.0, 1.0};
+  parameter input Real initialValues[size(initialPoints)] = {0.0, 0.0};
+  output Real out0;
+  output Real out1;
 external "builtin";
 annotation(version="Modelica 3.3");
 end spatialDistribution;
