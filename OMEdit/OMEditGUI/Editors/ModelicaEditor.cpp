@@ -138,8 +138,9 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Modelica")
                            .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
                            .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
-      pMessageBox->addButton(Helper::fixErrorsManually, QMessageBox::AcceptRole);
+      QPushButton *pAcceptRoleButton = pMessageBox->addButton(Helper::fixErrorsManually, QMessageBox::AcceptRole);
       pMessageBox->addButton(Helper::revertToLastCorrectVersion, QMessageBox::RejectRole);
+      pMessageBox->setEscapeButton(pAcceptRoleButton);
       // we set focus to this widget here so when the error dialog is closed Qt gives back the focus to this widget.
       mpPlainTextEdit->setFocus(Qt::ActiveWindowFocusReason);
       int answer = pMessageBox->exec();
