@@ -34,7 +34,6 @@ AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU)
 AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
-AC_SUBST(WITH_SUNDIALS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(SUNDIALS_TARGET)
 AC_SUBST(IPOPT_LDFLAGS)
@@ -519,29 +518,9 @@ fi
 
 OMC_AC_LAPACK(RequireFound)
 
-AC_CHECK_HEADERS(idas/idas.h idas/idas.h idas/idas_dense.h kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
 SUNDIALS_LDFLAGS="-lsundials_idas -lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
-LIBS="$SUNDIALS_LDFLAGS -lm"
-AC_MSG_CHECKING([Sundials linking])
-AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
-  [AC_MSG_RESULT([ok])],
-  [LIBS="-lsundials_kinsol -lsundials_nvecserial -llapack -lblas -lm";
-  AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
-  [AC_MSG_RESULT([ok])],[AC_MSG_RESULT([failed to link KINInit]); NO_SUNDIALS="yes"])])
-
-if ! test "$NO_SUNDIALS" = "yes"; then
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
-  WITH_SUNDIALS="#define WITH_SUNDIALS"
-  SUNDIALS_TARGET="sundials"
-else
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: No"
-  WITH_SUNDIALS="/* Without Sundials */"
-# We need -llapack regardless if we use Sundials or not
-  SUNDIALS_LDFLAGS="$LD_LAPACK"
-  SUNDIALS_TARGET=""
-fi
-
-LIBS=""
+FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
+SUNDIALS_TARGET="sundials"
 
 AC_CHECK_HEADERS(locale.h libintl.h,[
 AC_MSG_CHECKING([gettext linking])

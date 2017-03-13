@@ -35,6 +35,16 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 
+IF(UNIX)
+IF(APPLE)
+# We set the rpath manually, later...
+ELSE()
+# Needed to find Sundials; actually only the Sundials objects need this,
+# but there are so many of them
+SET(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/..")
+ENDIF(APPLE)
+ENDIF(LINUX)
+
 if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
   set(BUILD_SHARED_LIBS ON)
 elseif(PLATFORM STREQUAL "static")
@@ -75,7 +85,6 @@ OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(USE_BOOST_REALPATHS "USE_BOOST_REALPATHS" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(FMU_SUNDIALS "FMU_SUNDIALS" OFF)
-OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 OPTION(KLU_ROOT "KLU ROOT" "")
 OPTION(TRILINOS_ROOT "TRILINOS ROOT" "")
 OPTION(USE_CPP_03 "USE_CPP_03" OFF)
@@ -415,11 +424,11 @@ FIND_PACKAGE(Boost COMPONENTS log log_setup)
 
 # Deactivate threading stuff in MSVC release mode, because this produces linker errors to boost::exception_ptr
 IF(MSVC AND (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE"))
-	SET(Boost_THREAD_LIBRARY_RELEASE "NOT_FOUND")
-	SET(Boost_THREAD_LIBRARY_DEBUG "NOT_FOUND")
-	MESSAGE(STATUS "Boost threading disabled because othwerwise the MSVC build produces linker errors in release mode.")
+  SET(Boost_THREAD_LIBRARY_RELEASE "NOT_FOUND")
+  SET(Boost_THREAD_LIBRARY_DEBUG "NOT_FOUND")
+  MESSAGE(STATUS "Boost threading disabled because othwerwise the MSVC build produces linker errors in release mode.")
 ELSE(MSVC AND (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE"))
-	FIND_PACKAGE(Boost COMPONENTS thread atomic)
+  FIND_PACKAGE(Boost COMPONENTS thread atomic)
 ENDIF(MSVC AND (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE"))
 
 IF(NOT(COMPILER_SUPPORTS_CXX11))
@@ -497,16 +506,18 @@ IF(USE_SUNDIALS)
   ELSE(MSVC)
     SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build")
   ENDIF(MSVC)
-  SET(SUNDIALS_INLCUDE_HOME  ${Sundials_Path}/include)
-  SET(SUNDIALS_LIBRARY_RELEASE_HOME  ${Sundials_Path}/lib)
+  SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials)
+  SET(SUNDIALS_LIBRARY_RELEASE_HOME   ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/..)
   MESSAGE(STATUS "Sundials include:")
   MESSAGE(STATUS "${SUNDIALS_INLCUDE_HOME}")
   MESSAGE(STATUS "Sundials library:")
   MESSAGE(STATUS "${SUNDIALS_LIBRARY_RELEASE_HOME}")
 
-  FIND_PATH(SUNDIALS_INCLUDE_DIR cvode/cvode.h PATHS ${SUNDIALS_INLCUDE_HOME} $ENV{SUNDIALS_ROOT}/include)
+
+
+  FIND_PATH(SUNDIALS_INCLUDE_DIR cvode/cvode.h PATHS ${SUNDIALS_INLCUDE_HOME})
   IF (NOT SUNDIALS_INCLUDE_DIR)
-    MESSAGE(FATAL_ERROR "Could not find Sundials, specify environment variable SUNDIALS_ROOT")
+    MESSAGE(FATAL_ERROR "Could not find Sundials; compile omc first")
   ELSE(NOT SUNDIALS_INCLUDE_DIR)
     INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
     # Extract the version number from sundials_config.h
@@ -587,11 +598,11 @@ IF(USE_KLU)
   ENDIF(MSVC)
 
   IF(MSVC)
-	SET(KLU_INLCUDE_HOME ${Klu_Path}/include/omc/c/suitesparse/Include) #${Klu_Path}/KLU/Include)
-	SET(KLU_LIBRARY_RELEASE_HOME ${Klu_Path}/lib/omc) #${Klu_Path}/build)
+  SET(KLU_INLCUDE_HOME ${Klu_Path}/include/omc/c/suitesparse/Include) #${Klu_Path}/KLU/Include)
+  SET(KLU_LIBRARY_RELEASE_HOME ${Klu_Path}/lib/omc) #${Klu_Path}/build)
   ELSE(MSVC)
-	SET(KLU_INLCUDE_HOME ${Klu_Path}/Include) #${Klu_Path}/KLU/Include)
-	SET(KLU_LIBRARY_RELEASE_HOME ${Klu_Path}/build) #${Klu_Path}/build)
+  SET(KLU_INLCUDE_HOME ${Klu_Path}/Include) #${Klu_Path}/KLU/Include)
+  SET(KLU_LIBRARY_RELEASE_HOME ${Klu_Path}/build) #${Klu_Path}/build)
   ENDIF(MSVC)
 
   MESSAGE(STATUS "Klu include:")
@@ -891,8 +902,8 @@ GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
 GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)
 
 IF(OPENMP_FOUND)
-	GET_TARGET_PROPERTY(libCppDASSL ${CppDASSLName} LOCATION)
-	GET_FILENAME_COMPONENT(libCppDASSLName ${libCppDASSL} NAME)
+  GET_TARGET_PROPERTY(libCppDASSL ${CppDASSLName} LOCATION)
+  GET_FILENAME_COMPONENT(libCppDASSLName ${libCppDASSL} NAME)
 ENDIF(OPENMP_FOUND)
 
 GET_TARGET_PROPERTY(libRTRK ${RTRKName} LOCATION)

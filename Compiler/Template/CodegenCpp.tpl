@@ -3210,10 +3210,10 @@ case "gcc" then
             endif
 
             LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppDataExchange -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
-            LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS_COMMON)
+            LDSYSTEMFLAGS_STATIC=$(LDSYSTEMFLAGS_COMMON) <%staticLibs%>
 
             LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities -lOMCppExtensionUtilities $(LDMAINFLAGS_COMMON)
-            LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS_COMMON) $(SUNDIALS_LIBRARIES) $(LAPACK_LIBRARIES)
+            LDMAINFLAGS_STATIC=$(LDMAINFLAGS_COMMON) <%staticLibs%> $(SUNDIALS_LIBRARIES) $(LAPACK_LIBRARIES)
 
             ifeq ($(RUNTIME_STATIC_LINKING),ON)
             $(eval CFLAGS=$(CFLAGS_STATIC))
