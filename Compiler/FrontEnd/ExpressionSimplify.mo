@@ -310,10 +310,12 @@ protected function simplifyAsubExp
 algorithm
   outExp := matchcontinue (origExp,inExp,inSubs)
     local
-      Integer sub;
+      Integer sub, istart, istep, istop;
       DAE.Type tp;
       DAE.Exp e;
-      list<DAE.Exp> eLst;
+      list<DAE.Exp> eLst, subs;
+      Boolean hasRange;
+      Option<DAE.Exp> step;
     // ASUB(CAST(e)) -> CAST(liftArray(t), ASUB(e))
     case (_, DAE.CAST(tp,e), _)
       equation
@@ -339,6 +341,22 @@ algorithm
           Expression.expInt(exp);
         end for;
       then List.foldr(inSubs,simplifyAsub,inExp);
+
+    // Any range in the subscripts that we can evaluate?
+    case (_,_,_)
+      algorithm
+        hasRange := false;
+        subs := list(match exp
+          case DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),step,DAE.ICONST(istop))
+            algorithm
+              e := Expression.makeArray(list(DAE.ICONST(i) for i in simplifyRange(istart,match step case NONE() then 1; case SOME(DAE.ICONST(istep)) then istep; end match,istop)), DAE.T_INTEGER_DEFAULT, true);
+              hasRange := true;
+            then e;
+          else exp; end match
+           for exp in inSubs);
+        true := hasRange;
+      then DAE.ASUB(inExp, subs);
+
     else origExp;
   end matchcontinue;
 end simplifyAsubExp;
@@ -3481,7 +3499,7 @@ protected
   DAE.Type ty;
 algorithm
   // Expand the subscripts.
-  indices := List.map(inSubscripts, Expression.splitArray);
+  indices := list(Expression.splitArray(simplify1(e)) for e in inSubscripts);
   // Make asubs from all combinations of the subscript indices.
   asubs := List.combinationMap1(indices, simplifyAsubSlicing2, inExp);
   // Make sure one or more dimensions were sliced, i.e. we got more than one element.
