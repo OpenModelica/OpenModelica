@@ -46,6 +46,11 @@ eq7.mo \
 eq10.mo \
 extends3.mo \
 ExtendSections.mo \
+ForEquationNonParam.mo \
+ForStatement1.mo \
+ForStatement2.mo \
+ForStatementArray.mo \
+ForStatementNonVector.mo \
 FuncBuiltinAbs.mo \
 FuncBuiltinCeil.mo \
 FuncBuiltinDelay.mo \
@@ -191,7 +196,6 @@ eq9.mo \
 expconn4.mo \
 expconn7.mo \
 ExtendsVisibility.mo \
-for3.mo \
 func1.mo \
 func2.mo \
 func4.mo \
@@ -277,6 +281,7 @@ extends1.mo \
 extends2.mo \
 for1.mo \
 for2.mo \
+for3.mo \
 function1.mo \
 FunctionRecordArg1.mo \
 ImportUnqualified2.mo \
