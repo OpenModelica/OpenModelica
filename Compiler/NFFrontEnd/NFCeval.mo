@@ -63,6 +63,7 @@ algorithm
       Expression exp1, exp2, exp3;
       list<Expression> expl = {};
       Call call;
+      Component comp;
 
     case Expression.CREF(cref=ComponentRef.CREF(node=c as InstNode.COMPONENT_NODE()))
       algorithm

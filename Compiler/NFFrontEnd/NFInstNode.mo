@@ -108,6 +108,11 @@ uniontype InstNode
     Integer index;
   end REF_NODE;
 
+  record IMPLICIT_SCOPE
+    InstNode parentScope;
+    list<InstNode> locals;
+  end IMPLICIT_SCOPE;
+
   record EMPTY_NODE end EMPTY_NODE;
 
   function new
@@ -239,6 +244,16 @@ uniontype InstNode
     end match;
   end isEmpty;
 
+  function isImplicit
+    input InstNode node;
+    output Boolean isImplicit;
+  algorithm
+    isImplicit := match node
+      case IMPLICIT_SCOPE() then true;
+      else false;
+    end match;
+  end isImplicit;
+
   function name
     input InstNode node;
     output String name;
@@ -246,6 +261,10 @@ uniontype InstNode
     name := match node
       case CLASS_NODE() then node.name;
       case COMPONENT_NODE() then node.name;
+      // For bug catching, these names should never be used.
+      case REF_NODE() then "$ref" + String(node.index);
+      case IMPLICIT_SCOPE() then "$implicit";
+      case EMPTY_NODE() then "$empty";
     end match;
   end name;
 
@@ -275,6 +294,7 @@ uniontype InstNode
     parent := match node
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then node.parent;
+      case IMPLICIT_SCOPE() then node.parentScope;
     end match;
   end parent;
 
@@ -322,6 +342,12 @@ uniontype InstNode
       case COMPONENT_NODE()
         algorithm
           node.parent := parent;
+        then
+          ();
+
+      case IMPLICIT_SCOPE()
+        algorithm
+          node.parentScope := parent;
         then
           ();
     end match;
@@ -576,8 +602,8 @@ uniontype InstNode
           end match;
 
       case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
-
       case COMPONENT_NODE() then scopeList(node.parent, node :: accumScopes);
+      case IMPLICIT_SCOPE() then scopeList(node.parentScope, accumScopes);
     end match;
   end scopeList;
 
@@ -659,6 +685,24 @@ uniontype InstNode
           fail();
     end match;
   end cacheAddFunc;
+
+  function openImplicitScope
+    input output InstNode scope;
+  algorithm
+    scope := match scope
+      case IMPLICIT_SCOPE() then scope;
+      else IMPLICIT_SCOPE(scope, {});
+    end match;
+  end openImplicitScope;
+
+  function addIterator
+    input InstNode iterator;
+    input output InstNode scope;
+  algorithm
+    scope := match scope
+      case IMPLICIT_SCOPE() then IMPLICIT_SCOPE(scope, iterator :: scope.locals);
+    end match;
+  end addIterator;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

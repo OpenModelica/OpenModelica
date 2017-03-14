@@ -530,32 +530,32 @@ algorithm
       then
         el :: elements;
 
-    case Equation.FOR()
-      algorithm
-        // flatten the equations
-        (els1, funcs) := flattenEquations(eq.body, prefix, {}, funcs);
-
-        // deal with the range
-        if isSome(eq.range) then
-          SOME(e) := eq.range;
-          SOME(de) := DAEUtil.evaluateExp(Expression.toDAE(e), elements);
-          range := match (de)
-                    case DAE.ARRAY(array = range) then range;
-                    case DAE.RANGE(_, DAE.ICONST(is), SOME(DAE.ICONST(step)), DAE.ICONST(ie))
-                      then List.map(ExpressionSimplify.simplifyRange(is, step, ie), DAEExpression.makeIntegerExp);
-                    case DAE.RANGE(_, DAE.ICONST(is), _, DAE.ICONST(ie))
-                      then if is <= ie
-                           then List.map(ExpressionSimplify.simplifyRange(is, 1, ie), DAEExpression.makeIntegerExp)
-                           else List.map(ExpressionSimplify.simplifyRange(is, -1, ie), DAEExpression.makeIntegerExp);
-                  end match;
-          // replace index in elements
-          for i in range loop
-            els := DAEUtil.replaceCrefInDAEElements(els1, DAE.CREF_IDENT(eq.name, Type.toDAE(eq.indexType), {}), i);
-            elements := listAppend(els, elements);
-          end for;
-        end if;
-      then
-        elements;
+//    case Equation.FOR()
+//      algorithm
+//        // flatten the equations
+//        (els1, funcs) := flattenEquations(eq.body, prefix, {}, funcs);
+//
+//        // deal with the range
+//        if isSome(eq.range) then
+//          SOME(e) := eq.range;
+//          SOME(de) := DAEUtil.evaluateExp(Expression.toDAE(e), elements);
+//          range := match (de)
+//                    case DAE.ARRAY(array = range) then range;
+//                    case DAE.RANGE(_, DAE.ICONST(is), SOME(DAE.ICONST(step)), DAE.ICONST(ie))
+//                      then List.map(ExpressionSimplify.simplifyRange(is, step, ie), DAEExpression.makeIntegerExp);
+//                    case DAE.RANGE(_, DAE.ICONST(is), _, DAE.ICONST(ie))
+//                      then if is <= ie
+//                           then List.map(ExpressionSimplify.simplifyRange(is, 1, ie), DAEExpression.makeIntegerExp)
+//                           else List.map(ExpressionSimplify.simplifyRange(is, -1, ie), DAEExpression.makeIntegerExp);
+//                  end match;
+//          // replace index in elements
+//          for i in range loop
+//            els := DAEUtil.replaceCrefInDAEElements(els1, DAE.CREF_IDENT(eq.name, Type.toDAE(eq.indexType), {}), i);
+//            elements := listAppend(els, elements);
+//          end for;
+//        end if;
+//      then
+//        elements;
 
     case Equation.WHEN()
       algorithm
@@ -747,16 +747,9 @@ algorithm
 
     case Statement.FOR()
       algorithm
-        // flatten the list of statements
-        (sts, funcs) := flattenStatements(alg.body, {}, funcs);
-        if isSome(alg.range) then
-          SOME(e) := alg.range;
-          de := Expression.toDAE(e);
-        else
-          de := DAE.SCONST("NO RANGE GIVEN TODO FIXME");
-        end if;
+        (stmt, funcs) := flattenForStatement(alg, funcs);
       then
-        DAE.STMT_FOR(Type.toDAE(alg.indexType), false, alg.name, alg.index, de, sts, ElementSource.createElementSource(alg.info)) :: stmts;
+        stmt :: stmts;
 
     case Statement.IF()
       algorithm
@@ -918,14 +911,13 @@ protected
   list<tuple<Expression, list<Statement>>> rest;
   Option<DAE.Statement> owhenStatement = NONE();
 algorithm
-
   head :: rest := whenBranches;
   cond1 := Expression.toDAE(Util.tuple21(head));
   (stmts1, funcs) := flattenStatements(Util.tuple22(head), {}, funcs);
   rest := listReverse(rest);
 
   for b in rest loop
-  cond2 := Expression.toDAE(Util.tuple21(b));
+    cond2 := Expression.toDAE(Util.tuple21(b));
     (stmts2, funcs) := flattenStatements(Util.tuple22(b), {}, funcs);
     whenStatement := DAE.STMT_WHEN(cond2, {}, false, stmts2, owhenStatement, ElementSource.createElementSource(info));
     owhenStatement := SOME(whenStatement);
@@ -933,6 +925,31 @@ algorithm
 
   whenStatement := DAE.STMT_WHEN(cond1, {}, false, stmts1, owhenStatement, ElementSource.createElementSource(info));
 end flattenWhenStatement;
+
+function flattenForStatement
+  input Statement forStmt;
+        output DAE.Statement forDAE;
+  input output DAE.FunctionTree funcs;
+protected
+  InstNode iterator;
+  Type ty;
+  Binding binding;
+  Expression range;
+  list<Statement> body;
+  list<DAE.Statement> dbody;
+  SourceInfo info;
+algorithm
+  Statement.FOR(iterator = iterator, body = body, info = info) := forStmt;
+
+  (dbody, funcs) := flattenStatements(body, {}, funcs);
+
+  Component.ITERATOR(ty = ty, binding = binding) := InstNode.component(iterator);
+  SOME(range) := Binding.typedExp(binding);
+
+  forDAE := DAE.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
+    InstNode.name(iterator), 0, Expression.toDAE(range), dbody,
+    ElementSource.createElementSource(info));
+end flattenForStatement;
 
 function applyExpPrefix
   input ComponentRef prefix;

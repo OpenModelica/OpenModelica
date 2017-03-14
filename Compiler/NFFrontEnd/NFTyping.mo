@@ -62,6 +62,7 @@ import NFClass.ClassTree;
 import ComponentRef = NFComponentRef;
 import Ceval = NFCeval;
 import SimplifyExp = NFSimplifyExp;
+import Subscript = NFSubscript;
 
 public
 function typeClass
@@ -147,6 +148,56 @@ algorithm
 
   end match;
 end typeComponent;
+
+function typeIterator
+  input InstNode iterator;
+  input InstNode scope;
+  input Boolean structural = false "If the iteration range must be a parameter expression or not.";
+protected
+  Component c = InstNode.component(iterator);
+  Binding binding;
+  Type ty;
+algorithm
+  () := match c
+    case Component.ITERATOR(binding = Binding.UNTYPED_BINDING())
+      algorithm
+        binding := typeBinding(c.binding, scope);
+
+        // If the iteration range is structural, it must be a parameter expression.
+        if structural and not Types.isParameterOrConstant(Binding.variability(binding)) then
+          Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
+            {Binding.toString(binding)}, InstNode.info(iterator));
+        end if;
+
+        ty := Binding.getType(binding);
+
+        // The iteration range must be a vector expression.
+        if not Type.isVector(ty) then
+          Error.addSourceMessageAndFail(Error.FOR_EXPRESSION_TYPE_ERROR,
+            {Binding.toString(binding), Type.toString(ty)}, InstNode.info(iterator));
+        end if;
+
+        // The type of the iterator is the element type of the range expression.
+        ty := Type.arrayElementType(ty);
+        c := Component.ITERATOR(ty, binding);
+        InstNode.updateComponent(c, iterator);
+      then
+        ();
+
+    case Component.ITERATOR(binding = Binding.UNBOUND())
+      algorithm
+        assert(false, getInstanceName() + ": Implicit iteration ranges not yet implement");
+      then
+        fail();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got non-iterator " + InstNode.name(iterator));
+      then
+        fail();
+
+  end match;
+end typeIterator;
 
 function typeDimensions
   input output array<Dimension> dimensions;
@@ -483,9 +534,10 @@ algorithm
         assert(Component.isTyped(comp), getInstanceName() + " got untyped component ");
         ty := Component.getType(comp);
         variability := ComponentRef.getVariability(cref);
-        exp := Expression.CREF(ComponentRef.setType(ty, cref));
+        cref.ty := ty;
+        cref.subscripts := typeSubscripts(cref.subscripts, scope, info);
       then
-        (exp, ty, variability);
+        (Expression.CREF(cref), ty, variability);
 
     // A typename, e.g. Boolean or an enumeration type.
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
@@ -502,6 +554,35 @@ algorithm
 
   end match;
 end typeCref;
+
+function typeSubscripts
+  input list<Subscript> subscripts;
+  input InstNode scope;
+  input SourceInfo info;
+  output list<Subscript> typedSubs;
+algorithm
+  typedSubs := list(typeSubscript(s, scope, info) for s in subscripts);
+end typeSubscripts;
+
+function typeSubscript
+  input output Subscript subscript;
+  input InstNode scope;
+  input SourceInfo info;
+algorithm
+  subscript := match subscript
+    local
+      Expression e;
+      Type ty;
+
+    case Subscript.UNTYPED()
+      algorithm
+        (e, ty, _) := typeExp(subscript.exp, scope, info);
+      then
+        if Type.isArray(ty) then Subscript.SLICE(e) else Subscript.INDEX(e);
+
+    else subscript;
+  end match;
+end typeSubscript;
 
 function typeArray
   input list<Expression> elements;
@@ -618,17 +699,11 @@ function typeEquation
 algorithm
   eq := match eq
     local
-      Option<Expression> ope1;
       Expression cond, e1, e2, e3;
-      Option<Type> opty1;
       Type ty1, ty2;
       list<Equation> eqs1, body;
       list<tuple<Expression, list<Equation>>> tybrs;
-      InstNode fakeComponent;
-      array<InstNode> components;
-      Class cls;
-      Integer index;
-      ClassTree.Tree elements;
+      InstNode iterator;
 
     case Equation.EQUALITY()
       algorithm
@@ -644,41 +719,12 @@ algorithm
       then
         Equation.CONNECT(e1, ty1, e2, ty2, eq.info);
 
-    case Equation.FOR() then eq;
-    //case Equation.FOR()
-    //  algorithm
-    //    ope1 := NONE();
-    //    if (isSome(eq.range)) then
-    //      (e1, ty1) := typeExp(Util.getOption(eq.range), scope, eq.info);
-    //      ty1 := Type.arrayElementType(ty1);
-    //      ope1 := SOME(e1);
-    //    end if;
-    //    // we need to add the iterator to the component scope!
-    //    fakeComponent := InstNode.newComponent(
-    //       SCode.COMPONENT(
-    //          eq.name,
-    //          SCode.defaultPrefixes,
-    //          SCode.defaultVarAttr,
-    //          Absyn.TPATH(Absyn.IDENT("Integer"), NONE()),
-    //          SCode.NOMOD(),
-    //          SCode.COMMENT(NONE(), NONE()),
-    //          NONE(),
-    //          eq.info), scope);
-    //    fakeComponent := Inst.instComponent(fakeComponent, scope, scope);
-    //    fakeComponent := typeComponent(fakeComponent, scope);
-    //    cls := InstNode.getClass(scope);
-    //    components := Class.components(cls);
-    //    index := arrayLength(components) + 1;
-    //    components := listArray(listAppend(arrayList(components), {fakeComponent}));
-    //    cls := Class.setComponents(components, cls);
-    //    elements := Class.elements(cls);
-    //    elements :=  ClassTree.add(elements, eq.name,
-    //          ClassTree.Entry.COMPONENT(0, index), ClassTree.addConflictReplace);
-    //    cls := Class.setElements(elements, cls);
-    //    fakeComponent := InstNode.updateClass(cls, scope);
-    //    eqs1 := list(typeEquation(beq, fakeComponent) for beq in eq.body);
-    //  then
-    //    Equation.FOR(eq.name, 1, ty1, ope1, eqs1, eq.info);
+    case Equation.FOR()
+      algorithm
+        typeIterator(eq.iterator, scope, true);
+        body := typeEquations(eq.body, scope);
+      then
+        Equation.FOR(eq.iterator, body, eq.info);
 
     case Equation.IF()
       algorithm
@@ -757,12 +803,11 @@ function typeStatement
 algorithm
   st := match st
     local
-      Option<Expression> ope1;
       Expression cond, e1, e2, e3;
-      Option<Type> opty1;
       Type ty1, ty2, ty3;
       list<Statement> sts1, body;
       list<tuple<Expression, list<Statement>>> tybrs;
+      InstNode iterator;
 
     case Statement.ASSIGNMENT()
       algorithm
@@ -770,6 +815,13 @@ algorithm
         (e2, _) := typeExp(st.rhs, scope, st.info);
       then
         Statement.ASSIGNMENT(e1, e2, st.info);
+
+    case Statement.FOR()
+      algorithm
+        typeIterator(st.iterator, scope);
+        body := typeAlgorithm(st.body, scope);
+      then
+        Statement.FOR(st.iterator, body, st.info);
 
     case Statement.IF()
       algorithm

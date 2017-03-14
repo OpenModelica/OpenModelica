@@ -171,6 +171,17 @@ public
     end match;
   end isArray;
 
+  function isVector
+    "Return whether the type is a vector type or not, i.e. a 1-dimensional array."
+    input Type ty;
+    output Boolean isVector;
+  algorithm
+    isVector := match ty
+      case ARRAY(dimensions = {_}) then true;
+      else false;
+    end match;
+  end isVector;
+
   function isEnumeration
     input Type ty;
     output Boolean isEnum;

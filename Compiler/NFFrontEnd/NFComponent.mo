@@ -112,6 +112,11 @@ uniontype Component
     Component.Attributes attributes;
   end TYPED_COMPONENT;
 
+  record ITERATOR
+    Type ty;
+    Binding binding;
+  end ITERATOR;
+
   function classInstance
     input Component component;
     output InstNode classInst;
@@ -175,6 +180,7 @@ uniontype Component
     ty := match component
       case TYPED_COMPONENT() then component.ty;
       case UNTYPED_COMPONENT() then Class.getType(InstNode.getClass(component.classInst));
+      case ITERATOR() then component.ty;
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -192,6 +198,13 @@ uniontype Component
           component.ty := ty;
         then
           component;
+
+      case ITERATOR()
+        algorithm
+          component.ty := ty;
+        then
+          component;
+
     end match;
   end setType;
 
@@ -201,6 +214,8 @@ uniontype Component
   algorithm
     isTyped := match component
       case TYPED_COMPONENT() then true;
+      case ITERATOR(ty = Type.UNKNOWN()) then false;
+      case ITERATOR() then true;
       else false;
     end match;
   end isTyped;
@@ -213,6 +228,12 @@ uniontype Component
         Type ty;
 
       case TYPED_COMPONENT(ty = Type.ARRAY(elementType = ty))
+        algorithm
+          component.ty := ty;
+        then
+          ();
+
+      case ITERATOR(ty = Type.ARRAY(elementType = ty))
         algorithm
           component.ty := ty;
         then
@@ -239,6 +260,7 @@ uniontype Component
     b := match component
       case UNTYPED_COMPONENT() then component.binding;
       case TYPED_COMPONENT() then component.binding;
+      case ITERATOR() then component.binding;
     end match;
   end getBinding;
 
@@ -306,6 +328,7 @@ uniontype Component
     variability := match component
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
+      case ITERATOR() then DAE.VarKind.CONST();
       else fail();
     end match;
   end variability;

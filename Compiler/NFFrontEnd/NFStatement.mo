@@ -34,6 +34,7 @@ encapsulated package NFStatement
 import Absyn;
 import Type = NFType;
 import Expression = NFExpression;
+import NFInstNode.InstNode;
 
 public uniontype Statement
   record ASSIGNMENT
@@ -49,10 +50,7 @@ public uniontype Statement
   end FUNCTION_ARRAY_INIT;
 
   record FOR
-    String name "The name of the iterator variable.";
-    Integer index "The index of the scope of the iterator variable.";
-    Type indexType "The type of the index/iterator variable.";
-    Option<Expression> range "The range expression to loop over.";
+    InstNode iterator;
     list<Statement> body "The body of the for loop.";
     SourceInfo info;
   end FOR;

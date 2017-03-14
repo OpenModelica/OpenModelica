@@ -121,6 +121,16 @@ public
     end match;
   end typedExp;
 
+  function variability
+    input Binding binding;
+    output DAE.Const var;
+  algorithm
+    var := match binding
+      case TYPED_BINDING() then binding.variability;
+      else DAE.Const.C_UNKNOWN();
+    end match;
+  end variability;
+
   function getInfo
     input Binding binding;
     output SourceInfo info;
@@ -132,6 +142,13 @@ public
       case TYPED_BINDING() then binding.info;
     end match;
   end getInfo;
+
+  function getType
+    input Binding binding;
+    output Type ty;
+  algorithm
+    TYPED_BINDING(bindingType = ty) := binding;
+  end getType;
 
   function isEach
     input Binding binding;

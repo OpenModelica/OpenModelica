@@ -431,9 +431,18 @@ algorithm
   // scopes or for some reason exceed the recursion depth limit.
   for i in 1:Global.recursionDepthLimit loop
     try
+      node := match foundScope
+        case InstNode.IMPLICIT_SCOPE()
+          then lookupIterator(name, foundScope.locals);
+        case InstNode.CLASS_NODE()
+          then Class.lookupElement(name, InstNode.getClass(foundScope));
+        case InstNode.COMPONENT_NODE()
+          then Class.lookupElement(name, InstNode.getClass(foundScope));
+      end match;
+
       // Check if the cref can be found in the current scope.
-      cls := InstNode.getClass(foundScope);
-      node := Class.lookupElement(name, cls);
+      //cls := InstNode.getClass(foundScope);
+      //node := Class.lookupElement(name, cls);
 
       // We found a node, return it.
       return;
@@ -447,6 +456,21 @@ algorithm
     {String(Global.recursionDepthLimit), InstNode.name(foundScope)});
   fail();
 end lookupSimpleCref;
+
+function lookupIterator
+  input String name;
+  input list<InstNode> iterators;
+  output InstNode iterator;
+algorithm
+  for i in iterators loop
+    if name == InstNode.name(i) then
+      iterator := i;
+      return;
+    end if;
+  end for;
+
+  fail();
+end lookupIterator;
 
 function lookupCrefInNode
   input Absyn.ComponentRef cref;

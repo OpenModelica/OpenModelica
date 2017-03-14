@@ -107,7 +107,7 @@ algorithm
   // Instantiate component bindings. This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
   instExpressions(inst_cls);
-  execStat("NFInst.instBindings("+ name +")");
+  execStat("NFInst.instExpressions("+ name +")");
 
   // Type the class.
   Typing.typeClass(inst_cls);
@@ -1373,6 +1373,8 @@ algorithm
       list<Equation> eql;
       list<tuple<Expression, list<Equation>>> branches;
       SourceInfo info;
+      Binding binding;
+      InstNode for_scope, iter;
 
     case SCode.EEquation.EQ_EQUALS(info = info)
       algorithm
@@ -1390,10 +1392,13 @@ algorithm
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
-        oexp := instExpOpt(scodeEq.range, scope, info);
-        eql := instEEquations(scodeEq.eEquationLst, scope);
+        binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), 0, scope, info);
+        binding := instBinding(binding);
+
+        (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
+        eql := instEEquations(scodeEq.eEquationLst, for_scope);
       then
-        Equation.FOR(scodeEq.index, 0, Type.UNKNOWN(), oexp, eql, info);
+        Equation.FOR(iter, eql, info);
 
     case SCode.EEquation.EQ_IF(info = info)
       algorithm
@@ -1503,6 +1508,8 @@ algorithm
       list<Statement> stmtl;
       list<tuple<Expression, list<Statement>>> branches;
       SourceInfo info;
+      Binding binding;
+      InstNode for_scope, iter;
 
     case SCode.Statement.ALG_ASSIGN(info = info)
       algorithm
@@ -1513,10 +1520,13 @@ algorithm
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
-        oexp := instExpOpt(scodeStmt.range, scope, info);
-        stmtl := instStatements(scodeStmt.forBody, scope);
+        binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), 0, scope, info);
+        binding := instBinding(binding);
+
+        (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);
+        stmtl := instStatements(scodeStmt.forBody, for_scope);
       then
-        Statement.FOR(scodeStmt.index, 0, Type.UNKNOWN(), oexp, stmtl, info);
+        Statement.FOR(iter, stmtl, info);
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm
@@ -1594,6 +1604,25 @@ algorithm
 
   end match;
 end instStatement;
+
+function addIteratorToScope
+  input String name;
+  input Binding binding;
+  input SourceInfo info;
+  input output InstNode scope;
+        output InstNode iterator;
+protected
+  Component iter_comp;
+  SCode.Element elem;
+algorithm
+  scope := InstNode.openImplicitScope(scope);
+  elem := SCode.Element.COMPONENT(name, SCode.defaultPrefixes,
+    SCode.defaultVarAttr, Absyn.TypeSpec.TPATH(Absyn.Path.IDENT("$dummy"), NONE()),
+    SCode.NOMOD(), SCode.noComment, NONE(), info);
+  iter_comp := Component.ITERATOR(Type.UNKNOWN(), binding);
+  iterator := InstNode.fromComponent(name, iter_comp, elem, scope);
+  scope := InstNode.addIterator(iterator, scope);
+end addIteratorToScope;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

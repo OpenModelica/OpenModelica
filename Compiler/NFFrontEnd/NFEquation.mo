@@ -34,6 +34,7 @@ encapsulated package NFEquation
 import Absyn;
 import Expression = NFExpression;
 import Type = NFType;
+import NFInstNode.InstNode;
 
 public uniontype Equation
   record EQUALITY
@@ -55,10 +56,7 @@ public uniontype Equation
   end CONNECT;
 
   record FOR
-    String name           "The name of the iterator variable.";
-    Integer index         "The index of the iterator variable.";
-    Type indexType    "The type of the index/iterator variable.";
-    Option<Expression> range "The range expression to loop over.";
+    InstNode iterator;
     list<Equation> body   "The body of the for loop.";
     SourceInfo info;
   end FOR;
