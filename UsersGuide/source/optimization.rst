@@ -79,7 +79,7 @@ command line terminals similar to the options described below:
   :caption: BatchReactor.mo
   :name: BatchReactor.mo
 
-  optimization BatchReactor(objective=-x2(finalTime), startTime = 0, finalTime =1)
+  model BatchReactor
     Real x1(start =1, fixed=true, min=0, max=1);
     Real x2(start =0, fixed=true, min=0, max=1);
     input Real u(min=0, max=5);
