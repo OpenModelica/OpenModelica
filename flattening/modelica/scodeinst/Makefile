@@ -46,6 +46,9 @@ eq7.mo \
 eq10.mo \
 extends3.mo \
 ExtendSections.mo \
+ForEquation1.mo \
+ForEquation2.mo \
+ForEquation3.mo \
 ForEquationNonParam.mo \
 ForStatement1.mo \
 ForStatement2.mo \
@@ -279,9 +282,6 @@ expconn5.mo \
 expconn6.mo \
 extends1.mo \
 extends2.mo \
-for1.mo \
-for2.mo \
-for3.mo \
 function1.mo \
 FunctionRecordArg1.mo \
 ImportUnqualified2.mo \
