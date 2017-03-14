@@ -316,6 +316,9 @@ algorithm
       list<DAE.Exp> eLst, subs;
       Boolean hasRange;
       Option<DAE.Exp> step;
+    // No ASUB...
+    case (_, e, {}) then e;
+
     // ASUB(CAST(e)) -> CAST(liftArray(t), ASUB(e))
     case (_, DAE.CAST(tp,e), _)
       equation
@@ -3493,20 +3496,30 @@ protected function simplifyAsubSlicing
   output DAE.Exp outAsubArray;
 protected
   list<list<DAE.Exp>> indices;
-  list<DAE.Exp> asubs;
+  list<DAE.Exp> asubs, es;
   Integer sz;
   DAE.Exp elem;
   DAE.Type ty;
+  Boolean didSplit=false,b;
 algorithm
   // Expand the subscripts.
-  indices := list(Expression.splitArray(simplify1(e)) for e in inSubscripts);
+  indices := list(match () case () algorithm (es,b) := Expression.splitArray(simplify1(e)); didSplit := didSplit or b; then es; end match for e in inSubscripts);
+  // We don't want to loop forever... So keep track of if we actually expanded something
+  true := didSplit;
+  for is in indices loop
+    for i in is loop
+      // Make sure all asubs are scalar (were split by splitArray; no function calls or weird stuff left)
+      _ := match Expression.typeof(i)
+        case DAE.T_INTEGER() then ();
+        case DAE.T_BOOL() then ();
+        case DAE.T_ENUMERATION() then ();
+        else fail();
+      end match;
+    end for;
+  end for;
   // Make asubs from all combinations of the subscript indices.
   asubs := List.combinationMap1(indices, simplifyAsubSlicing2, inExp);
-  // Make sure one or more dimensions were sliced, i.e. we got more than one element.
-  elem :: _ :: _ := asubs;
-  // Make an array expression from the asub list.
-  ty := Expression.typeof(elem);
-  outAsubArray := Expression.makeScalarArray(asubs, ty);
+  outAsubArray := Expression.makeScalarArray(asubs, Types.unliftArray(Expression.typeof(inExp)));
 end simplifyAsubSlicing;
 
 protected function simplifyAsubSlicing2

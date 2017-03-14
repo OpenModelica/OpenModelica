@@ -10678,16 +10678,20 @@ public function splitArray
   "Splits an array into a list of elements."
   input DAE.Exp inExp;
   output list<DAE.Exp> outExp;
+  output Boolean didSplit;
 algorithm
-  outExp := match(inExp)
+  (outExp,didSplit) := match(inExp)
     local
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> mat;
+      Integer istart, istop, istep;
+      Option<DAE.Exp> step;
 
-    case DAE.ARRAY(array = expl) then expl;
-    case DAE.MATRIX(matrix = mat) then List.flatten(mat);
-    else {inExp};
-
+    case DAE.ARRAY(array = expl) then (expl,true);
+    case DAE.MATRIX(matrix = mat) then (List.flatten(mat),true);
+    case DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),step,DAE.ICONST(istop))
+      then (list(DAE.ICONST(i) for i in ExpressionSimplify.simplifyRange(istart,match step case NONE() then 1; case SOME(DAE.ICONST(istep)) then istep; end match,istop)),true);
+    else ({inExp},false);
   end match;
 end splitArray;
 
@@ -12692,6 +12696,39 @@ algorithm
 
   outContinue := not outContainsCall;
 end containsAnyCall_traverser;
+
+public function containsCallTo
+  "Returns true if the given expression contains any function calls,
+   otherwise false."
+  input DAE.Exp inExp;
+  input Absyn.Path path;
+  output Boolean outContainsCall;
+algorithm
+  (_, (_,outContainsCall)) := traverseExpTopDown(inExp, containsCallTo_traverser, (path,false));
+end containsCallTo;
+
+protected function containsCallTo_traverser
+  input DAE.Exp inExp;
+  input tuple<Absyn.Path,Boolean> inTpl;
+  output DAE.Exp outExp = inExp;
+  output Boolean outContinue = false;
+  output tuple<Absyn.Path,Boolean> outTpl = inTpl;
+protected
+  Boolean containsCall;
+  Absyn.Path path;
+algorithm
+  (path,containsCall) := outTpl;
+  if containsCall then
+    return;
+  end if;
+  outContinue := match inExp
+    case DAE.CALL() then Absyn.pathEqual(path,inExp.path);
+    else true;
+  end match;
+  if not outContinue then
+    outTpl := (path,false);
+  end if;
+end containsCallTo_traverser;
 
 public function rangeSize
   "Tries to figure out the size of a range expression. Either return the size or

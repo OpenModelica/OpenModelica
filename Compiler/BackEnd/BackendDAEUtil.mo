@@ -47,6 +47,7 @@ encapsulated package BackendDAEUtil
 
 import Absyn;
 import AvlSetInt;
+import AvlSetPath;
 import BackendDAE;
 import BackendDAEFunc;
 import DAE;
@@ -2591,7 +2592,7 @@ algorithm
     then vallst;
 
     case BackendDAE.SOLVABLE() equation
-      (_, (_, vallst, _)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables, inIntegerLst, functionTree));
+      (_, (_, vallst, _, _)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables, inIntegerLst, AvlSetPath.EMPTY(), functionTree));
     then vallst;
 
     case BackendDAE.BASECLOCK_IDX() equation
@@ -2612,10 +2613,10 @@ end incidenceRowExp;
 
 public function traversingincidenceRowExpSolvableFinder "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, AvlSetInt.Tree, Option<DAE.FunctionTree>> inTpl;
+  input tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Option<DAE.FunctionTree>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, AvlSetInt.Tree, Option<DAE.FunctionTree>> outTpl;
+  output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Option<DAE.FunctionTree>> outTpl;
 algorithm
   (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
@@ -2632,9 +2633,10 @@ algorithm
       list<DAE.ComponentRef> crlst;
       Option<DAE.FunctionTree> ofunctionTree;
       DAE.FunctionTree functionTree;
-      tuple<BackendDAE.Variables, AvlSetInt.Tree, Option<DAE.FunctionTree>> tpl;
+      tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Option<DAE.FunctionTree>> tpl;
       Integer diffindx;
       list<DAE.Subscript> subs;
+      AvlSetPath.Tree visitedPaths;
 
     case (DAE.LBINARY(), tpl)
     then (inExp, false, tpl);
@@ -2650,7 +2652,7 @@ algorithm
     case (DAE.RANGE(), tpl)
     then (inExp, false, tpl);
 
-    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, ofunctionTree))
+    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, visitedPaths, ofunctionTree))
       algorithm
         {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst);
         subs := list(DAE.INDEX(e) for e in extendRange(e1, vars));
@@ -2658,7 +2660,7 @@ algorithm
         (varslst, p) := BackendVariable.getVarLst(crlst, vars);
         pa := incidenceRowExp1(varslst, p, pa, 0);
       then
-        (inExp, false, (vars, pa, ofunctionTree));
+        (inExp, false, (vars, pa, visitedPaths, ofunctionTree));
 
     case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}), tpl) equation
       e1 = Expression.nthArrayExp(e1, i);
@@ -2674,30 +2676,30 @@ algorithm
     then (inExp, false, tpl);
 
     // cref and $START.cref
-    case (DAE.CREF(componentRef=cr), (vars, pa, ofunctionTree)) equation
+    case (DAE.CREF(componentRef=cr), (vars, pa, visitedPaths, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       (_, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
 
       pa = incidenceRowExp1(varslst, p, pa, 0);
       pa = incidenceRowExp1(varslst, p2, pa, 0);
-    then (inExp, true, (vars, pa, ofunctionTree));
+    then (inExp, true, (vars, pa, visitedPaths, ofunctionTree));
 
     // only cref
-    case (DAE.CREF(componentRef=cr), (vars, pa, ofunctionTree)) equation
+    case (DAE.CREF(componentRef=cr), (vars, pa, visitedPaths, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       pa = incidenceRowExp1(varslst, p, pa, 0);
-    then (inExp, true, (vars, pa, ofunctionTree));
+    then (inExp, true, (vars, pa, visitedPaths, ofunctionTree));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, ofunctionTree)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, visitedPaths, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       pa = incidenceRowExp1(varslst, p, pa, 1);
-    then (inExp, false,(vars, pa, ofunctionTree));
+    then (inExp, false,(vars, pa, visitedPaths, ofunctionTree));
 
     /* higher derivative, is only present during index reduction */
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr), DAE.ICONST(diffindx)}), (vars, pa, ofunctionTree)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr), DAE.ICONST(diffindx)}), (vars, pa, visitedPaths, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       pa = incidenceRowExp1(varslst, p, pa, diffindx);
-    then (inExp, false,(vars, pa, ofunctionTree));
+    then (inExp, false,(vars, pa, visitedPaths, ofunctionTree));
 
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path=Absyn.IDENT(name="pre")), tpl)
@@ -2713,11 +2715,12 @@ algorithm
     then (inExp, not b, tpl);
 
     // use the inlined function to analyze the ocuring variables
-    case (DAE.CALL(), tpl as (_, _, SOME(functionTree))) equation
-      (e1,_) = Inline.forceInlineCall(inExp, {}, (SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}));
-      false = referenceEq(inExp,e1);
-      (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
-    then (inExp, false, tpl);
+    case (DAE.CALL(), (vars, pa, visitedPaths, ofunctionTree as SOME(functionTree))) guard not AvlSetPath.hasKey(visitedPaths, inExp.path)
+      algorithm
+        (e1,_) := Inline.forceInlineCall(inExp, {}, (SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}));
+        false := referenceEq(inExp,e1);
+        (_, tpl) := Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, (vars, pa, AvlSetPath.add(visitedPaths, inExp.path), ofunctionTree));
+      then (inExp, false, tpl);
 
     else (inExp, true, inTpl);
   end matchcontinue;

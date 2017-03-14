@@ -40,30 +40,33 @@ encapsulated package Inline
   The entry point is the inlineCalls function, or inlineCallsInFunctions
   "
 
-public import Absyn;
-public import BaseHashTable;
-public import DAE;
-public import HashTableCG;
-public import SCode;
-public import Util;
+import Absyn;
+import AvlSetPath;
+import BaseHashTable;
+import DAE;
+import HashTableCG;
+import SCode;
+import Util;
 
-public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
-protected import Ceval;
-protected import ClassInf;
-protected import ComponentReference;
-protected import Config;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import Global;
-protected import List;
-protected import Types;
-protected import VarTransform;
+protected
+
+import Ceval;
+import ClassInf;
+import ComponentReference;
+import Config;
+import Debug;
+import ElementSource;
+import Error;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import Global;
+import List;
+import Types;
+import VarTransform;
 
 public function inlineStartAttribute
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
@@ -713,7 +716,7 @@ algorithm
       then (e_1,source,true);
     case (e,fns,source)
       equation
-        (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns),{});
+        (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns, visitedPaths=AvlSetPath.Tree.EMPTY()),{});
         b = not referenceEq(e, e_1);
         if b then
         source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
@@ -952,6 +955,7 @@ public function forceInlineCall
   input output DAE.Exp exp;
   input output list<DAE.Statement> assrtLst;
   input Functiontuple fns;
+  input AvlSetPath.Tree visitedPaths = AvlSetPath.EMPTY();
 algorithm
   (exp,assrtLst) := matchcontinue exp
     local
@@ -971,7 +975,7 @@ algorithm
       Boolean generateEvents,b;
       Option<SCode.Comment> comment;
 
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)))
+    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType))) guard not AvlSetPath.hasKey(visitedPaths, p)
       equation
         //print(printInlineTypeStr(inlineType));
         false = Config.acceptMetaModelicaGrammar();
@@ -994,7 +998,7 @@ algorithm
         newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
         (newExp,(_,_,true)) = Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function forceInlineCall(fns=fns),assrtLst);
+        (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function forceInlineCall(fns=fns,visitedPaths=AvlSetPath.add(visitedPaths, p)),assrtLst);
       then (newExp1,assrtLst);
 
     else (exp,assrtLst);
@@ -1597,7 +1601,7 @@ public function simplifyAndForceInlineEquationExp "
   output DAE.ElementSource source;
 algorithm
   (exp,source) := ExpressionSimplify.simplifyAddSymbolicOperation(inExp,inSource);
-  (exp,source) := inlineEquationExp(exp,function forceInlineCall(fns=fns),source);
+  (exp,source) := inlineEquationExp(exp,function forceInlineCall(fns=fns, visitedPaths=AvlSetPath.Tree.EMPTY()),source);
 end simplifyAndForceInlineEquationExp;
 
 public function inlineEquationExp "
