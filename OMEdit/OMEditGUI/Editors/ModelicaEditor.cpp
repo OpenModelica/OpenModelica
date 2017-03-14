@@ -542,7 +542,11 @@ void ModelicaHighlighter::highlightMultiLine(const QString &text)
       if (blockState < 1 || blockState > 3) {
         if (text[index] == ';') {
           if (pTextBlockUserData) {
-            if (index == text.length() - 1) { // if we have some text after closing the annotation then we don't want to fold it.
+            QString endText = text.mid(index + 1);
+            /* if we have some text after closing the annotation then we don't want to fold it.
+             * ticket:4310 But if the ending text is just white space then fold it.
+             */
+            if (index == text.length() - 1 || TabSettings::firstNonSpace(endText) == endText.length()) {
               if (annotationIndex < 0) { // if we have one line annotation, we don't want to fold it.
                 pTextBlockUserData->setFoldingIndent(1);
               }
