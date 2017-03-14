@@ -1,0 +1,12 @@
+// status: correct
+
+loadFile("FCSys.Characteristics.Examples.CellPotential.mo");getErrorString();
+// TODO: Once we handle model parameters inside functions, change to buildModel...
+translateModel(CellPotential_total);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// endResult
