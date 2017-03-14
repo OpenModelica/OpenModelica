@@ -65,6 +65,7 @@ protected
 import DAEUtil;
 import NFCall.Call;
 import NFFunction.Function;
+import RangeIterator = NFRangeIterator;
 
 public
 partial function ExpandScalarFunc<ElementT>
@@ -530,32 +531,11 @@ algorithm
       then
         el :: elements;
 
-//    case Equation.FOR()
-//      algorithm
-//        // flatten the equations
-//        (els1, funcs) := flattenEquations(eq.body, prefix, {}, funcs);
-//
-//        // deal with the range
-//        if isSome(eq.range) then
-//          SOME(e) := eq.range;
-//          SOME(de) := DAEUtil.evaluateExp(Expression.toDAE(e), elements);
-//          range := match (de)
-//                    case DAE.ARRAY(array = range) then range;
-//                    case DAE.RANGE(_, DAE.ICONST(is), SOME(DAE.ICONST(step)), DAE.ICONST(ie))
-//                      then List.map(ExpressionSimplify.simplifyRange(is, step, ie), DAEExpression.makeIntegerExp);
-//                    case DAE.RANGE(_, DAE.ICONST(is), _, DAE.ICONST(ie))
-//                      then if is <= ie
-//                           then List.map(ExpressionSimplify.simplifyRange(is, 1, ie), DAEExpression.makeIntegerExp)
-//                           else List.map(ExpressionSimplify.simplifyRange(is, -1, ie), DAEExpression.makeIntegerExp);
-//                  end match;
-//          // replace index in elements
-//          for i in range loop
-//            els := DAEUtil.replaceCrefInDAEElements(els1, DAE.CREF_IDENT(eq.name, Type.toDAE(eq.indexType), {}), i);
-//            elements := listAppend(els, elements);
-//          end for;
-//        end if;
-//      then
-//        elements;
+    case Equation.FOR()
+      algorithm
+        (elements, funcs) := flattenForEquation(eq, prefix, elements, funcs);
+      then
+        elements;
 
     case Equation.WHEN()
       algorithm
@@ -641,6 +621,40 @@ algorithm
     (elements, funcs) := flattenInitialEquation(eq, prefix, elements, funcs);
   end for;
 end flattenInitialEquations;
+
+function flattenForEquation
+  input Equation forEq;
+  input ComponentRef prefix;
+  input output list<DAE.Element> elements;
+  input output DAE.FunctionTree funcs;
+protected
+  InstNode iterator;
+  Type ty;
+  Binding binding;
+  Expression range;
+  list<Equation> body;
+  list<DAE.Element> dbody, dbody_unrolled;
+  SourceInfo info;
+  RangeIterator range_iter;
+  Expression exp;
+  DAE.ComponentRef iter_cr;
+  Boolean b;
+algorithm
+  Equation.FOR(iterator = iterator, body = body, info = info) := forEq;
+
+  (dbody, funcs) := flattenEquations(body, prefix, {}, funcs);
+
+  Component.ITERATOR(ty = ty, binding = binding) := InstNode.component(iterator);
+  SOME(range) := Binding.typedExp(binding);
+  iter_cr := DAE.CREF_IDENT(InstNode.name(iterator), Type.toDAE(ty), {});
+
+  range_iter := RangeIterator.new(range);
+  while RangeIterator.hasNext(range_iter) loop
+    (range_iter, exp) := RangeIterator.next(range_iter);
+    dbody_unrolled := DAEUtil.replaceCrefInDAEElements(dbody, iter_cr, Expression.toDAE(exp));
+    elements := listAppend(dbody_unrolled, elements);
+  end while;
+end flattenForEquation;
 
 function flattenIfEquation
   input list<tuple<Expression, list<Equation>>> ifBranches;
