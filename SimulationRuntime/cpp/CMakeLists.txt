@@ -38,12 +38,12 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 IF(UNIX)
 IF(APPLE)
 # We set the rpath manually, later...
-ELSE()
+ELSE(APPLE)
 # Needed to find Sundials; actually only the Sundials objects need this,
 # but there are so many of them
 SET(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/..")
 ENDIF(APPLE)
-ENDIF(LINUX)
+ENDIF(UNIX)
 
 if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
   set(BUILD_SHARED_LIBS ON)
@@ -502,17 +502,17 @@ MESSAGE(STATUS ${LAPACK_LIBRARIES})
 IF(USE_SUNDIALS)
   #set sundials solvers include and library directories
   IF(MSVC)
-    SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc")
+    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/include/")
+    SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/lib/")
   ELSE(MSVC)
-    SET(Sundials_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build")
+    SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials)
+    SET(SUNDIALS_LIBRARY_RELEASE_HOME   ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/..)
   ENDIF(MSVC)
-  SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials)
-  SET(SUNDIALS_LIBRARY_RELEASE_HOME   ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/..)
+
   MESSAGE(STATUS "Sundials include:")
   MESSAGE(STATUS "${SUNDIALS_INLCUDE_HOME}")
   MESSAGE(STATUS "Sundials library:")
   MESSAGE(STATUS "${SUNDIALS_LIBRARY_RELEASE_HOME}")
-
 
 
   FIND_PATH(SUNDIALS_INCLUDE_DIR cvode/cvode.h PATHS ${SUNDIALS_INLCUDE_HOME})

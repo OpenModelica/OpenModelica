@@ -13,11 +13,13 @@ builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
-OMDEVMSYS=$(shell cygpath $$OMDEV)
+OMBUILDDIR_WIN=$(shell cygpath -w $$OMBUILDDIR)
 
 #use this call to use precompiled headers
 #use this call if you want to debug the cpp runtime
 CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+
+OMDEVMSYS=$(shell cygpath $$OMDEV)
 
 ifeq ($(BUILDTYPE),)
 	BUILDTYPE=Debug
@@ -144,7 +146,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
@@ -159,7 +161,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC_static/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
