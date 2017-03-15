@@ -637,30 +637,23 @@ void Tools::readXml(QString file_name)
   texts1.clear();
   cellIds1.clear();
 
-  if(QFileInfo(file_name1).isFile())
-  {
+  if(QFileInfo(file_name1).isFile()) {
     QFile fd(file_name1);//It is a data file from which we are taking the data
     fd.open(QFile::ReadWrite);
     QXmlStreamReader xr(&fd);
 
     bool ok;
-
      //QMessageBox::about(this,"entered","Entered reading files");
-
      QString num1;
 
-
-
-     while(!xr.atEnd())
-     {
+     while(!xr.atEnd()) {
        QStringRef name = xr.name();
 
         //QMessageBox::about(this,"entered","Entered reading file contents");
-        if(name=="FileName") {
+      if(name=="FileName") {
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          filenames1.push_back(num1);
        } else if(name=="OnbFileName") {
-
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          onbfilenames1.push_back(num1);
        } else if(name=="Position") {
@@ -683,20 +676,14 @@ void Tools::readXml(QString file_name)
 
   //QMessageBox::about(this,"filenames",num.number(onbfilenames1.size()));
 
-  for(int i=0;i<onbfilenames1.size();i++)
-  {
-    if(documents_info.size()==0)
-    {
+  for(int i=0;i<onbfilenames1.size();i++) {
+    if(documents_info.size()==0) {
       //QMessageBox::about(this,"onbfile",onbfilenames1[i]);
       doc.onbFileName=onbfilenames1[i];
       documents_info.push_back(doc);
-    }
-    else
-    {
-      for(int j=0;j<documents_info.size();j++)
-      {
-        if(onbfilenames1[i]!=documents_info[j].onbFileName)
-        {
+    } else {
+      for(int j=0;j<documents_info.size();j++) {
+        if(onbfilenames1[i]!=documents_info[j].onbFileName) {
           doc.onbFileName=onbfilenames1[i];
           documents_info.push_back(doc);
         }
@@ -707,12 +694,10 @@ void Tools::readXml(QString file_name)
 
   QString str,str1;
 
-  for(int i=0;i<documents_info.size();i++)
-  {
-       documents_info[i].images_info.clear();
-     for(int j=0;j<filenames1.size();j++)
-     {
-          str=QFileInfo(documents_info[i].onbFileName).absoluteFilePath();
+  for(int i=0;i<documents_info.size();i++) {
+    documents_info[i].images_info.clear();
+    for(int j=0;j<filenames1.size();j++) {
+      str=QFileInfo(documents_info[i].onbFileName).absoluteFilePath();
       QString str2=str;
       //QMessageBox::about(this,"files",filenames1[j]);
       //QMessageBox::about(this,"onbfiles",str);
@@ -722,7 +707,7 @@ void Tools::readXml(QString file_name)
       //QMessageBox::about(this,"indx",num.number(indx));
       //QMessageBox::about(this,"str1 len",num.number(str1.length()));
 
-      /*In order to compare weather a image belong to a document, its enough to compare the image name and document name,
+      /*In order to compare whether an image belongs to a document, it's enough to compare the image name and document name,
       str1 conatins the image name and every image is index after its onb document name,In order to extract the onb document name
       from the image. The last part of image file name is reomved by following function.*/
       /*The two sting lengths are subtracted to get by how much length the image is differed from document*/
@@ -732,38 +717,28 @@ void Tools::readXml(QString file_name)
       //QMessageBox::about(this,"str",str);
       //QMessageBox::about(this,"str1",str1);
 
-      if(str==str1)
-      {
-             //QMessageBox::about(this,"attrib",filenames1[j]+" "+positions1[j]+" "+texts1[j]+" "+cellIds1[j]+" "+img.imageName);
-
+      if(str==str1) {
+        //QMessageBox::about(this,"attrib",filenames1[j]+" "+positions1[j]+" "+texts1[j]+" "+cellIds1[j]+" "+img.imageName);
         img.imageName=filenames1[j];
-       img.cursor_position=positions1[j];
-       img.cell_text=texts1[j];
-       img.cellId=cellIds1[j];
-       QImage* img1 = new QImage(img.imageName);
-       img.image=img1;
-       img.text=QImageReader(img.imageName).text("Shapes");
-       documents_info[i].images_info.push_back(img);
+        img.cursor_position=positions1[j];
+        img.cell_text=texts1[j];
+        img.cellId=cellIds1[j];
+        QImage* img1 = new QImage(img.imageName);
+        img.image=img1;
+        img.text=QImageReader(img.imageName).text("Shapes");
+        documents_info[i].images_info.push_back(img);
       }
      }
   }
-
-
-
 
   /*for(int i=0;i<documents_info.size();i++)
   {
     QMessageBox::about(this,"images info ",num.number(documents_info[i].images_info.size()));
   }*/
-
-
-
 }
 
- void Tools::writeXml(QString &image_name)
- {
-
- }
+void Tools::writeXml(QString &image_name) {
+}
 
 
 void Tools::draw_copy() {
@@ -773,42 +748,32 @@ void Tools::draw_copy() {
   scene->copy_object();
 }
 
-void Tools::draw_cut()
-{
-    if(copy_shape->isEnabled())
-        copy_shape->setDisabled(true);
-    scene->cut_object();
+void Tools::draw_cut() {
+  if(copy_shape->isEnabled())
+    copy_shape->setDisabled(true);
+  scene->cut_object();
 }
 
-void Tools::draw_paste()
-{
-    if(!copy_shape->isEnabled())
-        copy_shape->setDisabled(false);
-    if(!cut_shape->isEnabled())
-        cut_shape->setDisabled(false);
-    scene->paste_object();
+void Tools::draw_paste() {
+  if(!copy_shape->isEnabled())
+    copy_shape->setDisabled(false);
+  if(!cut_shape->isEnabled())
+    cut_shape->setDisabled(false);
+  scene->paste_object();
 }
 
+void Tools::mousePressEvent(QMouseEvent *event) {
+  if(itemSelected) {
+    QPen shapePen;
+    QBrush shapeBrush;
 
-void Tools::mousePressEvent(QMouseEvent *event)
-{
-  if(itemSelected)
-  {
-     QPen shapePen;
-     QBrush shapeBrush;
-
-     scene->getSelectedShapeProperties(shapePen,shapeBrush);
-
-
+    scene->getSelectedShapeProperties(shapePen,shapeBrush);
     select_pen->setCurrentIndex(shapePen.style());
     penWidth->setValue(shapePen.width());
     pen.setColor(QColor(shapePen.color().red(),shapePen.color().green(),shapePen.color().blue(),255));
-
     select_brush->setCurrentIndex(shapeBrush.style());
-
     if(scene->isObjectEdited)
       isSaved=false;
-
   }
 }
 

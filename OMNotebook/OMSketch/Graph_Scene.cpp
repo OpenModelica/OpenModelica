@@ -3943,253 +3943,170 @@ void Graph_Scene::copy_object() {
 
 
 //cut objects
-void Graph_Scene::cut_object()
-{
-    QVector<int> indxs;
-    indxs.clear();
+void Graph_Scene::cut_object() {
+  QVector<int> indxs;
+  indxs.clear();
 
-    selectedObjects();
+  selectedObjects();
+  if(isCopySelected)
+     isCopySelected=false;
+  temp_copy_objects.clear();
+  temp_copy_objects.reserve(copy_objects.size());
+  for(int i=0;i<copy_objects.size();i++) {
+    Scene_Objects *object = copy_objects[i]->clone();
+    temp_copy_objects.push_back(object);
+  }
+  copy_objects.clear();
 
-    if(isCopySelected)
-       isCopySelected=false;
+  if(!temp_copy_objects.isEmpty()) {
+    QVector<Draw_Arc*> arcs1;
+    QVector<Draw_Line*> lines1;
+    QVector<Draw_Rectangle*> rects1;
+    QVector<Draw_RoundRect*> round_rects1;
+    QVector<Draw_Ellipse*> elleps1;
+    QVector<Draw_Polygon*> polys1;
 
-    temp_copy_objects.clear();
-    temp_copy_objects.reserve(copy_objects.size());
+    arcs1=arcs;
+    lines1=lines;
+    rects1=rects;
+    round_rects1=round_rects;
+    polys1=polygons;
 
-    for(int i=0;i<copy_objects.size();i++)
-    {
-        Scene_Objects *object = copy_objects[i]->clone();
-        temp_copy_objects.push_back(object);
-    }
-    copy_objects.clear();
-
-    if(!temp_copy_objects.isEmpty())
-    {
-        QVector<Draw_Arc*> arcs1;
-        QVector<Draw_Line*> lines1;
-        QVector<Draw_Rectangle*> rects1;
-        QVector<Draw_RoundRect*> round_rects1;
-        QVector<Draw_Ellipse*> elleps1;
-        QVector<Draw_Polygon*> polys1;
-
-        arcs1=arcs;
-        lines1=lines;
-        rects1=rects;
-        round_rects1=round_rects;
-        polys1=polygons;
-
-
-        for(int i=0;i<temp_copy_objects.size();i++)
-        {
-            if(temp_copy_objects[i]->ObjectId==1)
-      {
-                for(int j=0;j<lines1.size();j++)
-                {
-            if(lines1[j]->item->boundingRect().topLeft()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(lines[j]->item);
-                           for(int k=0;k<lines[j]->edge_items.size();k++)
-                           {
-                               removeItem(lines[j]->edge_items[k]);
-                           }
-                      }
-                  }
-              }
-
-               if(temp_copy_objects[i]->ObjectId==2)
-               {
-                  for(int j=0;j<rects.size();j++)
-                  {
-                      if(rects[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                         removeItem(rects[j]->item);
-                         removeItem(rects[j]->Strt_Rect);
-                         removeItem(rects[j]->End_Rect);
-                         removeItem(rects[j]->Rot_Rect);
-
-                      }
-
-                  }
-
-              }
-
-               if(temp_copy_objects[i]->ObjectId==3)
-               {
-                  for(int j=0;j<elleps.size();j++)
-                  {
-                      if(temp_copy_objects[i]->ObjectStrtPnt==elleps[j]->getStartPnt())
-                      {
-                           removeItem(elleps[j]->item);
-                           removeItem(elleps[j]->Strt_Rect);
-                           removeItem(elleps[j]->End_Rect);
-                           removeItem(elleps[j]->Rot_Rect);
-                      }
-                  }
-               }
-
-               if(temp_copy_objects[i]->ObjectId==4)
-               {
-                  for(int j=0;j<polys1.size();j++)
-                  {
-
-                      if(polys1[j]->item->boundingRect().topLeft()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(polygons[j]->item);
-                           for(int k=0;k<polygons[j]->edge_items.size();k++)
-                           {
-                               removeItem(polygons[j]->edge_items[k]);
-                           }
-
-                      }
-                  }
-               }
-
-               if(temp_copy_objects[i]->ObjectId==5)
-               {
-
-                  for(int j=0;j<round_rects1.size();j++)
-                  {
-                      if(round_rects1[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(round_rects[j]->item);
-                           removeItem(round_rects[j]->Strt_Rect);
-                           removeItem(round_rects[j]->End_Rect);
-                           removeItem(round_rects[j]->Rot_Rect);
-                      }
-                  }
-               }
-
-               if(temp_copy_objects[i]->ObjectId==6)
-               {
-
-                  for(int j=0;j<arcs1.size();j++)
-                  {
-                      if(arcs1[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(arcs[j]->item);
-                           removeItem(arcs[j]->Strt_Rect);
-                           removeItem(arcs[j]->End_Rect);
-                           removeItem(arcs[j]->Rot_Rect);
-                           removeItem(arcs[j]->Curve_Rect);
-                      }
-                  }
-               }
-
-         if(temp_copy_objects[i]->ObjectId==7)
-               {
-
-                  for(int j=0;j<linearrows.size();j++)
-                  {
-                      if(linearrows[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(linearrows[j]->item);
-                           removeItem(linearrows[j]->Strt_Rect);
-                           removeItem(linearrows[j]->End_Rect);
-               removeItem(linearrows[j]->Rot_Rect);
-                      }
-                  }
-               }
-
-         if(temp_copy_objects[i]->ObjectId==8)
-               {
-
-                  for(int j=0;j<triangles.size();j++)
-                  {
-                      if(triangles[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(triangles[j]->item);
-                           removeItem(triangles[j]->Strt_Rect);
-                           removeItem(triangles[j]->End_Rect);
-               removeItem(triangles[j]->Height_Rect);
-               removeItem(triangles[j]->Rot_Rect);
-                      }
-                  }
-               }
-
-
-         if(temp_copy_objects[i]->ObjectId==9)
-               {
-
-                  for(int j=0;j<arrows.size();j++)
-                  {
-                      if(arrows[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt)
-                      {
-                           removeItem(arrows[j]->item);
-                           removeItem(arrows[j]->Strt_Rect);
-                           removeItem(arrows[j]->End_Rect);
-               removeItem(arrows[j]->Rot_Rect);
-                      }
-                  }
-               }
+    for(int i=0;i<temp_copy_objects.size();i++) {
+      if(temp_copy_objects[i]->ObjectId==1) {
+        for(int j=0;j<lines1.size();j++) {
+          if(lines1[j]->item->boundingRect().topLeft()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(lines[j]->item);
+            for(int k=0;k<lines[j]->edge_items.size();k++) {
+              removeItem(lines[j]->edge_items[k]);
             }
+          }
         }
-
-    for(int i=0;i<temp_copy_objects.size();i++)
-    {
-        for(int j=0;j<objects.size();j++)
-        {
-           if(temp_copy_objects[i]->ObjectStrtPnt==objects[j]->ObjectStrtPnt)
-           {
-               objects.remove(j);
-           }
+      }
+      if(temp_copy_objects[i]->ObjectId==2) {
+        for(int j=0;j<rects.size();j++) {
+          if(rects[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(rects[j]->item);
+            removeItem(rects[j]->Strt_Rect);
+            removeItem(rects[j]->End_Rect);
+            removeItem(rects[j]->Rot_Rect);
+          }
         }
+      }
+      if(temp_copy_objects[i]->ObjectId==3) {
+        for(int j=0;j<elleps.size();j++) {
+          if(temp_copy_objects[i]->ObjectStrtPnt==elleps[j]->getStartPnt()) {
+            removeItem(elleps[j]->item);
+            removeItem(elleps[j]->Strt_Rect);
+            removeItem(elleps[j]->End_Rect);
+            removeItem(elleps[j]->Rot_Rect);
+          }
+        }
+      }
+      if(temp_copy_objects[i]->ObjectId==4) {
+        for(int j=0;j<polys1.size();j++) {
+          if(polys1[j]->item->boundingRect().topLeft()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(polygons[j]->item);
+            for(int k=0;k<polygons[j]->edge_items.size();k++) {
+              removeItem(polygons[j]->edge_items[k]);
+            }
+          }
+        }
+      }
+      if(temp_copy_objects[i]->ObjectId==5) {
+        for(int j=0;j<round_rects1.size();j++) {
+          if(round_rects1[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(round_rects[j]->item);
+            removeItem(round_rects[j]->Strt_Rect);
+            removeItem(round_rects[j]->End_Rect);
+            removeItem(round_rects[j]->Rot_Rect);
+          }
+        }
+      }
+      if(temp_copy_objects[i]->ObjectId==6) {
+        for(int j=0;j<arcs1.size();j++) {
+          if(arcs1[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(arcs[j]->item);
+            removeItem(arcs[j]->Strt_Rect);
+            removeItem(arcs[j]->End_Rect);
+            removeItem(arcs[j]->Rot_Rect);
+            removeItem(arcs[j]->Curve_Rect);
+          }
+        }
+      }
+      if(temp_copy_objects[i]->ObjectId==7) {
+        for(int j=0;j<linearrows.size();j++) {
+          if(linearrows[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(linearrows[j]->item);
+            removeItem(linearrows[j]->Strt_Rect);
+            removeItem(linearrows[j]->End_Rect);
+            removeItem(linearrows[j]->Rot_Rect);
+          }
+        }
+      }
+      if(temp_copy_objects[i]->ObjectId==8) {
+        for(int j=0;j<triangles.size();j++) {
+          if(triangles[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(triangles[j]->item);
+            removeItem(triangles[j]->Strt_Rect);
+            removeItem(triangles[j]->End_Rect);
+            removeItem(triangles[j]->Height_Rect);
+            removeItem(triangles[j]->Rot_Rect);
+          }
+        }
+      }
+      if(temp_copy_objects[i]->ObjectId==9) {
+        for(int j=0;j<arrows.size();j++) {
+          if(arrows[j]->getStartPnt()==temp_copy_objects[i]->ObjectStrtPnt) {
+            removeItem(arrows[j]->item);
+            removeItem(arrows[j]->Strt_Rect);
+            removeItem(arrows[j]->End_Rect);
+            removeItem(arrows[j]->Rot_Rect);
+          }
+        }
+      }
     }
+  }
 
-
-    for(int i=temp_copy_objects.size()-1;i>=0;i--)
-    {
-        if(temp_copy_objects[i]->ObjectId==1)
-        {
-            lines.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-        if(temp_copy_objects[i]->ObjectId==2)
-        {
-            rects.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-        if(temp_copy_objects[i]->ObjectId==3)
-        {
-            elleps.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-        if(temp_copy_objects[i]->ObjectId==4)
-        {
-            polygons.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-        if(temp_copy_objects[i]->ObjectId==5)
-        {
-            round_rects.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-        if(temp_copy_objects[i]->ObjectId==6)
-        {
-            arcs.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-    if(temp_copy_objects[i]->ObjectId==7)
-        {
-            linearrows.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-    if(temp_copy_objects[i]->ObjectId==7)
-        {
-            linearrows.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-    if(temp_copy_objects[i]->ObjectId==8)
-        {
-            triangles.remove(temp_copy_objects[i]->ObjectIndx);
-        }
-
-    if(temp_copy_objects[i]->ObjectId==9)
-        {
-            arrows.remove(temp_copy_objects[i]->ObjectIndx);
-        }
+  for(int i=0;i<temp_copy_objects.size();i++) {
+    for(int j=0;j<objects.size();j++) {
+      if(temp_copy_objects[i]->ObjectStrtPnt==objects[j]->ObjectStrtPnt) {
+        objects.remove(j);
+      }
     }
-
-
+  }
+  for(int i=temp_copy_objects.size()-1;i>=0;i--) {
+    if(temp_copy_objects[i]->ObjectId==1) {
+      lines.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==2) {
+      rects.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==3) {
+      elleps.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==4) {
+      polygons.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==5) {
+      round_rects.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==6) {
+      arcs.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==7) {
+      linearrows.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==7) {
+      linearrows.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==8) {
+      triangles.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+    if(temp_copy_objects[i]->ObjectId==9) {
+      arrows.remove(temp_copy_objects[i]->ObjectIndx);
+    }
+  }
 }
 
 //paste objects
