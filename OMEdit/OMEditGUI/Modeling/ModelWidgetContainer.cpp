@@ -2732,6 +2732,10 @@ void ModelWidget::loadDiagramView()
     drawModelInheritedClassComponents(this, StringHandler::Diagram);
     drawModelDiagramComponents();
     mDiagramViewLoaded = true;
+    /*! @note The following is not needed if we load the connectors alongwith the icon/diagram annotation.
+     * We have disabled loading the connectors so user gets fast browsing of libraries.
+     */
+    mpLibraryTreeItem->handleIconUpdated();
   }
 }
 
@@ -4782,10 +4786,6 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);
-    /*! @note The following is not needed if we load the connectors alongwith the icon/diagram annotation.
-     * We have disabled loading the connectors so user gets fast browsing of libraries.
-     */
-    pModelWidget->getLibraryTreeItem()->handleIconUpdated();
   }
   if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
