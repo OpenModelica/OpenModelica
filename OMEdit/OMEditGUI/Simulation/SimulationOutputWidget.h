@@ -120,6 +120,8 @@ public slots:
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelCompilationOrSimulation();
   void openTransformationBrowser(QUrl url);
+protected:
+  virtual void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // SIMULATIONOUTPUTWIDGET_H

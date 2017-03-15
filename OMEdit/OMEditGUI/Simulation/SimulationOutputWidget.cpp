@@ -655,3 +655,17 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
                           .arg(tr("Url is <b>%1</b>").arg(url.toString())), Helper::ok);
   }
 }
+
+/*!
+ * \brief SimulationOutputWidget::keyPressEvent
+ * Closes the widget when Esc key is pressed.
+ * \param event
+ */
+void SimulationOutputWidget::keyPressEvent(QKeyEvent *event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    close();
+    return;
+  }
+  QWidget::keyPressEvent(event);
+}

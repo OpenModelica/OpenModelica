@@ -939,6 +939,11 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   }
 }
 
+/*!
+ * \brief InformationDialog::closeEvent
+ * Saves the widgets geometry.
+ * \param event
+ */
 void InformationDialog::closeEvent(QCloseEvent *event)
 {
   /* save the window geometry. */
@@ -947,6 +952,20 @@ void InformationDialog::closeEvent(QCloseEvent *event)
     pSettings->setValue("InformationDialog/geometry", saveGeometry());
   }
   event->accept();
+}
+
+/*!
+ * \brief InformationDialog::keyPressEvent
+ * Closes the widget when Esc key is pressed.
+ * \param event
+ */
+void InformationDialog::keyPressEvent(QKeyEvent *event)
+{
+  if (event->key() == Qt::Key_Escape) {
+    close();
+    return;
+  }
+  QWidget::keyPressEvent(event);
 }
 
 /*!
