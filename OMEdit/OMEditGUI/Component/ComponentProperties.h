@@ -62,12 +62,17 @@ public:
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   QString getOriginalFixedValue() {return mOriginalFixedValue;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
-  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false);
+  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool adjustSize = true);
   ValueType getValueType() {return mValueType;}
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
   QString getDefaultValue();
+  QToolButton* getLoadSelectorButton() {return mpLoadSelectorButton;}
+  void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
+  QString getLoadSelectorFilter() {return mLoadSelectorFilter;}
+  void setLoadSelectorCaption(QString loadSelectorCaption) {mLoadSelectorCaption = loadSelectorCaption;}
+  QString getLoadSelectorCaption() {return mLoadSelectorCaption;}
   QString getUnit() {return mUnit;}
   void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
@@ -91,6 +96,9 @@ private:
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
+  QToolButton *mpLoadSelectorButton;
+  QString mLoadSelectorFilter;
+  QString mLoadSelectorCaption;
   QString mUnit;
   QString mDisplayUnit;
   QString mPreviousUnit;
@@ -99,6 +107,7 @@ private:
 
   void createValueWidget();
 public slots:
+  void loadSelectorButtonClicked();
   void unitComboBoxChanged(QString text);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);

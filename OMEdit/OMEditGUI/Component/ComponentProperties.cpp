@@ -86,6 +86,12 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   }
   mValueCheckBoxModified = false;
   mDefaultValue = "";
+  mpLoadSelectorButton = new QToolButton;
+  mpLoadSelectorButton->setText("...");
+  mpLoadSelectorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  connect(mpLoadSelectorButton, SIGNAL(clicked()), SLOT(loadSelectorButtonClicked()));
+  setLoadSelectorFilter("-");
+  setLoadSelectorCaption("-");
   createValueWidget();
   /* Get unit value
    * First check if unit is defined with in the component modifier.
@@ -150,8 +156,9 @@ void Parameter::updateNameLabel()
  * \param defaultValue
  * \param fromUnit
  * \param valueChanged
+ * \param adjustSize
  */
-void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified)
+void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified, bool adjustSize)
 {
   // convert the value to display unit
   if (!fromUnit.isEmpty() && mpUnitComboBox->currentText().compare(fromUnit) != 0) {
@@ -177,9 +184,11 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         mpValueComboBox->lineEdit()->setText(value);
         mpValueComboBox->lineEdit()->setModified(valueModified);
       }
-      /* Set the minimum width so that the value text will be readable */
-      fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
-      mpValueComboBox->setMinimumWidth(fm.width(value) + 50);
+      if (adjustSize) {
+        /* Set the minimum width so that the value text will be readable */
+        fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
+        mpValueComboBox->setMinimumWidth(fm.width(value) + 50);
+      }
       break;
     case Parameter::CheckBox:
       mpValueCheckBox->setChecked(value.compare("true") == 0);
@@ -192,9 +201,11 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         mpValueTextBox->setText(value);
         mpValueTextBox->setModified(valueModified);
       }
-      /* Set the minimum width so that the value text will be readable */
-      fm = QFontMetrics(mpValueTextBox->font());
-      mpValueTextBox->setMinimumWidth(fm.width(value) + 50);
+      if (adjustSize) {
+        /* Set the minimum width so that the value text will be readable */
+        fm = QFontMetrics(mpValueTextBox->font());
+        mpValueTextBox->setMinimumWidth(fm.width(value) + 50);
+      }
       mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
       break;
   }
@@ -369,6 +380,28 @@ void Parameter::createValueWidget()
       mpValueTextBox = new QLineEdit;
       break;
   }
+}
+
+/*!
+ * \brief Parameter::loadSelectorButtonClicked
+ * Slot activated when mpLoadSelectorButton clicked SIGNAL is raised.
+ * Opens a QFileDialog::getOpenFileName so user can select a file.
+ */
+void Parameter::loadSelectorButtonClicked()
+{
+  QString filter = "";
+  if (mLoadSelectorFilter.compare("-") != 0) {
+    filter = mLoadSelectorFilter;
+  }
+  QString caption = tr("Load");
+  if (mLoadSelectorCaption.compare("-") != 0) {
+    caption = mLoadSelectorCaption;
+  }
+  QString fileName = StringHandler::getOpenFileName(MainWindow::instance(), caption, NULL, filter, NULL);
+  if (fileName.isEmpty()) {
+    return;
+  }
+  setValueWidget(QString("\"%1\"").arg(fileName), false, mUnit, true, false);
 }
 
 /*!
@@ -683,6 +716,9 @@ void ComponentParameters::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
+          if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0) {
+            pGroupBoxGridLayout->addWidget(pParameter->getLoadSelectorButton(), layoutIndex, columnIndex++);
+          }
           if (pParameter->getUnitComboBox()->count() > 0) { // only add the unit combobox if we really have a unit
             pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
           } else {
@@ -811,6 +847,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     QString groupBox = "";
     bool enable = true;
     bool showStartAttribute = false;
+    QString loadSelectorFilter, loadSelectorCaption;
     QString start, fixed = "";
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
@@ -846,6 +883,9 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       if (dialogAnnotation.at(3).compare("-") != 0) {
         showStartAttribute = (dialogAnnotation.at(3).compare("true") == 0);
       }
+      // get the loadSelector
+      loadSelectorFilter = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(5));
+      loadSelectorCaption = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(6));
       // get the group image
       groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
       if (!groupImage.isEmpty()) {
@@ -879,6 +919,8 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     // create the Parameter
     Parameter *pParameter = new Parameter(pComponent, showStartAttribute, tab, groupBox);
     pParameter->setEnabled(enable);
+    pParameter->setLoadSelectorFilter(loadSelectorFilter);
+    pParameter->setLoadSelectorCaption(loadSelectorCaption);
     QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
     pParameter->setValueWidget(value, true, pParameter->getUnit());
