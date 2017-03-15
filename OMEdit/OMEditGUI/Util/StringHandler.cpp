@@ -1201,9 +1201,13 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   /* Add the extension with purposedName because if the directory with the same name exists then
    * QFileDialog::getSaveFileName takes the user to that directory and does not show the purposedName.
    */
-  QString proposedFileName = *proposedName;
-  if (!proposedFileName.isEmpty() && !defaultSuffix.isEmpty())
-    proposedFileName = QString(proposedFileName).append(".").append(defaultSuffix);
+  QString proposedFileName = "";
+  if (proposedName) {
+    proposedFileName = *proposedName;
+    if (!proposedFileName.isEmpty() && !defaultSuffix.isEmpty()) {
+      proposedFileName = QString(proposedFileName).append(".").append(defaultSuffix);
+    }
+  }
 
   if (!proposedFileName.isEmpty()) {
     fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);

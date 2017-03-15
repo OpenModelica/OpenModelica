@@ -86,12 +86,14 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   }
   mValueCheckBoxModified = false;
   mDefaultValue = "";
-  mpLoadSelectorButton = new QToolButton;
-  mpLoadSelectorButton->setText("...");
-  mpLoadSelectorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-  connect(mpLoadSelectorButton, SIGNAL(clicked()), SLOT(loadSelectorButtonClicked()));
+  mpFileSelectorButton = new QToolButton;
+  mpFileSelectorButton->setText("...");
+  mpFileSelectorButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  connect(mpFileSelectorButton, SIGNAL(clicked()), SLOT(fileSelectorButtonClicked()));
   setLoadSelectorFilter("-");
   setLoadSelectorCaption("-");
+  setSaveSelectorFilter("-");
+  setSaveSelectorCaption("-");
   createValueWidget();
   /* Get unit value
    * First check if unit is defined with in the component modifier.
@@ -383,21 +385,38 @@ void Parameter::createValueWidget()
 }
 
 /*!
- * \brief Parameter::loadSelectorButtonClicked
- * Slot activated when mpLoadSelectorButton clicked SIGNAL is raised.
- * Opens a QFileDialog::getOpenFileName so user can select a file.
+ * \brief Parameter::fileSelectorButtonClicked
+ * Slot activated when mpFileSelectorButton clicked SIGNAL is raised.
+ * Opens a QFileDialog::getOpenFileName or QFileDialog::getSaveFileName so user can select a file.
  */
-void Parameter::loadSelectorButtonClicked()
+void Parameter::fileSelectorButtonClicked()
 {
-  QString filter = "";
-  if (mLoadSelectorFilter.compare("-") != 0) {
-    filter = mLoadSelectorFilter;
+  QString filter, caption = "";
+  QString fileName;
+  /* saveSelector is given precedence if present.
+   * There is nothing about it in the specification but we do so to keep consistant with Dymola.
+   */
+  if (mSaveSelectorFilter.compare("-") != 0 && mSaveSelectorCaption.compare("-") != 0) {
+    if (mSaveSelectorFilter.compare("-") != 0) {
+      filter = mSaveSelectorFilter;
+    }
+    caption = tr("Save");
+    if (mSaveSelectorCaption.compare("-") != 0) {
+      caption = mSaveSelectorCaption;
+    }
+    fileName = StringHandler::getSaveFileName(MainWindow::instance(), caption, NULL, filter, NULL);
+  } else {
+    filter = "";
+    if (mLoadSelectorFilter.compare("-") != 0) {
+      filter = mLoadSelectorFilter;
+    }
+    caption = tr("Load");
+    if (mLoadSelectorCaption.compare("-") != 0) {
+      caption = mLoadSelectorCaption;
+    }
+    fileName = StringHandler::getOpenFileName(MainWindow::instance(), caption, NULL, filter, NULL);
   }
-  QString caption = tr("Load");
-  if (mLoadSelectorCaption.compare("-") != 0) {
-    caption = mLoadSelectorCaption;
-  }
-  QString fileName = StringHandler::getOpenFileName(MainWindow::instance(), caption, NULL, filter, NULL);
+  // if user press ESC
   if (fileName.isEmpty()) {
     return;
   }
@@ -716,8 +735,9 @@ void ComponentParameters::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
-          if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0) {
-            pGroupBoxGridLayout->addWidget(pParameter->getLoadSelectorButton(), layoutIndex, columnIndex++);
+          if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
+              pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
+            pGroupBoxGridLayout->addWidget(pParameter->getFileSelectorButton(), layoutIndex, columnIndex++);
           }
           if (pParameter->getUnitComboBox()->count() > 0) { // only add the unit combobox if we really have a unit
             pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
@@ -847,7 +867,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     QString groupBox = "";
     bool enable = true;
     bool showStartAttribute = false;
-    QString loadSelectorFilter, loadSelectorCaption;
+    QString loadSelectorFilter, loadSelectorCaption, saveSelectorFilter, saveSelectorCaption;
     QString start, fixed = "";
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
@@ -886,6 +906,9 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       // get the loadSelector
       loadSelectorFilter = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(5));
       loadSelectorCaption = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(6));
+      // get the saveSelector
+      saveSelectorFilter = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(7));
+      saveSelectorCaption = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(8));
       // get the group image
       groupImage = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(9));
       if (!groupImage.isEmpty()) {
@@ -921,6 +944,8 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     pParameter->setEnabled(enable);
     pParameter->setLoadSelectorFilter(loadSelectorFilter);
     pParameter->setLoadSelectorCaption(loadSelectorCaption);
+    pParameter->setSaveSelectorFilter(saveSelectorFilter);
+    pParameter->setSaveSelectorCaption(saveSelectorCaption);
     QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
     QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
     pParameter->setValueWidget(value, true, pParameter->getUnit());

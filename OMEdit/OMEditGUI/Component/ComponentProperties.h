@@ -68,11 +68,15 @@ public:
   bool isValueModified();
   QString getValue();
   QString getDefaultValue();
-  QToolButton* getLoadSelectorButton() {return mpLoadSelectorButton;}
+  QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
   void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
   QString getLoadSelectorFilter() {return mLoadSelectorFilter;}
   void setLoadSelectorCaption(QString loadSelectorCaption) {mLoadSelectorCaption = loadSelectorCaption;}
   QString getLoadSelectorCaption() {return mLoadSelectorCaption;}
+  void setSaveSelectorFilter(QString saveSelectorFilter) {mSaveSelectorFilter = saveSelectorFilter;}
+  QString getSaveSelectorFilter() {return mSaveSelectorFilter;}
+  void setSaveSelectorCaption(QString saveSelectorCaption) {mSaveSelectorCaption = saveSelectorCaption;}
+  QString getSaveSelectorCaption() {return mSaveSelectorCaption;}
   QString getUnit() {return mUnit;}
   void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
@@ -96,9 +100,11 @@ private:
   QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
-  QToolButton *mpLoadSelectorButton;
+  QToolButton *mpFileSelectorButton;
   QString mLoadSelectorFilter;
   QString mLoadSelectorCaption;
+  QString mSaveSelectorFilter;
+  QString mSaveSelectorCaption;
   QString mUnit;
   QString mDisplayUnit;
   QString mPreviousUnit;
@@ -107,7 +113,7 @@ private:
 
   void createValueWidget();
 public slots:
-  void loadSelectorButtonClicked();
+  void fileSelectorButtonClicked();
   void unitComboBoxChanged(QString text);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
