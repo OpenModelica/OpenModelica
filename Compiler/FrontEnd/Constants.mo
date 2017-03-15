@@ -423,8 +423,8 @@ record Dialog
 end Dialog;
 
 record Selector
-  parameter String filter=\"\";
-  parameter String caption=\"\";
+  parameter String filter;
+  parameter String caption;
 end Selector;
 
 record choices
