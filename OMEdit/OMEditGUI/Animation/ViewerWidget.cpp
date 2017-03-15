@@ -70,6 +70,16 @@ void Viewer::setUpThreading()
 ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   : GLWidget(parent, flags)
 {
+  // Set the number of samples used for multisampling
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
+  QSurfaceFormat format;
+  format.setSamples(4);
+  setFormat(format);
+#else
+  QGLFormat format;
+  format.setSamples(4);
+  setFormat(format);
+#endif
   mpGraphicsWindow = new osgViewer::GraphicsWindowEmbedded(x(), y(), width(), height());
   mpViewer = new Viewer;
   mpSceneView = new osgViewer::View();
