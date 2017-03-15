@@ -7973,15 +7973,15 @@ getDocumentationAnnotation(Modelica.UsersGuide.Contact); getErrorString();
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentAnnotations(Modelica.Blocks.Sources.RealExpression)
-// {{Dialog("General","Time varying output signal",true,-,false,"","","","","",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
+// {{Dialog("General","Time varying output signal",true,-,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentAnnotations(Modelica.Blocks.Sources.IntegerExpression)
-// {{Dialog("General","Time varying output signal",true,-,false,"","","","","",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
+// {{Dialog("General","Time varying output signal",true,-,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponentAnnotations(Modelica.Blocks.Sources.BooleanExpression)
-// {{Dialog("General","Time varying output signal",true,-,false,"","","","","",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
+// {{Dialog("General","Time varying output signal",true,-,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getNamedAnnotation(Modelica.UsersGuide, __Dymola_DocumentationClass)

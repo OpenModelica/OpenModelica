@@ -21,10 +21,10 @@ getComponentAnnotations(Modelica.Blocks.Sources.RealExpression); getErrorString(
 //     Dialog);
 // end GetDialogAnnotation;"
 // ""
-// {{},{Dialog("General","",true,-,false,"","","","","",false)}}
+// {{},{Dialog("General","",true,-,false,-,-,-,-,"",false)}}
 // ""
-// {{Dialog("General","",true,-,false,"","","","","",false)},{Dialog("General","",true,-,false,"","","","","",false)},{Dialog("General","",true,-,false,"","","","","",false)},{Dialog("General","",true,-,false,"","","","","",false)},{Dialog("General","",true,-,false,"","","","","",false)},{Dialog("General","",true,-,true,"","","","","",false)},{Dialog("General","",true,-,false,"","","","","",false)},{},{},{},{HideResult=true},{HideResult=true},{HideResult=true},{},{}}
+// {{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,true,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{},{},{},{HideResult=true},{HideResult=true},{HideResult=true},{},{}}
 // ""
-// {{Dialog("General","Time varying output signal",true,-,false,"","","","","",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
+// {{Dialog("General","Time varying output signal",true,-,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
 // ""
 // endResult
