@@ -1481,6 +1481,7 @@ void NotebookWindow::createInsertMenu()
   evalallAction = new QAction(tr("Evaluate all cells"), this);
   evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
   evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
+  evalallAction->setShortcut( QKeySequence("Ctrl+R") );
   connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
   toolBar->addAction(evalallAction);
 

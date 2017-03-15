@@ -72,8 +72,8 @@ namespace IAEX
    * \class PrinterVisitor
    * \date 2005-12-19
    *
-   * \brief creates a new QTextDocument that contaions the documents
-   * enthier text
+   * \brief creates a new QTextDocument that contains the documents
+   * entire text
    */
 
   /*!
@@ -395,7 +395,7 @@ namespace IAEX
           cursor.insertTable( 1, 1, tableFormatInput );
 
           OMPlot::Plot *pPlot = node->mpPlotWindow->getPlot();
-          // calculate height for widht while preserving aspect ratio.
+          // calculate height for width while preserving aspect ratio.
           int width, height;
           if (pPlot->size().width() > 600) {
             width = 600;
