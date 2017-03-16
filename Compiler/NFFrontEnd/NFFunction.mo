@@ -54,6 +54,8 @@ import ComponentRef = NFComponentRef;
 import NFInstNode.CachedData;
 import Lookup = NFLookup;
 
+import MatchKind = NFTypeCheck.MatchKind;
+
 public
 type NamedArg = tuple<String, Expression>;
 type TypedArg = tuple<Expression, Type, DAE.Const>;
@@ -97,11 +99,54 @@ uniontype Slot
   end named;
 end Slot;
 
-type FuncType = enumeration(
-  NORMAL,
-  SPECIAL_MATCHING,
-  SPECIAL_TYPING
-);
+public
+encapsulated
+uniontype FunctionMatchKind
+  import NFFunction.Function;
+  import NFFunction.TypedArg;
+
+  type MatchedFunction = tuple<Function,list<TypedArg>,FunctionMatchKind>;
+
+  record EXACT "Exact match." end EXACT;
+
+  record CAST "Matched by casting one or more arguments. e.g. Integer to Real" end CAST;
+
+  record GENERIC "Matched with a generic type on one or more arguments e.g. function F<T> input T i; end F; F(1)"
+  end GENERIC;
+
+  record VECTORIZED "Matched by vectorization"
+  end VECTORIZED;
+
+  record NOT_COMPATIBLE end NOT_COMPATIBLE;
+
+  function getExactMatches
+    input list<MatchedFunction> matchedFunctions;
+    output list<MatchedFunction> outFuncs = {};
+  algorithm
+    for mf in matchedFunctions loop
+      if isExactMatch(mf) then
+        outFuncs := mf::outFuncs;
+      end if;
+    end for;
+    listReverse(outFuncs);
+  end getExactMatches;
+
+  function isExactMatch
+    input MatchedFunction mf;
+    output Boolean b;
+  algorithm
+    b := match mf
+      case (_,_,EXACT_MATCH) then true;
+      else false;
+    end match;
+  end isExactMatch;
+
+end FunctionMatchKind;
+
+constant FunctionMatchKind EXACT_MATCH = FunctionMatchKind.EXACT();
+constant FunctionMatchKind CAST_MATCH = FunctionMatchKind.CAST();
+constant FunctionMatchKind NO_MATCH = FunctionMatchKind.NOT_COMPATIBLE();
+
 
 uniontype Function
 
@@ -267,8 +312,10 @@ uniontype Function
     "Constructs a signature string for a function, e.g. Real func(Real x, Real y)"
     input Function fn;
     input Boolean printTypes = true;
+    input Option<Absyn.Path> display_name;
     output String str;
   protected
+    Absyn.Path fn_name;
     String input_str, output_str;
     list<String> inputs_strl = {};
     list<InstNode> inputs = fn.inputs;
@@ -307,7 +354,8 @@ uniontype Function
 
     input_str := stringDelimitList(listReverse(inputs_strl), ", ");
     output_str := if printTypes and isTyped(fn) then " => " + Type.toString(fn.returnType) else "";
-    str := Absyn.pathString(fn.path) + "(" + input_str + ")" + output_str;
+    fn_name := if isSome(display_name) then Util.getOption(display_name) else fn.path;
+    str := Absyn.pathString(fn_name) + "(" + input_str + ")" + output_str;
   end signatureString;
 
   function callString
@@ -359,6 +407,10 @@ uniontype Function
   algorithm
     slots := fn.slots;
 
+    if listLength(posArgs) > listLength(slots) then
+      matching := false;
+      return;
+    end if;
     // Remove as many slots as there are positional arguments. We don't actually
     // need to fill the slots, the positional arguments will always be first
     // anyway. This makes it a bit slower to figure out what error to give if a
@@ -512,6 +564,7 @@ uniontype Function
     input output list<TypedArg> args;
     input Option<SourceInfo> info;
           output Boolean correct;
+          output FunctionMatchKind funcMatchKind = EXACT_MATCH;
   protected
     Component comp;
     InstNode inputnode;
@@ -521,6 +574,7 @@ uniontype Function
     DAE.Const var;
     list<TypedArg> checked_args;
     Integer idx;
+    TypeCheck.MatchKind matchKind;
   algorithm
 
     checked_args := {};
@@ -532,7 +586,10 @@ uniontype Function
       inputnode :: inputs := inputs;
       comp := InstNode.component(inputnode);
 
-      (margexp, mty, correct) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp);
+      (margexp, mty, correct, matchKind) := TypeCheck.matchTypes_detail(ty, Component.getType(comp), argexp);
+      if MatchKind.isCastMatch(matchKind) then
+        funcMatchKind := CAST_MATCH;
+      end if;
 
       // Type mismatch, print an error.
       if not correct then

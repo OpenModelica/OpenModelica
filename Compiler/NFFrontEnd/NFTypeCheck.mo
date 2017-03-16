@@ -53,6 +53,39 @@ import Operator = NFOperator;
 import Type = NFType;
 
 public
+encapsulated
+uniontype MatchKind
+  record EXACT "Exact match." end EXACT;
+
+  record CAST "Matched by casting. e.g. Integer to Real" end CAST;
+
+  record UNKNOWN "Matched with unknown if unknown is allowed"
+    Boolean direction "true is expected was unknown, false if actual was unknown";
+  end UNKNOWN;
+
+  record GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)"
+  end GENERIC;
+
+  record NOT_COMPATIBLE end NOT_COMPATIBLE;
+
+  public function isCastMatch
+    input MatchKind matchKind;
+    output Boolean b;
+  algorithm
+    b := match matchKind
+      case CAST_MATCH then true;
+      else false;
+    end match;
+  end isCastMatch;
+
+end MatchKind;
+
+constant MatchKind EXACT_MATCH = MatchKind.EXACT();
+constant MatchKind CAST_MATCH = MatchKind.CAST();
+constant MatchKind UNKNOWN_EXP_MATCH = MatchKind.UNKNOWN(true);
+constant MatchKind UNKNOWN_ACT_MATCH = MatchKind.UNKNOWN(false);
+constant MatchKind NO_MATCH = MatchKind.NOT_COMPATIBLE();
+
 //
 //
 //public function checkClassComponents
@@ -1417,10 +1450,26 @@ function matchTypes
   input Boolean allowUnknown = false;
         output Type compatibleType;
         output Boolean compatible = true;
+protected
+  MatchKind matchKind;
+algorithm
+  (expression,compatibleType,compatible,matchKind) := matchTypes_detail(actualType,expectedType,expression,allowUnknown);
+end matchTypes;
+
+public
+function matchTypes_detail
+  input Type actualType;
+  input Type expectedType;
+  input output Expression expression;
+  input Boolean allowUnknown = false;
+        output Type compatibleType;
+        output Boolean compatible = true;
+        output MatchKind matchKind = NO_MATCH;
 algorithm
   // Return true if the references are the same.
   if referenceEq(actualType, expectedType) then
     compatibleType := actualType;
+    matchKind := EXACT_MATCH;
     return;
   end if;
 
@@ -1428,20 +1477,22 @@ algorithm
   if valueConstructor(actualType) <> valueConstructor(expectedType) then
     // If the types are not of the same kind we might need to type cast the
     // expression to make it compatible.
-    (expression, compatibleType, compatible) :=
+    (expression, compatibleType, compatible, matchKind) :=
       match (actualType, expectedType)
         case (Type.FUNCTION(), Type.FUNCTION())
-          then matchTypes(actualType.resultType, expectedType.resultType, expression, allowUnknown);
+          then matchTypes_detail(actualType.resultType, expectedType.resultType, expression, allowUnknown);
         case (Type.FUNCTION(), _)
-          then matchTypes(actualType.resultType, expectedType, expression, allowUnknown);
+          then matchTypes_detail(actualType.resultType, expectedType, expression, allowUnknown);
         case (_, Type.FUNCTION())
-          then matchTypes(actualType, expectedType.resultType, expression, allowUnknown);
+          then matchTypes_detail(actualType, expectedType.resultType, expression, allowUnknown);
         else matchTypes_cast(actualType, expectedType, expression, allowUnknown);
       end match;
     return;
   end if;
 
+
   // The types are of the same kind, so we only need to match on one of them.
+  matchKind := EXACT_MATCH;
   compatibleType := match (actualType)
     local
       list<Dimension> dims1, dims2;
@@ -1466,8 +1517,8 @@ algorithm
         ety1 := actualType.elementType;
         ety2 := Type.arrayElementType(expectedType);
 
-        (expression, compatibleType, compatible) :=
-          matchTypes(ety1, ety2, expression, allowUnknown);
+        (expression, compatibleType, compatible, matchKind) :=
+          matchTypes_detail(ety1, ety2, expression, allowUnknown);
 
         // If the element types are compatible, check the dimensions too.
         if compatible then
@@ -1488,10 +1539,17 @@ algorithm
 
     case Type.FUNCTION()
       algorithm
-        (expression, compatibleType, compatible) :=
+        (expression, compatibleType, compatible, matchKind) :=
           matchTypes_cast(actualType.resultType, expectedType, expression, allowUnknown);
       then
         compatibleType;
+
+
+    case Type.COMPLEX()
+      algorithm
+        assert(false, getInstanceName() + " IMPLEMENT ME.");
+      then
+        fail();
 
     else
       algorithm
@@ -1500,7 +1558,57 @@ algorithm
         fail();
 
   end match;
-end matchTypes;
+end matchTypes_detail;
+
+function matchTypes_cast
+  input Type actualType;
+  input Type expectedType;
+  input output Expression expression;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output Boolean compatible = true;
+        output MatchKind matchKind = NO_MATCH;
+algorithm
+  compatibleType := match(actualType, expectedType)
+    // Integer can be cast to Real.
+    case (Type.INTEGER(), Type.REAL())
+      algorithm
+        expression := Expression.typeCastElements(expression, expectedType);
+        matchKind := CAST_MATCH;
+      then
+        expectedType;
+
+    // Any enumeration is compatible with enumeration(:).
+    case (Type.ENUMERATION(), Type.ENUMERATION_ANY())
+      algorithm
+        // TODO: FIXME: Maybe this should be generic match
+        matchKind := CAST_MATCH;
+      then actualType;
+
+    // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
+    case (Type.UNKNOWN(), _)
+      algorithm
+        matchKind := UNKNOWN_ACT_MATCH;
+        compatible := allowUnknown;
+      then
+        expectedType;
+
+    case (_, Type.UNKNOWN())
+      algorithm
+        matchKind := UNKNOWN_EXP_MATCH;
+        compatible := allowUnknown;
+      then
+        actualType;
+
+    // Anything else is not compatible.
+    else
+      algorithm
+        compatible := false;
+      then
+        Type.UNKNOWN();
+
+  end match;
+end matchTypes_cast;
 
 
 //function checkTypeCompat
@@ -1751,49 +1859,6 @@ end matchTypes;
 //
 //  compatibleTypes := listReverse(compatibleTypes);
 //end checkTypeCompatList;
-
-function matchTypes_cast
-  input Type actualType;
-  input Type expectedType;
-  input output Expression expression;
-  input Boolean allowUnknown;
-        output Type compatibleType;
-        output Boolean compatible = true;
-algorithm
-  compatibleType := match(actualType, expectedType)
-    // Integer can be cast to Real.
-    case (Type.INTEGER(), Type.REAL())
-      algorithm
-        expression := Expression.typeCastElements(expression, expectedType);
-      then
-        expectedType;
-
-    // Any enumeration is compatible with enumeration(:).
-    case (Type.ENUMERATION(), Type.ENUMERATION_ANY())
-      then actualType;
-
-    // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
-    case (Type.UNKNOWN(), _)
-      algorithm
-        compatible := allowUnknown;
-      then
-        expectedType;
-
-    case (_, Type.UNKNOWN())
-      algorithm
-        compatible := allowUnknown;
-      then
-        actualType;
-
-    // Anything else is not compatible.
-    else
-      algorithm
-        compatible := false;
-      then
-        Type.UNKNOWN();
-
-  end match;
-end matchTypes_cast;
 
 //function checkTypeCompat_cast
 //  "Helper function to checkTypeCompat. Tries to type cast one of the given
