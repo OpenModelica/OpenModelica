@@ -226,18 +226,21 @@ algorithm
 
     case (DAE.VAR(variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(_))))) then inVar;
 
-    case (DAE.VAR(componentRef=cr,variableAttributesOption=attr))
-      equation
+    case (DAE.VAR(componentRef=cr,variableAttributesOption=attr)) equation
+      if BaseHashTable.hasKey(cr, inHtCr2U) then
         ut = BaseHashTable.get(cr, inHtCr2U);
         if NFUnit.isUnit(ut) then
           s = NFUnit.unitString(ut, inHtU2S);
-          attr=DAEUtil.setUnitAttr(attr, DAE.SCONST(s));
-          inVar.variableAttributesOption=attr;
-          var=inVar;
+          attr = DAEUtil.setUnitAttr(attr, DAE.SCONST(s));
+          inVar.variableAttributesOption = attr;
+          var = inVar;
         else
-            var = inVar;
+          var = inVar;
         end if;
-        then var;
+      else
+        var = inVar;
+      end if;
+    then var;
   end match;
 end returnVar;
 

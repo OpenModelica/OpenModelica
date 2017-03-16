@@ -104,11 +104,7 @@ algorithm
       BaseHashTable.dumpHashTable(HtCr2U1);
     end if;
     ((HtCr2U2, HtS2U, HtU2S)) := algo(paraList, eqList, HtCr2U2, HtS2U, HtU2S);
-    if Flags.isSet(Flags.DUMP_UNIT) then
-      BaseHashTable.dumpHashTable(HtCr2U2);
-      print("######## UnitCheck COMPLETED ########\n");
-    end if;
-    notification(HtCr2U1, HtCr2U2, HtU2S);
+
     varList := List.map2(varList, returnVar, HtCr2U2, HtU2S);
     paraList := List.map2(paraList, returnVar, HtCr2U2, HtU2S);
     aliasList := List.map2(aliasList, returnVar, HtCr2U2, HtU2S);
@@ -116,6 +112,12 @@ algorithm
     orderedVars := BackendVariable.listVar(varList);
     globalKnownVars := BackendVariable.listVar(paraList);
     aliasVars := BackendVariable.listVar(aliasList);
+
+    if Flags.isSet(Flags.DUMP_UNIT) then
+      BaseHashTable.dumpHashTable(HtCr2U2);
+      print("######## UnitCheck COMPLETED ########\n");
+    end if;
+    notification(HtCr2U1, HtCr2U2, HtU2S);
 
     syst := BackendDAEUtil.setEqSystVars(syst, orderedVars);
     shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
@@ -178,10 +180,14 @@ algorithm
 
     else equation
       cr = BackendVariable.varCref(inVar);
-      ut = BaseHashTable.get(cr, inHtCr2U);
-      if Unit.isUnit(ut) then
-        s = Unit.unitString(ut, inHtU2S);
-        var = BackendVariable.setUnit(inVar, DAE.SCONST(s));
+      if BaseHashTable.hasKey(cr, inHtCr2U) then
+        ut = BaseHashTable.get(cr, inHtCr2U);
+        if Unit.isUnit(ut) then
+          s = Unit.unitString(ut, inHtU2S);
+          var = BackendVariable.setUnit(inVar, DAE.SCONST(s));
+        else
+          var = inVar;
+        end if;
       else
         var = inVar;
       end if;
