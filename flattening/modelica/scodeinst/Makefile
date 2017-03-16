@@ -80,6 +80,11 @@ FuncIntegerWrongType.mo \
 FuncLocals.mo \
 FuncMissingDefault1.mo \
 FuncMissingDefault2.mo \
+FuncOverloadAmbiguousDefault.mo \
+FuncOverloadExactPrefer.mo \
+FuncOverloadMulti.mo \
+FuncOverloadNoMatch.mo \
+FuncOverloadSimple.mo \
 FuncSimple.mo \
 FuncStringInvalid1.mo \
 FuncStringInvalid2.mo \

@@ -12,6 +12,22 @@ end FuncStringInvalid1;
 
 // Result:
 // Error processing file: FuncStringInvalid1.mo
+// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: Type mismatch for positional argument 1 in String(e={1, 2, 3}). The argument has type:
+//   Integer[3]
+// expected type:
+//   enumeration(:)
+// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: Type mismatch for positional argument 1 in String(i={1, 2, 3}). The argument has type:
+//   Integer[3]
+// expected type:
+//   Integer
+// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: Type mismatch for positional argument 1 in String(b={1, 2, 3}). The argument has type:
+//   Integer[3]
+// expected type:
+//   Boolean
+// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: Type mismatch for positional argument 1 in String(r={1, 2, 3}). The argument has type:
+//   Integer[3]
+// expected type:
+//   Real
 // [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: No matching function found for String({1, 2, 3}) in component <REMOVE ME>
 // candidates are :
 //   String(enumeration(:) $e, Integer minimumLength = 0, Boolean leftJustified = true) => String

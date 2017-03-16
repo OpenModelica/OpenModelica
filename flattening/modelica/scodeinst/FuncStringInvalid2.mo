@@ -15,11 +15,11 @@ end FuncStringInvalid2;
 // Error processing file: FuncStringInvalid2.mo
 // [flattening/modelica/scodeinst/FuncStringInvalid2.mo:11:3-11:33:writable] Error: No matching function found for String(1, false, 3) in component <REMOVE ME>
 // candidates are :
-//   String($e, minimumLength = 0, leftJustified = true)
-//   String($i, minimumLength = 0, leftJustified = true)
-//   String($b, minimumLength = 0, leftJustified = true)
-//   String($r, significantDigits = 6, minimumLength = 0, leftJustified = true)
-//   String($r, format = "-0.6g")
+//   String(enumeration(:) $e, Integer minimumLength = 0, Boolean leftJustified = true) => String
+//   String(Integer $i, Integer minimumLength = 0, Boolean leftJustified = true) => String
+//   String(Boolean $b, Integer minimumLength = 0, Boolean leftJustified = true) => String
+//   String(Real $r, Integer significantDigits = 6, Integer minimumLength = 0, Boolean leftJustified = true) => String
+//   String(Real $r, String format = "-0.6g") => String
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

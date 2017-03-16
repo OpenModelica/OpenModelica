@@ -16,6 +16,9 @@ end FuncIntegerWrongType;
 //   Real
 // expected type:
 //   enumeration(:)
+// [flattening/modelica/scodeinst/FuncIntegerWrongType.mo:10:3-10:27:writable] Error: No matching function found for Integer(1) in component <REMOVE ME>
+// candidates are :
+//   Integer(enumeration(:) $e) => Integer
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
