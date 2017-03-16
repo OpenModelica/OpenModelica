@@ -1082,7 +1082,7 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
-    mpTransformationsEditor->goToLineNumber(equation->info.lineStart);
+    mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(equation->info.lineStart);
   }
 }
 
@@ -1245,7 +1245,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
-    mpTransformationsEditor->goToLineNumber(variable.info.lineStart);
+    mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(variable.info.lineStart);
   }
 }
 

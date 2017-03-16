@@ -301,7 +301,7 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
       pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
-      pLibraryTreeItem->getModelWidget()->getEditor()->goToLineNumber(lineNumber);
+      pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber);
     }
   } else {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),

@@ -181,6 +181,9 @@ public:
   static QString deleteStr;
   static QString copy;
   static QString paste;
+  static QString resetZoom;
+  static QString zoomIn;
+  static QString zoomOut;
   static QString loading;
   static QString question;
   static QString search;

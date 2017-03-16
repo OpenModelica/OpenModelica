@@ -53,7 +53,7 @@
 ModelicaEditor::ModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
-  setCanHaveBreakpoints(true);
+  mpPlainTextEdit->setCanHaveBreakpoints(true);
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
 }
@@ -286,7 +286,7 @@ void ModelicaEditor::setPlainText(const QString &text)
     setTextChanged(false);
     mForceSetPlainText = false;
     mLastValidText = contents;
-    foldAll();
+    mpPlainTextEdit->foldAll();
   }
 }
 

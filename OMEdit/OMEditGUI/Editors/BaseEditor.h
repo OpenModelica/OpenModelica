@@ -209,78 +209,90 @@ public:
   bool mHasBreakpoint;
 };
 
+class BaseEditor;
+class PlainTextEdit : public QPlainTextEdit
+{
+  Q_OBJECT
+public:
+  PlainTextEdit(BaseEditor *pBaseEditor);
+  LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
+  void setCanHaveBreakpoints(bool canHaveBreakpoints);
+  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
+  int lineNumberAreaWidth();
+  void lineNumberAreaPaintEvent(QPaintEvent *event);
+  void lineNumberAreaMouseEvent(QMouseEvent *event);
+  void goToLineNumber(int lineNumber);
+private:
+  BaseEditor *mpBaseEditor;
+  LineNumberArea *mpLineNumberArea;
+  bool mCanHaveBreakpoints;
+  QTextCharFormat mParenthesesMatchFormat;
+  QTextCharFormat mParenthesesMisMatchFormat;
+
+  void highlightCurrentLine();
+  void highlightParentheses();
+  void setLineWrapping();
+  QString plainTextFromSelection(const QTextCursor &cursor) const;
+  static QString convertToPlainText(const QString &txt);
+  void moveCursorVisible(bool ensureVisible = true);
+  void ensureCursorVisible();
+  void toggleBreakpoint(const QString fileName, int lineNumber);
+  void indentOrUnindent(bool doIndent);
+  void foldOrUnfold(bool unFold);
+  void handleHomeKey(bool keepAnchor);
+  void toggleBlockVisible(const QTextBlock &block);
+public slots:
+  void updateLineNumberAreaWidth(int newBlockCount);
+  void updateLineNumberArea(const QRect &rect, int dy);
+  void updateHighlights();
+  void updateCursorPosition();
+  void textSettingsChanged();
+  void showTabsAndSpaces(bool On);
+  void toggleBreakpoint();
+  void foldAll();
+  void unFoldAll();
+  void resetZoom();
+  void zoomIn();
+  void zoomOut();
+protected:
+  virtual void resizeEvent(QResizeEvent *pEvent);
+  virtual void keyPressEvent(QKeyEvent *pEvent);
+  virtual QMimeData* createMimeDataFromSelection() const;
+  virtual void focusInEvent(QFocusEvent *event);
+  virtual void focusOutEvent(QFocusEvent *event);
+  void paintEvent(QPaintEvent *e);
+  void wheelEvent(QWheelEvent *event);
+};
+
 class BaseEditor : public QWidget
 {
   Q_OBJECT
-private:
-  class PlainTextEdit : public QPlainTextEdit
-  {
-  public:
-    PlainTextEdit(BaseEditor *pBaseEditor);
-    LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
-    int lineNumberAreaWidth();
-    void lineNumberAreaPaintEvent(QPaintEvent *event);
-    void lineNumberAreaMouseEvent(QMouseEvent *event);
-    void goToLineNumber(int lineNumber);
-    void updateLineNumberAreaWidth(int newBlockCount);
-    void updateLineNumberArea(const QRect &rect, int dy);
-    void updateHighlights();
-    void updateCursorPosition();
-    void setLineWrapping();
-    void toggleBreakpoint(const QString fileName, int lineNumber);
-    void indentOrUnindent(bool doIndent);
-    void moveCursorVisible(bool ensureVisible = true);
-    void ensureCursorVisible();
-    void resetZoom();
-    void zoomIn();
-    void zoomOut();
-    void handleHomeKey(bool keepAnchor);
-  private:
-    BaseEditor *mpBaseEditor;
-    LineNumberArea *mpLineNumberArea;
-    QTextCharFormat mParenthesesMatchFormat;
-    QTextCharFormat mParenthesesMisMatchFormat;
-
-    void highlightCurrentLine();
-    void highlightParentheses();
-    QString plainTextFromSelection(const QTextCursor &cursor) const;
-    static QString convertToPlainText(const QString &txt);
-  protected:
-    virtual void resizeEvent(QResizeEvent *pEvent);
-    virtual void keyPressEvent(QKeyEvent *pEvent);
-    virtual QMimeData* createMimeDataFromSelection() const;
-    virtual void focusInEvent(QFocusEvent *event);
-    virtual void focusOutEvent(QFocusEvent *event);
-    void paintEvent(QPaintEvent *e);
-    void wheelEvent(QWheelEvent *event);
-  };
 public:
   BaseEditor(QWidget *pParent);
   ModelWidget *getModelWidget() {return mpModelWidget;}
   InfoBar* getInfoBar() {return mpInfoBar;}
   PlainTextEdit *getPlainTextEdit() {return mpPlainTextEdit;}
   FindReplaceWidget* getFindReplaceWidget() {return mpFindReplaceWidget;}
-  void setCanHaveBreakpoints(bool canHaveBreakpoints);
-  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
-  QAction *getToggleBreakpointAction() {return mpToggleBreakpointAction;}
+  QAction* getToggleBreakpointAction() {return mpToggleBreakpointAction;}
+  QAction* getFoldAllAction() {return mpFoldAllAction;}
+  QAction* getUnFoldAllAction() {return mpUnFoldAllAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
-  void goToLineNumber(int lineNumber);
-  void toggleBlockVisible(const QTextBlock &block);
 private:
   void initialize();
   void createActions();
-  void foldOrUnfold(bool unFold);
 protected:
   ModelWidget *mpModelWidget;
   InfoBar *mpInfoBar;
   PlainTextEdit *mpPlainTextEdit;
   FindReplaceWidget *mpFindReplaceWidget;
-  bool mCanHaveBreakpoints;
   QAction *mpFindReplaceAction;
   QAction *mpClearFindReplaceTextsAction;
   QAction *mpGotoLineNumberAction;
   QAction *mpShowTabsAndSpacesAction;
   QAction *mpToggleBreakpointAction;
+  QAction *mpResetZoomAction;
+  QAction *mpZoomInAction;
+  QAction *mpZoomOutAction;
   QAction *mpToggleCommentSelectionAction;
   QAction *mpFoldAllAction;
   QAction *mpUnFoldAllAction;
@@ -290,20 +302,11 @@ protected:
 private slots:
   virtual void showContextMenu(QPoint point) = 0;
 public slots:
-  void textSettingsChanged();
-  void updateLineNumberAreaWidth(int newBlockCount);
-  void updateLineNumberArea(const QRect &rect, int dy);
-  void updateHighlights();
-  void updateCursorPosition();
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
   void showFindReplaceWidget();
   void clearFindReplaceTexts();
   void showGotoLineNumberDialog();
-  void showTabsAndSpaces(bool On);
-  void toggleBreakpoint();
   virtual void toggleCommentSelection();
-  void foldAll();
-  void unFoldAll();
 };
 
 class LineNumberArea : public QWidget

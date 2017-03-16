@@ -161,7 +161,7 @@ void BreakpointsTreeView::gotoFile() {
     if (pModelWidget && pModelWidget->getEditor()) {
       pModelWidget->getModelWidgetContainer()->addModelWidget(pModelWidget, false);
       pModelWidget->getTextViewToolButton()->setChecked(true);
-      pModelWidget->getEditor()->goToLineNumber(pBreakpointTreeItem->getLineNumber().toInt());
+      pModelWidget->getEditor()->getPlainTextEdit()->goToLineNumber(pBreakpointTreeItem->getLineNumber().toInt());
     }
   }
 }

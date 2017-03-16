@@ -654,10 +654,10 @@ static int foldBoxWidth(const QFontMetrics &fm)
 }
 
 /*!
- * \class BaseEditor::PlainTextEdit
+ * \class PlainTextEdit
  * Internal QPlainTextEdit for Editor.
  */
-BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
+PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
@@ -668,6 +668,7 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   setDocument(pTextDocument);
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor, this);
+  mCanHaveBreakpoints = false;
   // parentheses matcher
   mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
   mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
@@ -676,23 +677,34 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   updateHighlights();
   updateCursorPosition();
   setLineWrapping();
-  connect(this, SIGNAL(blockCountChanged(int)), mpBaseEditor, SLOT(updateLineNumberAreaWidth(int)));
-  connect(this, SIGNAL(updateRequest(QRect,int)), mpBaseEditor, SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateHighlights()));
-  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
+  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
+  connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateHighlights()));
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
   connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
   OptionsDialog *pOptionsDialog = OptionsDialog::instance();
-  connect(pOptionsDialog, SIGNAL(textSettingsChanged()), mpBaseEditor, SLOT(textSettingsChanged()));
+  connect(pOptionsDialog, SIGNAL(textSettingsChanged()), this, SLOT(textSettingsChanged()));
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::lineNumberAreaWidth
+ * \brief PlainTextEdit::setCanHaveBreakpoints
+ * Sets whether editor supports breakpoints or not. Also sets/unsets the editor's LineNumberArea mouse tracking.
+ * \param canHaveBreakpoints
+ */
+void PlainTextEdit::setCanHaveBreakpoints(bool canHaveBreakpoints)
+{
+  mCanHaveBreakpoints = canHaveBreakpoints;
+  mpLineNumberArea->setMouseTracking(canHaveBreakpoints);
+}
+
+/*!
+ * \brief PlainTextEdit::lineNumberAreaWidth
  * Calculate appropriate width for LineNumberArea.
  * \return int width of LineNumberArea.
  */
-int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
+int PlainTextEdit::lineNumberAreaWidth()
 {
   int digits = 2;
   int max = qMax(1, document()->blockCount());
@@ -702,7 +714,7 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
   }
   const QFontMetrics fm(document()->defaultFont());
   int space = fm.width(QLatin1Char('9')) * digits;
-  if (mpBaseEditor->canHaveBreakpoints()) {
+  if (canHaveBreakpoints()) {
     space += fm.lineSpacing();
   } else {
     space += 4;
@@ -717,12 +729,12 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent
+ * \brief PlainTextEdit::lineNumberAreaPaintEvent
  * Activated whenever LineNumberArea Widget paint event is raised.
  * Writes the line numbers for the visible blocks and draws the breakpoint markers.
  * \param event
  */
-void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
+void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
   QPainter painter(mpLineNumberArea);
   painter.fillRect(event->rect(), QColor(240, 240, 240));
@@ -764,7 +776,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     }
     /* paint breakpoints */
     TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
-    if (pTextBlockUserData && mpBaseEditor->canHaveBreakpoints()) {
+    if (pTextBlockUserData && canHaveBreakpoints()) {
       int xoffset = 0;
       foreach (ITextMark *mk, pTextBlockUserData->marks()) {
         int x = 0;
@@ -850,16 +862,16 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent
+ * \brief PlainTextEdit::lineNumberAreaMouseEvent
  * Activated whenever LineNumberArea Widget mouse press event is raised.
  * \param event
  */
-void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
+void PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
 {
   QTextCursor cursor = cursorForPosition(QPoint(0, event->pos().y()));
   const QFontMetrics fm(document()->defaultFont());
   // check mouse click for breakpoints
-  if (mpBaseEditor->canHaveBreakpoints()) {
+  if (canHaveBreakpoints()) {
     int breakPointWidth = fm.lineSpacing();
     // Set whether the mouse cursor is a hand or a normal arrow
     if (event->type() == QEvent::MouseMove) {
@@ -892,10 +904,10 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
     int boxWidth = foldBoxWidth(fm);
     if (event->button() == Qt::LeftButton && event->pos().x() > mpLineNumberArea->width() - boxWidth) {
       if (!cursor.block().next().isVisible()) {
-        mpBaseEditor->toggleBlockVisible(cursor.block());
+        toggleBlockVisible(cursor.block());
         moveCursorVisible(false);
       } else if (BaseEditorDocumentLayout::canFold(cursor.block())) {
-        mpBaseEditor->toggleBlockVisible(cursor.block());
+        toggleBlockVisible(cursor.block());
         moveCursorVisible(false);
       }
     }
@@ -903,11 +915,11 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::goToLineNumber
+ * \brief PlainTextEdit::goToLineNumber
  * Takes the cursor to the specific line.
  * \param lineNumber - the line number to go.
  */
-void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
+void PlainTextEdit::goToLineNumber(int lineNumber)
 {
   if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isInPackageOneFile() &&
       mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -925,70 +937,28 @@ void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 }
 
 /*!
- * \brief BaseEditor::updateLineNumberAreaWidth
- * Updates the width of LineNumberArea.
- * \param newBlockCount
+ * \brief PlainTextEdit::highlightCurrentLine
+ * Hightlights the current line.
  */
-void BaseEditor::PlainTextEdit::updateLineNumberAreaWidth(int newBlockCount)
+void PlainTextEdit::highlightCurrentLine()
 {
-  Q_UNUSED(newBlockCount);
-  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+  Utilities::highlightCurrentLine(this);
 }
 
 /*!
- * \brief BaseEditor::updateLineNumberArea
- * Scrolls the LineNumberArea Widget and also updates its width if required.
- * \param rect
- * \param dy
+ * \brief PlainTextEdit::highlightParentheses
+ * Highlights the matching parentheses.
  */
-void BaseEditor::PlainTextEdit::updateLineNumberArea(const QRect &rect, int dy)
+void PlainTextEdit::highlightParentheses()
 {
-  if (dy) {
-    mpLineNumberArea->scroll(0, dy);
-  } else {
-    mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
-  }
-
-  if (rect.contains(viewport()->rect())) {
-    updateLineNumberAreaWidth(0);
-  }
-}
-
-/*!
- * \brief BaseEditor::updateHighlights
- * Slot activated when editor's cursorPositionChanged signal is raised.\n
- * Updates all the highlights.
- */
-void BaseEditor::PlainTextEdit::updateHighlights()
-{
-  QList<QTextEdit::ExtraSelection> selections;
-  setExtraSelections(selections);
-  highlightCurrentLine();
-  highlightParentheses();
-}
-
-/*!
- * \brief BaseEditor::updateCursorPosition
- * Slot activated when editor's cursorPositionChanged signal is raised.
- * Updates the cursorPostionLabel i.e Line: 12, Col:123.
- */
-void BaseEditor::PlainTextEdit::updateCursorPosition()
-{
-  if (mpBaseEditor->getModelWidget()) {
-    const QTextBlock block = textCursor().block();
-    const int line = block.blockNumber() + 1;
-    const int column = textCursor().columnNumber();
-    Label *pCursorPositionLabel = mpBaseEditor->getModelWidget()->getCursorPositionLabel();
-    pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
-  }
-  ensureCursorVisible();
+  Utilities::highlightParentheses(this, mParenthesesMatchFormat, mParenthesesMisMatchFormat);
 }
 
 /*!
  * \brief BaseEditor::setLineWrapping
  * Sets the Editor Line Wrapping mode.
  */
-void BaseEditor::PlainTextEdit::setLineWrapping()
+void PlainTextEdit::setLineWrapping()
 {
   OptionsDialog *pOptionsDialog = OptionsDialog::instance();
   if (pOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
@@ -999,12 +969,101 @@ void BaseEditor::PlainTextEdit::setLineWrapping()
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::toggleBreakpoint
+ * \brief PlainTextEdit::plainTextFromSelection
+ * Returns the selected text in plain text format.
+ * \param cursor
+ * \return
+ */
+QString PlainTextEdit::plainTextFromSelection(const QTextCursor &cursor) const
+{
+  // Copy the selected text as plain text
+  QString text = cursor.selectedText();
+  return convertToPlainText(text);
+}
+
+/*!
+ * \brief PlainTextEdit::convertToPlainText
+ * Returns the text in plain text format.
+ * \param txt
+ * \return
+ */
+QString PlainTextEdit::convertToPlainText(const QString &txt)
+{
+  QString ret = txt;
+  QChar *uc = ret.data();
+  QChar *e = uc + ret.size();
+
+  for (; uc != e; ++uc) {
+    switch (uc->unicode()) {
+      case 0xfdd0: // QTextBeginningOfFrame
+      case 0xfdd1: // QTextEndOfFrame
+      case QChar::ParagraphSeparator:
+      case QChar::LineSeparator:
+        *uc = QLatin1Char('\n');
+        break;
+      case QChar::Nbsp:
+        *uc = QLatin1Char(' ');
+        break;
+      default:
+        ;
+    }
+  }
+  return ret;
+}
+
+/*!
+ * \brief PlainTextEdit::moveCursorVisible
+ * \param ensureVisible
+ */
+void PlainTextEdit::moveCursorVisible(bool ensureVisible)
+{
+  QTextCursor cursor = textCursor();
+  if (!cursor.block().isVisible()) {
+    cursor.setVisualNavigation(true);
+    cursor.movePosition(QTextCursor::Up);
+    setTextCursor(cursor);
+  }
+  if (ensureVisible) {
+    ensureCursorVisible();
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::ensureCursorVisible
+ * Makes sure cursor is visible when user moves it inside hidden block.
+ */
+void PlainTextEdit::ensureCursorVisible()
+{
+  QTextBlock block = textCursor().block();
+  if (!block.isVisible()) {
+    BaseEditorDocumentLayout *pDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(document()->documentLayout());
+    // Open all folds of current line.
+    int indent = BaseEditorDocumentLayout::foldingIndent(block);
+    block = block.previous();
+    while (block.isValid()) {
+      const int indent2 = BaseEditorDocumentLayout::foldingIndent(block);
+      if (BaseEditorDocumentLayout::canFold(block) && indent2 < indent) {
+        BaseEditorDocumentLayout::foldOrUnfold(block, true);
+        if (block.isVisible()) {
+          break;
+        }
+        indent = indent2;
+      }
+      block = block.previous();
+    }
+    pDocumentLayout->requestUpdate();
+    pDocumentLayout->emitDocumentSizeChanged();
+  }
+  QPlainTextEdit::ensureCursorVisible();
+}
+
+/*!
+ * \brief PlainTextEdit::toggleBreakpoint
  * Toggles the breakpoint.
  * \param fileName
  * \param lineNumber
  */
-void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
+void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
   BreakpointsTreeModel *pBreakpointsTreeModel = MainWindow::instance()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
@@ -1027,7 +1086,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
  * Indents or unindents the code.
  * \param doIndent
  */
-void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
+void PlainTextEdit::indentOrUnindent(bool doIndent)
 {
   TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
   QTextCursor cursor = textCursor();
@@ -1078,96 +1137,36 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::moveCursorVisible
- * \param ensureVisible
+ * \brief PlainTextEdit::foldOrUnfold
+ * folds or unfolds the whole document foldings.
+ * \param unFold
  */
-void BaseEditor::PlainTextEdit::moveCursorVisible(bool ensureVisible)
+void PlainTextEdit::foldOrUnfold(bool unFold)
 {
-  QTextCursor cursor = textCursor();
-  if (!cursor.block().isVisible()) {
-    cursor.setVisualNavigation(true);
-    cursor.movePosition(QTextCursor::Up);
-    setTextCursor(cursor);
-  }
-  if (ensureVisible) {
-    ensureCursorVisible();
-  }
-}
+  BaseEditorDocumentLayout *pBaseEditorDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(document()->documentLayout());
 
-/*!
- * \brief BaseEditor::PlainTextEdit::ensureCursorVisible
- * Makes sure cursor is visible when user moves it inside hidden block.
- */
-void BaseEditor::PlainTextEdit::ensureCursorVisible()
-{
-  QTextBlock block = textCursor().block();
-  if (!block.isVisible()) {
-    BaseEditorDocumentLayout *pDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(document()->documentLayout());
-    // Open all folds of current line.
-    int indent = BaseEditorDocumentLayout::foldingIndent(block);
-    block = block.previous();
-    while (block.isValid()) {
-      const int indent2 = BaseEditorDocumentLayout::foldingIndent(block);
-      if (BaseEditorDocumentLayout::canFold(block) && indent2 < indent) {
-        BaseEditorDocumentLayout::foldOrUnfold(block, true);
-        if (block.isVisible()) {
-          break;
-        }
-        indent = indent2;
-      }
-      block = block.previous();
+  QTextBlock block = document()->firstBlock();
+  while (block.isValid()) {
+    if (BaseEditorDocumentLayout::canFold(block)) {
+      BaseEditorDocumentLayout::foldOrUnfold(block, unFold);
     }
-    pDocumentLayout->requestUpdate();
-    pDocumentLayout->emitDocumentSizeChanged();
+    block = block.next();
   }
-  QPlainTextEdit::ensureCursorVisible();
+
+  moveCursorVisible();
+  pBaseEditorDocumentLayout->requestUpdate();
+  pBaseEditorDocumentLayout->emitDocumentSizeChanged();
+  centerCursor();
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::resetZoom
- * Resets the document font size.
- */
-void BaseEditor::PlainTextEdit::resetZoom()
-{
-  QFont font = document()->defaultFont();
-  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  document()->setDefaultFont(font);
-}
-
-/*!
- * \brief BaseEditor::PlainTextEdit::zoomIn
- * Increases the document font size.
- */
-void BaseEditor::PlainTextEdit::zoomIn()
-{
-  QFont font = document()->defaultFont();
-  qreal fontSize = font.pointSizeF();
-  fontSize = fontSize  + 1;
-  font.setPointSizeF(fontSize);
-  document()->setDefaultFont(font);
-}
-
-/*!
- * \brief BaseEditor::PlainTextEdit::zoomOut
- * Decreases the document font size.
- */
-void BaseEditor::PlainTextEdit::zoomOut()
-{
-  QFont font = document()->defaultFont();
-  qreal fontSize = font.pointSizeF();
-  fontSize = fontSize <= 6 ? fontSize : fontSize - 1;
-  font.setPointSizeF(fontSize);
-  document()->setDefaultFont(font);
-}
-
-/*!
- * \brief BaseEditor::PlainTextEdit::handleHomeKey
+ * \brief PlainTextEdit::handleHomeKey
  * Handles the home key.\n
  * Moves the cursor to the start of the line.\n
  * Skips the trailing spaces.
  * \param keepAnchor
  */
-void BaseEditor::PlainTextEdit::handleHomeKey(bool keepAnchor)
+void PlainTextEdit::handleHomeKey(bool keepAnchor)
 {
   QTextCursor cursor = textCursor();
   QTextCursor::MoveMode mode = keepAnchor ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor;
@@ -1193,73 +1192,197 @@ void BaseEditor::PlainTextEdit::handleHomeKey(bool keepAnchor)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::highlightCurrentLine
- * Hightlights the current line.
+ * \brief PlainTextEdit::toggleBlockVisible
+ * Toggles the folding of the block.
+ * \param block
  */
-void BaseEditor::PlainTextEdit::highlightCurrentLine()
+void PlainTextEdit::toggleBlockVisible(const QTextBlock &block)
 {
-  Utilities::highlightCurrentLine(this);
+  BaseEditorDocumentLayout *pBaseEditorDocumentLayout;
+  pBaseEditorDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(document()->documentLayout());
+  BaseEditorDocumentLayout::foldOrUnfold(block, BaseEditorDocumentLayout::isFolded(block));
+  pBaseEditorDocumentLayout->requestUpdate();
+  pBaseEditorDocumentLayout->emitDocumentSizeChanged();
+}
+
+
+/*!
+ * \brief BaseEditor::updateLineNumberAreaWidth
+ * Updates the width of LineNumberArea.
+ * \param newBlockCount
+ */
+void PlainTextEdit::updateLineNumberAreaWidth(int newBlockCount)
+{
+  Q_UNUSED(newBlockCount);
+  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::highlightParentheses
- * Highlights the matching parentheses.
+ * \brief BaseEditor::updateLineNumberArea
+ * Scrolls the LineNumberArea Widget and also updates its width if required.
+ * \param rect
+ * \param dy
  */
-void BaseEditor::PlainTextEdit::highlightParentheses()
+void PlainTextEdit::updateLineNumberArea(const QRect &rect, int dy)
 {
-  Utilities::highlightParentheses(this, mParenthesesMatchFormat, mParenthesesMisMatchFormat);
-}
-
-/*!
- * \brief BaseEditor::PlainTextEdit::plainTextFromSelection
- * Returns the selected text in plain text format.
- * \param cursor
- * \return
- */
-QString BaseEditor::PlainTextEdit::plainTextFromSelection(const QTextCursor &cursor) const
-{
-  // Copy the selected text as plain text
-  QString text = cursor.selectedText();
-  return convertToPlainText(text);
-}
-
-/*!
- * \brief BaseEditor::PlainTextEdit::convertToPlainText
- * Returns the text in plain text format.
- * \param txt
- * \return
- */
-QString BaseEditor::PlainTextEdit::convertToPlainText(const QString &txt)
-{
-  QString ret = txt;
-  QChar *uc = ret.data();
-  QChar *e = uc + ret.size();
-
-  for (; uc != e; ++uc) {
-    switch (uc->unicode()) {
-      case 0xfdd0: // QTextBeginningOfFrame
-      case 0xfdd1: // QTextEndOfFrame
-      case QChar::ParagraphSeparator:
-      case QChar::LineSeparator:
-        *uc = QLatin1Char('\n');
-        break;
-      case QChar::Nbsp:
-        *uc = QLatin1Char(' ');
-        break;
-      default:
-        ;
-    }
+  if (dy) {
+    mpLineNumberArea->scroll(0, dy);
+  } else {
+    mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
   }
-  return ret;
+
+  if (rect.contains(viewport()->rect())) {
+    updateLineNumberAreaWidth(0);
+  }
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::resizeEvent
+ * \brief BaseEditor::updateHighlights
+ * Slot activated when editor's cursorPositionChanged signal is raised.\n
+ * Updates all the highlights.
+ */
+void PlainTextEdit::updateHighlights()
+{
+  QList<QTextEdit::ExtraSelection> selections;
+  setExtraSelections(selections);
+  highlightCurrentLine();
+  highlightParentheses();
+}
+
+/*!
+ * \brief BaseEditor::updateCursorPosition
+ * Slot activated when editor's cursorPositionChanged signal is raised.
+ * Updates the cursorPostionLabel i.e Line: 12, Col:123.
+ */
+void PlainTextEdit::updateCursorPosition()
+{
+  if (mpBaseEditor->getModelWidget()) {
+    const QTextBlock block = textCursor().block();
+    const int line = block.blockNumber() + 1;
+    const int column = textCursor().columnNumber();
+    Label *pCursorPositionLabel = mpBaseEditor->getModelWidget()->getCursorPositionLabel();
+    pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
+  }
+  ensureCursorVisible();
+}
+
+/*!
+ * \brief PlainTextEdit::textSettingsChanged
+ * Triggered when text settings are changed in the OptionsDialog.
+ */
+void PlainTextEdit::textSettingsChanged()
+{
+  // update line wrapping
+  setLineWrapping();
+  // update code foldings
+  bool enable = true;
+  // if user disables the code folding then unfold all the text editors.
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
+  if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    foldOrUnfold(true);
+    enable = false;
+  }
+  mpBaseEditor->getFoldAllAction()->setEnabled(enable);
+  mpBaseEditor->getUnFoldAllAction()->setEnabled(enable);
+}
+
+/*!
+ * \brief PlainTextEdit::showTabsAndSpaces
+ * Shows/hide tabs and spaces for the editor.
+ * \param On
+ */
+void PlainTextEdit::showTabsAndSpaces(bool On)
+{
+  QTextOption textOption = document()->defaultTextOption();
+  if (On) {
+    textOption.setFlags(textOption.flags() | QTextOption::ShowTabsAndSpaces);
+  } else {
+    textOption.setFlags(textOption.flags() & ~QTextOption::ShowTabsAndSpaces);
+  }
+  document()->setDefaultTextOption(textOption);
+}
+
+/*!
+ * \brief PlainTextEdit::toggleBreakpoint
+ * Slot activated when set breakpoint is seleteted from line number area context menu.
+ */
+void PlainTextEdit::toggleBreakpoint()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QStringList list = pAction->data().toStringList();
+    toggleBreakpoint(list.at(0), list.at(1).toInt());
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::foldAll
+ * Folds all the foldings in the document.
+ */
+void PlainTextEdit::foldAll()
+{
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    foldOrUnfold(false);
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::unFoldAll
+ * Unfolds all the foldings in the document.
+ */
+void PlainTextEdit::unFoldAll()
+{
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
+  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
+    foldOrUnfold(true);
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::resetZoom
+ * Resets the document font size.
+ */
+void PlainTextEdit::resetZoom()
+{
+  QFont font = document()->defaultFont();
+  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  document()->setDefaultFont(font);
+}
+
+/*!
+ * \brief PlainTextEdit::zoomIn
+ * Increases the document font size.
+ */
+void PlainTextEdit::zoomIn()
+{
+  QFont font = document()->defaultFont();
+  qreal fontSize = font.pointSizeF();
+  fontSize = fontSize  + 1;
+  font.setPointSizeF(fontSize);
+  document()->setDefaultFont(font);
+}
+
+/*!
+ * \brief PlainTextEdit::zoomOut
+ * Decreases the document font size.
+ */
+void PlainTextEdit::zoomOut()
+{
+  QFont font = document()->defaultFont();
+  qreal fontSize = font.pointSizeF();
+  fontSize = fontSize <= 6 ? fontSize : fontSize - 1;
+  font.setPointSizeF(fontSize);
+  document()->setDefaultFont(font);
+}
+
+/*!
+ * \brief PlainTextEdit::resizeEvent
  * Reimplementation of resize event.
  * Resets the size of LineNumberArea.
  * \param pEvent
  */
-void BaseEditor::PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
+void PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
 {
   QPlainTextEdit::resizeEvent(pEvent);
 
@@ -1268,11 +1391,11 @@ void BaseEditor::PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::keyPressEvent
+ * \brief PlainTextEdit::keyPressEvent
  * Reimplementation of keyPressEvent.
  * \param pEvent
  */
-void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
+void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
@@ -1326,11 +1449,11 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::createMimeDataFromSelection
+ * \brief PlainTextEdit::createMimeDataFromSelection
  * Reimplementation of QPlainTextEdit::createMimeDataFromSelection() to allow copying text with formatting.
  * \return
  */
-QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
+QMimeData* PlainTextEdit::createMimeDataFromSelection() const
 {
   if (textCursor().hasSelection()) {
     QTextCursor cursor = textCursor();
@@ -1400,22 +1523,22 @@ QMimeData* BaseEditor::PlainTextEdit::createMimeDataFromSelection() const
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::focusInEvent
+ * \brief PlainTextEdit::focusInEvent
  * Reimplementation of QPlainTextEdit::focusInEvent(). Stops the auto save timer.
  * \param event
  */
-void BaseEditor::PlainTextEdit::focusInEvent(QFocusEvent *event)
+void PlainTextEdit::focusInEvent(QFocusEvent *event)
 {
   MainWindow::instance()->getAutoSaveTimer()->stop();
   QPlainTextEdit::focusInEvent(event);
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::focusOutEvent
+ * \brief PlainTextEdit::focusOutEvent
  * Reimplementation of QPlainTextEdit::focusOutEvent(). Restarts the auto save timer.
  * \param event
  */
-void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
+void PlainTextEdit::focusOutEvent(QFocusEvent *event)
 {
   /* The user might start editing the document and then minimize the OMEdit window.
    * We should only start the autosavetimer when MainWindow is the active window and focusOutEvent is called.
@@ -1429,11 +1552,11 @@ void BaseEditor::PlainTextEdit::focusOutEvent(QFocusEvent *event)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::paintEvent
+ * \brief PlainTextEdit::paintEvent
  * Reimplementation for QPlainTextEdit::paintEvent() to draw folding indication in the text.
  * \param e
  */
-void BaseEditor::PlainTextEdit::paintEvent(QPaintEvent *e)
+void PlainTextEdit::paintEvent(QPaintEvent *e)
 {
   QPlainTextEdit::paintEvent(e);
 
@@ -1520,10 +1643,10 @@ void BaseEditor::PlainTextEdit::paintEvent(QPaintEvent *e)
 }
 
 /*!
- * \brief BaseEditor::PlainTextEdit::wheelEvent
+ * \brief PlainTextEdit::wheelEvent
  * \param event
  */
-void BaseEditor::PlainTextEdit::wheelEvent(QWheelEvent *event)
+void PlainTextEdit::wheelEvent(QWheelEvent *event)
 {
   if (event->modifiers() & Qt::ControlModifier) {
     if (event->delta() > 0) {
@@ -1544,7 +1667,7 @@ void BaseEditor::PlainTextEdit::wheelEvent(QWheelEvent *event)
  * \param pParent
  */
 BaseEditor::BaseEditor(QWidget *pParent)
-  : QWidget(pParent), mCanHaveBreakpoints(false)
+  : QWidget(pParent)
 {
   if (qobject_cast<ModelWidget*>(pParent)) {
     mpModelWidget = qobject_cast<ModelWidget*>(pParent);
@@ -1552,41 +1675,6 @@ BaseEditor::BaseEditor(QWidget *pParent)
     mpModelWidget = 0;
   }
   initialize();
-}
-
-/*!
- * \brief BaseEditor::setCanHaveBreakpoints
- * Sets whether editor supports breakpoints or not. Also sets/unsets the editor's LineNumberArea mouse tracking.
- * \param canHaveBreakpoints
- */
-void BaseEditor::setCanHaveBreakpoints(bool canHaveBreakpoints)
-{
-  mCanHaveBreakpoints = canHaveBreakpoints;
-  mpPlainTextEdit->getLineNumberArea()->setMouseTracking(canHaveBreakpoints);
-}
-
-/*!
- * \brief BaseEditor::goToLineNumber
- * Takes the cursor to the specific line.
- * \param lineNumber - the line number to go.
- */
-void BaseEditor::goToLineNumber(int lineNumber)
-{
-  mpPlainTextEdit->goToLineNumber(lineNumber);
-}
-
-/*!
- * \brief BaseEditor::toggleBlockVisible
- * Toggles the folding of the block.
- * \param block
- */
-void BaseEditor::toggleBlockVisible(const QTextBlock &block)
-{
-  BaseEditorDocumentLayout *pBaseEditorDocumentLayout;
-  pBaseEditorDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(mpPlainTextEdit->document()->documentLayout());
-  BaseEditorDocumentLayout::foldOrUnfold(block, BaseEditorDocumentLayout::isFolded(block));
-  pBaseEditorDocumentLayout->requestUpdate();
-  pBaseEditorDocumentLayout->emitDocumentSizeChanged();
 }
 
 /*!
@@ -1635,10 +1723,31 @@ void BaseEditor::createActions()
   mpShowTabsAndSpacesAction = new QAction(tr("Show Tabs and Spaces"), this);
   mpShowTabsAndSpacesAction->setStatusTip(tr("Shows the Tabs and Spaces"));
   mpShowTabsAndSpacesAction->setCheckable(true);
-  connect(mpShowTabsAndSpacesAction, SIGNAL(triggered(bool)), SLOT(showTabsAndSpaces(bool)));
+  connect(mpShowTabsAndSpacesAction, SIGNAL(triggered(bool)), mpPlainTextEdit, SLOT(showTabsAndSpaces(bool)));
   /* Toggle breakpoint action */
   mpToggleBreakpointAction = new QAction(tr("Toggle Breakpoint"), this);
-  connect(mpToggleBreakpointAction, SIGNAL(triggered()), SLOT(toggleBreakpoint()));
+  connect(mpToggleBreakpointAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(toggleBreakpoint()));
+  // we only define the zooming actions if ModelWidget is NULL otherwise we use the zooming actions from toolbar.
+  if (!mpModelWidget) {
+    // reset zoom action
+    mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.svg"), Helper::resetZoom, this);
+    mpResetZoomAction->setStatusTip(Helper::resetZoom);
+    mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
+    connect(mpResetZoomAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(resetZoom()));
+    mpPlainTextEdit->addAction(mpResetZoomAction);
+    // zoom in action
+    mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.svg"), Helper::zoomIn, this);
+    mpZoomInAction->setStatusTip(Helper::zoomIn);
+    mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
+    connect(mpZoomInAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomIn()));
+    mpPlainTextEdit->addAction(mpZoomInAction);
+    // zoom out action
+    mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.svg"), Helper::zoomOut, this);
+    mpZoomOutAction->setStatusTip(Helper::zoomOut);
+    mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
+    connect(mpZoomOutAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomOut()));
+    mpPlainTextEdit->addAction(mpZoomOutAction);
+  }
   // toggle comment action
   mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
   mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
@@ -1653,35 +1762,11 @@ void BaseEditor::createActions()
   // fold all action
   mpFoldAllAction = new QAction(tr("Fold All"), this);
   mpFoldAllAction->setEnabled(enable);
-  connect(mpFoldAllAction, SIGNAL(triggered()), SLOT(foldAll()));
+  connect(mpFoldAllAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(foldAll()));
   // unfold all action
   mpUnFoldAllAction = new QAction(tr("Unfold All"), this);
   mpUnFoldAllAction->setEnabled(enable);
-  connect(mpUnFoldAllAction, SIGNAL(triggered()), SLOT(unFoldAll()));
-}
-
-/*!
- * \brief BaseEditor::foldOrUnfold
- * folds or unfolds the whole document foldings.
- * \param unFold
- */
-void BaseEditor::foldOrUnfold(bool unFold)
-{
-  QTextDocument *pTextDocument = mpPlainTextEdit->document();
-  BaseEditorDocumentLayout *pBaseEditorDocumentLayout = qobject_cast<BaseEditorDocumentLayout*>(pTextDocument->documentLayout());
-
-  QTextBlock block = pTextDocument->firstBlock();
-  while (block.isValid()) {
-    if (BaseEditorDocumentLayout::canFold(block)) {
-      BaseEditorDocumentLayout::foldOrUnfold(block, unFold);
-    }
-    block = block.next();
-  }
-
-  mpPlainTextEdit->moveCursorVisible();
-  pBaseEditorDocumentLayout->requestUpdate();
-  pBaseEditorDocumentLayout->emitDocumentSizeChanged();
-  mpPlainTextEdit->centerCursor();
+  connect(mpUnFoldAllAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(unFoldAll()));
 }
 
 /*!
@@ -1698,68 +1783,17 @@ QMenu* BaseEditor::createStandardContextMenu()
   pMenu->addAction(mpGotoLineNumberAction);
   pMenu->addSeparator();
   pMenu->addAction(mpShowTabsAndSpacesAction);
-  return pMenu;
-}
-
-/*!
- * \brief BaseEditor::textSettingsChanged
- * Triggered when text settings are changed in the OptionsDialog.
- */
-void BaseEditor::textSettingsChanged()
-{
-  // update line wrapping
-  mpPlainTextEdit->setLineWrapping();
-  // update code foldings
-  bool enable = true;
-  // if user disables the code folding then unfold all the text editors.
-  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
-  if (!pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() || !pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
-    foldOrUnfold(true);
-    enable = false;
+  pMenu->addSeparator();
+  if (!mpModelWidget) {
+    pMenu->addAction(mpResetZoomAction);
+    pMenu->addAction(mpZoomInAction);
+    pMenu->addAction(mpZoomOutAction);
+  } else {
+    pMenu->addAction(MainWindow::instance()->getResetZoomAction());
+    pMenu->addAction(MainWindow::instance()->getZoomInAction());
+    pMenu->addAction(MainWindow::instance()->getZoomOutAction());
   }
-  mpFoldAllAction->setEnabled(enable);
-  mpUnFoldAllAction->setEnabled(enable);
-}
-
-/*!
- * \brief BaseEditor::updateLineNumberAreaWidth
- * Updates the width of LineNumberArea.
- * \param newBlockCount
- */
-void BaseEditor::updateLineNumberAreaWidth(int newBlockCount)
-{
-  mpPlainTextEdit->updateLineNumberAreaWidth(newBlockCount);
-}
-
-/*!
- * \brief BaseEditor::updateLineNumberArea
- * Scrolls the LineNumberArea Widget and also updates its width if required.
- * \param rect
- * \param dy
- */
-void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
-{
-  mpPlainTextEdit->updateLineNumberArea(rect, dy);
-}
-
-/*!
- * \brief BaseEditor::updateHighlights
- * Slot activated when editor's cursorPositionChanged signal is raised.
- * Updates all the highlights.
- */
-void BaseEditor::updateHighlights()
-{
-  mpPlainTextEdit->updateHighlights();
-}
-
-/*!
- * \brief BaseEditor::updateCursorPosition
- * Slot activated when editor's cursorPositionChanged signal is raised.
- * Updates the cursorPostionLabel i.e Line: 12, Col:123.
- */
-void BaseEditor::updateCursorPosition()
-{
-  mpPlainTextEdit->updateCursorPosition();
+  return pMenu;
 }
 
 /*!
@@ -1789,35 +1823,6 @@ void BaseEditor::showGotoLineNumberDialog()
 {
   GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
   pGotoLineWidget->exec();
-}
-
-/*!
- * \brief BaseEditor::showTabsAndSpaces
- * Shows/hide tabs and spaces for the editor.
- * \param On
- */
-void BaseEditor::showTabsAndSpaces(bool On)
-{
-  QTextOption textOption = mpPlainTextEdit->document()->defaultTextOption();
-  if (On) {
-    textOption.setFlags(textOption.flags() | QTextOption::ShowTabsAndSpaces);
-  } else {
-    textOption.setFlags(textOption.flags() & ~QTextOption::ShowTabsAndSpaces);
-  }
-  mpPlainTextEdit->document()->setDefaultTextOption(textOption);
-}
-
-/*!
- * \brief BaseEditor::toggleBreakpoint
- * Slot activated when set breakpoint is seleteted from line number area context menu.
- */
-void BaseEditor::toggleBreakpoint()
-{
-  QAction *pAction = qobject_cast<QAction*>(sender());
-  if (pAction) {
-    QStringList list = pAction->data().toStringList();
-    mpPlainTextEdit->toggleBreakpoint(list.at(0), list.at(1).toInt());
-  }
 }
 
 /*!
@@ -1998,30 +2003,6 @@ void BaseEditor::toggleCommentSelection()
     mpPlainTextEdit->setTextCursor(cursor);
   }
   cursor.endEditBlock();
-}
-
-/*!
- * \brief BaseEditor::foldAll
- * Folds all the foldings in the document.
- */
-void BaseEditor::foldAll()
-{
-  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
-  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
-    foldOrUnfold(false);
-  }
-}
-
-/*!
- * \brief BaseEditor::unFoldAll
- * Unfolds all the foldings in the document.
- */
-void BaseEditor::unFoldAll()
-{
-  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
-  if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
-    foldOrUnfold(true);
-  }
 }
 
 /*!
@@ -2379,7 +2360,7 @@ int GotoLineDialog::exec()
  */
 void GotoLineDialog::goToLineNumber()
 {
-  mpBaseEditor->goToLineNumber(mpLineNumberTextBox->text().toInt());
+  mpBaseEditor->getPlainTextEdit()->goToLineNumber(mpLineNumberTextBox->text().toInt());
   accept();
 }
 

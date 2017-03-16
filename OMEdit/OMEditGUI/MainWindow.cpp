@@ -1101,7 +1101,7 @@ void MainWindow::findFileAndGoToLine(QString fileName, QString lineNumber)
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
       pLibraryTreeItem->getModelWidget()->getTextViewToolButton()->setChecked(true);
-      pLibraryTreeItem->getModelWidget()->getEditor()->goToLineNumber(lineNumber.toInt());
+      pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->goToLineNumber(lineNumber.toInt());
     }
   } else {
     QString msg = tr("Unable to find the file <b>%1</b> with line number <b>%2</b>").arg(fileName).arg(lineNumber);
@@ -2737,20 +2737,20 @@ void MainWindow::createActions()
   mpShowGridLinesAction->setEnabled(false);
   connect(mpShowGridLinesAction, SIGNAL(toggled(bool)), SLOT(setShowGridLines(bool)));
   // reset zoom action
-  mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.svg"), tr("Reset Zoom"), this);
-  mpResetZoomAction->setStatusTip(tr("Resets the zoom"));
+  mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.svg"), Helper::resetZoom, this);
+  mpResetZoomAction->setStatusTip(Helper::resetZoom);
   mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
   mpResetZoomAction->setEnabled(false);
   connect(mpResetZoomAction, SIGNAL(triggered()), SLOT(resetZoom()));
   // zoom in action
-  mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.svg"), tr("Zoom In"), this);
-  mpZoomInAction->setStatusTip(tr("Zoom in"));
+  mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.svg"), Helper::zoomIn, this);
+  mpZoomInAction->setStatusTip(Helper::zoomIn);
   mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
   mpZoomInAction->setEnabled(false);
   connect(mpZoomInAction, SIGNAL(triggered()), SLOT(zoomIn()));
   // zoom out action
-  mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.svg"), tr("Zoom Out"), this);
-  mpZoomOutAction->setStatusTip(tr("Zoom out"));
+  mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.svg"), Helper::zoomOut, this);
+  mpZoomOutAction->setStatusTip(Helper::zoomOut);
   mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
   mpZoomOutAction->setEnabled(false);
   connect(mpZoomOutAction, SIGNAL(triggered()), SLOT(zoomOut()));

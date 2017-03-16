@@ -40,7 +40,7 @@
 MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
-  setCanHaveBreakpoints(true);
+  mpPlainTextEdit->setCanHaveBreakpoints(true);
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
 }
@@ -57,7 +57,7 @@ void MetaModelicaEditor::setPlainText(const QString &text)
     mForceSetPlainText = true;
     mpPlainTextEdit->setPlainText(text);
     mForceSetPlainText = false;
-    foldAll();
+    mpPlainTextEdit->foldAll();
   }
 }
 
