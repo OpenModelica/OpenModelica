@@ -186,6 +186,9 @@ runtimeCPPmsvcinstall:
 runtimeCPPinstall:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall
 
+nox:
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) nox
+
 testlogwindows:
 	$(MAKE) -C testsuite -f Makefile ReferenceFiles > testsuite/testsuite-trace.txt
 	(time $(MAKE) -C testsuite -f Makefile 2>&1 | tee testsuite/testsuite-trace.txt) || true
