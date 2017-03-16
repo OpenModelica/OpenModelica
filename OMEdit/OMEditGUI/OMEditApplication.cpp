@@ -89,17 +89,17 @@ OMEditApplication::OMEditApplication(int &argc, char **argv)
 
   QString translationDirectory = omhome + QString("/share/omedit/nls");
   // install Qt's default translations
-  QTranslator qtTranslator;
+  QTranslator *qtTranslator = new QTranslator(this);
 #ifdef Q_OS_WIN
-  qtTranslator.load("qt_" + locale, translationDirectory);
+  qtTranslator->load("qt_" + locale, translationDirectory);
 #else
-  qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+  qtTranslator->load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
 #endif
-  installTranslator(&qtTranslator);
+  installTranslator(qtTranslator);
   // install application translations
-  QTranslator translator;
-  translator.load("OMEdit_" + locale, translationDirectory);
-  installTranslator(&translator);
+  QTranslator *translator = new QTranslator(this);
+  translator->load("OMEdit_" + locale, translationDirectory);
+  installTranslator(translator);
   // Splash Screen
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
