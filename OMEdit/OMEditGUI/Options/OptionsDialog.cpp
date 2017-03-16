@@ -1504,6 +1504,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpToolbarIconSizeSpinBox->setValue(24);
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
+  mpPreserveUserCustomizations->setChecked(true);
   // terminal command
   mpTerminalCommandLabel = new Label(tr("Terminal Command:"));
   mpTerminalCommandTextBox = new QLineEdit;
