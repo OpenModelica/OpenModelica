@@ -49,6 +49,11 @@ uniontype EvalTarget
     SourceInfo info;
   end DIMENSION;
 
+  record ATTRIBUTE
+    Expression exp;
+    SourceInfo info;
+  end ATTRIBUTE;
+
   record IGNORE_ERRORS end IGNORE_ERRORS;
 end EvalTarget;
 

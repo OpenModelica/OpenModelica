@@ -373,9 +373,38 @@ protected
 algorithm
   name := Modifier.name(attribute);
   binding := Modifier.binding(attribute);
+
   binding := typeBinding(binding, scope);
+
+  binding := match name
+    case "fixed" then evalBinding(binding);
+    else binding;
+  end match;
+
   attribute := Modifier.setBinding(binding, attribute);
 end typeTypeAttribute;
+
+function evalBinding
+  input output Binding binding;
+algorithm
+  binding := match binding
+    local
+      Expression exp;
+
+    case Binding.TYPED_BINDING()
+      algorithm
+        exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding.bindingExp, binding.info));
+        exp := SimplifyExp.simplifyExp(exp);
+      then
+        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.propagatedDims, binding.info);
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " failed for " + Binding.toString(binding));
+      then
+        fail();
+  end match;
+end evalBinding;
 
 function checkRealAttributes
   input list<Modifier> attributes;
