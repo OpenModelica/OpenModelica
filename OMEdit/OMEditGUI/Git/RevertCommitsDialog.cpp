@@ -29,7 +29,7 @@ RevertCommitsDialog::RevertCommitsDialog(QWidget *pParent)
   // Working directory
   mpWorkingDirectoryLabel = new Label(tr("Working Directory:"));
   mpWorkingDirectoryTextBox = new QLineEdit;
-  mpWorkingDirectoryTextBox->setText(MainWindow::instance()->getGitCommands()->getRepositoryName(repository));
+  mpWorkingDirectoryTextBox->setText(GitCommands::instance()->getRepositoryName(repository));
   connect(mpWorkingDirectoryTextBox, SIGNAL(textChanged(QString)), this, SLOT(workingDirectoryChanged(QString)));
   mpDirectoryBrowseButton = new QPushButton(tr("Browse Directory"));
   connect(mpDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));

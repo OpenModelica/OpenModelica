@@ -67,6 +67,7 @@
 #include "Git/GitCommands.h"
 #include "Traceability/TraceabilityPushDialog.h"
 #include "Traceability/TraceabilityQueryDialog.h"
+#include "Traceability/TraceabilityGraphViewWidget.h"
 #include "omc_config.h"
 
 #include <QtSvg/QSvgGenerator>
@@ -190,6 +191,11 @@ void MainWindow::setUpMainWindow()
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
   connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
+  // traceability perspective
+  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/traceability.svg"), tr("Traceability"));
+  QShortcut *pTraceabilityShortcut = new QShortcut(QKeySequence("Ctrl+f6"), this);
+  connect(pTraceabilityShortcut, SIGNAL(activated()), SLOT(switchToTraceabilityGraphViewPerspectiveSlot()));
+  mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to traceability graph view perspective (%1)").arg(pTraceabilityShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   // Create an object of QStatusBar
@@ -274,6 +280,8 @@ void MainWindow::setUpMainWindow()
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
+  // create traceability graph view widget
+  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
 #if !defined(WITHOUT_OSG)
   /* Ticket #4252
    * Do not create an object of ThreeDViewer by default.
@@ -311,13 +319,15 @@ void MainWindow::setUpMainWindow()
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
   // create the Git commands instance
-  mpGitCommands = new GitCommands(this);
+  //mpGitCommands = new GitCommands(this);
+  GitCommands::create();
   //Create a centralwidget for the main window
   QWidget *pCentralwidget = new QWidget;
   mpCentralStackedWidget = new QStackedWidget;
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
   mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
+  mpCentralStackedWidget->addWidget(mpTraceabilityGraphViewWidget);
   // set the layout
   QGridLayout *pCentralgrid = new QGridLayout;
   pCentralgrid->setVerticalSpacing(4);
@@ -580,6 +590,8 @@ void MainWindow::beforeClosingMainWindow()
   MessagesWidget::destroy();
   // delete the GDBAdapter object
   GDBAdapter::destroy();
+  // delete the GitCommands object
+  GitCommands::destroy();
 }
 
 /*!
@@ -828,6 +840,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   //trace export FMU
   if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
     MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("FMU Export", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
+    //Push traceability information automaticaly to Daemon
+    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("FMU Export", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
   }
   // hide progress bar
   hideProgressBar();
@@ -2410,6 +2424,9 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 3:
       switchToAlgorithmicDebuggingPerspective();
       break;
+    case 4:
+      switchToTraceabilityGraphViewPerspective();
+      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -2502,6 +2519,16 @@ void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 }
 
 /*!
+ * \brief MainWindow::switchToTraceabilityGraphViewPerspectiveSlot
+ * Slot activated when Ctrl+f6 is clicked.
+ * Switches to traceability graph view perspective.
+ */
+void MainWindow::switchToTraceabilityGraphViewPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(4);
+}
+
+/*!
  * \brief MainWindow::showConfigureDialog
  * Slot activated when mpDebugConfigurationsAction triggered signal is raised.\n
  * Shows the debugger configurations.
@@ -2534,7 +2561,7 @@ void MainWindow::createGitRepository()
   QString gitRepositoryPath = StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL);
   if (gitRepositoryPath.isEmpty())
     return;
-  mpGitCommands->createGitRepository(gitRepositoryPath);
+  GitCommands::instance()->createGitRepository(gitRepositoryPath);
 }
 
 /*!
@@ -2546,7 +2573,7 @@ void MainWindow::logCurrentFile()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-     mpGitCommands->logCurrentFile(pModelWidget->getLibraryTreeItem()->getFileName());
+     GitCommands::instance()->logCurrentFile(pModelWidget->getLibraryTreeItem()->getFileName());
   }
 }
 
@@ -2559,7 +2586,7 @@ void MainWindow::stageCurrentFileForCommit()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-     mpGitCommands->stageCurrentFileForCommit(pModelWidget->getLibraryTreeItem()->getFileName());
+     GitCommands::instance()->stageCurrentFileForCommit(pModelWidget->getLibraryTreeItem()->getFileName());
   }
 }
 
@@ -2572,7 +2599,7 @@ void MainWindow::unstageCurrentFileFromCommit()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-     mpGitCommands->unstageCurrentFileFromCommit(pModelWidget->getLibraryTreeItem()->getFileName());
+     GitCommands::instance()->unstageCurrentFileFromCommit(pModelWidget->getLibraryTreeItem()->getFileName());
   }
 }
 
@@ -2618,8 +2645,8 @@ void MainWindow::cleanWorkingDirectory()
  */
 void MainWindow::pushTraceabilityInformation()
 {
-  TraceabilityPushDialog *pTraceabilityPushDialog = new TraceabilityPushDialog(this);
-  pTraceabilityPushDialog->exec();
+//  TraceabilityPushDialog *pTraceabilityPushDialog = new TraceabilityPushDialog(this);
+//  pTraceabilityPushDialog->exec();
 }
 
 /*!
@@ -3498,6 +3525,38 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
+}
+
+/*!
+ * \brief MainWindow::switchToTraceabilityGraphViewPerspective
+ * Switches to traceability graph view perspective.
+ */
+void MainWindow::switchToTraceabilityGraphViewPerspective()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
+      bool signalsState = mpPerspectiveTabbar->blockSignals(true);
+      mpPerspectiveTabbar->setCurrentIndex(1);
+      mpPerspectiveTabbar->blockSignals(signalsState);
+      return;
+    }
+  }
+  mpCentralStackedWidget->setCurrentWidget(mpTraceabilityGraphViewWidget);
+  mpModelWidgetContainer->currentModelWidgetChanged(0);
+  mpUndoAction->setEnabled(false);
+  mpRedoAction->setEnabled(false);
+  mpModelSwitcherToolButton->setEnabled(false);
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
+    mpVariablesDockWidget->hide();
+  }
+  mpStackFramesDockWidget->hide();
+  mpBreakpointsDockWidget->hide();
+  mpLocalsDockWidget->hide();
+  mpTargetOutputDockWidget->hide();
+  mpGDBLoggerDockWidget->hide();
+  mpPlotToolBar->setEnabled(false);
 }
 
 /*!

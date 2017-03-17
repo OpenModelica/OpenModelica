@@ -5371,7 +5371,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
     // check for git working directory
-    gitWorkingDirectory = MainWindow::instance()->getGitCommands()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
+    gitWorkingDirectory = /*MainWindow::instance()->getGitCommands()*/GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
       compositeModel = false;

@@ -13,14 +13,40 @@
  * \class GitCommands
  * \brief Interface for communication with Git.
  */
+
+GitCommands *GitCommands::mpInstance = 0;
+
+/*!
+ * \brief GitCommands::create
+ */
+void GitCommands::create()
+{
+  if (!mpInstance) {
+    mpInstance = new GitCommands;
+  }
+}
+
+/*!
+ * \brief GitCommands::destroy
+ */
+void GitCommands::destroy()
+{
+  mpInstance->deleteLater();
+}
+
+/*!
+ * \class GitCommands
+ * \brief Interface for communication with Git.
+ */
 /*!
  * \brief GitCommands::GitCommands
  * \param pMainWindow - pointer to MainWindow
  */
-GitCommands::GitCommands(QObject *pParent)
+GitCommands::GitCommands(QWidget *pParent)
   : QObject(pParent)
 {
   mpGitProcess = new QProcess;
+// mpGitProcess = 0;
 }
 
 /*!
@@ -100,25 +126,25 @@ void GitCommands::cleanWorkingDirectory()
  */
 void GitCommands::createGitRepository(QString repositoryPath)
 {
-  if(isGitInstalled()) {
-    mpGitProcess->setWorkingDirectory(repositoryPath);
-    //mpGitProcess->setProcessChannelMode(QProcess::MergedChannels);
-    mpGitProcess->start("git", QStringList() << "init");
-    mpGitProcess->waitForFinished();
-    QString createRepo = mpGitProcess->readAllStandardOutput();
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
-                                                                 createRepo,
-                                                                 Helper::scriptingKind, Helper::notificationLevel));
-
-    addStructuresToRepository(repositoryPath);
+  if(!isGitInstalled()) {
+    // Todo get Git path from settings
+    QMessageBox::warning(0, QString(Helper::applicationName).append(" - ").append(tr("Repository Creation Failed")),
+                         QString("A version control repository could not be created in %1").arg(repositoryPath), Helper::ok);
   }
   else {
-    QMessageBox *pMessageBox = new QMessageBox();
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
-    pMessageBox->setIcon(QMessageBox::Information);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText("Git not found in the system");
-    pMessageBox->exec();
+    QStringList args;
+    args << "init";
+    runGitCommand(repositoryPath, args);
+
+//    mpGitProcess->setWorkingDirectory(repositoryPath);
+//    mpGitProcess->start("git", QStringList() << "init");
+//    mpGitProcess->waitForFinished();
+    QString createRepo = mpGitProcess->readAllStandardOutput();
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, createRepo,
+                                              Helper::scriptingKind, Helper::notificationLevel));
+
+    addStructuresToRepository(repositoryPath);
+
   }
 }
 
@@ -143,7 +169,6 @@ void GitCommands::addStructuresToRepository(QString repositoryPath)
  */
 bool GitCommands::isGitInstalled()
 {
-//  mpGitProcess->setProcessChannelMode(QProcess::MergedChannels);
   mpGitProcess->start("git", QStringList() << "--version");
   mpGitProcess->waitForFinished();
   QString git = mpGitProcess->readAllStandardOutput();
@@ -162,17 +187,15 @@ bool GitCommands::isGitInstalled()
  */
 bool GitCommands::isSavedUnderGitRepository(QString filePath)
 {
-  if (!filePath.isEmpty()) {
-    QFileInfo fileInfo(filePath);
-    QString repository = fileInfo.absoluteDir().absolutePath();
-    mpGitProcess->setWorkingDirectory(repository);
-    mpGitProcess->start("git", QStringList() << "rev-parse" << "--is-inside-work-tree");
-    mpGitProcess->waitForFinished();
-    QString isGitRepository =  mpGitProcess->readAllStandardOutput();
-    if (!isGitRepository.isEmpty()) {
-      return true;
-    }
-  }
+  QFileInfo fileInfo(filePath);
+  QString repository = fileInfo.absoluteDir().absolutePath();
+//  mpGitProcess = new QProcess;
+  mpGitProcess->setWorkingDirectory(repository);
+  mpGitProcess->start("git", QStringList() << "rev-parse" << "--is-inside-work-tree");
+  mpGitProcess->waitForFinished();
+  QString isGitRepository =  mpGitProcess->readAllStandardOutput();
+  if(!isGitRepository.isEmpty())
+     return true;
   return false;
 }
 
@@ -207,6 +230,23 @@ QStringList GitCommands::getChangedFiles(QString filePath)
   QStringList changedFilesOutputList = QString(changedFilesOutput).split("\n");
   return changedFilesOutputList;
 }
+
+/*!
+ * \brief GitCommands::getSingleFileStatus
+ * Returns the status of the file .
+ * \return
+ */
+QString GitCommands::getSingleFileStatus(QString fileName)
+{
+//  QFileInfo fileInfo(filePath);
+//  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  mpGitProcess->start("git", QStringList() << "status"<< "--porcelain" << fileName);
+  mpGitProcess->waitForFinished();
+  QByteArray changedFileOutput =  mpGitProcess->readAllStandardOutput();
+  QString status = QString(changedFileOutput);
+  return status;
+}
+
 
 /*!
  * \brief GitCommands::getRepositoryName
@@ -308,4 +348,35 @@ QString GitCommands::commitAndGetFileHash(QString fileName, QString activity)
   mpGitProcess->start("git", QStringList() << "commit" << fileName <<"-m" << activity);
   mpGitProcess->waitForFinished();
   return getGitHash(fileName);
+}
+
+void GitCommands::runGitCommand(QString repositoryPath, QStringList args)
+{
+//  mpGitProcess = new QProcess;
+  QFileInfo fileInfo(repositoryPath);
+  // mpGitProcess = new QProcess;
+  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  // qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+  // connect(mpGitProcess, SIGNAL(started()), SLOT(gitProcessStarted()));
+  connect(mpGitProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGitStandardOutput()));
+  connect(mpGitProcess, SIGNAL(readyReadStandardError()), SLOT(readGitStandardError()));
+  // connect(mpGitProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(gitProcessFinished(int,QProcess::ExitStatus)));
+  // start the process
+  mpGitProcess->start("git",args);
+  mpGitProcess->waitForFinished();
+}
+
+void GitCommands::readGitStandardOutput()
+{
+  qDebug()<< mpGitProcess->readAllStandardOutput();
+//  mpGitProcess->kill();
+  //emit sendManagerOutput(QString(mpManagerProcess->readAllStandardOutput()), StringHandler::Unknown);
+}
+
+void GitCommands::readGitStandardError()
+{
+  qDebug("error");
+  qDebug()<<mpGitProcess->readAllStandardError();
+//  mpGitProcess->kill();
+  //emit sendManagerOutput(QString(mpManagerProcess->readAllStandardError()), StringHandler::Error);
 }

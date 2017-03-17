@@ -14,8 +14,17 @@
 class GitCommands : public QObject
 {
   Q_OBJECT
+private:
+  // the only class that is allowed to create and destroy
+  friend class MainWindow;
+
+  static void create();
+  static void destroy();
+  GitCommands(QWidget *pParent = 0);
+  static GitCommands *mpInstance;
 public:
-  GitCommands(QObject *pParent = 0);
+//  GitCommands(QObject *pParent = 0);
+  static GitCommands* instance() {return mpInstance;}
   QProcess* getGitProcess() {return mpGitProcess;}
   void logCurrentFile(QString currentFile);
   void stageCurrentFileForCommit(QString currentFile);
@@ -27,6 +36,7 @@ public:
   bool isSavedUnderGitRepository(QString filePath);
   QStringList getUntrackedFiles(QString workingDirectory);
   QStringList getChangedFiles(QString filePath);
+  QString getSingleFileStatus(QString fileName);
   QString getRepositoryName(QString directory);
   QString getBranchName(QString directory);
   QString getAuthorName();
@@ -38,13 +48,17 @@ private:
   QProcess *mpGitProcess;
   QString mGitProgram;
   QStringList mGitArguments;
-
-signals:
-
-public slots:
-
+  void runGitCommand(QString driectory, QStringList args);
 private slots:
-   // void readGitStandardOutput();
+//  void gitProcessStarted();
+  void readGitStandardOutput();
+  void readGitStandardError();
+//  void gitProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+//signals:
+//  void sendGitProcessStarted();
+//  void sendGitProcessOutput(QString, StringHandler::SimulationMessageType type);
+//  void sendGitProcessFinished(int, QProcess::ExitStatus);
+//  void sendGitProgress(int);
 };
 
 #endif // GITCOMMANDS_H

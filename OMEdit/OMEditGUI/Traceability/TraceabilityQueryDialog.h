@@ -3,6 +3,7 @@
 
 #include <QtGlobal>
 #include <QDialog>
+#include "QWebView"
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QNetworkReply>
@@ -10,6 +11,7 @@
 #include <QtCore>
 #include <QtGui>
 #include <QtNetwork>
+
 #endif
 
 class Label;
@@ -25,6 +27,7 @@ private:
   QRadioButton *mpTraceToRadioButton;
   QRadioButton *mpTraceFromRadioButton;
   QPlainTextEdit *mpTraceabilityInformationTextBox;
+  QWebView *mpTraceabilityGraphWebView;
   QPushButton *mpQueryTraceabilitytButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

@@ -36,11 +36,14 @@ TraceabilityQueryDialog::TraceabilityQueryDialog(QWidget *pParent)
   // Traceability information
   QGroupBox *pTraceabilityInformationGroupBox = new QGroupBox(tr("Traceability Information:"));
   mpTraceabilityInformationTextBox = new QPlainTextEdit;
+  mpTraceabilityGraphWebView = new QWebView;
   mpTraceabilityInformationTextBox->setLineWrapMode(QPlainTextEdit::NoWrap);
   mpTraceabilityInformationTextBox->setReadOnly(true);
   QGridLayout *pTraceabilityInformationLayout = new QGridLayout;
-  pTraceabilityInformationLayout->addWidget(mpTraceabilityInformationTextBox);
+//  pTraceabilityInformationLayout->addWidget(mpTraceabilityInformationTextBox);
+  pTraceabilityInformationLayout->addWidget(mpTraceabilityGraphWebView);
   pTraceabilityInformationGroupBox->setLayout(pTraceabilityInformationLayout);
+  mpTraceabilityGraphWebView->load(QUrl("http://localhost:7474/browser/"));
   // Create the buttons
   mpQueryTraceabilitytButton = new QPushButton(tr("Query"));
   mpQueryTraceabilitytButton->setEnabled(true);
@@ -119,7 +122,7 @@ void TraceabilityQueryDialog::queryTraceabilityInformation()
  * \param pNetworkReply
  * Slot activated when QNetworkAccessManager finished signal is raised.\n
  * Displays the traceability information or Show an error message if the traceability information not found.\n
- * Deletes QNetworkReply object which deletes the QHttpMultiPart and QFile objects attached with it.
+ * Deletes QNetworkReply object .
  */
 void TraceabilityQueryDialog::readTraceabilityInformation(QNetworkReply *pNetworkReply)
 {

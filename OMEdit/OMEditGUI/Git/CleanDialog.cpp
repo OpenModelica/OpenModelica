@@ -70,8 +70,8 @@ CleanDialog::CleanDialog(QWidget *pParent)
 void CleanDialog::getUntrackedFiles()
 {
   QString fileName = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName();
-  QString workingDirectory = MainWindow::instance()->getGitCommands()->getRepositoryName(fileName);
-  QStringList untrackedFiles = MainWindow::instance()->getGitCommands()->getUntrackedFiles(fileName);
+  QString workingDirectory = GitCommands::instance()->getRepositoryName(fileName);
+  QStringList untrackedFiles = GitCommands::instance()->getUntrackedFiles(fileName);
 
   if (const int oldRowCount = mpCleanFilesModel->rowCount())
       mpCleanFilesModel->removeRows(0, oldRowCount);

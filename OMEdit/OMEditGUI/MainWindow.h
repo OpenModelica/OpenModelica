@@ -79,6 +79,8 @@ class FileDataNotifier;
 class LibraryTreeItem;
 class GitCommands;
 class CommitChangesDialog;
+class TraceabilityPushDialog;
+class TraceabilityGraphViewWidget;
 
 
 class MainWindow : public QMainWindow
@@ -108,6 +110,7 @@ public:
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+
 #if !defined(WITHOUT_OSG)
   bool isThreeDViewerInitialized();
   ThreeDViewer* getThreeDViewer();
@@ -119,6 +122,7 @@ public:
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   GitCommands* getGitCommands() {return mpGitCommands;}
   CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
+  TraceabilityPushDialog* getTraceabilityPushDialog() {return mpTraceabilityPushDialog;}
   QStatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -235,6 +239,8 @@ private:
   PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
+  TraceabilityGraphViewWidget *mpTraceabilityGraphViewWidget;
+  QDockWidget *mpTraceabilityGraphViewDockWidget;
 #if !defined(WITHOUT_OSG)
   ThreeDViewer *mpThreeDViewer;
   QDockWidget *mpThreeDViewerDockWidget;
@@ -245,6 +251,7 @@ private:
   WelcomePageWidget *mpWelcomePageWidget;
   GitCommands *mpGitCommands;
   CommitChangesDialog *mpCommitChangesDialog;
+  TraceabilityPushDialog *mpTraceabilityPushDialog;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
@@ -466,6 +473,7 @@ private slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
+  void switchToTraceabilityGraphViewPerspectiveSlot();
   void showConfigureDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
@@ -486,6 +494,7 @@ private:
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
   void switchToAlgorithmicDebuggingPerspective();
+  void switchToTraceabilityGraphViewPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());

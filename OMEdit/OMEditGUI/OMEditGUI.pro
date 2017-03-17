@@ -185,7 +185,8 @@ SOURCES += main.cpp \
   Git/CleanDialog.cpp \
   Traceability/TraceabilityPushDialog.cpp \
   Traceability/TraceabilityQueryDialog.cpp \
-    OMEditApplication.cpp
+  OMEditApplication.cpp \
+  Traceability/TraceabilityGraphViewWidget.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -260,7 +261,8 @@ HEADERS  += Util/Helper.h \
   Git/CleanDialog.h \
   Traceability/TraceabilityPushDialog.h \
   Traceability/TraceabilityQueryDialog.h \
-    OMEditApplication.h
+  OMEditApplication.h \
+  Traceability/TraceabilityGraphViewWidget.h
 
 CONFIG(osg) {
 

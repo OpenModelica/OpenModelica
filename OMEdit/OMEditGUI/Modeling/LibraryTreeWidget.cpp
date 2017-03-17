@@ -41,6 +41,7 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "ModelicaClassDialog.h"
 #include "Git/GitCommands.h"
+#include "Git/CommitChangesDialog.h"
 
 ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
   : QItemDelegate(pParent)
@@ -3336,8 +3337,6 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       moveClassTop();
     } else if (controlModifier && event->key() == Qt::Key_PageDown && isModelicaLibraryType && !isTopLevel) {
       moveClassBottom();
-    } else if (controlModifier && event->key() == Qt::Key_C) {
-      QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
         unloadClass();
@@ -3972,27 +3971,12 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
     }
     mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
-    /* Stage the file for the next commit. */
-    if(MainWindow::instance()->getGitCommands()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append("Stage File"));
-      pMessageBox->setIcon(QMessageBox::Question);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText("Do you want to stage the file for the next commit ?");
-      pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-      pMessageBox->setDefaultButton(QMessageBox::Yes);
-      int answer = pMessageBox->exec();
-      switch (answer) {
-        case QMessageBox::Yes:
-          MainWindow::instance()->getGitCommands()->stageCurrentFileForCommit(pLibraryTreeItem->getFileName());
-          break;
-        case QMessageBox::No:
-        default:
-          break;
-      }
+    /* Save the traceabiliy information and send to Daemon. */
+    if(GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
+      MainWindow::instance()->getCommitChangesDialog()->commitAndGenerateTraceabilityURI(pLibraryTreeItem->getFileName());
     }
   } else {
-    return false;
+     return false;
   }
   return true;
 }

@@ -64,11 +64,13 @@ ImportFMUModelDescriptionDialog::ImportFMUModelDescriptionDialog(QWidget *pParen
   mpBrowseFileButton->setAutoDefault(false);
   connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(setSelectedFile()));
   // create Output Directory selection controls
-  mpOutputDirectoryLabel = new Label(tr("Output Directory:"));
+  mpOutputDirectoryLabel = new Label(tr("Output Directory (Optional):"));
   mpOutputDirectoryTextBox = new QLineEdit;
   mpBrowseDirectoryButton = new QPushButton(Helper::browse);
   mpBrowseDirectoryButton->setAutoDefault(false);
   connect(mpBrowseDirectoryButton, SIGNAL(clicked()), SLOT(setSelectedDirectory()));
+  // import FMU Model description note
+  mpOutputDirectoryNoteLabel = new Label(tr("* If no Output Directory specified then the Modelica model will be generated in the current working directory."));
   // create OK button
   mpImportButton = new QPushButton(Helper::ok);
   mpImportButton->setAutoDefault(true);
@@ -82,7 +84,8 @@ ImportFMUModelDescriptionDialog::ImportFMUModelDescriptionDialog(QWidget *pParen
   pMainLayout->addWidget(mpOutputDirectoryLabel, 1, 0);
   pMainLayout->addWidget(mpOutputDirectoryTextBox, 1, 1);
   pMainLayout->addWidget(mpBrowseDirectoryButton, 1, 2);
-  pMainLayout->addWidget(mpImportButton, 2, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpOutputDirectoryNoteLabel, 2, 0, 1, 3);
+  pMainLayout->addWidget(mpImportButton, 3, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -113,7 +116,7 @@ void ImportFMUModelDescriptionDialog::importFMUModelDescription()
 {
   if (mpFmuModelDescriptionTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU Model Description")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU Model Description XML file")), Helper::ok);
     return;
   }
   QString fmuFileName = MainWindow::instance()->getOMCProxy()->importFMUModelDescription(mpFmuModelDescriptionTextBox->text(), mpOutputDirectoryTextBox->text(), 1, false, true, true);
@@ -127,6 +130,8 @@ void ImportFMUModelDescriptionDialog::importFMUModelDescription()
     // Get the name of the file without the extension
     QString base_name = file.baseName();
     MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("ModelDescription Import", fmuFileName, base_name, mpFmuModelDescriptionTextBox->text());
+    //Push traceability information automaticaly to Daemon
+    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("ModelDescription Import", fmuFileName, base_name, mpFmuModelDescriptionTextBox->text());
   }
   accept();
 }

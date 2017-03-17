@@ -15,25 +15,29 @@
 
 
 class Label;
-class TraceabilityPushDialog : public QDialog
+class TraceabilityPushDialog /*: public QDialog*/
 {
-  Q_OBJECT
+//  Q_OBJECT
 public:
-  TraceabilityPushDialog(QWidget *pParent = 0);
+  TraceabilityPushDialog(/*QWidget *pParent = 0*/);
+  void translateURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString sourceModelFileNameURI, QString fmuFileNameURI);
+  void translateModelCreationURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString fileNameURI);
+  void sendTraceabilityInformation(QString jsonMessageFormat);
 private:
   void translateURIToJsonMessageFormat();
   void translateModelCreationURIToJsonMessageFormat(QStringList modelCreationURIList);
   void translateFMUExportURIToJsonMessageFormat(QStringList fmuExportURIList);
-  Label *mpTraceabilityInformationLabel;
-  QPlainTextEdit *mpTraceabilityInformationTextBox;
-  Label *mpFilesDescriptionLabel;
-  QCheckBox *mpCommitTraceabilityURI;
-  QPushButton *mpPushTraceabilitytButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
+//  Label *mpTraceabilityInformationLabel;
+//  QPlainTextEdit *mpTraceabilityInformationTextBox;
+//  Label *mpFilesDescriptionLabel;
+//  QCheckBox *mpCommitTraceabilityURI;
+//  QPushButton *mpPushTraceabilitytButton;
+//  QPushButton *mpCancelButton;
+//  QDialogButtonBox *mpButtonBox;
+private slots:
+  void traceabilityInformationSent(QNetworkReply *pNetworkReply);
 public slots:
   void sendTraceabilityInformation();
-  void traceabilityInformationSent(QNetworkReply *pNetworkReply);
 };
 
 #endif // TRACEABILITYPUSHDIALOG_H

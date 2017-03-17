@@ -50,6 +50,7 @@ private:
   QPushButton *mpBrowseFileButton;
   Label *mpOutputDirectoryLabel;
   QLineEdit *mpOutputDirectoryTextBox;
+  Label *mpOutputDirectoryNoteLabel;
   QPushButton *mpBrowseDirectoryButton;
   QPushButton *mpImportButton;
 private slots:
