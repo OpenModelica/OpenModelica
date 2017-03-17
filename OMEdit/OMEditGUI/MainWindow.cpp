@@ -718,6 +718,10 @@ void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
+  // check clear messages browser before instantiating
+  if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
+    MessagesWidget::instance()->clearMessages();
+  }
   QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeItem->getNameStructure());
   if (!instantiateModelResult.isEmpty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
@@ -749,6 +753,10 @@ void MainWindow::checkModel(LibraryTreeItem *pLibraryTreeItem)
   // check reset messages number before checking
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
+  }
+  // check clear messages browser before checking
+  if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
+    MessagesWidget::instance()->clearMessages();
   }
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeItem->getNameStructure());
   if (!checkModelResult.isEmpty()) {

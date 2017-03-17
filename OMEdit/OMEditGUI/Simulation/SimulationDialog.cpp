@@ -808,6 +808,10 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
   }
+  // check clear messages browser before simulation option
+  if (OptionsDialog::instance()->getMessagesPage()->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked()) {
+    MessagesWidget::instance()->clearMessages();
+  }
   /* save the model before translating */
   if (OptionsDialog::instance()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
       !mpLibraryTreeItem->isSaved() &&

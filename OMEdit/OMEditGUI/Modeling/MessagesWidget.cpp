@@ -154,8 +154,9 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
 }
 
 /*!
-  Applies the Messages settings e.g size, font, color.
-  */
+ * \brief MessagesWidget::applyMessagesSettings
+ * Applies the Messages settings e.g size, font, color.
+ */
 void MessagesWidget::applyMessagesSettings()
 {
   MessagesPage *pMessagesPage = OptionsDialog::instance()->getMessagesPage();
@@ -182,9 +183,11 @@ void MessagesWidget::applyMessagesSettings()
 }
 
 /*!
-  Adds the error message.\n
-  Moves to the most recent error message in the view.
-  */
+ * \brief MessagesWidget::addGUIMessage
+ * Adds the error message.\n
+ * Moves to the most recent error message in the view.
+ * \param messageItem
+ */
 void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // move the cursor down before adding message.
@@ -311,9 +314,11 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
 }
 
 /*!
-  Shows a context menu when user right click on the Messages tree.
-  Slot activated when Message::customContextMenuRequested() signal is raised.
-  */
+ * \brief MessagesWidget::showContextMenu
+ * Shows a context menu when user right click on the Messages tree.
+ * Slot activated when Message::customContextMenuRequested() signal is raised.
+ * \param point
+ */
 void MessagesWidget::showContextMenu(QPoint point)
 {
   QMenu menu(this);
@@ -324,9 +329,10 @@ void MessagesWidget::showContextMenu(QPoint point)
 }
 
 /*!
-  Clears the Messages Browser and resets the messages number.
-  Slot activated when mpClearAllAction triggered signal is raised.
-  */
+ * \brief MessagesWidget::clearMessages
+ * Clears the Messages Browser and resets the messages number.
+ * Slot activated when mpClearAllAction triggered signal is raised.
+ */
 void MessagesWidget::clearMessages()
 {
   resetMessagesNumber();

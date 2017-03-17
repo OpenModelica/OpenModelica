@@ -100,6 +100,7 @@ signals:
 private slots:
   void openErrorMessageClass(QUrl url);
   void showContextMenu(QPoint point);
+public slots:
   void clearMessages();
 };
 

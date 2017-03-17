@@ -529,6 +529,9 @@ void OptionsDialog::readMessagesSettings()
   if (mpSettings->contains("messages/resetMessagesNumber")) {
     mpMessagesPage->getResetMessagesNumberBeforeSimulationCheckBox()->setChecked(mpSettings->value("messages/resetMessagesNumber").toBool());
   }
+  if (mpSettings->contains("messages/clearMessagesBrowser")) {
+    mpMessagesPage->getClearMessagesBrowserBeforeSimulationCheckBox()->setChecked(mpSettings->value("messages/clearMessagesBrowser").toBool());
+  }
   // read font family
   if (mpSettings->contains("messages/fontFamily")) {
     int currentIndex;
@@ -1048,6 +1051,8 @@ void OptionsDialog::saveMessagesSettings()
   mpSettings->setValue("messages/outputSize", mpMessagesPage->getOutputSizeSpinBox()->value());
   // save reset messages number
   mpSettings->setValue("messages/resetMessagesNumber", mpMessagesPage->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked());
+  // save clear messages browser
+  mpSettings->setValue("messages/clearMessagesBrowser", mpMessagesPage->getClearMessagesBrowserBeforeSimulationCheckBox()->isChecked());
   // save font
   mpSettings->setValue("messages/fontFamily", mpMessagesPage->getFontFamilyComboBox()->currentFont().family());
   mpSettings->setValue("messages/fontSize", mpMessagesPage->getFontSizeSpinBox()->value());
@@ -3389,12 +3394,15 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   // reset messages number before simulation
   mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before checking, instantiation && simulation"));
   mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(true);
+  // clear messages browser before simulation
+  mpClearMessagesBrowserBeforeSimulationCheckBox = new QCheckBox(tr("Clear messages browser before checking, instantiation && simulation"));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setColumnStretch(1, 1);
   pGeneralGroupBoxLayout->addWidget(mpOutputSizeLabel, 0, 0);
   pGeneralGroupBoxLayout->addWidget(mpOutputSizeSpinBox, 0, 1);
   pGeneralGroupBoxLayout->addWidget(mpResetMessagesNumberBeforeSimulationCheckBox, 1, 0, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpClearMessagesBrowserBeforeSimulationCheckBox, 2, 0, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Font and Colors
   mpFontColorsGroupBox = new QGroupBox(Helper::Colors);
