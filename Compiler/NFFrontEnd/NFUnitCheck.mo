@@ -11,8 +11,8 @@ import Absyn;
 import DAE;
 import NFUnit;
 import System;
-protected
 
+protected
 import BaseHashTable;
 import ComponentReference;
 import Error;
@@ -40,51 +40,50 @@ end Functionargs;
 
 
 public function unitChecking
-  input DAE.DAElist indae;
+  input DAE.DAElist inDAE;
   input FCore.Cache inCache;
-  protected
-  DAE.DAElist elts1,elts2,elts3;
-  list<DAE.Element> eqlist,varlist,newdaelist;
+protected
+  DAE.DAElist elts1, elts2, elts3;
+  DAE.FunctionTree func;
+  list<DAE.Element> eqlist, varlist, newdaelist;
+  list<DAE.Function> functionlist;
+  list<Functionargs> args;
   NFHashTableCrToUnit.HashTable HtCr2U1, HtCr2U2;
   NFHashTableStringToUnit.HashTable HtS2U;
   NFHashTableUnitToString.HashTable HtU2S;
-  DAE.FunctionTree func;
-  list<DAE.Function> functionlist;
-  list<Functionargs> args;
-  list<String> inunits,outunits;
 algorithm
   try
-   (elts1,elts2):=DAEUtil.splitDAEIntoVarsAndEquations(indae);
-   varlist:=GetVarList(elts1);
-   eqlist:=GetElementList(elts2);
-   func := FCore.getFunctionTree(inCache);
-   functionlist := DAEUtil.getFunctionList(func);
+    (elts1, elts2) := DAEUtil.splitDAEIntoVarsAndEquations(inDAE);
+    varlist := GetVarList(elts1);
+    eqlist := GetElementList(elts2);
+    func := FCore.getFunctionTree(inCache);
+    functionlist := DAEUtil.getFunctionList(func);
 
-   HtCr2U1 := NFHashTableCrToUnit.emptyHashTableSized(2053);
-   HtS2U := NFUnit.getKnownUnits();
-   HtU2S := NFUnit.getKnownUnitsInverse();
+    HtCr2U1 := NFHashTableCrToUnit.emptyHashTableSized(2053);
+    HtS2U := NFUnit.getKnownUnits();
+    HtU2S := NFUnit.getKnownUnitsInverse();
 
-   args:={FUNCTIONUNITS("",{},{},{},{})};
+    args := {FUNCTIONUNITS("", {}, {}, {}, {})};
 
-   args:= List.map1Flat(functionlist, parseFunctionList, args);
+    args := List.mapFlat(functionlist, parseFunctionList);
 
-   // new instantiation
-   //((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
+    // new instantiation
+    //((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
 
-   // old instantiation
-   ((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit_old, (HtCr2U1, HtS2U, HtU2S));
-   HtCr2U2 := BaseHashTable.copy(HtCr2U1);
-   ((HtCr2U2, HtS2U, HtU2S)) := algo(varlist,eqlist,args, HtCr2U2, HtS2U, HtU2S);
-   if Flags.isSet(Flags.DUMP_UNIT) then
-     BaseHashTable.dumpHashTable(HtCr2U2);
-     print("######## UnitCheck COMPLETED ########\n");
-   end if;
-   notification(HtCr2U1, HtCr2U2, HtU2S);
-   varlist := List.map2(varlist, returnVar, HtCr2U2, HtU2S);
-   newdaelist:=List.append_reverse(varlist,eqlist);
-   elts3:=updateDAElist(indae,listReverse(newdaelist));
+    // old instantiation
+    ((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit_old, (HtCr2U1, HtS2U, HtU2S));
+    HtCr2U2 := BaseHashTable.copy(HtCr2U1);
+    ((HtCr2U2, HtS2U, HtU2S)) := algo(varlist, eqlist, args, HtCr2U2, HtS2U, HtU2S);
+    varlist := List.map2(varlist, returnVar, HtCr2U2, HtU2S);
+    newdaelist := List.append_reverse(varlist, eqlist);
+    if Flags.isSet(Flags.DUMP_UNIT) then
+      BaseHashTable.dumpHashTable(HtCr2U2);
+      print("######## UnitCheck COMPLETED ########\n");
+    end if;
+    notification(HtCr2U1, HtCr2U2, HtU2S);
+    elts3 := updateDAElist(inDAE, listReverse(newdaelist));
   else
-     Error.addInternalError("./Compiler/NFFrontEnd/NFUnitCheck.mo: unit check module failed",sourceInfo());
+    Error.addInternalError(getInstanceName() + ": unit check module failed", sourceInfo());
   end try;
 end unitChecking;
 
@@ -92,95 +91,69 @@ end unitChecking;
 
 protected function parseFunctionList
   input DAE.Function infunction;
-  input list<Functionargs> inTpl;
   output list<Functionargs> outTpl;
+protected
+  list<DAE.Element> inelt, outelt;
+  list<String> inunits, outunits, inargs, outargs;
+  String unitString, s;
 algorithm
-  outTpl := match(infunction, inTpl)
-    local
-      String unitString, s;
-      list<String> listStr;
-      DAE.ComponentRef cr;
-      NFUnit.Unit ut;
-      Absyn.Path path;
-      list<DAE.FunctionDefinition> functions;
-      list<DAE.Var> varlst;
-      list<DAE.Element> inelt,outelt;
-      list<String> inunits,outunits,inargs,outargs;
-      DAE.Function fn;
-      list<Functionargs> fncheck,fncheck1;
-    case (fn,_)
-      equation
-        s=getFunctionName(fn);
-        inelt=DAEUtil.getFunctionInputVars(fn);
-        outelt=DAEUtil.getFunctionOutputVars(fn);
-        inunits=List.filterMap(inelt,getUnits);
-        outunits=List.filterMap(outelt,getUnits);
-        inargs=List.filterMap(inelt,getVars);
-        outargs=List.filterMap(outelt,getVars);
-        fncheck={FUNCTIONUNITS(s,inargs,outargs,inunits,outunits)};
-      then
-        (fncheck);
-
-  end match;
-
+  s := getFunctionName(infunction);
+  inelt := DAEUtil.getFunctionInputVars(infunction);
+  outelt := DAEUtil.getFunctionOutputVars(infunction);
+  inunits := List.filterMap(inelt,getUnits);
+  outunits := List.filterMap(outelt,getUnits);
+  inargs := List.filterMap(inelt,getVars);
+  outargs := List.filterMap(outelt,getVars);
+  outTpl := {FUNCTIONUNITS(s,inargs,outargs,inunits,outunits)};
 end parseFunctionList;
 
 
 
 public function getFunctionName
-  input DAE.Function infunction;
-  output String outstring;
+  input DAE.Function inFunction;
+  output String outString;
 algorithm
-  outstring:=match(infunction)
+  outString := match inFunction
     local
-      DAE.Function fn;
       Absyn.Path path;
-      String s,s1;
-    case(DAE.FUNCTION(path=path))
-      equation
-        s=Absyn.pathStringDefault(path);
-        s1=System.trim(s,".");
-      then
-        s1;
+      String s, s1;
+
+    case DAE.FUNCTION(path=path) algorithm
+      s := Absyn.pathStringDefault(path);
+      s1 := System.trim(s, ".");
+    then s1;
   end match;
 end getFunctionName;
 
 function getVars
-  input DAE.Element inlist;
-  output String outstring;
+  input DAE.Element inElement;
+  output String outString;
 algorithm
-  (outstring):=match(inlist)
+  outString := match inElement
     local
-      String name;
       DAE.ComponentRef cr;
-    case(DAE.VAR(componentRef=cr))
-      equation
-        name=ComponentReference.crefStr(cr);
-      then
-        (name);
-    case(_)
-    then "";
+
+    case DAE.VAR(componentRef=cr)
+    then ComponentReference.crefStr(cr);
+
+    else "";
   end match;
 end getVars;
 
 
 function getUnits
-  input DAE.Element inlist;
-  output String outstring;
+  input DAE.Element inElement;
+  output String outString;
 algorithm
-  (outstring):=match(inlist)
+  outString := match inElement
     local
-      list <DAE.Element> rest;
       String unitString;
-      list<String> inputargs,inputargs1,inputargs2,outputargs,outputargs1,outputargs2;
-      DAE.ComponentRef cr;
-      DAE.VarDirection direction;
-    case(DAE.VAR(ty=DAE.T_REAL(),variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString))))))
+
+    case(DAE.VAR(ty=DAE.T_REAL(), variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString))))))
       guard(unitString <> "")
-      then
-        (unitString);
-    case(_)
-    then ("NONE");
+    then unitString;
+
+    else "NONE";
   end match;
 end getUnits;
 
