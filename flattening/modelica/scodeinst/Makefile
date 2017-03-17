@@ -15,6 +15,7 @@ BuiltinTime.mo \
 ceval1.mo \
 ceval2.mo \
 ceval3.mo \
+ceval5.mo \
 ceval6.mo \
 dim1.mo \
 dim3.mo \
@@ -181,7 +182,6 @@ FuncBuiltinTranspose.mo \
 FuncBuiltinVector.mo \
 FuncBuiltinZeros.mo \
 ceval4.mo \
-ceval5.mo \
 compfunc.mo \
 conn3.mo \
 conn5.mo \

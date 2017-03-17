@@ -1,5 +1,5 @@
-// name: ceval4.mo
-// status: correct
+// name: ceval5.mo
+// status: incorrect
 // cflags: -d=newInst
 
 model A
@@ -9,11 +9,11 @@ model A
 end A;
 
 // Result:
-// class A
-//   parameter Real n = 3;
-//   parameter Integer m = n;
-//   Real x[1] = 1.0;
-//   Real x[2] = 1.0;
-//   Real x[3] = 1.0;
-// end A;
+// Error processing file: ceval5.mo
+// [flattening/modelica/scodeinst/ceval5.mo:7:3-7:26:writable] Error: Type mismatch in binding m = n, expected subtype of Integer, got type Real.
+//
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult
