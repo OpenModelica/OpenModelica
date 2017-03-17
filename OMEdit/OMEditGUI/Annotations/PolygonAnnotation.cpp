@@ -113,22 +113,32 @@ QPainterPath PolygonAnnotation::getShape() const
   if (mPoints.size() > 0) {
     if (mSmooth) {
       path.moveTo(mPoints.at(0));
+      // if points are only two then spline acts as simple line
       if (mPoints.size() == 2) {
         path.lineTo(mPoints.at(1));
       } else {
         for (int i = 2 ; i < mPoints.size() ; i++) {
           QPointF point3 = mPoints.at(i);
-          // if points are only two then spline acts as simple line
           // calculate middle points for bezier curves
           QPointF point2 = mPoints.at(i - 1);
           QPointF point1 = mPoints.at(i - 2);
           QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
           QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
-          path.lineTo(point12);
+          if (i == 2) {
+            path.moveTo(point12);
+          }
           path.cubicTo(point12, point2, point23);
           // if its the last point
           if (i == mPoints.size() - 1) {
-            path.lineTo(point3);
+            /* ticket:4331 Close the polygon with angle using the bezier curve.
+             */
+            QPointF point3 = mPoints.at(1);
+            // calculate middle points for bezier curves
+            QPointF point2 = mPoints.at(i);
+            QPointF point1 = mPoints.at(i - 1);
+            QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
+            QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
+            path.cubicTo(point12, point2, point23);
           }
         }
       }
