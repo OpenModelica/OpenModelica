@@ -79,7 +79,7 @@ class FileDataNotifier;
 class LibraryTreeItem;
 class GitCommands;
 class CommitChangesDialog;
-class TraceabilityPushDialog;
+class TraceabilityInformationURI;
 class TraceabilityGraphViewWidget;
 
 
@@ -122,7 +122,7 @@ public:
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   GitCommands* getGitCommands() {return mpGitCommands;}
   CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
-  TraceabilityPushDialog* getTraceabilityPushDialog() {return mpTraceabilityPushDialog;}
+  TraceabilityInformationURI* getTraceabilityInformationURI() {return mpTraceabilityInformationURI;}
   QStatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
@@ -179,7 +179,6 @@ public:
   QAction* getCommitFilesAction() {return mpCommitFilesAction;}
   QAction* getRevertCommitAction() {return mpRevertCommitAction;}
   QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
-  QAction* getTraceabilityPushAction() {return mpTraceabilityPushAction;}
   QAction* getTraceabilityQueryAction() {return mpTraceabilityQueryAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
@@ -240,7 +239,6 @@ private:
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
   TraceabilityGraphViewWidget *mpTraceabilityGraphViewWidget;
-  QDockWidget *mpTraceabilityGraphViewDockWidget;
 #if !defined(WITHOUT_OSG)
   ThreeDViewer *mpThreeDViewer;
   QDockWidget *mpThreeDViewerDockWidget;
@@ -251,7 +249,7 @@ private:
   WelcomePageWidget *mpWelcomePageWidget;
   GitCommands *mpGitCommands;
   CommitChangesDialog *mpCommitChangesDialog;
-  TraceabilityPushDialog *mpTraceabilityPushDialog;
+  TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
   Label *mpPointerXPositionLabel;
@@ -328,7 +326,6 @@ private:
   QAction *mpCommitFilesAction;
   QAction *mpRevertCommitAction;
   QAction *mpCleanWorkingDirectoryAction;
-  QAction *mpTraceabilityPushAction;
   QAction *mpTraceabilityQueryAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
@@ -483,7 +480,6 @@ private slots:
   void commitFiles();
   void revertCommit();
   void cleanWorkingDirectory();
-  void pushTraceabilityInformation();
   void queryTraceabilityInformation();
 private:
   void createActions();

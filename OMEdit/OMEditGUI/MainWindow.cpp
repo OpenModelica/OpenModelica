@@ -65,7 +65,7 @@
 #include "Git/RevertCommitsDialog.h"
 #include "Git/CleanDialog.h"
 #include "Git/GitCommands.h"
-#include "Traceability/TraceabilityPushDialog.h"
+#include "Traceability/TraceabilityInformationURI.h"
 #include "Traceability/TraceabilityQueryDialog.h"
 #include "Traceability/TraceabilityGraphViewWidget.h"
 #include "omc_config.h"
@@ -839,7 +839,6 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   }
   //trace export FMU
   if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
-    MainWindow::instance()->getCommitChangesDialog()->generateFMUTraceabilityURI("FMU Export", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
     //Push traceability information automaticaly to Daemon
     MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("FMU Export", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
   }
@@ -2640,16 +2639,6 @@ void MainWindow::cleanWorkingDirectory()
 }
 
 /*!
- * \brief MainWindow::pushTreaceabilityInformation
- * Slot activated when mpTraceabilityPushAction triggered signal is raised.\n
- */
-void MainWindow::pushTraceabilityInformation()
-{
-//  TraceabilityPushDialog *pTraceabilityPushDialog = new TraceabilityPushDialog(this);
-//  pTraceabilityPushDialog->exec();
-}
-
-/*!
  * \brief MainWindow::queryTreaceabilityInformation
  * Slot activated when mpQueryTraceabilityAction triggered signal is raised.\n
  */
@@ -2935,9 +2924,6 @@ void MainWindow::createActions()
   mpCleanWorkingDirectoryAction->setEnabled(false);
   connect(mpCleanWorkingDirectoryAction, SIGNAL(triggered()), SLOT(cleanWorkingDirectory()));
   // Treaceability actions
-  mpTraceabilityPushAction = new QAction("Push Traceability Information", this);
-  mpTraceabilityPushAction->setEnabled(false);
-  connect(mpTraceabilityPushAction, SIGNAL(triggered()), SLOT(pushTraceabilityInformation()));
   mpTraceabilityQueryAction = new QAction("Query Traceability Information", this);
   mpTraceabilityQueryAction->setEnabled(false);
   connect(mpTraceabilityQueryAction, SIGNAL(triggered()), SLOT(queryTraceabilityInformation()));
@@ -3290,7 +3276,6 @@ void MainWindow::createMenus()
   QMenu *pTraceabilityMenu = new QMenu(menuBar());
   pTraceabilityMenu->setObjectName(tr("TraceabilityMenu"));
   pTraceabilityMenu->setTitle(tr("Traceability"));
-  pTraceabilityMenu->addAction(mpTraceabilityPushAction);
   pTraceabilityMenu->addAction(mpTraceabilityQueryAction);
   // add actions to Git menu
   pGitMenu->addAction(mpCreateGitRepositoryAction);
