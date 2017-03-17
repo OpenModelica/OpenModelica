@@ -9,8 +9,7 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${LinearSolverName} Include/Core/Modelica.h)
-target_link_libraries(${LinearSolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})    #C:/OpenModelica/OMCompiler/SimulationRuntime/cpp/Solver/KLU/OMCppklu_static.lib
-#target_link_libraries(${LinearSolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES} ${kluName})
+target_link_libraries(${LinearSolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})  
 
 install(TARGETS ${LinearSolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

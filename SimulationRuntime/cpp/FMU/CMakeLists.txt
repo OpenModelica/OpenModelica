@@ -8,7 +8,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${FMUName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${FMUName} ${ExtensionUtilitiesName})
+target_link_libraries(${FMUName} ${ExtensionUtilitiesName}  ${ModelicaName})
 add_precompiled_header(${FMUName} Include/Core/Modelica.h)
 
 install(TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})

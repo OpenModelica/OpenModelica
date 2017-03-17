@@ -8,7 +8,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${MathName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${MathName} ${Boost_LIBRARIES} ${UMFPACK_LIB} ${LAPACK_LIBRARIES})
+target_link_libraries(${MathName} ${Boost_LIBRARIES} ${UMFPACK_LIB} ${LAPACK_LIBRARIES} ${ModelicaName})
 add_precompiled_header(${MathName} Include/Core/Modelica.h )
 
 install(TARGETS ${MathName} DESTINATION ${LIBINSTALLEXT})

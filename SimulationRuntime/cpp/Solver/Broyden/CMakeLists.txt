@@ -8,8 +8,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${BroydenName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${BroydenName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})#C:/OpenModelica/OMCompiler/SimulationRuntime/cpp/Solver/KLU/OMCppklu_static.lib)
-#target_link_libraries(${BroydenName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${kluName})
+target_link_libraries(${BroydenName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${BroydenName} Include/Core/Modelica.h)
 
 install(TARGETS ${BroydenName} DESTINATION ${LIBINSTALLEXT})

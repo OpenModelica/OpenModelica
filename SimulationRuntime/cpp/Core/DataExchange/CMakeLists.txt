@@ -9,7 +9,7 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 if(NOT BOOST_STATIC_LINKING)
-  target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
+  target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName}  ${ModelicaName})
 endif(NOT BOOST_STATIC_LINKING)
 
 add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)

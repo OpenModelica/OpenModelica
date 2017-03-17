@@ -3114,16 +3114,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CPPFLAGS =
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
-
-  # /MD - link with MSVCRT.LIB
-  # /link - [linker options and libraries]
-  # /LIBPATH: - Directories where libs can be found
-  #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
-  #LDSYSTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib OMCppMath.lib OMCppOMCFactory.lib
+  !IF "$(PCH_FILE)" == ""
   LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
-  #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
-  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
-  # /MDd link with MSVCRTD.LIB debug lib
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib  <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  !ELSE
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(PCH_LIB) <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  !ENDIF
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
 

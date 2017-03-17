@@ -8,7 +8,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${NewtonName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${NewtonName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(${NewtonName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${NewtonName} Include/Core/Modelica.h)
 
 install(TARGETS ${NewtonName} DESTINATION ${LIBINSTALLEXT})

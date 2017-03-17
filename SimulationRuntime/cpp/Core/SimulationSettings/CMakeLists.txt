@@ -8,7 +8,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SimulationSettings} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
+target_link_libraries(${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${SimulationSettings} Include/Core/Modelica.h)
 
 install(TARGETS ${SimulationSettings} DESTINATION ${LIBINSTALLEXT})

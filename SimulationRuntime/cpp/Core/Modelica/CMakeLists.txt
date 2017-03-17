@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8.9)
 project(${ModelicaName})
 
 # this library is only for the precompiled header
-add_library(${ModelicaName} Modelica.cpp)
+add_library( ${ModelicaName}  STATIC Modelica.cpp)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ModelicaName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
@@ -230,6 +230,9 @@ if(BUILD_SHARED_LIBS)
 endif(BUILD_SHARED_LIBS)
 
 IF(MSVC)
+ GET_TARGET_PROPERTY(libModelica ${ModelicaName} LOCATION)
+ GET_FILENAME_COMPONENT(libModelicaName ${libModelica} NAME)
+ set(PCH_LIB ${libModelicaName})
  configure_file (
   "ModelicaConfig_msvc.inc.in"
   "${PROJECT_BINARY_DIR}/ModelicaConfig_msvc.inc"
@@ -267,7 +270,7 @@ ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" ST
 
 
 
-
+install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Modelica.h ${CMAKE_SOURCE_DIR}/Include/Core/ModelicaDefine.h DESTINATION include/omc/cpp/Core)
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/TextfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/MatfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
