@@ -2002,6 +2002,15 @@ void BaseEditor::toggleCommentSelection()
     }
     mpPlainTextEdit->setTextCursor(cursor);
   }
+  /* ticket:4322 Unfold the block if line is commented out.
+   * We only do this for single line comments because the multi line comments are done using selection.
+   */
+  if (!doMultiLineStyleComment && !doMultiLineStyleUncomment && !doSingleLineStyleUncomment) {
+    endBlock = doc->findBlock(end);
+    if (BaseEditorDocumentLayout::canFold(endBlock)) {
+      BaseEditorDocumentLayout::foldOrUnfold(endBlock, true);
+    }
+  }
   cursor.endEditBlock();
 }
 
