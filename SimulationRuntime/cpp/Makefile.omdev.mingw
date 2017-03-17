@@ -182,7 +182,7 @@ ifneq ($(BUILDTYPE),Release)
 	cp -u Build_MSVC*/Solver/Newton/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	cp -u Build_MSVC*/Solver/Euler/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	cp -u Build_MSVC*/Core/SimController/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
+	#cp -u Build_MSVC*/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	#cp -u Build_MSVC/Core/ModelicaExternalC/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	cp -u Build_MSVC*/Core/SimulationSettings/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
 	cp -u Build_MSVC*/Core/Solver/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
