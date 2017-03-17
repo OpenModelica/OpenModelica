@@ -19,7 +19,7 @@ end FuncStringInvalid2;
 //   String(Integer $i, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Boolean $b, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Real $r, Integer significantDigits = 6, Integer minimumLength = 0, Boolean leftJustified = true) => String
-//   String(Real $r, String format = "-0.6g") => String
+//   String(Real $r, String format) => String
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

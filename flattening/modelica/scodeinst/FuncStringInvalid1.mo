@@ -28,13 +28,14 @@ end FuncStringInvalid1;
 //   Integer[3]
 // expected type:
 //   Real
+// [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: Function parameter format was not given by the function call, and does not have a default value.
 // [flattening/modelica/scodeinst/FuncStringInvalid1.mo:10:3-10:31:writable] Error: No matching function found for String({1, 2, 3}) in component <REMOVE ME>
 // candidates are :
 //   String(enumeration(:) $e, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Integer $i, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Boolean $b, Integer minimumLength = 0, Boolean leftJustified = true) => String
 //   String(Real $r, Integer significantDigits = 6, Integer minimumLength = 0, Boolean leftJustified = true) => String
-//   String(Real $r, String format = "-0.6g") => String
+//   String(Real $r, String format) => String
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
