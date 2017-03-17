@@ -111,7 +111,7 @@ constant Function STRING_REAL = Function.FUNCTION(Path.IDENT("String"),
 constant Function STRING_REAL_FORMAT = Function.FUNCTION(Path.IDENT("String"),
   STRING_NODE, {REAL_PARAM, STRING_PARAM}, {STRING_PARAM}, {}, {
     Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE()),
-    Slot.SLOT("format", SlotType.NAMED, SOME(Expression.STRING("-0.6g")), NONE())
+    Slot.SLOT("format", SlotType.NAMED, NONE(), NONE())
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
 
 // String(i, minimumLength=0, leftJustified=true)
