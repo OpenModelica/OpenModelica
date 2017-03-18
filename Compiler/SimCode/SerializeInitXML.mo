@@ -305,7 +305,7 @@ function scalarVariable
 algorithm
   File.write(file, "  <ScalarVariable\n");
   scalarVariableAttribute(file, var, classType, valueReference, classIndex);
-  File.write(file, "  ");
+  File.write(file, "    ");
   // TODO: Convert ScalarVariableType to File.mo?
   File.write(file, Tpl.textString(CodegenUtil.ScalarVariableType(Tpl.emptyTxt, var.unit, var.displayUnit, var.minValue, var.maxValue, var.initialValue, var.nominalValue, var.isFixed, var.type_)));
   File.write(file, "\n  </ScalarVariable>\n");
@@ -325,55 +325,55 @@ algorithm
   source := simVar.source;
   info := source.info;
 
-  File.write(file, "  name = \"");
+  File.write(file, "    name = \"");
   CR.writeCref(file, simVar.name, XML);
   File.write(file, "\"\n");
 
-  File.write(file, "  valueReference = \"");
+  File.write(file, "    valueReference = \"");
   File.writeInt(file, valueReference);
   File.write(file, "\"\n");
 
   if simVar.comment <> "" then
-    File.write(file, "  description = \"");
+    File.write(file, "    description = \"");
     File.writeEscape(file, simVar.comment, XML);
     File.write(file, "\"\n");
   end if;
 
-  File.write(file, "  variability = \"");
+  File.write(file, "    variability = \"");
   File.write(file, getVariablity(simVar.varKind));
   File.write(file, "\" isDiscrete = \"");
   File.write(file, String(simVar.isDiscrete));
   File.write(file, "\"\n");
 
-  File.write(file, "  causality = \"");
+  File.write(file, "    causality = \"");
   File.write(file, getCausality(simVar.causality));
   File.write(file, "\" isValueChangeable = \"");
   File.write(file, String(simVar.isValueChangeable));
   File.write(file, "\"\n");
 
   if inputIndex <> -1 then
-    File.write(file, "  inputIndex = \"");
+    File.write(file, "    inputIndex = \"");
     File.writeInt(file, inputIndex);
     File.write(file, "\"\n");
   end if;
 
-  File.write(file, "  alias = ");
+  File.write(file, "    alias = ");
   getAliasVar(file, simVar.aliasvar);
   File.write(file, "\n");
 
-  File.write(file, "  classIndex = \"");
+  File.write(file, "    classIndex = \"");
   File.writeInt(file, classIndex);
   File.write(file, "\" classType = \"");
   File.write(file, classType);
   File.write(file, "\"\n");
 
-  File.write(file, "  isProtected = \"");
+  File.write(file, "    isProtected = \"");
   File.write(file, String(simVar.isProtected));
   File.write(file, "\" hideResult = \"");
   File.write(file, String(simVar.hideResult));
   File.write(file, "\"\n");
 
-  File.write(file, "  fileName = \"");
+  File.write(file, "    fileName = \"");
   File.writeEscape(file, info.fileName, XML);
   File.write(file, "\" startLine = \"");
   File.writeInt(file, info.lineNumberStart);
