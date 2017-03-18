@@ -7442,6 +7442,9 @@ algorithm
   deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
   deriv.name := ComponentReference.crefPrefixDer(deriv.name);
   deriv.varKind := BackendDAE.STATE_DER();
+  if deriv.comment <> "" then
+    deriv.comment := "der(" + deriv.comment + ")";
+  end if;
   try
     unit := Unit.parseUnitString(deriv.unit);
     unit := Unit.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
