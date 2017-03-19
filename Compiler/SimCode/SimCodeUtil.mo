@@ -7453,7 +7453,11 @@ algorithm
     deriv.unit := "";
   end try;
   deriv.displayUnit := "";
+  deriv.minValue := NONE();
+  deriv.maxValue := NONE();
   deriv.initialValue := NONE();
+  deriv.nominalValue := NONE();
+  deriv.isFixed := false;
   deriv.aliasvar := SimCodeVar.NOALIAS();
   deriv.causality := SimCodeVar.INTERNAL();
   deriv.variable_index := NONE();
