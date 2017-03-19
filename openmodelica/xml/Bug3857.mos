@@ -134,7 +134,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
 //     </ScalarVariable> 
-//     <ScalarVariable name=\"der(PI.I.y)\" description=\"Connector of Real output signal\" valueReference=\"6\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"der(PI.I.y)\" description=\"der(Connector of Real output signal)\" valueReference=\"6\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -147,7 +147,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>derivative</VariableCategory>
 //     </ScalarVariable> 
 //
-//     <ScalarVariable name=\"der(inertia1.phi)\" description=\"Absolute rotation angle of component\" valueReference=\"7\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"der(inertia1.phi)\" description=\"der(Absolute rotation angle of component)\" valueReference=\"7\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"Hz\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
@@ -159,7 +159,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>derivative</VariableCategory>
 //     </ScalarVariable> 
 //
-//     <ScalarVariable name=\"der(inertia2.w)\" description=\"Absolute angular velocity of component (= der(phi))\" valueReference=\"8\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"der(inertia2.w)\" description=\"der(Absolute angular velocity of component (= der(phi)))\" valueReference=\"8\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s-2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
@@ -171,7 +171,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>derivative</VariableCategory>
 //     </ScalarVariable> 
 //
-//     <ScalarVariable name=\"der(integrator.y)\" description=\"Connector of Real output signal\" valueReference=\"9\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"der(integrator.y)\" description=\"der(Connector of Real output signal)\" valueReference=\"9\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"integrator\"/>
@@ -183,7 +183,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>derivative</VariableCategory>
 //     </ScalarVariable> 
 //
-//     <ScalarVariable name=\"der(spring.phi_rel)\" description=\"Relative rotation angle (= flange_b.phi - flange_a.phi)\" valueReference=\"10\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"der(spring.phi_rel)\" description=\"der(Relative rotation angle (= flange_b.phi - flange_a.phi))\" valueReference=\"10\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"Hz\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
@@ -195,7 +195,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>derivative</VariableCategory>
 //     </ScalarVariable> 
 //
-//     <ScalarVariable name=\"der(spring.w_rel)\" description=\"Relative angular velocity (= der(phi_rel))\" valueReference=\"11\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"der(spring.w_rel)\" description=\"der(Relative angular velocity (= der(phi_rel)))\" valueReference=\"11\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s-2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
@@ -5204,8 +5204,8 @@ readFile("Bug3857.xml"); getErrorString();
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
 //     </ScalarVariable> 
-//     <ScalarVariable name=\"der(T)\" description=\"Temperature\" valueReference=\"1\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
-//       <Real  min=\"0.0\"  unit=\"s-1.K\" />
+//     <ScalarVariable name=\"der(T)\" description=\"der(Temperature)\" valueReference=\"1\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
+//       <Real    unit=\"s-1.K\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"T\"/>
 //       </QualifiedName>

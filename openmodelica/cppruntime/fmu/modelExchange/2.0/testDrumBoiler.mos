@@ -134,7 +134,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(controller.x)\"
 //     valueReference=\"3\"
-//     description=\"State of block\"
+//     description=\"der(State of block)\"
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
@@ -144,7 +144,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.V_l)\"
 //     valueReference=\"4\"
-//     description=\"volumes of liquid phase\"
+//     description=\"der(volumes of liquid phase)\"
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
@@ -154,7 +154,7 @@ val(evaporator_qm_S, 100);
 //   <ScalarVariable
 //     name=\"der(evaporator.p)\"
 //     valueReference=\"5\"
-//     description=\"pressure inside drum boiler\"
+//     description=\"der(pressure inside drum boiler)\"
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
@@ -3463,10 +3463,10 @@ val(evaporator_qm_S, 100);
 // ""
 // 10.0
 // 1.0
-// 1.066186930067338
-// 1.132373860134676
-// -16.62186190266782
-// 101.4102120346218
-// 66.98717532203503
-// -1.132373860134676
+// 1.066186919287032
+// 1.132373838574064
+// -16.62186183089507
+// 101.4102117488924
+// 66.98717542979452
+// -1.132373838574064
 // endResult
