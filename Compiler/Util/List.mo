@@ -3040,13 +3040,13 @@ algorithm
   end for;
 end mapListAllValueBool;
 
-public function foldAllValue<TI, TO, VT, ArgT1>
+public function foldAllValue<TI, TO, ArgT1>
   "Applies a function to all elements in the lists, and fails if not all
    elements are equal to the given value. This function also takes an extra
    argument that are passed to the mapping function and updated"
   input list<TI> inList;
   input MapFunc inMapFunc;
-  input VT inValue;
+  input TO inValue;
   input ArgT1 inArg1;
 
   partial function MapFunc
