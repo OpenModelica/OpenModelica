@@ -50,6 +50,14 @@ ExtendSections.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
+ForEquation4.mo \
+ForEquation5.mo \
+ForEquationEnum1.mo \
+RangeInvalidStep1.mo \
+RangeInvalidStep2.mo \
+RangeTypeError1.mo \
+RangeTypeError2.mo \
+RangeTypeError3.mo \
 ForEquationNonParam.mo \
 ForStatement1.mo \
 ForStatement2.mo \
@@ -119,6 +127,8 @@ NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 ParameterBug.mos \
 PropagateExtends.mo \
+RangeTypeError1.mo \
+RangeTypeError2.mo \
 redeclare11.mo \
 redeclare12.mo \
 redeclare13.mo \
@@ -138,6 +148,8 @@ when1.mo
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ForEquationEnum2.mo \
+Range1.mo \
 FuncBuiltinCardinality.mo \
 FuncBuiltinChange.mo \
 FuncBuiltinCross.mo \
