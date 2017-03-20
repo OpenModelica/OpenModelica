@@ -3375,10 +3375,10 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         if (nActiveInterfaces > 0) {
           resultFile << ",";
         }
-        resultFile << "\"" << name << ".R[cG][cG](1)\",\"" << name << ".R[cG][cG](2)\",\"" << name << ".R[cG][cG](3)\","; // Position vector
-        resultFile << "\"" << name << ".A(1,1)\",\"" << name << ".A(1,2)\",\"" << name << ".A(1,3)\",\""
-                   << name << ".A(2,1)\",\"" << name << ".A(2,2)\",\"" << name << ".A(2,3)\",\""
-                   << name << ".A(3,1)\",\"" << name << ".A(3,2)\",\"" << name << ".A(3,3)\""; // Transformation matrix
+        resultFile << "\"" << name << ".R[cG][cG](1) [m]\",\"" << name << ".R[cG][cG](2) [m]\",\"" << name << ".R[cG][cG](3) [m]\","; // Position vector
+        resultFile << "\"" << name << ".A(1,1) [-]\",\"" << name << ".A(1,2) [-]\",\"" << name << ".A(1,3) [-]\",\""
+                   << name << ".A(2,1) [-]\",\"" << name << ".A(2,2) [-]\",\"" << name << ".A(2,3) [-]\",\""
+                   << name << ".A(3,1) [-]\",\"" << name << ".A(3,2) [-]\",\"" << name << ".A(3,3) [-]\""; // Transformation matrix
         nActiveInterfaces++;
         //          }
         //        }
@@ -3687,20 +3687,20 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         visualFile << "    <ident>" << name << ".x</ident>\n";
         visualFile << "    <type>cylinder</type>\n";
         visualFile << "    <T>\n";
-        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3) [-]</cref>\n";
         visualFile << "    </T>\n";
         visualFile << "    <r>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3) [m]</cref>\n";
         visualFile << "    </r>\n";
         visualFile << "    <r_shape>\n";
         visualFile << "      <exp>0</exp>\n";
@@ -3740,20 +3740,20 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         visualFile << "    <ident>" << name << ".x</ident>\n";
         visualFile << "    <type>cylinder</type>\n";
         visualFile << "    <T>\n";
-        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3) [-]</cref>\n";
         visualFile << "    </T>\n";
         visualFile << "    <r>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3) [m]</cref>\n";
         visualFile << "    </r>\n";
         visualFile << "    <r_shape>\n";
         visualFile << "      <exp>0</exp>\n";
@@ -3793,20 +3793,20 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         visualFile << "    <ident>" << name << ".x</ident>\n";
         visualFile << "    <type>cylinder</type>\n";
         visualFile << "    <T>\n";
-        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3) [-]</cref>\n";
         visualFile << "    </T>\n";
         visualFile << "    <r>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3) [m]</cref>\n";
         visualFile << "    </r>\n";
         visualFile << "    <r_shape>\n";
         visualFile << "      <exp>0</exp>\n";
@@ -3885,20 +3885,20 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         visualFile << "    <ident>" << name << "</ident>\n";
         visualFile << "    <type>file://" << pSubModelComponent->getComponentInfo()->getGeometryFile() << "</type>\n";
         visualFile << "    <T>\n";
-        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
-        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2) [-]</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3) [-]</cref>\n";
         visualFile << "    </T>\n";
         visualFile << "    <r>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
-        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2) [m]</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3) [m]</cref>\n";
         visualFile << "    </r>\n";
         visualFile << "    <r_shape>\n";
         visualFile << "      <exp>" << r_shape(0, 0) << "</exp>\n";
