@@ -1350,9 +1350,6 @@ QString StringHandler::getLastOpenDirectory()
 
 QStringList StringHandler::getAnnotation(QString componentAnnotation, QString annotationName)
 {
-  if (componentAnnotation.toLower().contains("error")) {
-    return QStringList();
-  }
   componentAnnotation = StringHandler::removeFirstLastCurlBrackets(componentAnnotation);
   if (componentAnnotation.isEmpty()) {
     return QStringList();
@@ -1362,7 +1359,11 @@ QStringList StringHandler::getAnnotation(QString componentAnnotation, QString an
     if (annotation.startsWith(annotationName)) {
       annotation = annotation.mid(QString(annotationName).length());
       annotation = StringHandler::removeFirstLastBrackets(annotation);
-      return StringHandler::getStrings(annotation);
+      if (annotation.toLower().contains("error")) {
+        return QStringList();
+      } else {
+        return StringHandler::getStrings(annotation);
+      }
     }
   }
   return QStringList();
@@ -1370,9 +1371,6 @@ QStringList StringHandler::getAnnotation(QString componentAnnotation, QString an
 
 QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
 {
-  if (componentAnnotation.toLower().contains("error")) {
-    return "";
-  }
   componentAnnotation = StringHandler::removeFirstLastCurlBrackets(componentAnnotation);
   if (componentAnnotation.isEmpty()) {
     return "";
@@ -1380,7 +1378,12 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
   QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
   foreach (QString annotation, annotations) {
     if (annotation.startsWith("Placement")) {
-      return StringHandler::removeFirstLastBrackets(annotation);
+      QString placementAnnotation = StringHandler::removeFirstLastBrackets(annotation);
+      if (placementAnnotation.toLower().contains("error")) {
+        return "";
+      } else {
+        return placementAnnotation;
+      }
     }
   }
   return "";
