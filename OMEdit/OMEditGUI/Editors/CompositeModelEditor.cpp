@@ -534,13 +534,13 @@ void CompositeModelEditor::updateConnection(LineAnnotation *pConnectionLineAnnot
     if (connection.attribute("From").compare(pConnectionLineAnnotation->getStartComponentName()) == 0 &&
         connection.attribute("To").compare(pConnectionLineAnnotation->getEndComponentName()) == 0) {
       connection.setAttribute("Delay", pConnectionLineAnnotation->getDelay());
-      if(!pConnectionLineAnnotation->getAlpha().isEmpty()) {
+      if(connection.hasAttribute("alpha")) {
         connection.setAttribute("alpha", pConnectionLineAnnotation->getAlpha());
       }
-      if(!pConnectionLineAnnotation->getZf().isEmpty()) {
+      if(connection.hasAttribute("Zf")) {
         connection.setAttribute("Zf", pConnectionLineAnnotation->getZf());
       }
-      if(!pConnectionLineAnnotation->getZfr().isEmpty()) {
+      if(connection.hasAttribute("Zfr")) {
         connection.setAttribute("Zfr", pConnectionLineAnnotation->getZfr());
       }
       QDomNodeList connectionChildren = connection.childNodes();
