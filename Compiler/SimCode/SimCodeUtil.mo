@@ -5767,10 +5767,14 @@ algorithm
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms})}, iuniqueEqIndex+1, itempvars);
 
     /* Record() = f()  */
-    case (_, DAE.CALL(path=path, expLst=e1lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
+    case (_, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
       equation
 
         true = Absyn.pathEqual(path, rpath);
+        // check all crefs are on the lhs
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs, BaseHashSet.add, ht);
+        List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
         (e2_1, _) = Expression.extendArrExp(e2, false);
 
         // tmp = somexp
@@ -5782,11 +5786,9 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
 
         /* Expand the varLst. Each var might be an array or record. */
-        e1lst = List.mapFlat(e1lst, Expression.expandExpression);
-        /* Expand the tmp record and any arrays */
-        e2lst = Expression.expandExpression(e1_1);
+        crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
         /* pair each of the expanded expressions to coressponding one*/
-        exptl = List.threadTuple(e1lst, e2lst);
+        exptl = List.threadTuple(expLst, crexplst);
         /* Create residual equations for each pair*/
         (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
         eqSystlst = simeqn::eqSystlst;
@@ -5799,6 +5801,7 @@ algorithm
     case (_, e1, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), _, _, _)
       equation
         true = Absyn.pathEqual(path, rpath);
+        // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
