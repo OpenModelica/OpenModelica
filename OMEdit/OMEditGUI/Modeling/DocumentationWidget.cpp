@@ -1303,9 +1303,16 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
   if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
     qreal zf = zoomFactor();
-    zf += event->delta()/120.;
-    if (zf > 5.) zf = 5.;
-    if (zf < .1) zf = .1;
+    /* ticket:4349 Take smaller steps for zooming.
+     * Also set the minimum zoom to readable size.
+     */
+    if (event->delta() > 0) {
+      zf += 0.1;
+      zf = zf > 5 ? 5 : zf;
+    } else {
+      zf -= 0.1;
+      zf = zf < 0.5 ? 0.5 : zf;
+    }
     setZoomFactor(zf);
   } else {
     QWebView::wheelEvent(event);
