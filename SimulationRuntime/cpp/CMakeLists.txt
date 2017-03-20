@@ -28,7 +28,8 @@
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
 #     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
 #     specify target platform for compilation                                      -DPLATFORM=<dynamic, static or platform triple> [default: "dynamic"]
-#
+#     use Klu sparse liner solver 												   -DUSE_KLU [default: OFF]
+#     use NOX non linear solver from trilinos library                              -DUSE_TRILINOS [default: OFF]
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
@@ -144,8 +145,8 @@ SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
 SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
 
 SET(USE_MICO OFF)
-SET(USE_KLU OFF)
-SET(USE_TRILINOS OFF)
+SET(USE_KLU CACHE BOOL OFF)
+SET(USE_TRILINOS CACHE BOOL OFF)
 SET(REDUCE_DAE OFF)
 IF(NOT FMU_TARGET OR FMU_SUNDIALS)
   SET(USE_SUNDIALS ON)

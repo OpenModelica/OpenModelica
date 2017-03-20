@@ -392,6 +392,35 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
 	(cp -puf 3rdParty/sundials/build_msvc/lib/*.dll $(OMBUILDDIR)/bin)
 
+# build trilinos nox
+nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/nox*
+	rm -f $(OMBUILDDIR)/bin/nox*
+	#rm -rf 3rdParty/trilinos-nox/build_msvc
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/trilinos-nox
+	mkdir -p 3rdParty/trilinos-nox/build_msvc
+
+	# Create batch file, that builds with CMake and Visual Studio
+	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
+	echo 'Building trilinos-nox with MSVC'
+	echo @echo on > 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo echo Calling CMake >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles" -DOMDEV_DIR="$(OMDEVMSYS) ' >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo echo Building trilinos-nox >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo @echo on >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/trilinos-nox/build_msvc/build.bat
+	echo nmake /f Makefile install >> 3rdParty/trilinos-nox/build_msvc/build.bat
+
+	# Change into directory and run batch file
+	cd ./3rdParty/trilinos-nox/build_msvc; echo "change to 3rdParty/trilinos-nox/build_msvc";\
+	cmd /c build.bat
+
+
+
 runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc Umfpack_msvc sundials_msvc copycppmsvcheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
