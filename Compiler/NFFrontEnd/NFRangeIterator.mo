@@ -32,9 +32,11 @@
 encapsulated uniontype NFRangeIterator
 protected
   import RangeIterator = NFRangeIterator;
+  import Type = NFType;
 
 public
   import Expression = NFExpression;
+  import Dimension = NFDimension;
 
   record INT_RANGE
     Integer current;
@@ -48,15 +50,11 @@ public
     Real stop;
   end REAL_RANGE;
 
-  record ENUM_RANGE
-
-  end ENUM_RANGE;
-
-  record ARRAY
+  record ARRAY_RANGE
     list<Expression> values;
-  end ARRAY;
+  end ARRAY_RANGE;
 
-  function new
+  function fromExp
     input Expression exp;
     output RangeIterator iterator;
   algorithm
@@ -64,8 +62,9 @@ public
       local
         Integer istart, istep, istop;
         Real rstart, rstep, rstop;
+        Type ty;
 
-      case Expression.ARRAY() then ARRAY(exp.elements);
+      case Expression.ARRAY() then ARRAY_RANGE(exp.elements);
 
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = SOME(Expression.INTEGER(istep)),
@@ -94,7 +93,35 @@ public
           fail();
 
     end match;
-  end new;
+  end fromExp;
+
+  function fromDim
+    input Dimension dim;
+    output RangeIterator iterator;
+  algorithm
+    iterator := match dim
+      local
+        Type ty;
+        list<Expression> expl;
+
+      case Dimension.INTEGER() then INT_RANGE(1, 1, dim.size);
+
+      case Dimension.BOOLEAN()
+        then ARRAY_RANGE({Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
+
+      case Dimension.ENUM(enumType = ty as Type.ENUMERATION())
+        then ARRAY_RANGE(Expression.makeEnumLiterals(ty));
+
+      case Dimension.EXP() then fromExp(dim.exp);
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown dim");
+        then
+          fail();
+
+    end match;
+  end fromDim;
 
   function next
     input output RangeIterator iterator;
@@ -108,7 +135,7 @@ public
         then
           nextExp;
 
-      case ARRAY()
+      case ARRAY_RANGE()
         algorithm
           nextExp := listHead(iterator.values);
           iterator.values := listRest(iterator.values);
@@ -124,8 +151,7 @@ public
   algorithm
     hasNext := match iterator
       case INT_RANGE() then iterator.current <= iterator.last;
-      case ARRAY({}) then false;
-      case ARRAY() then true;
+      case ARRAY_RANGE() then not listEmpty(iterator.values);
     end match;
   end hasNext;
 

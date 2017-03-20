@@ -63,15 +63,28 @@ import ComponentRef = NFComponentRef;
 import Ceval = NFCeval;
 import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
+import ExecStat.execStat;
 
 public
 function typeClass
+  input InstNode cls;
+  input String name;
+algorithm
+  typeComponents(cls);
+  execStat("NFInst.typeComponents(" + name + ")");
+  typeBindings(cls);
+  execStat("NFInst.typeBindings(" + name + ")");
+  typeSections(cls);
+  execStat("NFInst.typeSections(" + name + ")");
+end typeClass;
+
+function typeFunction
   input InstNode cls;
 algorithm
   typeComponents(cls);
   typeBindings(cls);
   typeSections(cls);
-end typeClass;
+end typeFunction;
 
 function typeComponents
   input InstNode cls;
@@ -157,6 +170,8 @@ protected
   Component c = InstNode.component(iterator);
   Binding binding;
   Type ty;
+  Expression exp;
+  SourceInfo info;
 algorithm
   () := match c
     case Component.ITERATOR(binding = Binding.UNTYPED_BINDING())
@@ -164,9 +179,18 @@ algorithm
         binding := typeBinding(c.binding, scope);
 
         // If the iteration range is structural, it must be a parameter expression.
-        if structural and not Types.isParameterOrConstant(Binding.variability(binding)) then
-          Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
-            {Binding.toString(binding)}, InstNode.info(iterator));
+        if structural then
+          info := InstNode.info(iterator);
+
+          if not Types.isParameterOrConstant(Binding.variability(binding)) then
+            Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
+              {Binding.toString(binding)}, info);
+          else
+            SOME(exp) := Binding.typedExp(binding);
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.RANGE(info));
+            exp := SimplifyExp.simplifyExp(exp);
+            binding := Binding.setTypedExp(exp, binding);
+          end if;
         end if;
 
         ty := Binding.getType(binding);
@@ -463,8 +487,9 @@ algorithm
     case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), Const.C_CONST());
     case Expression.ENUM_LITERAL() then (exp, exp.ty, Const.C_CONST());
     case Expression.CREF() then typeCref(exp.cref, scope, info);
+    case Expression.TYPENAME() then (exp, exp.ty, Const.C_CONST());
     case Expression.ARRAY() then typeArray(exp.elements, scope, info);
-    case Expression.RANGE() then typeRange(exp.start, exp.step, exp.stop, scope, info);
+    case Expression.RANGE() then typeRange(exp, scope, info);
 
     case Expression.BINARY()
       algorithm
@@ -556,6 +581,7 @@ algorithm
     local
       Component comp;
       Class cls;
+      ComponentRef cr;
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
@@ -567,10 +593,6 @@ algorithm
         cref.subscripts := typeSubscripts(cref.subscripts, scope, info);
       then
         (Expression.CREF(cref), ty, variability);
-
-    // A typename, e.g. Boolean or an enumeration type.
-    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
-      then (Expression.CREF(cref), InstNode.getType(cref.node), DAE.Const.C_CONST());
 
     case ComponentRef.WILD()
       then (Expression.CREF(ComponentRef.WILD()), Type.UNKNOWN(), DAE.Const.C_VAR());
@@ -637,29 +659,52 @@ algorithm
 end typeArray;
 
 function typeRange
-  input Expression startExp;
-  input Option<Expression> stepExp;
-  input Expression stopExp;
+  input output Expression rangeExp;
   input InstNode scope;
   input SourceInfo info;
-  output Expression rangeExp;
-  output Type rangeType;
-  output DAE.Const variability;
+        output Type rangeType;
+        output DAE.Const variability;
 protected
   Expression start_exp, step_exp, stop_exp;
   Type start_ty, step_ty, stop_ty;
   Option<Expression> ostep_exp;
   Option<Type> ostep_ty;
   DAE.Const start_var, step_var, stop_var;
+  TypeCheck.MatchKind ty_match;
 algorithm
-  (start_exp, start_ty, start_var) := typeExp(startExp, scope, info);
-  (stop_exp, stop_ty, stop_var) := typeExp(stopExp, scope, info);
+  Expression.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := rangeExp;
+
+  // Type start and stop.
+  (start_exp, start_ty, start_var) := typeExp(start_exp, scope, info);
+  (stop_exp, stop_ty, stop_var) := typeExp(stop_exp, scope, info);
   variability := Types.constAnd(start_var, stop_var);
 
-  if isSome(stepExp) then
-    SOME(step_exp) := stepExp;
+  // Type check start and stop.
+  (start_exp, stop_exp, rangeType, ty_match) :=
+    TypeCheck.matchExpressions(start_exp, start_ty, stop_exp, stop_ty);
+
+  if TypeCheck.isIncompatibleMatch(ty_match) then
+    printRangeTypeError(start_exp, start_ty, stop_exp, stop_ty, info);
+  end if;
+
+  if isSome(ostep_exp) then
+    // Type step.
+    SOME(step_exp) := ostep_exp;
     (step_exp, step_ty, step_var) := typeExp(step_exp, scope, info);
     variability := Types.constAnd(step_var, variability);
+
+    // Type check start and step.
+    (start_exp, step_exp, rangeType, ty_match) :=
+      TypeCheck.matchExpressions(start_exp, start_ty, step_exp, step_ty);
+
+    if TypeCheck.isIncompatibleMatch(ty_match) then
+      printRangeTypeError(start_exp, start_ty, step_exp, step_ty, info);
+    end if;
+
+    // We've checked start-stop and start-step now, so step-stop must also be
+    // type compatible. Stop might need to be type cast here though.
+    stop_exp := TypeCheck.matchTypes_cast(stop_ty, rangeType, stop_exp);
+
     ostep_exp := SOME(step_exp);
     ostep_ty := SOME(step_ty);
   else
@@ -667,10 +712,22 @@ algorithm
     ostep_ty := NONE();
   end if;
 
-  rangeType := TypeCheck.getRangeType(start_exp, start_ty,
-      ostep_exp, ostep_ty, stop_exp, stop_ty, info);
+  rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);
   rangeExp := Expression.RANGE(rangeType, start_exp, ostep_exp, stop_exp);
 end typeRange;
+
+function printRangeTypeError
+  input Expression exp1;
+  input Type ty1;
+  input Expression exp2;
+  input Type ty2;
+  input SourceInfo info;
+algorithm
+  Error.addSourceMessage(Error.RANGE_TYPE_MISMATCH,
+    {Expression.toString(exp1), Type.toString(ty1),
+     Expression.toString(exp2), Type.toString(ty2)}, info);
+  fail();
+end printRangeTypeError;
 
 function typeSections
   input InstNode classNode;

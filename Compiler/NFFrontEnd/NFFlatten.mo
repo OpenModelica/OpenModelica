@@ -66,6 +66,7 @@ import DAEUtil;
 import NFCall.Call;
 import NFFunction.Function;
 import RangeIterator = NFRangeIterator;
+import ExecStat.execStat;
 
 public
 partial function ExpandScalarFunc<ElementT>
@@ -77,6 +78,7 @@ end ExpandScalarFunc;
 
 function flatten
   input InstNode classInst;
+  input String name;
   output DAE.DAElist dae;
   output DAE.FunctionTree funcs;
 protected
@@ -87,8 +89,10 @@ algorithm
   funcs := DAE.FunctionTree.new();
   (elems, funcs) := flattenNode(classInst, ComponentRef.EMPTY(), {}, funcs);
   elems := listReverse(elems);
-  class_elem := DAE.COMP(InstNode.name(classInst), elems, ElementSource.createElementSource(info), NONE());
+  class_elem := DAE.COMP(name, elems, ElementSource.createElementSource(info), NONE());
   dae := DAE.DAE({class_elem});
+
+  execStat(getInstanceName() + "(" + name +")");
 end flatten;
 
 function flattenNode
@@ -180,6 +184,8 @@ protected
   Dimension dim;
   list<Dimension> rest_dims;
   ComponentRef sub_pre;
+  RangeIterator range_iter;
+  Expression exp;
 algorithm
   if listEmpty(dimensions) then
     sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
@@ -187,96 +193,14 @@ algorithm
   else
     dim :: rest_dims := dimensions;
 
-    (elements, funcs) := match dim
-      case Dimension.INTEGER()
-        then flattenArrayIntDim(element, dim.size, rest_dims, prefix,
-          subscripts, scalarFunc, elements, funcs);
-
-      case Dimension.BOOLEAN()
-        then flattenArrayBoolDim(element, rest_dims, prefix, subscripts,
-          scalarFunc, elements, funcs);
-
-      case Dimension.ENUM()
-        then flattenArrayEnumDim(element, dim.enumType, rest_dims, prefix,
-          subscripts, scalarFunc, elements, funcs);
-
-      else
-        algorithm
-          assert(false, getInstanceName() + " got unknown dimension " + NFDimension.toString(dim));
-        then
-          fail();
-
-    end match;
+    range_iter := RangeIterator.fromDim(dim);
+    while RangeIterator.hasNext(range_iter) loop
+      (range_iter, exp) := RangeIterator.next(range_iter);
+      (elements, funcs) := flattenArray(element, rest_dims, prefix, scalarFunc,
+        elements, funcs, Subscript.INDEX(exp) :: subscripts);
+    end while;
   end if;
 end flattenArray;
-
-function flattenArrayIntDim<ElementT>
-  input ElementT element;
-  input Integer dimSize;
-  input list<Dimension> restDims;
-  input ComponentRef prefix;
-  input list<Subscript> subscripts;
-  input ExpandScalarFunc scalarFunc;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-protected
-  list<Subscript> subs;
-algorithm
-  for i in 1:dimSize loop
-    subs := Subscript.INDEX(Expression.INTEGER(i)) :: subscripts;
-    (elements, funcs) := flattenArray(element, restDims, prefix, scalarFunc, elements, funcs, subs);
-  end for;
-end flattenArrayIntDim;
-
-function flattenArrayBoolDim<ElementT>
-  input ElementT element;
-  input list<Dimension> restDims;
-  input ComponentRef prefix;
-  input list<Subscript> subscripts;
-  input ExpandScalarFunc scalarFunc;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-protected
-  list<Subscript> subs;
-algorithm
-  subs := Subscript.INDEX(Expression.BOOLEAN(false)) :: subscripts;
-  (elements, funcs) := flattenArray(element, restDims, prefix, scalarFunc, elements, funcs, subs);
-  subs := Subscript.INDEX(Expression.BOOLEAN(true)) :: subscripts;
-  (elements, funcs) := flattenArray(element, restDims, prefix, scalarFunc, elements, funcs, subs);
-end flattenArrayBoolDim;
-
-function flattenArrayEnumDim<ElementT>
-  input ElementT element;
-  input Type enumType;
-  input list<Dimension> restDims;
-  input ComponentRef prefix;
-  input list<Subscript> subscripts;
-  input ExpandScalarFunc scalarFunc;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-protected
-  Integer i = 1;
-  Expression enum_exp;
-  list<String> literals;
-  list<Subscript> subs;
-algorithm
-  literals := match enumType
-    case Type.ENUMERATION() then enumType.literals;
-    else
-      algorithm
-        assert(false, getInstanceName() + " got non-enum type");
-      then
-        fail();
-  end match;
-
-  for l in literals loop
-    enum_exp := Expression.ENUM_LITERAL(enumType, l, i);
-    i := i + 1;
-
-    subs := Subscript.INDEX(enum_exp) :: subscripts;
-    (elements, funcs) := flattenArray(element, restDims, prefix, scalarFunc, elements, funcs, subs);
-  end for;
-end flattenArrayEnumDim;
 
 function flattenScalar
   input Component component;
@@ -629,7 +553,6 @@ function flattenForEquation
   input output DAE.FunctionTree funcs;
 protected
   InstNode iterator;
-  Type ty;
   Binding binding;
   Expression range;
   list<Equation> body;
@@ -642,13 +565,19 @@ protected
 algorithm
   Equation.FOR(iterator = iterator, body = body, info = info) := forEq;
 
+  // Flatten the body of the for loop.
   (dbody, funcs) := flattenEquations(body, prefix, {}, funcs);
 
-  Component.ITERATOR(ty = ty, binding = binding) := InstNode.component(iterator);
+  // Get the range to iterate over.
+  Component.ITERATOR(binding = binding) := InstNode.component(iterator);
   SOME(range) := Binding.typedExp(binding);
-  iter_cr := DAE.CREF_IDENT(InstNode.name(iterator), Type.toDAE(ty), {});
+  range_iter := RangeIterator.fromExp(range);
 
-  range_iter := RangeIterator.new(range);
+  // Create a DAE.ComponentRef for the replace function. The type doesn't matter
+  // here, only the name is used when replacing.
+  iter_cr := DAE.CREF_IDENT(InstNode.name(iterator), DAE.Type.T_UNKNOWN(), {});
+
+  // Unroll the loop by iterating over the body and replacing the iterator with its value.
   while RangeIterator.hasNext(range_iter) loop
     (range_iter, exp) := RangeIterator.next(range_iter);
     dbody_unrolled := DAEUtil.replaceCrefInDAEElements(dbody, iter_cr, Expression.toDAE(exp));

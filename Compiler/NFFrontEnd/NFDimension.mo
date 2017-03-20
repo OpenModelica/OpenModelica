@@ -74,32 +74,21 @@ public
       local
         Class cls;
         ComponentRef cref;
+        Type ty;
 
       case Expression.INTEGER() then INTEGER(exp.value);
 
-      case Expression.CREF(cref = cref as ComponentRef.CREF())
-        algorithm
-          if InstNode.isClass(cref.node) then
-            cls := InstNode.getClass(cref.node);
-
-            dim := match cls
-              case Class.PARTIAL_BUILTIN(ty = Type.BOOLEAN())
-                then BOOLEAN();
-
-              case Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION())
-                then ENUM(cls.ty);
-
-              else
-                algorithm
-                  assert(false, getInstanceName() + " got non-typename class");
-                then
-                  fail();
-            end match;
-          else
-            dim := Dimension.EXP(exp);
-          end if;
+      case Expression.TYPENAME(ty = Type.ARRAY(elementType = ty))
         then
-          dim;
+          match ty
+            case Type.BOOLEAN() then BOOLEAN();
+            case Type.ENUMERATION() then ENUM(ty);
+            else
+              algorithm
+                assert(false, getInstanceName() + " got invalid typename");
+              then
+                fail();
+          end match;
 
       else Dimension.EXP(exp);
     end match;

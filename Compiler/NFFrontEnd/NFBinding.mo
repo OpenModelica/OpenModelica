@@ -121,6 +121,19 @@ public
     end match;
   end typedExp;
 
+  function setTypedExp
+    input Expression exp;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case TYPED_BINDING()
+        algorithm
+          binding.bindingExp := exp;
+        then
+          ();
+    end match;
+  end setTypedExp;
+
   function variability
     input Binding binding;
     output DAE.Const var;

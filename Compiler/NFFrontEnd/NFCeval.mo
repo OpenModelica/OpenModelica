@@ -40,6 +40,8 @@ import NFInstNode.InstNode;
 import Operator = NFOperator;
 import Typing = NFTyping;
 import NFCall.Call;
+import Dimension = NFDimension;
+import Type = NFType;
 
 uniontype EvalTarget
   record DIMENSION
@@ -53,6 +55,10 @@ uniontype EvalTarget
     Expression exp;
     SourceInfo info;
   end ATTRIBUTE;
+
+  record RANGE
+    SourceInfo info;
+  end RANGE;
 
   record IGNORE_ERRORS end IGNORE_ERRORS;
 end EvalTarget;
@@ -69,16 +75,17 @@ algorithm
       list<Expression> expl = {};
       Call call;
       Component comp;
+      Option<Expression> oexp;
 
-    case Expression.CREF(cref=ComponentRef.CREF(node=c as InstNode.COMPONENT_NODE()))
+    case Expression.CREF(cref=ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
       algorithm
         Typing.typeComponentBinding(c, InstNode.parent(c));
         binding := Component.getBinding(InstNode.component(c));
       then
         evalBinding(binding, exp, target);
 
-    case Expression.CREF(cref=ComponentRef.CREF(node=c as InstNode.CLASS_NODE()))
-      then evalTypename(c, exp, target);
+    case Expression.TYPENAME()
+      then evalTypename(exp.ty, exp, target);
 
     case Expression.ARRAY()
       algorithm
@@ -88,10 +95,16 @@ algorithm
         end for;
       then Expression.ARRAY(exp.ty, listReverse(expl));
 
+    // Ranges could be evaluated into arrays, but that's less efficient in some
+    // cases. So here we just evaluate the range's expressions, and let the
+    // caller worry about vectorization.
     case Expression.RANGE()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
-      then fail();
+        exp1 := evalExp(exp.start, target);
+        oexp := evalExpOpt(exp.step, target);
+        exp3 := evalExp(exp.stop, target);
+      then
+        Expression.RANGE(exp.ty, exp1, oexp, exp3);
 
     case Expression.RECORD()
       algorithm
@@ -158,6 +171,19 @@ algorithm
   end match;
 end evalExp;
 
+function evalExpOpt
+  input output Option<Expression> oexp;
+  input EvalTarget target;
+algorithm
+  oexp := match oexp
+    local
+      Expression e;
+
+    case SOME(e) then SOME(evalExp(e, target));
+    else oexp;
+  end match;
+end evalExpOpt;
+
 protected
 
 function evalBinding
@@ -198,15 +224,29 @@ algorithm
 end printUnboundError;
 
 function evalTypename
-  input InstNode node;
+  input Type ty;
   input Expression originExp;
   input EvalTarget target;
   output Expression exp;
+protected
+  list<Expression> lits;
 algorithm
-  exp := match target
-    case EvalTarget.DIMENSION() then originExp;
+  exp := match ty
+    case Type.ARRAY(elementType = Type.BOOLEAN())
+      then Expression.ARRAY(ty, {Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
 
-    else originExp;
+    case Type.ARRAY(elementType = Type.ENUMERATION())
+      algorithm
+        lits := Expression.makeEnumLiterals(ty.elementType);
+      then
+        Expression.ARRAY(ty, lits);
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got invalid typename");
+      then
+        fail();
+
   end match;
 end evalTypename;
 

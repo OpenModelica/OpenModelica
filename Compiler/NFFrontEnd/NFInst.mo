@@ -110,12 +110,10 @@ algorithm
   execStat("NFInst.instExpressions("+ name +")");
 
   // Type the class.
-  Typing.typeClass(inst_cls);
-  execStat("NFTyping.typeClass("+ name +")");
+  Typing.typeClass(inst_cls, name);
 
   // Flatten the class into a DAE.
-  (dae, funcs) := Flatten.flatten(inst_cls);
-  execStat("NFFlatten.flatten("+ name +")");
+  (dae, funcs) := Flatten.flatten(inst_cls, name);
 end instClassInProgram;
 
 function instantiate
@@ -1080,6 +1078,7 @@ end instComponentBindings;
 
 function instBinding
   input output Binding binding;
+  input Boolean allowTypename = false;
 algorithm
   binding := match binding
     local
@@ -1087,7 +1086,7 @@ algorithm
 
     case Binding.RAW_BINDING()
       algorithm
-        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
+        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info, allowTypename);
       then
         Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.propagatedDims, binding.info);
 
@@ -1227,14 +1226,28 @@ function instCref
   input Boolean allowTypename = false "Allows crefs referring to typenames if true.";
   output Expression cref;
 protected
+  InstNode node;
   list<InstNode> nodes;
   ComponentRef cr;
   InstNode found_scope;
+  Type ty;
 algorithm
-  (_, nodes, found_scope) := Lookup.lookupComponent(absynCref, scope, info, allowTypename);
-  cr := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-  cr := makeCref(absynCref, nodes, scope, info, cr);
-  cref := Expression.CREF(cr);
+  (node, nodes, found_scope) := Lookup.lookupComponent(absynCref, scope, info, allowTypename);
+
+  if allowTypename and InstNode.isClass(node) then
+    ty := InstNode.getType(node);
+
+    ty := match ty
+      case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
+      case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
+    end match;
+
+    cref := Expression.TYPENAME(ty);
+  else
+    cr := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
+    cr := makeCref(absynCref, nodes, scope, info, cr);
+    cref := Expression.CREF(cr);
+  end if;
 end instCref;
 
 function makeCref
@@ -1399,7 +1412,7 @@ algorithm
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
         binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), 0, scope, info);
-        binding := instBinding(binding);
+        binding := instBinding(binding, allowTypename = true);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
         eql := instEEquations(scodeEq.eEquationLst, for_scope);
@@ -1527,7 +1540,7 @@ algorithm
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
         binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), 0, scope, info);
-        binding := instBinding(binding);
+        binding := instBinding(binding, allowTypename = true);
 
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);
         stmtl := instStatements(scodeStmt.forBody, for_scope);

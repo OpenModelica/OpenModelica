@@ -53,38 +53,30 @@ import Operator = NFOperator;
 import Type = NFType;
 
 public
-encapsulated
-uniontype MatchKind
-  record EXACT "Exact match." end EXACT;
 
-  record CAST "Matched by casting. e.g. Integer to Real" end CAST;
+type MatchKind = enumeration(
+  EXACT "Exact match",
+  CAST  "Matched by casting, e.g. Integer to real",
+  UNKNOWN_EXPECTED "The expected type was unknown",
+  UNKNOWN_ACTUAL   "The actual type was unknown",
+  GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
+  NOT_COMPATIBLE
+);
 
-  record UNKNOWN "Matched with unknown if unknown is allowed"
-    Boolean direction "true is expected was unknown, false if actual was unknown";
-  end UNKNOWN;
+function isCompatibleMatch
+  input MatchKind kind;
+  output Boolean isCompatible = kind <> MatchKind.NOT_COMPATIBLE;
+end isCompatibleMatch;
 
-  record GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)"
-  end GENERIC;
+function isIncompatibleMatch
+  input MatchKind kind;
+  output Boolean isIncompatible = kind == MatchKind.NOT_COMPATIBLE;
+end isIncompatibleMatch;
 
-  record NOT_COMPATIBLE end NOT_COMPATIBLE;
-
-  public function isCastMatch
-    input MatchKind matchKind;
-    output Boolean b;
-  algorithm
-    b := match matchKind
-      case CAST_MATCH then true;
-      else false;
-    end match;
-  end isCastMatch;
-
-end MatchKind;
-
-constant MatchKind EXACT_MATCH = MatchKind.EXACT();
-constant MatchKind CAST_MATCH = MatchKind.CAST();
-constant MatchKind UNKNOWN_EXP_MATCH = MatchKind.UNKNOWN(true);
-constant MatchKind UNKNOWN_ACT_MATCH = MatchKind.UNKNOWN(false);
-constant MatchKind NO_MATCH = MatchKind.NOT_COMPATIBLE();
+function isCastMatch
+  input MatchKind kind;
+  output Boolean isCast = kind == MatchKind.CAST;
+end isCastMatch;
 
 //
 //
@@ -322,119 +314,6 @@ constant MatchKind NO_MATCH = MatchKind.NOT_COMPATIBLE();
 //  end matchcontinue;
 //end getParentDimensions;
 //
-//protected function liftArray
-// input Type inTy;
-// input DAE.Dimensions inParentDimensions;
-// input Integer inPropagatedDims;
-// output Type outTy;
-//algorithm
-// outTy := matchcontinue(inTy, inParentDimensions, inPropagatedDims)
-//   local
-//     Integer pdims;
-//     Type ty;
-//     DAE.Dimensions dims;
-//     TypeSource ts;
-//
-//   case (_, _, -1) then inTy;
-//   // TODO! FIXME! check if we can actually have propagated dims of 0
-//   case (_, {}, 0) then inTy;
-//   // we have some parent dims
-//   case (_, _::_, 0)
-//     equation
-//       ts = Types.getTypeSource(inTy);
-//       ty = DAE.T_ARRAY(inTy, inParentDimensions, ts);
-//     then ty;
-//   // we can take the lastN from the propagated dims!
-//   case (_, _, pdims)
-//     equation
-//       false = Types.isArray(inTy);
-//       ts = Types.getTypeSource(inTy);
-//       dims = List.lastN(inParentDimensions, pdims);
-//       ty = DAE.T_ARRAY(inTy, dims, ts);
-//     then
-//       ty;
-//   // we can take the lastN from the propagated dims!
-//   case (_, _, pdims)
-//     equation
-//       true = Types.isArray(inTy);
-//       ty = Types.unliftArray(inTy);
-//       ts = Types.getTypeSource(inTy);
-//       dims = listAppend(inParentDimensions, Types.getDimensions(inTy));
-//       dims = List.lastN(dims, pdims);
-//       ty = DAE.T_ARRAY(ty, dims, ts);
-//     then
-//       ty;
-//    case (_, {}, _) then inTy;
-//    else DAE.T_ARRAY(inTy, inParentDimensions, DAE.emptyTypeSource);
-//  end matchcontinue;
-//end liftArray;
-//
-//public function checkExpEquality
-//  input Expression inExp1;
-//  input Type inTy1;
-//  input Expression inExp2;
-//  input Type inTy2;
-//  input String inMessage;
-//  input SourceInfo inInfo;
-//  output Expression outExp1;
-//  output Type outTy1;
-//  output Expression outExp2;
-//  output Type outTy2;
-//algorithm
-//  (outExp1, outTy1, outExp2, outTy2) := matchcontinue(inExp1, inTy1, inExp2, inTy2, inMessage, inInfo)
-//    local
-//      Expression e;
-//      Type t;
-//      String e1Str, t1Str, e2Str, t2Str, s1, s2;
-//
-//    // Check if the Rhs matchs/can be converted to match the Lhs
-//    case (_, _, _, _, _, _)
-//      equation
-//        (e, t) = Types.matchType(inExp2, inTy2, inTy1, true);
-//      then
-//        (inExp1, inTy1, e, t);
-//
-//    // the other way arround just for equations!
-//    case (_, _, _, _, "equ", _)
-//      equation
-//        (e, t) = Types.matchType(inExp1, inTy1, inTy2, true);
-//      then
-//        (e, t, inExp2, inTy2);
-//
-//    // not really fine!
-//    case (_, _, _, _, "equ", _)
-//      equation
-//        e1Str = ExpressionDump.printExpStr(inExp1);
-//        t1Str = Types.unparseTypeNoAttr(inTy1);
-//        e2Str = ExpressionDump.printExpStr(inExp2);
-//        t2Str = Types.unparseTypeNoAttr(inTy2);
-//        s1 = stringAppendList({e1Str,"=",e2Str});
-//        s2 = stringAppendList({t1Str,"=",t2Str});
-//        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, inInfo);
-//        true = Flags.isSet(Flags.FAILTRACE);
-//        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " + s1 + " tys: " + s2);
-//      then
-//        fail();
-//
-//    case (_, _, _, _, "alg", _)
-//      equation
-//        e1Str = ExpressionDump.printExpStr(inExp1);
-//        t1Str = Types.unparseTypeNoAttr(inTy1);
-//        e2Str = ExpressionDump.printExpStr(inExp2);
-//        t2Str = Types.unparseTypeNoAttr(inTy2);
-//        s1 = stringAppendList({e1Str,":=",e2Str});
-//        s2 = stringAppendList({t1Str,":=",t2Str});
-//        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, {e1Str,e2Str,t1Str,t2Str}, inInfo);
-//        true = Flags.isSet(Flags.FAILTRACE);
-//        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " + s1 + " tys: " + s2);
-//      then
-//        fail();
-//  end matchcontinue;
-//end checkExpEquality;
-//
-//
-//
-//
 // ************************************************************** //
 //   BEGIN: Operator typing helper functions
 // ************************************************************** //
@@ -457,6 +336,7 @@ protected
   Operator op;
   //TypeSource ty_src;
   String e1_str, e2_str, ty1_str, ty2_str, msg_str, op_str, s1, s2;
+  MatchKind ty_match;
 algorithm
   try
     true := Type.isBoolean(type1) and Type.isBoolean(type2);
@@ -465,7 +345,8 @@ algorithm
     // The Modelica Specification 3.2 doesn't say anything if they should be
     // allowed or not on scalars of type Integers/Reals.
     // It says no for arrays of Integer/Real type.
-    (e1, e2, ty, true) := matchExpressions(exp1, type1, exp2, type2);
+    (e1, e2, ty, ty_match) := matchExpressions(exp1, type1, exp2, type2);
+    true := isCompatibleMatch(ty_match);
     op := Operator.setType(ty, operator);
 
     exp := Expression.LBINARY(e1, op, e2);
@@ -541,12 +422,14 @@ protected
   Operator op;
   //TypeSource ty_src;
   String e1_str, e2_str, ty1_str, ty2_str, msg_str, op_str, s1, s2;
+  MatchKind ty_match;
 algorithm
   try
     true := Type.isScalarBuiltin(type1) and Type.isScalarBuiltin(type2);
 
     // Check types match/can be converted to match.
-    (e1, e2, ty, true) := matchExpressions(exp1, type1, exp2, type2);
+    (e1, e2, ty, ty_match) := matchExpressions(exp1, type1, exp2, type2);
+    true := isCompatibleMatch(ty_match);
     //ty_src := Types.getTypeSource(ty);
     //ty := DAE.T_BOOL({}, ty_src);
     ty := Type.BOOLEAN();
@@ -590,6 +473,7 @@ protected
   Operator op;
   //TypeSource ty_src;
   String e1_str, e2_str, ty1_str, ty2_str, s1, s2;
+  MatchKind ty_match;
 algorithm
   // All operators expect Numeric types except Addition.
   true := checkValidNumericTypesForOp(type1, type2, operator, true);
@@ -603,19 +487,22 @@ algorithm
         // Check if the operands (match/can be converted to match) the other.
         case Operator.ADD()
           algorithm
-            (e1, e2, binaryType, true) := matchExpressions(exp1, type1, exp2, type2);
+            (e1, e2, binaryType, ty_match) := matchExpressions(exp1, type1, exp2, type2);
+            true := isCompatibleMatch(ty_match);
           then
             (e1, e2, binaryType);
 
         case Operator.SUB()
           algorithm
-            (e1, e2, binaryType, true) := matchExpressions(exp1, type1, exp2, type2);
+            (e1, e2, binaryType, ty_match) := matchExpressions(exp1, type1, exp2, type2);
+            true := isCompatibleMatch(ty_match);
           then
             (e1, e2, binaryType);
 
         case Operator.MUL()
           algorithm
-            (e1, e2, binaryType, true) := matchExpressions(exp1, type1, exp2, type2);
+            (e1, e2, binaryType, ty_match) := matchExpressions(exp1, type1, exp2, type2);
+            true := isCompatibleMatch(ty_match);
           then
             (e1, e2, binaryType);
 
@@ -623,7 +510,8 @@ algorithm
         // They result in T_REAL regardless of the operand types.
         case Operator.DIV()
           algorithm
-            (e1, e2, binaryType, true) := matchExpressions(exp1, type1, exp2, type2);
+            (e1, e2, binaryType, ty_match) := matchExpressions(exp1, type1, exp2, type2);
+            true := isCompatibleMatch(ty_match);
 
             //ty_src := Types.getTypeSource(type1);
           then
@@ -636,8 +524,10 @@ algorithm
         case Operator.POW()
           algorithm
             // Try converting both to Real type.
-            (e1, _, true) := matchTypes(type1, Type.REAL(), exp1);
-            (e2, _, true) := matchTypes(type2, Type.REAL(), exp2);
+            (e1, _, ty_match) := matchTypes(type1, Type.REAL(), exp1);
+            true := isCompatibleMatch(ty_match);
+            (e2, _, ty_match) := matchTypes(type2, Type.REAL(), exp2);
+            true := isCompatibleMatch(ty_match);
             //ty_src := Types.getTypeSource(type1);
           then
             (e1, e2, Type.REAL());
@@ -711,6 +601,7 @@ public function checkBinaryOperationArrays
 protected
   Boolean isArray1,isArray2, bothArrays;
   Integer nrDims1, nrDims2;
+  MatchKind ty_match;
 algorithm
 
   nrDims1 := Type.dimensionCount(inType1);
@@ -731,7 +622,8 @@ algorithm
     case Operator.ADD()
       algorithm
         if (bothArrays) then
-          (exp1,exp2,outType, true) := matchExpressions(inExp1,inType1,inExp2,inType2);
+          (exp1,exp2,outType, ty_match) := matchExpressions(inExp1,inType1,inExp2,inType2);
+          true := isCompatibleMatch(ty_match);
           outExp := Expression.BINARY(exp1, Operator.ADD(outType), exp2);
         else
           binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
@@ -745,7 +637,8 @@ algorithm
     case Operator.SUB()
       algorithm
         if (bothArrays) then
-          (exp1,exp2,outType, true) := matchExpressions(inExp1,inType1,inExp2,inType2);
+          (exp1,exp2,outType, ty_match) := matchExpressions(inExp1,inType1,inExp2,inType2);
+          true := isCompatibleMatch(ty_match);
           outExp := Expression.BINARY(exp1, Operator.SUB(outType), exp2);
         else
           binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
@@ -762,7 +655,8 @@ algorithm
           dims := Type.arrayDims(inType1);
           arrtp := Type.liftArrayLeftList(inType2,dims);
 
-          (exp1,exp2,_, true) := matchExpressions(inExp1,inType1,inExp2,arrtp);
+          (exp1,exp2,_, ty_match) := matchExpressions(inExp1,inType1,inExp2,arrtp);
+          true := isCompatibleMatch(ty_match);
 
           // Create a scalar Real Type and lift it to array.
           // Necessary because even if both operands are of Integer type the result
@@ -823,7 +717,8 @@ algorithm
           ty1 := Type.elementType(inType1);
           ty2 := Type.elementType(inType2);
           // TODO: one of the exps is array but its type is now simple.
-          (exp1,exp2,ty, true) := matchExpressions(inExp1,ty1,inExp2,ty2);
+          (exp1,exp2,ty, ty_match) := matchExpressions(inExp1,ty1,inExp2,ty2);
+          true := isCompatibleMatch(ty_match);
 
           outType := Type.liftArrayLeftList(ty,dims);
           outExp := Expression.BINARY(exp1, Operator.MUL_ARRAY_SCALAR(outType), exp2);
@@ -836,7 +731,8 @@ algorithm
             "\n: Dimensions not equal for scalar product.");
             fail();
           else
-            (exp1,exp2,ty, true) := matchExpressions(inExp1,inType1,inExp2,inType2);
+            (exp1,exp2,ty, ty_match) := matchExpressions(inExp1,inType1,inExp2,inType2);
+            true := isCompatibleMatch(ty_match);
             outType := Type.elementType(ty);
             outExp := Expression.BINARY(exp1, Operator.MUL_SCALAR_PRODUCT(outType), exp2);
           end if;
@@ -852,7 +748,8 @@ algorithm
             ty1 := Type.elementType(inType1);
             ty2 := Type.elementType(inType2);
             // TODO: the exps are arrays but the types are now simple.
-            (exp1,exp2,ty, true) := matchExpressions(inExp1,ty1,inExp2,ty2);
+            (exp1,exp2,ty, ty_match) := matchExpressions(inExp1,ty1,inExp2,ty2);
+            true := isCompatibleMatch(ty_match);
             outType := Type.liftArrayLeftList(ty, {M});
             outExp := Expression.BINARY(exp1, Operator.MUL_MATRIX_PRODUCT(outType), exp2);
           end if;
@@ -869,7 +766,8 @@ algorithm
             ty1 := Type.elementType(inType1);
             ty2 := Type.elementType(inType2);
             // TODO: the exps are arrays but the types are now simple.
-            (exp1,exp2,ty, true) := matchExpressions(inExp1,ty1,inExp2,ty2);
+            (exp1,exp2,ty, ty_match) := matchExpressions(inExp1,ty1,inExp2,ty2);
+            true := isCompatibleMatch(ty_match);
             outType := Type.liftArrayLeftList(ty, {M});
             outExp := Expression.BINARY(exp1, Operator.MUL_MATRIX_PRODUCT(outType), exp2);
           end if;
@@ -886,7 +784,8 @@ algorithm
             ty1 := Type.elementType(inType1);
             ty2 := Type.elementType(inType2);
             // TODO: the exps are arrays but the types are now simple.
-            (exp1,exp2,ty, true) := matchExpressions(inExp1,ty1,inExp2,ty2);
+            (exp1,exp2,ty, ty_match) := matchExpressions(inExp1,ty1,inExp2,ty2);
+            true := isCompatibleMatch(ty_match);
             outType := Type.liftArrayLeftList(ty, {M,K});
             outExp := Expression.BINARY(exp1, Operator.MUL_MATRIX_PRODUCT(outType), exp2);
           end if;
@@ -901,7 +800,8 @@ algorithm
 
     case _ guard Operator.isBinaryElementWise(inOp)
       algorithm
-        (exp1,exp2,outType, true) := matchExpressions(inExp1,inType1,inExp2,inType2);
+        (exp1,exp2,outType, ty_match) := matchExpressions(inExp1,inType1,inExp2,inType2);
+        true := isCompatibleMatch(ty_match);
         newop := Operator.setType(outType, inOp);
         outExp := Expression.BINARY(exp1, newop, exp2);
       then
@@ -1423,7 +1323,6 @@ end checkBinaryOperationArrays;
 //   END: TypeCall helper functions
 // ************************************************************** //
 
-protected
 function matchExpressions
   input output Expression exp1;
   input Type type1;
@@ -1431,13 +1330,13 @@ function matchExpressions
   input Type type2;
   input Boolean allowUnknown = false;
         output Type compatibleType;
-        output Boolean compatible;
+        output MatchKind matchKind;
 algorithm
-  (exp1, compatibleType, compatible) :=
+  (exp1, compatibleType, matchKind) :=
     matchTypes(type1, type2, exp1, allowUnknown);
 
-  if not compatible then
-    (exp2, compatibleType, compatible) :=
+  if isIncompatibleMatch(matchKind) then
+    (exp2, compatibleType, matchKind) :=
       matchTypes_cast(type2, type1, exp2, allowUnknown);
   end if;
 end matchExpressions;
@@ -1449,27 +1348,12 @@ function matchTypes
   input output Expression expression;
   input Boolean allowUnknown = false;
         output Type compatibleType;
-        output Boolean compatible = true;
-protected
-  MatchKind matchKind;
-algorithm
-  (expression,compatibleType,compatible,matchKind) := matchTypes_detail(actualType,expectedType,expression,allowUnknown);
-end matchTypes;
-
-public
-function matchTypes_detail
-  input Type actualType;
-  input Type expectedType;
-  input output Expression expression;
-  input Boolean allowUnknown = false;
-        output Type compatibleType;
-        output Boolean compatible = true;
-        output MatchKind matchKind = NO_MATCH;
+        output MatchKind matchKind;
 algorithm
   // Return true if the references are the same.
   if referenceEq(actualType, expectedType) then
     compatibleType := actualType;
-    matchKind := EXACT_MATCH;
+    matchKind := MatchKind.EXACT;
     return;
   end if;
 
@@ -1477,22 +1361,13 @@ algorithm
   if valueConstructor(actualType) <> valueConstructor(expectedType) then
     // If the types are not of the same kind we might need to type cast the
     // expression to make it compatible.
-    (expression, compatibleType, compatible, matchKind) :=
-      match (actualType, expectedType)
-        case (Type.FUNCTION(), Type.FUNCTION())
-          then matchTypes_detail(actualType.resultType, expectedType.resultType, expression, allowUnknown);
-        case (Type.FUNCTION(), _)
-          then matchTypes_detail(actualType.resultType, expectedType, expression, allowUnknown);
-        case (_, Type.FUNCTION())
-          then matchTypes_detail(actualType, expectedType.resultType, expression, allowUnknown);
-        else matchTypes_cast(actualType, expectedType, expression, allowUnknown);
-      end match;
+    (expression, compatibleType, matchKind) :=
+      matchTypes_cast(actualType, expectedType, expression, allowUnknown);
     return;
   end if;
 
-
   // The types are of the same kind, so we only need to match on one of them.
-  matchKind := EXACT_MATCH;
+  matchKind := MatchKind.EXACT;
   compatibleType := match (actualType)
     local
       list<Dimension> dims1, dims2;
@@ -1517,11 +1392,11 @@ algorithm
         ety1 := actualType.elementType;
         ety2 := Type.arrayElementType(expectedType);
 
-        (expression, compatibleType, compatible, matchKind) :=
-          matchTypes_detail(ety1, ety2, expression, allowUnknown);
+        (expression, compatibleType, matchKind) :=
+          matchTypes(ety1, ety2, expression, allowUnknown);
 
         // If the element types are compatible, check the dimensions too.
-        if compatible then
+        if isCompatibleMatch(matchKind) then
           dims1 := actualType.dimensions;
           dims2 := Type.arrayDims(expectedType);
 
@@ -1531,19 +1406,11 @@ algorithm
               dim1 else Dimension.UNKNOWN() threaded for dim1 in dims1, dim2 in dims2);
             compatibleType := Type.liftArrayLeftList(compatibleType, dims1);
           else
-            compatible := false;
+            matchKind := MatchKind.NOT_COMPATIBLE;
           end if;
         end if;
       then
         compatibleType;
-
-    case Type.FUNCTION()
-      algorithm
-        (expression, compatibleType, compatible, matchKind) :=
-          matchTypes_cast(actualType.resultType, expectedType, expression, allowUnknown);
-      then
-        compatibleType;
-
 
     case Type.COMPLEX()
       algorithm
@@ -1558,55 +1425,42 @@ algorithm
         fail();
 
   end match;
-end matchTypes_detail;
+end matchTypes;
 
 function matchTypes_cast
   input Type actualType;
   input Type expectedType;
   input output Expression expression;
-  input Boolean allowUnknown;
+  input Boolean allowUnknown = false;
         output Type compatibleType;
-        output Boolean compatible = true;
-        output MatchKind matchKind = NO_MATCH;
+        output MatchKind matchKind;
 algorithm
-  compatibleType := match(actualType, expectedType)
+  (compatibleType, matchKind) := match(actualType, expectedType)
     // Integer can be cast to Real.
     case (Type.INTEGER(), Type.REAL())
       algorithm
         expression := Expression.typeCastElements(expression, expectedType);
-        matchKind := CAST_MATCH;
       then
-        expectedType;
+        (expectedType, MatchKind.CAST);
 
     // Any enumeration is compatible with enumeration(:).
     case (Type.ENUMERATION(), Type.ENUMERATION_ANY())
       algorithm
         // TODO: FIXME: Maybe this should be generic match
-        matchKind := CAST_MATCH;
-      then actualType;
+      then
+        (actualType, MatchKind.CAST);
 
     // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
     case (Type.UNKNOWN(), _)
-      algorithm
-        matchKind := UNKNOWN_ACT_MATCH;
-        compatible := allowUnknown;
-      then
-        expectedType;
+      then (expectedType,
+        if allowUnknown then MatchKind.UNKNOWN_ACTUAL else MatchKind.NOT_COMPATIBLE);
 
     case (_, Type.UNKNOWN())
-      algorithm
-        matchKind := UNKNOWN_EXP_MATCH;
-        compatible := allowUnknown;
-      then
-        actualType;
+      then (actualType,
+        if allowUnknown then MatchKind.UNKNOWN_EXPECTED else MatchKind.NOT_COMPATIBLE);
 
     // Anything else is not compatible.
-    else
-      algorithm
-        compatible := false;
-      then
-        Type.UNKNOWN();
-
+    else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
   end match;
 end matchTypes_cast;
 
@@ -2122,120 +1976,145 @@ end binaryArrayOpError;
 //  end match;
 //end getCrefType2;
 
-public function getRangeType
-  input Expression inStart;
-  input Type inStartTy;
-  input Option<Expression> inOptStep;
-  input Option<Type> inOptStepTy;
-  input Expression inEnd;
-  input Type inEndTy;
+function getRangeType
+  input Expression startExp;
+  input Option<Expression> stepExp;
+  input Expression stopExp;
+  input Type rangeElemType;
   input SourceInfo info;
-  output Type outType;
+  output Type rangeType;
 protected
-  Boolean stepreal;
-  Type stepty;
+  Expression step_exp;
+  Dimension dim;
 algorithm
+  if isSome(stepExp) then
+    SOME(step_exp) := stepExp;
 
-  stepreal := false;
-  if Type.isNumeric(inStartTy) and Type.isNumeric(inEndTy) then
-    if isSome(inOptStepTy) then
-	    SOME(stepty) := inOptStepTy;
-	    if not Type.isNumeric(stepty) then
-	      Error.addInternalError("Invalid range expression. Step expression is not numeric type.", info);
-	      fail();
-	    end if;
-	    stepreal := Type.isReal(stepty);
-    end if;
-    try
-      outType := getNumericRangeType(inStart, inOptStep, inEnd);
-    else
-      // TODO: for now let it be unknown. However the expression (end-start)/step + 1 should be the dim expression.
-      if stepreal or Type.isReal(inStartTy) or Type.isReal(inEndTy) then
-        outType := Type.ARRAY(Type.REAL(), {Dimension.UNKNOWN()});
-      else
-        outType := Type.ARRAY(Type.INTEGER(), {Dimension.UNKNOWN()});
-      end if;
-    end try;
-
-  elseif Type.isBoolean(inStartTy) and Type.isBoolean(inEndTy) then
-    if isSome(inOptStepTy) then
-      Error.addInternalError("Invalid range expression. Non numeric range exressions can not have steps.", info);
-      fail();
-    end if;
-    try
-      outType := getBooleanRangeType(inStart, inOptStep, inEnd);
-    else
-      // TODO: for now let it be unknown. However an expression that can deduce the size from the possible true/false
-      // combinations should be the dim expression.
-      outType := Type.ARRAY(Type.BOOLEAN(), {Dimension.UNKNOWN()});
-    end try;
-
-  elseif Type.isEnumeration(inStartTy) and Type.isEnumeration(inEndTy) then
-    if isSome(inOptStepTy) then
-      Error.addInternalError("Invalid range expression. Non numeric range exressions can not have steps.", info);
-      fail();
-    end if;
-    Error.addInternalError("Enumerator ranges are not handled yet.", info);
-    fail();
-
+    dim := match rangeElemType
+      case Type.INTEGER() then getRangeTypeInt(startExp, stepExp, stopExp, info);
+      case Type.REAL() then getRangeTypeReal(startExp, stepExp, stopExp, info);
+      else // Only Integer and Real ranges may have a step size.
+        algorithm
+          if Type.isBoolean(rangeElemType) or Type.isEnumeration(rangeElemType) then
+            // If the range is Boolean or enumeration, tell the user that the
+            // step size is not allowed to be specified.
+            Error.addSourceMessage(Error.RANGE_INVALID_STEP,
+              {Type.toString(rangeElemType)}, info);
+          else
+            // Other types are not allowed regardless of step size or not.
+            Error.addSourceMessage(Error.RANGE_INVALID_TYPE,
+              {Type.toString(rangeElemType)}, info);
+          end if;
+        then
+          fail();
+    end match;
   else
-    Error.addInternalError("Invalid range expression. Start and end expressions have different types.", info);
-    fail();
+    dim := match rangeElemType
+      case Type.INTEGER() then getRangeTypeInt(startExp, stepExp, stopExp, info);
+      case Type.REAL() then getRangeTypeReal(startExp, stepExp, stopExp, info);
+      case Type.BOOLEAN() then getRangeTypeBool(startExp, stopExp);
+      case Type.ENUMERATION() then getRangeTypeEnum(startExp, stopExp);
+      else
+        algorithm
+          Error.addSourceMessage(Error.RANGE_INVALID_TYPE,
+            {Type.toString(rangeElemType)}, info);
+        then
+          fail();
+    end match;
   end if;
 
+  rangeType := Type.ARRAY(rangeElemType, {dim});
 end getRangeType;
 
-function getNumericRangeType
-  input Expression inStart;
-  input Option<Expression> inOptStep;
-  input Expression inEnd;
-  output Type outType;
-protected
-  Integer size, istep;
-  Expression step;
+function getRangeTypeInt
+  input Expression startExp;
+  input Option<Expression> stepExp;
+  input Expression stopExp;
+  input SourceInfo info;
+  output Dimension dim;
 algorithm
-  (outType, size) := match(inStart, inOptStep, inEnd)
-    // Pure integer arguments results in an integer range.
+  dim := match (startExp, stepExp, stopExp)
+    local
+      Integer step;
+
     case (Expression.INTEGER(), NONE(), Expression.INTEGER())
-      then (Type.INTEGER(), inEnd.value - inStart.value + 1);
+      then Dimension.INTEGER(max(stopExp.value - startExp.value + 1, 0));
 
-    case (Expression.INTEGER(), SOME(Expression.INTEGER(value = istep)), Expression.INTEGER())
-      then (Type.INTEGER(), intDiv(inEnd.value - inStart.value, istep) + 1);
+    case (Expression.INTEGER(), SOME(Expression.INTEGER(value = step)), Expression.INTEGER())
+      algorithm
+        // Don't allow infinite ranges.
+        if step == 0 then
+          Error.addSourceMessageAndFail(Error.RANGE_ZERO_STEP, {}, info);
+        end if;
+      then
+        Dimension.INTEGER(max(intDiv(stopExp.value - startExp.value, step) + 1, 0));
 
-    // Mixed Integer/Real or pure Real arguments results in a Real range.
-    case (_, NONE(), _)
-      then (Type.REAL(), Util.realRangeSize(Expression.realValue(inStart), 1.0,
-        Expression.realValue(inEnd)));
-
-    case (_, SOME(step), _)
-      then (Type.REAL(), Util.realRangeSize(Expression.realValue(inStart),
-          Expression.realValue(step), Expression.realValue(inEnd)));
+    else Dimension.UNKNOWN();
   end match;
+end getRangeTypeInt;
 
-  outType := Type.ARRAY(outType, {Dimension.INTEGER(size)});
-end getNumericRangeType;
-
-function getBooleanRangeType
-  input Expression inStart;
-  input Option<Expression> inOptStep;
-  input Expression inEnd;
-  output Type outType;
-protected
-  Integer sz;
-  Boolean s, e;
+function getRangeTypeReal
+  input Expression startExp;
+  input Option<Expression> stepExp;
+  input Expression stopExp;
+  input SourceInfo info;
+  output Dimension dim;
 algorithm
-  true := isNone(inOptStep);
-  Expression.BOOLEAN(value = s) := inStart;
-  Expression.BOOLEAN(value = e) := inEnd;
+  dim := match (startExp, stepExp, stopExp)
+    local
+      Real step;
 
-  sz := match (s, e)
-    case (true, false) then 0;
-    case (false, true) then 2;
-    else 1;
+    case (Expression.REAL(), NONE(), Expression.REAL())
+      then Dimension.INTEGER(Util.realRangeSize(startExp.value, 1.0, stopExp.value));
+
+    case (Expression.REAL(), SOME(Expression.REAL(value = step)), Expression.REAL())
+      algorithm
+        // The old inst checked that step > 1e-14, but that's actually ok if
+        // start and stop are also small. We could maybe check that the range
+        // doesn't become too large, but then we'd have to define 'too large'.
+        if step == 0.0 then
+          Error.addSourceMessageAndFail(Error.RANGE_ZERO_STEP, {}, info);
+        end if;
+      then
+        Dimension.INTEGER(Util.realRangeSize(startExp.value, step, stopExp.value));
+
+    else Dimension.UNKNOWN();
   end match;
+end getRangeTypeReal;
 
-  outType := Type.ARRAY(Type.BOOLEAN(), {Dimension.INTEGER(sz)});
-end getBooleanRangeType;
+function getRangeTypeBool
+  input Expression startExp;
+  input Expression stopExp;
+  output Dimension dim;
+algorithm
+  dim := match (startExp, stopExp)
+    local
+      Integer sz;
+
+    case (Expression.BOOLEAN(), Expression.BOOLEAN())
+      algorithm
+        sz := if startExp.value == startExp.value then 1
+              elseif startExp.value < startExp.value then 2
+              else 0;
+      then
+        Dimension.INTEGER(sz);
+
+    else Dimension.UNKNOWN();
+  end match;
+end getRangeTypeBool;
+
+function getRangeTypeEnum
+  input Expression startExp;
+  input Expression stopExp;
+  output Dimension dim;
+algorithm
+  dim := match (startExp, stopExp)
+    case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
+      then Dimension.INTEGER(max(stopExp.index - startExp.index + 1, 0));
+
+    else Dimension.UNKNOWN();
+  end match;
+end getRangeTypeEnum;
 
 function checkIfExpression
   input Expression condExp;
@@ -2254,22 +2133,22 @@ function checkIfExpression
 protected
    Expression ec, e1, e2;
    String s1, s2, s3, s4;
-   Boolean tyMatch;
+   MatchKind ty_match;
 algorithm
-  (ec, _, tyMatch) := matchTypes(condType, Type.BOOLEAN(), condExp);
+  (ec, _, ty_match) := matchTypes(condType, Type.BOOLEAN(), condExp);
 
   // The condition must be a boolean.
-  if not tyMatch then
+  if isIncompatibleMatch(ty_match) then
     s1 := Expression.toString(condExp);
     s2 := Type.toString(condType);
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR, {s1, s2}, info);
   end if;
 
-  (e1, e2, outType, tyMatch) :=
+  (e1, e2, outType, ty_match) :=
     matchExpressions(thenExp, thenType, elseExp, elseType);
 
   // The types of the branches must be compatible.
-  if not tyMatch then
+  if isIncompatibleMatch(ty_match) then
     s1 := Expression.toString(thenExp);
     s2 := Expression.toString(elseExp);
     s3 := Type.toString(thenType);

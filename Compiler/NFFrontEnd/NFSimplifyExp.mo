@@ -43,12 +43,31 @@ algorithm
   exp := postSimplify(exp);
 end simplifyExp;
 
+function simplifyExpOpt
+  input output Option<Expression> oexp;
+algorithm
+  oexp := match oexp
+    local
+      Expression exp;
+
+    case SOME(exp)
+      algorithm
+        exp := preSimplify(exp);
+        exp := postSimplify(exp);
+      then
+        SOME(exp);
+
+    else oexp;
+  end match;
+end simplifyExpOpt;
+
 protected
 
 function preSimplify
   input output Expression exp;
 protected
   Expression exp1, exp2, exp3;
+  Option<Expression> oexp;
   list<Expression> expl = {};
   Call call;
 algorithm
@@ -63,8 +82,11 @@ algorithm
 
     case Expression.RANGE()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
-      then fail();
+        exp1 := simplifyExp(exp.start);
+        oexp := simplifyExpOpt(exp.step);
+        exp2 := simplifyExp(exp.stop);
+      then
+        Expression.RANGE(exp.ty, exp1, oexp, exp2);
 
     case Expression.RECORD()
       algorithm
@@ -148,11 +170,6 @@ algorithm
           expl := exp1 :: expl;
         end for;
       then Expression.ARRAY(exp.ty, listReverse(expl));
-
-    case Expression.RANGE()
-      algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
-      then fail();
 
     case Expression.RECORD()
       algorithm

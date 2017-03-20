@@ -586,8 +586,9 @@ uniontype Function
       inputnode :: inputs := inputs;
       comp := InstNode.component(inputnode);
 
-      (margexp, mty, correct, matchKind) := TypeCheck.matchTypes_detail(ty, Component.getType(comp), argexp);
-      if MatchKind.isCastMatch(matchKind) then
+      (margexp, mty, matchKind) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp);
+      correct := TypeCheck.isCompatibleMatch(matchKind);
+      if TypeCheck.isCastMatch(matchKind) then
         funcMatchKind := CAST_MATCH;
       end if;
 
@@ -639,7 +640,7 @@ uniontype Function
     DAE.FunctionAttributes attr;
   algorithm
     if not isTyped(fn) then
-      Typing.typeClass(fn.node);
+      Typing.typeFunction(fn.node);
       checkParamTypes(fn);
       fn.slots := makeSlots(fn.inputs);
       fn.returnType := makeReturnType(fn);

@@ -74,6 +74,10 @@ public
     ComponentRef cref;
   end CREF;
 
+  record TYPENAME "Represents a type used as a range, e.g. Boolean."
+    Type ty;
+  end TYPENAME;
+
   record ARRAY
     Type ty;
     list<Expression> elements;
@@ -228,6 +232,12 @@ public
           CREF(cref = cr) := exp2;
         then
           ComponentRef.compare(exp1.cref, cr);
+
+      case TYPENAME()
+        algorithm
+          TYPENAME(ty = ty) := exp2;
+        then
+          valueCompare(exp1.ty, ty);
 
       case ARRAY()
         algorithm
@@ -544,6 +554,17 @@ public
     outExp := arrayFromList(newlst, ty, restdims);
   end arrayFromList_impl;
 
+  function makeEnumLiterals
+    input Type enumType;
+    output list<Expression> literals;
+  protected
+    list<String> lits;
+  algorithm
+    Type.ENUMERATION(literals = lits) := enumType;
+    literals := list(ENUM_LITERAL(enumType, l, i)
+      threaded for l in lits, i in 1:listLength(lits));
+  end makeEnumLiterals;
+
   function toInteger
     input Expression exp;
     output Integer i;
@@ -572,6 +593,7 @@ public
         then Absyn.pathString(t.typePath) + "." + exp.name;
 
       case CREF() then ComponentRef.toString(exp.cref);
+      case TYPENAME() then Type.toString(exp.ty);
       case ARRAY() then "{" + stringDelimitList(List.map(exp.elements, toString), ", ") + "}";
 
       case RANGE() then toString(exp.start) +
@@ -621,6 +643,9 @@ public
 
       case CREF()
         then DAE.CREF(ComponentRef.toDAE(exp.cref), DAE.T_UNKNOWN_DEFAULT);
+
+      // TYPENAME() doesn't have a DAE representation, and shouldn't need to be
+      // converted anyway.
 
       case ARRAY()
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
