@@ -3350,6 +3350,8 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
         if (fileInfo.isFile()) {
           mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
         }
+      } else {
+        mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
     } else {
       QTreeView::keyPressEvent(event);
