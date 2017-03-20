@@ -748,6 +748,21 @@ void LineAnnotation::setAligned(bool aligned)
   update();
 }
 
+QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+  ShapeAnnotation::itemChange(change, value);
+#if !defined(WITHOUT_OSG)
+  if (change == QGraphicsItem::ItemSelectedHasChanged) {
+
+    // if connection selection is changed in CompositeModel
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
+    }
+  }
+#endif
+  return value;
+}
+
 /*!
  * \brief LineAnnotation::handleComponentMoved
  * If the component associated with the connection is moved then update the connection accordingly.\n

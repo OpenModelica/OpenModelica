@@ -3666,10 +3666,185 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
       }
       bool visited = false;
       foreach (Component *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
+        QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
+
+
+
+
+        //Draw interface vectors
+        bool interfaceSelected=false;
+        foreach(LineAnnotation* pConnection, pInterfaceComponent->getGraphicsView()->getConnectionsList()) {
+          if(pConnection->isSelected()) {
+            if(pConnection->getStartComponent() == pInterfaceComponent ||
+             pConnection->getEndComponent() == pInterfaceComponent) {
+              interfaceSelected = true;
+            }
+          }
+        }
+
+        //Draw X-axis
+        visualFile << "  <shape>\n";
+        visualFile << "    <ident>" << name << ".x</ident>\n";
+        visualFile << "    <type>cylinder</type>\n";
+        visualFile << "    <T>\n";
+        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "    </T>\n";
+        visualFile << "    <r>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "    </r>\n";
+        visualFile << "    <r_shape>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </r_shape>\n";
+        visualFile << "    <lengthDir>\n";
+        visualFile << "      <exp>1</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </lengthDir>\n";
+        visualFile << "    <widthDir>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>1</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </widthDir>\n";
+        visualFile << "    <length><exp>0.5</exp></length>\n";
+        visualFile << "    <width><exp>0.0025</exp></width>\n";
+        visualFile << "    <height><exp>0.0025</exp></height>\n";
+        visualFile << "    <extra><exp>0.0</exp></extra>\n";
+        visualFile << "    <color>\n";
+        if(interfaceSelected) {
+          visualFile << "      <exp>" << selectedColor.red() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.green() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.blue() << "</exp>\n";
+        } else {
+          visualFile << "      <exp>255</exp>\n";
+          visualFile << "      <exp>0</exp>\n";
+          visualFile << "      <exp>0</exp>\n";
+        }
+        visualFile << "    </color>\n";
+        visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+        visualFile << "  </shape>\n";
+
+        //Draw Y-axis
+        visualFile << "  <shape>\n";
+        visualFile << "    <ident>" << name << ".x</ident>\n";
+        visualFile << "    <type>cylinder</type>\n";
+        visualFile << "    <T>\n";
+        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "    </T>\n";
+        visualFile << "    <r>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "    </r>\n";
+        visualFile << "    <r_shape>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </r_shape>\n";
+        visualFile << "    <lengthDir>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>1</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </lengthDir>\n";
+        visualFile << "    <widthDir>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>1</exp>\n";
+        visualFile << "    </widthDir>\n";
+        visualFile << "    <length><exp>0.5</exp></length>\n";
+        visualFile << "    <width><exp>0.0025</exp></width>\n";
+        visualFile << "    <height><exp>0.0025</exp></height>\n";
+        visualFile << "    <extra><exp>0.0</exp></extra>\n";
+        visualFile << "    <color>\n";
+        if(interfaceSelected) {
+          visualFile << "      <exp>" << selectedColor.red() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.green() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.blue() << "</exp>\n";
+        } else {
+          visualFile << "      <exp>0</exp>\n";
+          visualFile << "      <exp>255</exp>\n";
+          visualFile << "      <exp>0</exp>\n";
+        }
+        visualFile << "    </color>\n";
+        visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+        visualFile << "  </shape>\n";
+
+        //Draw Z-axis
+        visualFile << "  <shape>\n";
+        visualFile << "    <ident>" << name << ".x</ident>\n";
+        visualFile << "    <type>cylinder</type>\n";
+        visualFile << "    <T>\n";
+        visualFile << "      <cref>" << name << ".A(1,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(1,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(2,3)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,1)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,2)</cref>\n";
+        visualFile << "      <cref>" << name << ".A(3,3)</cref>\n";
+        visualFile << "    </T>\n";
+        visualFile << "    <r>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](1)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](2)</cref>\n";
+        visualFile << "      <cref>" << name << ".R[cG][cG](3)</cref>\n";
+        visualFile << "    </r>\n";
+        visualFile << "    <r_shape>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </r_shape>\n";
+        visualFile << "    <lengthDir>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>1</exp>\n";
+        visualFile << "    </lengthDir>\n";
+        visualFile << "    <widthDir>\n";
+        visualFile << "      <exp>1</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "      <exp>0</exp>\n";
+        visualFile << "    </widthDir>\n";
+        visualFile << "    <length><exp>0.5</exp></length>\n";
+        visualFile << "    <width><exp>0.0025</exp></width>\n";
+        visualFile << "    <height><exp>0.0025</exp></height>\n";
+        visualFile << "    <extra><exp>0.0</exp></extra>\n";
+        visualFile << "    <color>\n";
+        if(interfaceSelected) {
+          visualFile << "      <exp>" << selectedColor.red() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.green() << "</exp>\n";
+          visualFile << "      <exp>" << selectedColor.blue() << "</exp>\n";
+        } else {
+          visualFile << "      <exp>0</exp>\n";
+          visualFile << "      <exp>0</exp>\n";
+          visualFile << "      <exp>255</exp>\n";
+        }
+        visualFile << "    </color>\n";
+        visualFile << "    <specCoeff><exp>0.7</exp></specCoeff>\n";
+        visualFile << "  </shape>\n";
+        //End new code
+
         if (visited) {
           break;
         }
-        QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
         /*!
          * \note Don't check for connection.
          * If we check for connection then only connected submodels can be seen in the ThreeDViewer Browser.

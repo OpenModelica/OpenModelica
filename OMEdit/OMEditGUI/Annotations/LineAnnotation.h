@@ -103,7 +103,10 @@ public:
   void setShapeFlags(bool enable);
   void updateShape(ShapeAnnotation *pShapeAnnotation);
   void setAligned(bool aligned);
-private:
+protected:
+  QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+
+  private:
   LineType mLineType;
   Component *mpStartComponent;
   QString mStartComponentName;
