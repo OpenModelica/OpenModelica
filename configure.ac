@@ -163,8 +163,6 @@ AC_ARG_WITH(msys, [  --with-msys[=no]              Point to an msys installation
     CPPFLAGS="$CPPFLAGS -I$withval/$MINGWNUM/include -I$withval/$MINGWNUM/include/tre"
     LDFLAGS="$LDFLAGS -L$withval/$MINGWNUM/lib"
     echo "Got: $CPPFLAGS"
-  ],
-  [
   ]
 )
 
