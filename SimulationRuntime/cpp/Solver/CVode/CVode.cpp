@@ -547,8 +547,15 @@ void Cvode::CVodeCore()
         _tLastEvent = _tCurrent;
         _event_n = 0;
       }
-      else
-        throw ModelicaSimulationError(EVENT_HANDLING,"Number of events exceeded  in time interval " + to_string(_abs) + " at time " + to_string(_tCurrent));
+      else{
+        std::stringstream zeros;
+		_idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
+        for (int i = 0; i < _dimZeroFunc; i++){
+		  if(_zeroSign[i]!=0)
+		    zeros << i << " ";
+		}
+		throw ModelicaSimulationError(EVENT_HANDLING,"Number of events of zero function(s) " + zeros.str() + "exceeded in time interval " + to_string(_abs) + " at time " + to_string(_tCurrent));
+	  }
 
       // CVode has interpolated the states at time 'tCurrent'
       _time_system->setTime(_tCurrent);
