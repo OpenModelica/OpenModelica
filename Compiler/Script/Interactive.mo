@@ -8877,7 +8877,7 @@ algorithm
       Integer l2,l1,l1_1;
       list<Absyn.ClassPart> parts2,parts;
       String name,i;
-      Boolean p,f,e;
+      Boolean p,f,e, success;
       Absyn.Restriction r;
       Option<String> cmt;
       SourceInfo file_info;
@@ -8893,11 +8893,12 @@ algorithm
                            info = file_info))
       equation
         publst = getPublicList(parts);
-        publst2 = deleteOrUpdateComponentFromElementitems(name, publst, item);
+        (publst2, success) = deleteOrUpdateComponentFromElementitems(name, publst, item);
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(boolNot(intEq(l1_1, l2)) and boolNot(isSome(item))) or /*update case*/(intEq(l1_1, l2) and isSome(item))) then
+        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+            /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = replacePublicList(parts, publst2);
         else
           protlst = getProtectedList(parts);
@@ -8913,11 +8914,12 @@ algorithm
                            info = file_info))
       equation
         publst = getPublicList(parts);
-        publst2 = deleteOrUpdateComponentFromElementitems(name, publst, item);
+        (publst2, success) = deleteOrUpdateComponentFromElementitems(name, publst, item);
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(boolNot(intEq(l1_1, l2)) and boolNot(isSome(item))) or /*update case*/(intEq(l1_1, l2) and isSome(item))) then
+        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+            /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = replacePublicList(parts, publst2);
         else
 	        protlst = getProtectedList(parts);
@@ -8935,8 +8937,9 @@ protected function deleteOrUpdateComponentFromElementitems
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Option<tuple<Absyn.Path,Absyn.ComponentItem>> item;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
+  output Boolean success;
 algorithm
-  outAbsynElementItemLst := match (inString,inAbsynElementItemLst)
+  (outAbsynElementItemLst, success) := match (inString,inAbsynElementItemLst)
     local
       String name,name2;
       list<Absyn.ElementItem> xs,res;
@@ -8948,7 +8951,8 @@ algorithm
       Absyn.Path tppath;
       Absyn.TypeSpec typeSpec;
       Boolean hasOtherComponents;
-    case (_,{}) then {};
+      Boolean successResult;
+    case (_,{}) then ({}, false);
     case (name,(x as Absyn.ELEMENTITEM(element = elt as Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(typeSpec = typeSpec as Absyn.TPATH(), components = comps)))) :: xs)
       algorithm
         if max(match c
@@ -8956,7 +8960,7 @@ algorithm
             else false;
             end match for c in comps) then
           // These components do contain the name we are looking for
-          res := match item
+          (res, successResult) := match item
             case SOME((tppath, compitem))
               algorithm
                 // It is an update operation
@@ -8967,6 +8971,7 @@ algorithm
                   end match for c in comps);
                   elt.specification := spec;
                   res := Absyn.ELEMENTITEM(elt)::xs;
+                  successResult := true;
                 else
                   /* We need to split the old component into two parts: one with the renamed typename */
                   spec.components := list(c for c
@@ -8987,13 +8992,15 @@ algorithm
                   if hasOtherComponents then
                     res := Absyn.ELEMENTITEM(eltold)::res;
                   end if;
+                  successResult := true;
                 end if;
-              then res;
+              then (res, successResult);
             else
               algorithm
                 // It is a deletion
                 if listLength(comps)==1 then
                   res := xs;
+                  successResult := true;
                 else
                   spec.components := list(c for c
                     guard match c
@@ -9002,18 +9009,20 @@ algorithm
                     end match in comps);
                   elt.specification := spec;
                   res := Absyn.ELEMENTITEM(elt)::xs;
+                  successResult := true;
                 end if;
-              then res;
+              then (res, successResult);
           end match;
         else
-          res := x :: deleteOrUpdateComponentFromElementitems(name, xs, item);
+          (res, successResult) := deleteOrUpdateComponentFromElementitems(name, xs, item);
+          res := x :: res;
         end if;
-      then res;
+      then (res, successResult);
     case (name,(x :: xs))
       equation
         // Did not find the name we are looking for in element x
-        res = deleteOrUpdateComponentFromElementitems(name, xs, item);
-      then (x :: res);
+        (res, successResult) = deleteOrUpdateComponentFromElementitems(name, xs, item);
+      then ((x :: res), successResult);
   end match;
 end deleteOrUpdateComponentFromElementitems;
 
