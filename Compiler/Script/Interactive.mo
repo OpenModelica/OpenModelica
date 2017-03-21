@@ -8871,7 +8871,7 @@ protected function deleteOrUpdateComponentFromClass
   input Option<tuple<Absyn.Path,Absyn.ComponentItem>> item;
   output Absyn.Class outClass;
 algorithm
-  outClass := matchcontinue (inString,inClass)
+  outClass := match (inString,inClass)
     local
       list<Absyn.ElementItem> publst,publst2,protlst,protlst2;
       Integer l2,l1,l1_1;
@@ -8897,23 +8897,13 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        true = intEq(l1_1, l2) or isSome(item);
-        parts2 = replacePublicList(parts, publst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
-
-    // Search in protected list
-    case (name,Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                           body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
-                           info = file_info))
-      equation
-        protlst = getProtectedList(parts);
-        protlst2 = deleteOrUpdateComponentFromElementitems(name, protlst, item);
-        l2 = listLength(protlst2);
-        l1 = listLength(protlst);
-        l1_1 = l1 - 1;
-        true = intEq(l1_1, l2) or isSome(item);
-        parts2 = replaceProtectedList(parts, protlst2);
+        if (/*delete case*/(boolNot(intEq(l1_1, l2)) and boolNot(isSome(item))) or /*update case*/(intEq(l1_1, l2) and isSome(item))) then
+          parts2 = replacePublicList(parts, publst2);
+        else
+          protlst = getProtectedList(parts);
+          protlst2 = deleteOrUpdateComponentFromElementitems(name, protlst, item);
+          parts2 = replaceProtectedList(parts, protlst2);
+        end if;
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
 
@@ -8927,27 +8917,16 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        true = intEq(l1_1, l2) or isSome(item);
-        parts2 = replacePublicList(parts, publst2);
+        if (/*delete case*/(boolNot(intEq(l1_1, l2)) and boolNot(isSome(item))) or /*update case*/(intEq(l1_1, l2) and isSome(item))) then
+          parts2 = replacePublicList(parts, publst2);
+        else
+	        protlst = getProtectedList(parts);
+	        protlst2 = deleteOrUpdateComponentFromElementitems(name, protlst, item);
+	        parts2 = replaceProtectedList(parts, protlst2);
+        end if;
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann),file_info);
-
-    // adrpo search also in model extends X end X
-    case (name,Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                           body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,ann = ann,comment = cmt),
-                           info = file_info))
-      equation
-        protlst = getProtectedList(parts);
-        protlst2 = deleteOrUpdateComponentFromElementitems(name, protlst, item);
-        l2 = listLength(protlst2);
-        l1 = listLength(protlst);
-        l1_1 = l1 - 1;
-        true = intEq(l1_1, l2) or isSome(item);
-        parts2 = replaceProtectedList(parts, protlst2);
-      then
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann),file_info);
-
-  end matchcontinue;
+  end match;
 end deleteOrUpdateComponentFromClass;
 
 protected function deleteOrUpdateComponentFromElementitems
