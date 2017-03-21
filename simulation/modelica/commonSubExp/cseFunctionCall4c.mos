@@ -41,24 +41,35 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (7)
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (7)
 // ========================================
 // 1: y.r1[3]:VARIABLE()  type: Real  [3]
 // 2: y.r1[2]:VARIABLE()  type: Real  [3]
 // 3: y.r1[1]:VARIABLE()  type: Real  [3]
-// 4: $cse2:VARIABLE()  type: Real  unreplaceable
-// 5: $cse1.r1[1]:VARIABLE()  type: Real  [3] unreplaceable
-// 6: $cse1.r1[2]:VARIABLE()  type: Real  [3] unreplaceable
-// 7: $cse1.r1[3]:VARIABLE()  type: Real  [3] unreplaceable
+// 4: $cse1.r1[1]:VARIABLE()  type: Real  [3] unreplaceable
+// 5: $cse1.r1[2]:VARIABLE()  type: Real  [3] unreplaceable
+// 6: $cse1.r1[3]:VARIABLE()  type: Real  [3] unreplaceable
+// 7: $cse2:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (3, 7)
+// ########### Updated Equation List (simulation) (3, 7)
 // ========================================
 // 1/1 (3): CSE.R({y.r1[1], y.r1[2], y.r1[3]}) = $cse1   [dynamic]
 // 2/4 (3): $cse1 = CSE.f3(time, $cse2)   [unknown]
 // 3/7 (1): $cse2 = sin(time)   [unknown]
 //
-// cse replacements (2/45)
+//
+// ########### Updated globalKnownVars (simulation) (0)
+// ========================================
+//
+//
+// ########### CSE Replacements (2/45)
 // ========================================
 // 1: $cse1 - CSE.f3(time, $cse2) - {}
 // 2: $cse2 - sin(time) - {}

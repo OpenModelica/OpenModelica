@@ -46,25 +46,11 @@ val(J4_w1, 1);
 // assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
 // assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
 // assert            | debug   | division leads to inf or nan at time 0, (a=-nan) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// stdout            | warning | While solving non-linear system an assertion failed at time 1e-08.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=-nan) / (b=1), where divisor b is: J1.J
-// assert            | debug   | division leads to inf or nan at time 1e-08, (a=inf) / (b=1), where divisor b is: J1.J
 // "
 // end SimulationResult;
 // ""
-// 3.235521367082613
-// 3.38230058783599
-// 3.38230048783602
+// 3.23552136708265
+// 3.382300587836032
+// 3.382300487836059
 // 0.0
 // endResult

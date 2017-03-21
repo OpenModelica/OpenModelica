@@ -113,6 +113,11 @@ runScript(modelTesting);getErrorString();
 // ""
 // Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.BranchingDynamicPipes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Fluid.Examples.BranchingDynamicPipes_res.mat
+// Messages: Wrong start value for variable _boundary1_P_medium_P_p_steam_sat_ detected. Got 2339.19 Expected: 100000
+// Wrong start value for variable _pipe1_P_flowModel_P_mus_(1) detected. Got 1.82329e-05 Expected: 0.001
+// Wrong start value for variable _pipe1_P_flowModel_P_rhos_(1) detected. Got 1.77178 Expected: 1
+// Wrong start value for variable _pipe1_P_statesFM1_P_T_ detected. Got 293.15 Expected: 300
+//
 // Files Equal!
 // "true
 // "

@@ -1316,54 +1316,54 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 3: aimc.statorCore.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
 // 4: aimc.strayLoad.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
 // 5: aimc.strayLoad.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -0.0  "Cut torque in the flange" type: Real 
-// 6: sinevoltage1.sineVoltage[3].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[3]  "Frequency of sine wave" type: Real  [3]
-// 7: sinevoltage1.sineVoltage[3].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[3]  "Phase of sine wave" type: Real  [3]
-// 8: sinevoltage1.sineVoltage[3].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[3]  "Amplitude of sine wave" type: Real  [3]
-// 9: sinevoltage1.sineVoltage[3].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
-// 10: sinevoltage1.sineVoltage[3].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[3].startTime  "Output = offset for time < startTime" type: Real  [3]
-// 11: sinevoltage1.sineVoltage[3].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[3].offset  "Offset of output signal" type: Real  [3]
-// 12: sinevoltage1.sineVoltage[3].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[3].phase  "Phase of sine wave" type: Real  [3]
-// 13: sinevoltage1.sineVoltage[3].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[3].freqHz  "Frequency of sine wave" type: Real  [3]
-// 14: sinevoltage1.sineVoltage[3].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[3].V  "Amplitude of sine wave" type: Real  [3]
-// 15: sinevoltage1.sineVoltage[3].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[3]  "Time offset" type: Real  [3]
-// 16: sinevoltage1.sineVoltage[3].offset:PARAM(unit = "V" )  = sinevoltage1.offset[3]  "Voltage offset" type: Real  [3]
-// 17: sinevoltage1.sineVoltage[2].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[2]  "Frequency of sine wave" type: Real  [3]
-// 18: sinevoltage1.sineVoltage[2].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[2]  "Phase of sine wave" type: Real  [3]
-// 19: sinevoltage1.sineVoltage[2].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[2]  "Amplitude of sine wave" type: Real  [3]
-// 20: sinevoltage1.sineVoltage[2].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
-// 21: sinevoltage1.sineVoltage[2].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[2].startTime  "Output = offset for time < startTime" type: Real  [3]
-// 22: sinevoltage1.sineVoltage[2].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[2].offset  "Offset of output signal" type: Real  [3]
-// 23: sinevoltage1.sineVoltage[2].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[2].phase  "Phase of sine wave" type: Real  [3]
-// 24: sinevoltage1.sineVoltage[2].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[2].freqHz  "Frequency of sine wave" type: Real  [3]
-// 25: sinevoltage1.sineVoltage[2].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[2].V  "Amplitude of sine wave" type: Real  [3]
-// 26: sinevoltage1.sineVoltage[2].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[2]  "Time offset" type: Real  [3]
-// 27: sinevoltage1.sineVoltage[2].offset:PARAM(unit = "V" )  = sinevoltage1.offset[2]  "Voltage offset" type: Real  [3]
-// 28: sinevoltage1.sineVoltage[1].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[1]  "Frequency of sine wave" type: Real  [3]
-// 29: sinevoltage1.sineVoltage[1].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[1]  "Phase of sine wave" type: Real  [3]
-// 30: sinevoltage1.sineVoltage[1].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[1]  "Amplitude of sine wave" type: Real  [3]
-// 31: sinevoltage1.sineVoltage[1].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
-// 32: sinevoltage1.sineVoltage[1].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[1].startTime  "Output = offset for time < startTime" type: Real  [3]
-// 33: sinevoltage1.sineVoltage[1].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[1].offset  "Offset of output signal" type: Real  [3]
-// 34: sinevoltage1.sineVoltage[1].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[1].phase  "Phase of sine wave" type: Real  [3]
-// 35: sinevoltage1.sineVoltage[1].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[1].freqHz  "Frequency of sine wave" type: Real  [3]
-// 36: sinevoltage1.sineVoltage[1].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[1].V  "Amplitude of sine wave" type: Real  [3]
-// 37: sinevoltage1.sineVoltage[1].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[1]  "Time offset" type: Real  [3]
-// 38: sinevoltage1.sineVoltage[1].offset:PARAM(unit = "V" )  = sinevoltage1.offset[1]  "Voltage offset" type: Real  [3]
-// 39: sinevoltage1.startTime[3]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
-// 40: sinevoltage1.startTime[2]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
-// 41: sinevoltage1.startTime[1]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
-// 42: sinevoltage1.offset[3]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
-// 43: sinevoltage1.offset[2]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
-// 44: sinevoltage1.offset[1]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
-// 45: sinevoltage1.freqHz[3]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
-// 46: sinevoltage1.freqHz[2]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
-// 47: sinevoltage1.freqHz[1]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
-// 48: sinevoltage1.phase[3]:PARAM(unit = "rad" )  = -4.188790204786391  "Phases of sine waves" type: Real  [3]
-// 49: sinevoltage1.phase[2]:PARAM(unit = "rad" )  = -2.094395102393195  "Phases of sine waves" type: Real  [3]
-// 50: sinevoltage1.phase[1]:PARAM(unit = "rad" )  = -0.0  "Phases of sine waves" type: Real  [3]
-// 51: sinevoltage1.V[3]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
-// 52: sinevoltage1.V[2]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
-// 53: sinevoltage1.V[1]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 6: sinevoltage1.freqHz[3]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
+// 7: sinevoltage1.sineVoltage[3].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[3]  "Frequency of sine wave" type: Real  [3]
+// 8: sinevoltage1.phase[3]:PARAM(unit = "rad" )  = -4.188790204786391  "Phases of sine waves" type: Real  [3]
+// 9: sinevoltage1.sineVoltage[3].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[3]  "Phase of sine wave" type: Real  [3]
+// 10: sinevoltage1.V[3]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 11: sinevoltage1.sineVoltage[3].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[3]  "Amplitude of sine wave" type: Real  [3]
+// 12: sinevoltage1.sineVoltage[3].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
+// 13: sinevoltage1.startTime[3]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
+// 14: sinevoltage1.sineVoltage[3].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[3]  "Time offset" type: Real  [3]
+// 15: sinevoltage1.sineVoltage[3].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[3].startTime  "Output = offset for time < startTime" type: Real  [3]
+// 16: sinevoltage1.offset[3]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
+// 17: sinevoltage1.sineVoltage[3].offset:PARAM(unit = "V" )  = sinevoltage1.offset[3]  "Voltage offset" type: Real  [3]
+// 18: sinevoltage1.sineVoltage[3].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[3].offset  "Offset of output signal" type: Real  [3]
+// 19: sinevoltage1.sineVoltage[3].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[3].phase  "Phase of sine wave" type: Real  [3]
+// 20: sinevoltage1.sineVoltage[3].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[3].freqHz  "Frequency of sine wave" type: Real  [3]
+// 21: sinevoltage1.sineVoltage[3].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[3].V  "Amplitude of sine wave" type: Real  [3]
+// 22: sinevoltage1.freqHz[2]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
+// 23: sinevoltage1.sineVoltage[2].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[2]  "Frequency of sine wave" type: Real  [3]
+// 24: sinevoltage1.phase[2]:PARAM(unit = "rad" )  = -2.094395102393195  "Phases of sine waves" type: Real  [3]
+// 25: sinevoltage1.sineVoltage[2].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[2]  "Phase of sine wave" type: Real  [3]
+// 26: sinevoltage1.V[2]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 27: sinevoltage1.sineVoltage[2].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[2]  "Amplitude of sine wave" type: Real  [3]
+// 28: sinevoltage1.sineVoltage[2].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
+// 29: sinevoltage1.startTime[2]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
+// 30: sinevoltage1.sineVoltage[2].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[2]  "Time offset" type: Real  [3]
+// 31: sinevoltage1.sineVoltage[2].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[2].startTime  "Output = offset for time < startTime" type: Real  [3]
+// 32: sinevoltage1.offset[2]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
+// 33: sinevoltage1.sineVoltage[2].offset:PARAM(unit = "V" )  = sinevoltage1.offset[2]  "Voltage offset" type: Real  [3]
+// 34: sinevoltage1.sineVoltage[2].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[2].offset  "Offset of output signal" type: Real  [3]
+// 35: sinevoltage1.sineVoltage[2].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[2].phase  "Phase of sine wave" type: Real  [3]
+// 36: sinevoltage1.sineVoltage[2].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[2].freqHz  "Frequency of sine wave" type: Real  [3]
+// 37: sinevoltage1.sineVoltage[2].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[2].V  "Amplitude of sine wave" type: Real  [3]
+// 38: sinevoltage1.freqHz[1]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
+// 39: sinevoltage1.sineVoltage[1].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[1]  "Frequency of sine wave" type: Real  [3]
+// 40: sinevoltage1.phase[1]:PARAM(unit = "rad" )  = -0.0  "Phases of sine waves" type: Real  [3]
+// 41: sinevoltage1.sineVoltage[1].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[1]  "Phase of sine wave" type: Real  [3]
+// 42: sinevoltage1.V[1]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 43: sinevoltage1.sineVoltage[1].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[1]  "Amplitude of sine wave" type: Real  [3]
+// 44: sinevoltage1.sineVoltage[1].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
+// 45: sinevoltage1.startTime[1]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
+// 46: sinevoltage1.sineVoltage[1].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[1]  "Time offset" type: Real  [3]
+// 47: sinevoltage1.sineVoltage[1].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[1].startTime  "Output = offset for time < startTime" type: Real  [3]
+// 48: sinevoltage1.offset[1]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
+// 49: sinevoltage1.sineVoltage[1].offset:PARAM(unit = "V" )  = sinevoltage1.offset[1]  "Voltage offset" type: Real  [3]
+// 50: sinevoltage1.sineVoltage[1].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[1].offset  "Offset of output signal" type: Real  [3]
+// 51: sinevoltage1.sineVoltage[1].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[1].phase  "Phase of sine wave" type: Real  [3]
+// 52: sinevoltage1.sineVoltage[1].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[1].freqHz  "Frequency of sine wave" type: Real  [3]
+// 53: sinevoltage1.sineVoltage[1].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[1].V  "Amplitude of sine wave" type: Real  [3]
 // 54: sinevoltage1.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 55: sinevoltage1.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 56: sinevoltage1.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
@@ -1371,157 +1371,157 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 58: torque.useSupport:PARAM(final = true )  = false  "= true, if support flange enabled, otherwise implicitly grounded" type: Boolean 
 // 59: star.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 60: star.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 61: aimc.thermalAmbient.constTr.k:PARAM(start = 1.0 final = true )  = aimc.thermalAmbient.Tr  "Constant output value" type: Real 
-// 62: aimc.thermalAmbient.constTs.k:PARAM(start = 1.0 final = true )  = aimc.thermalAmbient.Ts  "Constant output value" type: Real 
-// 63: aimc.thermalAmbient.Tr:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 final = true )  = aimc.TrOperational  "Temperature of rotor (squirrel cage)" type: Real 
-// 64: aimc.thermalAmbient.thermalCollectorStator.m:PARAM(min = 1 final = true )  = 3  "Number of collected heat flows" type: Integer 
-// 65: aimc.thermalAmbient.temperatureFriction.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
-// 66: aimc.thermalAmbient.temperatureStrayLoad.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
-// 67: aimc.thermalAmbient.temperatureRotorCore.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
-// 68: aimc.thermalAmbient.temperatureStatorCore.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
-// 69: aimc.thermalAmbient.thermalPort.m:PARAM(flow=false final = true )  = 3  "Number of stator phases" type: Integer 
-// 70: aimc.thermalAmbient.Ts:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 final = true )  = aimc.TsOperational  "Temperature of stator windings" type: Real 
-// 71: aimc.thermalAmbient.TDefault:CONST(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Default temperature" type: Real 
-// 72: aimc.thermalAmbient.useTemperatureInputs:PARAM(final = true )  = false  "If true, temperature inputs are used; else, temperatures are constant" type: Boolean 
-// 73: aimc.thermalAmbient.m:PARAM(final = true )  = 3  "Number of stator phases" type: Integer 
-// 74: aimc.fixed.phi0:PARAM(unit = "rad" )  = 0.0  "Fixed offset angle of housing" type: Real 
-// 75: aimc.squirrelCageR.alpha:PARAM(unit = "1/K" )  = aimc.alpha20r / (1.0 + aimc.alpha20r * (-293.15 + aimc.TrRef))  "Temperature coefficient of resistance at T_ref" type: Real 
-// 76: aimc.squirrelCageR.T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Reference temperature" type: Real 
-// 77: aimc.squirrelCageR.Rr:PARAM(unit = "Ohm" )  = aimc.Rr  "Rotor resistance per phase translated to stator at T_ref" type: Real 
-// 78: aimc.squirrelCageR.Lrsigma:PARAM(unit = "H" )  = aimc.Lrsigma  "Rotor stray inductance per phase translated to stator" type: Real 
-// 79: aimc.squirrelCageR.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Fixed device temperature if useHeatPort = false" type: Real 
-// 80: aimc.squirrelCageR.useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean 
-// 81: aimc.TrOperational:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Operational temperature of rotor resistance" type: Real 
-// 82: aimc.alpha20r:PARAM(start = 0.0 unit = "1/K" )  "Temperature coefficient of rotor resistance at 20 degC" type: Real 
-// 83: aimc.TrRef:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Reference temperature of rotor resistance" type: Real 
-// 84: aimc.Rr:PARAM(start = 0.04 unit = "Ohm" )  = 0.4  "Rotor resistance per phase (equivalent three phase winding) at TRef" type: Real 
-// 85: aimc.Lrsigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.002  "Rotor stray inductance per phase (equivalent three phase winding)" type: Real 
-// 86: aimc.Lm:PARAM(start = 2.898223593858831 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.06931  "Stator main field inductance per phase" type: Real 
-// 87: aimc.airGapS.L[2,2]:PARAM(unit = "H" protected = true )  = aimc.airGapS.Lm  "Inductance matrix" type: Real  [2,2]
-// 88: aimc.airGapS.L[2,1]:PARAM(unit = "H" protected = true )  = 0.0  "Inductance matrix" type: Real  [2,2]
-// 89: aimc.airGapS.L[1,2]:PARAM(unit = "H" protected = true )  = 0.0  "Inductance matrix" type: Real  [2,2]
-// 90: aimc.airGapS.L[1,1]:PARAM(unit = "H" protected = true )  = aimc.airGapS.Lm  "Inductance matrix" type: Real  [2,2]
-// 91: aimc.airGapS.Lm:PARAM(unit = "H" )  = aimc.Lm  "Main field inductance" type: Real 
-// 92: aimc.airGapS.p:PARAM(min = 1 )  = aimc.p  "Number of pole pairs" type: Integer 
-// 93: aimc.airGapS.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
-// 94: aimc.internalThermalPort.m:PARAM(flow=false final = true )  = 3  "Number of stator phases" type: Integer 
-// 95: aimc.strayLoad.strayLoadParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference stray load torque at reference angular velocity and reference current" type: Real 
-// 96: aimc.strayLoad.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = aimc.strayLoadParameters.power_w  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
-// 97: aimc.strayLoad.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.strayLoadParameters.wRef  "Reference angular velocity that PRef refers to" type: Real 
-// 98: aimc.strayLoad.strayLoadParameters.IRef:PARAM(min = 1e-60 unit = "A" )  = aimc.strayLoadParameters.IRef  "Reference RMS current that PRef refers to" type: Real 
-// 99: aimc.strayLoad.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
-// 100: aimc.strayLoad.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
-// 101: aimc.strayLoad.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 102: aimc.strayLoad.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 103: aimc.strayLoad.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 104: aimc.spacePhasorS.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 105: aimc.spacePhasorS.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 106: aimc.spacePhasorS.InverseTransformation[3,2]:PARAM(protected = true )  = -0.8660254037844384  type: Real  [3,2]
-// 107: aimc.spacePhasorS.InverseTransformation[3,1]:PARAM(protected = true )  = -0.5000000000000004  type: Real  [3,2]
-// 108: aimc.spacePhasorS.InverseTransformation[2,2]:PARAM(protected = true )  = 0.8660254037844387  type: Real  [3,2]
-// 109: aimc.spacePhasorS.InverseTransformation[2,1]:PARAM(protected = true )  = -0.4999999999999998  type: Real  [3,2]
-// 110: aimc.spacePhasorS.InverseTransformation[1,2]:PARAM(protected = true )  = 0.0  type: Real  [3,2]
-// 111: aimc.spacePhasorS.InverseTransformation[1,1]:PARAM(protected = true )  = 1.0  type: Real  [3,2]
-// 112: aimc.spacePhasorS.TransformationMatrix[2,3]:PARAM(protected = true )  = -0.5773502691896255  type: Real  [2,3]
-// 113: aimc.spacePhasorS.TransformationMatrix[2,2]:PARAM(protected = true )  = 0.5773502691896257  type: Real  [2,3]
-// 114: aimc.spacePhasorS.TransformationMatrix[2,1]:PARAM(protected = true )  = 0.0  type: Real  [2,3]
-// 115: aimc.spacePhasorS.TransformationMatrix[1,3]:PARAM(protected = true )  = -0.3333333333333336  type: Real  [2,3]
-// 116: aimc.spacePhasorS.TransformationMatrix[1,2]:PARAM(protected = true )  = -0.3333333333333331  type: Real  [2,3]
-// 117: aimc.spacePhasorS.TransformationMatrix[1,1]:PARAM(protected = true )  = 0.6666666666666666  type: Real  [2,3]
-// 118: aimc.spacePhasorS.turnsRatio:PARAM()  = 1.0  "Turns ratio" type: Real 
-// 119: aimc.spacePhasorS.pi:CONST()  = 3.141592653589793  type: Real 
-// 120: aimc.spacePhasorS.m:CONST()  = 3  "Number of phases" type: Integer 
-// 121: aimc.statorCore.turnsRatio:PARAM(min = 1e-60 )  = 1.0  "Effective number of stator turns / effective number of rotor turns (if used as rotor core)" type: Real 
-// 122: aimc.statorCore.m:PARAM(final = true )  = aimc.statorCore.coreParameters.m  "Number of phases" type: Integer 
-// 123: aimc.statorCore.coreParameters.wMin:PARAM(unit = "rad/s" final = true )  = aimc.statorCoreParameters.wMin  type: Real 
-// 124: aimc.statorCore.coreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
-// 125: aimc.statorCore.coreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
-// 126: aimc.statorCore.coreParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.statorCoreParameters.wRef  "Reference angular velocity that reference core losses PRef refer to" type: Real 
-// 127: aimc.statorCore.coreParameters.VRef:PARAM(min = 1e-60 unit = "V" )  = aimc.statorCoreParameters.VRef  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real 
-// 128: aimc.statorCore.coreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real 
+// 61: aimc.TrOperational:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Operational temperature of rotor resistance" type: Real 
+// 62: aimc.thermalAmbient.Tr:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 final = true )  = aimc.TrOperational  "Temperature of rotor (squirrel cage)" type: Real 
+// 63: aimc.thermalAmbient.constTr.k:PARAM(start = 1.0 final = true )  = aimc.thermalAmbient.Tr  "Constant output value" type: Real 
+// 64: aimc.TsOperational:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Operational temperature of stator resistance" type: Real 
+// 65: aimc.thermalAmbient.Ts:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 final = true )  = aimc.TsOperational  "Temperature of stator windings" type: Real 
+// 66: aimc.thermalAmbient.constTs.k:PARAM(start = 1.0 final = true )  = aimc.thermalAmbient.Ts  "Constant output value" type: Real 
+// 67: aimc.thermalAmbient.thermalCollectorStator.m:PARAM(min = 1 final = true )  = 3  "Number of collected heat flows" type: Integer 
+// 68: aimc.thermalAmbient.temperatureFriction.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 69: aimc.thermalAmbient.temperatureStrayLoad.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 70: aimc.thermalAmbient.temperatureRotorCore.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 71: aimc.thermalAmbient.temperatureStatorCore.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 72: aimc.thermalAmbient.thermalPort.m:PARAM(flow=false final = true )  = 3  "Number of stator phases" type: Integer 
+// 73: aimc.thermalAmbient.TDefault:CONST(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Default temperature" type: Real 
+// 74: aimc.thermalAmbient.useTemperatureInputs:PARAM(final = true )  = false  "If true, temperature inputs are used; else, temperatures are constant" type: Boolean 
+// 75: aimc.thermalAmbient.m:PARAM(final = true )  = 3  "Number of stator phases" type: Integer 
+// 76: aimc.fixed.phi0:PARAM(unit = "rad" )  = 0.0  "Fixed offset angle of housing" type: Real 
+// 77: aimc.TrRef:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Reference temperature of rotor resistance" type: Real 
+// 78: aimc.alpha20r:PARAM(start = 0.0 unit = "1/K" )  "Temperature coefficient of rotor resistance at 20 degC" type: Real 
+// 79: aimc.squirrelCageR.alpha:PARAM(unit = "1/K" )  = aimc.alpha20r / (1.0 + aimc.alpha20r * (-293.15 + aimc.TrRef))  "Temperature coefficient of resistance at T_ref" type: Real 
+// 80: aimc.squirrelCageR.T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Reference temperature" type: Real 
+// 81: aimc.Rr:PARAM(start = 0.04 unit = "Ohm" )  = 0.4  "Rotor resistance per phase (equivalent three phase winding) at TRef" type: Real 
+// 82: aimc.squirrelCageR.Rr:PARAM(unit = "Ohm" )  = aimc.Rr  "Rotor resistance per phase translated to stator at T_ref" type: Real 
+// 83: aimc.Lrsigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.002  "Rotor stray inductance per phase (equivalent three phase winding)" type: Real 
+// 84: aimc.squirrelCageR.Lrsigma:PARAM(unit = "H" )  = aimc.Lrsigma  "Rotor stray inductance per phase translated to stator" type: Real 
+// 85: aimc.squirrelCageR.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Fixed device temperature if useHeatPort = false" type: Real 
+// 86: aimc.squirrelCageR.useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean 
+// 87: aimc.Lm:PARAM(start = 2.898223593858831 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.06931  "Stator main field inductance per phase" type: Real 
+// 88: aimc.airGapS.Lm:PARAM(unit = "H" )  = aimc.Lm  "Main field inductance" type: Real 
+// 89: aimc.airGapS.L[2,2]:PARAM(unit = "H" protected = true )  = aimc.airGapS.Lm  "Inductance matrix" type: Real  [2,2]
+// 90: aimc.airGapS.L[2,1]:PARAM(unit = "H" protected = true )  = 0.0  "Inductance matrix" type: Real  [2,2]
+// 91: aimc.airGapS.L[1,2]:PARAM(unit = "H" protected = true )  = 0.0  "Inductance matrix" type: Real  [2,2]
+// 92: aimc.airGapS.L[1,1]:PARAM(unit = "H" protected = true )  = aimc.airGapS.Lm  "Inductance matrix" type: Real  [2,2]
+// 93: aimc.p:PARAM(min = 1 start = 2 )  = 2  "Number of pole pairs (Integer)" type: Integer 
+// 94: aimc.airGapS.p:PARAM(min = 1 )  = aimc.p  "Number of pole pairs" type: Integer 
+// 95: aimc.airGapS.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
+// 96: aimc.internalThermalPort.m:PARAM(flow=false final = true )  = 3  "Number of stator phases" type: Integer 
+// 97: aimc.strayLoad.strayLoadParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference stray load torque at reference angular velocity and reference current" type: Real 
+// 98: aimc.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = 1.0  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
+// 99: aimc.strayLoad.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = aimc.strayLoadParameters.power_w  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
+// 100: aimc.fsNominal:PARAM(start = 50.0 unit = "Hz" )  = 50.0  "Nominal frequency" type: Real 
+// 101: aimc.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that PRef refers to" type: Real 
+// 102: aimc.strayLoad.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.strayLoadParameters.wRef  "Reference angular velocity that PRef refers to" type: Real 
+// 103: aimc.strayLoadParameters.IRef:PARAM(min = 1e-60 start = 100.0 unit = "A" )  "Reference RMS current that PRef refers to" type: Real 
+// 104: aimc.strayLoad.strayLoadParameters.IRef:PARAM(min = 1e-60 unit = "A" )  = aimc.strayLoadParameters.IRef  "Reference RMS current that PRef refers to" type: Real 
+// 105: aimc.strayLoad.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
+// 106: aimc.strayLoad.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
+// 107: aimc.strayLoad.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 108: aimc.strayLoad.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 109: aimc.strayLoad.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 110: aimc.spacePhasorS.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 111: aimc.spacePhasorS.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 112: aimc.spacePhasorS.InverseTransformation[3,2]:PARAM(protected = true )  = -0.8660254037844384  type: Real  [3,2]
+// 113: aimc.spacePhasorS.InverseTransformation[3,1]:PARAM(protected = true )  = -0.5000000000000004  type: Real  [3,2]
+// 114: aimc.spacePhasorS.InverseTransformation[2,2]:PARAM(protected = true )  = 0.8660254037844387  type: Real  [3,2]
+// 115: aimc.spacePhasorS.InverseTransformation[2,1]:PARAM(protected = true )  = -0.4999999999999998  type: Real  [3,2]
+// 116: aimc.spacePhasorS.InverseTransformation[1,2]:PARAM(protected = true )  = 0.0  type: Real  [3,2]
+// 117: aimc.spacePhasorS.InverseTransformation[1,1]:PARAM(protected = true )  = 1.0  type: Real  [3,2]
+// 118: aimc.spacePhasorS.TransformationMatrix[2,3]:PARAM(protected = true )  = -0.5773502691896255  type: Real  [2,3]
+// 119: aimc.spacePhasorS.TransformationMatrix[2,2]:PARAM(protected = true )  = 0.5773502691896257  type: Real  [2,3]
+// 120: aimc.spacePhasorS.TransformationMatrix[2,1]:PARAM(protected = true )  = 0.0  type: Real  [2,3]
+// 121: aimc.spacePhasorS.TransformationMatrix[1,3]:PARAM(protected = true )  = -0.3333333333333336  type: Real  [2,3]
+// 122: aimc.spacePhasorS.TransformationMatrix[1,2]:PARAM(protected = true )  = -0.3333333333333331  type: Real  [2,3]
+// 123: aimc.spacePhasorS.TransformationMatrix[1,1]:PARAM(protected = true )  = 0.6666666666666666  type: Real  [2,3]
+// 124: aimc.spacePhasorS.turnsRatio:PARAM()  = 1.0  "Turns ratio" type: Real 
+// 125: aimc.spacePhasorS.pi:CONST()  = 3.141592653589793  type: Real 
+// 126: aimc.spacePhasorS.m:CONST()  = 3  "Number of phases" type: Integer 
+// 127: aimc.statorCore.turnsRatio:PARAM(min = 1e-60 )  = 1.0  "Effective number of stator turns / effective number of rotor turns (if used as rotor core)" type: Real 
+// 128: aimc.statorCoreParameters.m:PARAM()  = 3  "Number of phases (1 for DC, 3 for induction machines)" type: Integer 
 // 129: aimc.statorCore.coreParameters.m:PARAM()  = aimc.statorCoreParameters.m  "Number of phases (1 for DC, 3 for induction machines)" type: Integer 
-// 130: aimc.statorCore.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
-// 131: aimc.lszero.L:PARAM(start = 1.0 unit = "H" )  = aimc.Lszero  "Inductance" type: Real 
-// 132: aimc.lssigma.L[2]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real  [2]
-// 133: aimc.lssigma.L[1]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real  [2]
-// 134: aimc.rs.resistor[3].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[3]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
-// 135: aimc.rs.resistor[3].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[3]  "Reference temperature" type: Real  [3]
-// 136: aimc.rs.resistor[3].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[3]  "Resistance at temperature T_ref" type: Real  [3]
-// 137: aimc.rs.resistor[3].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[3]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
-// 138: aimc.rs.resistor[3].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
-// 139: aimc.rs.resistor[2].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[2]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
-// 140: aimc.rs.resistor[2].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[2]  "Reference temperature" type: Real  [3]
-// 141: aimc.rs.resistor[2].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[2]  "Resistance at temperature T_ref" type: Real  [3]
-// 142: aimc.rs.resistor[2].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[2]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
-// 143: aimc.rs.resistor[2].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
-// 144: aimc.rs.resistor[1].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[1]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
-// 145: aimc.rs.resistor[1].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[1]  "Reference temperature" type: Real  [3]
-// 146: aimc.rs.resistor[1].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[1]  "Resistance at temperature T_ref" type: Real  [3]
-// 147: aimc.rs.resistor[1].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[1]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
-// 148: aimc.rs.resistor[1].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
-// 149: aimc.rs.alpha[3]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
-// 150: aimc.rs.alpha[2]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
-// 151: aimc.rs.alpha[1]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
-// 152: aimc.rs.T_ref[3]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
-// 153: aimc.rs.T_ref[2]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
-// 154: aimc.rs.T_ref[1]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
-// 155: aimc.rs.R[3]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
-// 156: aimc.rs.R[2]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
-// 157: aimc.rs.R[1]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
-// 158: aimc.rs.T[3]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
-// 159: aimc.rs.T[2]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
-// 160: aimc.rs.T[1]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
-// 161: aimc.rs.useHeatPort:PARAM(final = true )  = true  "=true, if all HeatPorts are enabled" type: Boolean 
-// 162: aimc.rs.mh:PARAM(min = 1 final = true )  = 3  "Number of heatPorts=number of phases" type: Integer 
-// 163: aimc.rs.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 164: aimc.rs.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 165: aimc.rs.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 166: aimc.plug_sn.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 167: aimc.plug_sp.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
-// 168: aimc.strayLoadParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference stray load torque at reference angular velocity and reference current" type: Real 
-// 169: aimc.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = 1.0  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
-// 170: aimc.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that PRef refers to" type: Real 
-// 171: aimc.strayLoadParameters.IRef:PARAM(min = 1e-60 start = 100.0 unit = "A" )  "Reference RMS current that PRef refers to" type: Real 
-// 172: aimc.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
-// 173: aimc.statorCoreParameters.wMin:PARAM(unit = "rad/s" final = true )  = 1e-06 * aimc.statorCoreParameters.wRef  type: Real 
-// 174: aimc.statorCoreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
-// 175: aimc.statorCoreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
-// 176: aimc.statorCoreParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal  "Reference angular velocity that reference core losses PRef refer to" type: Real 
-// 177: aimc.statorCoreParameters.VRef:PARAM(min = 1e-60 start = 100.0 unit = "V" )  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real 
-// 178: aimc.statorCoreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real 
-// 179: aimc.statorCoreParameters.m:PARAM()  = 3  "Number of phases (1 for DC, 3 for induction machines)" type: Integer 
-// 180: aimc.friction.frictionParameters.tauLinear:PARAM(unit = "N.m" final = true )  = 0.0  "Torque corresponding with linear angular velocity range" type: Real 
-// 181: aimc.friction.frictionParameters.wLinear:PARAM(unit = "rad/s" final = true )  = aimc.frictionParameters.wLinear  "Linear angular velocity range" type: Real 
-// 182: aimc.friction.frictionParameters.linear:PARAM(final = true )  = 0.001  "Linear angular velocity range with respect to reference angular velocity" type: Real 
-// 183: aimc.friction.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
-// 184: aimc.friction.frictionParameters.power_w:PARAM(min = 1e-60 )  = aimc.frictionParameters.power_w  "Exponent of friction torque w.r.t. angular velocity" type: Real 
-// 185: aimc.friction.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.frictionParameters.wRef  "Reference angular velocity that the PRef refer to" type: Real 
-// 186: aimc.friction.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
-// 187: aimc.friction.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
-// 188: aimc.inertiaStator.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
-// 189: aimc.inertiaStator.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Js  "Moment of inertia" type: Real 
-// 190: aimc.inertiaRotor.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
-// 191: aimc.inertiaRotor.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Jr  "Moment of inertia" type: Real 
-// 192: aimc.frictionParameters.tauLinear:PARAM(unit = "N.m" final = true )  = 0.0  "Torque corresponding with linear angular velocity range" type: Real 
-// 193: aimc.frictionParameters.wLinear:PARAM(unit = "rad/s" final = true )  = 0.001 * aimc.frictionParameters.wRef  "Linear angular velocity range" type: Real 
-// 194: aimc.frictionParameters.linear:PARAM(final = true )  = 0.001  "Linear angular velocity range with respect to reference angular velocity" type: Real 
-// 195: aimc.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
-// 196: aimc.frictionParameters.power_w:PARAM(min = 1e-60 )  = 2.0  "Exponent of friction torque w.r.t. angular velocity" type: Real 
-// 197: aimc.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that the PRef refer to" type: Real 
-// 198: aimc.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
-// 199: aimc.useThermalPort:PARAM(final = true )  = false  "Enable / disable (=fixed temperatures) thermal port" type: Boolean 
-// 200: aimc.Js:PARAM(start = aimc.Jr unit = "kg.m2" )  "Stator's moment of inertia" type: Real 
-// 201: aimc.useSupport:PARAM(final = true )  = false  "Enable / disable (=fixed stator) support" type: Boolean 
-// 202: aimc.Jr:PARAM(start = 0.29 unit = "kg.m2" )  = 2.0  "Rotor's moment of inertia" type: Real 
-// 203: aimc.pi:CONST(unit = "rad" )  = 3.141592653589793  type: Real 
-// 204: aimc.Lssigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.004  "Stator stray inductance per phase" type: Real 
-// 205: aimc.Lszero:PARAM(unit = "H" )  = aimc.Lssigma  "Stator zero sequence inductance" type: Real 
-// 206: aimc.alpha20s:PARAM(start = 0.0 unit = "1/K" )  "Temperature coefficient of stator resistance at 20 degC" type: Real 
-// 207: aimc.TsRef:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Reference temperature of stator resistance" type: Real 
-// 208: aimc.Rs:PARAM(start = 0.03 unit = "Ohm" )  = 0.435  "Stator resistance per phase at TRef" type: Real 
-// 209: aimc.TsOperational:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Operational temperature of stator resistance" type: Real 
-// 210: aimc.fsNominal:PARAM(start = 50.0 unit = "Hz" )  = 50.0  "Nominal frequency" type: Real 
-// 211: aimc.p:PARAM(min = 1 start = 2 )  = 2  "Number of pole pairs (Integer)" type: Integer 
+// 130: aimc.statorCore.m:PARAM(final = true )  = aimc.statorCore.coreParameters.m  "Number of phases" type: Integer 
+// 131: aimc.statorCoreParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal  "Reference angular velocity that reference core losses PRef refer to" type: Real 
+// 132: aimc.statorCoreParameters.wMin:PARAM(unit = "rad/s" final = true )  = 1e-06 * aimc.statorCoreParameters.wRef  type: Real 
+// 133: aimc.statorCore.coreParameters.wMin:PARAM(unit = "rad/s" final = true )  = aimc.statorCoreParameters.wMin  type: Real 
+// 134: aimc.statorCore.coreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
+// 135: aimc.statorCore.coreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
+// 136: aimc.statorCore.coreParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.statorCoreParameters.wRef  "Reference angular velocity that reference core losses PRef refer to" type: Real 
+// 137: aimc.statorCoreParameters.VRef:PARAM(min = 1e-60 start = 100.0 unit = "V" )  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real 
+// 138: aimc.statorCore.coreParameters.VRef:PARAM(min = 1e-60 unit = "V" )  = aimc.statorCoreParameters.VRef  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real 
+// 139: aimc.statorCore.coreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real 
+// 140: aimc.statorCore.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
+// 141: aimc.Lssigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.004  "Stator stray inductance per phase" type: Real 
+// 142: aimc.Lszero:PARAM(unit = "H" )  = aimc.Lssigma  "Stator zero sequence inductance" type: Real 
+// 143: aimc.lszero.L:PARAM(start = 1.0 unit = "H" )  = aimc.Lszero  "Inductance" type: Real 
+// 144: aimc.lssigma.L[2]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real  [2]
+// 145: aimc.lssigma.L[1]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real  [2]
+// 146: aimc.TsRef:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Reference temperature of stator resistance" type: Real 
+// 147: aimc.alpha20s:PARAM(start = 0.0 unit = "1/K" )  "Temperature coefficient of stator resistance at 20 degC" type: Real 
+// 148: aimc.rs.alpha[3]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
+// 149: aimc.rs.resistor[3].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[3]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 150: aimc.rs.T_ref[3]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
+// 151: aimc.rs.resistor[3].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[3]  "Reference temperature" type: Real  [3]
+// 152: aimc.Rs:PARAM(start = 0.03 unit = "Ohm" )  = 0.435  "Stator resistance per phase at TRef" type: Real 
+// 153: aimc.rs.R[3]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
+// 154: aimc.rs.resistor[3].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[3]  "Resistance at temperature T_ref" type: Real  [3]
+// 155: aimc.rs.T[3]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
+// 156: aimc.rs.resistor[3].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[3]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
+// 157: aimc.rs.resistor[3].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
+// 158: aimc.rs.alpha[2]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
+// 159: aimc.rs.resistor[2].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[2]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 160: aimc.rs.T_ref[2]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
+// 161: aimc.rs.resistor[2].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[2]  "Reference temperature" type: Real  [3]
+// 162: aimc.rs.R[2]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
+// 163: aimc.rs.resistor[2].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[2]  "Resistance at temperature T_ref" type: Real  [3]
+// 164: aimc.rs.T[2]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
+// 165: aimc.rs.resistor[2].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[2]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
+// 166: aimc.rs.resistor[2].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
+// 167: aimc.rs.alpha[1]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
+// 168: aimc.rs.resistor[1].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[1]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 169: aimc.rs.T_ref[1]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
+// 170: aimc.rs.resistor[1].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[1]  "Reference temperature" type: Real  [3]
+// 171: aimc.rs.R[1]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
+// 172: aimc.rs.resistor[1].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[1]  "Resistance at temperature T_ref" type: Real  [3]
+// 173: aimc.rs.T[1]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
+// 174: aimc.rs.resistor[1].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[1]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
+// 175: aimc.rs.resistor[1].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
+// 176: aimc.rs.useHeatPort:PARAM(final = true )  = true  "=true, if all HeatPorts are enabled" type: Boolean 
+// 177: aimc.rs.mh:PARAM(min = 1 final = true )  = 3  "Number of heatPorts=number of phases" type: Integer 
+// 178: aimc.rs.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 179: aimc.rs.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 180: aimc.rs.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 181: aimc.plug_sn.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 182: aimc.plug_sp.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 183: aimc.strayLoadParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference stray load torque at reference angular velocity and reference current" type: Real 
+// 184: aimc.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
+// 185: aimc.statorCoreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
+// 186: aimc.statorCoreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
+// 187: aimc.statorCoreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real 
+// 188: aimc.friction.frictionParameters.tauLinear:PARAM(unit = "N.m" final = true )  = 0.0  "Torque corresponding with linear angular velocity range" type: Real 
+// 189: aimc.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that the PRef refer to" type: Real 
+// 190: aimc.frictionParameters.wLinear:PARAM(unit = "rad/s" final = true )  = 0.001 * aimc.frictionParameters.wRef  "Linear angular velocity range" type: Real 
+// 191: aimc.friction.frictionParameters.wLinear:PARAM(unit = "rad/s" final = true )  = aimc.frictionParameters.wLinear  "Linear angular velocity range" type: Real 
+// 192: aimc.friction.frictionParameters.linear:PARAM(final = true )  = 0.001  "Linear angular velocity range with respect to reference angular velocity" type: Real 
+// 193: aimc.friction.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
+// 194: aimc.frictionParameters.power_w:PARAM(min = 1e-60 )  = 2.0  "Exponent of friction torque w.r.t. angular velocity" type: Real 
+// 195: aimc.friction.frictionParameters.power_w:PARAM(min = 1e-60 )  = aimc.frictionParameters.power_w  "Exponent of friction torque w.r.t. angular velocity" type: Real 
+// 196: aimc.friction.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.frictionParameters.wRef  "Reference angular velocity that the PRef refer to" type: Real 
+// 197: aimc.friction.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
+// 198: aimc.friction.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
+// 199: aimc.inertiaStator.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
+// 200: aimc.Jr:PARAM(start = 0.29 unit = "kg.m2" )  = 2.0  "Rotor's moment of inertia" type: Real 
+// 201: aimc.Js:PARAM(start = aimc.Jr unit = "kg.m2" )  "Stator's moment of inertia" type: Real 
+// 202: aimc.inertiaStator.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Js  "Moment of inertia" type: Real 
+// 203: aimc.inertiaRotor.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
+// 204: aimc.inertiaRotor.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Jr  "Moment of inertia" type: Real 
+// 205: aimc.frictionParameters.tauLinear:PARAM(unit = "N.m" final = true )  = 0.0  "Torque corresponding with linear angular velocity range" type: Real 
+// 206: aimc.frictionParameters.linear:PARAM(final = true )  = 0.001  "Linear angular velocity range with respect to reference angular velocity" type: Real 
+// 207: aimc.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
+// 208: aimc.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
+// 209: aimc.useThermalPort:PARAM(final = true )  = false  "Enable / disable (=fixed temperatures) thermal port" type: Boolean 
+// 210: aimc.useSupport:PARAM(final = true )  = false  "Enable / disable (=fixed stator) support" type: Boolean 
+// 211: aimc.pi:CONST(unit = "rad" )  = 3.141592653589793  type: Real 
 // 212: aimc.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
 // 213: terminalBox.star.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
 // 214: terminalBox.star.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 

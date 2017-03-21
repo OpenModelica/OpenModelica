@@ -36,17 +36,28 @@ simulate(CSE.TestCall2); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (2)
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
 // ========================================
 // 1: f.y:VARIABLE()  type: Real 
 // 2: f.x:VARIABLE()  type: Real 
 //
 //
-// ########### Updated Equation List (simulation) ########### (1, 2)
+// ########### Updated Equation List (simulation) (1, 2)
 // ========================================
 // 1/1 (2): (f.x, f.y) = CSE.TestCall2.func(time)   [unknown]
 //
-// cse replacements (1/44)
+//
+// ########### Updated globalKnownVars (simulation) (0)
+// ========================================
+//
+//
+// ########### CSE Replacements (1/44)
 // ========================================
 // 1: (f.x, f.y) - CSE.TestCall2.func(time) - {}
 // record SimulationResult

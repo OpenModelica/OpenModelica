@@ -117,7 +117,7 @@
             </data>
         </node>
         <node id="Node11">
-            <data key="cust1"><![CDATA[{13:10}]]></data>
+            <data key="cust1"><![CDATA[{13:13}]]></data>
             <data key="cust3">271</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 11 ]]></data>
@@ -217,7 +217,7 @@
             </data>
         </node>
         <node id="Node7">
-            <data key="cust1"><![CDATA[{12:11}]]></data>
+            <data key="cust1"><![CDATA[{12:12}]]></data>
             <data key="cust3">145</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 7 ]]></data>
@@ -342,7 +342,7 @@
             </data>
         </node>
         <node id="Node2">
-            <data key="cust1"><![CDATA[{10:13}]]></data>
+            <data key="cust1"><![CDATA[{10:10}]]></data>
             <data key="cust3">271</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 2 ]]></data>
@@ -367,7 +367,7 @@
             </data>
         </node>
         <node id="Node1">
-            <data key="cust1"><![CDATA[{11:12}]]></data>
+            <data key="cust1"><![CDATA[{11:11}]]></data>
             <data key="cust3">271</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 1 ]]></data>

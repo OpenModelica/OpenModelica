@@ -1,0 +1,34 @@
+// name:      parameterTest17
+// keywords:  parameter evaluation, globalKnownVars
+// status:    correct
+
+loadString("
+model parameterTest17
+  Real a,b,c,d;
+  input Integer x;
+  parameter Integer p1 = 1;
+  parameter Integer p2 = p1;
+  parameter Integer p3 = c1;
+  parameter Integer p4 (fixed=false);
+  final constant Integer c1 = 5;
+  constant Integer c2;
+  final parameter Integer p5 = 1;
+  final parameter Integer p6 = p5;
+  final parameter Integer p7 (start=1);
+  parameter Integer p8 (start=2*p3);
+  parameter Integer p9 = 2*p4;
+protected
+  parameter Integer pr1 = 5;
+  parameter Integer pr2 = pr1;
+equation
+  a = p1 + p2;
+  b = a + c1 + p5;
+  c = p1 + p2 + p3 + p5 + p6 + p7 + p8 + pr1 + pr2 + c1 + c2;
+  d = p9;
+end parameterTest17;
+"); getErrorString();
+
+simulate(parameterTest17, simflags="-output=p1,p2,p3"); getErrorString();
+
+// Result:
+// endResult
