@@ -115,14 +115,16 @@ void Nox::solve()
 	//_solverParametersPtr->sublist("Direction").set("Method", "Steepest Descent");
 
 	//resetting Line search method to default (Full Step, ie. Standard Newton with lambda=1)
-	_solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
+	_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
+	//_solverParametersPtr->sublist("Line Search").sublist("Full Step").set("Full Step", 0.5);
+	//_solverParametersPtr->sublist("Line Search").set("Method", "Polynomial");
 	// Set the level of output
     if (_generateoutput){
 		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
 	}else{
 		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
 	}
-	_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::InnerIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
+	// _solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::InnerIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
 
 
 	if (_generateoutput) std::cout << "creating noxLapackInterface" << std::endl;
@@ -330,7 +332,13 @@ void Nox::solve()
 		int numberofdifferentnormtests=5;//this variable is used twice.
 
 		_algLoop->setReal(_y);
-		_algLoop->evaluate();
+		try{
+			_algLoop->evaluate();
+		}
+		catch(const std::exception &ex)
+		{
+			if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl << "Trying to continue without. This should hopefully lead to statusTest::Failed." << std::endl;
+		}
 
 		if (_generateoutput) {
 			std::cout << "solutionvector=(";
@@ -684,7 +692,12 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	}
 
 	_algLoop->setReal(_y);
-	_algLoop->evaluate();
+	try{
+		_algLoop->evaluate();
+	}catch(const std::exception &ex)
+	{
+		if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl << "Trying to continue without. This should hopefully lead to statusTest::Failed." << std::endl;
+	}
 
 	if (_generateoutput) {
 		std::cout << "solutionvector=(";

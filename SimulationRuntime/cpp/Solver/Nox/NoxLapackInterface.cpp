@@ -187,10 +187,6 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		}
 	}
 
-	_algLoop->setReal(xp);
-	_algLoop->evaluate();
-	_algLoop->getRHS(rhs);
-
 	if (_generateoutput) {
 		std::cout << "we are at position x=(";
 		for (int i=0;i<_dimSys;i++){
@@ -198,7 +194,31 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		}
 		std::cout << ")" << std::endl;
 		std::cout << std::endl;
+	}
 
+	_algLoop->setReal(xp);
+	_algLoop->getRHS(rhs);
+	try{
+		_algLoop->evaluate();
+		_algLoop->getRHS(rhs);
+	}catch(const std::exception &ex)
+	{
+		if (_generateoutput) std::cout << "calculating right hand side failed with error message:" << std::endl << ex.what() << std::endl;
+		//the following should be done when some to be implemented flag like "continue if function evaluation fails" is activated.
+		if (_generateoutput) std::cout << "setting high values into right hand side:" << std::endl << "(";
+		for(int i=0;i<_dimSys;i++){
+			if (rhs[i]==0.0){
+				rhs[i]=1000000.0;
+			}else{
+				rhs[i]=1000000.0*rhs[i];
+			}
+			if (_generateoutput) std::cout << rhs[i] << " ";
+		}
+		if (_generateoutput) std::cout << ")" << std::endl;
+	}
+
+
+	if (_generateoutput) {
 		std::cout << "the right hand side is given by (";
 		for (int i=0;i<_dimSys;i++){
 			std::cout << rhs[i] << " ";
