@@ -596,14 +596,12 @@ protected
   Boolean useHomotopy "true if homotopy(...) is used during initialization";
   Option<BackendDAE.BackendDAE> initDAE_lambda0;
   list<BackendDAE.Equation> removedInitialEquationLst;
-  list<BackendDAE.Var> primaryParameters "already sorted";
-  list<BackendDAE.Var> allPrimaryParameters "already sorted";
 algorithm
   if Config.simulationCg() then
     info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), Absyn.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
-    (dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters) := BackendDAEUtil.getSolvedSystem(dlow, "");
-    simcodegen(dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, primaryParameters, allPrimaryParameters, inClassName, ap);
+    (dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow, "");
+    simcodegen(dlow, initDAE, inlineData, useHomotopy, initDAE_lambda0, removedInitialEquationLst, inClassName, ap);
   end if;
 end optimizeDae;
 
@@ -615,8 +613,6 @@ protected function simcodegen "
   input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
-  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
-  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   input Absyn.Path inClassName;
   input Absyn.Program inProgram;
 protected
@@ -636,7 +632,7 @@ algorithm
       SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6, "dassl", "", "mat", ".*", "");
 
     System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
-    SimCodeMain.generateModelCode(inBackendDAE, inInitDAE, inInlineData, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
+    SimCodeMain.generateModelCode(inBackendDAE, inInitDAE, inInlineData, inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inProgram, inClassName, cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
 
     execStat("Codegen Done");
   end if;

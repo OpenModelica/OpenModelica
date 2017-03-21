@@ -83,8 +83,6 @@ public function solveInitialSystem "author: lochel
   output Boolean outUseHomotopy;
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0 "initialization system for lambda=0";
   output list<BackendDAE.Equation> outRemovedInitialEquations;
-  output list<BackendDAE.Var> outPrimaryParameters "already sorted";
-  output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
   output BackendDAE.Variables outGlobalKnownVars;
 protected
   BackendDAE.BackendDAE dae;
@@ -100,7 +98,7 @@ protected
   String msg;
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
-  list<BackendDAE.Var> dumpVars, dumpVars2;
+  list<BackendDAE.Var> dumpVars, dumpVars2, outAllPrimaryParameters;
   list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
@@ -117,11 +115,11 @@ algorithm
     //end if;
     execStat("inlineWhenForInitialization (initialization)");
 
-    (dae, initVars, outPrimaryParameters, outAllPrimaryParameters, outGlobalKnownVars) := selectInitializationVariablesDAE(dae);
-    // if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
-      // BackendDump.dumpVarList(outPrimaryParameters, "selected primary parameters");
-      // BackendDump.dumpVarList(outAllPrimaryParameters, "selected all primary parameters");
-    // end if;
+    (dae, initVars, outAllPrimaryParameters, outGlobalKnownVars) := selectInitializationVariablesDAE(dae);
+
+    if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+      BackendDump.dumpVarList(outAllPrimaryParameters, "selected all primary parameters");
+    end if;
     execStat("selectInitializationVariablesDAE (initialization)");
 
     hs := collectPreVariables(dae);
@@ -781,7 +779,6 @@ protected function selectInitializationVariablesDAE "author: lochel
   All primary parameters get removed from the dae."
   input output BackendDAE.BackendDAE dae;
   output BackendDAE.Variables outInitVars;
-  output list<BackendDAE.Var> outPrimaryParameters = {};
   output list<BackendDAE.Var> outAllPrimaryParameters = {};
   output BackendDAE.Variables outGlobalKnownVars = dae.shared.globalKnownVars;
 protected
@@ -855,18 +852,15 @@ algorithm
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
         if (not Expression.isConst(bindExp)) or BackendVariable.isFinalOrProtectedVar(p) or BackendVariable.isExtObj(p) then
-          outPrimaryParameters := p::outPrimaryParameters "this is used in SimCode to generate parameter equations";
         end if;
         hs := BaseHashSet.add(BackendVariable.varCref(p), hs);
       end if;
     end for;
 
     GC.free(secondary);
-    outPrimaryParameters := listReverse(outPrimaryParameters);
     outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
     dae := BackendDAEUtil.setDAEGlobalKnownVars(dae, otherVariables);
 
-    //BackendDump.dumpVarList(outPrimaryParameters, "outPrimaryParameters");
     //BackendDump.dumpVarList(outAllPrimaryParameters, "outAllPrimaryParameters");
     //BackendDump.dumpVariables(otherVariables, "otherVariables");
   end if;
@@ -909,7 +903,7 @@ algorithm
   end match;
 end selectSecondaryParameters;
 
-protected function flattenParamComp
+public function flattenParamComp
   input list<Integer> paramIndices;
   input BackendDAE.Variables inAllParameters;
   output Integer outFlatComp;
@@ -1039,7 +1033,7 @@ algorithm
     case (BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), vars) equation
       false = BackendVariable.varFixed(inVar);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       vars = BackendVariable.addVar(preVar, vars);
     then (inVar, vars);
 
@@ -1961,7 +1955,7 @@ algorithm
       startValue = BackendVariable.varStartValue(var);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
 
@@ -1977,7 +1971,7 @@ algorithm
       preUsed = BaseHashSet.has(cr, hs);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 

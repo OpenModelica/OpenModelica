@@ -1437,7 +1437,7 @@ Create a BackendDAE.Var with some defaults"
   input BackendDAE.Type varType;
   output BackendDAE.Var var;
 algorithm
-  var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), {},
+  var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), NONE(), {},
     DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(),false);
 end createVarWithDefaults;
 
@@ -1562,6 +1562,7 @@ protected
   DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
   BackendDAE.Type varType "built-in type or enumeration";
   Option<DAE.Exp> bindExp "Binding expression e.g. for parameters";
+  Option<DAE.Exp> tupleExp "Variable is part of a tuple";
   DAE.InstDims arryDim "array dimensions of non-expanded var";
   DAE.ElementSource source "origin of variable";
   Option<DAE.VariableAttributes> values "values on built-in attributes";
@@ -1574,7 +1575,7 @@ protected
 algorithm
   try
     (SOME(var), mt) := inVarModeTable;
-    BackendDAE.VAR(varName, varKind, DAE.OUTPUT(), varParallelism, varType, bindExp,
+    BackendDAE.VAR(varName, varKind, DAE.OUTPUT(), varParallelism, varType, bindExp, tupleExp,
       arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, DAE.OUTER()) := var;
 
     DAE.SOURCE(instance=instance as Prefix.PRE()) := source;
@@ -2619,6 +2620,7 @@ protected
   DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
   BackendDAE.Type varType "built-in type or enumeration";
   Option<DAE.Exp> bindExp "Binding expression e.g. for parameters";
+  Option<DAE.Exp> tupleExp "Variable is part of a tuple";
   DAE.InstDims arryDim "array dimensions of non-expanded var";
   DAE.ElementSource source "origin of variable";
   Option<DAE.VariableAttributes> values "values on built-in attributes";
@@ -2628,8 +2630,8 @@ protected
   DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(varName, varKind, varDirection, varParallelism, varType,
-   bindExp, arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, io) := inVar;
+  BackendDAE.VAR(varName, varKind, varDirection, varParallelism, varType, bindExp, tupleExp,
+   arryDim, source, values, tearingSelectOption, hideResult, comment, connectorType, io) := inVar;
    sVarName := ComponentReference.crefStr(varName);
    sVarKind := BackendDump.kindString(varKind);
    sVarDirection := DAEDump.dumpDirectionStr(varDirection);

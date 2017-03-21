@@ -78,6 +78,18 @@ algorithm
   end for;
 end clear;
 
+function copy
+  input ExpandableArray<T> inExarray;
+  input T dummy "This is needed to determine the type information, the actual value is not used";
+  output ExpandableArray<T> outExarray;
+algorithm
+  outExarray := new(inExarray.capacity[1], dummy);
+  outExarray.numberOfElements := arrayCopy(inExarray.numberOfElements);
+  outExarray.lastUsedIndex := arrayCopy(inExarray.lastUsedIndex);
+  outExarray.capacity := arrayCopy(inExarray.capacity);
+  outExarray.data := arrayCreate(1, arrayCopy(Dangerous.arrayGetNoBoundsChecking(inExarray.data, 1)));
+end copy;
+
 function get "O(1)
   Returns the value of the element at the given index.
   Fails if there is nothing assigned to the given index."

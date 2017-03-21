@@ -70,8 +70,6 @@ public function createSimCode "
   input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
-  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
-  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
@@ -134,7 +132,7 @@ algorithm
       //Setup
       //-----
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
-          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, NONE(), inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
+          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, NONE(), inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions,
                                      externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings
@@ -189,7 +187,7 @@ algorithm
       //-----
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
-          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, NONE(), inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
+          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, NONE(), inUseHomotopy, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions,
                                      externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings

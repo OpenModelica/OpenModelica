@@ -32,8 +32,8 @@
 encapsulated package CommonSubExpression
 " file:        CommonSubExpression.mo
   package:     CommonSubExpression
-  description: This package contains functions for the optimization module
-               CommonSubExpression."
+  description: This package contains functions for the optimization modules
+               wrapFunctionCalls, commonSubExpressionReplacement and cseBinary."
 
 
 public
@@ -56,6 +56,7 @@ import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;
 import Global;
+import HashSet;
 import HashTableExpToExp;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
@@ -73,6 +74,8 @@ end CSE_Equation;
 
 constant CSE_Equation dummy_equation = CSE_EQUATION(DAE.RCONST(0.0), DAE.RCONST(0.0), {});
 constant Boolean debug = false;
+constant String BORDER = "###############################################################";
+constant String UNDERLINE = "========================================";
 
 protected function printCSEEquation
   input CSE_Equation cseEquation;
@@ -94,105 +97,199 @@ algorithm
   str := str + "}";
 end printCSEEquation;
 
-public function wrapFunctionCalls "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)
-  main function: is called by postOpt and SymbolicJacobian"
+public function wrapFunctionCalls "
+  This function traverses the equation systems and looks for function calls to store in $cse variables.
+  This avoids unnecessary function evaluations.
+  Main function: is called by postOpt and SymbolicJacobian
+  authors: Jan Hagemann, Lennart Ochel and Patrick Täuber (FH Bielefeld, Germany)"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
   Integer size;
   HashTableExpToIndex.HashTable HT "call -> index";
+  HashTableExpToIndex.HashTable HT_initial "call -> index (filled with globalKnownVars)";
   ExpandableArray<CSE_Equation> exarray "id -> (cse, call, dependencies)";
+  ExpandableArray<CSE_Equation> exarray_initial "id -> (cse, call, dependencies - filled with globalKnownVars)";
 
   Integer cseIndex = System.tmpTickIndex(Global.backendDAE_cseIndex);
-  Integer index;
+  Integer index = 0, index_initial = 0;
 
+  BackendDAE.Shared shared;
   DAE.FunctionTree functionTree;
   BackendDAE.EquationArray orderedEqs, orderedEqs_new;
-  BackendDAE.Variables orderedVars;
+  BackendDAE.Variables orderedVars, globalKnownVars;
   list<BackendDAE.EqSystem> eqSystems = {};
   list<BackendDAE.Var> varList;
+  String daeTypeStr = BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType);
+  Boolean isSimulationDAE = stringEq(daeTypeStr, "simulation");
+
+  HashSet.HashSet globalKnownVarHT;
 
   DAE.Exp cse, call;
   list<Integer> dependencies;
 algorithm
   size := BackendDAEUtil.maxSizeOfEqSystems(inDAE.eqs) + 42;   //create data structures independent from the size of the EqSystem
   exarray := ExpandableArray.new(size, dummy_equation);
+  exarray_initial := ExpandableArray.new(size, dummy_equation);
 
   size := Util.nextPrime(realInt(2.4*size));
   HT := HashTableExpToIndex.emptyHashTableSized(size);
+  HT_initial := HashTableExpToIndex.emptyHashTableSized(size);
 
-  BackendDAE.SHARED(functionTree=functionTree) := inDAE.shared;
+  shared := inDAE.shared;
+  BackendDAE.SHARED(globalKnownVars=globalKnownVars,functionTree=functionTree) := shared;
 
+  // Create Hashtable and store globally known variables in it
+  globalKnownVarHT := HashSet.emptyHashSetSized(Util.nextPrime(realInt(2.4*(globalKnownVars.numberOfVars + 42))));
+  if isSimulationDAE then
+    globalKnownVarHT := BackendVariable.traverseBackendDAEVars(globalKnownVars, VarToGlobalKnownVarHT, globalKnownVarHT);
+  end if;
+
+  if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+    print("Start optimization module wrapFunctionCalls for " + daeTypeStr + " DAE\n" + BORDER + BORDER + "\n\n\n");
+    print("Pre-Phase: Set up data structure\n" + BORDER + "\n");
+    BackendDump.dumpVariables(globalKnownVars, "globalKnownVars before WFC");
+    print("globalKnownVarHT before analysis\n" + UNDERLINE + "\n");
+    BaseHashSet.dumpHashSet(globalKnownVarHT);
+    print("\nPhase 0: Analyse the globalKnownVars\n" + BORDER + "\n");
+  end if;
+
+  if isSimulationDAE then
+    // Traverse globalKnownVars and perform the WFC analysis phase on it
+    (HT_initial, exarray_initial, cseIndex, index_initial, functionTree, globalKnownVarHT) := BackendVariable.traverseBackendDAEVars(globalKnownVars, findCallsInGlobalKnownVars, (HT_initial, exarray_initial, cseIndex, index_initial, functionTree, globalKnownVarHT));
+  end if;
+
+  if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+    print("Hastable after analysis of globalKnownVars (HT_initial)\n" + UNDERLINE + "\n");
+    BaseHashTable.dumpHashTable(HT_initial);
+    ExpandableArray.dump(exarray_initial, "\nExpandable Array after analysis of globalKnownVars (exarray_initial)", printCSEEquation);
+    print("\nglobalKnownVarHT after analysis\n" + UNDERLINE + "\n");
+    BaseHashSet.dumpHashSet(globalKnownVarHT);
+  end if;
+
+  // Start the WFC algorithm for all equation systems
   for syst in inDAE.eqs loop
-    HT := BaseHashTable.clear(HT);
-    exarray := ExpandableArray.clear(exarray);
+    if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+      print("\n\nHandle system (belongs to " + daeTypeStr + " DAE):\n" + BORDER + "\n");
+      BackendDump.dumpVariables(syst.orderedVars, "Variables");
+      BackendDump.dumpEquationArray(syst.orderedEqs, "Equations");
+      print("\n\nPhase 1: Analysis\n" + BORDER + "\n");
+    end if;
+    HT := BaseHashTable.copy(HT_initial);
+    exarray := ExpandableArray.copy(exarray_initial, dummy_equation);
+    index := index_initial;
+
     orderedEqs := syst.orderedEqs;
     orderedVars := syst.orderedVars;
 
-    // analysis
-    index := 0;
-    (HT, exarray, cseIndex, index, _) := BackendEquation.traverseEquationArray(orderedEqs, wrapFunctionCalls_analysis, (HT, exarray, cseIndex, index, functionTree));
+    // Phase 1: Analysis
+    (HT, exarray, cseIndex, index, _, globalKnownVarHT) := BackendEquation.traverseEquationArray(orderedEqs, wrapFunctionCalls_analysis, (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT));
+
+    if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+      print("Hastable after analysis\n" + UNDERLINE + "\n");
+      BaseHashTable.dumpHashTable(HT);
+      ExpandableArray.dump(exarray, "\nExpandable Array after analysis", printCSEEquation);
+      print("\nglobalKnownVarHT after analysis\n" + UNDERLINE + "\n");
+      BaseHashSet.dumpHashSet(globalKnownVarHT);
+    end if;
 
     if index > 0 then
-      // determine dependencies
+      // Phase 2: Dependencies
       exarray := determineDependencies(exarray, HT);
 
-      if debug then
-        print("#############################################\n");
-        print("after analysis###############################\n");
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("\n\nPhase 2: Dependencies\n" + BORDER + "\n\n");
+        print("Hashtable after dependencies\n" + UNDERLINE + "\n");
         BaseHashTable.dumpHashTable(HT);
-        ExpandableArray.dump(exarray, "Expandable Array", printCSEEquation);
+        ExpandableArray.dump(exarray, "\nExpandable Array after dependencies", printCSEEquation);
+        print("\n\nPhase3: Substitution\n" + BORDER + "\n");
       end if;
 
-      // substitution
+      // Phase 3: Substitution
       orderedEqs_new := BackendEquation.emptyEqnsSized(orderedEqs.numberOfElement + ExpandableArray.getNumberOfElements(exarray));
       (HT, exarray, orderedEqs_new) := BackendEquation.traverseEquationArray(orderedEqs, wrapFunctionCalls_substitution, (HT, exarray, orderedEqs_new));
 
-      //for id in 1:exarray.numberOfElements loop
-      //  CSE_EQUATION(cse=cse, call=call, dependencies=dependencies) := ExpandableArray.get(id, exarray);
-      //  (HT, exarray) := substituteDependencies(dependencies, HT, exarray, call, cse);
-      //  ExpandableArray.update(id, CSE_EQUATION(cse, call, {}), exarray);
-      //end for;
-
-      if debug then
-        print("#############################################\n");
-        print("after substitution###########################\n");
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("Hashtable after substitution\n" + UNDERLINE + "\n");
         BaseHashTable.dumpHashTable(HT);
-        ExpandableArray.dump(exarray, "Expandable Array", printCSEEquation);
+        ExpandableArray.dump(exarray, "\nExpandable Array after substitution", printCSEEquation);
+        print("\n\nPhase 4: Create CSE-Equations\n" + BORDER + "\n\n");
       end if;
 
-      // create cse equations
-      (orderedEqs_new, varList) := createCseEquations(exarray, orderedEqs_new);
-      syst.orderedEqs := orderedEqs_new;
-      syst.orderedVars := BackendVariable.addVars(varList, orderedVars);
+      // Phase 4: Create CSE equations
+      (orderedEqs_new, orderedVars, globalKnownVars) := createCseEquations(exarray, orderedEqs_new, orderedVars, globalKnownVarHT, globalKnownVars);
 
-      // reset Matching
+      syst.orderedEqs := orderedEqs_new;
+      syst.orderedVars := orderedVars;
+
+      // Reset Matching
       syst.m := NONE();
       syst.mT := NONE();
       syst.matching := BackendDAE.NO_MATCHING();
 
       if Flags.isSet(Flags.DUMP_CSE) or Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ") ###########");
-        BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List (" + BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType) + ") ###########");
-        ExpandableArray.dump(exarray, "cse replacements", printCSEEquation);
+        print("\n\n\n" + BORDER + "\nFinal Results\n" + BORDER + "\n");
+        BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List (" + BackendDump.printBackendDAEType2String(shared.backendDAEType) + ")");
+        BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List (" + BackendDump.printBackendDAEType2String(shared.backendDAEType) + ")");
+        BackendDump.dumpVariables(globalKnownVars, "########### Updated globalKnownVars (" + BackendDump.printBackendDAEType2String(shared.backendDAEType) + ")");
+        ExpandableArray.dump(exarray, "\n########### CSE Replacements", printCSEEquation);
       end if;
 
-      if debug then
-        print("#############################################\n");
-        print("final result#################################\n");
-        BackendDump.dumpEqSystem(syst, "new syst");
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("\n\n" + BORDER);
+        BackendDump.dumpEqSystem(syst, "Final EqSystem");
+      end if;
+    else
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("\n" + BORDER + "\nNo function calls found. Exiting the algorithm...\n\n\n");
       end if;
     end if;
 
     eqSystems := syst::eqSystems;
   end for;
 
+  shared.globalKnownVars := globalKnownVars;
+
   System.tmpTickSetIndex(cseIndex, Global.backendDAE_cseIndex);
   eqSystems := MetaModelica.Dangerous.listReverseInPlace(eqSystems);
-  outDAE := BackendDAE.DAE(eqSystems, inDAE.shared);
+  outDAE := BackendDAE.DAE(eqSystems, shared);
 end wrapFunctionCalls;
 
+protected function VarToGlobalKnownVarHT
+" Adds all globalKnownVars with bindExp to globalKnownVarHT except inputs and nonfixed parameters"
+  input BackendDAE.Var inVar;
+  input HashSet.HashSet inGlobalKnownVarHT;
+  output BackendDAE.Var outVar = inVar;
+  output HashSet.HashSet outGlobalKnownVarHT = inGlobalKnownVarHT;
+algorithm
+  // To-Do: Move inputs to localKnownVars
+  if not BackendVariable.isInput(inVar) and not (BackendVariable.isParam(inVar) and not BackendVariable.varFixed(inVar)) and isSome(inVar.bindExp) then
+    outGlobalKnownVarHT := BaseHashSet.add(BackendVariable.varCref(inVar), inGlobalKnownVarHT);
+  end if;
+end VarToGlobalKnownVarHT;
+
+protected function findCallsInGlobalKnownVars
+"This function traverses the globalKnownVars and looks for function calls. The calls are stored in the HT/expArray"
+  input BackendDAE.Var inVar;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> inTuple;
+  output BackendDAE.Var outVar = inVar;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> outTuple = inTuple;
+protected
+  DAE.Exp exp;
+  BackendDAE.Equation eq;
+algorithm
+  // To-Do: Move inputs to localKnownVars
+  if not BackendVariable.isInput(inVar) and not (BackendVariable.isParam(inVar) and not BackendVariable.varFixed(inVar)) and isSome(inVar.bindExp) then
+    SOME(exp):= inVar.bindExp;
+    if isCall(exp) then
+      eq := BackendEquation.generateEquation(DAE.CREF(inVar.varName, inVar.varType), exp);
+      (_, outTuple) := wrapFunctionCalls_analysis(eq, inTuple);
+    end if;
+  end if;
+end findCallsInGlobalKnownVars;
+
 protected function wrapFunctionCalls_substitution
+"Third phase of the WFC algorithm: The found function calls in the equation system which are stored in the HT are replaced by its cse-variables."
   input BackendDAE.Equation inEq;
   input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, BackendDAE.EquationArray> inTuple;
   output BackendDAE.Equation outEq = inEq;
@@ -207,7 +304,7 @@ algorithm
 
   _ := match(inEq)
     case BackendDAE.COMPLEX_EQUATION() equation
-      if debug then
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_substitution (COMPLEX_EQUATION)");
       end if;
 
@@ -215,18 +312,18 @@ algorithm
 
       if not isEquationRedundant(eq) then
         orderedEqs_new = BackendEquation.addEquation(eq, orderedEqs_new);
-        if debug then
+        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           BackendDump.dumpEquationList({eq}, "isEquationRedundant? no");
         end if;
       else
-        if debug then
+        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           BackendDump.dumpEquationList({eq}, "isEquationRedundant? yes");
         end if;
       end if;
     then ();
 
     case BackendDAE.EQUATION() equation
-      if debug then
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_substitution (EQUATION)");
       end if;
 
@@ -377,24 +474,110 @@ algorithm
 end substituteExp2;
 
 protected function createCseEquations
+" Fourth phase of the WFC algorithm:
+  Creates CSE equations from the expandable array and stores them in the correct data structure:
+  1) cse var (i.e. function call) with $cse-prefix is dependending on variables
+       -> store eqn in orderedEqs and var in orderedVars
+  2) cse var (i.e. function call) without $cse-prefix is dependending on variables
+       -> store eqn in orderedEqs
+  3) cse var (i.e. function call) with $cse-prefix is only dependending on globally known variables
+       -> store var in globalKnownVars (bindExp=call)
+  4) cse var (i.e. function call) without $cse-prefix is only dependending on globally known variables
+       -> store var in globalKnownVars (bindExp=call) and delete var from orderedVars
+  author: ptaeuber"
   input ExpandableArray<CSE_Equation> exarray "id -> (cse, call, dependencies)";
-  input output BackendDAE.EquationArray orderedEqs;
-  output list<BackendDAE.Var> varList = {};
+  input output BackendDAE.EquationArray orderedEqs "equations of the system";
+  input output BackendDAE.Variables orderedVars;
+  input HashSet.HashSet inGlobalKnownVarHT;
+  input output BackendDAE.Variables globalKnownVars;
 protected
   DAE.Exp cse, call;
+  list<DAE.Exp> callArg;
   BackendDAE.Equation eq;
+  list<DAE.ComponentRef> crefList;
+  DAE.ComponentRef cr;
+  BackendDAE.Var var;
+  list<BackendDAE.Var> varList, delVars;
+  Boolean eqRedundant, addEquation;
+  list<Integer> var_indexes;
 algorithm
+  if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+    print("globalKnownVars:\n" + UNDERLINE + "\n");
+    BaseHashSet.dumpHashSet(inGlobalKnownVarHT);
+    print("\nTraverse expandable array\n"  + UNDERLINE + "\n");
+  end if;
   for i in 1:ExpandableArray.getNumberOfElements(exarray) loop
+    addEquation := true;
     CSE_EQUATION(cse=cse, call=call) := ExpandableArray.get(i, exarray);
+    if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+      print("\n--> cse-equation: " + ExpressionDump.printExpStr(cse) + " = " + ExpressionDump.printExpStr(call) + "\n");
+    end if;
+
     eq := BackendEquation.generateEquation(cse, call);
-    if not isEquationRedundant(eq) then
-      orderedEqs := BackendEquation.addEquation(eq, orderedEqs);
-      varList := createVarsForExp(cse, varList);
+    (eqRedundant, globalKnownVars, orderedVars) := isEquationRedundant_flatten(eq, inGlobalKnownVarHT, globalKnownVars, orderedVars);
+
+    if debug then print("\ndebug 1 - eq redundant?\n"); end if;
+    if not eqRedundant then
+      if debug then print("\ndebug 2 - no, not redundant. let's loop\n"); end if;
+      varList := createVarsForExp(cse);
+      // If cse is a constant number add the equation
+      if listEmpty(varList) then
+        orderedEqs := BackendEquation.addEquation(eq, orderedEqs);
+      else
+        for var in varList loop
+          if debug then print("\ndebug 3 - handle var: " + BackendDump.varString(var) + " Is it a globalKnownVar?\n"); end if;
+          cr := BackendVariable.varCref(var);
+          // Variable is not in globalKnownVars HT
+          if not allArgsInGlobalKnownVars({call}, inGlobalKnownVarHT) then
+            if debug then print("\ndebug 4 - The variable is not a globalKnownVar. Should an equation be added?\n"); end if;
+            if addEquation then
+              if debug then print("\ndebug 5 - yes, definitely!\n"); end if;
+              orderedEqs := BackendEquation.addEquation(eq, orderedEqs);
+              addEquation := false;
+            end if;
+            if debug then print("\ndebug 6 - Is this cref a CSE cref?: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n"); end if;
+            if isCSECref(cr) then
+              if debug then print("\ndebug 7 - yes it is a CSE cref. Add to orderedVars!\n"); end if;
+              orderedVars := BackendVariable.addVar(var, orderedVars);
+            end if;
+            if debug then print("\ndebug 8\n"); end if;
+
+          // Variable is in globalKnownVars HT: Add it to globalKnownVars and not to ordered vars and do not create a cse-equation
+          else
+            if debug then print("\ndebug 9 - The variable is a globalKnownVar.\n"); end if;
+
+            if not isCSECref(cr) then
+              if debug then print("\ndebug 10 - The globalKnownVar is no CSE cref, so copy attributes and delete it from orderedVars if it is in that list.\n"); end if;
+              (delVars, orderedVars) := BackendVariable.deleteVarIfExistsAndReturn(cr, orderedVars);
+              if listEmpty(delVars) then
+                (delVars, _) := BackendVariable.getVar(cr, globalKnownVars);
+              end if;
+              var := listGet(delVars, 1);
+            end if;
+
+            // Save the rhs (call) as bind expression
+            var := BackendVariable.setBindExp(var, SOME(call));
+
+            // If it is a tuple or a record (or record within tuple)
+            if intGt(listLength(varList), 1) then
+              if debug then print("\ndebug 11 - It is a tuple! Add it to tplExp\n"); end if;
+              var.tplExp := SOME(cse);
+            end if;
+
+            if debug then print("\ndebug 12 - Add the variable to globalKnownVars\n"); end if;
+            // Add var to globalKnownVars
+            globalKnownVars := BackendVariable.addVar(var, globalKnownVars);
+
+          end if;
+        end for;
+      end if;
     end if;
   end for;
+  if debug then print("\ndebug 13\n"); end if;
 end createCseEquations;
 
-function determineDependencies
+protected function determineDependencies
+"Second phase of the WFC algorithm: Finds the dependencies between nested function calls and stores them in the expandable array."
   input output ExpandableArray<CSE_Equation> exarray "id -> (cse, call, dependencies)";
   input HashTableExpToIndex.HashTable HT "call -> index";
 protected
@@ -436,86 +619,204 @@ algorithm
   end if;
 end determineDependencies2;
 
+protected function addConstantCseVarsToGlobalKnownVarHT
+"Traverses the callArgs and adds the cse variable to the globalKnownVarHT if all args are globally known.
+ For tuples the crefs are stored separately.
+ author: ptaeuber"
+  input DAE.Exp cse_crExp;
+  input list<DAE.Exp> callArgs;
+  input output HashSet.HashSet globalKnownVarHT;
+protected
+  list<DAE.ComponentRef> crefList;
+algorithm
+  if allArgsInGlobalKnownVars(callArgs, globalKnownVarHT) then
+    globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT2(cse_crExp, globalKnownVarHT);
+  end if;
+end addConstantCseVarsToGlobalKnownVarHT;
+
+protected function allArgsInGlobalKnownVars
+"Returns true if all call arguments are globally known"
+  input list<DAE.Exp> callArgs;
+  input HashSet.HashSet globalKnownVarHT;
+  output Boolean allCrefsAreGlobal = true;
+protected
+  list<DAE.ComponentRef> crefList;
+algorithm
+  (_,crefList) := Expression.traverseExpList(callArgs, Expression.traversingComponentRefFinder, {});
+  for cr in crefList loop
+    if allCrefsAreGlobal then
+      allCrefsAreGlobal := BaseHashSet.has(cr, globalKnownVarHT);
+    else
+      return;
+    end if;
+  end for;
+end allArgsInGlobalKnownVars;
+
+protected function addConstantCseVarsToGlobalKnownVarHT2
+  input DAE.Exp cse_crExp;
+  input output HashSet.HashSet globalKnownVarHT;
+algorithm
+  _ :=  match(cse_crExp)
+    local
+      list<DAE.Exp> expLst;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crefs;
+
+    case(DAE.TUPLE(PR = expLst))
+      algorithm
+        for exp in expLst loop
+          if Expression.isNotWild(exp) then
+            globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT2(exp, globalKnownVarHT);
+          end if;
+        end for;
+     then ();
+
+    case DAE.CREF(componentRef=cr, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))
+      algorithm
+        globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
+        crefs := ComponentReference.expandCref(cr, true /*the way it is now we won't get records here. but if we do somehow expand them*/);
+
+        for cr_ in crefs loop
+          globalKnownVarHT := BaseHashSet.add(cr_, globalKnownVarHT);
+        end for;
+     then ();
+
+    case DAE.CREF(componentRef=cr) guard(Expression.isArrayType(Expression.typeof(cse_crExp)))
+      algorithm
+        globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
+        crefs := ComponentReference.expandCref(cr, true);
+
+        for cr_ in crefs loop
+          globalKnownVarHT := BaseHashSet.add(cr_, globalKnownVarHT);
+        end for;
+     then ();
+
+    case(DAE.CREF(componentRef=cr))
+      algorithm
+        globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
+     then ();
+  end match;
+end addConstantCseVarsToGlobalKnownVarHT2;
+
 protected function wrapFunctionCalls_analysis
+"First phase of the WFC algorithm: The equation system is traversed and all occuring function calls are stored in the HT and the expandable array."
   input BackendDAE.Equation inEq;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> inTuple;
   output BackendDAE.Equation outEq = inEq;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> outTuple;
 protected
   DAE.FunctionTree functionTree;
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
+  HashSet.HashSet globalKnownVarHT;
+
   Integer cseIndex, exIndex, index, ix;
   DAE.Exp lhs, rhs;
   DAE.Exp cref, call;
   DAE.Exp exp;
+  list<DAE.Exp> expLst;
   DAE.Type ty;
   list<DAE.Type> types;
   CSE_Equation cseEquation;
+  Boolean allCrefsAreGlobal = true;
+  list<DAE.ComponentRef> crefList;
+  list<BackendDAE.Var> varList;
 algorithm
-  (HT, exarray, cseIndex, index, functionTree) := inTuple;
+  (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT) := inTuple;
 
   _ := match(inEq)
     case BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs) algorithm
-      if debug then
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_analysis (COMPLEX_EQUATION)");
       end if;
 
       // TUPLE = CALL
+      // ************
       if isCallAndTuple(lhs, rhs) then
         (cref, call) := getTheRightPattern(lhs, rhs);
+
+        // Tuple is already in HT
         if BaseHashTable.hasKey(call, HT) then
           exIndex := BaseHashTable.get(call, HT);
           cseEquation := ExpandableArray.get(exIndex, exarray);
-          //print("cref1: " + ExpressionDump.printExpStr(cseEquation.cse) + "\n");
-          //print("cref2: " + ExpressionDump.printExpStr(cref) + "\n");
           cseEquation.cse := mergeCSETuples(cseEquation.cse, cref);
           exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cseEquation.cse, expLst, globalKnownVarHT);
+
+        // Tuple is not already in HT
         elseif not isSkipCase(call, functionTree) then
           index := index + 1;
           HT := BaseHashTable.add((call, index), HT);
           exarray := ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cref, expLst, globalKnownVarHT);
         end if;
 
+      // RECORD = CALL
+      // *************
       elseif isCallAndRecord(lhs, rhs) then
         (cref, call) := getTheRightPattern(lhs, rhs);
         if BaseHashTable.hasKey(call, HT) then
           exIndex := BaseHashTable.get(call, HT);
           cseEquation := ExpandableArray.get(exIndex, exarray);
-          //print("cref old: " + ExpressionDump.printExpStr(cseEquation.cse) + "\n");
-          //print("cref new: " + ExpressionDump.printExpStr(cref) + "\n");
           cseEquation.cse := cref;
           exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cseEquation.cse, expLst, globalKnownVarHT);
         elseif not isSkipCase(call, functionTree) then
           index := index + 1;
           HT := BaseHashTable.add((call, index), HT);
           exarray := ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cref, expLst, globalKnownVarHT);
         end if;
       end if;
 
-      (_, (HT, exarray, cseIndex, index, functionTree)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_analysis2, (HT, exarray, cseIndex, index, functionTree));
+      (_, (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_analysis2, (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT));
     then ();
 
     case BackendDAE.EQUATION(exp=lhs, scalar=rhs) algorithm
-      if debug then
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_analysis (EQUATION)");
       end if;
 
       // CREF = CALL or CONST = CALL
+      // ***************************
       if isCallAndCref(lhs, rhs) or isConstAndCall(lhs, rhs) then
         (cref, call) := getTheRightPattern(lhs, rhs);
+
+
         if BaseHashTable.hasKey(call, HT) then
           exIndex := BaseHashTable.get(call, HT);
           cseEquation := ExpandableArray.get(exIndex, exarray);
           cseEquation.cse := cref;
           exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cref, expLst, globalKnownVarHT);
+
         elseif not isSkipCase(call, functionTree) then
           index := index + 1;
           HT := BaseHashTable.add((call, index), HT);
           exarray := ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cref, expLst, globalKnownVarHT);
         end if;
 
       // CREF = TSUB
+      // ***********
       elseif isTsubAndCref(lhs, rhs) then
         (cref, DAE.TSUB(call as DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types))),ix,_)) := getTheRightPattern(lhs, rhs);
         if BaseHashTable.hasKey(call, HT) then
@@ -524,15 +825,24 @@ algorithm
           cref := createCrefForTsub(listLength(types), ix, cref);
           cseEquation.cse := mergeCSETuples(cseEquation.cse, cref);
           exarray := ExpandableArray.update(exIndex, cseEquation, exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cseEquation.cse, expLst, globalKnownVarHT);
+
         elseif not isSkipCase(call, functionTree) then
           index := index + 1;
           HT := BaseHashTable.add((call, index), HT);
           cref := createCrefForTsub(listLength(types), ix, cref);
           exarray := ExpandableArray.set(index, CSE_EQUATION(cref, call, {}), exarray);
+
+          // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+          DAE.CALL(expLst = expLst) := call;
+          globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cref, expLst, globalKnownVarHT);
         end if;
       end if;
 
-      (_, (HT, exarray, cseIndex, index, functionTree)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_analysis2, (HT, exarray, cseIndex, index, functionTree));
+      (_, (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_analysis2, (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT));
     then ();
 
     // all other cases are not handled (e.g. algorithms)
@@ -540,7 +850,7 @@ algorithm
   end match;
 
 
-  outTuple := (HT, exarray, cseIndex, index, functionTree);
+  outTuple := (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT);
 end wrapFunctionCalls_analysis;
 
 protected function createCrefForTsub "(4, 2, x)  -> TUPLE(_,x,_,_)"
@@ -563,9 +873,9 @@ end createCrefForTsub;
 
 protected function wrapFunctionCalls_analysis2
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> inTuple;
   output DAE.Exp outExp = inExp;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> outTuple;
 algorithm
   (_, outTuple) := Expression.traverseExpTopDown(inExp, wrapFunctionCalls_analysis3, inTuple);
 end wrapFunctionCalls_analysis2;
@@ -573,26 +883,31 @@ end wrapFunctionCalls_analysis2;
 
 protected function wrapFunctionCalls_analysis3
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> inTuple;
   output DAE.Exp outExp = inExp;
   output Boolean cont;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree, HashSet.HashSet> outTuple;
 protected
   DAE.FunctionTree functionTree;
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
   Integer cseIndex, index;
+  HashSet.HashSet globalKnownVarHT;
+  list<DAE.ComponentRef> crefList;
+  DAE.Exp tsub;
 algorithm
-  (HT, exarray, cseIndex, index, functionTree) := inTuple;
+  (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT) := inTuple;
 
   cont := match(inExp)
     local
-      DAE.Exp cse_var, call, e;
+      DAE.Exp cse_var, cse_var2, call, e;
       DAE.Type ty;
       list<DAE.Type> types;
       Integer length, ix, id;
-      list<DAE.Exp> expList={};
+      list<DAE.Exp> expList={}, expLst;
       CSE_Equation cseEquation;
+      Boolean allCrefsAreGlobal = true;
+      DAE.ComponentRef cr;
 
     case DAE.IFEXP()
     then false;
@@ -602,13 +917,17 @@ algorithm
     guard isSkipCase(inExp, functionTree)
     then false;
 
-    case DAE.TSUB(exp=call as DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types))), ix=ix, ty=ty) algorithm
+    case tsub as DAE.TSUB(exp=call as DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types)), expLst=expLst), ix=ix, ty=ty) algorithm
       if not BaseHashTable.hasKey(call, HT) then
         index := index + 1;
         HT := BaseHashTable.add((call, index), HT);
         (cse_var, cseIndex) := createReturnExp(ty, cseIndex, inComplex=false);
-        cse_var := createCrefForTsub(listLength(types), ix, cse_var);
-        exarray := ExpandableArray.set(index, CSE_EQUATION(cse_var, call, {}), exarray);
+        cse_var2 := createCrefForTsub(listLength(types), ix, cse_var);
+        exarray := ExpandableArray.set(index, CSE_EQUATION(cse_var2, call, {}), exarray);
+
+        // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+        globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cse_var, expLst, globalKnownVarHT);
+
       else
         id := BaseHashTable.get(call, HT);
         cseEquation := ExpandableArray.get(id, exarray);
@@ -620,6 +939,9 @@ algorithm
             expList := List.set(expList, ix, cse_var);
             cseEquation.cse := DAE.TUPLE(expList);
             exarray := ExpandableArray.update(id, cseEquation, exarray);
+
+            // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+            globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cse_var, expLst, globalKnownVarHT);
           end if;
         else
           print("This should never appear\n");
@@ -627,19 +949,22 @@ algorithm
       end if;
     then true;
 
-    case DAE.CALL(attr=DAE.CALL_ATTR(ty=ty)) algorithm
+    case DAE.CALL(attr=DAE.CALL_ATTR(ty=ty), expLst=expLst) algorithm
       if not BaseHashTable.hasKey(inExp, HT) then
         index := index + 1;
         HT := BaseHashTable.add((inExp, index), HT);
         (cse_var, cseIndex) := createReturnExp(ty, cseIndex, inComplex=false);
         exarray := ExpandableArray.set(index, CSE_EQUATION(cse_var, inExp, {}), exarray);
+
+        // Add cse vars which are only depending on globalKnownVars to globalKnownVarHT
+        globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(cse_var, expLst, globalKnownVarHT);
       end if;
     then true;
 
     else true;
   end match;
 
-  outTuple := (HT, exarray, cseIndex, index, functionTree);
+  outTuple := (HT, exarray, cseIndex, index, functionTree, globalKnownVarHT);
 end wrapFunctionCalls_analysis3;
 
 protected function getTheRightPattern
@@ -712,6 +1037,89 @@ algorithm
 
   result := isEquationRedundant2(ll, rr);
 end isEquationRedundant2;
+
+protected function isEquationRedundant_flatten
+  "Same as isEquationRedundant but flattens equations of form 'tuple = tuple'
+  (e.g. (a,_,b) = (_,c,d) => b=d), if left tuple elements are in globalKnownVarHT and adds them to globalKnownVars"
+  input BackendDAE.Equation inEq;
+  input HashSet.HashSet globalKnownVarHT;
+  output Boolean outB "true if 'x=x', else false";
+  input output BackendDAE.Variables globalKnownVars;
+  input output BackendDAE.Variables orderedVars;
+algorithm
+  (outB, globalKnownVars, orderedVars) := match(inEq)
+    local
+      DAE.Exp exp1, exp2;
+      list<DAE.Exp> lhs, rhs;
+
+    case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
+     then (Expression.expEqual(exp1, exp2), globalKnownVars, orderedVars);
+
+    case BackendDAE.EQUATION(exp=DAE.TUPLE(lhs), scalar=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs)) equation
+      print("This should never appear\n");
+     then isEquationRedundant_flatten2(lhs, rhs, globalKnownVarHT, globalKnownVars, orderedVars);
+
+    case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(lhs), right=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs))
+     then isEquationRedundant_flatten2(lhs, rhs, globalKnownVarHT, globalKnownVars, orderedVars);
+
+    else (false, globalKnownVars, orderedVars);
+  end match;
+end isEquationRedundant_flatten;
+
+protected function isEquationRedundant_flatten2
+  input list<DAE.Exp> lhs;
+  input list<DAE.Exp> rhs;
+  input HashSet.HashSet globalKnownVarHT;
+  output Boolean result = true;
+  input output BackendDAE.Variables globalKnownVars;
+  input output BackendDAE.Variables orderedVars;
+protected
+  DAE.Exp l, r;
+  list<DAE.Exp> ll, rr;
+  BackendDAE.Var var;
+algorithm
+  if listEmpty(lhs) then
+    return;
+  end if;
+
+  l::ll := lhs;
+  r::rr := rhs;
+
+  if not isWildCref(l) and not isWildCref(r) then
+    //print(ExpressionDump.printExpStr(l) + " ?= " + ExpressionDump.printExpStr(r) + "\n");
+    if not Expression.expEqual(l, r) then
+      // Left variable in globalKnownVarHT?
+      if BaseHashSet.has(Expression.expCref(l), globalKnownVarHT) then
+        // create variable with bind exp
+        {var} := createVarsForExp(l, {});
+        var := BackendVariable.setBindExp(var, SOME(r));
+
+        // Add var to globalKnownVars
+        globalKnownVars := BackendVariable.addVar(var, globalKnownVars);
+
+        // Delete var from ordered vars if no cse-cref
+        if not isCSECref(var.varName) then
+          (_, orderedVars) := BackendVariable.deleteVarIfExistsAndReturn(var.varName, orderedVars);
+        end if;
+      else
+        result := false;
+        return;
+      end if;
+    end if;
+  end if;
+
+  (result, globalKnownVars, orderedVars) := isEquationRedundant_flatten2(ll, rr, globalKnownVarHT, globalKnownVars, orderedVars);
+end isEquationRedundant_flatten2;
+
+protected function isCall
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inExp)
+    case DAE.CALL() then true;
+    else false;
+  end match;
+end isCall;
 
 protected function isCallAndCref
   input DAE.Exp inExp;
@@ -1058,7 +1466,8 @@ algorithm
   end match;
 end createReturnExp;
 
-protected function createVarsForExp     //cse in varList
+protected function createVarsForExp_onlyCSECrefs
+"Same as createVarsForExp but only creates a variable if the crefs in inExp are $cse-crefs"
   input DAE.Exp inExp;
   input list<BackendDAE.Var> inAccumVarLst;
   output list<BackendDAE.Var> outVarLst;
@@ -1115,6 +1524,82 @@ algorithm
     then var::inAccumVarLst;
 
     case DAE.TUPLE(expLst) equation
+      outVarLst = List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
+    then outVarLst;
+
+    case DAE.ARRAY(array=expLst) equation
+      //print("This should never appear\n");
+      outVarLst = List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
+    then outVarLst;
+
+    case DAE.RECORD(exps=expLst) equation
+      print("This should never appear\n");
+      outVarLst = List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
+    then outVarLst;
+
+    // add no variable in all other cases
+    else inAccumVarLst;
+  end match;
+end createVarsForExp_onlyCSECrefs;
+
+protected function createVarsForExp
+"Creates a variable list for crefs in inExp, e.g. inExp = (a, b, _, d) -> outVarLst = {a,b,d}"
+  input DAE.Exp inExp;
+  input list<BackendDAE.Var> inAccumVarLst = {};
+  output list<BackendDAE.Var> outVarLst;
+algorithm
+  (outVarLst) := match (inExp)
+    local
+      DAE.ComponentRef cr, cr_;
+      list<DAE.ComponentRef> crefs;
+      list<DAE.Exp> expLst;
+      BackendDAE.Var var;
+      DAE.Type ty;
+      DAE.InstDims arrayDim;
+/*
+    case DAE.CREF(componentRef=cr) guard(not Expression.isArrayType(Expression.typeof(inExp))
+                                         and not Expression.isRecordType(Expression.typeof(inExp))) equation
+      // use the correct type when creating var. The cref might have subs.
+      var = BackendVariable.createCSEVar(cr, Expression.typeof(inExp));
+    then var::inAccumVarLst;
+*/
+    case DAE.CREF(componentRef=DAE.WILD()) then inAccumVarLst;
+
+    case DAE.CREF(componentRef=cr, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))) algorithm
+      // use the correct type when creating var. The cref might have subs.
+      crefs := ComponentReference.expandCref(cr, true /*the way it is now we won't get records here. but if we do somehow expand them*/);
+
+      /* Create SimVars from the list of expanded crefs.*/
+      /* Mark the first element as an arrayCref i.e. we have 'SOME(arraycref)' since this is how the C template
+         detects first elements of arrays to generate VARNAME_indexed(..) macros for accessing the array
+         with variable indexes.*/
+      outVarLst := inAccumVarLst;
+      for cr_ in crefs loop
+        arrayDim := ComponentReference.crefDims(cr_);
+        outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
+      end for;
+    then outVarLst;
+
+    case DAE.CREF(componentRef=cr) guard(Expression.isArrayType(Expression.typeof(inExp))) algorithm
+      // use the correct type when creating var. The cref might have subs.
+      crefs := ComponentReference.expandCref(cr, true);
+
+      outVarLst := inAccumVarLst;
+      ty := DAEUtil.expTypeElementType(Expression.typeof(inExp));
+      for cr_ in crefs loop
+        arrayDim := ComponentReference.crefDims(cr_);
+        //expLst := DAE.CREF(cr_, ComponentReference.crefType(cr_))::expLst;
+        outVarLst := BackendVariable.createCSEArrayVar(cr_, ty, arrayDim)::outVarLst;
+      end for;
+      //expLst = list(DAE.CREF(cr_, ComponentReference.crefType(cr_)) for cr_ in crefs);
+    then outVarLst;
+
+    case DAE.CREF(componentRef=cr) equation
+      // use the correct type when creating var. The cref might have subs.
+      var = BackendVariable.createCSEVar(cr, Expression.typeof(inExp));
+    then var::inAccumVarLst;
+
+    case DAE.TUPLE(expLst) equation
       outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 
@@ -1134,20 +1619,23 @@ algorithm
 end createVarsForExp;
 
 protected function isCSECref
+"Returns true if the cref is prefixed with '$cse'"
   input DAE.ComponentRef cr;
   output Boolean b;
 protected
   String s;
 algorithm
-  try
-    DAE.CREF_IDENT(ident=s) := cr;
-    b := substring(s, 1, 4) == "$cse";
-  else
-    b := false;
-  end try;
+  b := matchcontinue(cr)
+    case(DAE.CREF_IDENT(ident=s))
+     then (substring(s, 1, 4) == "$cse");
+    case(DAE.CREF_QUAL(ident=s))
+     then (substring(s, 1, 4) == "$cse");
+    else false;
+  end matchcontinue;
 end isCSECref;
 
 protected function isCSEExp
+"Returns true if the exp is prefixed with '$cse'"
   input DAE.Exp inExp;
   output Boolean b;
 protected
@@ -1293,7 +1781,7 @@ algorithm
 
       if not BaseHashTable.hasKey(value, HT3) then
         HT3 = BaseHashTable.add((value, 1), HT3);
-        varLst = createVarsForExp(value, varLst);
+        varLst = createVarsForExp_onlyCSECrefs(value, varLst);
         eq = BackendEquation.generateEquation(value, inExp, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqLst = eq::eqLst;
       end if;
