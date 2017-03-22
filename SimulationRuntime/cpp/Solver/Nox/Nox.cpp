@@ -91,7 +91,7 @@ void Nox::solve()
 	double * rhs = new double[_dimSys];
 	double sum;
 
-
+	Teuchos::RCP<std::ostream> output = Teuchos::rcp(new std::stringstream);
 
     if (_firstCall) initialize();
 
@@ -111,6 +111,8 @@ void Nox::solve()
     _solverParametersPtr->set("Nonlinear Solver", "Line Search Based");
 
 	_solverParametersPtr->sublist("Printing").set("Output Precision", 15);
+	_solverParametersPtr->sublist("Printing").set("Output Stream", output);
+	_solverParametersPtr->sublist("Printing").set("Error Stream", output);
 
 	//_solverParametersPtr->sublist("Direction").set("Method", "Steepest Descent");
 
@@ -306,6 +308,9 @@ void Nox::solve()
 		try{
 			//std::cout << "solving..." << std::endl;
 			status = _solver->solve();
+			LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG)
+			LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
+			LOGGER_WRITE_END(LC_NLS,LL_DEBUG)
 			//std::cout << "done!" << std::endl;
 		}
 		catch(const std::exception &ex)
@@ -576,6 +581,8 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	//Since we are doing an equilibrium continuation, we set the bifurcation method to "None".
 	//We use a secant predictor and adaptive step size control with an initial step size of 0.1, maximum of 1.0 and minimum of 0.001.
 
+	Teuchos::RCP<std::ostream> output = Teuchos::rcp(new std::stringstream);
+
 	// Create parameter list. For detailed calibration, check https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
 	Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::rcp(new Teuchos::ParameterList);
 	// Create LOCA sublist
@@ -617,6 +624,8 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 
 	Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
 	nlPrintParams.set("Output Precision", 15);
+	nlPrintParams.set("Output Stream", output);
+	nlPrintParams.set("Error Stream", output);
 	//Set the level of output
     if (_generateoutput){
 		nlPrintParams.set("Output Information", NOX::Utils::Details + NOX::Utils::OuterIteration + NOX::Utils::Warning + NOX::Utils::StepperIteration + NOX::Utils::StepperDetails + NOX::Utils::StepperParameters);  // Should set
@@ -655,16 +664,19 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	try{
 		// Perform continuation run
 		LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+		LOGGER_WRITE_BEGIN("LOCA: ",LC_NLS,LL_DEBUG)
+		LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
+		LOGGER_WRITE_END(LC_NLS,LL_DEBUG)
 		// Check for convergence
 		if (status != LOCA::Abstract::Iterator::Finished){
-			std::cout << "Stepper failed to converge!" << std::endl;
+			if(_generateoutput) std::cout << "Stepper failed to converge!" << std::endl;
 		}else{
 			_iterationStatus=DONE;
 		}
 	}
 	catch(const std::exception &ex)
 	{
-		std::cout << std::endl << "sth went wrong during stepper running, with error message" << ex.what() << std::endl;
+		if(_generateoutput) std::cout << std::endl << "sth went wrong during stepper running, with error message" << ex.what() << std::endl;
 		//std::cout << add_error_info("building solver with grp, status tests and solverparameters", ex.what(), ex.getErrorID(), time) << std::endl << std::endl;
 		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");
 	}
