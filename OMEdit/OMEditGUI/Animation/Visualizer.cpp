@@ -415,8 +415,7 @@ OSGScene::OSGScene()
 int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
 {
   int isOk(0);
-  for (std::vector<ShapeObject>::size_type i = 0; i != allShapes.size(); i++)
-  {
+  for (std::vector<ShapeObject>::size_type i = 0; i != allShapes.size(); i++) {
     ShapeObject shape = allShapes[i];
     osg::ref_ptr<osg::Geode> geode;
     osg::ref_ptr<osg::StateSet> ss;
@@ -429,25 +428,22 @@ int OSGScene::setUpScene(std::vector<ShapeObject> allShapes)
     osg::ref_ptr<osg::MatrixTransform> transf = new osg::MatrixTransform();
 
     //cad node
-    if (shape._type.compare("stl") == 0)
-    {
+    if (shape._type.compare("stl") == 0) {
       //std::cout<<"Its a CAD and the filename is "<<shape._fileName<<std::endl;
       osg::ref_ptr<osg::Node> node = osgDB::readNodeFile(shape._fileName);
-      osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
-      ss->setAttribute(material.get());
-      node->setStateSet(ss);
-      transf->addChild(node.get());
-    }
-    else if ((shape._type.compare("dxf") == 0)) {
+      if (node) {
+        osg::ref_ptr<osg::StateSet> ss = node->getOrCreateStateSet();
+        ss->setAttribute(material.get());
+        node->setStateSet(ss);
+        transf->addChild(node.get());
+      }
+    } else if ((shape._type.compare("dxf") == 0)) {
       std::string name = shape._fileName;
       DXFile* shape = new DXFile(name);
       geode = new osg::Geode();
       geode->addDrawable(shape);
       transf->addChild(geode);
-    }
-    //geode with shape drawable
-    else
-    {
+    } else { //geode with shape drawable
       osg::ref_ptr<osg::ShapeDrawable> shapeDraw = new osg::ShapeDrawable();
       shapeDraw->setColor(osg::Vec4(1.0, 1.0, 1.0, 1.0));
       geode = new osg::Geode();
