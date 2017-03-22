@@ -308,9 +308,9 @@ void Nox::solve()
 		try{
 			//std::cout << "solving..." << std::endl;
 			status = _solver->solve();
-			LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG)
+			LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
 			LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
-			LOGGER_WRITE_END(LC_NLS,LL_DEBUG)
+			LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
 			//std::cout << "done!" << std::endl;
 		}
 		catch(const std::exception &ex)
@@ -664,9 +664,9 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	try{
 		// Perform continuation run
 		LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
-		LOGGER_WRITE_BEGIN("LOCA: ",LC_NLS,LL_DEBUG)
+		LOGGER_WRITE_BEGIN("LOCA: ",LC_NLS,LL_DEBUG);
 		LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
-		LOGGER_WRITE_END(LC_NLS,LL_DEBUG)
+		LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
 		// Check for convergence
 		if (status != LOCA::Abstract::Iterator::Finished){
 			if(_generateoutput) std::cout << "Stepper failed to converge!" << std::endl;
