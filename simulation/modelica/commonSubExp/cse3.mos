@@ -91,26 +91,20 @@ simulate(testCSE); getErrorString();
 // true
 // ""
 //
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
-// ########### Updated Variable List (simulation) (9)
+// ########### Updated Variable List (simulation) ########### (9)
 // ========================================
 // 1: w:VARIABLE()  type: Real 
 // 2: z:VARIABLE(start = 0.0 )  type: Real 
 // 3: y:VARIABLE(start = 1.0 )  type: Real 
 // 4: x:STATE(1)(start = 0.0 fixed = true )  type: Real 
-// 5: $cse1:VARIABLE()  type: Real  unreplaceable
-// 6: $cse2:VARIABLE()  type: Real  unreplaceable
+// 5: $cse5:VARIABLE()  type: Real  unreplaceable
+// 6: $cse4:VARIABLE()  type: Real  unreplaceable
 // 7: $cse3:VARIABLE()  type: Real  unreplaceable
-// 8: $cse4:VARIABLE()  type: Real  unreplaceable
-// 9: $cse5:VARIABLE()  type: Real  unreplaceable
+// 8: $cse2:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) (9, 9)
+// ########### Updated Equation List (simulation) ########### (9, 9)
 // ========================================
 // 1/1 (1): $cse1 * y + 1.1 * $cse2 * $cse3 = 2.0   [dynamic]
 // 2/2 (1): $cse4 * $cse5 + 1.1 * $cse4 * z = 1.0   [dynamic]
@@ -122,13 +116,7 @@ simulate(testCSE); getErrorString();
 // 8/8 (1): $cse4 = testCSE.f4(x, n)   [unknown]
 // 9/9 (1): $cse5 = sinh(y)   [unknown]
 //
-//
-// ########### Updated globalKnownVars (simulation) (1)
-// ========================================
-// 1: n:PARAM()  = 100000  type: Integer 
-//
-//
-// ########### CSE Replacements (6/46)
+// cse replacements (6/46)
 // ========================================
 // 1: w - testCSE.f3(x, n) - {}
 // 2: $cse1 - testCSE.f1(x, n) - {}
@@ -137,23 +125,17 @@ simulate(testCSE); getErrorString();
 // 5: $cse4 - testCSE.f4(x, n) - {}
 // 6: $cse5 - sinh(y) - {}
 //
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
-// ########### Updated Variable List (jacobian) (6)
+// ########### Updated Variable List (jacobian) ########### (6)
 // ========================================
 // 1: $cse5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real 
 // 2: $cse3.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real 
 // 3: $res.2.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real  unreplaceable
 // 4: $res.1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real  unreplaceable
-// 5: $cse6:VARIABLE()  type: Real  unreplaceable
-// 6: $cse7:VARIABLE()  type: Real  unreplaceable
+// 5: $cse7:VARIABLE()  type: Real  unreplaceable
+// 6: $cse6:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (jacobian) (6, 6)
+// ########### Updated Equation List (jacobian) ########### (6, 6)
 // ========================================
 // 1/1 (1): $res.2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * ySeedNLSJac1   [dynamic]
 // 2/2 (1): $res.1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * zSeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic]
@@ -162,21 +144,7 @@ simulate(testCSE); getErrorString();
 // 5/5 (1): $cse6 = cosh(y)   [unknown]
 // 6/6 (1): $cse7 = cosh(z)   [unknown]
 //
-//
-// ########### Updated globalKnownVars (jacobian) (9)
-// ========================================
-// 1: input ySeedNLSJac1:STATE_DER()  type: Real 
-// 2: input zSeedNLSJac1:STATE_DER()  type: Real 
-// 3: input $cse1:VARIABLE()  type: Real  unreplaceable
-// 4: input $cse2:VARIABLE()  type: Real  unreplaceable
-// 5: input $cse4:VARIABLE()  type: Real  unreplaceable
-// 6: input $res[1]:VARIABLE()  type: Real 
-// 7: input $res[2]:VARIABLE()  type: Real 
-// 8: input $cse3:VARIABLE()  type: Real  unreplaceable
-// 9: input $cse5:VARIABLE()  type: Real  unreplaceable
-//
-//
-// ########### CSE Replacements (2/46)
+// cse replacements (2/46)
 // ========================================
 // 1: $cse6 - cosh(y) - {}
 // 2: $cse7 - cosh(z) - {}

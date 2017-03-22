@@ -51,13 +51,7 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // true
 // ""
 //
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
-// ########### Updated Variable List (simulation) (6)
+// ########### Updated Variable List (simulation) ########### (6)
 // ========================================
 // 1: z.r2:DISCRETE()  type: Integer 
 // 2: z.r1:VARIABLE()  type: Real 
@@ -67,19 +61,14 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // 6: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) (4, 6)
+// ########### Updated Equation List (simulation) ########### (4, 6)
 // ========================================
 // 1/1 (2): y = z   [dynamic]
 // 2/3 (1): x = sin(time * $cse1)   [unknown]
 // 3/4 (1): $cse1 = cos(time)   [unknown]
 // 4/5 (2): z = CSE.functions.f3(time, x)   [unknown]
 //
-//
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
-// ########### CSE Replacements (3/47)
+// cse replacements (3/47)
 // ========================================
 // 1: x - sin(time * $cse1) - {}
 // 2: $cse1 - cos(time) - {}

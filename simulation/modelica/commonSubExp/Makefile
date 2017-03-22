@@ -31,13 +31,6 @@ wrapFunctionCalls3.mos \
 wrapFunctionCalls4.mos \
 wrapFunctionCalls5.mos \
 wrapFunctionCalls6.mos \
-wrapFunctionCalls7.mos \
-wrapFunctionCalls8.mos \
-wrapFunctionCalls9.mos \
-wrapFunctionCalls10.mos \
-wrapFunctionCalls11.mos \
-wrapFunctionCalls12.mos \
-wrapFunctionCalls13.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

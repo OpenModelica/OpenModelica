@@ -39,7 +39,7 @@ val(b, 0.0); getErrorString();
 // |                 | |       | | | [2] parameter Real b(start=0, fixed=false) = 2.8
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
-// |                 | |       | | | [1] Real x(start=0, nominal=1) = 1 (pre: 1)
+// |                 | |       | | | [1] Real x(start=0, nominal=1) = 1 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // "
 // end SimulationResult;

@@ -36,27 +36,16 @@ simulate(CSE.TestCall5); getErrorString();
 // true
 // ""
 //
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
-// ########### Updated Variable List (simulation) (1)
+// ########### Updated Variable List (simulation) ########### (1)
 // ========================================
 // 1: a.x:VARIABLE()  type: Real 
 //
 //
-// ########### Updated Equation List (simulation) (1, 1)
+// ########### Updated Equation List (simulation) ########### (1, 1)
 // ========================================
 // 1/1 (1): a = CSE.TestCall5.f(time)   [unknown]
 //
-//
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
-// ########### CSE Replacements (1/43)
+// cse replacements (1/43)
 // ========================================
 // 1: a - CSE.TestCall5.f(time) - {}
 // record SimulationResult

@@ -39,23 +39,17 @@ simulate(CSE.wrapFunctionCalls4); getErrorString();
 // true
 // ""
 //
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
-// ########### Updated Variable List (simulation) (6)
+// ########### Updated Variable List (simulation) ########### (6)
 // ========================================
 // 1: c:VARIABLE()  type: Real 
 // 2: b:VARIABLE()  type: Real 
 // 3: x:VARIABLE()  type: Real 
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse2:VARIABLE()  type: Real  unreplaceable
 // 5: $cse3:VARIABLE()  type: Real  unreplaceable
-// 6: $cse2:VARIABLE()  type: Real  unreplaceable
+// 6: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) (5, 6)
+// ########### Updated Equation List (simulation) ########### (5, 6)
 // ========================================
 // 1/1 (1): c = 5.0 + $cse2   [dynamic]
 // 2/2 (1): x = sin($cse1)   [unknown]
@@ -63,12 +57,7 @@ simulate(CSE.wrapFunctionCalls4); getErrorString();
 // 4/4 (2): ($cse3, b, _) = CSE.wrapFunctionCalls4.f1(x, x)   [unknown]
 // 5/6 (1): $cse2 = sin($cse3)   [unknown]
 //
-//
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
-// ########### CSE Replacements (5/45)
+// cse replacements (5/45)
 // ========================================
 // 1: x - sin($cse1) - {}
 // 2: $cse1 - cos(time) - {}

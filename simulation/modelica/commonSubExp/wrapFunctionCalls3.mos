@@ -36,30 +36,19 @@ simulate(CSE.wrapFunctionCalls3); getErrorString();
 // true
 // ""
 //
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
-// ########### Updated Variable List (simulation) (3)
+// ########### Updated Variable List (simulation) ########### (3)
 // ========================================
 // 1: b:VARIABLE()  type: Real 
 // 2: a:VARIABLE()  type: Real 
 // 3: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) (2, 3)
+// ########### Updated Equation List (simulation) ########### (2, 3)
 // ========================================
 // 1/1 (1): a = 5.0 + $cse1   [dynamic]
 // 2/2 (2): ($cse1, b, _) = CSE.wrapFunctionCalls3.f1(time)   [unknown]
 //
-//
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
-// ########### CSE Replacements (1/44)
+// cse replacements (1/44)
 // ========================================
 // 1: ($cse1, b, _) - CSE.wrapFunctionCalls3.f1(time) - {}
 // record SimulationResult
