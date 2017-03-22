@@ -1122,7 +1122,7 @@ QStringList StringHandler::unparseStrings(QString value)
         i++;
       continue;
     }
-    while (value[i] != '"' && value[i] != '\0') {
+    while (value[i] != '"' && !value[i].isNull()) {
       i++;
       fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
     }
