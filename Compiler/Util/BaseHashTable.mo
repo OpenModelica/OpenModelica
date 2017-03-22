@@ -614,7 +614,7 @@ algorithm
 end copy;
 
 public function clear
-  "Clears the hashtable."
+  "Makes a copy of a hashtable."
   input output HashTable ht;
 protected
   HashVector hv;
