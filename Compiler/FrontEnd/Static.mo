@@ -4567,6 +4567,173 @@ algorithm
   end match;
 end elabBuiltinMinMaxCommon;
 
+protected function elabBuiltinClock
+  "Author: BTH
+   This function elaborates the builtin Clock constructor Clock(..)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call,interval,intervalCounter,resolution,condition,startInterval,c,solverMethod;
+      DAE.Type ty1,ty2,ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1,prop2, prop = DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_VAR());
+      Absyn.Exp ainterval, aintervalCounter, aresolution, acondition, astartInterval, ac, asolverMethod;
+      Real rInterval, rStartInterval;
+      Integer iIntervalCounter, iResolution;
+      DAE.Const variability;
+      String strSolverMethod;
+      Values.Value val;
+
+    // Inferred clock "Clock()"
+    case (cache,_,{},{},_,_,_)
+      equation
+        call = DAE.CLKCONST(DAE.INFERRED_CLOCK());
+      then (cache, call, DAE.PROP(DAE.T_CLOCK_DEFAULT, DAE.C_VAR()));
+
+    // clock with Integer interval "Clock(intervalCounter)"
+    case (cache,env,{aintervalCounter},{},impl,pre,_)
+      equation
+        (cache, intervalCounter, prop1, _) = elabExpInExpression(cache,env,aintervalCounter,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        (intervalCounter,_) = Types.matchType(intervalCounter,ty1,DAE.T_INTEGER_DEFAULT,true);
+        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, DAE.ICONST(1)));
+      then (cache, call, prop);
+
+    // clock with Integer interval "Clock(intervalCounter, resolution)"
+    case (cache,env,{aintervalCounter, aresolution},{},impl,pre,_)
+      equation
+        (cache, intervalCounter, prop1, _) = elabExpInExpression(cache,env,aintervalCounter,impl,NONE(),true,pre,info);
+        (cache, resolution, prop2, _) = elabExpInExpression(cache,env,aresolution,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty2 = Types.arrayElementType(Types.getPropType(prop2));
+        (intervalCounter,_) = Types.matchType(intervalCounter,ty1,DAE.T_INTEGER_DEFAULT,true);
+        (resolution,_) = Types.matchType(resolution,ty2,DAE.T_INTEGER_DEFAULT,true);
+        // evaluate and check if resolution >= 1 (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, resolution, false, NONE(), Absyn.MSG(info), 0);
+        Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 1,
+          Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", ValuesUtil.valString(val), ">= 1"}, info);
+        resolution = ValuesUtil.valueExp(val);
+        call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, resolution));
+      then (cache, call, prop);
+
+    // clock with Real interval "Clock(interval)"
+    case (cache,env,{ainterval},{},impl,pre,_)
+      equation
+        (cache, interval, prop1, _) = elabExpInExpression(cache,env,ainterval,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        (interval,_) = Types.matchType(interval,ty1,DAE.T_REAL_DEFAULT,true);
+        call = DAE.CLKCONST(DAE.REAL_CLOCK(interval));
+      then (cache, call, prop);
+
+    // Boolean Clock (clock triggered by zero-crossing events) "Clock(condition)"
+    case (cache,env,{acondition},{},impl,pre,_)
+      equation
+        (cache, condition, prop1, _) = elabExpInExpression(cache,env,acondition,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
+        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, DAE.RCONST(0.0)));
+      then (cache, call, prop);
+
+    // Boolean Clock (clock triggered by zero-crossing events) "Clock(condition, startInterval)"
+    case (cache,env,{acondition, astartInterval},{},impl,pre,_)
+      equation
+        (cache, condition, prop1, _) = elabExpInExpression(cache,env,acondition,impl,NONE(),true,pre,info);
+        (cache, startInterval, prop2, _) = elabExpInExpression(cache,env,astartInterval,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty2 = Types.arrayElementType(Types.getPropType(prop2));
+        (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
+        (startInterval,_) = Types.matchType(startInterval,ty2,DAE.T_REAL_DEFAULT,true);
+        // TODO! check if expression startInterval is >= 0.0
+        // rStartInterval = Expression.toReal(startInterval);
+        // true = rStartInterval >= 0.0;
+        call = DAE.CLKCONST(DAE.BOOLEAN_CLOCK(condition, startInterval));
+      then (cache, call, prop);
+
+    // Solver Clock "Clock(c, solverMethod)"
+    case (cache,env,{ac, asolverMethod},{},impl,pre,_)
+      equation
+        (cache, c, prop1, _) = elabExpInExpression(cache,env,ac,impl,NONE(),true,pre,info);
+        (cache, solverMethod, prop2, _) = elabExpInExpression(cache,env,asolverMethod,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty2 = Types.arrayElementType(Types.getPropType(prop2));
+        (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
+        (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
+        // evaluate structural solverMethod (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, solverMethod, false, NONE(), Absyn.MSG(info), 0);
+        solverMethod = ValuesUtil.valueExp(val);
+        call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
+      then (cache, call, prop);
+
+    // Solver Clock "Clock(c, solverMethod=solverMethod)" with named arguments
+    case (cache,env,{ac},{Absyn.NAMEDARG(argName="solverMethod", argValue=asolverMethod)},impl,pre,_)
+      equation
+        (cache, c, prop1, _) = elabExpInExpression(cache,env,ac,impl,NONE(),true,pre,info);
+        (cache, solverMethod, prop2, _) = elabExpInExpression(cache,env,asolverMethod,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty2 = Types.arrayElementType(Types.getPropType(prop2));
+        (c,_) = Types.matchType(c,ty1,DAE.T_CLOCK_DEFAULT,true);
+        (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
+        // evaluate structural solverMethod (rfranke)
+        (cache, val, _) = Ceval.ceval(cache, env, solverMethod, false, NONE(), Absyn.MSG(info), 0);
+        solverMethod = ValuesUtil.valueExp(val);
+        call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
+      then (cache, call, prop);
+
+  end matchcontinue;
+end elabBuiltinClock;
+
+protected function elabBuiltinHold "
+Author: BTH
+This function elaborates the builtin operator hold(u)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call, u;
+      DAE.Type ty1,ty2,ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1, prop;
+      Absyn.Exp au;
+
+    case (cache,env,{au},{},impl,pre,_)
+      equation
+        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                 ty1,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                Absyn.IDENT("hold"));
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("hold"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinHold;
+
 protected function elabBuiltinSample "
 Author: BTH
 This function elaborates the builtin operator sample(..) variants."
@@ -4811,6 +4978,45 @@ algorithm
   end match;
 end elabBuiltinBackSample;
 
+protected function elabBuiltinNoClock "
+Author: BTH
+This function elaborates the builtin operator noClock(u)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call, u;
+      DAE.Type ty1,ty2,ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1, prop;
+      Absyn.Exp au;
+
+    case (cache,env,{au},{},impl,pre,_)
+      equation
+        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                 ty1,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                Absyn.IDENT("noClock"));
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("noClock"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinNoClock;
+
 protected function elabBuiltinFirstTick "
  This function elaborates the builtin operator firstTick(u)."
   input FCore.Cache inCache;
@@ -4858,6 +5064,55 @@ algorithm
       then (cache, call, prop);
   end match;
 end elabBuiltinFirstTick;
+
+protected function elabBuiltinInterval "
+Author: BTH
+This function elaborates the builtin operator interval(u)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call, u;
+      DAE.Type ty1,ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop1, prop;
+      Absyn.Exp au;
+
+    case (cache,env,{},{},impl,pre,_)
+      equation
+        ty =  DAE.T_FUNCTION(
+                {},
+                DAE.T_REAL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                Absyn.IDENT("interval"));
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+
+    case (cache,env,{au},{},impl,pre,_)
+      equation
+        (cache,_, prop1, _) = elabExpInExpression(cache,env,au,impl,NONE(),true,pre,info);
+        ty1 = Types.arrayElementType(Types.getPropType(prop1));
+        ty =  DAE.T_FUNCTION(
+                {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
+                DAE.T_REAL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                Absyn.IDENT("interval"));
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinInterval;
 
 protected function isBlockTypeWorkaround "
 Author: BTH
@@ -5129,6 +5384,80 @@ algorithm
       then (cache, call, prop);
   end match;
 end elabBuiltinActiveState;
+
+protected function elabBuiltinTicksInState "
+Author: BTH
+This function elaborates the builtin operator
+ticksInState()."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call;
+      DAE.Type ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop;
+
+    case (cache,env,{},{},impl,pre,_)
+      equation
+        ty =  DAE.T_FUNCTION(
+                {},
+                 DAE.T_INTEGER_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                Absyn.IDENT("ticksInState"));
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("ticksInState"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinTicksInState;
+
+protected function elabBuiltinTimeInState "
+Author: BTH
+This function elaborates the builtin operator
+timeInState()."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
+    local
+      DAE.Exp call;
+      DAE.Type ty;
+      Boolean impl;
+      FCore.Graph env;
+      FCore.Cache cache;
+      Prefix.Prefix pre;
+      DAE.Properties prop;
+
+    case (cache,env,{},{},impl,pre,_)
+      equation
+        ty =  DAE.T_FUNCTION(
+                {},
+                 DAE.T_REAL_DEFAULT,
+                DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
+                Absyn.IDENT("timeInState"));
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("timeInState"), args, nargs, impl, NONE(), pre, info);
+      then (cache, call, prop);
+  end match;
+end elabBuiltinTimeInState;
 
 protected function elabBuiltinBoolean
   "This function elaborates on the builtin operator boolean, which extracts
@@ -6238,6 +6567,7 @@ algorithm
     case "product" then elabBuiltinProduct;
     case "pre" then elabBuiltinPre;
     case "firstTick" then elabBuiltinFirstTick;
+    case "interval" then elabBuiltinInterval;
     case "boolean" then elabBuiltinBoolean;
     case "noEvent" then elabBuiltinNoevent;
     case "edge" then elabBuiltinEdge;
@@ -6260,6 +6590,14 @@ algorithm
     case "cardinality" then elabBuiltinCardinality;
     case "homotopy" then elabBuiltinHomotopy;
     case "DynamicSelect" then elabBuiltinDynamicSelect;
+    case "Clock"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinClock;
+    case "hold"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinHold;
     case "shiftSample"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
@@ -6268,6 +6606,10 @@ algorithm
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinBackSample;
+    case "noClock"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinNoClock;
     case "transition"
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
@@ -6280,6 +6622,14 @@ algorithm
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinActiveState;
+    case "ticksInState"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinTicksInState;
+    case "timeInState"
+      equation
+        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+      then elabBuiltinTimeInState;
     case "sourceInfo"
       equation
         true = Config.acceptMetaModelicaGrammar();
