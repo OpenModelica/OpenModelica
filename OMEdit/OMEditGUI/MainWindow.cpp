@@ -195,7 +195,7 @@ void MainWindow::setUpMainWindow()
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/traceability.svg"), tr("Traceability"));
   QShortcut *pTraceabilityShortcut = new QShortcut(QKeySequence("Ctrl+f6"), this);
   connect(pTraceabilityShortcut, SIGNAL(activated()), SLOT(switchToTraceabilityGraphViewPerspectiveSlot()));
-  mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to traceability graph view perspective (%1)").arg(pTraceabilityShortcut->key().toString()));
+  mpPerspectiveTabbar->setTabToolTip(4, tr("Changes to traceability graph view perspective (%1)").arg(pTraceabilityShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   // Create an object of QStatusBar
