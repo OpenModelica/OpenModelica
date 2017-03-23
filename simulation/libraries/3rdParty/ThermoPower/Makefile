@@ -3,7 +3,6 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 Bug2537.mos \
 ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.mos \
-ThermoPower.Examples.CISE.CISESim2States120501.mos \
 ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen.mos \
 ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phDB_hf.mos \
 ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop.mos \
@@ -15,6 +14,7 @@ ThermoPower.Examples.HRB.Simulators.ClosedLoopSimulator \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES = \
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
