@@ -267,6 +267,7 @@ void ModelicaEditor::showContextMenu(QPoint point)
  */
 void ModelicaEditor::setPlainText(const QString &text)
 {
+  static int init = 0;
   QMap<int, int> leadingSpacesMap;
   QString contents = text;
   // store and remove leading spaces
@@ -277,11 +278,16 @@ void ModelicaEditor::setPlainText(const QString &text)
   // Only set the text when it is really new
   if (contents != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
-    if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+    if (!init) {
+      init = 1;
       mpPlainTextEdit->setPlainText(contents);
-      storeLeadingSpaces(leadingSpacesMap);
     } else {
-      mpPlainTextEdit->setPlainText(contents);
+      QTextCursor textCursor (mpPlainTextEdit->document());
+      textCursor.select(QTextCursor::Document);
+      textCursor.insertText(contents);
+    }
+    if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+      storeLeadingSpaces(leadingSpacesMap);
     }
     setTextChanged(false);
     mForceSetPlainText = false;

@@ -372,13 +372,15 @@ public:
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
   void clearSelection();
   void updateClassAnnotationIfNeeded();
-  void updateModelText();
+  void updateModelText(bool updateText = true);
   void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
   void updateDynamicResults(QString resultFileName);
   QString getResultFileName() {return mResultFileName;}
   bool writeCoSimulationResultFile(QString fileName);
   bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
+  void beginMacro(const QString &text);
+  void endMacro();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;

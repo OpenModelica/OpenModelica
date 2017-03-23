@@ -1255,12 +1255,20 @@ void CompositeModelEditor::showContextMenu(QPoint point)
  */
 void CompositeModelEditor::setPlainText(const QString &text)
 {
+  static int init = 0;
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
     mXmlDocument.setContent(text);
     updateAllOrientations();
     // use the text from mXmlDocument so that we can map error to line numbers. We don't care about users formatting in the file.
-    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    if (!init) {
+      init = 1;
+      mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    } else {
+      QTextCursor textCursor (mpPlainTextEdit->document());
+      textCursor.select(QTextCursor::Document);
+      textCursor.insertText(mXmlDocument.toString());
+    }
     mForceSetPlainText = false;
     mLastValidText = text;
   }

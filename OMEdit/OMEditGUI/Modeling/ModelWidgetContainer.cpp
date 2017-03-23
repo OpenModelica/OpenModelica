@@ -1503,11 +1503,11 @@ void GraphicsView::showRenameDialog()
  */
 void GraphicsView::manhattanizeItems()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Manhattanize by mouse");
+  mpModelWidget->beginMacro("Manhattanize by mouse");
   emit mouseManhattanize();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1516,11 +1516,11 @@ void GraphicsView::manhattanizeItems()
  */
 void GraphicsView::deleteItems()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Deleting by mouse");
+  mpModelWidget->beginMacro("Deleting by mouse");
   emit mouseDelete();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1529,11 +1529,11 @@ void GraphicsView::deleteItems()
  */
 void GraphicsView::duplicateItems()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Duplicate by mouse");
+  mpModelWidget->beginMacro("Duplicate by mouse");
   emit mouseDuplicate();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1542,11 +1542,11 @@ void GraphicsView::duplicateItems()
  */
 void GraphicsView::rotateClockwise()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Rotate clockwise by mouse");
+  mpModelWidget->beginMacro("Rotate clockwise by mouse");
   emit mouseRotateClockwise();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1555,11 +1555,11 @@ void GraphicsView::rotateClockwise()
  */
 void GraphicsView::rotateAntiClockwise()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by mouse");
+  mpModelWidget->beginMacro("Rotate anti clockwise by mouse");
   emit mouseRotateAntiClockwise();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1568,11 +1568,11 @@ void GraphicsView::rotateAntiClockwise()
  */
 void GraphicsView::flipHorizontal()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Flip horizontal by mouse");
+  mpModelWidget->beginMacro("Flip horizontal by mouse");
   emit mouseFlipHorizontal();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1581,11 +1581,11 @@ void GraphicsView::flipHorizontal()
  */
 void GraphicsView::flipVertical()
 {
-  mpModelWidget->getUndoStack()->beginMacro("Flip vertical by mouse");
+  mpModelWidget->beginMacro("Flip vertical by mouse");
   emit mouseFlipVertical();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
-  mpModelWidget->getUndoStack()->endMacro();
+  mpModelWidget->endMacro();
 }
 
 /*!
@@ -1843,7 +1843,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     foreach (Component *pComponent, mComponentsList) {
       if (pComponent->getOldPosition() != pComponent->pos()) {
         if (!beginMacro) {
-          mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
+          mpModelWidget->beginMacro("Move items by mouse");
           beginMacro = true;
         }
         Transformation oldTransformation = pComponent->mTransformation;
@@ -1858,7 +1858,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       if (pShapeAnnotation->getOldScenePosition() != pShapeAnnotation->scenePos()) {
         if (!beginMacro) {
-          mpModelWidget->getUndoStack()->beginMacro("Move items by mouse");
+          mpModelWidget->beginMacro("Move items by mouse");
           beginMacro = true;
         }
         QString oldAnnotation = pShapeAnnotation->getOMCShapeAnnotation();
@@ -1882,7 +1882,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     }
     // if we have started he undo stack macro then we should end it.
     if (beginMacro) {
-      mpModelWidget->getUndoStack()->endMacro();
+      mpModelWidget->endMacro();
     }
   }
   QGraphicsView::mouseReleaseEvent(event);
@@ -1962,81 +1962,81 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (event->key() == Qt::Key_Delete && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Deleting by key press");
+    mpModelWidget->beginMacro("Deleting by key press");
     emit keyPressDelete();
     mpModelWidget->updateClassAnnotationIfNeeded();
     mpModelWidget->updateModelText();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move up by key press");
+    mpModelWidget->beginMacro("Move up by key press");
     emit keyPressUp();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move shift up by key press");
+    mpModelWidget->beginMacro("Move shift up by key press");
     emit keyPressShiftUp();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move control up by key press");
+    mpModelWidget->beginMacro("Move control up by key press");
     emit keyPressCtrlUp();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move down by key press");
+    mpModelWidget->beginMacro("Move down by key press");
     emit keyPressDown();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move shift down by key press");
+    mpModelWidget->beginMacro("Move shift down by key press");
     emit keyPressShiftDown();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move control down by key press");
+    mpModelWidget->beginMacro("Move control down by key press");
     emit keyPressCtrlDown();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move left by key press");
+    mpModelWidget->beginMacro("Move left by key press");
     emit keyPressLeft();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move shift left by key press");
+    mpModelWidget->beginMacro("Move shift left by key press");
     emit keyPressShiftLeft();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move control left by key press");
+    mpModelWidget->beginMacro("Move control left by key press");
     emit keyPressCtrlLeft();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move right by key press");
+    mpModelWidget->beginMacro("Move right by key press");
     emit keyPressRight();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move shift right by key press");
+    mpModelWidget->beginMacro("Move shift right by key press");
     emit keyPressShiftRight();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Move control right by key press");
+    mpModelWidget->beginMacro("Move control right by key press");
     emit keyPressCtrlRight();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (controlModifier && event->key() == Qt::Key_A) {
     selectAll();
   } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Duplicate by key press");
+    mpModelWidget->beginMacro("Duplicate by key press");
     emit keyPressDuplicate();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Rotate clockwise by key press");
+    mpModelWidget->beginMacro("Rotate clockwise by key press");
     emit keyPressRotateClockwise();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Rotate anti clockwise by key press");
+    mpModelWidget->beginMacro("Rotate anti clockwise by key press");
     emit keyPressRotateAntiClockwise();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_H && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Flip horizontal by key press");
+    mpModelWidget->beginMacro("Flip horizontal by key press");
     emit keyPressFlipHorizontal();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_V && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->getUndoStack()->beginMacro("Flip vertical by key press");
+    mpModelWidget->beginMacro("Flip vertical by key press");
     emit keyPressFlipVertical();
-    mpModelWidget->getUndoStack()->endMacro();
+    mpModelWidget->endMacro();
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
     removeCurrentConnection();
   } else {
@@ -2957,6 +2957,8 @@ void ModelWidget::createModelWidgetComponents()
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     }
+    connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
+    connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
     pMainLayout->addWidget(mpEditor, 1);
     mCreateModelWidgetComponents = true;
   }
@@ -3033,6 +3035,9 @@ void ModelWidget::reDrawModelWidget()
     getCompositeModelConnections();
     // clear the undo stack
     mpUndoStack->clear();
+    if (mpEditor) {
+      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
+    }
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;
@@ -3065,6 +3070,9 @@ void ModelWidget::reDrawModelWidget()
     }
     // clear the undo stack
     mpUndoStack->clear();
+    if (mpEditor) {
+      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
+    }
     // announce the change.
     mpLibraryTreeItem->emitLoaded();
   }
@@ -3268,14 +3276,17 @@ void ModelWidget::updateClassAnnotationIfNeeded()
 }
 
 /*!
- * \brief ModelWidget::updateModelicaText
+ * \brief ModelWidget::updateModelText
  * Updates the Text of the class.
+ * \param updateText
  */
-void ModelWidget::updateModelText()
+void ModelWidget::updateModelText(bool updateText)
 {
   setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+  if (updateText) {
+    pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+  }
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
@@ -3308,6 +3319,9 @@ void ModelWidget::updateUndoRedoActions()
   } else if (mpDiagramGraphicsView && mpDiagramGraphicsView->isVisible()) {
     MainWindow::instance()->getUndoAction()->setEnabled(mpUndoStack->canUndo());
     MainWindow::instance()->getRedoAction()->setEnabled(mpUndoStack->canRedo());
+  } else if (mpEditor && mpEditor->isVisible()) {
+    MainWindow::instance()->getUndoAction()->setEnabled(mpEditor->getPlainTextEdit()->document()->isUndoAvailable());
+    MainWindow::instance()->getRedoAction()->setEnabled(mpEditor->getPlainTextEdit()->document()->isRedoAvailable());
   } else {
     MainWindow::instance()->getUndoAction()->setEnabled(false);
     MainWindow::instance()->getRedoAction()->setEnabled(false);
@@ -3951,6 +3965,30 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
                                                           Helper::errorLevel));
     return false;
   }
+}
+
+/*!
+ * \brief ModelWidget::beginMacro
+ * Tells the undo stack to consider all coming commands as one.\n
+ * Also tells the text editor to mark all changes as one.
+ * \param text
+ */
+void ModelWidget::beginMacro(const QString &text)
+{
+  mpUndoStack->beginMacro(text);
+  QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
+  textCursor.beginEditBlock();
+}
+
+/*!
+ * \brief ModelWidget::endMacro
+ * Tells the undo stack and text editor that the batch editing is finished.
+ */
+void ModelWidget::endMacro()
+{
+  mpUndoStack->endMacro();
+  QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
+  textCursor.endEditBlock();
 }
 
 /*!

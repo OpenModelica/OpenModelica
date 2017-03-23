@@ -1421,6 +1421,14 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     // ctrl+k is pressed.
     mpBaseEditor->toggleCommentSelection();
     return;
+  } else if (pEvent->matches(QKeySequence::Undo)) {
+    // ctrl+z is pressed.
+    MainWindow::instance()->undo();
+    return;
+  } else if (pEvent->matches(QKeySequence::Redo)) {
+    // ctrl+y is pressed.
+    MainWindow::instance()->redo();
+    return;
   } else if (shiftModifier && pEvent->key() == Qt::Key_Home) {
     handleHomeKey(true);
     return;
@@ -1776,7 +1784,15 @@ void BaseEditor::createActions()
  */
 QMenu* BaseEditor::createStandardContextMenu()
 {
-  QMenu *pMenu = mpPlainTextEdit->createStandardContextMenu();
+  /* ticket:4334 & 4344
+   * It's not possible to remove QPlainTextEdit undo/redo actions from standard context menu.
+   * So don't use the standard context menu.
+   * Added our custom undo/redo actions to the custom context menu.
+   */
+//  QMenu *pMenu = mpPlainTextEdit->createStandardContextMenu();
+  QMenu *pMenu = new QMenu;
+  pMenu->addAction(MainWindow::instance()->getUndoAction());
+  pMenu->addAction(MainWindow::instance()->getRedoAction());
   pMenu->addSeparator();
   pMenu->addAction(mpFindReplaceAction);
   pMenu->addAction(mpClearFindReplaceTextsAction);

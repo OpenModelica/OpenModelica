@@ -1533,7 +1533,7 @@ void SimulationDialog::simulate()
       }
       if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
           mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->getUndoStack()->beginMacro("Simulation settings");
+        mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
       }
       if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
         saveExperimentAnnotation();
@@ -1543,7 +1543,7 @@ void SimulationDialog::simulate()
       }
       if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
           mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->getUndoStack()->endMacro();
+        mpLibraryTreeItem->getModelWidget()->endMacro();
       }
       if (mpSimulateCheckBox->isChecked()) {
         performSimulation();
