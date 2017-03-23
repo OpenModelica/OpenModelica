@@ -3337,6 +3337,8 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       moveClassTop();
     } else if (controlModifier && event->key() == Qt::Key_PageDown && isModelicaLibraryType && !isTopLevel) {
       moveClassBottom();
+    } else if (controlModifier && event->key() == Qt::Key_C) {
+      QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
         unloadClass();
