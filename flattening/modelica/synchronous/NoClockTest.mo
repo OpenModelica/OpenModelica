@@ -24,7 +24,9 @@ end NoClockTest;
 //   output Integer yy[2];
 // equation
 //   x = /*Real*/(noClock(3));
-//   y = noClock({z[1], z[2]});
-//   yy = noClock({3, 4});
+//   y[1] = noClock(z[1]);
+//   y[2] = noClock(z[2]);
+//   yy[1] = noClock(3);
+//   yy[2] = noClock(4);
 // end NoClockTest;
 // endResult

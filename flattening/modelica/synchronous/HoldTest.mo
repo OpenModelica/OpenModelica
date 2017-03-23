@@ -20,6 +20,7 @@ end HoldTest;
 //   Real z[2];
 // equation
 //   x = /*Real*/(hold(3));
-//   y = hold({z[1], z[2]});
+//   y[1] = hold(z[1]);
+//   y[2] = hold(z[2]);
 // end HoldTest;
 // endResult

@@ -13,6 +13,7 @@ Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
 DID.mos \
+TestClockParameterEvaluation.mos \
 
 
 # test that currently fail. Move up when fixed.
