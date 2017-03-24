@@ -264,10 +264,10 @@ void ModelicaEditor::showContextMenu(QPoint point)
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.
+ * \param useInserText
  */
-void ModelicaEditor::setPlainText(const QString &text)
+void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
 {
-  static int init = 0;
   QMap<int, int> leadingSpacesMap;
   QString contents = text;
   // store and remove leading spaces
@@ -278,13 +278,14 @@ void ModelicaEditor::setPlainText(const QString &text)
   // Only set the text when it is really new
   if (contents != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
-    if (!init) {
-      init = 1;
+    if (!useInserText) {
       mpPlainTextEdit->setPlainText(contents);
     } else {
       QTextCursor textCursor (mpPlainTextEdit->document());
+      textCursor.beginEditBlock();
       textCursor.select(QTextCursor::Document);
       textCursor.insertText(contents);
+      textCursor.endEditBlock();
     }
     if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
       storeLeadingSpaces(leadingSpacesMap);

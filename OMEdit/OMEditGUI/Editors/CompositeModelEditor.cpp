@@ -1252,22 +1252,23 @@ void CompositeModelEditor::showContextMenu(QPoint point)
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.
  * \param text the string to set.
+ * \param useInserText
  */
-void CompositeModelEditor::setPlainText(const QString &text)
+void CompositeModelEditor::setPlainText(const QString &text, bool useInserText)
 {
-  static int init = 0;
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
     mXmlDocument.setContent(text);
     updateAllOrientations();
     // use the text from mXmlDocument so that we can map error to line numbers. We don't care about users formatting in the file.
-    if (!init) {
-      init = 1;
+    if (!useInserText) {
       mpPlainTextEdit->setPlainText(mXmlDocument.toString());
     } else {
       QTextCursor textCursor (mpPlainTextEdit->document());
+      textCursor.beginEditBlock();
       textCursor.select(QTextCursor::Document);
       textCursor.insertText(mXmlDocument.toString());
+      textCursor.endEditBlock();
     }
     mForceSetPlainText = false;
     mLastValidText = text;

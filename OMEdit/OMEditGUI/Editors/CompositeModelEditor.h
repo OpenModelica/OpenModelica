@@ -109,7 +109,7 @@ private slots:
   virtual void showContextMenu(QPoint point);
   void updateAllOrientations();
 public slots:
-  void setPlainText(const QString &text);
+  void setPlainText(const QString &text, bool useInserText = true);
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   virtual void toggleCommentSelection() {}
   void alignInterfaces(QString fromSubModel, QString toSubModel, bool showError = true);

@@ -1502,6 +1502,12 @@ void MainWindow::undo()
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable())) {
     pModelWidget->getEditor()->setForceSetPlainText(true);
     pModelWidget->getEditor()->getPlainTextEdit()->document()->undo();
+    if (pModelWidget->getEditor()->isVisible() &&
+        pModelWidget->getEditor()->getPlainTextEdit()->document()->availableUndoSteps() + 1 == pModelWidget->getUndoStack()->index()) {
+      pModelWidget->clearSelection();
+      pModelWidget->getUndoStack()->undo();
+      pModelWidget->updateClassAnnotationIfNeeded();
+    }
     pModelWidget->getEditor()->setForceSetPlainText(false);
   }
 }
@@ -1524,6 +1530,12 @@ void MainWindow::redo()
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable())) {
     pModelWidget->getEditor()->setForceSetPlainText(true);
     pModelWidget->getEditor()->getPlainTextEdit()->document()->redo();
+    if (pModelWidget->getEditor()->isVisible() &&
+        pModelWidget->getEditor()->getPlainTextEdit()->document()->availableRedoSteps() == pModelWidget->getUndoStack()->index()) {
+      pModelWidget->clearSelection();
+      pModelWidget->getUndoStack()->redo();
+      pModelWidget->updateClassAnnotationIfNeeded();
+    }
     pModelWidget->getEditor()->setForceSetPlainText(false);
   }
 }
