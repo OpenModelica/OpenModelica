@@ -56,7 +56,15 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 		double* x = new double[_dimSys];
 
 
-
+		// alternative calculation of huge values.
+		// _algLoop->getRHS(_hugeabsolutevalues);
+		// for(int i=0;i<_dimSys;i++){
+			// _hugeabsolutevalues[i]= ((_hugeabsolutevalues[i]==0.0) ? 1000000.0 : (1000000.0*std::abs(_hugeabsolutevalues[i])));
+		// }
+		// with call to
+		// for(int i=0;i<_dimSys;i++){
+			// rhs[i] *= ((rhs[i]>0.0) ? _hugeabsolutevalues[i] : -_hugeabsolutevalues[i]);
+		// }
 
 
 
@@ -187,7 +195,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		}
 	}
 
-	if (_generateoutput) {
+	if (_generateoutput){
 		std::cout << "we are at position x=(";
 		for (int i=0;i<_dimSys;i++){
 			std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << x(i) << " ";
@@ -218,7 +226,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 	}
 
 
-	if (_generateoutput) {
+	if (_generateoutput){
 		std::cout << "the right hand side is given by (";
 		for (int i=0;i<_dimSys;i++){
 			std::cout << rhs[i] << " ";
@@ -227,6 +235,10 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		std::cout << std::endl;
 	}
 
+
+	if (_generateoutput){
+		std::cout << "the right hand side seen by NOX is given by (";
+	}
 	for (int i=0;i<_dimSys;i++){
 
 		if (_useFunctionValueScaling){
@@ -234,10 +246,15 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		}else{
 			f(i)=rhs[i];
 		}
-
-
+		if (f(i)>=std::numeric_limits<double>::max()) f(i)=1.0e6;
+		if (f(i)<=-std::numeric_limits<double>::max()) f(i)=-1.0e6;
+		if (!(f(i)==f(i))) f(i)=1.0e6;
+		if (_generateoutput) std::cout << f(i) << " ";
 	}
-
+	if (_generateoutput){
+		std::cout << ")" << std::endl;
+		std::cout << std::endl;
+	}
 	delete [] rhs;
 	delete [] xp;
 	return true;
@@ -258,14 +275,12 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 	computeF(f2,x);
 
 	if (_generateoutput){
-		std::cout << "we are at position x=(";
+		std::cout << "we are at simtime " << _algLoop->getSimTime() << " and at position x=(";
 		for (int i=0;i<_dimSys;i++){
 			std::cout << x(i) << " ";
 		}
 		std::cout << ")" << std::endl;
 		std::cout << std::endl;
-
-		std::cout << "the Jacobian is given by " << std::endl;
 	}
 
 	for (int i=0;i<_dimSys;i++){
@@ -274,14 +289,21 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 		computeF(f1,xplushei);
 		for (int j=0;j<_dimSys;j++){
 			J(j,i) = (f1(j)-f2(j))/(xplushei(i)-x(i));//=\partial_i f_j
-			if (_generateoutput) std::cout << J(j,i) << " ";
 		}
-		if (_generateoutput) std::cout << std::endl;
-
 		xplushei(i)=x(i);
 	}
 
-	if (_generateoutput) std::cout << std::endl << "done computing Jacobian" << std::endl;
+
+	if (_generateoutput){
+		std::cout << "the Jacobian is given by " << std::endl;
+		for (int i=0;i<_dimSys;i++){
+			for (int j=0;j<_dimSys;j++){
+				std::cout << J(j,i) << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl << "done computing Jacobian" << std::endl;
+	}
 
 	return true;
 
@@ -420,13 +442,22 @@ bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::L
 			//This is Fixed Point Homotopy, so we take f(x)=x-x_0.
 			f.update(1.0,x,-1.0,getInitialGuess());
 			break;
-		case 1:
+		case 1://This is Fixed Point Homotopy, so we take f(x)=x_0-x.
+			f.update(-1.0,x,1.0,getInitialGuess());
+			break;
+		case 2:
 			//This is Newton Homotopy, so we take f(x)=F(x)-F(x_0).
 			computeActualF(f,x);
 			computeActualF(zeroandtempvec,getInitialGuess());
 			f.update(-1.0,zeroandtempvec,1.0);
 			break;
-		case 2:
+		case 3:
+			//This is Newton Homotopy, so we take f(x)=F(x_0)-F(x).
+			computeActualF(f,x);
+			computeActualF(zeroandtempvec,getInitialGuess());
+			f.update(1.0,zeroandtempvec,-1.0);
+			break;
+		case 4:
 			//This is Affine Homotopy, so we take f(x)=F'(x_0)(x-x_0)=F'(x_0)x-F'(x_0)x_0
 			if(!_evaluatedJacobianAtInitialGuess){
 			_lambda=1.0;//setting _lambda such that computeJacobian returns F'(x_0) instead of _lambda*F(x)+(1-_lambda)*f(x)
@@ -436,8 +467,18 @@ bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::L
 			}
 			f.update(1.0,applyMatrixtoVector(*_J,x),-1.0,applyMatrixtoVector(*_J,getInitialGuess()));
 			break;
+		case 5:
+			//This is Affine Homotopy, so we take f(x)=F'(x_0)(x-x_0)=F'(x_0)x_0-F'(x_0)x
+			if(!_evaluatedJacobianAtInitialGuess){
+			_lambda=1.0;//setting _lambda such that computeJacobian returns F'(x_0) instead of _lambda*F(x)+(1-_lambda)*f(x)
+				_evaluatedJacobianAtInitialGuess=true;
+				computeJacobian(*_J,getInitialGuess());
+			_lambda=templambda;
+			}
+			f.update(-1.0,applyMatrixtoVector(*_J,x),1.0,applyMatrixtoVector(*_J,getInitialGuess()));
+			break;
 		default:
-			std::cout << "We are at AlgLoop " << _algLoop->getEquationIndex() << " and simtime " << _algLoop->getSimTime() << std::endl;
+			if (_generateoutput) std::cout << "We are at AlgLoop " << _algLoop->getEquationIndex() << " and simtime " << _algLoop->getSimTime() << std::endl;
 			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Running out of homotopy methods!");
 			break;
 	}

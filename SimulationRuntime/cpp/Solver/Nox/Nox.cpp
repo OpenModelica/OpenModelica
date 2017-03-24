@@ -308,9 +308,12 @@ void Nox::solve()
 		try{
 			//std::cout << "solving..." << std::endl;
 			status = _solver->solve();
-			LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
-			LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
-			LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
+			if(!((dynamic_cast<const std::stringstream &>(*output)).str().empty())){
+				LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
+				LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
+				LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
+				//(dynamic_cast<const std::stringstream &>(*output)).str().clear();//this does nothing. Also, using std::cout somehow miraculously disables the logging.
+			}
 			//std::cout << "done!" << std::endl;
 		}
 		catch(const std::exception &ex)
@@ -596,7 +599,7 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	stepperList.set("Max Value", 1.0);             // Must set
 	stepperList.set("Min Value", 0.0);             // Must set
 	//stepperList.set("Max Steps", 50);                    // Should set
-	stepperList.set("Max Nonlinear Iterations", 100); // Should set
+	stepperList.set("Max Nonlinear Iterations", 200); // Should set
 	//stepperList.set("Compute Eigenvalues",false);        // Default
 	// Create bifurcation sublist
 	//Teuchos::ParameterList& bifurcationList = locaParamsList.sublist("Bifurcation");
@@ -609,8 +612,8 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	// Create step size sublist
 	Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
 	stepSizeList.set("Method", "Adaptive");             // Default
-	stepSizeList.set("Initial Step Size", 0.1);   // Should set
-	stepSizeList.set("Min Step Size", 1.0e-3);    // Should set
+	stepSizeList.set("Initial Step Size", 1.0e-3);   // Should set
+	stepSizeList.set("Min Step Size", 1.0e-9);    // Should set
 	stepSizeList.set("Max Step Size", 1.0);      // Should set
 
 	// Create the "Solver" parameters sublist to be used with NOX Solvers
@@ -664,9 +667,11 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	try{
 		// Perform continuation run
 		LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
-		LOGGER_WRITE_BEGIN("LOCA: ",LC_NLS,LL_DEBUG);
-		LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
-		LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
+		if(!((dynamic_cast<const std::stringstream &>(*output)).str().empty())){
+			LOGGER_WRITE_BEGIN("LOCA: ",LC_NLS,LL_DEBUG);
+			LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*output)).str(),LC_NLS,LL_DEBUG);
+			LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
+		}
 		// Check for convergence
 		if (status != LOCA::Abstract::Iterator::Finished){
 			if(_generateoutput) std::cout << "Stepper failed to converge!" << std::endl;
