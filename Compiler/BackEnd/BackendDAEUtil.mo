@@ -2739,11 +2739,19 @@ public function traversingIncidenceRowExpFinderBaseClock "author: lochel
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
-      list<Integer> p;
+      list<Integer> p, p2;
       AvlSetInt.Tree pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
+
+    case (DAE.CREF(componentRef=cr), (vars, pa))
+      equation
+        (_, p) = BackendVariable.getVar(cr, vars);
+        (_, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+        pa = AvlSetInt.addList(pa, p);
+        pa = AvlSetInt.addList(pa, p2);
+      then (inExp, true, (vars, pa));
 
     case (DAE.CREF(componentRef=cr), (vars, pa))
       equation
@@ -2776,10 +2784,18 @@ public function traversingIncidenceRowExpFinderSubClock "author: lochel
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
-      list<Integer> p;
+      list<Integer> p, p2;
       AvlSetInt.Tree pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
+
+    case (DAE.CREF(componentRef=cr), (vars, pa))
+      equation
+        (_, p) = BackendVariable.getVar(cr, vars);
+        (_, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+        res = AvlSetInt.addList(pa, p);
+        res = AvlSetInt.addList(res, p2);
+      then (inExp, true, (vars, res));
 
     case (DAE.CREF(componentRef=cr), (vars, pa))
       equation
@@ -2817,7 +2833,7 @@ public function traversingincidenceRowExpFinder "
 algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
-      list<Integer> p;
+      list<Integer> p, p2;
       AvlSetInt.Tree pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
@@ -2827,11 +2843,22 @@ algorithm
       Integer i;
       String str;
 
+    // var and var.start
+    case (e as DAE.CREF(componentRef=cr), (vars, pa))
+      equation
+        (varslst, p) = BackendVariable.getVar(cr, vars);
+        (varslst, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+
+        res = incidenceRowExp1(varslst, p, pa, 0);
+        res = incidenceRowExp1(varslst, p2, res, 0);
+      then (e, true, (vars, res));
+
+    // only var
     case (e as DAE.CREF(componentRef = cr),(vars,pa))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1(varslst,p,pa,0);
-      then (e,true,(vars,res));
+      then (e, true, (vars,res));
 
     case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))
       equation
@@ -2944,11 +2971,20 @@ algorithm
         res = incidenceRowExp1withInput(varslst,p,pa,0);
       then (inExp,false,(vars,res));
 
+    case (DAE.CREF(componentRef=cr), (vars, pa))
+      equation
+        (varslst, p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1withInput(varslst, p, pa, 0);
+
+        (varslst, p) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+        res = incidenceRowExp1withInput(varslst, p, res, 0);
+      then (inExp, true, (vars, res));
+
     case (DAE.CREF(componentRef = cr),(vars,pa))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1withInput(varslst,p,pa,0);
-      then (inExp,false,(vars,res));
+      then (inExp, true, (vars, res));
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))
       equation

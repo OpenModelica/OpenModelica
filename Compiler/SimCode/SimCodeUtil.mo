@@ -7287,7 +7287,7 @@ protected function extractVarsFromList
   input BackendDAE.Variables aliasVars, vars;
   input array<HashSet.HashSet> hs;
 algorithm
-  if if ComponentReference.isPreCref(var.varName) then false else not BaseHashSet.has(var.varName, arrayGet(hs,1)) then
+  if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, arrayGet(hs,1)) then
     /* ignore variable, since they are treated by kind in the codegen */
     if not BackendVariable.isAlgebraicOldState(var) then
       extractVarFromVar(var, aliasVars, vars, simVars, hs);

@@ -4060,7 +4060,7 @@ end contextIteratorName;
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
   case WILD(__) then ''
-  else crefToCStr(cr, 0, false)
+  else crefToCStr(cr, 0, false, false)
 end cref;
 
 /* public */ template crefOld(ComponentRef cr, Integer ix)
@@ -4071,7 +4071,7 @@ end cref;
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[<%ix%>]->timeValue"
   case WILD(__) then ''
-  else crefToCStr(cr, ix, false)
+  else crefToCStr(cr, ix, false, false)
 end crefOld;
 
 /* public */ template crefPre(ComponentRef cr)
@@ -4080,7 +4080,7 @@ end crefOld;
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValueOld" // ??? Should
-  else crefToCStr(cr, 0, true)
+  else crefToCStr(cr, 0, true, false)
 end crefPre;
 
 /* public */ template crefDefine(ComponentRef cr)
@@ -4094,13 +4094,15 @@ end crefPre;
   else "$P" + crefToCStrDefine(cr)
 end crefDefine;
 
-template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre)
+template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
  "Helper function to cref."
 ::=
   match cr
   case CREF_QUAL(ident="$PRE", subscriptLst={}) then
     (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStr(cr)%>')
-    else crefToCStr(componentRef, ix, true))
+    else crefToCStr(componentRef, ix, true, isStart))
+  case CREF_QUAL(ident="$START") then
+    crefToCStr(componentRef, ix, isPre, true)
   else match cref2simvar(cr, getSimCode())
   case SIMVAR(varKind=ALG_STATE_OLD(), index=index)
   then
@@ -4114,7 +4116,7 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre)
     if intEq(ix,0) then (if isPre then "$P$PRE")+crefDefine(cr)
     else '_<%if isPre then "$P$PRE"%><%crefDefine(cr)%>(<%ix%>)'
   case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStr(name)%>')
-  case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre)%>[<%index%>] /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */'
+  case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre, isStart)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
@@ -4160,7 +4162,7 @@ template contextArrayCref(ComponentRef cr, Context context)
   match context
   case FUNCTION_CONTEXT(__) then "_" + arrayCrefStr(cr)
   case PARALLEL_FUNCTION_CONTEXT(__) then "_" + arrayCrefStr(cr)
-  else crefToCStr(cr, 0, false)
+  else crefToCStr(cr, 0, false, false)
 end contextArrayCref;
 
 template arrayCrefStr(ComponentRef cr)
@@ -6932,14 +6934,14 @@ template crefShortType(ComponentRef cr) "template crefType
   end match
 end crefShortType;
 
-template varArrayNameValues(SimVar var, Integer ix, Boolean isPre)
+template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isStart)
 ::=
   match var
   case SIMVAR(varKind=PARAM())
   case SIMVAR(varKind=OPT_TGRID())
-  then 'data->simulationInfo-><%crefShortType(name)%>Parameter'
-  case SIMVAR(varKind=EXTOBJ()) then 'data->simulationInfo->extObjs'
-  case SIMVAR(__) then 'data-><%if isPre then "simulationInfo" else 'localData[<%ix%>]'%>-><%crefShortType(name)%>Vars<%if isPre then "Pre"%>'
+  then 'data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]'
+  case SIMVAR(varKind=EXTOBJ()) then 'data->simulationInfo->extObjs[<%index%>]'
+  case SIMVAR(__) then '<%if isStart then '<%varAttributes(var)%>.start' else if isPre then 'data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>] /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */' else 'data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>] /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */'%>'
 end varArrayNameValues;
 
 template varArrayName(SimVar var)
@@ -6961,7 +6963,7 @@ template varAttributes(SimVar var)
   match var
   case SIMVAR(index=-1) then crefAttributes(name) // input variable?
   case SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */'
 end varAttributes;
 
 template crefAttributes(ComponentRef cr)
