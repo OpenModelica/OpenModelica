@@ -97,7 +97,6 @@ public:
 private:
   QString mLastValidText;
   bool mTextChanged;
-  bool mForceSetPlainText;
   XMLDocument mXmlDocument;
 
   bool existInterfacePoint(QString subModelName, QString interfaceName);

@@ -271,6 +271,14 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Com
                                                                              const Transformation &newTransformation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
+  pComponent->emitTransformChanging(this);
+  new UpdateComponentTransformationsCommandInternal(pComponent, oldTransformation, newTransformation, this);
+}
+
+UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::UpdateComponentTransformationsCommandInternal
+(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
   mpComponent = pComponent;
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
@@ -278,10 +286,10 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Com
 }
 
 /*!
- * \brief UpdateComponentTransformationsCommand::redo
- * Redo the UpdateComponentTransformationsCommand.
+ * \brief UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::redo
+ * Redo the UpdateComponentTransformationsCommandInternal.
  */
-void UpdateComponentTransformationsCommand::redo()
+void UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::redo()
 {
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -295,10 +303,10 @@ void UpdateComponentTransformationsCommand::redo()
 }
 
 /*!
- * \brief UpdateComponentTransformationsCommand::undo
- * Undo the UpdateComponentTransformationsCommand.
+ * \brief UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::undo
+ * Undo the UpdateComponentTransformationsCommandInternal.
  */
-void UpdateComponentTransformationsCommand::undo()
+void UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::undo()
 {
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);

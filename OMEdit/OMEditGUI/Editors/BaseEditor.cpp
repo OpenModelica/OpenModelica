@@ -1697,6 +1697,7 @@ void BaseEditor::initialize()
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
   createActions();
+  mForceSetPlainText = false;
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

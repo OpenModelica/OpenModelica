@@ -60,7 +60,6 @@ public:
 private:
   QString mLastValidText;
   bool mTextChanged;
-  bool mForceSetPlainText;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

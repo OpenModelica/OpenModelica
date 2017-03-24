@@ -40,6 +40,7 @@
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
+#include <QUndoCommand>
 
 class Label;
 class Component;
@@ -92,6 +93,8 @@ public:
   Component* getEndComponent() {return mpEndComponent;}
   void setEndComponentName(QString name) {mEndComponentName = name;}
   QString getEndComponentName() {return mEndComponentName;}
+  void setOldAnnotation(QString oldAnnotation) {mOldAnnotation = oldAnnotation;}
+  QString getOldAnnotation() {return mOldAnnotation;}
   void setDelay(QString delay) {mDelay = delay;}
   QString getDelay() {return mDelay;}
   void setZf(QString zf) {mZf = zf;}
@@ -112,6 +115,7 @@ protected:
   QString mStartComponentName;
   Component *mpEndComponent;
   QString mEndComponentName;
+  QString mOldAnnotation;
   // CompositeModel attributes
   QString mDelay;
   QString mZf;
@@ -120,6 +124,7 @@ protected:
 public slots:
   void handleComponentMoved();
   void updateConnectionAnnotation();
+  void updateConnectionTransformation(QUndoCommand *pUndoCommand);
   void duplicate();
 };
 

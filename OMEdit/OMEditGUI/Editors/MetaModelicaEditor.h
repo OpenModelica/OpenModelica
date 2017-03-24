@@ -44,8 +44,6 @@ class MetaModelicaEditor : public BaseEditor
 public:
   MetaModelicaEditor(QWidget *pParent);
   void setPlainText(const QString &text);
-private:
-  bool mForceSetPlainText;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

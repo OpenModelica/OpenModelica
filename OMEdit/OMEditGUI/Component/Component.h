@@ -227,6 +227,7 @@ public:
   void emitAdded();
   void emitTransformChange() {emit transformChange();}
   void emitTransformHasChanged();
+  void emitTransformChanging(QUndoCommand *pUndoCommand) {emit transformChanging(pUndoCommand);}
   void emitChanged();
   void emitDeleted();
   void componentParameterHasChanged();
@@ -303,6 +304,7 @@ signals:
   void added();
   void transformChange();
   void transformHasChanged();
+  void transformChanging(QUndoCommand *pUndoCommand);
   void displayTextChanged();
   void changed();
   void deleted();

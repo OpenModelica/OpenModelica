@@ -57,7 +57,7 @@ QString XMLDocument::toString() const
 
 
 CompositeModelEditor::CompositeModelEditor(QWidget *pParent)
-  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
+  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
 {
   mXmlDocument = XMLDocument(this);
 }

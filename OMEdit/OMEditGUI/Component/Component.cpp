@@ -1036,7 +1036,8 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
   // handle component position, rotation and scale changes
   connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()), Qt::UniqueConnection);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    connect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()), Qt::UniqueConnection);
+    connect(this, SIGNAL(transformChanging(QUndoCommand*)), pConnectorLineAnnotation,
+            SLOT(updateConnectionTransformation(QUndoCommand*)), Qt::UniqueConnection);
   }
 }
 
@@ -1044,7 +1045,7 @@ void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation
 {
   disconnect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    disconnect(this, SIGNAL(transformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
+    disconnect(this, SIGNAL(transformChanging(QUndoCommand*)), pConnectorLineAnnotation, SLOT(updateConnectionTransformation(QUndoCommand*)));
   }
 }
 

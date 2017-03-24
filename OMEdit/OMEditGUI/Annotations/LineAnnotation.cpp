@@ -42,6 +42,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
+  setOldAnnotation("");
   setDelay("");
   setZf("");
   setZfr("");
@@ -63,6 +64,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
+  setOldAnnotation("");
   setDelay("");
   setZf("");
   setZfr("");
@@ -106,6 +108,7 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   // set the start component
   setStartComponent(pStartComponent);
   setEndComponent(0);
+  setOldAnnotation("");
 
   ComponentInfo *pInfo = getStartComponent()->getComponentInfo();
   bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
@@ -142,6 +145,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   setStartComponent(pStartComponent);
   // set the end component
   setEndComponent(pEndComponent);
+  setOldAnnotation("");
   setDelay("");
   setZf("");
   setZfr("");
@@ -165,6 +169,7 @@ LineAnnotation::LineAnnotation(Component *pParent)
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
+  setOldAnnotation("");
   setDelay("");
   setZf("");
   setZfr("");
@@ -193,6 +198,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
+  setOldAnnotation("");
   setDelay("");
   setZf("");
   setZfr("");
@@ -719,6 +725,7 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   setStartComponentName(pLineAnnotation->getStartComponentName());
   setEndComponent(pLineAnnotation->getEndComponent());
   setEndComponentName(pLineAnnotation->getEndComponentName());
+  setOldAnnotation(pLineAnnotation->getOldAnnotation());
   setDelay(pLineAnnotation->getDelay());
   setZf(pLineAnnotation->getZf());
   setZfr(pLineAnnotation->getZfr());
@@ -811,6 +818,12 @@ void LineAnnotation::updateConnectionAnnotation()
     pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
                                 mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
   }
+}
+
+void LineAnnotation::updateConnectionTransformation(QUndoCommand *pUndoCommand)
+{
+  assert(!mOldAnnotation.isEmpty());
+  new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation(), pUndoCommand);
 }
 
 /*!

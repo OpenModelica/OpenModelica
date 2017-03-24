@@ -42,8 +42,6 @@ class TextEditor : public BaseEditor
 public:
   TextEditor(QWidget *pParent);
   void setPlainText(const QString &text);
-private:
-  bool mForceSetPlainText;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

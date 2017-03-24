@@ -1755,6 +1755,10 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       pShapeAnnotation->setOldScenePosition(pShapeAnnotation->scenePos());
     }
+    // save annotations of all connections
+    foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+      pConnectionLineAnnotation->setOldAnnotation(pConnectionLineAnnotation->getOMCShapeAnnotation());
+    }
   }
   // if some item is clicked
   if (Component *pComponent = connectorComponentAtPosition(event->pos())) {
@@ -3987,8 +3991,10 @@ void ModelWidget::beginMacro(const QString &text)
 void ModelWidget::endMacro()
 {
   mpUndoStack->endMacro();
+  mpEditor->setForceSetPlainText(true);
   QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
   textCursor.endEditBlock();
+  mpEditor->setForceSetPlainText(false);
 }
 
 /*!

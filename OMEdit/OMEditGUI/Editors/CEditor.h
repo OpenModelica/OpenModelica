@@ -45,8 +45,6 @@ class CEditor : public BaseEditor
 public:
   CEditor(QWidget *pParent);
   void setPlainText(const QString &text);
-private:
-  bool mForceSetPlainText;
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
