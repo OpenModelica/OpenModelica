@@ -447,6 +447,9 @@ protected:
   virtual void closeEvent(QCloseEvent *event);
 };
 
+
+void addCloseActionsToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
+
 class ModelWidgetContainer : public QMdiArea
 {
   Q_OBJECT

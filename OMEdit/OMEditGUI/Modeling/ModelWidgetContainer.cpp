@@ -4933,6 +4933,18 @@ void ModelWidget::closeEvent(QCloseEvent *event)
   mpModelWidgetContainer->removeSubWindow(this);
 }
 
+/*!
+ * \brief addCloseActionsToSubWindowSystemMenu
+ * Adds the "Close All Windows" and "Close All Windows But This" actions to QMdiSubWindow system menu.
+ */
+void addCloseActionsToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow)
+{
+  /* ticket:3295 Add the "Close All Windows" and "Close All Windows But This" to system menu. */
+  QMenu *pMenu = pMdiSubWindow->systemMenu();
+  pMenu->addAction(MainWindow::instance()->getCloseAllWindowsAction());
+  pMenu->addAction(MainWindow::instance()->getCloseAllWindowsButThisAction());
+}
+
 ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   : QMdiArea(pParent), mPreviousViewType(StringHandler::NoView), mShowGridLines(true)
 {
@@ -4994,6 +5006,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   } else {
     int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
+    addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
     if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       pModelWidget->loadDiagramView();

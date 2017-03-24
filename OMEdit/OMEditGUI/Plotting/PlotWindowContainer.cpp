@@ -167,6 +167,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setXLabel(QString("time [%1]").arg(pPlotWindow->getTimeUnit()));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plot-window.svg"));
     pPlotWindow->show();
     if (maximized) {
@@ -193,6 +194,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
   }
@@ -212,6 +214,7 @@ void PlotWindowContainer::addAnimationWindow(bool maximized)
   AnimationWindow *pAnimationWindow = new AnimationWindow(this);
   pAnimationWindow->setWindowTitle(getUniqueName("Animation : "));
   QMdiSubWindow *pSubWindow = addSubWindow(pAnimationWindow);
+  addCloseActionsToSubWindowSystemMenu(pSubWindow);
   pSubWindow->setWindowIcon(QIcon(":/Resources/icons/animation.svg"));
   pAnimationWindow->show();
   if (maximized) {

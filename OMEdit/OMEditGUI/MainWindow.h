@@ -142,6 +142,8 @@ public:
   QAction* getResetZoomAction() {return mpResetZoomAction;}
   QAction* getZoomInAction() {return mpZoomInAction;}
   QAction* getZoomOutAction() {return mpZoomOutAction;}
+  QAction* getCloseAllWindowsAction() {return mpCloseAllWindowsAction;}
+  QAction* getCloseAllWindowsButThisAction() {return mpCloseAllWindowsButThisAction;}
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
