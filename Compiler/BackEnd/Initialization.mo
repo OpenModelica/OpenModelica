@@ -118,10 +118,10 @@ algorithm
     execStat("inlineWhenForInitialization (initialization)");
 
     (dae, initVars, outPrimaryParameters, outAllPrimaryParameters, outGlobalKnownVars) := selectInitializationVariablesDAE(dae);
-    // if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
-      // BackendDump.dumpVarList(outPrimaryParameters, "selected primary parameters");
-      // BackendDump.dumpVarList(outAllPrimaryParameters, "selected all primary parameters");
-    // end if;
+    //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
+    //  BackendDump.dumpVarList(outPrimaryParameters, "selected primary parameters");
+    //  BackendDump.dumpVarList(outAllPrimaryParameters, "selected all primary parameters");
+    //end if;
     execStat("selectInitializationVariablesDAE (initialization)");
 
     hs := collectPreVariables(dae);
@@ -177,8 +177,7 @@ algorithm
     // split the initial system into independend subsystems
     initdae := BackendDAE.DAE({initsyst}, shared);
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
-      print(stringAppendList({"\ncreated initial system:\n\n"}));
-      BackendDump.printBackendDAE(initdae);
+      BackendDump.dumpBackendDAE(initdae, "created initial system");
     end if;
 
     if Flags.isSet(Flags.PARTITION_INITIALIZATION) then
@@ -188,8 +187,7 @@ algorithm
     end if;
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
-      print(stringAppendList({"\npartitioned initial system:\n\n"}));
-      BackendDump.printBackendDAE(initdae);
+      BackendDump.dumpBackendDAE(initdae, "partitioned initial system");
     end if;
     // initdae := BackendDAE.DAE({initsyst}, shared);
 

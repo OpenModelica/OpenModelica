@@ -6354,8 +6354,7 @@ algorithm
       // startValueEquationsTmp2 = listAppend(startValueEquationsTmp2, startValueEquationsTmp);
 
       (simeqns1, uniqueEqIndex) = List.mapFold(startValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
-    then
-      ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
+    then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
       Error.addInternalError("function createStartValueEquations failed", sourceInfo());

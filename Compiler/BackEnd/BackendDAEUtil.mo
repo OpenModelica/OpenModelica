@@ -2307,6 +2307,7 @@ algorithm
       then varIxs;
     else {};
   end matchcontinue;
+
   (outIntegerLst,rowSize) := matchcontinue (inEquation)
     local
       AvlSetInt.Tree lst1,lst2,res;
@@ -2593,32 +2594,31 @@ public function incidenceRowExp "author: PA
   input BackendDAE.IndexType inIndexType;
   output AvlSetInt.Tree outIntegerLst;
 algorithm
-  outIntegerLst := match (inExp, inVariables, inIntegerLst, functionTree, inIndexType)
+  outIntegerLst := match inIndexType
     local
       AvlSetInt.Tree vallst;
 
-    case (_, _, _, _, BackendDAE.SPARSE()) equation
+    case BackendDAE.SPARSE() equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables, inIntegerLst));
     then vallst;
 
-    case (_, _, _, _, BackendDAE.SOLVABLE()) equation
+    case BackendDAE.SOLVABLE() equation
       (_, (_, vallst, _)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables, inIntegerLst, functionTree));
     then vallst;
 
-    case (_, _, _, _, BackendDAE.BASECLOCK_IDX()) equation
+    case BackendDAE.BASECLOCK_IDX() equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderBaseClock, (inVariables, inIntegerLst));
     then vallst;
 
-    case (_, _, _, _, BackendDAE.SUBCLOCK_IDX()) equation
+    case BackendDAE.SUBCLOCK_IDX() equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderSubClock, (inVariables, inIntegerLst));
     then vallst;
 
-    else
-      equation
-        (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables, inIntegerLst));
-        // only absolute indexes?
-        vallst = applyIndexType(vallst, inIndexType);
-      then vallst;
+    else equation
+      (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables, inIntegerLst));
+      // only absolute indexes?
+      vallst = applyIndexType(vallst, inIndexType);
+    then vallst;
   end match;
 end incidenceRowExp;
 
@@ -2816,7 +2816,7 @@ public function traversingincidenceRowExpFinder "
   output tuple<BackendDAE.Variables,AvlSetInt.Tree> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
-  local
+    local
       list<Integer> p;
       AvlSetInt.Tree pa,res;
       DAE.ComponentRef cr;
@@ -6995,10 +6995,13 @@ algorithm
     //List.map_0(args,BackendDump.SSSHandlerArgString);
 
   // do state selection
-  BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
+  if causalized then
+    BackendDAE.DAE(systs,shared) := stateDeselectionDAE(outDAE, args, stateDeselection);
+  end if;
+
   // sort assigned equations to blt form
-  systs := mapSortEqnsDAE(systs,shared);
-  outDAE := BackendDAE.DAE(systs,shared);
+  systs := mapSortEqnsDAE(systs, shared);
+  outDAE := BackendDAE.DAE(systs, shared);
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
@@ -7098,10 +7101,6 @@ algorithm
 end causalizeDAEWork;
 
 protected function stateDeselectionDAE
-"Run the matching Algorithm.
-  In case of an DAE an DAE-Handler is used to reduce
-  the index of the dae."
-  input Boolean causalized;
   input BackendDAE.BackendDAE inDAE;
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   input tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String> stateDeselection;
@@ -7110,14 +7109,10 @@ protected
   String methodstr;
   BackendDAEFunc.stateDeselectionFunc sDfunc;
 algorithm
-  if causalized then
-    // do state selection
-    (_, _, sDfunc, methodstr) := stateDeselection;
-    outDAE := sDfunc(inDAE, args);
-    //execStat("transformDAE -> state selection " + methodstr);
-  else
-    outDAE := inDAE;
-  end if;
+  // do state selection
+  (_, _, sDfunc, methodstr) := stateDeselection;
+  outDAE := sDfunc(inDAE, args);
+  //execStat("transformDAE -> state selection " + methodstr);
 end stateDeselectionDAE;
 
 protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
@@ -7200,8 +7195,7 @@ algorithm
       outDAE := causalizeDAE(outDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), inMatchingAlgorithm, inDAEHandler, false);
       execStat("postOpt " + (if debug then "causalize " else "") + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print("\npost-optimization module " + moduleStr + ":\n\n");
-        BackendDump.printBackendDAE(outDAE);
+        BackendDump.dumpBackendDAE(outDAE, "post-optimization module " + moduleStr);
       end if;
     else
       execStat("<failed> postOpt " + moduleStr);
