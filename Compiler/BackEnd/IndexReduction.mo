@@ -1589,6 +1589,7 @@ protected
 
  DAE.Exp expcrA,mulAstates,mulAdstates,expset,expderset,expsetstart;
  list<DAE.Exp> expcrstates,expcrdstates,expcrset,expcrdset,expcrstatesstart;
+ list<DAE.ComponentRef> crstates;
  DAE.Operator op;
  BackendDAE.Equation eqn,deqn;
  list<BackendDAE.Equation> cEqnsLst,oEqnLst;
@@ -1607,8 +1608,9 @@ algorithm
     // add Equations
     // set.x = set.A*set.statecandidates
     // der(set.x) = set.A*der(set.candidates)
-    expcrstates := List.map(stateCandidates,BackendVariable.varExp);
-    expcrstatesstart := List.map(expcrstates,makeStartExp);
+    expcrstates := List.map(stateCandidates, BackendVariable.varExp);
+    crstates := List.map(stateCandidates, BackendVariable.varCref);
+    expcrstatesstart := List.map(crstates, makeStartExp);
     expcrdstates := List.map(expcrstates,makeder);
     expcrset := List.map(crset,Expression.crefExp);
     expcrdset := List.map(expcrset,makeder);
@@ -1648,11 +1650,11 @@ algorithm
 end generateStateSets;
 
 protected function makeStartExp
-"generate the expression: $_start(inExp)"
-  input DAE.Exp inExp;
+"generate the expression: $START.inCref"
+  input DAE.ComponentRef inCref;
   output DAE.Exp outExp;
 algorithm
-  outExp := Expression.makePureBuiltinCall("$_start", {inExp}, Expression.typeof(inExp));
+  outExp := Expression.crefExp(ComponentReference.crefPrefixStart(inCref));
 end makeStartExp;
 
 protected function setStartExp
