@@ -121,6 +121,13 @@ public
     end match;
   end typedExp;
 
+  function getTypedExp
+    input Binding binding;
+    output Expression exp;
+  algorithm
+    TYPED_BINDING(bindingExp = exp) := binding;
+  end getTypedExp;
+
   function setTypedExp
     input Expression exp;
     input output Binding binding;
@@ -174,6 +181,16 @@ public
       else false;
     end match;
   end isEach;
+
+  function isTyped
+    input Binding binding;
+    output Boolean isTyped;
+  algorithm
+    isTyped := match binding
+      case TYPED_BINDING() then true;
+      else false;
+    end match;
+  end isTyped;
 
   function toString
     input Binding binding;

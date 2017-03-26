@@ -51,19 +51,20 @@ import NFType.Type;
 import Operator = NFOperator;
 
 protected
-import Inst = NFInst;
-import Lookup = NFLookup;
-import TypeCheck = NFTypeCheck;
-import Types;
+import Ceval = NFCeval;
 import ClassInf;
+import ComponentRef = NFComponentRef;
+import ExecStat.execStat;
+import Inst = NFInst;
 import InstUtil = NFInstUtil;
+import Lookup = NFLookup;
+import MatchKind = NFTypeCheck.MatchKind;
 import NFCall.Call;
 import NFClass.ClassTree;
-import ComponentRef = NFComponentRef;
-import Ceval = NFCeval;
 import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
-import ExecStat.execStat;
+import TypeCheck = NFTypeCheck;
+import Types;
 
 public
 function typeClass
@@ -315,14 +316,22 @@ algorithm
   () := match c
     local
       Binding binding;
+      MatchKind matchKind;
 
     case Component.TYPED_COMPONENT()
       algorithm
         binding := typeBinding(c.binding, scope);
-
         if not referenceEq(binding, c.binding) then
           c.binding := binding;
           InstNode.updateComponent(c, component);
+        end if;
+
+        if Binding.isTyped(binding) then
+          (_, _, matchKind) := TypeCheck.matchTypes(Binding.getType(binding), c.ty, Binding.getTypedExp(binding));
+          if not TypeCheck.isCompatibleMatch(matchKind) then
+            Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, {InstNode.name(component), Binding.toString(binding), Type.toString(c.ty), Type.toString(Binding.getType(binding))}, Binding.getInfo(binding));
+            fail();
+          end if;
         end if;
 
         typeBindings(c.classInst, component);
@@ -331,8 +340,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid node " +
-          InstNode.name(component));
+        assert(false, getInstanceName() + " got invalid node " + InstNode.name(component));
       then
         fail();
 
