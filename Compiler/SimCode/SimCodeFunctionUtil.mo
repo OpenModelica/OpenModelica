@@ -2091,6 +2091,7 @@ algorithm
   (strs,names) := matchcontinue exp
     local
       String str, fopenmp;
+      list<String> strs1, strs2, names1, names2;
 
     // Lapack is always included
     case Absyn.STRING("lapack") then ({},{});
@@ -2152,7 +2153,10 @@ algorithm
     case Absyn.STRING(str)
       algorithm
         if System.os()=="Windows_NT" and str=="ModelicaStandardTables" then
-          (strs,names) := getLibraryStringInGccFormat(Absyn.STRING("ModelicaMatIO"));
+          (strs1,names1) := getLibraryStringInGccFormat(Absyn.STRING("ModelicaIO"));
+          (strs2,names2) := getLibraryStringInGccFormat(Absyn.STRING("ModelicaMatIO"));
+          strs := listAppend(strs1, strs2);
+          names := listAppend(names1, names2);
         else
           strs := {};
           names := {};
