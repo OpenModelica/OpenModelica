@@ -185,6 +185,7 @@ private:
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
+  QScrollArea *mpPagesWidgetScrollArea;
   Label *mpChangesEffectLabel;
   QPushButton *mpCancelButton;
   QPushButton *mpOkButton;

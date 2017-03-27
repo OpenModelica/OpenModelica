@@ -1244,10 +1244,10 @@ void OptionsDialog::setUpDialog()
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QHBoxLayout *horizontalLayout = new QHBoxLayout;
   horizontalLayout->addWidget(mpOptionsList);
-  QScrollArea *pPagesWidgetScrollArea = new QScrollArea;
-  pPagesWidgetScrollArea->setWidgetResizable(true);
-  pPagesWidgetScrollArea->setWidget(mpPagesWidget);
-  horizontalLayout->addWidget(pPagesWidgetScrollArea);
+  mpPagesWidgetScrollArea = new QScrollArea;
+  mpPagesWidgetScrollArea->setWidgetResizable(true);
+  mpPagesWidgetScrollArea->setWidget(mpPagesWidget);
+  horizontalLayout->addWidget(mpPagesWidgetScrollArea);
   // Create a layout
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
@@ -1419,6 +1419,9 @@ void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previo
     current = previous;
   }
   mpPagesWidget->setCurrentIndex(mpOptionsList->row(current));
+  /* ticket:4345 reset the scrollbars to top */
+  mpPagesWidgetScrollArea->verticalScrollBar()->setValue(0);
+  mpPagesWidgetScrollArea->horizontalScrollBar()->setValue(0);
 }
 
 //! Reimplementation of QWidget's reject function. If user reject the settings then set them back to original.
