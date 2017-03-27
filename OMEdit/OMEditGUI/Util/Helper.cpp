@@ -594,7 +594,7 @@ QString GUIMessages::getMessage(int type)
     case CHECK_MESSAGES_BROWSER:
       return tr("Please check the Messages Browser for more error specific details.");
     case SAME_COMPONENT_NAME:
-      return tr("A Component with the name <b>%1</b> already exists. Please choose another name.");
+      return tr("A component with the name <b>%1</b> already exists. Please choose another name.");
     case SAME_COMPONENT_CONNECT:
       return tr("You cannot connect a component to itself.");
     case NO_MODELICA_CLASS_OPEN:

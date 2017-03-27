@@ -1840,12 +1840,19 @@ ComponentNameDialog::ComponentNameDialog(QString name, GraphicsView *pGraphicsVi
  */
 void ComponentNameDialog::updateComponentName()
 {
-  // check name
+  // check if name is empty
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
                             GUIMessages::ENTER_NAME).arg(Helper::item), Helper::ok);
     return;
   }
+  // check for spaces
+  if (StringHandler::containsSpace(mpNameTextBox->text())) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                          tr("A component name should not have spaces. Please choose another name."), Helper::ok);
+    return;
+  }
+  // check for existing component name
   if (!mpGraphicsView->checkComponentName(mpNameTextBox->text())) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
                              GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);

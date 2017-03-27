@@ -1717,10 +1717,11 @@ QString OMCProxy::getDefaultComponentPrefixes(QString className)
 bool OMCProxy::addComponent(QString name, QString className, QString componentName, QString placementAnnotation)
 {
   sendCommand("addComponent(" + name + ", " + className + "," + componentName + "," + placementAnnotation + ")");
-  if (StringHandler::unparseBool(getResult()))
+  if (StringHandler::unparseBool(getResult())) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 /*!
@@ -1732,10 +1733,11 @@ bool OMCProxy::addComponent(QString name, QString className, QString componentNa
 bool OMCProxy::deleteComponent(QString name, QString componentName)
 {
   sendCommand("deleteComponent(" + name + "," + componentName + ")");
-  if (StringHandler::unparseBool(getResult()))
+  if (StringHandler::unparseBool(getResult())) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 /*!
@@ -1750,10 +1752,11 @@ bool OMCProxy::deleteComponent(QString name, QString componentName)
 bool OMCProxy::renameComponent(QString className, QString oldName, QString newName)
 {
   sendCommand("renameComponent(" + className + "," + oldName + "," + newName + ")");
-  if (getResult().toLower().contains("error"))
+  if (getResult().toLower().contains("error")) {
     return false;
-  else
+  } else {
     return true;
+  }
 }
 
 /*!
@@ -1767,10 +1770,11 @@ bool OMCProxy::renameComponent(QString className, QString oldName, QString newNa
 bool OMCProxy::updateComponent(QString name, QString className, QString componentName, QString placementAnnotation)
 {
   sendCommand("updateComponent(" + name + "," + className + "," + componentName + "," + placementAnnotation + ")");
-  if (StringHandler::unparseBool(getResult()))
+  if (StringHandler::unparseBool(getResult())) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 /*!
@@ -1784,10 +1788,11 @@ bool OMCProxy::updateComponent(QString name, QString className, QString componen
 bool OMCProxy::renameComponentInClass(QString className, QString oldName, QString newName)
 {
   sendCommand("renameComponentInClass(" + className + "," + oldName + "," + newName + ")");
-  if (getResult().toLower().contains("error"))
+  if (getResult().toLower().contains("error")) {
     return false;
-  else
+  } else {
     return true;
+  }
 }
 
 /*!
