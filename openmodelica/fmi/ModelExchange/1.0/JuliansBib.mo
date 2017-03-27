@@ -1347,9 +1347,9 @@ package JuliansBib
       annotation (Placement(transformation(extent={{110,30},{90,50}})));
     Modelica.Blocks.Interfaces.RealOutput a
       annotation (Placement(transformation(extent={{90,-90},{110,-70}})));
-    Modelica.Blocks.Continuous.Derivative derivative1
+    Modelica.Blocks.Continuous.Derivative derivative1(initType=Modelica.Blocks.Types.Init.InitialState)
       annotation (Placement(transformation(extent={{60,-90},{80,-70}})));
-    Modelica.Blocks.Continuous.Derivative derivative
+    Modelica.Blocks.Continuous.Derivative derivative(initType=Modelica.Blocks.Types.Init.InitialState)
       annotation (Placement(transformation(extent={{0,-50},{20,-30}})));
   equation
     connect(force.f,F)  annotation (Line(
@@ -1402,13 +1402,13 @@ package JuliansBib
       annotation (Placement(transformation(extent={{-60,-10},{-40,10}})));
     Modelica.Blocks.Interfaces.RealOutput alpha
       annotation (Placement(transformation(extent={{90,-10},{110,10}})));
-    Modelica.Blocks.Continuous.Derivative derivative
+    Modelica.Blocks.Continuous.Derivative derivative(initType=Modelica.Blocks.Types.Init.InitialState)
       annotation (Placement(transformation(extent={{0,30},{20,50}})));
     Modelica.Blocks.Interfaces.RealOutput omega
       annotation (Placement(transformation(extent={{90,30},{110,50}})));
     Modelica.Blocks.Interfaces.RealOutput theta
       annotation (Placement(transformation(extent={{90,70},{110,90}})));
-    Modelica.Blocks.Continuous.Derivative derivative1
+    Modelica.Blocks.Continuous.Derivative derivative1(initType=Modelica.Blocks.Types.Init.InitialState)
       annotation (Placement(transformation(extent={{60,70},{80,90}})));
     Modelica.Mechanics.Rotational.Sources.Torque torque annotation (Placement(
           transformation(
@@ -2253,6 +2253,7 @@ package JuliansBib
     PlanarMechanicsStandard.Joints.ActuatedPrismatic actuatedPrismatic1(
       s_start=0,
       v_start=0,
+      initialize=true,
       r={Zylinderlaenge[1],Zylinderlaenge[2]})
                  annotation (Placement(transformation(
           extent={{-10,-10},{10,10}},
