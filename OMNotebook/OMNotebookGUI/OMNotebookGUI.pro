@@ -47,23 +47,23 @@ SOURCES += \
     latexcell.cpp \
     evalthread.cpp \
     indent.cpp \
-    ../OMSketch/Tools.cpp \
-    ../OMSketch/Sketch_files.cpp \
-    ../OMSketch/Shapes.cpp \
-    ../OMSketch/Scene_Objects.cpp \
-    ../OMSketch/mainwindow.cpp \
-    ../OMSketch/Line.cpp \
-    ../OMSketch/Graph_Scene.cpp \
-    ../OMSketch/Draw_Triangle.cpp \
-    ../OMSketch/Draw_Text.cpp \
-    ../OMSketch/Draw_RoundRect.cpp \
-    ../OMSketch/Draw_Rectangle.cpp \
-    ../OMSketch/Draw_polygon.cpp \
-    ../OMSketch/Draw_LineArrow.cpp \
-    ../OMSketch/Draw_line.cpp \
-    ../OMSketch/Draw_Ellipse.cpp \
-    ../OMSketch/Draw_Arrow.cpp \
-    ../OMSketch/Draw_Arc.cpp
+#    ../OMSketch/Tools.cpp \
+#    ../OMSketch/Sketch_files.cpp \
+#    ../OMSketch/Shapes.cpp \
+#    ../OMSketch/Scene_Objects.cpp \
+#    ../OMSketch/mainwindow.cpp \
+#    ../OMSketch/Line.cpp \
+#    ../OMSketch/Graph_Scene.cpp \
+#    ../OMSketch/Draw_Triangle.cpp \
+#    ../OMSketch/Draw_Text.cpp \
+#    ../OMSketch/Draw_RoundRect.cpp \
+#    ../OMSketch/Draw_Rectangle.cpp \
+#    ../OMSketch/Draw_polygon.cpp \
+#    ../OMSketch/Draw_LineArrow.cpp \
+#    ../OMSketch/Draw_line.cpp \
+#    ../OMSketch/Draw_Ellipse.cpp \
+#    ../OMSketch/Draw_Arrow.cpp \
+#    ../OMSketch/Draw_Arc.cpp \
 
 HEADERS += \
     application.h \
@@ -120,25 +120,26 @@ HEADERS += \
     latexcell.h \
     evalthread.h \
     indent.h \
-    ../OMSketch/Tools.h \
-    ../OMSketch/Sketch_files.h \
-    ../OMSketch/Shapes.h \
-    ../OMSketch/Scene_Objects.h \
-    ../OMSketch/mainwindow.h \
-    ../OMSketch/Line.h \
-    ../OMSketch/Label.h \
-    ../OMSketch/Graph_Scene.h \
-    ../OMSketch/Draw_Triangle.h \
-    ../OMSketch/Draw_Text.h \
-    ../OMSketch/Draw_RoundRect.h \
-    ../OMSketch/Draw_Rectangle.h \
-    ../OMSketch/Draw_polygon.h \
-    ../OMSketch/Draw_LineArrow.h \
-    ../OMSketch/Draw_Line.h \
-    ../OMSketch/Draw_ellipse.h \
-    ../OMSketch/Draw_Arrow.h \
-    ../OMSketch/Draw_Arc.h \
-    ../OMSketch/basic.h
+#    ../OMSketch/Tools.h \
+#    ../OMSketch/Sketch_files.h \
+#    ../OMSketch/Shapes.h \
+#    ../OMSketch/Scene_Objects.h \
+#    ../OMSketch/mainwindow.h \
+#    ../OMSketch/Line.h \
+#    ../OMSketch/Label.h \
+#    ../OMSketch/Graph_Scene.h \
+#    ../OMSketch/Draw_Triangle.h \
+#    ../OMSketch/Draw_Text.h \
+#    ../OMSketch/Draw_RoundRect.h \
+#    ../OMSketch/Draw_Rectangle.h \
+#    ../OMSketch/Draw_polygon.h \
+#    ../OMSketch/Draw_LineArrow.h \
+#    ../OMSketch/Draw_Line.h \
+#    ../OMSketch/Draw_ellipse.h \
+#    ../OMSketch/Draw_Arrow.h \
+#    ../OMSketch/Draw_Arc.h \
+#    ../OMSketch/CustomDialog.h \
+#    ../OMSketch/basic.h
 
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
@@ -166,8 +167,8 @@ LIBS += $${PLOTLIBS} \
         $${OMCLIBS}
 INCLUDEPATH += $${PLOTINC} \
                $${OMCINC} \
-               ../OMSketch \
-               ../../
+               ../../ \
+#               ../OMSketch
 
 INCLUDEPATH += .
 

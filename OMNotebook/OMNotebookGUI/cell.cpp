@@ -287,7 +287,7 @@ namespace IAEX
       }
       else if( r->attribute() == "TextAlignment" )
       {
-        QRegExp textalignment( "Right|Left|Center" );
+        QRegExp textalignment( "Right|Left|Center|Justify" );
         if( 0 > r->value().indexOf( textalignment ))
           cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << endl;
       }

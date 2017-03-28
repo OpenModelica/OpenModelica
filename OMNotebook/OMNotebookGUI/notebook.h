@@ -50,7 +50,9 @@
 #include "application.h"
 #include "document.h"
 #include "documentview.h"
+#if USE_OMSKETCH
 #include "Tools.h"
+#endif
 //Forward declaration
 class QAction;
 class QActionGroup;
@@ -152,9 +154,11 @@ private slots:
   void openOldFile();        // Added 2005-12-01 AF
   void pureText();        // Added 2005-11-21 AF
 
+#if USE_OMSKETCH
   void Sketch(); //Added by jhansi
   void sketchImageEdit();//Added by jhansi
   void viewSketchImageAttributes(); //Added by jhansi
+#endif
 
   void createNewCell();
   void deleteCurrentCell();
@@ -348,6 +352,7 @@ private:
   QAction *importOldFile;      // Added 2005-12-01 AF
   QAction *exportPureText;    // Added 2005-11-21 AF
 
+#if USE_OMSKETCH
   QAction *insertSketch;//Added by jhansi
   QAction *insertSketchImage;//Added by jhansi
   QAction *editSketchImage;//Added by jhansi
@@ -365,6 +370,7 @@ private:
 
   Tools *window;
   bool isShown;
+#endif
 
   // 2005-11-03/04/07 AF, Added for the new menus (for text changes)
   QHash<QString, QAction*> fonts_;

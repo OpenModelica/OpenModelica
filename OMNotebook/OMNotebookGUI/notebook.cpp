@@ -198,12 +198,14 @@ NotebookWindow::NotebookWindow(Document *subject,
   updateChapterCounters();
   update();
 
+#if USE_OMSKETCH
   //Intializing sketch application
   window = new Tools(subject_,this);
   window->resize(1200,800);
   window->setWindowTitle("OMSketch");
 
   isShown=false;
+#endif
 
   //int count=0;
 
@@ -212,7 +214,9 @@ NotebookWindow::NotebookWindow(Document *subject,
   /**find  and inserts all the present cells in document in a vector**/
   cells=SearchCells(current);
 
+#if USE_OMSKETCH
   window->readXml(subject_->getFilename());
+#endif
 }
 
 /*!
@@ -662,7 +666,7 @@ void NotebookWindow::createEditMenu()
   connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
 
 
-
+#if USE_OMSKETCH
   //Edit Sketch image,and view the attributes added by jhansi
   editSketchImage = new QAction( tr("&EditSketchImage"), this );
   editSketchImage->setShortcut( QKeySequence("Ctrl+E") );
@@ -671,8 +675,8 @@ void NotebookWindow::createEditMenu()
            this, SLOT( sketchImageEdit() ));
   editSketchImage->setIcon(QIcon(":/Resources/toolbarIcons/editimage.png"));
   toolBar->addAction(editSketchImage);
-
   toolBar->addSeparator();
+#endif
 
   editMenu = menuBar()->addMenu( tr("&Edit") );
   editMenu->addAction( undoAction );
@@ -686,7 +690,9 @@ void NotebookWindow::createEditMenu()
   editMenu->addAction( replaceAction );
   editMenu->addSeparator();
   editMenu->addAction( showExprAction );
+#if USE_OMSKETCH
   editMenu->addAction(editSketchImage);
+#endif
 }
 
 /*!
@@ -1430,6 +1436,7 @@ void NotebookWindow::createInsertMenu()
 
   toolBar->addSeparator();
 
+#if USE_OMSKETCH
   //Sketch
   insertSketch = new QAction( tr("&Sketch"), this );
   insertSketch->setStatusTip( tr("Sketch App") );
@@ -1437,9 +1444,8 @@ void NotebookWindow::createInsertMenu()
            this, SLOT( Sketch() ));
   insertSketch->setIcon(QIcon(":/Resources/toolbarIcons/sketch.png"));
   toolBar->addAction(insertSketch);
-
   toolBar->addSeparator();
-
+#endif
 
   //INDENT
   indentAction = new QAction(tr("Indent"), this);
@@ -2520,11 +2526,13 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   QDir dir;
   dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
 
+#if USE_OMSKETCH
   if(!window->filenames.isEmpty())
   {
     for(int i=0;i<window->filenames.size();i++)
       dir.remove(window->filenames[i]);
   }
+#endif
 
   // if no name, set name to '(untitled)'
   if( filename.isEmpty() )
@@ -3555,6 +3563,7 @@ void NotebookWindow::indent()
 
 //Functions added by Jhansi
 
+#if USE_OMSKETCH
 void NotebookWindow::Sketch()
 {
   QString num;
@@ -3641,6 +3650,7 @@ void NotebookWindow::viewSketchImageAttributes()
   //QTextCharFormat format =  *subject_->getCursor()->currentCell()->style()->textCharFormat();
   QMessageBox::about(this,"char format",subject_->getCursor()->currentCell()->text());
 }
+#endif
 
 /*!
   * \author Anders Fernström

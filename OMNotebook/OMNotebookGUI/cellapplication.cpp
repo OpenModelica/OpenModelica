@@ -164,11 +164,11 @@ namespace IAEX
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
     QString cmdLine = env->getResult();
-    cout << "Set shortOutput flag: " << cmdLine.toStdString() << std::endl;
+    //cout << "Set shortOutput flag: " << cmdLine.toStdString() << std::endl;
     QString tmpDir = OmcInteractiveEnvironment::TmpPath();
     if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
     tmpDir = QDir(tmpDir).canonicalPath();
-    cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
+    //cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
     QString cdCmd = "cd(\"" + tmpDir + "\")";
     env->evalExpression(cdCmd);
     QString cdRes = env->getResult();
