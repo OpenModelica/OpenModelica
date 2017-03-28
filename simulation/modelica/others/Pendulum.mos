@@ -1,21 +1,14 @@
-// name:     Pendulum
+// name: Pendulum
 // keywords: Simulate, readSimulationData
-// status: incorrect
+// status: correct
 // teardown_command: rm -rf Pendulum.cpp Pendulum Pendulum.exe Pendulum.libs Pendulum.log Pendulum.makefile Pendulum_*.*
 //
 //  Simulate Pendulum example (index reduction, linear and nonlinear equation systems)
 //
+
 loadFile("Pendulum.mo");
-echo(false);
-x := simulate(Pendulum,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
-x := x.messages;
-if x<>"" then
-  print("*** Dynamic state selection probably failed ***\n");
-  // TODO: Remove this code when DSS works properly again
-  exit(1);
-end if;
-echo(true);
-x;
+simulate(Pendulum,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
+
 val(x,1.0);
 val(x,2.0);
 val(x,3.0);
@@ -26,5 +19,15 @@ val(y,3.0);
 
 // Result:
 // true
-// *** Dynamic state selection probably failed ***
+// record SimulationResult
+//     resultFile = "Pendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// -0.986442419514578
+// 0.7957014346591361
+// -0.183257778899123
+// -0.1641077480871185
+// -0.6056890513137847
+// -0.9830648943345297
 // endResult

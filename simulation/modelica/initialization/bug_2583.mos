@@ -28,7 +28,7 @@ simulate(initializationTests.bug_2583, simflags="-iim symbolic"); getErrorString
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // "
 // end SimulationResult;
-// "Error: The initialization problem is inconsistent due to the following equation: a = 0.0 (1.0 = 0.0)
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: a = 0.0 ($START.a = 0.0)
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

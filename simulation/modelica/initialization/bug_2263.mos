@@ -50,7 +50,7 @@ simulate(initializationTests.bug_2263, startTime=0.0, stopTime=0.0, simflags="-i
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // "
 // end SimulationResult;
-// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: x = $PRE.x ($_start(x) = -1.0)
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: x = $PRE.x ($START.x = -1.0)
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

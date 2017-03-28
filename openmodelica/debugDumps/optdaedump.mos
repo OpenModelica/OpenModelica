@@ -1778,7 +1778,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 //
-// created initial system:
+// ########################################
+// created initial system
+// ########################################
 //
 //
 // unknown partition
@@ -1884,7 +1886,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// partitioned initial system:
+//
+// ########################################
+// partitioned initial system
+// ########################################
 //
 //
 // unknown partition
@@ -2012,7 +2017,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyComplexFunction (initialization):
+//
+// ########################################
+// post-optimization module simplifyComplexFunction (initialization)
+// ########################################
 //
 //
 // unknown partition
@@ -2075,7 +2083,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): u1 = uC - uL   [dynamic]
 // 8/8 (1): u1 = R1 * i1   [dynamic]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic]
-// 10/10 (1): iL = $_start(iL)   [initial]
+// 10/10 (1): iL = $START.iL   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2172,7 +2180,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module tearingSystem (initialization):
+//
+// ########################################
+// post-optimization module tearingSystem (initialization)
+// ########################################
 //
 //
 // unknown partition
@@ -2235,7 +2246,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): u1 = uC - uL   [dynamic]
 // 8/8 (1): u1 = R1 * i1   [dynamic]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic]
-// 10/10 (1): iL = $_start(iL)   [initial]
+// 10/10 (1): iL = $START.iL   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -2331,6 +2342,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 //
 // pre-optimization module removeEqualFunctionCalls (jacobian):
@@ -2642,7 +2654,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // pre-optimization done.
 //
-// post-optimization module wrapFunctionCalls (jacobian):
+// ########################################
+// post-optimization module wrapFunctionCalls (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -2751,7 +2765,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module inlineArrayEqn (jacobian):
+//
+// ########################################
+// post-optimization module inlineArrayEqn (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -2860,7 +2877,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module constantLinearSystem (jacobian):
+//
+// ########################################
+// post-optimization module constantLinearSystem (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -2969,7 +2989,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module solveSimpleEquations (jacobian):
+//
+// ########################################
+// post-optimization module solveSimpleEquations (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -3078,7 +3101,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module tearingSystem (jacobian):
+//
+// ########################################
+// post-optimization module tearingSystem (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -3187,7 +3213,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module calculateStrongComponentJacobians (jacobian):
+//
+// ########################################
+// post-optimization module calculateStrongComponentJacobians (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -3296,7 +3325,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module removeConstants (jacobian):
+//
+// ########################################
+// post-optimization module removeConstants (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -3405,7 +3437,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyTimeIndepFuncCalls (jacobian):
+//
+// ########################################
+// post-optimization module simplifyTimeIndepFuncCalls (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -3512,10 +3547,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // post-optimization done.
 //
-// post-optimization module calculateStrongComponentJacobians (initialization):
+// ########################################
+// post-optimization module calculateStrongComponentJacobians (initialization)
+// ########################################
 //
 //
 // unknown partition
@@ -3578,7 +3616,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): u1 = uC - uL   [dynamic]
 // 8/8 (1): u1 = R1 * i1   [dynamic]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic]
-// 10/10 (1): iL = $_start(iL)   [initial]
+// 10/10 (1): iL = $START.iL   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -3676,7 +3714,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module solveSimpleEquations (initialization):
+//
+// ########################################
+// post-optimization module solveSimpleEquations (initialization)
+// ########################################
 //
 //
 // unknown partition
@@ -3739,7 +3780,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): u1 = uC - uL   [dynamic]
 // 8/8 (1): u1 = R1 * i1   [dynamic]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic]
-// 10/10 (1): iL = $_start(iL)   [initial]
+// 10/10 (1): iL = $START.iL   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -3837,7 +3878,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyAllExpressions (initialization):
+//
+// ########################################
+// post-optimization module simplifyAllExpressions (initialization)
+// ########################################
 //
 //
 // unknown partition
@@ -3900,7 +3944,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): u1 = uC - uL   [dynamic]
 // 8/8 (1): u1 = R1 * i1   [dynamic]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic]
-// 10/10 (1): iL = $_start(iL)   [initial]
+// 10/10 (1): iL = $START.iL   [initial]
 //
 //
 // Simple Equations (0, 0)
@@ -3996,10 +4040,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // post-optimization done.
 //
-// post-optimization module lateInlineFunction (simulation):
+// ########################################
+// post-optimization module lateInlineFunction (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4128,7 +4175,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module wrapFunctionCalls (simulation):
+//
+// ########################################
+// post-optimization module wrapFunctionCalls (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4261,7 +4311,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module inlineArrayEqn (simulation):
+//
+// ########################################
+// post-optimization module inlineArrayEqn (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4394,7 +4447,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module constantLinearSystem (simulation):
+//
+// ########################################
+// post-optimization module constantLinearSystem (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4527,7 +4583,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifysemiLinear (simulation):
+//
+// ########################################
+// post-optimization module simplifysemiLinear (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4660,7 +4719,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module removeSimpleEquations (simulation):
+//
+// ########################################
+// post-optimization module removeSimpleEquations (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4793,7 +4855,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyComplexFunction (simulation):
+//
+// ########################################
+// post-optimization module simplifyComplexFunction (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -4926,7 +4991,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module solveSimpleEquations (simulation):
+//
+// ########################################
+// post-optimization module solveSimpleEquations (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -5059,7 +5127,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module tearingSystem (simulation):
+//
+// ########################################
+// post-optimization module tearingSystem (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -5193,7 +5264,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module inputDerivativesUsed (simulation):
+//
+// ########################################
+// post-optimization module inputDerivativesUsed (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -5325,6 +5399,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 //
 // pre-optimization module removeEqualFunctionCalls (jacobian):
@@ -5636,7 +5711,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // pre-optimization done.
 //
-// post-optimization module wrapFunctionCalls (jacobian):
+// ########################################
+// post-optimization module wrapFunctionCalls (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -5745,7 +5822,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module inlineArrayEqn (jacobian):
+//
+// ########################################
+// post-optimization module inlineArrayEqn (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -5854,7 +5934,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module constantLinearSystem (jacobian):
+//
+// ########################################
+// post-optimization module constantLinearSystem (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -5963,7 +6046,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module solveSimpleEquations (jacobian):
+//
+// ########################################
+// post-optimization module solveSimpleEquations (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -6072,7 +6158,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module tearingSystem (jacobian):
+//
+// ########################################
+// post-optimization module tearingSystem (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -6181,7 +6270,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module calculateStrongComponentJacobians (jacobian):
+//
+// ########################################
+// post-optimization module calculateStrongComponentJacobians (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -6290,7 +6382,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module removeConstants (jacobian):
+//
+// ########################################
+// post-optimization module removeConstants (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -6399,7 +6494,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyTimeIndepFuncCalls (jacobian):
+//
+// ########################################
+// post-optimization module simplifyTimeIndepFuncCalls (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -6506,10 +6604,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // post-optimization done.
 //
-// post-optimization module calculateStrongComponentJacobians (simulation):
+// ########################################
+// post-optimization module calculateStrongComponentJacobians (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -6643,7 +6744,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module calculateStateSetsJacobians (simulation):
+//
+// ########################################
+// post-optimization module calculateStateSetsJacobians (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -6777,7 +6881,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module detectJacobianSparsePattern (simulation):
+//
+// ########################################
+// post-optimization module detectJacobianSparsePattern (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -6911,7 +7018,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module removeConstants (simulation):
+//
+// ########################################
+// post-optimization module removeConstants (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -7045,7 +7155,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyTimeIndepFuncCalls (simulation):
+//
+// ########################################
+// post-optimization module simplifyTimeIndepFuncCalls (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -7179,7 +7292,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module simplifyAllExpressions (simulation):
+//
+// ########################################
+// post-optimization module simplifyAllExpressions (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -7313,7 +7429,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// post-optimization module findZeroCrossings (simulation):
+//
+// ########################################
+// post-optimization module findZeroCrossings (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -7445,6 +7564,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // post-optimization done.
 // {"testOptdaedump","testOptdaedump_init.xml"}

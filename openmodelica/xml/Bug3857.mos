@@ -4179,12 +4179,11 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"inertia1\"/>
 //           <exp:QualifiedNamePart name=\"phi\"/>
 //         </exp:Identifier>
-//         <exp:Pre>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"inertia1\"/>
-//             <exp:QualifiedNamePart name=\"phi\"/>
-//           </exp:Identifier>
-//         </exp:Pre>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$START\"/>
+//           <exp:QualifiedNamePart name=\"inertia1\"/>
+//           <exp:QualifiedNamePart name=\"phi\"/>
+//         </exp:Identifier>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -4193,7 +4192,11 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"inertia1\"/>
 //           <exp:QualifiedNamePart name=\"a\"/>
 //         </exp:Identifier>
-//         <exp:RealLiteral>0.0</exp:RealLiteral>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$START\"/>
+//           <exp:QualifiedNamePart name=\"inertia1\"/>
+//           <exp:QualifiedNamePart name=\"a\"/>
+//         </exp:Identifier>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -4216,12 +4219,11 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"spring\"/>
 //           <exp:QualifiedNamePart name=\"w_rel\"/>
 //         </exp:Identifier>
-//         <exp:Pre>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"spring\"/>
-//             <exp:QualifiedNamePart name=\"w_rel\"/>
-//           </exp:Identifier>
-//         </exp:Pre>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$START\"/>
+//           <exp:QualifiedNamePart name=\"spring\"/>
+//           <exp:QualifiedNamePart name=\"w_rel\"/>
+//         </exp:Identifier>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -5098,11 +5100,10 @@ readFile("Bug3857.xml"); getErrorString();
 //         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"v\"/>
 //         </exp:Identifier>
-//         <exp:Pre>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"v\"/>
-//           </exp:Identifier>
-//         </exp:Pre>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$START\"/>
+//           <exp:QualifiedNamePart name=\"v\"/>
+//         </exp:Identifier>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -5722,11 +5723,10 @@ readFile("Bug3857.xml"); getErrorString();
 //         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"T\"/>
 //         </exp:Identifier>
-//         <exp:Pre>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"T\"/>
-//           </exp:Identifier>
-//         </exp:Pre>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"$START\"/>
+//           <exp:QualifiedNamePart name=\"T\"/>
+//         </exp:Identifier>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
