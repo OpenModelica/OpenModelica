@@ -4,9 +4,9 @@
 
 loadFile("Tearing19.mo"); getErrorString();
 
-setDebugFlags("backenddaeinfo,allowImpossibleAssignments"); getErrorString();
+setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 --tearingStrictness=casual"); getErrorString();
 simulate(Tearing19); getErrorString();
 
 val(x0,0.0); getErrorString();

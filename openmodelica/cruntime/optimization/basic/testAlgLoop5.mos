@@ -1,7 +1,7 @@
 // name: testAlgLoop5
 // status: correct
 
-setCommandLineOptions("+gDynOpt +d=allowImpossibleAssignments +loop2con=all --postOptModules-=wrapFunctionCalls"); //wrapFunctionCalls is deactivated, Ticket: 3710
+setCommandLineOptions("+gDynOpt --tearingStrictness=casual +loop2con=all --postOptModules-=wrapFunctionCalls"); //wrapFunctionCalls is deactivated, Ticket: 3710
 //setCommandLineOptions("+gDynOpt");
 getErrorString();
 
