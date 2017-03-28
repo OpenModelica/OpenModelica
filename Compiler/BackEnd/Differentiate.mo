@@ -102,7 +102,7 @@ protected
 algorithm
   try
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrEqnStr("### Differentiate equation\n", inEquation, " w.r.t. time.\n");
+      BackendDump.debugStrEqnStr("### differentiateEquationTime\n", inEquation, " w.r.t. time\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
@@ -111,7 +111,7 @@ algorithm
     outEquation := SOME(eqn);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrEqnStr("### Result of differentiation\n --> ", eqn, "\n");
+      BackendDump.debugStrEqnStr("### Result of differentiateEquationTime\n --> ", eqn, "\n");
     end if;
   else
     source := BackendEquation.equationSource(inEquation);
@@ -135,7 +135,7 @@ protected
 algorithm
   try
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrExpStr("### Differentiate expression\n ", inExp, " w.r.t. time.\n");
+      BackendDump.debugStrExpStr("### differentiateExpTime\n ", inExp, " w.r.t. time\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     knvars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
@@ -144,7 +144,7 @@ algorithm
     (outExp, _) := ExpressionSimplify.simplify(dexp);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrExpStr("### Result of differentiation\n --> ", outExp, "n");
+      BackendDump.debugStrExpStr("### Result of differentiateExpTime\n --> ", outExp, "n");
     end if;
   else
     // expandDerOperator expects sometime that differentiate fails,
@@ -181,12 +181,12 @@ algorithm
     end match;
 
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrExpStrCrefStr("### Differentiate expression\n ", inExp, " w.r.t. ", inCref, "\n");
+      BackendDump.debugStrExpStrCrefStr("### differentiateExpSolve\n ", inExp, " w.r.t. ", inCref, "\n");
     end if;
     (dexp, _) := differentiateExp(inExp, inCref, BackendDAE.emptyInputData, BackendDAE.SIMPLE_DIFFERENTIATION(), fun, defaultMaxIter, {});
     (outExp, _) := ExpressionSimplify.simplify(dexp);
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      BackendDump.debugStrExpStr("### Result of differentiation\n --> ", outExp, "\n");
+      BackendDump.debugStrExpStr("### Result of differentiateExpSolve\n --> ", outExp, "\n");
     end if;
   else
     if Flags.isSet(Flags.FAILTRACE) then
@@ -253,7 +253,7 @@ algorithm
 try
   // Debug dump
   if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-    BackendDump.debugStrEqnStr("### Differentiate equation\n ", inEquation, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
+    BackendDump.debugStrEqnStr("### differentiateEquation\n ", inEquation, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
   end if;
   (outEquation, outFunctionTree) := match inEquation
     local
@@ -382,7 +382,7 @@ try
   end match;
   // Debug dump
   if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-    BackendDump.debugStrEqnStr("### Result of differentiation\n --> ", outEquation,"\n");
+    BackendDump.debugStrEqnStr("### Result of differentiateEquation\n --> ", outEquation,"\n");
   end if;
 else
   Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
