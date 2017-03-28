@@ -4740,7 +4740,7 @@ protected function tryToSolveOrDerive
   output BackendDAE.Constraints outCons={};
 protected
   DAE.Type tp = Expression.typeof(e);
-  Boolean trytosolve2 = Flags.isSet(Flags.ALLOW_IMPOSSIBLE_ASSIGNMENTS);
+  Boolean trytosolve2 = stringEqual(Flags.getConfigString(Flags.TEARING_STRICTNESS), "casual");
   Boolean localCon;
   DAE.Exp one, tmpEqn, solvedExp, con;
   list<BackendDAE.Equation> eqnForNewVars;
@@ -4748,40 +4748,47 @@ protected
   DAE.ComponentRef tmpVar;
   DAE.Constraint constraint;
   BackendDAE.Constraints constraints;
+  constant Boolean debug = false;
 algorithm
   if trytosolve1 or trytosolve2 then
     try // try to solve for x (1*x = f(y))
       (solvedExp,_,eqnForNewVars,newVarsCrefs) := ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(1));
 
-      // print("Solve expression:\n" + ExpressionDump.printExpStr(e) + "\n");
-      // print("for variable: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
-      // print("Solved expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
-      // ComponentReference.printComponentRefList(newVarsCrefs);
-      // BackendDump.dumpEquationList(eqnForNewVars, "eqnForNewVars");
-      // ExpressionDump.dumpExp(solvedExp);
-      // print("listLength(eqnForNewVars): " + intString(listLength(eqnForNewVars)) + "\n\n");
+      if debug then
+        print("Solve expression:\n" + ExpressionDump.printExpStr(e) + "\n");
+        print("for variable: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
+        print("Solved expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
+        ComponentReference.printComponentRefList(newVarsCrefs);
+        BackendDump.dumpEquationList(eqnForNewVars, "eqnForNewVars");
+        ExpressionDump.dumpExp(solvedExp);
+        print("listLength(eqnForNewVars): " + intString(listLength(eqnForNewVars)) + "\n\n");
+      end if;
 
-      (_,(constraints,_)) := Expression.traverseExpTopDown(solvedExp, getConstraints, ({},vars));
+      if trytosolve1 then
+        (_,(constraints,_)) := Expression.traverseExpTopDown(solvedExp, getConstraints, ({},vars));
 
-      for eqn in eqnForNewVars loop
-        BackendDAE.SOLVED_EQUATION(componentRef=tmpVar, exp=tmpEqn) := eqn;
-        (_,(constraints,_)) := Expression.traverseExpTopDown(tmpEqn, getConstraints, (constraints,vars));
-      end for;
-
-      // print("Constraints before substitution: " + ExpressionDump.constraintDTlistToString(constraints, "\n") + "\n\n");
-
-      for i in listLength(constraints):-1:1 loop
-        constraint := listGet(constraints, i);
-        DAE.CONSTRAINT_DT(constraint = con, localCon=localCon) := constraint;
         for eqn in eqnForNewVars loop
           BackendDAE.SOLVED_EQUATION(componentRef=tmpVar, exp=tmpEqn) := eqn;
-          con := Expression.replaceCrefBottomUp(con, tmpVar, tmpEqn);
+          (_,(constraints,_)) := Expression.traverseExpTopDown(tmpEqn, getConstraints, (constraints,vars));
         end for;
-        outCons := DAE.CONSTRAINT_DT(con, localCon)::outCons;
-      end for;
 
-      // print("Substituted expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
-      // print("Constraints:" + ExpressionDump.constraintDTlistToString(outCons, "\n") + "\n\n");
+
+        for i in listLength(constraints):-1:1 loop
+          constraint := listGet(constraints, i);
+          DAE.CONSTRAINT_DT(constraint = con, localCon=localCon) := constraint;
+          for eqn in eqnForNewVars loop
+            BackendDAE.SOLVED_EQUATION(componentRef=tmpVar, exp=tmpEqn) := eqn;
+            con := Expression.replaceCrefBottomUp(con, tmpVar, tmpEqn);
+          end for;
+          outCons := DAE.CONSTRAINT_DT(con, localCon)::outCons;
+        end for;
+
+        if debug then
+          print("Constraints before substitution: " + ExpressionDump.constraintDTlistToString(constraints, "\n") + "\n\n");
+          print("Substituted expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
+          print("Constraints:" + ExpressionDump.constraintDTlistToString(outCons, "\n") + "\n\n");
+        end if;
+      end if;
 
       solved := true;
     else end try;
@@ -4805,7 +4812,9 @@ algorithm
     fail();
    end if;
    true := solved or derived;
-   //print("tryToSolveOrDerive" + ExpressionDump.printExpStr(e) + " -> " +  ExpressionDump.printExpStr(f) + " == " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
+   if debug then
+     print("tryToSolveOrDerive" + ExpressionDump.printExpStr(e) + " -> " +  ExpressionDump.printExpStr(f) + " == " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
+   end if;
 end tryToSolveOrDerive;
 
 
@@ -7500,7 +7509,7 @@ protected function deprecatedDebugFlag
 algorithm
   if Flags.isSet(inFlag) then
     outModuleList := inModule::inModuleList;
-    Error.addCompilerWarning("Deprecated debug flag --d=" + Flags.debugFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
+    Error.addCompilerWarning("Deprecated debug flag -d=" + Flags.debugFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
   end if;
 end deprecatedDebugFlag;
 

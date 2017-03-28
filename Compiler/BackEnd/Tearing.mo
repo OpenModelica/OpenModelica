@@ -1470,7 +1470,7 @@ algorithm
     case BackendDAE.SOLVABILITY_SOLVED() then true;
     case BackendDAE.SOLVABILITY_CONSTONE() then true;
     case BackendDAE.SOLVABILITY_CONST(b=b) then b;
-    case BackendDAE.SOLVABILITY_PARAMETER(b=b) then b;
+    case BackendDAE.SOLVABILITY_PARAMETER(b=b) then (b and not stringEqual(Flags.getConfigString(Flags.TEARING_STRICTNESS), "veryStrict"));
     case BackendDAE.SOLVABILITY_LINEAR() then false;
     case BackendDAE.SOLVABILITY_NONLINEAR() then false;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then false;
