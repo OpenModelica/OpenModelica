@@ -207,6 +207,7 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
     then "_system->_simTime"
     else "_simTime"
     end match
+  case CREF_QUAL(ident = "$START") then '<%representationCref(componentRef, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
   else '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
 end cref1;
 
