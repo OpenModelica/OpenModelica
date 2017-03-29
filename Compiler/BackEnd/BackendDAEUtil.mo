@@ -2631,7 +2631,7 @@ public function traversingincidenceRowExpSolvableFinder "Helper for statesAndVar
 algorithm
   (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
-      list<Integer> p, ilst;
+      list<Integer> p, p2, ilst;
       AvlSetInt.Tree pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
@@ -2685,10 +2685,20 @@ algorithm
       (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
     then (inExp, false, tpl);
 
+    // cref and $START.cref
+    case (DAE.CREF(componentRef=cr), (vars, pa, ofunctionTree)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      (_, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+
+      pa = incidenceRowExp1(varslst, p, pa, 0);
+      pa = incidenceRowExp1(varslst, p2, pa, 0);
+    then (inExp, true, (vars, pa, ofunctionTree));
+
+    // only cref
     case (DAE.CREF(componentRef=cr), (vars, pa, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       pa = incidenceRowExp1(varslst, p, pa, 0);
-    then (inExp, false,(vars, pa, ofunctionTree));
+    then (inExp, true, (vars, pa, ofunctionTree));
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
@@ -2702,6 +2712,7 @@ algorithm
     then (inExp, false,(vars, pa, ofunctionTree));
 
     // lochel: internally generated call start(v) depends not on v
+    // TODO: REMOVE THIS CASE
     case (DAE.CALL(path=Absyn.IDENT(name="$_start")), tpl)
     then (inExp, false, tpl);
 
@@ -2843,17 +2854,17 @@ algorithm
       Integer i;
       String str;
 
-    // var and var.start
+    // cref and $START.cref
     case (e as DAE.CREF(componentRef=cr), (vars, pa))
       equation
         (varslst, p) = BackendVariable.getVar(cr, vars);
-        (varslst, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+        (_, p2) = BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
 
         res = incidenceRowExp1(varslst, p, pa, 0);
         res = incidenceRowExp1(varslst, p2, res, 0);
       then (e, true, (vars, res));
 
-    // only var
+    // only cref
     case (e as DAE.CREF(componentRef = cr),(vars,pa))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
@@ -2879,6 +2890,7 @@ algorithm
       then (e,false,(vars,res));
 
     // lochel: internally generated call start(v) depends not on v
+    // TODO: REMOVE THIS CASE
     case (DAE.CALL(path = Absyn.IDENT(name = "$_start")), _) then (inExp, false, inTpl);
 
     /* pre(v) is considered a known variable */
@@ -6976,8 +6988,7 @@ algorithm
       outDAE := BackendDAE.DAE(systs, shared);
       execStat("preOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
-        print(stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
-        BackendDump.printBackendDAE(outDAE);
+        BackendDump.dumpBackendDAE(outDAE, "pre-optimization module " + moduleStr);
       end if;
     else
       execStat("preOpt " + moduleStr + " <failed>");

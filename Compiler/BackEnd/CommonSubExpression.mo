@@ -874,6 +874,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("$_initialGuess"))  then true;
     case DAE.CALL(path=Absyn.IDENT("$_old")) then true;
     case DAE.CALL(path=Absyn.IDENT("$_round")) then true;
+    // TODO: REMOVE THIS CASE
     case DAE.CALL(path=Absyn.IDENT("$_start")) then true;
     case DAE.CALL(path=Absyn.IDENT("$getPart")) then true;
     case DAE.CALL(path=Absyn.IDENT("abs")) then true;

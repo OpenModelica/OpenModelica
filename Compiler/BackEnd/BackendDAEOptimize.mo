@@ -3663,9 +3663,9 @@ end removeLocalKnownVars2;
 //
 //   Real a[3];
 // algorithm       -->  algorithm
-//   a[1] := 1.0;         a[1] := $_start(a[1]);
-//                        a[2] := $_start(a[2]);
-//                        a[3] := $_start(a[3]);
+//   a[1] := 1.0;         a[1] := $START.a[1];
+//                        a[2] := $START.a[2];
+//                        a[3] := $START.a[3];
 //                        a[1] := 1.0;
 // =============================================================================
 
@@ -3738,7 +3738,6 @@ algorithm
       DAE.Statement stmt;
       DAE.Type type_;
       list<DAE.Statement> statements;
-      Boolean b;
 
     case(statements, {}, _)
     then statements;
@@ -3748,8 +3747,11 @@ algorithm
       type_ = Expression.typeof(out);
       type_ = Expression.arrayEltType(type_);
       (var::_, _) = BackendVariable.getVar(cref, inVars);
-      b = BackendVariable.isVarDiscrete(var);
-      initExp = Expression.makePureBuiltinCall(if b then "pre" else "$_start", {out}, type_);
+      if BackendVariable.isVarDiscrete(var) then
+        initExp = Expression.makePureBuiltinCall("pre", {out}, type_);
+      else
+        initExp = Expression.crefExp(ComponentReference.crefPrefixStart(cref));
+      end if;
       stmt = Algorithm.makeAssignment(DAE.CREF(cref, type_), DAE.PROP(type_, DAE.C_VAR()), initExp, DAE.PROP(type_, DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
     then expandAlgorithmStmts(stmt::statements, rest, inVars);
   end match;

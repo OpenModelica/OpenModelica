@@ -1658,7 +1658,6 @@ algorithm
 end makeStartExp;
 
 protected function setStartExp
-"generate the expression: $_start(inExp)"
   input BackendDAE.Var inVar;
   input DAE.Exp startExp;
   input Integer size;

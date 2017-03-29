@@ -558,6 +558,7 @@ algorithm
       //String se1;
       list<DAE.Exp> sub, expl;
       list<list<DAE.Exp>> matrix, dmatrix;
+      DAE.ComponentRef cref;
 
     // constants => results in zero
     case DAE.BCONST(bool=b) then (DAE.BCONST(b), inFunctionTree);
@@ -577,17 +578,24 @@ algorithm
     then  (DAE.RECORD(p, listReverse(sub), strLst, tp), functionTree);
 
     // differentiate cref
-    case DAE.CREF() equation
+    case DAE.CREF(componentRef=cref, ty=tp) equation
       //se1 = ExpressionDump.printExpStr(inExp);
       //print("\nExp-Cref\nDifferentiate exp: " + se1);
 
-      (res, functionTree) = differentiateCrefs(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1, expStack);
+      if ComponentReference.isStartCref(cref) then
+        // differentiate start value
+        res = Expression.makeConstZero(tp);
+        functionTree = inFunctionTree;
+      else
+        (res, functionTree) = differentiateCrefs(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1, expStack);
+      end if;
 
       //se1 = ExpressionDump.printExpStr(res);
       //print("\nresults to exp: " + se1);
     then (res, functionTree);
 
     // differentiate start value
+    // TODO: REMOVE THIS CASE
     case DAE.CALL(path=Absyn.IDENT(name="$_start"), attr=DAE.CALL_ATTR(ty=tp))
     then (Expression.makeConstZero(tp), inFunctionTree);
 

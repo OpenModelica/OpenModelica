@@ -362,16 +362,6 @@ algorithm
       Real r, r2;
       list<DAE.Statement> asserts;
 
-    // special case for inital system when already solved, cr1 = $_start(...)
-    case (DAE.CREF(componentRef = cr1),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
-      guard ComponentReference.crefEqual(cr, cr1)
-      then
-        (inExp2,{});
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
-      guard ComponentReference.crefEqual(cr, cr1)
-      then
-        (inExp2,{});
-
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (DAE.CREF(componentRef = cr1),_,DAE.CREF(componentRef = cr))
       guard ComponentReference.crefEqual(cr, cr1) and (not Expression.expHasCrefNoPreOrStart(inExp2, cr))
@@ -1953,7 +1943,7 @@ protected
   DAE.Exp con, e;
 algorithm
  con := Expression.makePureBuiltinCall("initial",{},tp);
- (e,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, "$_start",tp,true));
+ (e,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, DAE.startNamePrefix, tp, true));
  (oExp,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, "$_initialGuess",tp,false));
  oExp := DAE.IFEXP(con,e,oExp);
 end makeIntialGuess;
@@ -1964,26 +1954,32 @@ protected function makeIntialGuess2
   output DAE.Exp oExp;
   output tuple<DAE.Exp, String, DAE.Type, Boolean> otpl = itpl;
 algorithm
- oExp := match(iExp, itpl)
-         local DAE.ComponentRef cr1,cr2;
-               DAE.Type tp;
-               String fun;
-               DAE.Exp e;
+  oExp := match(iExp, itpl)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Type tp;
+      String fun;
+      DAE.Exp e;
 
-         case(DAE.CREF(componentRef = cr1), (DAE.CREF(componentRef = cr2), fun, tp,_))
-           guard(ComponentReference.crefEqual(cr1, cr2))
-           then Expression.makePureBuiltinCall(fun,{iExp},tp);
-         case(_,(_,_,tp,true))
-           algorithm
-             try
-               SOME(e) := makeIntialGuess3(iExp, tp);
-             else
-               e := iExp;
-             end try;
-             then e;
-         else iExp;
-         end match;
+    case (DAE.CREF(componentRef=cr1), (DAE.CREF(componentRef=cr2), fun, tp, _))
+      guard(ComponentReference.crefEqual(cr1, cr2)) algorithm
+      if fun == DAE.startNamePrefix then
+        e := Expression.crefExp(ComponentReference.crefPrefixStart(cr1));
+      else
+        e := Expression.makePureBuiltinCall(fun, {iExp}, tp);
+      end if;
+    then e;
 
+    case (_, (_, _, tp, true)) algorithm
+      try
+        SOME(e) := makeIntialGuess3(iExp, tp);
+      else
+        e := iExp;
+      end try;
+    then e;
+
+    else iExp;
+  end match;
 end makeIntialGuess2;
 
 protected function makeIntialGuess3
