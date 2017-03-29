@@ -47,6 +47,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 //
 //
 // Tearing type: heuristic
+// Tearing strictness: strict
 //
 //
 // ###BEGIN print Strong Component#####################
@@ -184,6 +185,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 //
 //
 // Tearing type: heuristic
+// Tearing strictness: strict
 //
 //
 // ###BEGIN print Strong Component#####################

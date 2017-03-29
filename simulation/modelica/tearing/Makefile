@@ -80,6 +80,8 @@ totalTearing2.mos \
 totalTearing3.mos \
 userDefinedTearing1.mos \
 userDefinedTearing2.mos \
+testTearingStrictness.mos \
+testParamDivision.mos \
 
 
 
