@@ -2948,6 +2948,28 @@ algorithm
   end try;
 end mapAllValueBool;
 
+public function map1AllValueBool<TI, TO, VT, ArgT1>
+  "Same as mapAllValueBool, but takes one extra argument."
+  input list<TI> inList;
+  input MapFunc inMapFunc;
+  input VT inValue;
+  input ArgT1 inArg1;
+  output Boolean outAllValue;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output TO outElement;
+  end MapFunc;
+algorithm
+  try
+    map1AllValue(inList, inMapFunc, inValue, inArg1);
+    outAllValue := true;
+  else
+    outAllValue := false;
+  end try;
+end map1AllValueBool;
+
 public function map1AllValue<TI, TO, VT, ArgT1>
   "Applies a function to all elements in the lists, and fails if not all
    elements are equal to the given value. This function also takes an extra
@@ -3039,6 +3061,28 @@ algorithm
     end if;
   end for;
 end mapListAllValueBool;
+
+public function map1ListAllValueBool<TI, TO, VT, ArgT1>
+  "Same as mapListAllValueBool, but takes one extra argument."
+  input list<list<TI>> inList;
+  input MapFunc inMapFunc;
+  input VT inValue;
+  input ArgT1 inArg1;
+  output Boolean outAllValue = true;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output TO outElement;
+  end MapFunc;
+algorithm
+  for lst in inList loop
+    if not map1AllValueBool(lst, inMapFunc, inValue, inArg1) then
+      outAllValue := false;
+      return;
+    end if;
+  end for;
+end map1ListAllValueBool;
 
 public function foldAllValue<TI, TO, ArgT1>
   "Applies a function to all elements in the lists, and fails if not all

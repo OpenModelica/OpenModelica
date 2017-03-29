@@ -7511,17 +7511,26 @@ algorithm
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
 
-    case (DAE.ICONST(integer = ival)) then intEq(ival,0);
-    case (DAE.RCONST(real = rval)) then realEq(rval,0.0);
-    case (DAE.CAST(exp = e)) then isZero(e);
+    case (DAE.ICONST(integer = ival))
+     then intEq(ival,0);
 
-    case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
-    case(DAE.ARRAY(array = ae)) then List.mapAllValueBool(ae,isZero,true);
+    case (DAE.RCONST(real = rval))
+     then realEq(rval,0.0);
+
+    case (DAE.CAST(exp = e))
+     then isZero(e);
+
+    case (DAE.UNARY(DAE.UMINUS(_),e))
+     then isZero(e);
+
+    case (DAE.ARRAY(array = ae))
+     then List.mapAllValueBool(ae,isZero,true);
 
     case (DAE.MATRIX(matrix = matrix))
-      then List.mapListAllValueBool(matrix,isZero,true);
+     then List.mapListAllValueBool(matrix,isZero,true);
 
-    case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e))
+     then isZero(e);
 
     else false;
 
@@ -7533,9 +7542,10 @@ public function isZeroOrAlmostZero
 "Returns true if an expression is constant
   and zero or near to zero, otherwise false"
   input DAE.Exp inExp;
+  input DAE.Exp nominal = DAE.RCONST(1.0);
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match (inExp, nominal)
     local
       Integer ival;
       Real rval;
@@ -7543,20 +7553,34 @@ algorithm
       DAE.Exp e,e1;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
+      Real rNom;
 
-    case (DAE.ICONST(integer = ival)) then intEq(ival,0);
-    case (DAE.RCONST(real = rval)) then realLt(abs(rval),1e-15);
-    case (DAE.CAST(exp = e)) then isZeroOrAlmostZero(e);
+    case (DAE.ICONST(integer = ival),_)
+     then intEq(ival,0);
 
-    case(DAE.UNARY(DAE.UMINUS(_),e)) then isZeroOrAlmostZero(e);
-    case(DAE.ARRAY(array = ae)) then List.mapAllValueBool(ae,isZeroOrAlmostZero,true);
+    case (DAE.RCONST(real = rval), DAE.RCONST(real=rNom))
+     then realLt(abs(rval),1e-6*abs(rNom));
 
-    case (DAE.MATRIX(matrix = matrix))
-      then List.mapListAllValueBool(matrix,isZeroOrAlmostZero,true);
+    case (DAE.RCONST(real = rval),_)
+     then realLt(abs(rval),1e-6);
 
-    case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZeroOrAlmostZero(e);
+    case (DAE.CAST(exp = e),_)
+     then isZeroOrAlmostZero(e, nominal);
 
-    case(DAE.IFEXP(_,e,e1)) then (isZeroOrAlmostZero(e) or isZeroOrAlmostZero(e1));
+    case (DAE.UNARY(DAE.UMINUS(_),e),_)
+     then isZeroOrAlmostZero(e, nominal);
+
+    case (DAE.ARRAY(array = ae),_)
+     then List.map1AllValueBool(ae,isZeroOrAlmostZero,true,nominal);
+
+    case (DAE.MATRIX(matrix = matrix),_)
+      then List.map1ListAllValueBool(matrix,isZeroOrAlmostZero,true,nominal);
+
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e),_)
+     then isZeroOrAlmostZero(e, nominal);
+
+    case (DAE.IFEXP(_,e,e1),_)
+     then (isZeroOrAlmostZero(e, nominal) or isZeroOrAlmostZero(e1, nominal));
 
     else false;
 

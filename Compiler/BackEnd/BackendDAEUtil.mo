@@ -5014,7 +5014,7 @@ protected function adjacencyRowEnhanced2
   input BackendDAE.Variables globalKnownVars;
   output BackendDAE.Solvability oSolvab;
 algorithm
-  oSolvab := matchcontinue(cr,e,crlst,vars,globalKnownVars)
+  oSolvab := match(cr,e,crlst,vars,globalKnownVars)
     local
       Boolean b,b1,b2;
     case(_,_,{},_,_)
@@ -5023,9 +5023,7 @@ algorithm
         b2 = Expression.isConstOne(e) or Expression.isConstMinusOne(e);
       then
         if b2 then BackendDAE.SOLVABILITY_CONSTONE() else BackendDAE.SOLVABILITY_CONST(not b1);
-    case(_,_,_,_,_)
-      equation
-        true = List.isMemberOnTrue(cr,crlst,ComponentReference.crefEqualNoStringCompare);
+    case(_,_,_,_,_) guard List.isMemberOnTrue(cr,crlst,ComponentReference.crefEqualNoStringCompare)
       then
         BackendDAE.SOLVABILITY_NONLINEAR();
     case(_,_,_,_,_)
@@ -5034,7 +5032,7 @@ algorithm
         b2 = containAnyVar(crlst,vars);
       then
         adjacencyRowEnhanced3(b1,b2,cr,e,crlst,vars,globalKnownVars);
-  end matchcontinue;
+  end match;
 end adjacencyRowEnhanced2;
 
 protected function adjacencyRowEnhanced3
@@ -5050,13 +5048,13 @@ protected function adjacencyRowEnhanced3
   input BackendDAE.Variables globalKnownVars;
   output BackendDAE.Solvability oSolvab;
 algorithm
-  oSolvab := matchcontinue(b1,b2,cr,e,crlst,vars,globalKnownVars)
+  oSolvab := match(b1,b2,cr,e,crlst,vars,globalKnownVars)
     local
       Boolean b,b_1;
-      DAE.Exp e1;
+      DAE.Exp e1, nominal;
     case(true,true,_,_,_,_,_)
       equation
-        (e1,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, globalKnownVars);
+        (e1,_) = Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
         (e1,_) = ExpressionSimplify.simplify(e1);
         b = not Expression.isZeroOrAlmostZero(e1);
       then
@@ -5067,11 +5065,13 @@ algorithm
       then
         BackendDAE.SOLVABILITY_LINEAR(b);
     case(true,_,_,_,_,_,_)
-      equation
-        (e1,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, globalKnownVars);
-        (e1,_) = ExpressionSimplify.simplify(e1);
-        b = not Expression.isZeroOrAlmostZero(e1);
-        b_1 = Expression.isConst(e1);
+      algorithm
+        (nominal,_) := Expression.traverseExpBottomUp(e, replaceVarWithNominal, globalKnownVars);
+        (nominal,_) := ExpressionSimplify.simplify(nominal);
+        (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
+        (e1,_) := ExpressionSimplify.simplify(e1);
+        b := not Expression.isZeroOrAlmostZero(e1, nominal);
+        b_1 := Expression.isConst(e1);
       then
        if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_,_,_,_,_,_,_)
@@ -5079,16 +5079,11 @@ algorithm
         b = not Expression.isZeroOrAlmostZero(e);
       then
         BackendDAE.SOLVABILITY_LINEAR(b);
-/*    case(_,_,_,_,_,_,_)
-      equation
-        BackendDump.debugStrCrefStrExpStr(("Warning cannot calculate solvabilty for",cr," in ",e,"\n"));
-      then
-        BackendDAE.SOLVABILITY_LINEAR(true);
-*/  end matchcontinue;
+  end match;
 end adjacencyRowEnhanced3;
 
-protected function replaceVartraverser
-"Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with there bind expression."
+protected function replaceVarWithValue
+"Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with their bind expression."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVars;
   output DAE.Exp outExp;
@@ -5105,7 +5100,7 @@ algorithm
       equation
         (v::_,_) = BackendVariable.getVar(cr,vars);
         e = BackendVariable.varBindExp(v);
-        (e,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, vars);
+        (e,_) = Expression.traverseExpBottomUp(e, replaceVarWithValue, vars);
       then (e, vars);
 
     case (DAE.CREF(componentRef=cr),vars)
@@ -5113,13 +5108,39 @@ algorithm
         (v::_,_) = BackendVariable.getVar(cr,vars);
         true = BackendVariable.varFixed(v);
         e = BackendVariable.varBindExpStartValue(v);
-        (e,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, vars);
+        (e,_) = Expression.traverseExpBottomUp(e, replaceVarWithValue, vars);
       then (e, vars);
 
     else (inExp,inVars);
 
   end matchcontinue;
-end replaceVartraverser;
+end replaceVarWithValue;
+
+protected function replaceVarWithNominal
+"Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with their nominal values."
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output DAE.Exp outExp;
+  output BackendDAE.Variables outVars;
+algorithm
+  (outExp,outVars) := matchcontinue (inExp,inVars)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      BackendDAE.Var v;
+      DAE.Exp nom;
+
+    case (DAE.CREF(componentRef=cr),vars)
+      equation
+        (v::_,_) = BackendVariable.getVar(cr,vars);
+        nom = BackendVariable.getVarNominalValue(v);
+        (nom,_) = Expression.traverseExpBottomUp(nom, replaceVarWithNominal, vars);
+      then (nom, vars);
+
+    else (inExp,inVars);
+
+  end matchcontinue;
+end replaceVarWithNominal;
 
 protected function adjacencyRowExpEnhanced
 "author: Frenkel TUD 2012-05

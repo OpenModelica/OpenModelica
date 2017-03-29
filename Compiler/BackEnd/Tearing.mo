@@ -185,6 +185,7 @@ algorithm
         algorithm
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
             print("\nTearing type: heuristic\n");
+            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
           end if;
           (ocomp,outRunMatching) := omcTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
           if debug then execStat("Tearing.omcTearing"); end if;
@@ -194,6 +195,7 @@ algorithm
         algorithm
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
             print("\nTearing type: heuristic\n");
+            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
           end if;
           (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, userTVars, ojac, jacType, mixedSystem, strongComponentIndex);
           if debug then execStat("Tearing.CellierTearing"); end if;
@@ -203,6 +205,7 @@ algorithm
         algorithm
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
             print("\nTearing type: total\n");
+            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
           end if;
           (ocomp,outRunMatching) := totalTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
           if debug then execStat("Tearing.totalTearing"); end if;
@@ -212,6 +215,7 @@ algorithm
         algorithm
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
             print("\nTearing type: user defined\n");
+            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
           end if;
           (ocomp,outRunMatching) := userDefinedTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, userTVars, userResiduals);
           if debug then execStat("Tearing.userDefinedTearing"); end if;
