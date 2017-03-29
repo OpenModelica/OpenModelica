@@ -2022,32 +2022,6 @@ algorithm
   end match;
 end collectInitialVarsEqnsSystem;
 
-protected function isCrefPrimaryParameter
-  input DAE.ComponentRef inCref;
-  input list<BackendDAE.Var> inAllPrimaryParameters;
-  output Boolean isPrimary = false;
-algorithm
-  for v in inAllPrimaryParameters loop
-    if ComponentReference.crefEqual(BackendVariable.varCref(v), inCref) then
-      isPrimary := true;
-      return;
-    end if;
-  end for;
-end isCrefPrimaryParameter;
-
-protected function areCrefsPrimaryParameters
-  input list<DAE.ComponentRef> inCrefs;
-  input list<BackendDAE.Var> inAllPrimaryParameters;
-  output Boolean isPrimary = true;
-algorithm
-  for cref in inCrefs loop
-    if not isCrefPrimaryParameter(cref, inAllPrimaryParameters) then
-      isPrimary := false;
-      return;
-    end if;
-  end for;
-end areCrefsPrimaryParameters;
-
 protected function collectInitialVars "author: lochel
   This function collects all the vars for the initial system.
   TODO: return additional equations for pre-variables"
@@ -2095,7 +2069,7 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-      if not areCrefsPrimaryParameters(parameters, allPrimaryParameters) then
+      if not BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) then
         eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
         eqns = BackendEquation.addEquation(eqn, eqns);
 
@@ -2286,7 +2260,7 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-      if not areCrefsPrimaryParameters(parameters, allPrimaryParameters) then
+      if not BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) then
         eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
         eqns = BackendEquation.addEquation(eqn, eqns);
 
@@ -2332,7 +2306,7 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-      if not areCrefsPrimaryParameters(parameters, allPrimaryParameters) then
+      if not BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) then
         eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
         eqns = BackendEquation.addEquation(eqn, eqns);
 

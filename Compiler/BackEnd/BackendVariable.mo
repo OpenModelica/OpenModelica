@@ -2056,6 +2056,32 @@ public function emptyVarsSized
   output BackendDAE.Variables outVariables = emptyVars(size);
 end emptyVarsSized;
 
+public function isCrefInVarList "O(n)"
+  input DAE.ComponentRef inCref;
+  input list<BackendDAE.Var> inVars;
+  output Boolean isInList = false;
+algorithm
+  for v in inVars loop
+    if ComponentReference.crefEqual(BackendVariable.varCref(v), inCref) then
+      isInList := true;
+      return;
+    end if;
+  end for;
+end isCrefInVarList;
+
+public function areAllCrefsInVarList "O(n^2)"
+  input list<DAE.ComponentRef> inCrefs;
+  input list<BackendDAE.Var> inVars;
+  output Boolean isInList = true;
+algorithm
+  for cref in inCrefs loop
+    if not isCrefInVarList(cref, inVars) then
+      isInList := false;
+      return;
+    end if;
+  end for;
+end areAllCrefsInVarList;
+
 public function varList
   "Takes a BackendDAE.Variables and returns a list of all variables in it,
    useful for e.g. dumping.

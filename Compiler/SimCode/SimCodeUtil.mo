@@ -330,7 +330,7 @@ algorithm
 
     // Assertions and crap
     // create parameter equations
-    ((uniqueEqIndex, startValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, inAllPrimaryParameters));
     if debug then execStat("simCode: createStartValueEquations"); end if;
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createNominalValueEquations"); end if;
@@ -6333,8 +6333,8 @@ end createVarNominalAssertFromVars;
 protected function createStartValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input tuple<Integer, list<SimCode.SimEqSystem>> acc;
-  output tuple<Integer, list<SimCode.SimEqSystem>> startValueEquations;
+  input tuple<Integer, list<SimCode.SimEqSystem>, list<BackendDAE.Var>> acc;
+  output tuple<Integer, list<SimCode.SimEqSystem>, list<BackendDAE.Var>> startValueEquations;
 algorithm
   startValueEquations := matchcontinue (syst, shared, acc)
     local
@@ -6342,11 +6342,11 @@ algorithm
       list<BackendDAE.Equation>  startValueEquationsTmp2;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
+      list<BackendDAE.Var> allPrimaryParameters;
 
-    // this is the old version if the new fails
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns, allPrimaryParameters)) equation
       // vars
-      ((startValueEquationsTmp2, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromStart, ({}, av));
+      ((startValueEquationsTmp2, _, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromStart, ({}, av, allPrimaryParameters));
       startValueEquationsTmp2 = listReverse(startValueEquationsTmp2);
       // kvars
       // ((startValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromStart, ({}, av));
@@ -6354,7 +6354,7 @@ algorithm
       // startValueEquationsTmp2 = listAppend(startValueEquationsTmp2, startValueEquationsTmp);
 
       (simeqns1, uniqueEqIndex) = List.mapFold(startValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
-    then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
+    then ((uniqueEqIndex, listAppend(simeqns1, simeqns), allPrimaryParameters));
 
     else equation
       Error.addInternalError("function createStartValueEquations failed", sourceInfo());
@@ -6506,9 +6506,9 @@ end createParameterEquations;
 
 protected function createInitialAssignmentsFromStart
   input BackendDAE.Var inVar;
-  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables, list<BackendDAE.Var>> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables> outTpl;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables, list<BackendDAE.Var>> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
@@ -6516,21 +6516,25 @@ algorithm
       BackendDAE.Equation initialEquation;
       list<BackendDAE.Equation> eqns;
       DAE.ComponentRef name;
-      DAE.Exp startv;
+      DAE.Exp startExp;
       DAE.ElementSource source;
       BackendDAE.Variables av;
+      list<BackendDAE.Var> allPrimaryParameters;
+      list<DAE.ComponentRef> parameters;
 
       // also add an assignment for variables that have non-constant
       // expressions, e.g. parameter values, as start.  NOTE: such start
       // attributes can then not be changed in the text file, since the initial
       // calc. will override those entries!
-    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av))
+    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av, allPrimaryParameters))
       equation
-        startv = BackendVariable.varStartValueFail(var);
-        false = Expression.isConst(startv);
+        startExp = BackendVariable.varStartValueFail(var);
+        parameters = Expression.getAllCrefs(startExp);
+        true = BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) "add equations if the start value depends only on primary parameters";
+        false = Expression.isConst(startExp) "don't add equations for constant start values";
         SimCodeVar.NOALIAS() = getAliasVar(var, SOME(av));
-        initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      then (var, (initialEquation :: eqns, av));
+        initialEquation = BackendDAE.SOLVED_EQUATION(name, startExp, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+      then (var, (initialEquation :: eqns, av, allPrimaryParameters));
 
     else (inVar,inTpl);
   end matchcontinue;
