@@ -32,7 +32,6 @@ private:
   void createSolverParameters();
   void LocaHomotopySolve(int numberofhomotopytries);
   NOX::StatusTest::StatusType BasicNLSsolve();
-  NOX::StatusTest::StatusType secondBasicNLSsolve();
 
   //void check4EventRetry(double* y)
 
@@ -74,9 +73,10 @@ private:
   //solver
   Teuchos::RCP<NOX::Solver::Generic> _solver;
 
+  Teuchos::RCP<std::ostream> _output;
+
   bool _firstCall;
   bool _generateoutput;
   bool _useDomainScaling;
-
 };
 /** @} */ // end of solverNox
