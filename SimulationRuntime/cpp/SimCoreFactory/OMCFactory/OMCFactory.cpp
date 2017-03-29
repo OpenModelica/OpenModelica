@@ -100,7 +100,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
 	#else
 	, _defaultLinSolver("linearSolver")
     #endif
-	, _defaultNonLinSolver("nox")
+	, _defaultNonLinSolver("kinsol")
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -114,7 +114,7 @@ OMCFactory::OMCFactory()
 	#else
 	, _defaultLinSolver("linearSolver")
     #endif
-    , _defaultNonLinSolver("nox")
+    , _defaultNonLinSolver("kinsol")
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
