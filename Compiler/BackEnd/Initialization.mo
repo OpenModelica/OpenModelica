@@ -1911,13 +1911,13 @@ protected
 algorithm
   (parameters, anyStartValue) := inParams;
   (outParams, outContinue) := match inExp
-    case DAE.CREF(componentRef=componentRef) equation
-      parameters = ComponentReference.crefStr(componentRef)::parameters;
-    then ((parameters, anyStartValue), true);
-
-    // TODO: REMOVE THIS CASE
-    case DAE.CALL(path=Absyn.IDENT(name="$_start"))
-    then ((parameters, true), false);
+    case DAE.CREF(componentRef=componentRef) algorithm
+      if ComponentReference.isStartCref(componentRef) then
+        anyStartValue := true;
+      else
+        parameters := ComponentReference.crefStr(componentRef)::parameters;
+      end if;
+    then ((parameters, anyStartValue), not anyStartValue);
 
     else ((parameters, anyStartValue), true);
   end match;

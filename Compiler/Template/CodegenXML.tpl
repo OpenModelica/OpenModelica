@@ -3055,9 +3055,6 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(), 'Code generation does not support der(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPreXml(arg, context, preExp, varDecls)
-// a $_start is used to get get start value of a variable
-  case CALL(path=IDENT(name="$_start"), expLst={arg}) then
-    daeExpCallPreXml(arg, context, preExp, varDecls)
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     <<
     <%crefXml(arg.componentRef)%>

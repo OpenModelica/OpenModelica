@@ -6636,9 +6636,6 @@ algorithm
       then (inExp,false,inTpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "edge")), _)
       then (inExp,false,inTpl);
-    // TODO: REMOVE THIS CASE
-    case (DAE.CALL(path = Absyn.IDENT(name = "$_start")), _)
-      then (inExp,false,inTpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "$_initialGuess")), _)
       then (inExp,false,inTpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "$_round")), _)

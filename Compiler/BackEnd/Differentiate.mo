@@ -594,11 +594,6 @@ algorithm
       //print("\nresults to exp: " + se1);
     then (res, functionTree);
 
-    // differentiate start value
-    // TODO: REMOVE THIS CASE
-    case DAE.CALL(path=Absyn.IDENT(name="$_start"), attr=DAE.CALL_ATTR(ty=tp))
-    then (Expression.makeConstZero(tp), inFunctionTree);
-
     // differentiate homotopy
     case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) equation
       (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter, inExpStack);

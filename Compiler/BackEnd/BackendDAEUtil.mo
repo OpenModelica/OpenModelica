@@ -2711,11 +2711,6 @@ algorithm
       pa = incidenceRowExp1(varslst, p, pa, diffindx);
     then (inExp, false,(vars, pa, ofunctionTree));
 
-    // lochel: internally generated call start(v) depends not on v
-    // TODO: REMOVE THIS CASE
-    case (DAE.CALL(path=Absyn.IDENT(name="$_start")), tpl)
-    then (inExp, false, tpl);
-
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path=Absyn.IDENT(name="pre")), tpl)
     then (inExp, false, tpl);
@@ -2888,10 +2883,6 @@ algorithm
         /* check also indizes of cr */
         (_,(_,res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars,res));
       then (e,false,(vars,res));
-
-    // lochel: internally generated call start(v) depends not on v
-    // TODO: REMOVE THIS CASE
-    case (DAE.CALL(path = Absyn.IDENT(name = "$_start")), _) then (inExp, false, inTpl);
 
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);

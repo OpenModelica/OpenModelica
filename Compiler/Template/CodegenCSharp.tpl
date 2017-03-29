@@ -1215,22 +1215,10 @@ match eq
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, simCode) //was daeExpToReal
-  //a hack - start values should be never on the right side of an equation,
-  //specially in FunInitialEquations()
-  let codeTxt =
-    <<
-    <%preExp%>
-    <%cref(cref, simCode)%> = <%expPart%>;
-    >>
-  match exp
-  case CALL(path=IDENT(name="$_start"), expLst={arg as CREF(__)}) then
-    <<
-    //### useless start value assignment ??
-    //<%codeTxt%>
-    //###
-    >>
-  else
-    codeTxt
+  <<
+  <%preExp%>
+  <%cref(cref, simCode)%> = <%expPart%>;
+  >>
 case SES_ARRAY_CALL_ASSIGN(__) then "SES_ARRAY_CALL_ASSIGN"
 case SES_ALGORITHM(__) then
   (statements |> stmt =>
@@ -2654,9 +2642,6 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp, simCode)
     '((int)<%castedVar%>)'
-
-  case CALL(path=IDENT(name="$_start"), expLst={arg as CREF(__)}) then
-    startCref(arg.componentRef, simCode)
 
   //'(/*edge(h[<%idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
