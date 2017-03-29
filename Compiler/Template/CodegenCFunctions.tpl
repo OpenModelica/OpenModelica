@@ -6385,22 +6385,6 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls, T
     error(sourceInfo(), 'Code generation does not support pre(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
 end daeExpCallPre;
 
-template daeExpCallStart(Exp exp, Context context, Text &preExp,
-                       Text &varDecls, Text &auxFunction)
-  "Generates code for an asub of a cref, which becomes cref + offset."
-::=
-  match exp
-  case cr as CREF(__) then
-    '<%crefAttributes(cr.componentRef)%>.start'
-  case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
-    let offset = daeExp(sub_exp, context, &preExp, &varDecls, &auxFunction)
-    let cref = cref(cr.componentRef)
-    '*(&<%crefAttributes(cr.componentRef)%>.start + <%offset%>)'
-  else
-    error(sourceInfo(), 'Code generation does not support start(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
-end daeExpCallStart;
-
-
 template daeExpSize(Exp exp, Context context, Text &preExp,
                     Text &varDecls, Text &auxFunction)
  "Generates code for a size expression."

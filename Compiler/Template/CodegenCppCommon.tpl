@@ -2157,26 +2157,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     error(sourceInfo(), 'Code generation does not support daeExpCall(<%ExpressionDumpTpl.dumpExp(call,"\"")%>)')
 end daeExpCall;
 
-template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
-                       Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
-  "Generates code for an asub of a cref, which becomes cref + offset."
-::=
-  let &varDeclsCref = buffer "" /*BUFD*/
-  match exp
-  case cr as CREF(__) then
-  match context
-    case  ALGLOOP_CONTEXT(genInitialisation=false) then
-    '_system->get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
-    else
-    'SystemDefaultImplementation::get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
-  case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
-    let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let cref = cref1(cr.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
-    '*(&$P$ATTRIBUTE<%cref(cr.componentRef, useFlatArrayNotation)%>.start + <%offset%>)'
-  else
-    error(sourceInfo(), 'Code generation does not support start(<%ExpressionDumpTpl.dumpExp(exp,"\"")%>)')
-end daeExpCallStart;
-
 template daeExpLunary(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for a logical unary expression."

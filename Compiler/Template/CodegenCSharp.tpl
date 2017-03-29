@@ -1588,23 +1588,6 @@ template old2Cref(ComponentRef cr, SimCode simCode) ::=
 end old2Cref;
 ***/
 
-//this one should be used only in InitialResidual( ..., double[][] startValues)
-template startCref(ComponentRef cr, SimCode simCode) ::=
-//'/*start(<%crefStr(cr, simCode)%>)*/start<%representationCref(cr, simCode)%>'
-
-    match cref2simvar(cr, simCode)
-    case sv as SIMVAR(__) then
-      let fviIndex =
-        match varKind
-        case STATE(__)     then "State"
-        case STATE_DER(__) then "StateDer"
-        case VARIABLE(__)  then "Algebraic"
-        case PARAM(__)     then "Parameter"
-        else /*error(sourceInfo(),*/ "UNEXPECTED_variable_varKind_in_startCref_template" //)
-      'startValues[(int)SimVarType.<%fviIndex%>][<%sv.index%>]'
-end startCref;
-
-
 //TODO: a HACK ? ... used in mixed system only
 template crefToReal(ComponentRef cr, SimCode simCode) ::=
 <</*(double)<% crefStr(cr, simCode)
