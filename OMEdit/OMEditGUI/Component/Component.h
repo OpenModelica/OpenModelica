@@ -238,6 +238,7 @@ public:
   void renameComponentInConnections(QString newName);
   void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
   void removeInterfacePoint(QString interfaceName);
+  void adjustInterfacePoints();
 
   Transformation mTransformation;
   Transformation mOldTransformation;

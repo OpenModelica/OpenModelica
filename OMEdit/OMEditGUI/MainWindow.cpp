@@ -892,7 +892,7 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
 {
-  /* if CompositeModel text is changed manually by user then validate it before fetaching the interface data. */
+  /* if CompositeModel text is changed manually by user then validate it before fetching the interface data. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return;

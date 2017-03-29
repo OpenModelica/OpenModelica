@@ -473,6 +473,10 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     mTransformation.setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
     mTransformation.setRotateAngle(0.0);
   }
+  // dynamically adjust the interface points.
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    adjustInterfacePoints();
+  }
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
   setChoicesAnnotation(StringHandler::getAnnotation(annotation, "choices"));
@@ -663,9 +667,8 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpDefaultComponentRectangle->setVisible(true);
   mpDefaultComponentText->setFontSize(5);
   mpDefaultComponentText->setVisible(true);
-  // transformation
-  qreal yPosition = 80 - mpParentComponent->getComponentsList().size() * 40;
-  QString transformation = QString("Placement(true,110.0,%1,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(yPosition);
+  // Transformation. Doesn't matter what we set here since it will be overwritten in adjustInterfacePoints();
+  QString transformation = QString("Placement(true,100.0,100.0,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)");
   mTransformation = Transformation(mpGraphicsView->getViewType(), this);
   mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
   setTransform(mTransformation.getTransformationMatrix());
@@ -1266,6 +1269,7 @@ void Component::insertInterfacePoint(QString interfaceName, QString position, QS
   pComponentInfo->setTLMCausality(causality);
   pComponentInfo->setDomain(domain);
   mComponentsList.append(new Component(pComponentInfo, this));
+  adjustInterfacePoints();
 }
 
 void Component::removeInterfacePoint(QString interfaceName)
@@ -1275,6 +1279,42 @@ void Component::removeInterfacePoint(QString interfaceName)
       mComponentsList.removeOne(pComponent);
       pComponent->deleteLater();
       break;
+    }
+  }
+  adjustInterfacePoints();
+}
+
+/*!
+ * \brief Component::adjustInterfacePoints
+ * Dynamically adjusts the size of interface points.
+ */
+void Component::adjustInterfacePoints()
+{
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+    if (!mComponentsList.isEmpty()) {
+      // we start with default size of 30
+      int interfacePointSize = 30;
+      // keep the separator size to 1/3.
+      int interfacePointSeparatorSize = (interfacePointSize / 3);
+      // 200 is the maximum height of submodel
+      while (200 <= mComponentsList.size() * (interfacePointSize + interfacePointSeparatorSize)) {
+        interfacePointSize -= 1;
+        if (interfacePointSize <= 0) {
+          interfacePointSize = 1;
+          break;
+        }
+        interfacePointSeparatorSize = (interfacePointSize / 3);
+      }
+      // set the new transformation for each interface point.
+      qreal yPosition = 100 - (interfacePointSize / 2);
+      foreach (Component *pComponent, mComponentsList) {
+        qreal xPosition = 100 + interfacePointSeparatorSize;
+        QString transformation = QString("Placement(true,%1,%2,-%3,-%3,%3,%3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(xPosition).arg(yPosition)
+            .arg(interfacePointSize / 2);
+        yPosition -= (interfacePointSize + interfacePointSeparatorSize);
+        pComponent->mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+        pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
+      }
     }
   }
 }
@@ -1316,17 +1356,10 @@ void Component::drawInterfacePoints()
         QDomNodeList interfacePoints = subModel.elementsByTagName("InterfacePoint");
         for (int j = 0; j < interfacePoints.size(); j++) {
           QDomElement interfacePoint = interfacePoints.at(j).toElement();
-          ComponentInfo *pComponentInfo = new ComponentInfo;
-          pComponentInfo->setName(interfacePoint.attribute("Name"));
-          pComponentInfo->setPosition(interfacePoint.attribute("Position", "0,0,0"));
-          pComponentInfo->setAngle321(interfacePoint.attribute("Angle321", "0,0,0"));
-          pComponentInfo->setDimensions(interfacePoint.attribute("Dimensions", "3").toInt());
-          pComponentInfo->setTLMCausality(interfacePoint.attribute("Causality",
-                                                                   StringHandler::getTLMCausality(StringHandler::TLMBidirectional)));
-          pComponentInfo->setDomain(interfacePoint.attribute("Domain",
-                                                             StringHandler::getTLMDomain(StringHandler::Mechanical)));
-          mComponentsList.append(new Component(pComponentInfo, this));
-          mComponentsList.last();
+          insertInterfacePoint(interfacePoint.attribute("Name"), interfacePoint.attribute("Position", "0,0,0"),
+                               interfacePoint.attribute("Angle321", "0,0,0"), interfacePoint.attribute("Dimensions", "3").toInt(),
+                               interfacePoint.attribute("Causality", StringHandler::getTLMCausality(StringHandler::TLMBidirectional)),
+                               interfacePoint.attribute("Domain", StringHandler::getTLMDomain(StringHandler::Mechanical)));
         }
       }
     }
