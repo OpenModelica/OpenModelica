@@ -30,7 +30,9 @@ buildModel(testOptdaedump); getErrorString();
 // true
 // ""
 //
-// pre-optimization module evalFunc (simulation):
+// ########################################
+// pre-optimization module evalFunc (simulation)
+// ########################################
 //
 //
 // unknown partition
@@ -115,6 +117,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // pre-optimization done.
 //

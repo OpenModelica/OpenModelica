@@ -50,7 +50,9 @@ buildModel(testOptdaedump); getErrorString();
 // true
 // ""
 //
-// pre-optimization module normalInlineFunction (simulation):
+// ########################################
+// pre-optimization module normalInlineFunction (simulation)
+// ########################################
 //
 //
 // unknown partition
@@ -161,7 +163,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evaluateParameters (simulation):
+//
+// ########################################
+// pre-optimization module evaluateParameters (simulation)
+// ########################################
 //
 //
 // unknown partition
@@ -272,7 +277,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module simplifyIfEquations (simulation):
+//
+// ########################################
+// pre-optimization module simplifyIfEquations (simulation)
+// ########################################
 //
 //
 // unknown partition
@@ -383,7 +391,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module expandDerOperator (simulation):
+//
+// ########################################
+// pre-optimization module expandDerOperator (simulation)
+// ########################################
 //
 //
 // unknown partition
@@ -494,7 +505,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeEqualFunctionCalls (simulation):
+//
+// ########################################
+// pre-optimization module removeEqualFunctionCalls (simulation)
+// ########################################
 //
 //
 // unknown partition
@@ -639,7 +653,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module clockPartitioning (simulation):
+//
+// ########################################
+// pre-optimization module clockPartitioning (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -750,7 +767,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module findStateOrder (simulation):
+//
+// ########################################
+// pre-optimization module findStateOrder (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -861,7 +881,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module replaceEdgeChange (simulation):
+//
+// ########################################
+// pre-optimization module replaceEdgeChange (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -972,7 +995,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module inlineArrayEqn (simulation):
+//
+// ########################################
+// pre-optimization module inlineArrayEqn (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -1083,7 +1109,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations (simulation):
+//
+// ########################################
+// pre-optimization module removeSimpleEquations (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -1189,7 +1218,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module comSubExp (simulation):
+//
+// ########################################
+// pre-optimization module comSubExp (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -1295,7 +1327,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module resolveLoops (simulation):
+//
+// ########################################
+// pre-optimization module resolveLoops (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -1401,7 +1436,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evalFunc (simulation):
+//
+// ########################################
+// pre-optimization module evalFunc (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -1507,7 +1545,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module encapsulateWhenConditions (simulation):
+//
+// ########################################
+// pre-optimization module encapsulateWhenConditions (simulation)
+// ########################################
 //
 //
 // unspecified partition
@@ -1611,6 +1652,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // pre-optimization done.
 //
@@ -2345,7 +2387,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 //
-// pre-optimization module removeEqualFunctionCalls (jacobian):
+// ########################################
+// pre-optimization module removeEqualFunctionCalls (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -2459,7 +2503,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations (jacobian):
+//
+// ########################################
+// pre-optimization module removeSimpleEquations (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -2556,7 +2603,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evalFunc (jacobian):
+//
+// ########################################
+// pre-optimization module evalFunc (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -2651,6 +2701,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // pre-optimization done.
 //
@@ -5402,7 +5453,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 //
-// pre-optimization module removeEqualFunctionCalls (jacobian):
+// ########################################
+// pre-optimization module removeEqualFunctionCalls (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -5516,7 +5569,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module removeSimpleEquations (jacobian):
+//
+// ########################################
+// pre-optimization module removeSimpleEquations (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -5613,7 +5669,10 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// pre-optimization module evalFunc (jacobian):
+//
+// ########################################
+// pre-optimization module evalFunc (jacobian)
+// ########################################
 //
 //
 // unknown partition
@@ -5708,6 +5767,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Sub partitions (0)
 // ========================================
+//
 //
 // pre-optimization done.
 //

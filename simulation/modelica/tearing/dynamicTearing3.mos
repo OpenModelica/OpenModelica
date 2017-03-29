@@ -204,7 +204,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // ========================================
 // 1/1 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic]
 // 2/2 (1): algorithm
-//   a := $_start(a);
+//   a := $START.a;
 //   a := 2.0 * x;
 //    [dynamic]
 // 3/3 (1): g * a + x * z - y = 0.0   [dynamic]
