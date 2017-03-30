@@ -278,8 +278,6 @@ public:
   QAction* getUnFoldAllAction() {return mpUnFoldAllAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void setForceSetPlainText(bool forceSetPlainText) {mForceSetPlainText = forceSetPlainText;}
-  void setTextChanged(bool changed) {mTextChanged = changed;}
-  bool isTextChanged() {return mTextChanged;}
 private:
   void initialize();
   void createActions();
@@ -301,7 +299,6 @@ protected:
   QAction *mpUnFoldAllAction;
   DocumentMarker *mpDocumentMarker;
   bool mForceSetPlainText;
-  bool mTextChanged;
 
   QMenu* createStandardContextMenu();
 private slots:

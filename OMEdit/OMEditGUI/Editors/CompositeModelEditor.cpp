@@ -57,7 +57,7 @@ QString XMLDocument::toString() const
 
 
 CompositeModelEditor::CompositeModelEditor(QWidget *pParent)
-  : BaseEditor(pParent), mLastValidText("")
+  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
 {
   mXmlDocument = XMLDocument(this);
 }
@@ -69,7 +69,7 @@ CompositeModelEditor::CompositeModelEditor(QWidget *pParent)
  */
 bool CompositeModelEditor::validateText()
 {
-  if (isTextChanged()) {
+  if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!mpModelWidget->compositeModelEditorTextChanged()) {
       QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
@@ -87,17 +87,17 @@ bool CompositeModelEditor::validateText()
       int answer = pMessageBox->exec();
       switch (answer) {
         case QMessageBox::RejectRole:
-          setTextChanged(false);
+          mTextChanged = false;
           // revert back to last correct version
           setPlainText(mLastValidText);
           return true;
         case QMessageBox::AcceptRole:
         default:
-          setTextChanged(true);
+          mTextChanged = true;
           return false;
       }
     } else {
-      setTextChanged(false);
+      mTextChanged = false;
       mLastValidText = mpPlainTextEdit->toPlainText();
     }
   }
@@ -1270,7 +1270,6 @@ void CompositeModelEditor::setPlainText(const QString &text, bool useInserText)
       textCursor.insertText(mXmlDocument.toString());
       textCursor.endEditBlock();
     }
-    setTextChanged(false);
     mForceSetPlainText = false;
     mLastValidText = text;
   }
@@ -1301,7 +1300,7 @@ void CompositeModelEditor::contentsHasChanged(int position, int charsRemoved, in
         mpModelWidget->setWindowTitle(QString(mpModelWidget->getLibraryTreeItem()->getName()).append("*"));
         mpModelWidget->getLibraryTreeItem()->setIsSaved(false);
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
-        setTextChanged(true);
+        mTextChanged = true;
       }
     }
   }

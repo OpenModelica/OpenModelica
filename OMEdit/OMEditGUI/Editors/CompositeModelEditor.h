@@ -96,6 +96,7 @@ public:
   bool deleteConnection(QString startComponentName, QString endComponentName);
 private:
   QString mLastValidText;
+  bool mTextChanged;
   XMLDocument mXmlDocument;
 
   bool existInterfacePoint(QString subModelName, QString interfaceName);
