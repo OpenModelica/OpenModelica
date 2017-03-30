@@ -179,6 +179,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
   TRACE_PUSH
   long step;
   int retVal;
+  FILE *pFile = NULL;
+  long i;
+  MODEL_DATA *mData = data->modelData;
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -190,33 +193,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
 
   if (data->callback->useHomotopy && numLambdaSteps > 1)
   {
-    long i;
     char buffer[4096];
-    FILE *pFile = NULL;
-
-    modelica_real* realVars = (modelica_real*)calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
-    modelica_integer* integerVars = (modelica_integer*)calloc(data->modelData->nVariablesInteger, sizeof(modelica_integer));
-    modelica_boolean* booleanVars = (modelica_boolean*)calloc(data->modelData->nVariablesBoolean, sizeof(modelica_boolean));
-    modelica_string* stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesString * sizeof(modelica_string));
-    MODEL_DATA *mData = data->modelData;
-
-    assertStreamPrint(threadData, 0 != realVars, "out of memory");
-    assertStreamPrint(threadData, 0 != integerVars, "out of memory");
-    assertStreamPrint(threadData, 0 != booleanVars, "out of memory");
-    assertStreamPrint(threadData, 0 != stringVars, "out of memory");
-
-    for(i=0; i<mData->nVariablesReal; ++i) {
-      realVars[i] = mData->realVarsData[i].attribute.start;
-    }
-    for(i=0; i<mData->nVariablesInteger; ++i) {
-      integerVars[i] = mData->integerVarsData[i].attribute.start;
-    }
-    for(i=0; i<mData->nVariablesBoolean; ++i) {
-      booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    }
-    for(i=0; i<mData->nVariablesString; ++i) {
-      stringVars[i] = mData->stringVarsData[i].attribute.start;
-    }
 
 #if !defined(OMC_NO_FILESYSTEM)
     if(ACTIVE_STREAM(LOG_INIT))
@@ -231,7 +208,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
 #endif
 
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
-    for(step=0; step<numLambdaSteps; ++step)
+    for(step=0; step<numLambdaSteps-1; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(numLambdaSteps-1);
       infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
@@ -247,6 +224,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
 
       infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
 
+#if !defined(OMC_NO_FILESYSTEM)
       if(ACTIVE_STREAM(LOG_INIT))
       {
         fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
@@ -254,39 +232,32 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
           fprintf(pFile, "%.16g,", data->localData[0]->realVars[i]);
         fprintf(pFile, "\n");
       }
+#endif
 
       if(check_nonlinear_solutions(data, 0) ||
          check_linear_solutions(data, 0) ||
          check_mixed_solutions(data, 0))
         break;
-
-      setAllStartToVars(data);
     }
     messageClose(LOG_INIT);
-
-    if(ACTIVE_STREAM(LOG_INIT))
-      fclose(pFile);
-
-    for(i=0; i<mData->nVariablesReal; ++i)
-      mData->realVarsData[i].attribute.start = realVars[i];
-    for(i=0; i<mData->nVariablesInteger; ++i)
-      mData->integerVarsData[i].attribute.start = integerVars[i];
-    for(i=0; i<mData->nVariablesBoolean; ++i)
-      mData->booleanVarsData[i].attribute.start = booleanVars[i];
-    for(i=0; i<mData->nVariablesString; ++i)
-      mData->stringVarsData[i].attribute.start = stringVars[i];
-
-    free(realVars);
-    free(integerVars);
-    free(booleanVars);
-    omc_alloc_interface.free_uncollectable(stringVars);
+    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = 1");
   }
-  else
-  {
-    data->simulationInfo->lambda = 1.0;
-    data->callback->functionInitialEquations(data, threadData);
-  }
+
+  data->simulationInfo->lambda = 1.0;
+  data->callback->functionInitialEquations(data, threadData);
   storeRelations(data);
+
+#if !defined(OMC_NO_FILESYSTEM)
+  if(data->callback->useHomotopy && numLambdaSteps > 1 && ACTIVE_STREAM(LOG_INIT))
+  {
+    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
+    fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
+    for(i=0; i<mData->nVariablesReal; ++i)
+      fprintf(pFile, "%.16g,", data->localData[0]->realVars[i]);
+    fprintf(pFile, "\n");
+    fclose(pFile);
+  }
+#endif
 
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
@@ -651,9 +622,9 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   infoStreamPrint(LOG_INIT, 0, "### END INITIALIZATION ###");
 #endif
 
-  overwriteOldSimulationData(data);     /* overwrite the whole ring-buffer with initialized values */
-  storePreValues(data);                 /* save pre-values */
-  updateDiscreteSystem(data, threadData);           /* evaluate discrete variables (event iteration) */
+  overwriteOldSimulationData(data);       /* overwrite the whole ring-buffer with initialized values */
+  storePreValues(data);                   /* save pre-values */
+  updateDiscreteSystem(data, threadData); /* evaluate discrete variables (event iteration) */
   saveZeroCrossings(data, threadData);
 
   /* do pivoting for dynamic state selection if selection changed try again */
