@@ -6515,7 +6515,7 @@ algorithm
       BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
       list<BackendDAE.Equation> eqns;
-      DAE.ComponentRef name;
+      DAE.ComponentRef cref;
       DAE.Exp startExp;
       DAE.ElementSource source;
       BackendDAE.Variables av;
@@ -6526,14 +6526,14 @@ algorithm
       // expressions, e.g. parameter values, as start.  NOTE: such start
       // attributes can then not be changed in the text file, since the initial
       // calc. will override those entries!
-    case (var as BackendDAE.VAR(varName=name, source=source), (eqns, av, allPrimaryParameters))
+    case (var as BackendDAE.VAR(varName=cref, source=source), (eqns, av, allPrimaryParameters))
       equation
         startExp = BackendVariable.varStartValueFail(var);
         parameters = Expression.getAllCrefs(startExp);
         true = BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) "add equations if the start value depends only on primary parameters";
         false = Expression.isConst(startExp) "don't add equations for constant start values";
         SimCodeVar.NOALIAS() = getAliasVar(var, SOME(av));
-        initialEquation = BackendDAE.SOLVED_EQUATION(name, startExp, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+        initialEquation = BackendDAE.SOLVED_EQUATION(ComponentReference.crefPrefixStart(cref), startExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       then (var, (initialEquation :: eqns, av, allPrimaryParameters));
 
     else (inVar,inTpl);

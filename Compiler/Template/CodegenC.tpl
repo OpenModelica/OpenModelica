@@ -2981,16 +2981,8 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* start ****************************************************** */
+    infoStreamPrint(LOG_INIT, 1, "updating primary start-values");
     <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-
-    infoStreamPrint(LOG_INIT, 1, "updating start-values");
-    <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-      <<
-      <%crefAttributes(cref)%>.start = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>)  <%crefAttributes(cref)%>.start);
-      >>
-      ;separator="\n"
-    %>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     TRACE_POP
