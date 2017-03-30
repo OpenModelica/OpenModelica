@@ -3039,9 +3039,9 @@ void ModelWidget::reDrawModelWidget()
     getCompositeModelConnections();
     // clear the undo stack
     mpUndoStack->clear();
-    if (mpEditor) {
-      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
-    }
+//    if (mpEditor) {
+//      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
+//    }
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;
@@ -3074,9 +3074,9 @@ void ModelWidget::reDrawModelWidget()
     }
     // clear the undo stack
     mpUndoStack->clear();
-    if (mpEditor) {
-      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
-    }
+//    if (mpEditor) {
+//      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
+//    }
     // announce the change.
     mpLibraryTreeItem->emitLoaded();
   }
