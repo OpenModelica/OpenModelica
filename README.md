@@ -29,6 +29,15 @@ $ make -f Makefile.omdev.mingw omedit
 ```
 - Start OMEdit from `/path/to/OpenModelica/build/bin/OMEdit.exe`
 
+## Coding Style
+
+- 2 spaces not tab
+- CamelCase except that first letter should be small.
+- Member variables should start with `m` and member pointers should start with `mp`.
+- Local pointers should start with `p`.
+- Use meaningful name for variables and functions.
+
+
 ## Bug Reports
 
 - Submit bugs through the [OpenModelica trac](https://trac.openmodelica.org/OpenModelica/newticket).
