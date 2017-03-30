@@ -51,7 +51,7 @@
  * \param pParent
  */
 ModelicaEditor::ModelicaEditor(QWidget *pParent)
-  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
+  : BaseEditor(pParent), mLastValidText("")
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   /* set the document marker */
