@@ -1500,15 +1500,26 @@ void MainWindow::undo()
     pModelWidget->updateModelText(false);
   }
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable())) {
-//    pModelWidget->getEditor()->setForceSetPlainText(true);
+    if (pModelWidget &&
+        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
+      pModelWidget->getEditor()->setForceSetPlainText(true);
+    }
     pModelWidget->getEditor()->getPlainTextEdit()->document()->undo();
 //    if (pModelWidget->getEditor()->isVisible() &&
 //        pModelWidget->getEditor()->getPlainTextEdit()->document()->availableUndoSteps() + 1 == pModelWidget->getUndoStack()->index()) {
 //      pModelWidget->clearSelection();
 //      pModelWidget->getUndoStack()->undo();
 //      pModelWidget->updateClassAnnotationIfNeeded();
+//    } else {
+//      pModelWidget->getEditor()->setTextChanged(true);
 //    }
-//    pModelWidget->getEditor()->setForceSetPlainText(false);
+//    pModelWidget->updateModelText(false);
+    if (pModelWidget &&
+        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
+      pModelWidget->getEditor()->setForceSetPlainText(false);
+    }
   }
 }
 
@@ -1528,15 +1539,26 @@ void MainWindow::redo()
     pModelWidget->updateModelText(false);
   }
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable())) {
-//    pModelWidget->getEditor()->setForceSetPlainText(true);
+    if (pModelWidget &&
+        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
+      pModelWidget->getEditor()->setForceSetPlainText(true);
+    }
     pModelWidget->getEditor()->getPlainTextEdit()->document()->redo();
 //    if (pModelWidget->getEditor()->isVisible() &&
 //        pModelWidget->getEditor()->getPlainTextEdit()->document()->availableRedoSteps() == pModelWidget->getUndoStack()->index()) {
 //      pModelWidget->clearSelection();
 //      pModelWidget->getUndoStack()->redo();
 //      pModelWidget->updateClassAnnotationIfNeeded();
+//    } else {
+//      pModelWidget->getEditor()->setTextChanged(true);
 //    }
-//    pModelWidget->getEditor()->setForceSetPlainText(false);
+//    pModelWidget->updateModelText(false);
+    if (pModelWidget &&
+        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
+      pModelWidget->getEditor()->setForceSetPlainText(false);
+    }
   }
 }
 

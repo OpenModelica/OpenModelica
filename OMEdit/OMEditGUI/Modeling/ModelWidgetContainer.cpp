@@ -3290,6 +3290,9 @@ void ModelWidget::updateModelText(bool updateText)
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   if (updateText) {
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+  } else {
+    mpLibraryTreeItem->setIsSaved(false);
+    pLibraryTreeModel->updateLibraryTreeItem(mpLibraryTreeItem);
   }
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
