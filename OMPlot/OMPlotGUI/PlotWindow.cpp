@@ -342,7 +342,12 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     double *timeVals = read_csv_dataset(csvReader, "time");
     if (timeVals == NULL)
     {
-      throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
+      timeVals = read_csv_dataset(csvReader, "lambda");
+      if (timeVals == NULL)
+      {
+        throw NoVariableException(tr("Variable doesnt exist: %1").arg("time or lambda").toStdString().c_str());
+      }
+      setXLabel("lambda");
     }
 
     // read in all values
