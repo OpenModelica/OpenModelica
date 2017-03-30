@@ -4,10 +4,10 @@
 #include <Solver/Nox/FactoryExport.h>
 
 
+#include <Core/Utils/extension/logger.hpp>
 #include <Solver/Nox/NoxLapackInterface.h>
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#include <Core/Utils/extension/logger.hpp>
 #include <Solver/Nox/Nox.h>
 #include <Solver/Nox/NoxSettings.h>
 
@@ -728,118 +728,6 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error in Algloop " + std::to_string(_algLoop->getEquationIndex()) + " at simtime " + std::to_string(_algLoop->getSimTime()) + ", with error message: " + ex.what());
 	}
     return status;
-}
-
-NOX::StatusTest::StatusType Nox::secondBasicNLSsolve(){
-	NOX::StatusTest::StatusType status;
-	int iter = 0;
-	if (_generateoutput) std::cout << "starting solving algloop " << _algLoop->getEquationIndex() << std::endl;
-
-	if (_firstCall) initialize();
-
-	_statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
-    _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
-    _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
-    _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
-
-	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
-	_statusTestsCombo->addStatusTest(_statusTestStagnation);
-	_statusTestsCombo->addStatusTest(_statusTestDivergence);
-
-	_solverParametersPtr = Teuchos::rcp(new Teuchos::ParameterList);
-	_solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
-
-	if (_generateoutput){
-		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
-	}else{
-		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
-	}
-
-	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop,-1));//this also gets the nominal values
-
-	_iterationStatus=CONTINUE;
-
-	while(_iterationStatus==CONTINUE){
-		iter++;
-
-		// Reset initial guess
-		memcpy(_y,_y0,_dimSys*sizeof(double));
-		_algLoop->setReal(_y);
-
-		_grp = Teuchos::rcp(new NOX::LAPACK::Group(*_noxLapackInterface));//this also calls the getInitialGuess-function in the NoxLapackInterface and sets the initial guess in the NOX::LAPACK::Group
-
-		try{
-			_solver = NOX::Solver::buildSolver(_grp, _statusTestsCombo, _solverParametersPtr);
-		}
-		catch(const std::exception &ex)
-		{
-			std::cout << std::endl << "sth went wrong during solver building, with error message" << ex.what() << std::endl;
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"solver building error");
-		}
-
-
-		if (_generateoutput) {
-			double* rhsssss = new double[_dimSys];//stores f(x)
-			double* xp = new double[_dimSys];//stores x temporarily
-			_algLoop->getReal(xp);
-			_algLoop->getRHS(rhsssss);
-			std::cout << "we are at position x=(";
-			for (int i=0;i<_dimSys;i++){
-				std::cout << xp[i] << " ";
-			}
-			std::cout << ")" << std::endl;
-			std::cout << "the right hand side is given by (";
-			for (int i=0;i<_dimSys;i++){
-				std::cout << rhsssss[i] << " ";
-			}
-			std::cout << ")" << std::endl;
-			std::cout << std::endl;
-			delete [] rhsssss;
-			delete [] xp;
-
-			std::cout << "we are solving with the following options:" <<std::endl;
-			_solverParametersPtr->print();
-			std::cout << std::endl;
-		}
-
-		try{
-			status = _solver->solve();
-		}
-		catch(const std::exception &ex)
-		{
-			std::cout << std::endl << "sth went wrong during solving, with error message" << ex.what() << std::endl;
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");
-		}
-
-		// Get the answer
-		NOX::LAPACK::Group solnGrp = dynamic_cast<const NOX::LAPACK::Group&>(_solver->getSolutionGroup());
-		NOX::LAPACK::Vector Lapacksolution=dynamic_cast<const NOX::LAPACK::Vector&>(solnGrp.getX());
-
-		for (int i=0;i<_dimSys;i++){
-			if (_useDomainScaling){
-				_y[i]=Lapacksolution(i)/_yScale[i];
-			}else{
-				_y[i]=Lapacksolution(i);
-			}
-		}
-
-		_algLoop->setReal(_y);
-		_algLoop->evaluate();
-
-		if (_generateoutput) {
-			std::cout << "solutionvector=(";
-			for (int i=0;i<_dimSys;i++) std::cout << _y[i] << " ";
-			std::cout << ")" << std::endl;
-		}
-
-		if (status==NOX::StatusTest::Converged){
-			if (_generateoutput) std::cout << "simtime=" << _algLoop->getSimTime() << std::endl;
-			_iterationStatus=DONE;
-		}
-	}
-	if (_generateoutput) std::cout << "ending solve" << std::endl;
-
-	return status;
 }
 
 /** @} */ // end of solverNox

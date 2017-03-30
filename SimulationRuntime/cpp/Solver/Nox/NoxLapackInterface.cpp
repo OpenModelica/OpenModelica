@@ -91,8 +91,10 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 
 		if (_generateoutput) {
 			std::cout << "Initial guess is given by " << std::endl;
-			for(int i=0;i<_dimSys;i++) std::cout << (*_initialGuess)(i) << " ";
-			std::cout << std::endl;
+			// for(int i=0;i<_dimSys;i++) std::cout << (*_initialGuess)(i) << " ";
+			// std::cout << std::endl;
+			// std::cout << "or" << std::endl;
+			_initialGuess->print(std::cout);
 		}
 
 		if (_useFunctionValueScaling){
@@ -132,14 +134,16 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		}
 		std::cout << ")" << std::endl;
 		std::cout << "The position seen by NOX is given by x=(";
-		for (int i=0;i<_dimSys;i++){
-			std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << x(i) << " ";
-		}
-		std::cout << ")" << std::endl;
+		// for (int i=0;i<_dimSys;i++){
+			// std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << x(i) << " ";
+		// }
+		// std::cout << ")" << std::endl;
+		// std::cout << "or" << std::endl;
+		x.print(std::cout);
 	}
 
 	_algLoop->setReal(_xtemp);
-	//_algLoop->getRHS(_rhs);
+	_algLoop->getRHS(_rhs);
 	try{
 		_algLoop->evaluate();
 		_algLoop->getRHS(_rhs);
@@ -147,9 +151,23 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 	{
 		if (_generateoutput) std::cout << "calculating right hand side failed with error message:" << std::endl << ex.what() << std::endl;
 		//the following should be done when some to be implemented flag like "continue if function evaluation fails" is activated.
+
+
+		//even newer, experimental version. Delete comments, when this is tested.
+		// for(int i=0;i<_dimSys;i++){
+			// _rhs[i]=_fScale[i]*(std::abs(x(i)-(getInitialGuess())(i))+1)*((_rhs[i]<0.0) ? -1.0e6 : 1.0e6);
+			// this has conical form.
+			// it is based on the assumption that getInitialGuess is contained in the domain.
+			// We have two goals: One is to ensure, that the rhs is at least 1.0e6.
+			// The other is to make sure, that if there is an open ball around the area where we cannot evaluate, that the next newton iterate is the initial guess.
+			// That is actually not good, the initial guess is where we started...
+			// _rhs[i]=_fScale[i]*(std::abs(x(i))+1)*((_rhs[i]<0.0) ? -1.0e6 : 1.0e6);
+			// this has conical form with center 0.
+		// }
+
 		//new, experimental version. Delete comments, when this is tested.
 		for(int i=0;i<_dimSys;i++){
-			_rhs[i]= (_rhs[i]<0.0) ? -1.0e6 : 1.0e6;
+			_rhs[i]= ((_rhs[i]<0.0) ? -1.0e6 : 1.0e6);
 		}
 		//Maybe this should have conical form, ie. in case of high values, use 1.0e6*x+1.0e6 instead.
 
@@ -173,7 +191,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 			std::cout << _rhs[i] << " ";
 		}
 		std::cout << ")" << std::endl;
-		std::cout << "the right hand side seen by NOX is given by (";
+		// std::cout << "the right hand side seen by NOX is given by (";
 	}
 	for (int i=0;i<_dimSys;i++){
 
@@ -183,15 +201,17 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 			f(i)=_rhs[i];
 		}
 		//checking for infinity.
-		if (f(i)>=std::numeric_limits<double>::max()) f(i)=1.0e6;
-		if (f(i)<=-std::numeric_limits<double>::max()) f(i)=-1.0e6;
+		if (f(i)>=std::numeric_limits<double>::max()) f(i)=1.0e12;
+		if (f(i)<=-std::numeric_limits<double>::max()) f(i)=-1.0e12;
 		//checking for NaN. Do NOT delete the next line, it makes sense.
-		if (!(f(i)==f(i))) f(i)=1.0e6;
-		if (_generateoutput) std::cout << f(i) << " ";
+		if (!(f(i)==f(i))) f(i)=1.0e12;
+		// if (_generateoutput) std::cout << f(i) << " ";
 	}
 	if (_generateoutput){
-		std::cout << ")" << std::endl;
-		std::cout << std::endl;
+		// std::cout << ")" << std::endl;
+		// std::cout << std::endl;
+		// std::cout << "or also" << std::endl;
+		// f.print(std::cout);
 	}
 	return true;
 }
@@ -211,12 +231,15 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 
 	if (_generateoutput){
 		std::cout << "we are at simtime " << _algLoop->getSimTime() << " and at position (seen by NOX) x=(";
-		for (int i=0;i<_dimSys;i++){
-			std::cout << x(i) << " ";
-		}
-		std::cout << ")" << std::endl;
-		std::cout << std::endl;
+		// for (int i=0;i<_dimSys;i++){
+			// std::cout << x(i) << " ";
+		// }
+		// std::cout << ")" << std::endl;
+		// std::cout << std::endl;
+		// std::cout << "or" << std::endl;
+		x.print(std::cout);
 	}
+
 
 	for (int i=0;i<_dimSys;i++){
 		//adding the denominator of the difference quotient
@@ -228,15 +251,19 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 		xplushei(i)=x(i);
 	}
 
+	//if (_generateoutput){
+		// std::cout << "the Jacobian is given by (the transpose of) " << std::endl;
+		// for (int i=0;i<_dimSys;i++){
+			// for (int j=0;j<_dimSys;j++){
+				// std::cout << J(j,i) << " ";
+			// }
+			// std::cout << std::endl;
+		// }
+		// std::cout << std::endl << "done computing Jacobian" << std::endl;
+	//}
 	if (_generateoutput){
-		std::cout << "the Jacobian is given by (the transpose of) " << std::endl;
-		for (int i=0;i<_dimSys;i++){
-			for (int j=0;j<_dimSys;j++){
-				std::cout << J(j,i) << " ";
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl << "done computing Jacobian" << std::endl;
+		std::cout << "the Jacobian is given by" << std::endl;
+		J.print(std::cout);//is correct, no transposing necessary.
 	}
 	return true;
 }
@@ -250,8 +277,10 @@ void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const doubl
 {
 	if(_generateoutput){
 		std::cout << "At parameter value: " << std::setprecision(8) << conParam << " the solution vector (norm=" << x.norm() << ") is" << std::endl;
-		for (int i=0; i<_dimSys; i++) std::cout << " " << x(i);
-		std::cout << ")" << std::endl;
+		// for (int i=0; i<_dimSys; i++) std::cout << " " << x(i);
+		// std::cout << ")" << std::endl;
+		// std::cout << "or" << std::endl;
+		x.print(std::cout);
 		std::cout << "Simtime: " << _algLoop->getSimTime() << std::endl;
 	}
 }
