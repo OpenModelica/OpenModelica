@@ -5146,10 +5146,16 @@ case SES_SIMPLE_ASSIGN(__)
 case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+  let postExp = if isStartCref(cref) then
+    <<
+    <%cref(popCref(cref))%> = <%cref(cref)%>;
+    infoStreamPrint(LOG_INIT, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref))%>);
+    >>
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
   <%cref(cref)%> = <%expPart%>;
+    <%postExp%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;

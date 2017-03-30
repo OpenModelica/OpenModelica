@@ -3147,6 +3147,21 @@ package ComponentReference
     output Absyn.Path outPath;
   end crefToPathIgnoreSubs;
 
+  function crefPrefixStart
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end crefPrefixStart;
+
+  function isStartCref
+    input DAE.ComponentRef cr;
+    output Boolean b;
+  end isStartCref;
+
+  function popCref
+    input DAE.ComponentRef inCR;
+    output DAE.ComponentRef outCR;
+  end popCref;
+
 end ComponentReference;
 
 package Expression
