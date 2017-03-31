@@ -162,11 +162,9 @@ void MainWindow::setUpMainWindow()
   mpProgressBar->setMaximumWidth(300);
   mpProgressBar->setTextVisible(false);
   mpProgressBar->setVisible(false);
-  // pointer position Label
-  mpPointerXPositionLabel = new Label;
-  mpPointerXPositionLabel->setMinimumWidth(60);
-  mpPointerYPositionLabel = new Label;
-  mpPointerYPositionLabel->setMinimumWidth(60);
+  // Position Label
+  mpPositionLabel = new Label;
+  mpPositionLabel->setMinimumWidth(75);
   // create the perspective tabs
   mpPerspectiveTabbar = new QTabBar;
   mpPerspectiveTabbar->setDocumentMode(true);
@@ -204,8 +202,7 @@ void MainWindow::setUpMainWindow()
   mpStatusBar->setContentsMargins(0, 0, 0, 0);
   // add items to statusbar
   mpStatusBar->addPermanentWidget(mpProgressBar);
-  mpStatusBar->addPermanentWidget(mpPointerXPositionLabel);
-  mpStatusBar->addPermanentWidget(mpPointerYPositionLabel);
+  mpStatusBar->addPermanentWidget(mpPositionLabel);
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
   setStatusBar(mpStatusBar);

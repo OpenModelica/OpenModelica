@@ -1260,8 +1260,8 @@ void PlainTextEdit::updateCursorPosition()
     const QTextBlock block = textCursor().block();
     const int line = block.blockNumber() + 1;
     const int column = textCursor().columnNumber();
-    Label *pCursorPositionLabel = mpBaseEditor->getModelWidget()->getCursorPositionLabel();
-    pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
+    Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
+    pPositionLabel->setText(QString("Ln: %1, Col: %2").arg(line).arg(column));
   }
   ensureCursorVisible();
 }

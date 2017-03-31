@@ -285,6 +285,7 @@ protected:
   virtual void contextMenuEvent(QContextMenuEvent *event);
   virtual void resizeEvent(QResizeEvent *event);
   virtual void wheelEvent(QWheelEvent *event);
+  virtual void leaveEvent(QEvent *event);
 };
 
 class WelcomePageWidget : public QWidget
@@ -346,7 +347,6 @@ public:
   BaseEditor* getEditor() {return mpEditor;}
   void setModelClassPathLabel(QString path) {mpModelClassPathLabel->setText(path);}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
-  Label* getCursorPositionLabel() {return mpCursorPositionLabel;}
   bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.append(pLibraryTreeItem);}
   void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
@@ -394,7 +394,6 @@ private:
   Label *mpViewTypeLabel;
   Label *mpModelClassPathLabel;
   Label *mpModelFilePathLabel;
-  Label *mpCursorPositionLabel;
   QToolButton *mpFileLockToolButton;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsScene *mpDiagramGraphicsScene;

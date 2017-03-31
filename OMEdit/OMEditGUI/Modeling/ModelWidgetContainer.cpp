@@ -1774,16 +1774,17 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   }
 }
 
-//! Defines what happens when the mouse is moving in a GraphicsView.
-//! @param event contains information of the mouse moving operation.
+/*!
+ * \brief GraphicsView::mouseMoveEvent
+ * Defines what happens when the mouse is moving in a GraphicsView.
+ * \param event contains information of the mouse moving operation.
+ */
 void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
-  /* update the pointer position labels */
-  Label *pPointerXPositionLabel = MainWindow::instance()->getPointerXPositionLabel();
-  pPointerXPositionLabel->setText(QString("X: %1").arg(QString::number(mapToScene(event->pos()).x(), 'f', 2)));
-  Label *pPointerYPositionLabel = MainWindow::instance()->getPointerYPositionLabel();
-  pPointerYPositionLabel->setText(QString("Y: %1").arg(QString::number(mapToScene(event->pos()).y(), 'f', 2)));
-
+  // update the position label
+  Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
+  pPositionLabel->setText(QString("X: %1, Y: %2").arg(QString::number(qRound(mapToScene(event->pos()).x())))
+                          .arg(QString::number(qRound(mapToScene(event->pos()).y()))));
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if user mouse over connector show Qt::CrossCursor.
   bool setCrossCursor = false;
@@ -2157,8 +2158,11 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
 }
 
 /*!
-  Reimplementation of QGraphicsView::wheelEvent.
-  */
+ * \brief GraphicsView::wheelEvent
+ * Reimplementation of QGraphicsView::wheelEvent.
+ * Allows zooming with mouse.
+ * \param event
+ */
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
   int numDegrees = event->delta() / 8;
@@ -2182,6 +2186,19 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   } else {
     QGraphicsView::wheelEvent(event);
   }
+}
+
+/*!
+ * \brief GraphicsView::leaveEvent
+ * Reimplementation of QGraphicsView::leaveEvent.
+ * Clears the position label in the status bar.
+ * \param event
+ */
+void GraphicsView::leaveEvent(QEvent *event)
+{
+  // clear the position label
+  MainWindow::instance()->getPositionLabel()->clear();
+  QGraphicsView::leaveEvent(event);
 }
 
 WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
@@ -2810,7 +2827,6 @@ void ModelWidget::createModelWidgetComponents()
     mpModelClassPathLabel = new Label(mpLibraryTreeItem->getNameStructure());
     mpModelFilePathLabel = new Label(mpLibraryTreeItem->getFileName());
     mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
-    mpCursorPositionLabel = new Label;
     // documentation view tool button
     mpFileLockToolButton = new QToolButton;
     mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeItem->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
@@ -2856,7 +2872,6 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelClassPathLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-      mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       if (MainWindow::instance()->isDebug()) {
@@ -2892,7 +2907,6 @@ void ModelWidget::createModelWidgetComponents()
       }
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-      mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       pMainLayout->addWidget(mpModelStatusBar);
@@ -2951,7 +2965,6 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-      mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
       pMainLayout->addWidget(mpModelStatusBar);
@@ -4774,6 +4787,7 @@ void ModelWidget::showIconView(bool checked)
   mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
   updateUndoRedoActions();
+  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -4806,6 +4820,7 @@ void ModelWidget::showDiagramView(bool checked)
   mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
   updateUndoRedoActions();
+  MainWindow::instance()->getPositionLabel()->clear();
 }
 
 /*!
@@ -4827,6 +4842,7 @@ void ModelWidget::showTextView(bool checked)
   mpDiagramGraphicsView->hide();
   mpEditor->show();
   mpEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+  mpEditor->getPlainTextEdit()->updateCursorPosition();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
   updateUndoRedoActions();
 }

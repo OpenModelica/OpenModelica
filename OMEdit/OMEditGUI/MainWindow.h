@@ -127,8 +127,7 @@ public:
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
   void hideProgressBar() {mpProgressBar->setVisible(false);}
-  Label* getPointerXPositionLabel() {return mpPointerXPositionLabel;}
-  Label* getPointerYPositionLabel() {return mpPointerYPositionLabel;}
+  Label* getPositionLabel() {return mpPositionLabel;}
   QTabBar* getPerspectiveTabBar() {return mpPerspectiveTabbar;}
   QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
   QAction* getSaveAction() {return mpSaveAction;}
@@ -254,8 +253,7 @@ private:
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QProgressBar *mpProgressBar;
-  Label *mpPointerXPositionLabel;
-  Label *mpPointerYPositionLabel;
+  Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
   QStatusBar *mpStatusBar;
   QTimer *mpAutoSaveTimer;
