@@ -1942,10 +1942,10 @@ protected function makeIntialGuess
 protected
   DAE.Exp con, e;
 algorithm
- con := Expression.makePureBuiltinCall("initial",{},tp);
- (e,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, DAE.startNamePrefix, tp, true));
- (oExp,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, "$_initialGuess",tp,false));
- oExp := DAE.IFEXP(con,e,oExp);
+ con := Expression.makePureBuiltinCall("initial", {}, tp);
+ e := Expression.traverseExpBottomUp(iExp2, makeIntialGuess2, (iExp3, "pre", tp, true));
+ oExp := Expression.traverseExpBottomUp(iExp2, makeIntialGuess2, (iExp3, "pre", tp, false));
+ oExp := DAE.IFEXP(con, e, oExp);
 end makeIntialGuess;
 
 protected function makeIntialGuess2
@@ -1963,11 +1963,7 @@ algorithm
 
     case (DAE.CREF(componentRef=cr1), (DAE.CREF(componentRef=cr2), fun, tp, _))
       guard(ComponentReference.crefEqual(cr1, cr2)) algorithm
-      if fun == DAE.startNamePrefix then
-        e := Expression.crefExp(ComponentReference.crefPrefixStart(cr1));
-      else
-        e := Expression.makePureBuiltinCall(fun, {iExp}, tp);
-      end if;
+      e := Expression.makePureBuiltinCall(fun, {iExp}, tp);
     then e;
 
     case (_, (_, _, tp, true)) algorithm
