@@ -144,19 +144,9 @@ const double* PlotCurve::getXAxisVector() const
   return mXAxisVector.data();
 }
 
-QVector<double> PlotCurve::getXAxisData()
-{
-  return mXAxisVector;
-}
-
 void PlotCurve::setYAxisVector(QVector<double> vector)
 {
   mYAxisVector = vector;
-}
-
-QVector<double> PlotCurve::getYAxisData()
-{
-  return mYAxisVector;
 }
 
 void PlotCurve::addYAxisValue(double value)

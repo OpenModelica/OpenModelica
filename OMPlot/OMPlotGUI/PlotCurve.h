@@ -41,8 +41,6 @@ namespace OMPlot
 class PlotCurve : public QwtPlotCurve
 {
 private:
-  QwtArray<double> mXAxisVector;
-  QwtArray<double> mYAxisVector;
   QString mName;
   QString mNameStructure;
   QString mFileName;
@@ -59,6 +57,9 @@ public:
   PlotCurve(QString fileName, QString variableName, QString unit, QString displayUnit, Plot *pParent);
   ~PlotCurve();
 
+  QwtArray<double> mXAxisVector;
+  QwtArray<double> mYAxisVector;
+
   void setTitleLocal();
   Qt::PenStyle getPenStyle(int style);
   QwtPlotCurve::CurveStyle getCurveStyle(int style);
@@ -74,10 +75,8 @@ public:
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
   const double* getXAxisVector() const;
-  QVector<double> getXAxisData();
   void clearXAxisVector() {mXAxisVector.clear();}
   void setYAxisVector(QVector<double> vector);
-  QVector<double> getYAxisData();
   void addYAxisValue(double value);
   void updateYAxisValue(int index, double value);
   const double* getYAxisVector() const;
