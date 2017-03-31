@@ -1277,8 +1277,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(),
                                                                                                  pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
-            for (int i = 0 ; i < pPlotCurve->getYAxisData().size() ; i++) {
-              pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->getYAxisData().at(i), convertUnit.offset, convertUnit.scaleFactor));
+            for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
+              pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
             pPlotWindow->getPlot()->replot();
@@ -1291,8 +1291,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (pPlotWindow->getTimeUnit().compare("s") != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits("s", pPlotWindow->getTimeUnit());
           if (convertUnit.unitsCompatible) {
-            for (int i = 0 ; i < pPlotCurve->getXAxisData().size() ; i++) {
-              pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->getXAxisData().at(i), convertUnit.offset, convertUnit.scaleFactor));
+            for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+              pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
             pPlotWindow->getPlot()->replot();
@@ -1486,8 +1486,8 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         QString curveTitle = pPlotCurve->getNameStructure();
         if (curveTitle.compare(pVariablesTreeItem->getVariableName()) == 0) {
-          for (int i = 0 ; i < pPlotCurve->getYAxisData().size() ; i++) {
-            pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->getYAxisData().at(i), convertUnit.offset, convertUnit.scaleFactor));
+          for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
+            pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           pPlotCurve->setDisplayUnit(pVariablesTreeItem->getDisplayUnit());
@@ -1519,8 +1519,8 @@ void VariablesWidget::timeUnitChanged(QString unit)
     OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
     if (convertUnit.unitsCompatible) {
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-        for (int i = 0 ; i < pPlotCurve->getXAxisData().size() ; i++) {
-          pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->getXAxisData().at(i), convertUnit.offset, convertUnit.scaleFactor));
+        for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+          pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
         }
         pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
       }

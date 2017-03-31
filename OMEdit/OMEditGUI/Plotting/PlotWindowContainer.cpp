@@ -277,7 +277,7 @@ void PlotWindowContainer::exportVariables()
   headers << "\"time\"";
   foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
     headers << "\"" + pPlotCurve->getName() + "\"";
-    dataPoints = pPlotCurve->getXAxisData().size();
+    dataPoints = pPlotCurve->mXAxisVector.size();
   }
   // write the csv header
   contents.append(headers.join(",")).append("\n");
@@ -285,9 +285,9 @@ void PlotWindowContainer::exportVariables()
   for (int i = 0 ; i < dataPoints ; ++i) {
     QStringList data;
     // write time data
-    data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->getXAxisData().at(i));
+    data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->mXAxisVector.at(i));
     for (int j = 0; j < headers.size() - 1; ++j) {
-      data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(j)->getYAxisData().at(i));
+      data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(j)->mYAxisVector.at(i));
     }
     contents.append(data.join(",")).append("\n");
   }
