@@ -35,8 +35,8 @@ simulate(initializationTests.bug_2207, simflags="-lv=LOG_INIT"); getErrorString(
 // |                 | |       | | x(max=500)
 // LOG_INIT          | info    | updating nominal-values
 // |                 | |       | | x(nominal=300)
-// LOG_INIT          | info    | updating start-values
-// |                 | |       | | x(start=200)
+// LOG_INIT          | info    | updating primary start-values
+// |                 | |       | | updated start value: x(start=200)
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters

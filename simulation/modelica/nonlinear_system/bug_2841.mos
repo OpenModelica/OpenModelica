@@ -36,9 +36,9 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_INIT          | info    | updating nominal-values
 // |                 | |       | | y(nominal=1e-05)
 // |                 | |       | | x(nominal=100000)
-// LOG_INIT          | info    | updating start-values
-// |                 | |       | | y(start=5e-06)
-// |                 | |       | | x(start=50000)
+// LOG_INIT          | info    | updating primary start-values
+// |                 | |       | | updated start value: y(start=5e-06)
+// |                 | |       | | updated start value: x(start=50000)
 // LOG_NLS           | info    | update static data of non-linear system solvers
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
 // LOG_NLS_V         | info    | ------------------------------------------------------

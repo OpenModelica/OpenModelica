@@ -34,7 +34,7 @@ simulate(initializationTests.bug_2990, simflags="-lv=LOG_INIT -iim=none"); getEr
 // LOG_INIT          | info    | updating max-values
 // |                 | |       | | x(max=6.25)
 // LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating start-values
+// LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
@@ -61,7 +61,7 @@ simulate(initializationTests.bug_2990, simflags="-lv=LOG_INIT -iim=none"); getEr
 // LOG_INIT          | info    | updating max-values
 // |                 | |       | | x(max=6.25)
 // LOG_INIT          | info    | updating nominal-values
-// LOG_INIT          | info    | updating start-values
+// LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: none            [sets all variables to their start values and skips the initialization process]
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
