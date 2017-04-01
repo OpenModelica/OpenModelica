@@ -1846,11 +1846,11 @@ algorithm
     local
       BackendDAE.BackendDAE backendDAE, reducedDAE;
 
-      list<DAE.ComponentRef> comref_vars, comref_seedVars, comref_differentiatedVars;
+      list<DAE.ComponentRef> comref_vars, comref_differentiatedVars;
 
       BackendDAE.Shared shared;
       BackendDAE.Variables  globalKnownVars, globalKnownVars1;
-      list<BackendDAE.Var> diffedVars "resVars", diffVarsTmp, seedlst, globalKnownVarsTmp;
+      list<BackendDAE.Var> diffedVars "resVars", seedlst;
 
       DAE.FunctionTree funcs;
 
@@ -1870,31 +1870,11 @@ algorithm
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
 
-        globalKnownVars1 = BackendVariable.daeGlobalKnownVars(shared);
-        globalKnownVarsTmp = BackendVariable.varList(globalKnownVars1);
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know temp vars(" + intString(listLength(globalKnownVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
-        end if;
-
-        (backendDAE as BackendDAE.DAE(shared=shared)) = optimizeJacobianMatrix(backendDAE,comref_differentiatedVars,comref_vars);
+        backendDAE = optimizeJacobianMatrix(backendDAE,comref_differentiatedVars,comref_vars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
 
-        globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
-        diffVarsTmp = BackendVariable.varList(globalKnownVars);
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know diff vars(" + intString(listLength(diffVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
-        end if;
-        (_,globalKnownVarsTmp,_) = List.intersection1OnTrue(diffVarsTmp, globalKnownVarsTmp, BackendVariable.varEqual);
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know vars(" + intString(listLength(globalKnownVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
-        end if;
-        globalKnownVars = BackendVariable.listVar1(globalKnownVarsTmp);
-        backendDAE = BackendDAEUtil.setDAEGlobalKnownVars(backendDAE, globalKnownVars);
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated optimized jacobians: " + realString(clock()) + "\n");
-        end if;
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), funcs);
     else
@@ -1938,9 +1918,10 @@ algorithm
             print("analytical Jacobians -> optimize jacobians time: " + realString(clock()) + "\n");
           end if;
 
-          b = Flags.disableDebug(Flags.EXEC_STAT);
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE);
+          else
+            b = Flags.disableDebug(Flags.EXEC_STAT);
           end if;
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
@@ -1958,9 +1939,10 @@ algorithm
                                                                     "calculateStrongComponentJacobians",
                                                                     "removeConstants",
                                                                     "simplifyTimeIndepFuncCalls"});
-          _ = Flags.set(Flags.EXEC_STAT, b);
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE2);
+          else
+            _ = Flags.set(Flags.EXEC_STAT, b);
           end if;
         then backendDAE2;
      else
