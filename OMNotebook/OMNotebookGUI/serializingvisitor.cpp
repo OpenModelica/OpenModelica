@@ -288,11 +288,11 @@ namespace IAEX
         // set the curve data
         QByteArray xByteArray, yByteArray;
         QDataStream xOutStream(&xByteArray,QIODevice::WriteOnly);
-        QVector<double> xAxisData = pPlotCurve->getXAxisData();
+        QVector<double> xAxisData = pPlotCurve->mXAxisVector;
         foreach (double d, xAxisData)
           xOutStream << d;
         QDataStream yOutStream(&yByteArray,QIODevice::WriteOnly);
-        QVector<double> yAxisData = pPlotCurve->getYAxisData();
+        QVector<double> yAxisData = pPlotCurve->mYAxisVector;
         foreach (double d, yAxisData)
           yOutStream << d;
         omcPlotCurve.setAttribute(XML_GRAPHCELL_XDATA, QString(xByteArray.toBase64()));
