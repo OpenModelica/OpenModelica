@@ -53,7 +53,10 @@ private:
 	  *_y0,
       *_y_old,
       *_y_new,
-      *_yScale;
+      *_yScale,
+	  _locTol,
+	  _currentIterateNorm,
+	  *_currentIterate;
 
   Teuchos::RCP<NoxLapackInterface> _noxLapackInterface;
 

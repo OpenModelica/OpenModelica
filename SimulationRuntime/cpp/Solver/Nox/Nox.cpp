@@ -30,6 +30,7 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _firstCall		  (true)
 	, _generateoutput     (false)
 	, _useDomainScaling         (false)
+	, _currentIterate             (NULL)
 {
 	_dimSys=_algLoop->getDimReal();
 }
@@ -42,6 +43,7 @@ Nox::~Nox()
     if(_y_new)              delete [] _y_new;
     if(_yScale)              delete [] _yScale;
     //if(_noxLapackInterface) delete _noxLapackInterface;
+	if(_currentIterate) delete [] _currentIterate;
 
 }
 
@@ -64,6 +66,7 @@ void Nox::initialize()
 	_y_old            = new double[_dimSys];
 	_y_new            = new double[_dimSys];
 	_yScale            = new double[_dimSys];
+	_currentIterate            = new double[_dimSys];
 
 	_algLoop->getReal(_y);
 	_algLoop->getReal(_y0);
@@ -92,10 +95,14 @@ void Nox::solve()
 	double * rhs = new double[_dimSys];
 	double sum;
 
+	_locTol=5.0e-7;
+	_currentIterateNorm=1.0e2;
+
 	_output = Teuchos::rcp(new std::stringstream);
     if (_firstCall) initialize();
 
 	// Set up the status tests
+	// can be moved to initialize.
     _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
     _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
     _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
@@ -272,8 +279,6 @@ void Nox::solve()
 			}
 		}
 
-		int numberofdifferentnormtests=5;//this variable is used twice.
-
 		_algLoop->setReal(_y);
 		try{
 			_algLoop->evaluate();
@@ -300,53 +305,55 @@ void Nox::solve()
 			if (_generateoutput) std::cout << "simtime=" << _algLoop->getSimTime() << std::endl;
 			_iterationStatus=DONE;
 		}else{
-			//skip iter=1,2,4,6,7,9,11,12,13
+			if(true){
+				try{
+					_algLoop->setReal(_y);
+					_algLoop->evaluate();
+					_algLoop->getRHS(rhs);
 
-			if (iter==11){
-				iter = 14;
-			}
-			if (iter==9){
-				iter = 10;
-			}
-			if (iter==6){
-				iter = 8;
-			}
-			if (iter==4){
-				iter = 5;
-			}
-			if (iter==0){
-				iter = 3;
-			}
-			if ((iter == 1) || (iter == 2) || (iter == 4) || (iter == 6) || (iter == 7) || (iter == 9)){
-				std::cout << "You failed heavily at iter = " << iter << " and simtime " << _algLoop->getSimTime() << std::endl;
+					double*ypluseps=new double [_dimSys];
+					double*rhs2=new double [_dimSys];
+					memcpy(ypluseps,_y,_dimSys*sizeof(double));
+					for(int i=0;i<_dimSys;i++){
+						ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*8.0);//increase _ypluseps in the smallest amount possible.
+					}
+					_algLoop->setReal(ypluseps);
+					_algLoop->evaluate();
+					_algLoop->getRHS(rhs2);
+					double threshold=0.0;
+					for(int i=0;i<_dimSys;i++){
+						threshold+=(rhs2[i]-rhs[i])*(rhs2[i]-rhs[i]);
+					}
+					threshold=std::sqrt(threshold);
+
+					delete [] ypluseps;
+					delete [] rhs2;
+
+					if(_statusTestNormF->getNormF()<2*threshold){
+						std::cout << "threshold (this should typically be a very small value (we vary the real value by ). In case of occurence of rounding errors, the threshold should be big though.) = " << threshold << ", simtime = " << _algLoop->getSimTime() << ", algloop " << _algLoop->getEquationIndex() << std::endl;
+						_algLoop->setReal(_y);
+						_algLoop->evaluate();
+						_algLoop->getRHS(rhs);
+						_iterationStatus=DONE;
+						break;
+					}
+				}
+				catch(const std::exception &ex)
+				{
+					if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl << "Trying to continue without. This should hopefully lead to statusTest::Failed." << std::endl;
+				}
 			}
 
-			switch(iter%(numberofdifferentnormtests)){
-				case 0:
-				*_statusTestNormF=NOX::StatusTest::NormF(1.0e-13);
-				break;
-				case 1:
-				*_statusTestNormF=NOX::StatusTest::NormF(1.0e-11);
-				break;
-				case 2:
-				*_statusTestNormF=NOX::StatusTest::NormF(1.0e-9);
-				break;
-				case 3:
-				*_statusTestNormF=NOX::StatusTest::NormF(1.0e-7);
-				break;
-				default:
-				*_statusTestNormF=NOX::StatusTest::NormF(1.0e-5);
-				break;
-			}
-			_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
-			_statusTestsCombo->addStatusTest(_statusTestStagnation);
-			_statusTestsCombo->addStatusTest(_statusTestDivergence);
+			// if(_statusTestNormF->getNormF()<std::min(_locTol,_currentIterateNorm)){
+				// memcpy(_currentIterate,_y,_dimSys*sizeof(double));
+				// _currentIterateNorm=_statusTestNormF->getNormF();
+			// }
 
-			switch (iter/numberofdifferentnormtests){
+			switch (iter){
 			case 0:
 				break;
 				//default Nox Line Search failed -> Try damped Newton instead
-			case 1:
+			case 1://should delete this. It typically does not help (verify this))
 				_solverParametersPtr->sublist("Line Search").sublist("Full Step").set("Full Step", 0.5);
 
 				//default Nox Line Search failed -> Try Backtracking instead
@@ -415,6 +422,14 @@ void Nox::solve()
 
 				//Tensor failed or other failure
 			default:
+				if(_currentIterateNorm<_locTol){
+					memcpy(_y,_currentIterate,_dimSys*sizeof(double));
+					_iterationStatus=DONE;
+					break;
+				}
+				if(_currentIterateNorm<_locTol){
+					std::cout << "you should not see this." << std::endl;
+				}
 				int numberofhomotopytries = 0;
 				while((_iterationStatus!=DONE)){
 					//todo: This is implemented in the worst way possible. Please fix this.
@@ -430,6 +445,7 @@ void Nox::solve()
 					}
 					numberofhomotopytries++;
 				}
+
 				break;
 			}
 			//comment in for debugging
