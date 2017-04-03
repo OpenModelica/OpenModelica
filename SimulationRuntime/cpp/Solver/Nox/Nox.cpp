@@ -330,7 +330,7 @@ void Nox::solve()
 					delete [] rhs2;
 
 					if(_statusTestNormF->getNormF()<2*threshold){
-						std::cout << "threshold (this should typically be a very small value (we vary the real value by ). In case of occurence of rounding errors, the threshold should be big though.) = " << threshold << ", simtime = " << _algLoop->getSimTime() << ", algloop " << _algLoop->getEquationIndex() << std::endl;
+						//std::cout << "threshold (this should typically be a very small value (we vary the real value by ). In case of occurence of rounding errors, the threshold should be big though.) = " << threshold << ", simtime = " << _algLoop->getSimTime() << ", algloop " << _algLoop->getEquationIndex() << std::endl;
 						_algLoop->setReal(_y);
 						_algLoop->evaluate();
 						_algLoop->getRHS(rhs);
@@ -422,14 +422,14 @@ void Nox::solve()
 
 				//Tensor failed or other failure
 			default:
-				if(_currentIterateNorm<_locTol){
-					memcpy(_y,_currentIterate,_dimSys*sizeof(double));
-					_iterationStatus=DONE;
-					break;
-				}
-				if(_currentIterateNorm<_locTol){
-					std::cout << "you should not see this." << std::endl;
-				}
+				// if(_currentIterateNorm<_locTol){
+					// memcpy(_y,_currentIterate,_dimSys*sizeof(double));
+					// _iterationStatus=DONE;
+					// break;
+				// }
+				// if(_currentIterateNorm<_locTol){
+					// std::cout << "you should not see this." << std::endl;
+				// }
 				int numberofhomotopytries = 0;
 				while((_iterationStatus!=DONE)){
 					//todo: This is implemented in the worst way possible. Please fix this.
