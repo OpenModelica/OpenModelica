@@ -985,8 +985,6 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       addHashStringString(&mOverrides, p, value);
       addHashStringLong(&mOverridesUses, p, OMC_OVERRIDE_UNUSED);
 
-      infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", p, value);
-
       // move to next
       p = strtok(NULL, "!");
     }
@@ -1000,10 +998,13 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       }
     }
 
-    #define CHECK_OVERRIDE(v) \
+    #define CHECK_OVERRIDE(v,b) \
       if (findHashStringStringNull(mOverrides, findHashStringString(*findHashLongVar(mi->v,i),"name"))) { \
         if (0 == strcmp(findHashStringString(*findHashLongVar(mi->v,i), "isValueChangeable"), "true")){ \
-        addHashStringString(findHashLongVar(mi->v,i), "start", getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"))); \
+          infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", findHashStringString(*findHashLongVar(mi->v,i),"name"), getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"))); \
+          if (b && fabs(atof(getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name")))) < 1e-6) \
+            warningStreamPrint(LOG_STDOUT, 0, "You are overriding %s with a small value or zero.\nThis could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.", findHashStringString(*findHashLongVar(mi->v,i),"name")); \
+          addHashStringString(findHashLongVar(mi->v,i), "start", getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"))); \
         } \
         else{ \
           addHashStringLong(&mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"), OMC_OVERRIDE_USED); \
@@ -1013,48 +1014,48 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
 
     // override all found!
     for(i=0; i<modelData->nStates; i++) {
-      CHECK_OVERRIDE(rSta);
-      CHECK_OVERRIDE(rDer);
+      CHECK_OVERRIDE(rSta,0);
+      CHECK_OVERRIDE(rDer,0);
     }
     for(i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
-      CHECK_OVERRIDE(rAlg);
+      CHECK_OVERRIDE(rAlg,0);
     }
     for(i=0; i<modelData->nVariablesInteger; i++) {
-      CHECK_OVERRIDE(iAlg);
+      CHECK_OVERRIDE(iAlg,0);
     }
     for(i=0; i<modelData->nVariablesBoolean; i++) {
-      CHECK_OVERRIDE(bAlg);
+      CHECK_OVERRIDE(bAlg,0);
     }
     for(i=0; i<modelData->nVariablesString; i++) {
-      CHECK_OVERRIDE(sAlg);
+      CHECK_OVERRIDE(sAlg,0);
     }
     for(i=0; i<modelData->nParametersReal; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(rPar);
+      CHECK_OVERRIDE(rPar,1);
     }
     for(i=0; i<modelData->nParametersInteger; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(iPar);
+      CHECK_OVERRIDE(iPar,1);
     }
     for(i=0; i<modelData->nParametersBoolean; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(bPar);
+      CHECK_OVERRIDE(bPar,0);
     }
     for(i=0; i<modelData->nParametersString; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(sPar);
+      CHECK_OVERRIDE(sPar,0);
     }
     for(i=0; i<modelData->nAliasReal; i++) {
-      CHECK_OVERRIDE(rAli);
+      CHECK_OVERRIDE(rAli,0);
     }
     for(i=0; i<modelData->nAliasInteger; i++) {
-      CHECK_OVERRIDE(iAli);
+      CHECK_OVERRIDE(iAli,0);
     }
     for(i=0; i<modelData->nAliasBoolean; i++) {
-      CHECK_OVERRIDE(bAli);
+      CHECK_OVERRIDE(bAli,0);
     }
     for(i=0; i<modelData->nAliasString; i++) {
-      CHECK_OVERRIDE(sAli);
+      CHECK_OVERRIDE(sAli,0);
     }
 
     // give a warning if an override is not used #3204
