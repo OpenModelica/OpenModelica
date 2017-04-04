@@ -470,7 +470,6 @@ private slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
-  void switchToTraceabilityGraphViewPerspectiveSlot();
   void showConfigureDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
@@ -490,7 +489,6 @@ private:
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
   void switchToAlgorithmicDebuggingPerspective();
-  void switchToTraceabilityGraphViewPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());

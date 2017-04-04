@@ -189,11 +189,6 @@ void MainWindow::setUpMainWindow()
   QShortcut *pAlgorithmicDebuggingShortcut = new QShortcut(QKeySequence("Ctrl+f5"), this);
   connect(pAlgorithmicDebuggingShortcut, SIGNAL(activated()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
-  // traceability perspective
-  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/traceability.svg"), tr("Traceability"));
-  QShortcut *pTraceabilityShortcut = new QShortcut(QKeySequence("Ctrl+f6"), this);
-  connect(pTraceabilityShortcut, SIGNAL(activated()), SLOT(switchToTraceabilityGraphViewPerspectiveSlot()));
-  mpPerspectiveTabbar->setTabToolTip(4, tr("Changes to traceability graph view perspective (%1)").arg(pTraceabilityShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   // Create an object of QStatusBar
@@ -278,7 +273,7 @@ void MainWindow::setUpMainWindow()
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
   // create traceability graph view widget
-  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
+  //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
 #if !defined(WITHOUT_OSG)
   /* Ticket #4252
    * Do not create an object of ThreeDViewer by default.
@@ -324,7 +319,6 @@ void MainWindow::setUpMainWindow()
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
   mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
-  mpCentralStackedWidget->addWidget(mpTraceabilityGraphViewWidget);
   // set the layout
   QGridLayout *pCentralgrid = new QGridLayout;
   pCentralgrid->setVerticalSpacing(4);
@@ -2458,9 +2452,6 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     case 3:
       switchToAlgorithmicDebuggingPerspective();
       break;
-    case 4:
-      switchToTraceabilityGraphViewPerspective();
-      break;
     default:
       switchToWelcomePerspective();
       break;
@@ -2550,16 +2541,6 @@ void MainWindow::switchToPlottingPerspectiveSlot()
 void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(3);
-}
-
-/*!
- * \brief MainWindow::switchToTraceabilityGraphViewPerspectiveSlot
- * Slot activated when Ctrl+f6 is clicked.
- * Switches to traceability graph view perspective.
- */
-void MainWindow::switchToTraceabilityGraphViewPerspectiveSlot()
-{
-  mpPerspectiveTabbar->setCurrentIndex(4);
 }
 
 /*!
@@ -3545,38 +3526,6 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpLocalsDockWidget->show();
   mpTargetOutputDockWidget->show();
   mpGDBLoggerDockWidget->show();
-}
-
-/*!
- * \brief MainWindow::switchToTraceabilityGraphViewPerspective
- * Switches to traceability graph view perspective.
- */
-void MainWindow::switchToTraceabilityGraphViewPerspective()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
-      bool signalsState = mpPerspectiveTabbar->blockSignals(true);
-      mpPerspectiveTabbar->setCurrentIndex(1);
-      mpPerspectiveTabbar->blockSignals(signalsState);
-      return;
-    }
-  }
-  mpCentralStackedWidget->setCurrentWidget(mpTraceabilityGraphViewWidget);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
-  mpUndoAction->setEnabled(false);
-  mpRedoAction->setEnabled(false);
-  mpModelSwitcherToolButton->setEnabled(false);
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
-    mpVariablesDockWidget->hide();
-  }
-  mpStackFramesDockWidget->hide();
-  mpBreakpointsDockWidget->hide();
-  mpLocalsDockWidget->hide();
-  mpTargetOutputDockWidget->hide();
-  mpGDBLoggerDockWidget->hide();
-  mpPlotToolBar->setEnabled(false);
 }
 
 /*!
