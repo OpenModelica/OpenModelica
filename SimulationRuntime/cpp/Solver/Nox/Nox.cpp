@@ -127,9 +127,13 @@ void Nox::solve()
 	//_solverParametersPtr->sublist("Direction").set("Method", "Steepest Descent");
 
 	//resetting Line search method to default (Full Step, ie. Standard Newton with lambda=1)
-	_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
+	// _solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
+	_solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
+	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
+	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
 
-    if (_generateoutput){
+
+    if (_generateoutput || true){
 		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
 	}else{
 		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
@@ -311,32 +315,102 @@ void Nox::solve()
 					_algLoop->evaluate();
 					_algLoop->getRHS(rhs);
 
-					double*ypluseps=new double [_dimSys];
-					double*rhs2=new double [_dimSys];
-					memcpy(ypluseps,_y,_dimSys*sizeof(double));
-					for(int i=0;i<_dimSys;i++){
-						ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*8.0);//increase _ypluseps in the smallest amount possible.
-					}
-					_algLoop->setReal(ypluseps);
-					_algLoop->evaluate();
-					_algLoop->getRHS(rhs2);
-					double threshold=0.0;
-					for(int i=0;i<_dimSys;i++){
-						threshold+=(rhs2[i]-rhs[i])*(rhs2[i]-rhs[i]);
-					}
-					threshold=std::sqrt(threshold);
+					sum=0.0;
+					for (int i=0;i<_dimSys;i++) sum+=rhs[i]*rhs[i];
+					sum=std::sqrt(sum);
 
-					delete [] ypluseps;
-					delete [] rhs2;
+					// double*ypluseps=new double [_dimSys];
+					// double*rhs2=new double [_dimSys];
+					// memcpy(ypluseps,_y,_dimSys*sizeof(double));
+					// for(int i=0;i<_dimSys;i++){
+						// ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*8.0);//increase _ypluseps in the smallest amount possible.
+					// }
+					// _algLoop->setReal(ypluseps);
+					// _algLoop->evaluate();
+					// _algLoop->getRHS(rhs2);
+					// double threshold=0.0;
+					// for(int i=0;i<_dimSys;i++){
+						// threshold+=(rhs2[i]-rhs[i])*(rhs2[i]-rhs[i]);
+					// }
+					// threshold=std::sqrt(threshold);
 
-					if(_statusTestNormF->getNormF()<2*threshold){
-						//std::cout << "threshold (this should typically be a very small value (we vary the real value by ). In case of occurence of rounding errors, the threshold should be big though.) = " << threshold << ", simtime = " << _algLoop->getSimTime() << ", algloop " << _algLoop->getEquationIndex() << std::endl;
+					// delete [] ypluseps;
+					// delete [] rhs2;
+
+					// std::cout << "simtime: " << _algLoop->getSimTime() << ", equation index: " << _algLoop->getEquationIndex() << ", sum: " << sum << ", threshold: " << threshold << ", sum<threshold " << (sum<threshold) << ", sum<10*threshold " << (sum<10*threshold) << std::endl;
+
+					// if(sum<threshold){
+						// // std::cout << "threshold (this should typically be a very small value (we vary the real value by ). In case of occurence of rounding errors, the threshold should be big though.) = " << threshold << ", simtime = " << _algLoop->getSimTime() << ", algloop " << _algLoop->getEquationIndex() << std::endl;
+						// _algLoop->setReal(_y);
+						// _algLoop->evaluate();
+						// _algLoop->getRHS(rhs);
+						// _iterationStatus=DONE;
+						// break;
+					// }
+					// zweite Möglichkeit: Wenn ich in alle Richtungen um ein Epsilon gehe (positiv und negativ), und mindestens die Hälfte der Richtungen in mindestens einer Komponente der rechten Seite einen Vorzeichenwechsel aufweist.
+					// das geht so nicht, aber ich kann in alle Richtungen gehen und gucken, dass jede Komponente bei mindestens einer Richtung einen Vorzeichenwechsel aufweist.
+					bool truesolution=true;
+					bool* rhshassignchangeincomponent=new bool [_dimSys];
+					double* ypluseps=new double [_dimSys];
+					double* rhs2=new double [_dimSys];
+
+					for (int i=0;i<_dimSys;i++){
+						rhshassignchangeincomponent[i]=false;
+					}
+
+					for (int i=0;i<_dimSys;i++){
+						// evaluate algLoop at ypluseps=_y+eps*e_i and save in rhs2
+						memcpy(ypluseps,_y,_dimSys*sizeof(double));
+						//ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*2.0);//der Faktor 2.0 ist nur zur Sicherheit und kann spaeter geloescht werden. Alternativ kann std::nextafter oder std::nexttoward verwendet werden
+						ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],std::numeric_limits<double>::max()),std::numeric_limits<double>::max());
+						_algLoop->setReal(ypluseps);
+						_algLoop->evaluate();
+						_algLoop->getRHS(rhs2);
+						// compare
+						for(int j=0;j<_dimSys;j++){
+							if (rhs[j]*rhs2[j]<=0.0){
+								rhshassignchangeincomponent[j]= true;
+							}
+						}
+
+						// do the same for _y-eps*e_i
+						memcpy(ypluseps,_y,_dimSys*sizeof(double));
+						// ypluseps[i]*=(1.0-std::numeric_limits<double>::epsilon()*2.0);//der Faktor 2.0 ist nur zur Sicherheit.
+						ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],-std::numeric_limits<double>::max()),-std::numeric_limits<double>::max());
+						_algLoop->setReal(ypluseps);
+						_algLoop->evaluate();
+						_algLoop->getRHS(rhs2);
+						for(int j=0;j<_dimSys;j++){
+							if (rhs[j]*rhs2[j]<=0.0){
+								rhshassignchangeincomponent[j]= true;
+							}
+						}
+					}
+
+					//check whether all components of rhs had a sign change, ie. all entries of rhshassignchangeincomponent are true.
+					for (int i=0;i<_dimSys;i++){
+						if (!rhshassignchangeincomponent[i]) truesolution=false;
+					}
+
+					if(truesolution){
 						_algLoop->setReal(_y);
 						_algLoop->evaluate();
 						_algLoop->getRHS(rhs);
 						_iterationStatus=DONE;
 						break;
 					}
+
+
+					delete [] rhshassignchangeincomponent;
+					delete [] ypluseps;
+					delete [] rhs2;
+
+
+					// // dritte Moeglichkeit: geh fuer jede Komponente ein Epsilon in Richtung des Gradienten. // Das setzt aber auf jeden Fall Linearitaet voraus.
+
+
+
+
 				}
 				catch(const std::exception &ex)
 				{
@@ -349,12 +423,18 @@ void Nox::solve()
 				// _currentIterateNorm=_statusTestNormF->getNormF();
 			// }
 
+			if (iter==0) iter = 2;
+
+			if (iter==1) iter=2;//skip damped Newton.
+			//we could skip case 2 as well
+
 			switch (iter){
 			case 0:
 				break;
 				//default Nox Line Search failed -> Try damped Newton instead
 			case 1://should delete this. It typically does not help (verify this))
 				_solverParametersPtr->sublist("Line Search").sublist("Full Step").set("Full Step", 0.5);
+				break;
 
 				//default Nox Line Search failed -> Try Backtracking instead
 			case 2:
@@ -435,7 +515,7 @@ void Nox::solve()
 					//todo: This is implemented in the worst way possible. Please fix this.
 					//try homotopy
 					try{
-						if (_generateoutput) std::cout << "solving with numberofhomotopytries = " << numberofhomotopytries << std::endl;
+						if ((_generateoutput)) std::cout << "solving with numberofhomotopytries = " << numberofhomotopytries << std::endl;
 						LocaHomotopySolve(numberofhomotopytries);
 					}
 					catch(const std::exception &e){
@@ -445,11 +525,10 @@ void Nox::solve()
 					}
 					numberofhomotopytries++;
 				}
-
 				break;
 			}
 			//comment in for debugging
-			if (_generateoutput){
+			if ((_generateoutput)){
 				std::cout << "solutionvector=(";
 				for (int i=0;i<_dimSys;i++) std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << _y[i] << " ";
 				std::cout << ")" << std::setprecision (6) << std::endl;
@@ -586,7 +665,7 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	grp->setParams(p);
 
 	// Set up the status tests
-    Teuchos::RCP<NOX::StatusTest::NormF> normF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
+    Teuchos::RCP<NOX::StatusTest::NormF> normF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
     Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
     Teuchos::RCP<NOX::StatusTest::Generic> comboOR = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, normF, maxIters));
 
