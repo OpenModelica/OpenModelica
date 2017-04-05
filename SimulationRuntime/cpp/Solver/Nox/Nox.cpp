@@ -454,35 +454,35 @@ void Nox::solve()
 				//_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Alpha Factor", 1.0e-2);
 				break;
 
-			case 4:
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
-				break;
+			// case 4:
+				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
+				// break;
 
-			case 5:
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
-				break;
+			// case 5:
+				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
+				// break;
 
-			case 6:
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Sufficient Decrease Condition", "Ared/Pred");
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Cubic");
-				break;
+			// case 6:
+				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Sufficient Decrease Condition", "Ared/Pred");
+				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Cubic");
+				// break;
 
-			case 7:
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
-				break;
+			// case 7:
+				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
+				// break;
 
-			case 8:
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
-				break;
+			// case 8:
+				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
+				// break;
 
 				//Polynomial failed -> Try More'-Thuente instead
-			case 9:
+			case 4:
 				_solverParametersPtr->sublist("Line Search").set("Method", "More'-Thuente");
 				//_solverParametersPtr->sublist("Line Search").sublist("More'-Thuente").set("Sufficient Decrease", 1.0e-2);
 				break;
 
 				//More'-Thuente failed -> Try Trust Region instead
-			case 10:
+			case 5:
 				//_solverParametersPtr->sublist("Line Search").remove("Method", true);
 				_solverParametersPtr->set("Nonlinear Solver", "Trust Region Based");
 				_solverParametersPtr->sublist("Trust Region").set("Minimum Improvement Ratio", 1.0e-4);
@@ -490,7 +490,7 @@ void Nox::solve()
 				break;
 
 				//Trust Region failed -> Try Inexact Trust Region instead
-			case 11:
+			case 6:
 				//_solverParametersPtr->sublist("Trust Region").set("Use Dogleg Segment Minimization", true);
 				_solverParametersPtr->set("Nonlinear Solver", "Inexact Trust Region Based");
 				break;
@@ -504,6 +504,9 @@ void Nox::solve()
 			default:
 				// if(_currentIterateNorm<_locTol){
 					// memcpy(_y,_currentIterate,_dimSys*sizeof(double));
+					// _algLoop->setReal(_y);
+					// _algLoop->evaluate();
+					// _algLoop->getRHS(rhs);
 					// _iterationStatus=DONE;
 					// break;
 				// }
