@@ -34,7 +34,9 @@ val(v,0.5);
 //     resultFile = "ModelTestSolve12_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelTestSolve12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
 //     messages = "LOG_NLS           | info    | initialize mixed system solvers
+// |                 | |       | | 0 mixed systems
 // LOG_NLS           | info    | initialize non-linear system solvers
+// |                 | |       | | 0 non-linear systems
 // LOG_NLS           | info    | update static data of non-linear system solvers
 // LOG_NLS           | info    | free mixed system solvers
 // LOG_NLS           | info    | free non-linear system solvers
