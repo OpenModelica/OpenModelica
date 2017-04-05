@@ -133,7 +133,7 @@ void Nox::solve()
 	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
 
 
-    if (_generateoutput || true){
+    if (_generateoutput){
 		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
 	}else{
 		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
