@@ -44,6 +44,7 @@ class MetaModelicaEditor : public BaseEditor
 public:
   MetaModelicaEditor(QWidget *pParent);
   void setPlainText(const QString &text);
+  virtual void popUpCompleter();
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
@@ -58,6 +59,8 @@ public:
   MetaModelicaHighlighter(MetaModelicaEditorPage *pMetaModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
+  static QStringList getKeywords();
+  static QStringList getTypes();
 protected:
   virtual void highlightBlock(const QString &text);
 private:

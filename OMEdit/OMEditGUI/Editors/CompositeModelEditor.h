@@ -94,6 +94,7 @@ public:
   bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName);
+  virtual void popUpCompleter();
 private:
   QString mLastValidText;
   bool mTextChanged;

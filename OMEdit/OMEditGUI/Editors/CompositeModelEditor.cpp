@@ -63,6 +63,15 @@ CompositeModelEditor::CompositeModelEditor(QWidget *pParent)
 }
 
 /*!
+ * \brief CompositeModelEditor::popUpCompleter()
+ * \we do not have completer for this
+ */
+void CompositeModelEditor::popUpCompleter()
+{
+
+}
+
+/*!
  * \brief CompositeModelEditor::validateText
  * When user make some changes in the CompositeModelEditor text then this method validates the text.
  * \return

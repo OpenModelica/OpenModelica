@@ -43,6 +43,7 @@ class TransformationsEditor : public BaseEditor
   Q_OBJECT
 public:
   TransformationsEditor(TransformationsWidget *pTransformationsWidget);
+  virtual void popUpCompleter();
 private:
   TransformationsWidget *mpTransformationsWidget;
 private slots:

@@ -48,6 +48,15 @@ TextEditor::TextEditor(QWidget *pParent)
 }
 
 /*!
+ * \brief TextEditor::popUpCompleter()
+ * \we do not have completer for this
+ */
+void TextEditor::popUpCompleter()
+{
+
+}
+
+/*!
  * \brief TextEditor::setPlainText
  * Reimplementation of QPlainTextEdit::setPlainText method.
  * Makes sure we dont update if the passed text is same.

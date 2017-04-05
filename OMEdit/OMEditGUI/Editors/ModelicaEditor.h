@@ -57,6 +57,7 @@ public:
   QString getPlainText();
   void setTextChanged(bool changed) {mTextChanged = changed;}
   bool isTextChanged() {return mTextChanged;}
+  virtual void popUpCompleter();
 private:
   QString mLastValidText;
   bool mTextChanged;
@@ -76,6 +77,8 @@ public:
   ModelicaHighlighter(ModelicaEditorPage *pModelicaEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
+  static QStringList getKeywords();
+  static QStringList getTypes();
 protected:
   virtual void highlightBlock(const QString &text);
 private:

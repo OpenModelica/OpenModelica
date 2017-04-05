@@ -44,6 +44,7 @@ class HTMLEditor : public BaseEditor
   Q_OBJECT
 public:
   HTMLEditor(QWidget *pParent);
+  virtual void popUpCompleter();
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

@@ -51,6 +51,15 @@ TransformationsEditor::TransformationsEditor(TransformationsWidget *pTransformat
 }
 
 /*!
+ * \brief TransformationsEditor::popUpCompleter()
+ * \we do not have completer for this
+ */
+void TransformationsEditor::popUpCompleter()
+{
+
+}
+
+/*!
  * \brief TransformationsEditor::showContextMenu
  * Create a context menu.
  * \param point

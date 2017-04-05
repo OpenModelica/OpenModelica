@@ -34,7 +34,7 @@
 #include "MetaModelicaEditor.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
-
+#include <QCompleter>
 #include <QMenu>
 
 MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
@@ -43,6 +43,11 @@ MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+  QStringList keywords = MetaModelicaHighlighter::getKeywords();
+  QStringList types = MetaModelicaHighlighter::getTypes();
+  mpPlainTextEdit->insertCompleterKeywords(keywords);
+  mpPlainTextEdit->insertCompleterTypes(types);
+  mpPlainTextEdit->setCompleter();
 }
 
 /*!
@@ -59,6 +64,18 @@ void MetaModelicaEditor::setPlainText(const QString &text)
     mForceSetPlainText = false;
     mpPlainTextEdit->foldAll();
   }
+}
+
+/*!
+ * \brief MetaModelicaEditor::popUpCompleter()
+ * show the popup for keywords and type for autocompletion
+ */
+void MetaModelicaEditor::popUpCompleter()
+{
+  QCompleter *completer = mpPlainTextEdit->completer();
+  QRect cr = mpPlainTextEdit->cursorRect();
+  cr.setWidth(completer->popup()->sizeHintForColumn(0)+ completer->popup()->verticalScrollBar()->sizeHint().width());
+  completer->complete(cr);
 }
 
 /*!
@@ -143,109 +160,123 @@ void MetaModelicaHighlighter::initializeSettings()
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
   // keywords
-  QStringList keywordPatterns;
-  keywordPatterns << "\\balgorithm\\b"
-                  << "\\band\\b"
-                  << "\\bannotation\\b"
-                  << "\\bassert\\b"
-                  << "\\bblock\\b"
-                  << "\\bbreak\\b"
-                  << "\\bBoolean\\b"
-                  << "\\bclass\\b"
-                  << "\\bconnect\\b"
-                  << "\\bconnector\\b"
-                  << "\\bconstant\\b"
-                  << "\\bconstrainedby\\b"
-                  << "\\bder\\b"
-                  << "\\bdiscrete\\b"
-                  << "\\beach\\b"
-                  << "\\belse\\b"
-                  << "\\belseif\\b"
-                  << "\\belsewhen\\b"
-                  << "\\bencapsulated\\b"
-                  << "\\bend\\b"
-                  << "\\benumeration\\b"
-                  << "\\bequation\\b"
-                  << "\\bexpandable\\b"
-                  << "\\bextends\\b"
-                  << "\\bexternal\\b"
-                  << "\\bfalse\\b"
-                  << "\\bfinal\\b"
-                  << "\\bflow\\b"
-                  << "\\bfor\\b"
-                  << "\\bfunction\\b"
-                  << "\\bif\\b"
-                  << "\\bimport\\b"
-                  << "\\bimpure\\b"
-                  << "\\bin\\b"
-                  << "\\binitial\\b"
-                  << "\\binner\\b"
-                  << "\\binput\\b"
-                  << "\\bloop\\b"
-                  << "\\bmodel\\b"
-                  << "\\bnot\\b"
-                  << "\\boperator\\b"
-                  << "\\bor\\b"
-                  << "\\bouter\\b"
-                  << "\\boutput\\b"
-                  << "\\boptimization\\b"
-                  << "\\bpackage\\b"
-                  << "\\bparameter\\b"
-                  << "\\bpartial\\b"
-                  << "\\bprotected\\b"
-                  << "\\bpublic\\b"
-                  << "\\bpure\\b"
-                  << "\\brecord\\b"
-                  << "\\bredeclare\\b"
-                  << "\\breplaceable\\b"
-                  << "\\breturn\\b"
-                  << "\\bstream\\b"
-                  << "\\bthen\\b"
-                  << "\\btrue\\b"
-                  << "\\btype\\b"
-                  << "\\bwhen\\b"
-                  << "\\bwhile\\b"
-                  << "\\bwithin\\b"
-                  /* MetaModelica specific keywords */
-                  << "\\bas\\b"
-                  << "\\bcase\\b"
-                  << "\\bcontinue\\b"
-                  << "\\bequality\\b"
-                  << "\\bfailure\\b"
-                  << "\\bguard\\b"
-                  << "\\blocal\\b"
-                  << "\\bmatch\\b"
-                  << "\\bmatchcontinue\\b"
-                  << "\\buniontype\\b"
-                  << "\\bsubtypeof\\b"
-                  << "\\btry\\b"
-                  << "\\bparfor\\b"
-                  << "\\bparallel\\b"
-                  << "\\bparlocal\\b"
-                  << "\\bparglobal\\b"
-                  << "\\bparkernel\\b"
-                  << "\\bthreaded\\b";
+  QStringList keywordPatterns = getKeywords();
   foreach (const QString &pattern, keywordPatterns) {
-    rule.mPattern = QRegExp(pattern);
+    QString newPattern = QString("\\b%1\\b").arg(pattern);
+    rule.mPattern = QRegExp(newPattern);
     rule.mFormat = mKeywordFormat;
     mHighlightingRules.append(rule);
   }
   // Modelica types
-  QStringList typePatterns;
-  typePatterns << "\\bString\\b"
-               << "\\bInteger\\b"
-               << "\\bBoolean\\b"
-               << "\\bReal\\b"
-               << "\\bOption\\b"
-               << "\\bSOME\\b"
-               << "\\bNONE\\b"
-               << "\\blist\\b"
-               << "\\barray\\b";
+  QStringList typePatterns = getTypes();
   foreach (const QString &pattern, typePatterns) {
-    rule.mPattern = QRegExp(pattern);
+    QString newPattern = QString("\\b%1\\b").arg(pattern);
+    rule.mPattern = QRegExp(newPattern);
     rule.mFormat = mTypeFormat;
     mHighlightingRules.append(rule);
   }
+}
+// Function which returns list of keywords for the highlighter
+QStringList MetaModelicaHighlighter::getKeywords()
+{
+  QStringList keywordsList;
+  keywordsList << "algorithm"
+               << "and"
+               << "annotation"
+               << "assert"
+               << "block"
+               << "break"
+               << "class"
+               << "connect"
+               << "connector"
+               << "constant"
+               << "constrainedby"
+               << "der"
+               << "discrete"
+               << "each"
+               << "else"
+               << "elseif"
+               << "elsewhen"
+               << "encapsulated"
+               << "end"
+               << "enumeration"
+               << "equation"
+               << "expandable"
+               << "extends"
+               << "external"
+               << "false"
+               << "final"
+               << "flow"
+               << "for"
+               << "function"
+               << "if"
+               << "import"
+               << "impure"
+               << "in"
+               << "initial"
+               << "inner"
+               << "input"
+               << "loop"
+               << "model"
+               << "not"
+               << "operator"
+               << "or"
+               << "outer"
+               << "output"
+               << "optimization"
+               << "package"
+               << "parameter"
+               << "partial"
+               << "protected"
+               << "public"
+               << "pure"
+               << "record"
+               << "redeclare"
+               << "replaceable"
+               << "return"
+               << "stream"
+               << "then"
+               << "true"
+               << "type"
+               << "when"
+               << "while"
+               << "within"
+                  /* MetaModelica specific keywords */
+               << "as"
+               << "case"
+               << "continue"
+               << "equality"
+               << "failure"
+               << "guard"
+               << "local"
+               << "match"
+               << "matchcontinue"
+               << "uniontype"
+               << "subtypeof"
+               << "try"
+               << "parfor"
+               << "parallel"
+               << "parlocal"
+               << "parglobal"
+               << "parkernel"
+               << "threaded";
+  return keywordsList;
+}
+
+// Function which returns list of types for the highlighter
+QStringList MetaModelicaHighlighter::getTypes()
+{
+  QStringList typesList;
+  typesList  << "String"
+             << "Integer"
+             << "Boolean"
+             << "Real"
+             << "Option"
+             << "SOME"
+             << "NONE"
+             << "list"
+             << "array";
+  return typesList;
 }
 
 /*!

@@ -41,6 +41,7 @@
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QToolButton>
+#include <QStandardItemModel>
 
 class ModelWidget;
 class InfoBar;
@@ -210,25 +211,31 @@ public:
 };
 
 class BaseEditor;
+class QCompleter;
 class PlainTextEdit : public QPlainTextEdit
 {
   Q_OBJECT
 public:
   PlainTextEdit(BaseEditor *pBaseEditor);
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
+  void insertCompleterKeywords(QStringList keywords);
+  void insertCompleterTypes(QStringList types);
+  void setCompleter();
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
   bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
   int lineNumberAreaWidth();
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   void lineNumberAreaMouseEvent(QMouseEvent *event);
   void goToLineNumber(int lineNumber);
+  QCompleter *completer();
 private:
+  QStandardItemModel* mpStandardItemModel;
+  QCompleter *mpCompleter;
   BaseEditor *mpBaseEditor;
   LineNumberArea *mpLineNumberArea;
   bool mCanHaveBreakpoints;
   QTextCharFormat mParenthesesMatchFormat;
   QTextCharFormat mParenthesesMisMatchFormat;
-
   void highlightCurrentLine();
   void highlightParentheses();
   void setLineWrapping();
@@ -241,6 +248,9 @@ private:
   void foldOrUnfold(bool unFold);
   void handleHomeKey(bool keepAnchor);
   void toggleBlockVisible(const QTextBlock &block);
+  QString textUnderCursor() const;
+private slots:
+  void insertCompletion(const QString &completion);
 public slots:
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
@@ -278,6 +288,7 @@ public:
   QAction* getUnFoldAllAction() {return mpUnFoldAllAction;}
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void setForceSetPlainText(bool forceSetPlainText) {mForceSetPlainText = forceSetPlainText;}
+  virtual void popUpCompleter () = 0;
 private:
   void initialize();
   void createActions();

@@ -45,6 +45,7 @@ class CEditor : public BaseEditor
 public:
   CEditor(QWidget *pParent);
   void setPlainText(const QString &text);
+  virtual void popUpCompleter();
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:
@@ -60,6 +61,8 @@ public:
   CHighlighter(CEditorPage *pCEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
+  static QStringList getKeywords();
+  static QStringList getTypes();
 protected:
   virtual void highlightBlock(const QString &text);
 private:

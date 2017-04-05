@@ -34,13 +34,17 @@
 #include "CEditor.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
-
+#include <QCompleter>
 #include <QMenu>
 
 CEditor::CEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
-
+  QStringList keywords = CHighlighter::getKeywords();
+  QStringList types = CHighlighter::getTypes();
+  mpPlainTextEdit->insertCompleterKeywords(keywords);
+  mpPlainTextEdit->insertCompleterTypes(types);
+  mpPlainTextEdit->setCompleter();
 }
 
 /*!
@@ -56,6 +60,18 @@ void CEditor::setPlainText(const QString &text)
     mpPlainTextEdit->setPlainText(text);
     mForceSetPlainText = false;
   }
+}
+
+/*!
+ * \brief CEditor::popUpCompleter()
+ * \pop up the C keywords and types to the completer in the editor
+ */
+void CEditor::popUpCompleter()
+{
+  QCompleter *completer = mpPlainTextEdit->completer();
+  QRect cr = mpPlainTextEdit->cursorRect();
+  cr.setWidth(completer->popup()->sizeHintForColumn(0)+ completer->popup()->verticalScrollBar()->sizeHint().width());
+  completer->complete(cr);
 }
 
 /*!
@@ -127,53 +143,68 @@ void CHighlighter::initializeSettings()
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
   // keywords
-  QStringList keywordPatterns;
-  keywordPatterns << "\\bauto\\b"
-                  << "\\bbreak\\b"
-                  << "\\bcase\\b"
-                  << "\\bconst\\b"
-                  << "\\bcontinue\\b"
-                  << "\\bdefault\\b"
-                  << "\\bdo\\b"
-                  << "\\belse\\b"
-                  << "\\benum\\b"
-                  << "\\bextern\\b"
-                  << "\\bfor\\b"
-                  << "\\bgoto\\b"
-                  << "\\bif\\b"
-                  << "\\blong\\b"
-                  << "\\bregister\\b"
-                  << "\\breturn\\b"
-                  << "\\bshort\\b"
-                  << "\\bsigned\\b"
-                  << "\\bsizeof\\b"
-                  << "\\bstatic\\b"
-                  << "\\bclass\\b"
-                  << "\\bstruct\\b"
-                  << "\\bswitch\\b"
-                  << "\\btypedef\\b"
-                  << "\\bunion\\b"
-                  << "\\bunsigned\\b"
-                  << "\\bvoid\\b"
-                  << "\\bvolatile\\b"
-                  << "\\bwhile\\b";
+  QStringList keywordPatterns = getKeywords();
   foreach (const QString &pattern, keywordPatterns) {
-    rule.mPattern = QRegExp(pattern);
+    QString newPattern = QString("\\b%1\\b").arg(pattern);
+    rule.mPattern = QRegExp(newPattern);
     rule.mFormat = mKeywordFormat;
     mHighlightingRules.append(rule);
   }
-  // Modelica types
-  QStringList typePatterns;
-  typePatterns << "\\bchar\\b"
-               << "\\bdouble\\b"
-               << "\\bint\\b"
-               << "\\bdouble\\b"
-               << "\\bfloat\\b";
+  // types
+  QStringList typePatterns = getTypes();
   foreach (const QString &pattern, typePatterns) {
-    rule.mPattern = QRegExp(pattern);
+    QString newPattern = QString("\\b%1\\b").arg(pattern);
+    rule.mPattern = QRegExp(newPattern);
     rule.mFormat = mTypeFormat;
     mHighlightingRules.append(rule);
   }
+}
+
+// Function which returns list of keywords for the highlighter
+QStringList CHighlighter::getKeywords()
+{
+  QStringList keywordsList;
+  keywordsList  << "auto"
+                << "break"
+                << "case"
+                << "const"
+                << "continue"
+                << "default"
+                << "do"
+                << "else"
+                << "enum"
+                << "extern"
+                << "for"
+                << "goto"
+                << "if"
+                << "long"
+                << "register"
+                << "return"
+                << "short"
+                << "signed"
+                << "sizeof"
+                << "static"
+                << "class"
+                << "struct"
+                << "switch"
+                << "typedef"
+                << "union"
+                << "unsigned"
+                << "void"
+                << "volatile"
+                << "while";
+  return keywordsList;
+}
+
+// Function which returns list of types for the highlighter
+QStringList CHighlighter::getTypes()
+{
+  QStringList typesList;
+  typesList  << "char"
+             << "double"
+             << "int"
+             << "float";
+  return typesList;
 }
 
 //! Highlights the multilines text.

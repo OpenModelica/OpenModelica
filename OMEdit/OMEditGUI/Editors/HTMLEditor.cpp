@@ -51,6 +51,15 @@ HTMLEditor::HTMLEditor(QWidget *pParent)
 }
 
 /*!
+ * \brief HTMLEditor::popUpCompleter()
+ * \we do not have completer for this
+ */
+void HTMLEditor::popUpCompleter()
+{
+
+}
+
+/*!
  * \brief HTMLEditor::showContextMenu
  * Create a context menu.
  * \param point

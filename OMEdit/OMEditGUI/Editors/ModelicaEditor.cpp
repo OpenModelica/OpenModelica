@@ -38,7 +38,7 @@
 #include "Options/OptionsDialog.h"
 #include "Debugger/Breakpoints/BreakpointMarker.h"
 #include "Util/Helper.h"
-
+#include <QCompleter>
 #include <QMenu>
 #include <QMessageBox>
 
@@ -56,6 +56,23 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+  QStringList keywords = ModelicaHighlighter::getKeywords();
+  QStringList types = ModelicaHighlighter::getTypes();
+  mpPlainTextEdit->insertCompleterKeywords(keywords);
+  mpPlainTextEdit->insertCompleterTypes(types);
+  mpPlainTextEdit->setCompleter();
+}
+
+/*!
+ * \brief ModelicaEditor::popUpCompleter()
+ * show the popup for keywords and type for autocompletion
+ */
+void ModelicaEditor::popUpCompleter()
+{
+  QCompleter *completer = mpPlainTextEdit->completer();
+  QRect cr = mpPlainTextEdit->cursorRect();
+  cr.setWidth(completer->popup()->sizeHintForColumn(0)+ completer->popup()->verticalScrollBar()->sizeHint().width());
+  completer->complete(cr);
 }
 
 /*!
@@ -390,85 +407,100 @@ void ModelicaHighlighter::initializeSettings()
   rule.mFormat = mFunctionFormat;
   mHighlightingRules.append(rule);
   // keywords
-  QStringList keywordPatterns;
-  keywordPatterns << "\\balgorithm\\b"
-                  << "\\band\\b"
-                  << "\\bannotation\\b"
-                  << "\\bassert\\b"
-                  << "\\bblock\\b"
-                  << "\\bbreak\\b"
-                  << "\\bBoolean\\b"
-                  << "\\bclass\\b"
-                  << "\\bconnect\\b"
-                  << "\\bconnector\\b"
-                  << "\\bconstant\\b"
-                  << "\\bconstrainedby\\b"
-                  << "\\bder\\b"
-                  << "\\bdiscrete\\b"
-                  << "\\beach\\b"
-                  << "\\belse\\b"
-                  << "\\belseif\\b"
-                  << "\\belsewhen\\b"
-                  << "\\bencapsulated\\b"
-                  << "\\bend\\b"
-                  << "\\benumeration\\b"
-                  << "\\bequation\\b"
-                  << "\\bexpandable\\b"
-                  << "\\bextends\\b"
-                  << "\\bexternal\\b"
-                  << "\\bfalse\\b"
-                  << "\\bfinal\\b"
-                  << "\\bflow\\b"
-                  << "\\bfor\\b"
-                  << "\\bfunction\\b"
-                  << "\\bif\\b"
-                  << "\\bimport\\b"
-                  << "\\bimpure\\b"
-                  << "\\bin\\b"
-                  << "\\binitial\\b"
-                  << "\\binner\\b"
-                  << "\\binput\\b"
-                  << "\\bloop\\b"
-                  << "\\bmodel\\b"
-                  << "\\bnot\\b"
-                  << "\\boperator\\b"
-                  << "\\bor\\b"
-                  << "\\bouter\\b"
-                  << "\\boutput\\b"
-                  << "\\boptimization\\b"
-                  << "\\bpackage\\b"
-                  << "\\bparameter\\b"
-                  << "\\bpartial\\b"
-                  << "\\bprotected\\b"
-                  << "\\bpublic\\b"
-                  << "\\bpure\\b"
-                  << "\\brecord\\b"
-                  << "\\bredeclare\\b"
-                  << "\\breplaceable\\b"
-                  << "\\breturn\\b"
-                  << "\\bstream\\b"
-                  << "\\bthen\\b"
-                  << "\\btrue\\b"
-                  << "\\btype\\b"
-                  << "\\bwhen\\b"
-                  << "\\bwhile\\b"
-                  << "\\bwithin\\b";
+  QStringList keywordPatterns = getKeywords();
   foreach (const QString &pattern, keywordPatterns) {
-    rule.mPattern = QRegExp(pattern);
+    QString newPattern = QString("\\b%1\\b").arg(pattern);
+    rule.mPattern = QRegExp(newPattern);
     rule.mFormat = mKeywordFormat;
     mHighlightingRules.append(rule);
   }
   // Modelica types
-  QStringList typePatterns;
-  typePatterns << "\\bString\\b"
-               << "\\bInteger\\b"
-               << "\\bBoolean\\b"
-               << "\\bReal\\b";
+  QStringList typePatterns = getTypes();
   foreach (const QString &pattern, typePatterns) {
-    rule.mPattern = QRegExp(pattern);
+    QString newPattern = QString("\\b%1\\b").arg(pattern);
+    rule.mPattern = QRegExp(newPattern);
     rule.mFormat = mTypeFormat;
     mHighlightingRules.append(rule);
   }
+}
+
+// Function which returns list of keywords for the highlighter
+QStringList ModelicaHighlighter::getKeywords()
+{
+  QStringList keywordsList;
+  keywordsList   << "algorithm"
+                 << "and"
+                 << "annotation"
+                 << "assert"
+                 << "block"
+                 << "break"
+                 << "class"
+                 << "connect"
+                 << "connector"
+                 << "constant"
+                 << "constrainedby"
+                 << "der"
+                 << "discrete"
+                 << "each"
+                 << "else"
+                 << "elseif"
+                 << "elsewhen"
+                 << "encapsulated"
+                 << "end"
+                 << "enumeration"
+                 << "equation"
+                 << "expandable"
+                 << "extends"
+                 << "external"
+                 << "false"
+                 << "final"
+                 << "flow"
+                 << "for"
+                 << "function"
+                 << "if"
+                 << "import"
+                 << "impure"
+                 << "in"
+                 << "initial"
+                 << "inner"
+                 << "input"
+                 << "loop"
+                 << "model"
+                 << "not"
+                 << "operator"
+                 << "or"
+                 << "outer"
+                 << "output"
+                 << "optimization"
+                 << "package"
+                 << "parameter"
+                 << "partial"
+                 << "protected"
+                 << "public"
+                 << "pure"
+                 << "record"
+                 << "redeclare"
+                 << "replaceable"
+                 << "return"
+                 << "stream"
+                 << "then"
+                 << "true"
+                 << "type"
+                 << "when"
+                 << "while"
+                 << "within";
+  return keywordsList;
+}
+
+// Function which returns list of types for the highlighter
+QStringList ModelicaHighlighter::getTypes()
+{
+  QStringList typesList;
+  typesList << "String"
+            << "Integer"
+            << "Boolean"
+            << "Real";
+  return typesList;
 }
 
 /*!
