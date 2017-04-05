@@ -344,6 +344,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   struct dataNewtonAndHybrid *mixedSolverData;
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
+  infoStreamPrint(LOG_NLS, 0, "%ld non-linear systems", data->modelData->nNonLinearSystems);
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {

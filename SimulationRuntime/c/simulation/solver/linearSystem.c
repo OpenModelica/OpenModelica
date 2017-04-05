@@ -80,7 +80,8 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
   struct dataLapackAndTotalPivot *defaultSolverData;
 
-  infoStreamPrint(LOG_LS_V, 1, "initialize linear system solvers");
+  infoStreamPrint(LOG_LS, 1, "initialize linear system solvers");
+  infoStreamPrint(LOG_LS, 0, "%ld linear systems", data->modelData->nLinearSystems);
 
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
@@ -217,7 +218,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     }
   }
 
-  messageClose(LOG_LS_V);
+  messageClose(LOG_LS);
 
   TRACE_POP
   return 0;

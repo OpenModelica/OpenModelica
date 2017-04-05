@@ -51,6 +51,7 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
   MIXED_SYSTEM_DATA *system = data->simulationInfo->mixedSystemData;
 
   infoStreamPrint(LOG_NLS, 1, "initialize mixed system solvers");
+  infoStreamPrint(LOG_NLS, 0, "%ld mixed systems", data->modelData->nMixedSystems);
 
   for(i=0; i<data->modelData->nMixedSystems; ++i)
   {
