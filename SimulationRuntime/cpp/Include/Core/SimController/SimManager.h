@@ -25,7 +25,6 @@ public:
     void runSingleStep();
 
 private:
-    void computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub);
     void computeSampleCycles();
 
     void runSingleProcess();

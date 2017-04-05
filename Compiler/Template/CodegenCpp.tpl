@@ -3626,8 +3626,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%generateRestoreOldValues(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%generateRestoreNewValues(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    <%generatehandleTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
     <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%generateGetTimeEvenData(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, true)%>
 
     <%isODE(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -3690,6 +3690,9 @@ match simCode
       _dimClock = <%listLength(getSubPartitions(clockedPartitions))%>;
       // simplified treatment of clocks in model as time events
       _dimTimeEvent = <%timeEventLength(simCode)%>  + _dimClock;
+      _timeEventData = (std::pair<double,double>*)calloc(_dimTimeEvent, sizeof(std::pair<double,double>));
+      _currTimeEvents = (double*)malloc(_dimTimeEvent*sizeof(double));
+
       //Number of residues
        _event_handling= shared_ptr<EventHandling>(new EventHandling());
        initializeAlgloopSolverVariables(); //if we do not initialize it here, we get a segfault in the destructor if initialization of Solver or OMFactory has failed
@@ -7107,7 +7110,21 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       {
         SystemDefaultImplementation::setTime(t);
       }
-
+      // Computes the conditions of time event samplers for the current time
+      double <%lastIdentOfPath(modelInfo.name)%>::computeNextTimeEvents(double currTime)
+      {
+        return SystemDefaultImplementation::computeNextTimeEvents(currTime, getTimeEventData());
+      }
+      // Computes the conditions of time event samplers for the current time
+      void <%lastIdentOfPath(modelInfo.name)%>::computeTimeEventConditions(double currTime)
+      {
+        SystemDefaultImplementation::computeTimeEventConditions(currTime);
+      }
+      // Resets the conditions of time event samplers to false
+      void <%lastIdentOfPath(modelInfo.name)%>::resetTimeConditions()
+      {
+        SystemDefaultImplementation::resetTimeConditions();
+      }
       // Provide number (dimension) of variables according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimContinuousStates() const
       {
@@ -7549,10 +7566,13 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual bool isAlgebraic();
 
     virtual int getDimTimeEvent() const;
-    //gibt die Time events (Startzeit und Frequenz) zuruck
-    virtual void getTimeEvent(time_event_type& time_events);
-    //Wird vom Solver zur Behandlung der Time events aufgerufen (wenn zero_sign[i] = 0  kein time event,zero_sign[i] = n  Anzahl von vorgekommen time events )
-    virtual void handleTimeEvent(int* time_events);
+    virtual std::pair<double,double>* getTimeEventData() const;
+    virtual double computeNextTimeEvents(double currTime);
+    virtual void computeTimeEventConditions(double currTime);
+    virtual void resetTimeConditions();
+    //initializes the definition of time event samplers (i.e. starttime and frequency)
+    virtual void initTimeEventData();
+
     /// Set current integration time
     virtual void setTime(const double& time);
 
@@ -10094,35 +10114,6 @@ then
 
 end generateStepStarted;
 
-
-template generatehandleTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean createMeasureTime)
-::=
-
-  match simCode
-case SIMCODE(modelInfo = MODELINFO(__))
-then
-  let &measureTimeStartVar = buffer "" /*BUFD*/
-  let &measureTimeEndVar = buffer "" /*BUFD*/
-  let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
-  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[3]", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
-  <<
-  void <%lastIdentOfPath(modelInfo.name)%>::handleTimeEvent(int* time_events)
-  {
-    <%measureTimeStartVar%>
-    for(int i=0; i<_dimTimeEvent; i++)
-    {
-      if(time_events[i] != _time_event_counter[i])
-        _time_conditions[i] = true;
-      else
-        _time_conditions[i] = false;
-    }
-    memcpy(_time_event_counter, time_events, (int)_dimTimeEvent*sizeof(int));
-    <%measureTimeEndVar%>
-  }
-  >>
-
-end generatehandleTimeEvent;
-
 template generateDimTimeEvent(list<SimEqSystem> allEquations,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match simCode
@@ -10137,6 +10128,19 @@ then
 
 end generateDimTimeEvent;
 
+template generateGetTimeEvenData(list<SimEqSystem> allEquations,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+::=
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+  <<
+  std::pair<double,double>* <%lastIdentOfPath(modelInfo.name)%>::getTimeEventData() const
+  {
+    return _timeEventData;
+  }
+  >>
+
+end generateGetTimeEvenData;
 
 template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -10145,9 +10149,9 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
     then
       let &varDecls = buffer "" /*BUFD*/
       <<
-      void <%lastIdentOfPath(modelInfo.name)%>::getTimeEvent(time_event_type& time_events)
+      void <%lastIdentOfPath(modelInfo.name)%>::initTimeEventData()
       {
-        <%(timeEvents |> timeEvent  =>
+        <%(timeEvents |> timeEvent  hasindex i1 =>
           match timeEvent
             case SAMPLE_TIME_EVENT(__) then
               let &preExp = buffer "" /*BUFD*/
@@ -10155,13 +10159,15 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
               let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
               <<
               <%preExp%>
-              time_events.push_back(std::make_pair(<%e1%>, <%e2%>));
+              _timeEventData[<%i1%>] = std::make_pair(<%e1%>, <%e2%>);
               >>
             else ''
           ;separator="\n\n")%>
          // simplified treatment of clocks in model as time events
         for (int i = 0; i < _dimClock; i++)
-          time_events.push_back(std::make_pair(_clockShift[i] * _clockInterval[i], _clockInterval[i]));
+        {
+          _timeEventData[_dimTimeEvent-_dimClock+i] = std::make_pair(_clockShift[i] * _clockInterval[i], _clockInterval[i]);
+        }
       }
       >>
 end generateTimeEvent;

@@ -178,7 +178,13 @@ public:
       _need_update = false;
       // TODO set options for algerbraic solver according to toleranceControlled and relativeTolerance
       eventInfo.terminateSimulation = fmiFalse;
-      eventInfo.upcomingTimeEvent = fmiFalse;
+      //time events
+      _model->initTimeEventData();
+      eventInfo.nextEventTime = _model->computeNextTimeEvents(_model->getTime());
+      if (eventInfo.nextEventTime > 0)
+        eventInfo.upcomingTimeEvent = fmiTrue;
+      else
+        eventInfo.upcomingTimeEvent = fmiFalse;
       //eventInfo.nextTimeEvent no need to set this for this model
       //LOGGER_WRITE("Initialize completed",LC_OTHER,LL_DEBUG);
       return fmiOK;
@@ -188,6 +194,7 @@ public:
     {
       //LOGGER_WRITE("Get derivatives (number of derivatives: " + boost::lexical_cast<std::string>(nx) + ")",LC_OTHER,LL_DEBUG);
       updateModel();
+      _model->computeTimeEventConditions(_model->getTime());
       _model->getRHS(derivatives);
 
       //for(size_t i = 0; i < nx; i++)
@@ -276,13 +283,17 @@ public:
         events[i] = f[i] >= 0;
       // Handle Zero Crossings if nessesary
       bool state_vars_reinitialized = _model->handleSystemEvents(events);
+      //time events
+      eventInfo.nextEventTime = _model->computeNextTimeEvents(_model->getTime());
+      if ((eventInfo.nextEventTime != 0.0) and (eventInfo.nextEventTime != std::numeric_limits<double>::max()))
+        eventInfo.upcomingTimeEvent = fmiTrue;
+      else
+        eventInfo.upcomingTimeEvent = fmiFalse;
       // everything is done
       eventInfo.iterationConverged = fmiTrue;
       eventInfo.stateValueReferencesChanged = fmiFalse; // will never change for open Modelica Models
       eventInfo.stateValuesChanged = state_vars_reinitialized; // TODO
       eventInfo.terminateSimulation = fmiFalse;
-      eventInfo.upcomingTimeEvent = fmiFalse;
-      //eventInfo.nextEventTime = _time;
       //LOGGER_WRITE("Event update finished",LC_OTHER,LL_DEBUG);
       return fmiOK;
     }

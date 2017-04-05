@@ -122,6 +122,7 @@ public:
   void initialize();
   /// Set current integration time
   void setTime(const double& t);
+  double getTime();
 
   IGlobalSettings* getGlobalSettings();
 
@@ -130,6 +131,11 @@ public:
 
   shared_ptr<ISimData> getSimData();
   shared_ptr<ISimVars> getSimVars();
+
+  double computeNextTimeEvents(double currTime, std::pair<double, double>* timeEventPairs);
+  void computeTimeEventConditions(double currTime);
+  void setIntervalInTimEventData(int clockIdx, double interval);
+  void resetTimeConditions();
 
   virtual double& getRealStartValue(double& var);
   virtual bool& getBoolStartValue(bool& var);
@@ -143,7 +149,6 @@ public:
   virtual void setIntStartValue(int& var,int val,bool overwriteOldValue);
   virtual void setStringStartValue(string& var,string val);
   virtual void setStringStartValue(string& var,string val,bool overwriteOldValue);
-
 protected:
     void Assert(bool cond, const string& msg);
     void Terminate(string msg);
@@ -176,8 +181,10 @@ protected:
         _dimClock,            ///< Dimension (=Anzahl) Clocks (active)
         _dimAE;               ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 
-    int
-    * _time_event_counter;
+    std::pair<double, double>*
+        _timeEventData;
+    double* _currTimeEvents;
+
     double *_clockInterval;   ///< time interval between clock ticks
     double *_clockShift;      ///< time before first activation
     double *_clockTime;       ///< time of clock ticks
@@ -200,7 +207,7 @@ protected:
    double
         *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot,              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
-	    *__daeResidual;
+      *__daeResidual;
     typedef std::deque<double> buffer_type;
     typedef std::iterator_traits<buffer_type::iterator>::difference_type difference_type;
     map<unsigned int, buffer_type> _delay_buffer;
@@ -211,7 +218,7 @@ protected:
     IEvent* _event_system; //this pointer to event system
     string _modelName;
 
-	bool _sparse;
-	bool _useAnalyticalJacobian;
+  bool _sparse;
+  bool _useAnalyticalJacobian;
 };
 /** @} */ // end of coreSystem

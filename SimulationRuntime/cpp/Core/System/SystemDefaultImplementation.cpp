@@ -52,7 +52,8 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _dimTimeEvent      (0)
   , _dimClock        (0)
   , _dimAE        (0)
-  , _time_event_counter  (NULL)
+  , _timeEventData  (NULL)
+  , _currTimeEvents (NULL)
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
@@ -91,7 +92,8 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _dimTimeEvent      (0)
   , _dimClock        (0)
   , _dimAE        (0)
-  , _time_event_counter  (NULL)
+  , _timeEventData  (NULL)
+  , _currTimeEvents (NULL)
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
@@ -135,7 +137,8 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   */
   if(_conditions) delete [] _conditions ;
   if(_time_conditions) delete [] _time_conditions ;
-  if(_time_event_counter) delete [] _time_event_counter;
+  if(_timeEventData) delete [] _timeEventData;
+  if(_currTimeEvents) delete [] _currTimeEvents;
   if(_conditions0) delete [] _conditions0;
   if(_clockInterval) delete [] _clockInterval;
   if(_clockShift) delete [] _clockShift;
@@ -194,6 +197,11 @@ int SystemDefaultImplementation::getDimClock() const
   return _dimClock;
 }
 
+void SystemDefaultImplementation::setIntervalInTimEventData(int clockIdx, double interval)
+{
+    _timeEventData[_dimTimeEvent-_dimClock+clockIdx].second = interval;
+}
+
 /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 int SystemDefaultImplementation::getDimRHS() const
 {
@@ -230,19 +238,13 @@ void SystemDefaultImplementation::initialize()
     _conditions0= new bool[_dimZeroFunc];
 
     memset(_conditions,false,(_dimZeroFunc)*sizeof(bool));
-	_event_system = dynamic_cast<IEvent*>(this);
+  _event_system = dynamic_cast<IEvent*>(this);
   }
   if(_dimTimeEvent > 0)
   {
     if(_time_conditions) delete [] _time_conditions ;
-    if(_time_event_counter) delete [] _time_event_counter;
     _time_conditions = new bool[_dimTimeEvent];
-
-
-    _time_event_counter = new int[_dimTimeEvent];
-
     memset(_time_conditions,false,(_dimTimeEvent)*sizeof(bool));
-    memset(_time_event_counter,0,(_dimTimeEvent)*sizeof(int));
   }
   if (_dimClock > 0)
   {
@@ -275,6 +277,12 @@ void SystemDefaultImplementation::setTime(const double& t)
 {
   _simTime = t;
 };
+
+// Get current integration time
+double SystemDefaultImplementation::getTime()
+{
+  return _simTime;
+}
 
 /// getter for variables of different types
 void SystemDefaultImplementation::getBoolean(bool* z)
@@ -471,7 +479,7 @@ void SystemDefaultImplementation::getRHS(double* f)
 
 void SystemDefaultImplementation::getResidual(double* f)
 {
-	 std::copy(__daeResidual, __daeResidual+_dimRHS, f);
+   std::copy(__daeResidual, __daeResidual+_dimRHS, f);
 }
 
 void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr, vector<double> delay_max)
@@ -655,6 +663,69 @@ void SystemDefaultImplementation::setStringStartValue(string& var,string val,boo
   var=val;
   _string_start_values.setStartValue(var,val,overwriteOldValue);
 }
+
+/**
+    Computes whether time event conditions are active at current time
+    @param The current time
+*/
+void SystemDefaultImplementation::computeTimeEventConditions(double currTime)
+{
+  for (int i=0; i< _dimTimeEvent; i++)
+  {
+    if (std::abs(_currTimeEvents[i] - currTime) <= 1e4*UROUND)
+    {
+      _time_conditions[i] = true;
+    }
+    else
+    {
+      _time_conditions[i] = false;
+    }
+  }
+}
+
+/**
+    Sets all time event conditions to false
+*/
+void SystemDefaultImplementation::resetTimeConditions()
+{
+  for (int i=0; i< _dimTimeEvent; i++)
+  {
+  _time_conditions[i] = false;
+  }
+}
+
+/**
+    Computes the next time events for each time event sampler
+    @param The current Time
+    @param The definition of the time event samplers (starttime, intervall)
+    @param An array of the next time events for each sampler
+    @return the closest time event
+*/
+double SystemDefaultImplementation::computeNextTimeEvents(double currTime, std::pair<double, double>* timeEventPairs)
+{
+  double closestTimeEvent = std::numeric_limits<double>::max();
+  double nextTimeEvent = 0;
+  double pastIntervalls;
+
+  for (  int timerIdx = 0; timerIdx < _dimTimeEvent ; timerIdx++)
+  {
+    //the time event samples started already
+    if(timeEventPairs[timerIdx].first <= currTime)
+    {
+      pastIntervalls = std::floor((currTime - timeEventPairs[timerIdx].first + 1e4*UROUND) / timeEventPairs[timerIdx].second);
+      _currTimeEvents[timerIdx] = timeEventPairs[timerIdx].first + (pastIntervalls) * timeEventPairs[timerIdx].second;
+      nextTimeEvent = _currTimeEvents[timerIdx] + timeEventPairs[timerIdx].second;
+    }
+    else
+    {
+      nextTimeEvent = timeEventPairs[timerIdx].first;
+      _currTimeEvents[timerIdx] = 1.0;
+    }
+    closestTimeEvent = std::min(closestTimeEvent, nextTimeEvent);
+  }
+  return closestTimeEvent;
+}
+
 /** @} */ // end of coreSystem
 
 /*
