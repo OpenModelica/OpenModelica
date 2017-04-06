@@ -2,6 +2,8 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 Bug3503.mos \
+EventClock.mos \
+EventClock_cpp.mos \
 SamplingWithClocks.mos \
 subSample.mos \
 SynchronousFeatures.ControlledMassBasic.mos \
