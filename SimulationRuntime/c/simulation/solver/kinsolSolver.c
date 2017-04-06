@@ -125,8 +125,12 @@ static int nlsKinsolResiduals(N_Vector z, N_Vector f, void *userData);
 static void nlsKinsolErrorPrint(int error_code, const char *module, const char *function, char *msg, void *userData);
 static void nlsKinsolInfoPrint(const char *module, const char *function, char *msg, void *userData);
 static int nlsSparseJac(N_Vector x, N_Vector fx, SlsMat Jac, void *userData, N_Vector tmp1, N_Vector tmp2);
+static int nlsSparseSymJac(N_Vector x, N_Vector fx, SlsMat Jac, void *userData, N_Vector tmp1, N_Vector tmp2);
 static int nlsDenseJac(long int N, N_Vector x, N_Vector fx, DlsMat Jac, void *userData, N_Vector tmp1, N_Vector tmp2);
 static void nlsKinsolJacSumSparse(SlsMat mat);
+static void nlsKinsolJacSumDense(DlsMat mat);
+
+
 
 int checkReturnFlag(int flag)
 {
@@ -207,7 +211,12 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
       if (checkReturnFlag(flag)){
         errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Something goes wrong while initialize KINSOL solver!");
       }
-      flag = KINSlsSetSparseJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+      if (nlsData->analyticalJacobianColumn != NULL){
+        flag = KINSlsSetSparseJacFn(kinsolData->kinsolMemory, nlsSparseSymJac);
+      }
+      else {
+        flag = KINSlsSetSparseJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+      }
       if (checkReturnFlag(flag)){
         errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Something goes wrong while initialize KINSOL Sparse Solver!");
       }
@@ -357,8 +366,10 @@ int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, DlsMat Jac, void *use
 
   /* debug */
   if (ACTIVE_STREAM(LOG_NLS_JAC)){
-    infoStreamPrint(LOG_NLS_JAC, 0, "##KINSOL## omc dense matrix.");
-    PrintMat(Jac);
+    infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## omc dense matrix.");
+    PrintSparseMat(SlsConvertDls(Jac));
+    nlsKinsolJacSumDense(Jac);
+    messageClose(LOG_NLS_JAC);
   }
 
   /* performance measurement and statistics */
@@ -386,7 +397,7 @@ static void finishSparseColPtr(SlsMat mat)
   mat->colptrs[mat->N] = mat->NNZ;
   for(i=1; i<mat->N+1; ++i){
     if (mat->colptrs[i] == 0){
-      warningStreamPrint(LOG_STDOUT, 0, "##KINSOL## Jac row %d singular. See LOG_NLS for more infomation.", i);
+      warningStreamPrint(LOG_STDOUT, 0, "##KINSOL## Jacobian row %d singular. See LOG_NLS for more information.", i);
       mat->colptrs[i] = mat->colptrs[i-1];
     }
   }
@@ -479,6 +490,108 @@ int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Ve
   return 0;
 }
 
+/*! \fn nlsSparseSymJac
+ *
+ *  function calculates symbolic jacobian
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [sysNumber]
+
+ */
+static
+int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Vector tmp1, N_Vector tmp2)
+{
+  NLS_KINSOL_USERDATA *kinsolUserData = (NLS_KINSOL_USERDATA*) userData;
+  DATA* data = kinsolUserData->data;
+  threadData_t *threadData = kinsolUserData->threadData;
+  int sysNumber = kinsolUserData->sysNumber;
+  NONLINEAR_SYSTEM_DATA *nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA*) nlsData->solverData;
+
+  /* prepare variables */
+  double *x = N_VGetArrayPointer(vecX);
+  double *fx = N_VGetArrayPointer(vecFX);
+
+  SPARSE_PATTERN* sparsePattern = &(nlsData->sparsePattern);
+  ANALYTIC_JACOBIAN* analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
+
+  long int i,j,ii;
+  int nth = 0;
+  int nnz = sparsePattern->numberOfNoneZeros;
+
+  /* performance measurement */
+  rt_ext_tp_tick(&nlsData->jacobianTimeClock);
+
+  /* reset matrix */
+  SlsSetToZero(Jac);
+
+  /* update x for the matrix */
+  nlsKinsolResiduals(vecX, vecFX, userData);
+
+  for(i = 0; i < sparsePattern->maxColors; i++)
+  {
+    for(ii=0; ii < kinsolData->size; ii++)
+    {
+      if(sparsePattern->colorCols[ii]-1 == i)
+      {
+        analyticJacobian->seedVars[ii] = 1;
+      }
+    }
+    ((nlsData->analyticalJacobianColumn))(data, threadData);
+
+    for(ii = 0; ii < kinsolData->size; ii++)
+    {
+      if(sparsePattern->colorCols[ii]-1 == i)
+      {
+        nth = sparsePattern->leadindex[ii];
+        while(nth < sparsePattern->leadindex[ii+1])
+        {
+          j  =  sparsePattern->index[nth];
+          setJacElementKluSparse(j, ii, analyticJacobian->resultVars[j], nth, Jac);
+          nth++;
+        };
+        analyticJacobian->seedVars[ii] = 0;
+      }
+    }
+  }
+  /* finish sparse matrix */
+  finishSparseColPtr(Jac);
+
+  /* debug */
+  if (ACTIVE_STREAM(LOG_NLS_JAC)){
+    infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Sparse Matrix.");
+    PrintSparseMat(Jac);
+    nlsKinsolJacSumSparse(Jac);
+    messageClose(LOG_NLS_JAC);
+  }
+
+  /* performance measurement and statistics */
+  nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
+  nlsData->numberOfJEval++;
+
+  return 0;
+}
+
+static
+void nlsKinsolJacSumDense(DlsMat mat)
+{
+  int i,j;
+  double sum;
+
+  for(i=0; i<mat->M; ++i,sum=0.0){
+    for(j=0; j<mat->N;++j){
+      sum += fabs(DENSE_ELEM(mat,j,i));
+    }
+
+    if (sum == 0.0){
+      warningStreamPrint(LOG_NLS, 0, "sum of col %d of jacobian is zero!", i);
+    }else{
+      infoStreamPrint(LOG_NLS_JAC, 0, "col %d jac sum = %g", i, sum);
+    }
+
+  }
+}
+
 static
 void nlsKinsolJacSumSparse(SlsMat mat)
 {
@@ -486,13 +599,20 @@ void nlsKinsolJacSumSparse(SlsMat mat)
   double sum;
 
   for(i=0; i<mat->N; ++i){
-    sum = 0;
+    sum = 0.0;
     for(j=mat->colptrs[i]; j<mat->colptrs[i+1];++j){
       sum += fabs(mat->data[j]);
     }
-    infoStreamPrint(LOG_NLS_JAC, 0, "row %d jac sum = %g", i, sum);
+
+    if (sum == 0.0){
+      warningStreamPrint(LOG_NLS, 0, "sum of col %d of jacobian is zero!", i);
+    }else{
+      infoStreamPrint(LOG_NLS_JAC, 0, "col %d jac sum = %g", i, sum);
+    }
+
   }
 }
+
 
 static
 void nlsKinsolErrorPrint(int errorCode, const char *module, const char *function, char *msg, void *userData)
