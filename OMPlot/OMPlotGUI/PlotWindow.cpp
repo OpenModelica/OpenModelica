@@ -72,8 +72,6 @@ void PlotWindow::setUpWidget()
   mpPlot = new Plot(this);
   // set up the toolbar
   setupToolbar();
-  // enable the zoom mode by default
-  mpZoomButton->setChecked(true);
   // set the default values
   // set the plot title
   setTitle(tr("Plot by OpenModelica"));
@@ -171,20 +169,6 @@ void PlotWindow::setupToolbar()
 {
   QToolBar *toolBar = new QToolBar(this);
   setContextMenuPolicy(Qt::NoContextMenu);
-  //ZOOM
-  mpZoomButton = new QToolButton(toolBar);
-  mpZoomButton->setText(tr("Zoom"));
-  mpZoomButton->setCheckable(true);
-  connect(mpZoomButton, SIGNAL(toggled(bool)), SLOT(enableZoomMode(bool)));
-  toolBar->addWidget(mpZoomButton);
-  toolBar->addSeparator();
-  //PAN
-  mpPanButton = new QToolButton(toolBar);
-  mpPanButton->setText(tr("Pan"));
-  mpPanButton->setCheckable(true);
-  connect(mpPanButton, SIGNAL(toggled(bool)), SLOT(enablePanMode(bool)));
-  toolBar->addWidget(mpPanButton);
-  toolBar->addSeparator();
   // Auto scale
   mpAutoScaleButton = new QToolButton(toolBar);
   mpAutoScaleButton->setText(tr("Auto Scale"));
@@ -198,11 +182,6 @@ void PlotWindow::setupToolbar()
   connect(fitInViewButton, SIGNAL(clicked()), SLOT(fitInView()));
   toolBar->addWidget(fitInViewButton);
   toolBar->addSeparator();
-  // make the buttons exclusive
-  QButtonGroup *pViewsButtonGroup = new QButtonGroup;
-  pViewsButtonGroup->setExclusive(true);
-  pViewsButtonGroup->addButton(mpZoomButton);
-  pViewsButtonGroup->addButton(mpPanButton);
   //EXPORT
   QToolButton *btnExport = new QToolButton(toolBar);
   btnExport->setText(tr("Save"));
@@ -883,11 +862,6 @@ void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlot
 Plot* PlotWindow::getPlot()
 {
   return mpPlot;
-}
-
-QToolButton* PlotWindow::getPanButton()
-{
-  return mpPanButton;
 }
 
 void PlotWindow::receiveMessage(QStringList arguments)

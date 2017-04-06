@@ -63,7 +63,6 @@ Plot::Plot(PlotWindow *pParent)
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
   pPlotCanvas->setFrameStyle(QFrame::NoFrame);  /* Ticket #2679 point 6. Remove the default frame from the canvas. */
-  canvas()->setCursor(Qt::ArrowCursor);
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
   setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);

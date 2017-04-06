@@ -68,8 +68,6 @@ private:
   QToolButton *mpGridButton;
   QToolButton *mpDetailedGridButton;
   QToolButton *mpNoGridButton;
-  QToolButton *mpZoomButton;
-  QToolButton *mpPanButton;
   QToolButton *mpAutoScaleButton;
   QToolButton *mpSetupButton;
   QTextStream *mpTextStream;
@@ -129,7 +127,6 @@ public:
   QString getFooter();
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
-  QToolButton* getPanButton();
   void receiveMessage(QStringList arguments);
   void closeEvent(QCloseEvent *event);
 signals:

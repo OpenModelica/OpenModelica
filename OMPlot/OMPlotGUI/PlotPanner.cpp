@@ -38,16 +38,16 @@ using namespace OMPlot;
 
 #if QWT_VERSION >= 0x060100
 PlotPanner::PlotPanner(QWidget *pCanvas, Plot *pParent)
-    : QwtPlotPanner(pCanvas)
+  : QwtPlotPanner(pCanvas)
 {
 #else
 PlotPanner::PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent)
-    : QwtPlotPanner(pCanvas)
+  : QwtPlotPanner(pCanvas)
 {
 #endif
-    setEnabled(false);
-    connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
-    mpParentPlot = pParent;
+  setMouseButton(Qt::LeftButton, Qt::ControlModifier);
+  connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
+  mpParentPlot = pParent;
 
 }
 
@@ -58,28 +58,30 @@ PlotPanner::~PlotPanner()
 
 void PlotPanner::updateView(int dx, int dy)
 {
-    plot()->updateAxes();
-    //moveCanvas(dx - pos().x(), dy - pos().y());
-//    plot()->setAxisAutoScale(QwtPlot::xBottom);
-//    plot()->setAxisAutoScale(QwtPlot::yLeft);
-//    canvas()->update();
-//    plot()->updateAxes();
-    plot()->updateLayout();
-    canvas()->updateGeometry();
-    canvas()->update();
-    plot()->replot();
+  Q_UNUSED(dx);
+  Q_UNUSED(dy);
+  plot()->updateAxes();
+//  moveCanvas(dx - pos().x(), dy - pos().y());
+//  plot()->setAxisAutoScale(QwtPlot::xBottom);
+//  plot()->setAxisAutoScale(QwtPlot::yLeft);
+//  canvas()->update();
+//  plot()->updateAxes();
+  plot()->updateLayout();
+  canvas()->updateGeometry();
+  canvas()->update();
+  plot()->replot();
 }
 
 void PlotPanner::widgetMousePressEvent(QMouseEvent *event)
 {
-    if (mpParentPlot->getParentPlotWindow()->getPanButton()->isChecked())
-        mpParentPlot->canvas()->setCursor(Qt::ClosedHandCursor);
-    QwtPlotPanner::widgetMousePressEvent(event);
+  if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
+    mpParentPlot->canvas()->setCursor(Qt::ClosedHandCursor);
+  }
+  QwtPlotPanner::widgetMousePressEvent(event);
 }
 
 void PlotPanner::widgetMouseReleaseEvent(QMouseEvent *event)
 {
-    if (mpParentPlot->getParentPlotWindow()->getPanButton()->isChecked())
-        mpParentPlot->canvas()->setCursor(Qt::OpenHandCursor);
-    QwtPlotPanner::widgetMouseReleaseEvent(event);
+  mpParentPlot->canvas()->setCursor(Qt::CrossCursor);
+  QwtPlotPanner::widgetMouseReleaseEvent(event);
 }
