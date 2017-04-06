@@ -5014,7 +5014,11 @@ case BINARY(__) then
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     'add_alloc_scalar_<%type%>(<% if isArrayType(typeof(exp1)) then '<%e2%>, &<%e1%>' else '<%e1%>, &<%e2%>' %>)'
-  case SUB_SCALAR_ARRAY(__) then error(sourceInfo(),'Code generation does not support SUB_SCALAR_ARRAY <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
+  case SUB_SCALAR_ARRAY(__) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    'sub_alloc_scalar_<%type%>(<% if isArrayType(typeof(exp1)) then '<%e2%>, &<%e1%>' else '<%e1%>, &<%e2%>' %>)'
   case MUL_SCALAR_PRODUCT(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_scalar"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_scalar"
