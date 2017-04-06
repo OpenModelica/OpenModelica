@@ -1,0 +1,52 @@
+// name:     ScalarArrayOperations
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// ticket:4382
+
+setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen"); getErrorString();
+
+loadString("
+function main
+protected
+  Real m[:];
+  String str;
+  Real b[:];
+algorithm
+  m := array(1.0,2.0,3.0,4.0);
+  printArray(m);
+  b := m .+ 10.0;
+  printArray(b);
+  b := m .- 10.0;
+  printArray(b);
+  b := 10.0 .+ m;
+  printArray(b);
+  b := 10.0 .- m;
+  printArray(b);
+end main;
+
+function printArray
+  input Real m[:];
+algorithm
+  print(\"{\");
+  for r in m loop
+    print(\" \" + realString(r));
+  end for;
+  print(\" }\\n\");
+end printArray;
+"); getErrorString();
+
+main();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// { 1.0 2.0 3.0 4.0 }
+// { 11.0 12.0 13.0 14.0 }
+// { -9.0 -8.0 -7.0 -6.0 }
+// { 11.0 12.0 13.0 14.0 }
+// { 9.0 8.0 7.0 6.0 }
+//
+// endResult

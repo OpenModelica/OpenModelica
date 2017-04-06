@@ -100,6 +100,7 @@ Polymorphic2.mos \
 PolymorphicReduction.mos \
 Recursive.mos \
 ReturnInTryBlock.mos \
+ScalarArrayOperations.mos \
 Shadowing1.mos \
 Shadowing2.mos \
 Simplify1.mos \
