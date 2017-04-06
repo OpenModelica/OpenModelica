@@ -42,7 +42,6 @@ Nox::~Nox()
     if(_y_old)              delete [] _y_old;
     if(_y_new)              delete [] _y_new;
     if(_yScale)              delete [] _yScale;
-    //if(_noxLapackInterface) delete _noxLapackInterface;
 	if(_currentIterate) delete [] _currentIterate;
 
 }
@@ -61,6 +60,7 @@ void Nox::initialize()
     if(_yScale) delete [] _yScale;
 
 
+	_output = Teuchos::rcp(new std::stringstream);
 	_y                = new double[_dimSys];
 	_y0               = new double[_dimSys];
 	_y_old            = new double[_dimSys];
@@ -82,6 +82,17 @@ void Nox::initialize()
 		}
 	}
 
+
+	// Set up the status tests
+    _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
+    _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
+    _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
+    _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
+
+	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
+	_statusTestsCombo->addStatusTest(_statusTestStagnation);
+	_statusTestsCombo->addStatusTest(_statusTestDivergence);
+
 	if (_generateoutput) std::cout << "ending init" << std::endl;
 }
 
@@ -94,23 +105,13 @@ void Nox::solve()
 	NOX::LAPACK::Vector Lapacksolution;//temporary variable used to convert the solution from NOX::LAPACK::Vector to a double array.
 	double * rhs = new double[_dimSys];
 	double sum;
+	bool handleddivisionbyzeroerror=false;
 
 	_locTol=5.0e-7;
 	_currentIterateNorm=1.0e2;
 
-	_output = Teuchos::rcp(new std::stringstream);
     if (_firstCall) initialize();
 
-	// Set up the status tests
-	// can be moved to initialize.
-    _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
-    _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
-    _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
-    _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
-
-	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
-	_statusTestsCombo->addStatusTest(_statusTestStagnation);
-	_statusTestsCombo->addStatusTest(_statusTestDivergence);
 
 	// Create the list of solver parameters. For detailed calibration, check https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
     _solverParametersPtr = Teuchos::rcp(new Teuchos::ParameterList);
@@ -118,10 +119,9 @@ void Nox::solve()
     _solverParametersPtr->set("Nonlinear Solver", "Line Search Based");
 
 	// Set the level of output
-	if(!_generateoutput){
-		_solverParametersPtr->sublist("Printing").set("Output Precision", 15);
-		_solverParametersPtr->sublist("Printing").set("Output Stream", _output);
-		_solverParametersPtr->sublist("Printing").set("Error Stream", _output);
+	addPrintingList(_solverParametersPtr);
+    if (_generateoutput){
+		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
 	}
 
 	//_solverParametersPtr->sublist("Direction").set("Method", "Steepest Descent");
@@ -132,18 +132,31 @@ void Nox::solve()
 	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
 	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
 
-
-    if (_generateoutput){
-		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
-	}else{
-		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
-	}
-
 	if (_generateoutput) std::cout << "creating noxLapackInterface" << std::endl;
 
 	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop,-1));//this also gets the nominal values
 
 	_iterationStatus=CONTINUE;
+
+
+
+	try{
+		// Reset initial guess
+		memcpy(_y,_y0,_dimSys*sizeof(double));
+		_algLoop->setReal(_y);
+		_algLoop->evaluate();
+	}
+	catch(const std::exception &ex)
+	{
+		if(isdivisionbyzeroerror(ex)){
+			handleddivisionbyzeroerror=true;
+			divisionbyzerohandling(_y0);
+		}else{
+			throw;
+		}
+	}
+
+
 
 	if (_generateoutput) std::cout << "starting while loop" << std::endl;
 
@@ -151,7 +164,9 @@ void Nox::solve()
 		iter++;
 
 		// Reset initial guess
-		memcpy(_y,_y0,_dimSys*sizeof(double));
+		if(!handleddivisionbyzeroerror){
+			memcpy(_y,_y0,_dimSys*sizeof(double));
+		}
 		_algLoop->setReal(_y);
 
 		try{
@@ -159,73 +174,8 @@ void Nox::solve()
 		}
 		catch(const std::exception &ex)
 		{
-			std::string divbyzero = "Division by zero";
-			std::string errorstring(ex.what());
-			//we only do the error handling by variation of initial guess in case of division by zero at evaluation of initial guess
-			if(errorstring.find(divbyzero)!=std::string::npos){
-				NOX::StatusTest::StatusType stat = NOX::StatusTest::Unevaluated;
-				int initialguessdividebyzerofailurecounter = 0;
-
-				while((stat!=NOX::StatusTest::Converged)){
-					bool detecteddivisionbyzero=true;
-					double* startvaluemodifier=new double[_dimSys];
-
-					memcpy(_y,_y0,_dimSys*sizeof(double));
-					_algLoop->setReal(_y);
-
-					if (initialguessdividebyzerofailurecounter>std::pow(2.0,static_cast<double>(_dimSys-1))){
-						std::cout << "Could not find a good initial guess with a root nearby:(" << std::endl;
-						throw;
-					}
-
-					//converts initialguessdividebyzerofailurecounter into its binary representation and store it in startvaluemodifier
-					for(int i=0;i<_dimSys;i++)
-					{
-						startvaluemodifier[i]=static_cast<int>(initialguessdividebyzerofailurecounter/std::floor(std::pow(2.0,static_cast<double>(i))))%2;
-						if (startvaluemodifier[i]==0) startvaluemodifier[i]=-1;
-					}
-
-					std::cout << "initialguessdividebyzerofailurecounter =" << initialguessdividebyzerofailurecounter << std::endl;
-					std::cout << "startvaluemodifier =" << std::endl;
-					for (int i=0;i<_dimSys;i++){
-						std::cout << " " << startvaluemodifier[i];
-					}
-					std::cout << std::endl;
-
-
-					initialguessdividebyzerofailurecounter++;
-
-					std::cout << "Varying initial guess by 10%:" << std::endl;
-					for (int i=0;i<_dimSys;i++){
-						if(_y[i]!=0.0){
-							_y[i]+=0.1*_y[i]*startvaluemodifier[i];
-						}else{
-							_y[i]=0.1*startvaluemodifier[i];
-						}
-					}
-					delete [] startvaluemodifier;
-
-					_algLoop->setReal(_y);
-					while(detecteddivisionbyzero){
-						try{
-							_algLoop->evaluate();
-							detecteddivisionbyzero=false;
-							stat = BasicNLSsolve();
-						}
-						catch(const std::exception &e){
-							std::string error(e.what());
-							if(errorstring.find(divbyzero)!=std::string::npos){
-								std::cout << "still dividing by zero, trying new initial guess." << std::endl;
-							}else{
-								throw;
-							}
-						}
-					}
-				}
-				break;
-			}else{
-				throw;
-			}
+			std::cout << std::endl << "sth went wrong during solver building, with error message" << ex.what() << std::endl;
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");
 		}
 
 		if (_generateoutput) std::cout << "building solver" << std::endl;
@@ -256,12 +206,7 @@ void Nox::solve()
 
 		try{
 			status = _solver->solve();
-			if(!((dynamic_cast<const std::stringstream &>(*_output)).str().empty())){
-				LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
-				LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*_output)).str(),LC_NLS,LL_DEBUG);
-				LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
-				//(dynamic_cast<const std::stringstream &>(*_output)).str().clear();//this does nothing. Also, using std::cout somehow miraculously disables the logging.
-			}
+			printLogger();
 		}
 		catch(const std::exception &ex)
 		{
@@ -272,16 +217,17 @@ void Nox::solve()
 		if (_generateoutput) std::cout << "finishing solve!" << std::endl;
 
 		// Get the answer
-		NOX::LAPACK::Group solnGrp = dynamic_cast<const NOX::LAPACK::Group&>(_solver->getSolutionGroup());
-		Lapacksolution=dynamic_cast<const NOX::LAPACK::Vector&>(solnGrp.getX());
+		copySolution(_solver,_y);
 
-		for (int i=0;i<_dimSys;i++){
-			if (_useDomainScaling){
-				_y[i]=Lapacksolution(i)/_yScale[i];
-			}else{
-				_y[i]=Lapacksolution(i);
-			}
-		}
+		// Lapacksolution=dynamic_cast<const NOX::LAPACK::Vector&>((dynamic_cast<const NOX::LAPACK::Group&>(_solver->getSolutionGroup())).getX());
+
+		// for (int i=0;i<_dimSys;i++){
+			// if (_useDomainScaling){
+				// _y[i]=Lapacksolution(i)/_yScale[i];
+			// }else{
+				// _y[i]=Lapacksolution(i);
+			// }
+		// }
 
 		_algLoop->setReal(_y);
 		try{
@@ -311,110 +257,17 @@ void Nox::solve()
 		}else{
 			if(true){
 				try{
-					_algLoop->setReal(_y);
-					_algLoop->evaluate();
-					_algLoop->getRHS(rhs);
-
-					sum=0.0;
-					for (int i=0;i<_dimSys;i++) sum+=rhs[i]*rhs[i];
-					sum=std::sqrt(sum);
-
-					// double*ypluseps=new double [_dimSys];
-					// double*rhs2=new double [_dimSys];
-					// memcpy(ypluseps,_y,_dimSys*sizeof(double));
-					// for(int i=0;i<_dimSys;i++){
-						// ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*8.0);//increase _ypluseps in the smallest amount possible.
-					// }
-					// _algLoop->setReal(ypluseps);
-					// _algLoop->evaluate();
-					// _algLoop->getRHS(rhs2);
-					// double threshold=0.0;
-					// for(int i=0;i<_dimSys;i++){
-						// threshold+=(rhs2[i]-rhs[i])*(rhs2[i]-rhs[i]);
-					// }
-					// threshold=std::sqrt(threshold);
-
-					// delete [] ypluseps;
-					// delete [] rhs2;
-
-					// std::cout << "simtime: " << _algLoop->getSimTime() << ", equation index: " << _algLoop->getEquationIndex() << ", sum: " << sum << ", threshold: " << threshold << ", sum<threshold " << (sum<threshold) << ", sum<10*threshold " << (sum<10*threshold) << std::endl;
-
-					// if(sum<threshold){
-						// // std::cout << "threshold (this should typically be a very small value (we vary the real value by ). In case of occurence of rounding errors, the threshold should be big though.) = " << threshold << ", simtime = " << _algLoop->getSimTime() << ", algloop " << _algLoop->getEquationIndex() << std::endl;
-						// _algLoop->setReal(_y);
-						// _algLoop->evaluate();
-						// _algLoop->getRHS(rhs);
-						// _iterationStatus=DONE;
-						// break;
-					// }
-					// zweite Möglichkeit: Wenn ich in alle Richtungen um ein Epsilon gehe (positiv und negativ), und mindestens die Hälfte der Richtungen in mindestens einer Komponente der rechten Seite einen Vorzeichenwechsel aufweist.
-					// das geht so nicht, aber ich kann in alle Richtungen gehen und gucken, dass jede Komponente bei mindestens einer Richtung einen Vorzeichenwechsel aufweist.
-					bool truesolution=true;
-					bool* rhshassignchangeincomponent=new bool [_dimSys];
-					double* ypluseps=new double [_dimSys];
-					double* rhs2=new double [_dimSys];
-
-					for (int i=0;i<_dimSys;i++){
-						rhshassignchangeincomponent[i]=false;
-					}
-
-					for (int i=0;i<_dimSys;i++){
-						// evaluate algLoop at ypluseps=_y+eps*e_i and save in rhs2
-						memcpy(ypluseps,_y,_dimSys*sizeof(double));
-						//ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*2.0);//der Faktor 2.0 ist nur zur Sicherheit und kann spaeter geloescht werden. Alternativ kann std::nextafter oder std::nexttoward verwendet werden
-						ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],std::numeric_limits<double>::max()),std::numeric_limits<double>::max());
-						_algLoop->setReal(ypluseps);
-						_algLoop->evaluate();
-						_algLoop->getRHS(rhs2);
-						// compare
-						for(int j=0;j<_dimSys;j++){
-							if (rhs[j]*rhs2[j]<=0.0){
-								rhshassignchangeincomponent[j]= true;
-							}
-						}
-
-						// do the same for _y-eps*e_i
-						memcpy(ypluseps,_y,_dimSys*sizeof(double));
-						// ypluseps[i]*=(1.0-std::numeric_limits<double>::epsilon()*2.0);//der Faktor 2.0 ist nur zur Sicherheit.
-						ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],-std::numeric_limits<double>::max()),-std::numeric_limits<double>::max());
-						_algLoop->setReal(ypluseps);
-						_algLoop->evaluate();
-						_algLoop->getRHS(rhs2);
-						for(int j=0;j<_dimSys;j++){
-							if (rhs[j]*rhs2[j]<=0.0){
-								rhshassignchangeincomponent[j]= true;
-							}
-						}
-					}
-
-					//check whether all components of rhs had a sign change, ie. all entries of rhshassignchangeincomponent are true.
-					for (int i=0;i<_dimSys;i++){
-						if (!rhshassignchangeincomponent[i]) truesolution=false;
-					}
-
-					if(truesolution){
+					if(checkwhethersolutionisnearby(_y)){
 						_algLoop->setReal(_y);
 						_algLoop->evaluate();
 						_algLoop->getRHS(rhs);
 						_iterationStatus=DONE;
 						break;
 					}
-
-
-					delete [] rhshassignchangeincomponent;
-					delete [] ypluseps;
-					delete [] rhs2;
-
-
-					// // dritte Moeglichkeit: geh fuer jede Komponente ein Epsilon in Richtung des Gradienten. // Das setzt aber auf jeden Fall Linearitaet voraus.
-
-
-
-
 				}
 				catch(const std::exception &ex)
 				{
-					if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl << "Trying to continue without. This should hopefully lead to statusTest::Failed." << std::endl;
+					if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl;
 				}
 			}
 
@@ -585,7 +438,7 @@ void Nox::restoreNewValues()
     memcpy(_y,_y_new,_dimSys*sizeof(double));
 }
 
-void Nox::LocaHomotopySolve(int numberofhomotopytries)
+void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 {
     if (_firstCall) initialize();
 
@@ -667,24 +520,15 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = Teuchos::rcp(new LOCA::LAPACK::Group(globalData, *LocaLapackInterface));
 	grp->setParams(p);
 
-	// Set up the status tests
-    Teuchos::RCP<NOX::StatusTest::NormF> normF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
-    Teuchos::RCP<NOX::StatusTest::Generic> comboOR = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, normF, maxIters));
-
 	// Create the stepper
-	LOCA::Stepper stepper(globalData, grp, comboOR, paramList);
+	LOCA::Stepper stepper(globalData, grp, _statusTestsCombo, paramList);
 
 	_iterationStatus=CONTINUE;
 
 	try{
 		// Perform continuation run
 		LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
-		if(!((dynamic_cast<const std::stringstream &>(*_output)).str().empty())){
-			LOGGER_WRITE_BEGIN("LOCA: ",LC_NLS,LL_DEBUG);
-			LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*_output)).str(),LC_NLS,LL_DEBUG);
-			LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
-		}
+		printLogger();
 		// Check for convergence
 		if (status != LOCA::Abstract::Iterator::Finished){
 			if(_generateoutput) std::cout << "Stepper failed to converge!" << std::endl;
@@ -730,10 +574,6 @@ void Nox::LocaHomotopySolve(int numberofhomotopytries)
 	}
 
 	if (_generateoutput) {
-		std::cout << "solutionvector=(";
-		for (int i=0;i<_dimSys;i++) std::cout << _y[i] << " ";
-		std::cout << ")" << std::endl;
-
 		double * rhs = new double[_dimSys];
 		double sum;
 		sum=0.0;
@@ -763,62 +603,18 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 	try{
 		Teuchos::RCP<NoxLapackInterface> noxlapackinterface=Teuchos::rcp(new NoxLapackInterface(_algLoop,-1));
 		Teuchos::RCP<NOX::LAPACK::Group> grp=Teuchos::rcp(new NOX::LAPACK::Group(*noxlapackinterface));
-		Teuchos::RCP<NOX::StatusTest::NormF> normf = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
-		Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
-		Teuchos::RCP<NOX::StatusTest::Stagnation> stagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
-		Teuchos::RCP<NOX::StatusTest::Divergence> divergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
-		Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, normf, maxiters));
-		statusTestsCombo->addStatusTest(_statusTestStagnation);
-		statusTestsCombo->addStatusTest(_statusTestDivergence);
 		Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr = Teuchos::rcp(new Teuchos::ParameterList);
-		solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);// + NOX::Utils::OuterIteration);
-		solverParametersPtr->sublist("Printing").set("Output Stream", _output);
-		solverParametersPtr->sublist("Printing").set("Error Stream", _output);
+		addPrintingList(solverParametersPtr);
 		solverParametersPtr->sublist("Line Search").set("Method","Backtrack");
 		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
-		Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
-		status = solver->solve();/*
+		Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(grp, _statusTestsCombo, solverParametersPtr);
+		status = solver->solve();
+		printLogger();
+
 		if (status == NOX::StatusTest::Converged){
-			_iterationStatus=DONE;
-			NOX::LAPACK::Group solnGrp = dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
-			//Teuchos::RCP<const LOCA::LAPACK::Group> finalGroup = Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
-			const NOX::LAPACK::Vector& finalSolution = dynamic_cast<const NOX::LAPACK::Vector&>(solnGrp.getX());
-			for (int i=0;i<_dimSys;i++){
-				if (_useDomainScaling){
-					_y[i]=finalSolution(i)/_yScale[i];
-				}else{
-					_y[i]=finalSolution(i);
-				}
-			}
+			copySolution(solver,_y);
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
-		}else{
-			_iterationStatus=SOLVERERROR;
-		}*/
-		if(!((dynamic_cast<const std::stringstream &>(*_output)).str().empty())){
-			LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
-			LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*_output)).str(),LC_NLS,LL_DEBUG);
-			LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
-		}
-		_iterationStatus=DONE;
-		NOX::LAPACK::Group solnGrp = dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
-		const NOX::LAPACK::Vector& finalSolution = dynamic_cast<const NOX::LAPACK::Vector&>(solnGrp.getX());
-
-		std::cout << "final solution: " << std::endl;
-		finalSolution.print(std::cout);
-
-		if(status == NOX::StatusTest::Converged){
-			for (int i=0;i<_dimSys;i++){
-				if (_useDomainScaling){
-					_y[i]=finalSolution(i)/_yScale[i];
-				}else{
-					_y[i]=finalSolution(i);
-				}
-			}
-			_algLoop->setReal(_y);
-			_algLoop->evaluate();
-		}else{
-			_iterationStatus=SOLVERERROR;
 		}
 	}
 	catch(const std::exception &ex)
@@ -826,6 +622,161 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error in Algloop " + std::to_string(_algLoop->getEquationIndex()) + " at simtime " + std::to_string(_algLoop->getSimTime()) + ", with error message: " + ex.what());
 	}
     return status;
+}
+
+bool Nox::checkwhethersolutionisnearby(double const * const y){
+	double* rhs=new double [_dimSys];
+	double* rhs2=new double [_dimSys];
+	double* ypluseps=new double [_dimSys];
+	std::vector<bool> rhssignchange(_dimSys, false);
+	_algLoop->setReal(y);
+	_algLoop->evaluate();
+	_algLoop->getRHS(rhs);
+
+	for (int i=0;i<_dimSys;i++){
+		// evaluate algLoop at ypluseps=y+eps*e_i and save in rhs2
+		memcpy(ypluseps,y,_dimSys*sizeof(double));
+		//ypluseps[i]*=(1.0+std::numeric_limits<double>::epsilon()*2.0);//der Faktor 2.0 ist nur zur Sicherheit und kann spaeter geloescht werden. Alternativ kann std::nextafter oder std::nexttoward verwendet werden
+		ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],std::numeric_limits<double>::max()),std::numeric_limits<double>::max());
+		_algLoop->setReal(ypluseps);
+		_algLoop->evaluate();
+		_algLoop->getRHS(rhs2);
+		// compare
+		for(int j=0;j<_dimSys;j++){
+			if (rhs[j]*rhs2[j]<=0.0){
+				rhssignchange[j]= true;
+			}
+		}
+
+		// do the same for y-eps*e_i
+		memcpy(ypluseps,y,_dimSys*sizeof(double));
+		// ypluseps[i]*=(1.0-std::numeric_limits<double>::epsilon()*2.0);//der Faktor 2.0 ist nur zur Sicherheit.
+		ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],-std::numeric_limits<double>::max()),-std::numeric_limits<double>::max());
+		_algLoop->setReal(ypluseps);
+		_algLoop->evaluate();
+		_algLoop->getRHS(rhs2);
+
+		for(int j=0;j<_dimSys;j++){
+			if (rhs[j]*rhs2[j]<=0.0){
+				rhssignchange[j]= true;
+			}
+		}
+
+		//The following does not work since rhssignchange would be rewritten every time i changes.
+		//It is also troublesome, since rhs and rhs2 are pointer to arrays whereas rhssignchange is a std::vector.
+		//std::transform(rhs,rhs+_dimSys,rhs2,rhssignchange,[](double a, double b){return (a*b<=0.0);});
+	}
+
+	delete [] ypluseps;
+	delete [] rhs2;
+	delete [] rhs;
+	// just testing
+	// bool truesol = std::all_of(rhssignchange.begin(),rhssignchange.end(),[](bool a){return a;});
+	// bool testbool=true;
+	// for (int i=0;i<_dimSys;i++){
+		// if (!rhssignchange[i]) testbool=false;
+	// }
+	// if (testbool!=truesol) std::cout << "somehow your lambda function does not work" << std::endl;
+	return std::all_of(rhssignchange.begin(),rhssignchange.end(),[](bool a){return a;});
+}
+
+bool Nox::isdivisionbyzeroerror(const std::exception &ex){
+	std::string divbyzero = "Division by zero";
+	std::string errorstring(ex.what());
+	//we only do the error handling by variation of initial guess in case of division by zero at evaluation of initial guess
+	return (errorstring.find(divbyzero)!=std::string::npos);
+}
+
+//additionally modifies _y and the algLoop
+void Nox::divisionbyzerohandling(double const * const y0){
+	NOX::StatusTest::StatusType stat = NOX::StatusTest::Unevaluated;
+	int initialguessdividebyzerofailurecounter = 0;
+	bool detecteddivisionbyzero;
+	std::vector<double> startvaluemodifier(_dimSys);
+
+	while((stat!=NOX::StatusTest::Converged)){
+		detecteddivisionbyzero=true;
+
+		memcpy(_y,y0,_dimSys*sizeof(double));
+
+		if (initialguessdividebyzerofailurecounter>std::pow(2.0,static_cast<double>(_dimSys-1))){
+			std::cout << "Could not find a good initial guess with a root nearby:(" << std::endl;
+			throw;
+		}
+
+		//converts initialguessdividebyzerofailurecounter into its binary representation and store it in startvaluemodifier
+		for(int i=0;i<_dimSys;i++)
+		{
+			startvaluemodifier[i]=static_cast<int>(initialguessdividebyzerofailurecounter/std::floor(std::pow(2.0,static_cast<double>(i))))%2;
+			if (startvaluemodifier[i]==0) startvaluemodifier[i]=-1;
+		}
+
+		if(_generateoutput){
+			std::cout << "initialguessdividebyzerofailurecounter =" << initialguessdividebyzerofailurecounter << std::endl;
+			std::cout << "startvaluemodifier =" << std::endl;
+			for (int i=0;i<_dimSys;i++){
+				std::cout << " " << startvaluemodifier[i];
+			}
+			std::cout << std::endl;
+		}
+
+		initialguessdividebyzerofailurecounter++;
+
+		std::cout << "Varying initial guess by 10%:" << std::endl;
+		for (int i=0;i<_dimSys;i++){
+			if(_y[i]!=0.0){
+				_y[i]+=0.1*_y[i]*startvaluemodifier[i];
+			}else{
+				_y[i]=0.1*startvaluemodifier[i];
+			}
+		}
+
+		_algLoop->setReal(_y);
+		while(detecteddivisionbyzero){
+			try{
+				_algLoop->evaluate();
+				detecteddivisionbyzero=false;
+				stat = BasicNLSsolve();
+			}
+			catch(const std::exception &ex){
+				if(isdivisionbyzeroerror(ex)){
+					std::cout << "still dividing by zero, trying new initial guess." << std::endl;
+				}else{
+					throw;
+				}
+			}
+		}
+	}
+}
+
+//writes output
+void Nox::printLogger(){
+	if(!((dynamic_cast<const std::stringstream &>(*_output)).str().empty())){
+		LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
+		LOGGER_WRITE((dynamic_cast<const std::stringstream &>(*_output)).str(),LC_NLS,LL_DEBUG);
+		LOGGER_WRITE_END(LC_NLS,LL_DEBUG);
+		//(dynamic_cast<const std::stringstream &>(*_output)).str().clear();//this does nothing. Also, using std::cout somehow miraculously disables the logging.
+	}
+}
+
+
+//sets printing list in solverParametersPtr
+void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr){
+		solverParametersPtr->sublist("Printing").set("Output Precision", 15);
+		solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
+		solverParametersPtr->sublist("Printing").set("Output Stream", _output);
+		solverParametersPtr->sublist("Printing").set("Error Stream", _output);
+}
+
+void Nox::copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* algLoopSolution){
+	const NOX::LAPACK::Vector& NoxSolution = dynamic_cast<const NOX::LAPACK::Vector&>((dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup())).getX());
+	for (int i=0;i<_dimSys;i++){
+		if (_useDomainScaling){
+			algLoopSolution[i]=NoxSolution(i)/_yScale[i];
+		}else{
+			algLoopSolution[i]=NoxSolution(i);
+		}
+	}
 }
 
 /** @} */ // end of solverNox

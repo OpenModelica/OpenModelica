@@ -1,4 +1,3 @@
-//somehow this is not good...
 #include <LOCA.H>
 #include <LOCA_LAPACK.H>
 

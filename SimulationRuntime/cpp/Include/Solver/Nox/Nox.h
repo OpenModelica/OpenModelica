@@ -30,8 +30,14 @@ private:
   void solverinit();
   void createStatusTests();
   void createSolverParameters();
-  void LocaHomotopySolve(int numberofhomotopytries);
+  void LocaHomotopySolve(const int numberofhomotopytries);
   NOX::StatusTest::StatusType BasicNLSsolve();
+  void addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr);
+  void copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* algLoopSolution);
+  void printLogger();
+  void divisionbyzerohandling(double const * const y0);
+  bool checkwhethersolutionisnearby(double const * const y);
+  bool isdivisionbyzeroerror(const std::exception &ex);
 
   //void check4EventRetry(double* y)
 
