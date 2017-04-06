@@ -793,7 +793,7 @@ real_array_t add_alloc_scalar_real_array(modelica_real sc, const real_array_t *a
   alloc_real_array_data(&dest);
   nr_of_elements = base_array_nr_of_elements(*arr);
   for(i=0; i < nr_of_elements; ++i) {
-    real_set(&dest, i, sc * real_get(*arr, i));
+    real_set(&dest, i, sc + real_get(*arr, i));
   }
   return dest;
 }
