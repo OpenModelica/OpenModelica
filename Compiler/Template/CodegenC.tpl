@@ -4482,7 +4482,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
       <<
       if(<%cref(var)%> != <%crefPre(var)%>)
       {
-        infoStreamPrint(LOG_EVENTS_V, 0, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", <%crefPre(var)%>, <%cref(var)%>);
+        infoStreamPrint(LOG_EVENTS_V, 0, "discrete var changed: %s from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", <%crefVarInfo(var)%>.name, <%crefPre(var)%>, <%cref(var)%>);
         needToIterate = 1;
       }
       >>
