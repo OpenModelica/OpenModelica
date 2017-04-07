@@ -1377,7 +1377,7 @@ void MainWindow::loadExternalModels()
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     } else {
-      mpLibraryWidget->openFile(file, Helper::utf8, false);
+      mpLibraryWidget->openFile(file, Helper::utf8, false, false, true);
     }
   }
   mpStatusBar->clearMessage();

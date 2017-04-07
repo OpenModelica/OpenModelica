@@ -389,7 +389,8 @@ public:
   LibraryTreeModel* getLibraryTreeModel() {return mpLibraryTreeModel;}
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
-  void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
+  void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false,
+                bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);

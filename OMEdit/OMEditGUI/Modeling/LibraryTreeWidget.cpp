@@ -3408,8 +3408,9 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
  * \param encoding
  * \param showProgress
  * \param checkFileExists
+ * \param loadExternalModel
  */
-void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists)
+void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists, bool loadExternalModel)
 {
   /* if the file doesn't exist then remove it from the recent files list. */
   QFileInfo fileInfo(fileName);
@@ -3431,7 +3432,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
       return;
     }
   }
-  if (fileInfo.suffix().compare("mo") == 0) {
+  if (fileInfo.suffix().compare("mo") == 0 && !loadExternalModel) {
     openModelicaFile(fileName, encoding, showProgress);
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
