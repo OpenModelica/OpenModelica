@@ -1138,7 +1138,7 @@ algorithm
       algorithm
         globalKnownVars1 := BackendVariable.emptyVars();
         globalKnownVars := shared.globalKnownVars;
-        ((globalKnownVars, globalKnownVars1)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, copyNonParamVariables, (globalKnownVars,globalKnownVars1));
+        globalKnownVars1 := BackendVariable.traverseBackendDAEVars(globalKnownVars, copyNonParamVariables, globalKnownVars1);
         ((_, globalKnownVars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
         ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(globalKnownVars, checkUnusedParameter, (globalKnownVars,globalKnownVars1));
         ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedParameter, (globalKnownVars,globalKnownVars1));
@@ -1152,22 +1152,22 @@ end removeUnusedParameter;
 
 protected function copyNonParamVariables
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables,BackendDAE.Variables> inTpl;
+  input BackendDAE.Variables inVars;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables,BackendDAE.Variables> outTpl;
+  output BackendDAE.Variables outVars;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
+  (outVar,outVars) := match (inVar,inVars)
     local
       BackendDAE.Var v;
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
-    case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),(_,_))
-      then (v,inTpl);
-    case (v as BackendDAE.VAR(),(vars,vars1))
+    case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),_)
+      then (v,inVars);
+    else
       equation
-        vars1 = BackendVariable.addVar(v,vars1);
-      then (v,(vars,vars1));
-  end matchcontinue;
+        vars1 = BackendVariable.addVar(inVar,inVars);
+      then (inVar,vars1);
+  end match;
 end copyNonParamVariables;
 
 protected function checkUnusedParameter
