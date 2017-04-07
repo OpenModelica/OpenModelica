@@ -93,6 +93,8 @@ private:
   bool mIsCreatingEllipseShape;
   bool mIsCreatingTextShape;
   bool mIsCreatingBitmapShape;
+  bool mIsPanning;
+  QPoint mLastMouseEventPos;
   Component *mpClickedComponent;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
@@ -150,6 +152,9 @@ public:
   bool isCreatingTextShape() {return mIsCreatingTextShape;}
   void setIsCreatingBitmapShape(bool enable);
   bool isCreatingBitmapShape() {return mIsCreatingBitmapShape;}
+  void setIsPanning(bool enable);
+  bool isPanning() {return mIsPanning;}
+  void setDragModeInternal(bool enable, bool updateCursor = false);
   void setItemsFlags(bool enable);
   void updateUndoRedoActions(bool enable);
   void setIsMovingComponentsAndShapes(bool enable) {mIsMovingComponentsAndShapes = enable;}

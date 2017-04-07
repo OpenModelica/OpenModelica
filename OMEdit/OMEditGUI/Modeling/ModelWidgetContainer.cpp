@@ -111,6 +111,8 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   mIsCreatingEllipseShape = false;
   mIsCreatingTextShape = false;
   mIsCreatingBitmapShape = false;
+  mIsPanning = false;
+  mLastMouseEventPos = QPoint(0, 0);
   mpClickedComponent = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
@@ -120,29 +122,25 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
 void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
 {
   mExtentRectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
-  setSceneRect(mExtentRectangle);
-  centerOn(mExtentRectangle.center());
+  /* Ticket:4340 Extend vertical space
+   * Make the drawing area 3 times larger than the actual size. So we can better use the panning feature.
+   */
+  QRectF sceneRectangle(left * 3, bottom * 3, fabs(left - right) * 3, fabs(bottom - top) * 3);
+  setSceneRect(sceneRectangle);
+  centerOn(sceneRectangle.center());
 }
 
 void GraphicsView::setIsCreatingConnection(bool enable)
 {
   mIsCreatingConnection = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
 }
 
 void GraphicsView::setIsCreatingLineShape(bool enable)
 {
   mIsCreatingLineShape = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
 }
@@ -150,11 +148,7 @@ void GraphicsView::setIsCreatingLineShape(bool enable)
 void GraphicsView::setIsCreatingPolygonShape(bool enable)
 {
   mIsCreatingPolygonShape = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
 }
@@ -162,11 +156,7 @@ void GraphicsView::setIsCreatingPolygonShape(bool enable)
 void GraphicsView::setIsCreatingRectangleShape(bool enable)
 {
   mIsCreatingRectangleShape = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
 }
@@ -174,11 +164,7 @@ void GraphicsView::setIsCreatingRectangleShape(bool enable)
 void GraphicsView::setIsCreatingEllipseShape(bool enable)
 {
   mIsCreatingEllipseShape = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
 }
@@ -186,11 +172,7 @@ void GraphicsView::setIsCreatingEllipseShape(bool enable)
 void GraphicsView::setIsCreatingTextShape(bool enable)
 {
   mIsCreatingTextShape = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
 }
@@ -198,13 +180,31 @@ void GraphicsView::setIsCreatingTextShape(bool enable)
 void GraphicsView::setIsCreatingBitmapShape(bool enable)
 {
   mIsCreatingBitmapShape = enable;
-  if (enable) {
-    setDragMode(QGraphicsView::NoDrag);
-  } else {
-    setDragMode(QGraphicsView::RubberBandDrag);
-  }
+  setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
+}
+
+void GraphicsView::setIsPanning(bool enable)
+{
+  mIsPanning = enable;
+  setDragModeInternal(enable, true);
+  setItemsFlags(!enable);
+}
+
+void GraphicsView::setDragModeInternal(bool enable, bool updateCursor)
+{
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+    if (updateCursor) {
+      viewport()->setCursor(Qt::ClosedHandCursor);
+    }
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+    if (updateCursor) {
+      viewport()->unsetCursor();
+    }
+  }
 }
 
 void GraphicsView::setItemsFlags(bool enable)
@@ -1714,6 +1714,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
+  // if user is starting panning.
+  if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
+    setIsPanning(true);
+    mLastMouseEventPos = event->pos();
+    QGraphicsView::mousePressEvent(event);
+    return;
+  }
   MainWindow *pMainWindow = MainWindow::instance();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   bool eventConsumed = false;
@@ -1770,6 +1777,12 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     }
   }
   if (!eventConsumed) {
+    /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
+     * To provide multi select we switch the shift key with control.
+     */
+    if (event->modifiers() & Qt::ShiftModifier) {
+      event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
+    }
     QGraphicsView::mousePressEvent(event);
   }
 }
@@ -1781,6 +1794,17 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
  */
 void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
+  // if we are in panning mode
+  if (isPanning()) {
+    QScrollBar *pHorizontalScrollBar = horizontalScrollBar();
+    QScrollBar *pVerticalScrollBar = verticalScrollBar();
+    QPoint delta = event->pos() - mLastMouseEventPos;
+    mLastMouseEventPos = event->pos();
+    pHorizontalScrollBar->setValue(pHorizontalScrollBar->value() + (isRightToLeft() ? delta.x() : -delta.x()));
+    pVerticalScrollBar->setValue(pVerticalScrollBar->value() - delta.y());
+    QGraphicsView::mouseMoveEvent(event);
+    return;
+  }
   // update the position label
   Label *pPositionLabel = MainWindow::instance()->getPositionLabel();
   pPositionLabel->setText(QString("X: %1, Y: %2").arg(QString::number(qRound(mapToScene(event->pos()).x())))
@@ -1838,6 +1862,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
+  setIsPanning(false);
   mpClickedComponent = 0;
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
@@ -1889,6 +1914,13 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     if (beginMacro) {
       mpModelWidget->endMacro();
     }
+  }
+  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
+   * To provide multi select we switch the shift key with control.
+   * Yes we need to do this in both mousePressEvent and mouseReleaseEvent.
+   */
+  if (event->modifiers() & Qt::ShiftModifier) {
+    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
   }
   QGraphicsView::mouseReleaseEvent(event);
 }
