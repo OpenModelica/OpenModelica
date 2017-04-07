@@ -871,7 +871,6 @@ algorithm
     local
       Absyn.Path path;
     case DAE.ASUB() then true;
-    case DAE.CALL(path=Absyn.IDENT("$_old")) then true;
     case DAE.CALL(path=Absyn.IDENT("$_round")) then true;
     case DAE.CALL(path=Absyn.IDENT("$getPart")) then true;
     case DAE.CALL(path=Absyn.IDENT("abs")) then true;

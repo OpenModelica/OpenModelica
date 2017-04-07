@@ -1070,7 +1070,7 @@ protected function unifyFunCallsWork
      equation
       tp = Expression.typeof(e1);
       e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
-      e3 = Expression.makePureBuiltinCall("$_old", {e1}, tp);
+      e3 = Expression.makePureBuiltinCall("pre", {e1}, tp);
       e3 = Expression.expSub(e1,e3);
       e = Expression.expDiv(e3,e2);
      then (e,true, iT);
@@ -1482,7 +1482,7 @@ algorithm
     false = expHasCref(inExp2, inExp3);
     tp = Expression.typeof(e1);
     e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
-    lhs = Expression.makePureBuiltinCall("$_old", {e1}, tp);
+    lhs = Expression.makePureBuiltinCall("pre", {e1}, tp);
     lhs = Expression.expAdd(Expression.expMul(inExp2,e2), lhs);
   then(e1, lhs, true, ieqnForNewVars, inewVarsCrefs, idepth + 1);
 

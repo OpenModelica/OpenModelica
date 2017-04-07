@@ -5548,8 +5548,6 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     '(data->simulationInfo->clocksData[clockIndex].cnt == 0)'
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
     'fireClock(data, threadData, <%intSub(arg.integer,1)%>, data->localData[0]->timeValue)'
-  case CALL(path=IDENT(name="$_old"), expLst={arg as CREF(__)}) then
-    crefOld(arg.componentRef,1)
   // if arg >= 0 then 1 else -1
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
