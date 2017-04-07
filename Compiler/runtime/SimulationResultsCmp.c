@@ -548,6 +548,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   ddf.n=0;
   ddf.n_max=0;
   len = 1;
+  int offset, offsetRef;
 
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
@@ -617,6 +618,9 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     "File[%d]=%f\n",timeref.n,timeref.data[timeref.n-1],time.n,time.data[time.n-1]);
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, buf, NULL, 0);
   }
+  /* calculate offsets */
+  for(offset=0; offset<time.n-1 && time.data[offset] == time.data[offset+1]; ++offset);
+  for(offsetRef=0; offsetRef<timeref.n-1 && timeref.data[offsetRef] == timeref.data[offsetRef+1]; ++offsetRef);
   var1=NULL;
   var2=NULL;
   /* compare vars */
@@ -670,6 +674,11 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       ngetfailedvars++;
       continue;
     }
+    /* adjust initial data points */
+    for(j=offset; j>0; j--)
+      data.data[j-1] = data.data[j];
+    for(j=offsetRef; j>0; j--)
+      dataref.data[j-1] = dataref.data[j];
     /* compare */
     if (isHtml) {
       vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,1,htmlOut);
