@@ -79,6 +79,7 @@ build/
 .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
 .project
 .metadata
+.vscode/
 revision.h
 SimulationRuntime/c/Makefile
 SimulationRuntime/c/util/java_interface/Makefile
