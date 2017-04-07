@@ -33,11 +33,13 @@ private:
   void LocaHomotopySolve(const int numberofhomotopytries);
   NOX::StatusTest::StatusType BasicNLSsolve();
   void addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr);
-  void copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* algLoopSolution);
+  void copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* const algLoopSolution);
   void printLogger();
   void divisionbyzerohandling(double const * const y0);
   bool checkwhethersolutionisnearby(double const * const y);
   bool isdivisionbyzeroerror(const std::exception &ex);
+  void modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter);
+
 
   //void check4EventRetry(double* y)
 
@@ -52,7 +54,7 @@ private:
   ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
-  long int _dimSys;
+  const long int _dimSys;
 
   double
 	  *_y,

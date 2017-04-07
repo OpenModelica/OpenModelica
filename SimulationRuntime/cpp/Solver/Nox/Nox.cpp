@@ -31,8 +31,9 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _generateoutput     (false)
 	, _useDomainScaling         (false)
 	, _currentIterate             (NULL)
+	, _dimSys (_algLoop->getDimReal())
 {
-	_dimSys=_algLoop->getDimReal();
+
 }
 
 Nox::~Nox()
@@ -174,8 +175,8 @@ void Nox::solve()
 		}
 		catch(const std::exception &ex)
 		{
-			std::cout << std::endl << "sth went wrong during solver building, with error message" << ex.what() << std::endl;
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");
+			std::cout << std::endl << "sth went wrong during group building, with error message" << ex.what() << std::endl;
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");//could be deleted
 		}
 
 		if (_generateoutput) std::cout << "building solver" << std::endl;
@@ -276,113 +277,11 @@ void Nox::solve()
 				// _currentIterateNorm=_statusTestNormF->getNormF();
 			// }
 
-			if (iter==0) iter = 2;
+			if ((iter==0) || (iter==1) || (iter==2)) iter = 3;
 
-			if (iter==1) iter=2;//skip damped Newton.
-			//we could skip case 2 as well
 
-			switch (iter){
-			case 0:
-				break;
-				//default Nox Line Search failed -> Try damped Newton instead
-			case 1://should delete this. It typically does not help (verify this))
-				_solverParametersPtr->sublist("Line Search").sublist("Full Step").set("Full Step", 0.5);
-				break;
+			modifySolverParameters(_solverParametersPtr,iter);
 
-				//default Nox Line Search failed -> Try Backtracking instead
-			case 2:
-				_solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
-				_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Default Step", 1024.0*1024.0);
-				_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
-				_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
-				//std::cout << "we just set the solver parameters to use backtrack. the currently used options are:" << std::endl;
-				//_solverParametersPtr->print();
-				//std::cout << std::endl;
-				break;
-
-				//Backtracking failed -> Try Polynomial with various parameters instead
-			case 3:
-				_solverParametersPtr->sublist("Line Search").set("Method", "Polynomial");
-				_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Minimum Step", 1.0e-30);
-				//_solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Alpha Factor", 1.0e-2);
-				break;
-
-			// case 4:
-				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
-				// break;
-
-			// case 5:
-				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
-				// break;
-
-			// case 6:
-				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Sufficient Decrease Condition", "Ared/Pred");
-				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Cubic");
-				// break;
-
-			// case 7:
-				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
-				// break;
-
-			// case 8:
-				// _solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
-				// break;
-
-				//Polynomial failed -> Try More'-Thuente instead
-			case 4:
-				_solverParametersPtr->sublist("Line Search").set("Method", "More'-Thuente");
-				//_solverParametersPtr->sublist("Line Search").sublist("More'-Thuente").set("Sufficient Decrease", 1.0e-2);
-				break;
-
-				//More'-Thuente failed -> Try Trust Region instead
-			case 5:
-				//_solverParametersPtr->sublist("Line Search").remove("Method", true);
-				_solverParametersPtr->set("Nonlinear Solver", "Trust Region Based");
-				_solverParametersPtr->sublist("Trust Region").set("Minimum Improvement Ratio", 1.0e-4);
-				_solverParametersPtr->sublist("Trust Region").set("Minimum Trust Region Radius", 1.0e-6);
-				break;
-
-				//Trust Region failed -> Try Inexact Trust Region instead
-			case 6:
-				//_solverParametersPtr->sublist("Trust Region").set("Use Dogleg Segment Minimization", true);
-				_solverParametersPtr->set("Nonlinear Solver", "Inexact Trust Region Based");
-				break;
-
-				//Inexact Trust Region failed -> Try Tensor instead
-			//case 11:
-				//_solverParametersPtr->set("Nonlinear Solver", "Tensor Based");
-				//break;
-
-				//Tensor failed or other failure
-			default:
-				// if(_currentIterateNorm<_locTol){
-					// memcpy(_y,_currentIterate,_dimSys*sizeof(double));
-					// _algLoop->setReal(_y);
-					// _algLoop->evaluate();
-					// _algLoop->getRHS(rhs);
-					// _iterationStatus=DONE;
-					// break;
-				// }
-				// if(_currentIterateNorm<_locTol){
-					// std::cout << "you should not see this." << std::endl;
-				// }
-				int numberofhomotopytries = 0;
-				while((_iterationStatus!=DONE)){
-					//todo: This is implemented in the worst way possible. Please fix this.
-					//try homotopy
-					try{
-						if ((_generateoutput)) std::cout << "solving with numberofhomotopytries = " << numberofhomotopytries << std::endl;
-						LocaHomotopySolve(numberofhomotopytries);
-					}
-					catch(const std::exception &e){
-						std::string errorstring(e.what());
-						_iterationStatus=SOLVERERROR;
-						throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver nox failed with error message " +errorstring);
-					}
-					numberofhomotopytries++;
-				}
-				break;
-			}
 			//comment in for debugging
 			if ((_generateoutput)){
 				std::cout << "solutionvector=(";
@@ -624,6 +523,114 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
     return status;
 }
 
+void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter){
+
+	switch (iter){
+	case 0:
+		break;
+		//default Nox Line Search failed -> Try damped Newton instead
+	case 1://should delete this. It typically does not help (verify this))
+		solverParametersPtr->sublist("Line Search").sublist("Full Step").set("Full Step", 0.5);
+		break;
+
+		//default Nox Line Search failed -> Try Backtracking instead
+	case 2:
+		solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
+		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Default Step", 1024.0*1024.0);
+		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
+		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
+		//std::cout << "we just set the solver parameters to use backtrack. the currently used options are:" << std::endl;
+		//solverParametersPtr->print();
+		//std::cout << std::endl;
+		break;
+
+		//Backtracking failed -> Try Polynomial with various parameters instead
+	case 3:
+		solverParametersPtr->sublist("Line Search").set("Method", "Polynomial");
+		solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Minimum Step", 1.0e-30);
+		//solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Alpha Factor", 1.0e-2);
+		break;
+
+	// case 4:
+		// solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
+		// break;
+
+	// case 5:
+		// solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
+		// break;
+
+	// case 6:
+		// solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Sufficient Decrease Condition", "Ared/Pred");
+		// solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Cubic");
+		// break;
+
+	// case 7:
+		// solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic");
+		// break;
+
+	// case 8:
+		// solverParametersPtr->sublist("Line Search").sublist("Polynomial").set("Interpolation Type", "Quadratic3");
+		// break;
+
+		//Polynomial failed -> Try More'-Thuente instead
+	case 4:
+		solverParametersPtr->sublist("Line Search").set("Method", "More'-Thuente");
+		//solverParametersPtr->sublist("Line Search").sublist("More'-Thuente").set("Sufficient Decrease", 1.0e-2);
+		break;
+
+		//More'-Thuente failed -> Try Trust Region instead
+	case 5:
+		//solverParametersPtr->sublist("Line Search").remove("Method", true);
+		solverParametersPtr->set("Nonlinear Solver", "Trust Region Based");
+		solverParametersPtr->sublist("Trust Region").set("Minimum Improvement Ratio", 1.0e-4);
+		solverParametersPtr->sublist("Trust Region").set("Minimum Trust Region Radius", 1.0e-6);
+		break;
+
+		//Trust Region failed -> Try Inexact Trust Region instead
+	case 6:
+		//solverParametersPtr->sublist("Trust Region").set("Use Dogleg Segment Minimization", true);
+		solverParametersPtr->set("Nonlinear Solver", "Inexact Trust Region Based");
+		break;
+
+		//Inexact Trust Region failed -> Try Tensor instead
+	//case 11:
+		//solverParametersPtr->set("Nonlinear Solver", "Tensor Based");
+		//break;
+
+		//Tensor failed or other failure
+	default:
+		// if(_currentIterateNorm<_locTol){
+			// memcpy(_y,_currentIterate,_dimSys*sizeof(double));
+			// _algLoop->setReal(_y);
+			// _algLoop->evaluate();
+			// _algLoop->getRHS(rhs);
+			// _iterationStatus=DONE;
+			// break;
+		// }
+		// if(_currentIterateNorm<_locTol){
+			// std::cout << "you should not see this." << std::endl;
+		// }
+		int numberofhomotopytries = 0;
+		while((_iterationStatus!=DONE)){
+			//todo: This is implemented in the worst way possible. Please fix this.
+			//try homotopy
+			try{
+				if ((_generateoutput)) std::cout << "solving with numberofhomotopytries = " << numberofhomotopytries << std::endl;
+				LocaHomotopySolve(numberofhomotopytries);
+			}
+			catch(const std::exception &e){
+				std::string errorstring(e.what());
+				_iterationStatus=SOLVERERROR;
+				throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver nox failed with error message " +errorstring);
+			}
+			numberofhomotopytries++;
+		}
+		break;
+	}
+}
+
+
+
 bool Nox::checkwhethersolutionisnearby(double const * const y){
 	double* rhs=new double [_dimSys];
 	double* rhs2=new double [_dimSys];
@@ -768,7 +775,7 @@ void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParam
 		solverParametersPtr->sublist("Printing").set("Error Stream", _output);
 }
 
-void Nox::copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* algLoopSolution){
+void Nox::copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* const algLoopSolution){
 	const NOX::LAPACK::Vector& NoxSolution = dynamic_cast<const NOX::LAPACK::Vector&>((dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup())).getX());
 	for (int i=0;i<_dimSys;i++){
 		if (_useDomainScaling){
