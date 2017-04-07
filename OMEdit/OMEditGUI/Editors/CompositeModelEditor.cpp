@@ -643,11 +643,10 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
           // check if interface is aligned
           foreach (LineAnnotation* pConnectionLineAnnotation, mpModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
             QString interfaceName = QString("%1.%2").arg(subModel.attribute("Name")).arg(interfaceDataElement.attribute("Name"));
-            if (pConnectionLineAnnotation->getStartComponentName().compare(interfaceName) == 0) {
-              alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
-            }
-            if (pConnectionLineAnnotation->getEndComponentName().compare(interfaceName) == 0) {
-              alignInterfaces(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), false);
+            if (pConnectionLineAnnotation->getStartComponentName().compare(interfaceName) == 0 ||
+                pConnectionLineAnnotation->getEndComponentName().compare(interfaceName) == 0) {
+              bool aligned = interfacesAligned(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
+              pConnectionLineAnnotation->setAligned(aligned);
             }
           }
         } else {  // insert interface point
