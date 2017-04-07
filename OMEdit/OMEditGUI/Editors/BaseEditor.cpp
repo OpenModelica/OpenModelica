@@ -1256,7 +1256,7 @@ void PlainTextEdit::updateHighlights()
  */
 void PlainTextEdit::updateCursorPosition()
 {
-  if (mpBaseEditor->getModelWidget()) {
+  if (mpBaseEditor->getModelWidget() && isVisible()) {
     const QTextBlock block = textCursor().block();
     const int line = block.blockNumber() + 1;
     const int column = textCursor().columnNumber();
