@@ -93,7 +93,8 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // 0
 // {"Files Equal!"}
 // true
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
 // ""
 // 0

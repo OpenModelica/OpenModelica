@@ -171,7 +171,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=3'",
@@ -180,7 +181,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=4'",
@@ -189,7 +191,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6'",
@@ -198,5 +201,6 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

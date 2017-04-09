@@ -63,13 +63,14 @@ val(der(y[8]), stopTime);
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
-// 0.0007384151520740088
-// 0.0001445013584864727
-// 5.912787664030176e-05
-// 0.001178015085023294
-// 0.002425749526862097
-// 0.006363480878948185
-// 0.002877141832801001
-// 0.002822858167198984
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// 0.0007378826529726283
+// 0.0001443964762010527
+// 5.902829667065656e-05
+// 0.00117703152548367
+// 0.002409514742812167
+// 0.006312341629438915
+// 0.002865850195479065
+// 0.002834149804520921
 // endResult

@@ -16,7 +16,6 @@ end Hydrogen_Iodide;
 "); getErrorString();
 simulate(Hydrogen_Iodide, stopTime=10, simflags="-steadyState -steadyStateTol=1e-5"); getErrorString();
 
-
 // Result:
 // true
 // ""

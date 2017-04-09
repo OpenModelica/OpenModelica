@@ -88,7 +88,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files not Equal!","y2","y1","x2","x1","u","final_con2","final_con1","der(x2)","der(x1)","cost"}
-// "Warning: Files not Equal
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Files not Equal
 // "
 // true
 // ""

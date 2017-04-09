@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start);
 compareVars :=
 {
@@ -28,12 +28,11 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start
 // {"aims.idq_rr[1]","aims.idq_rr[2]","aims.lssigma.i_[1]","aims.lssigma.i_[2]","aims.lszero.i","aims.lrzero.i","loadInertia.phi","loadInertia.w"}
 // Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start', options = '', outputFormat = 'mat', variableFilter = 'time|aims.idq_rr.1.|aims.idq_rr.2.|aims.lssigma.i_.1.|aims.lssigma.i_.2.|aims.lszero.i|aims.lrzero.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start_res.mat
-// Files Equal!
 // "true
 // "
 // ""

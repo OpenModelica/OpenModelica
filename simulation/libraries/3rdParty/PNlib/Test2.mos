@@ -24,5 +24,6 @@ res := OpenModelica.Scripting.compareSimulationResults("PNlib.Examples.Test2_res
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

@@ -23,5 +23,6 @@ res := OpenModelica.Scripting.compareSimulationResults("CurtissHirschfelder_res.
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

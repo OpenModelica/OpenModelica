@@ -86,7 +86,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // true
 // ""
 // record SimulationResult
@@ -123,9 +124,10 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 1.02648e-09 for the approximation of the state y(time = 1)
 // "
 // end SimulationResult;
-// "Warning: Deprecated debug flag --d=reduceDynOpt detected. Use --postOptModules+=reduceDynamicOptimization instead.
+// "Warning: Deprecated debug flag -d=reduceDynOpt detected. Use --postOptModules+=reduceDynamicOptimization instead.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

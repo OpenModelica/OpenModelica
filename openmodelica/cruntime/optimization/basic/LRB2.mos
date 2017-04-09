@@ -85,5 +85,6 @@ getErrorString();
 // EXIT: Optimal Solution Found.
 // ""
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

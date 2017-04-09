@@ -423,5 +423,6 @@ getErrorString();
 //   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

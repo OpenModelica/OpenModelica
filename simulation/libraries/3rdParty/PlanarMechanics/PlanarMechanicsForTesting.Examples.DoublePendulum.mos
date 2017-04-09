@@ -30,7 +30,8 @@ getErrorString();
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
-// "Warning: Resultfile and Reference have different end time points!
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Resultfile and Reference have different end time points!
 // Reffile[502]=10.000000
 // File[502]=9.500000
 // "

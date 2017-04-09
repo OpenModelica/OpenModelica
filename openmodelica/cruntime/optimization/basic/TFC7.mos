@@ -62,10 +62,10 @@ getErrorString();
 //
 // LOG_IPOPT_ERROR   | info    | max violation is 3.25 for the final constraint $finalCon$final_con2(time = 5)
 // LOG_IPOPT_ERROR   | info    | max error is 0.136064 for the approximation of the state x1(time = 3.7)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00651595 for the approximation of the state x1(time = 4.5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00651596 for the approximation of the state x1(time = 4.5)
 // LOG_IPOPT_ERROR   | info    | max error is 0.00103252 for the approximation of the state x1(time = 4.5)
 // LOG_IPOPT_ERROR   | info    | max error is 2.32683e-05 for the approximation of the state x1(time = 4.5)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.81419e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.81421e-08 for the final constraint $finalCon$final_con2(time = 5)
 // LOG_IPOPT_ERROR   | info    | max violation is 4.99294e-08 for the final constraint $finalCon$final_con2(time = 5)
 // "
 // end SimulationResult;
@@ -73,5 +73,6 @@ getErrorString();
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

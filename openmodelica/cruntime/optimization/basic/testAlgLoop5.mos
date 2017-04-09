@@ -92,19 +92,19 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 0.265803 for the final constraint $finalCon$fcon(time = 50)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.257776 for the final constraint $finalCon$fcon(time = 50)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.219093 for the final constraint $finalCon$fcon(time = 50)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0393323 for the final constraint $finalCon$fcon(time = 50)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.00971727 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0393324 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00971726 for the constraint $EqCon$t2(time = 48.8)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.00522208 for the constraint $EqCon$t2(time = 48.8)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0008537 for the constraint $EqCon$t2(time = 0.8)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000581585 for the constraint $EqCon$t2(time = 48.8)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000306239 for the constraint $EqCon$t2(time = 48.8)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000611672 for the constraint $EqCon$t2(time = 48.8)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000278638 for the constraint $EqCon$t2(time = 48.8)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.00121427 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000581587 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00030624 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000611677 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00027864 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00121425 for the constraint $EqCon$t2(time = 48.8)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.00112002 for the constraint $EqCon$t2(time = 48.4)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000855805 for the constraint $EqCon$t2(time = 48.2)
-// LOG_IPOPT_ERROR   | info    | max violation is 2.22297e-05 for the constraint $EqCon$t2(time = 48.4)
-// LOG_IPOPT_ERROR   | info    | max violation is 2.18284e-05 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000855813 for the constraint $EqCon$t2(time = 48.2)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.22306e-05 for the constraint $EqCon$t2(time = 48.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.18283e-05 for the constraint $EqCon$t2(time = 48.8)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.04517e-05 for the constraint $EqCon$t2(time = 48.8)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.29938e-06 for the constraint $EqCon$t2(time = 4.4)
 // LOG_IPOPT_ERROR   | info    | max violation is 2.02641e-07 for the constraint $EqCon$t2(time = 4.4)
@@ -122,5 +122,6 @@ getErrorString();
 //   t2:VARIABLE(min = -2.0 max = 0.5 start = 1.0 )  type: Real
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

@@ -31,7 +31,8 @@ getErrorString();
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// "Warning: Resultfile and Reference have different end time points!
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Resultfile and Reference have different end time points!
 // Reffile[510]=20.000000
 // File[502]=15.000000
 // "

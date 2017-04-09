@@ -38,12 +38,14 @@ OpenModelica.Scripting.compareSimulationResults("Compare.Modell1_res.mat", "Comp
 // Warning: Get data of variable a from file Compare.Modell2_res.mat failed!
 // "
 // {"Files not Equal!"}
-// "Error: Could not read variable a in file Compare.Modell2_res.mat.
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Error: Could not read variable a in file Compare.Modell2_res.mat.
 // Warning: Get data of variable a from file Compare.Modell2_res.mat failed!
 // Warning: Files not Equal
 // "
 // (true,{})
 // ""
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

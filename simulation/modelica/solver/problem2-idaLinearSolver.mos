@@ -142,7 +142,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=spgmr'",
@@ -151,7 +152,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=spbcg -alarm=360'",
@@ -160,7 +162,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=sptfqmr'",
@@ -169,7 +172,8 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaLS=klu -jacobian=kluSparse'",
@@ -178,5 +182,6 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult
