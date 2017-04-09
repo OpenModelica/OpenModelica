@@ -2034,6 +2034,7 @@ algorithm
 
     case (cache,_,"compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars)},st,_)
       equation
+        Error.addMessage(Error.DEPRECATED_API_CALL, {"compareSimulationResults", "diffSimulationResults"});
         filename = Util.absoluteOrRelative(filename);
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
         filename_1 = Util.absoluteOrRelative(filename_1);
