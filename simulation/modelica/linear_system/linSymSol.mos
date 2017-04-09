@@ -71,14 +71,8 @@ val(res,1);
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 3 linear systems
 // LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000027  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000061
 // LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000002  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000002
 // LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000002  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000002
 // assert            | debug   | division leads to inf or nan at time 1, (a=0) / (b=0), where divisor b is: __OMC__1$QR$R$3
 // stdout            | warning | Integrator attempt to handle a problem with a called assert.
 // "

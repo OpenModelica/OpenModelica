@@ -32,8 +32,6 @@ val(max_res,1);
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 1 linear systems
 // LOG_LS            | info    | Start solving Linear System 42 (size 19) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000052  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000080
 // "
 // end SimulationResult;
 // ""

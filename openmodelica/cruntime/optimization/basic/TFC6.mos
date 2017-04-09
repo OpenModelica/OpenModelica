@@ -57,8 +57,6 @@ getErrorString();
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 1 linear systems
 // LOG_LS            | info    | Start solving Linear System 9 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | ###  0.000020  time to set Matrix A and vector b.
-// LOG_LS            | info    | Solve System: 0.000041
 //
 // Optimizer Variables
 // ========================================================
