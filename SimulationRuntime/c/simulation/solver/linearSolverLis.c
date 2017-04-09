@@ -246,11 +246,11 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   err = lis_solve(solverData->A,solverData->b,solverData->x,solverData->solver);
-  infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (err){
     warningStreamPrint(LOG_LS_V, 0, "lis_solve : %s(code=%d)\n\n ", lis_returncode[err], err);

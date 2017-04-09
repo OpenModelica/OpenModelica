@@ -432,12 +432,12 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
   debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   status = solveSystemWithTotalPivotSearchLS(n, solverData->x, solverData->Ab, solverData->indRow, solverData->indCol, &rank);
-  infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (status != 0)
   {

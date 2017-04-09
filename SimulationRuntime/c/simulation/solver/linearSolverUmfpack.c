@@ -238,24 +238,20 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   if (ACTIVE_STREAM(LOG_LS_V))
   {
-    if (ACTIVE_STREAM(LOG_LS_V))
-    {
-      infoStreamPrint(LOG_LS_V, 1, "Old solution x:");
-      for(i = 0; i < solverData->n_row; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+    infoStreamPrint(LOG_LS_V, 1, "Old solution x:");
+    for(i = 0; i < solverData->n_row; ++i)
+      infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+    messageClose(LOG_LS_V);
 
-      messageClose(LOG_LS_V);
-    }
     infoStreamPrint(LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
     for (i=0; i<solverData->n_row; i++){
       infoStreamPrint(LOG_LS_V, 0, "%d. Ap => %d -> %d", i, solverData->Ap[i], solverData->Ap[i+1]);
       for (j=solverData->Ap[i]; j<solverData->Ap[i+1]; j++){
         infoStreamPrint(LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
-
       }
     }
     messageClose(LOG_LS_V);
@@ -295,7 +291,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
       success = 1;
     }
   }
-  infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   /* print solution */
   if (1 == success){
