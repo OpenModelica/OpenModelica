@@ -34,7 +34,6 @@ simulate(initializationTests.bug_4387, stopTime=0.0); getErrorString();
 // In initial algorithm
 // In when initial() equation
 // In when initial() algorithm
-// In when initial() algorithm
 // "
 // end SimulationResult;
 // ""
