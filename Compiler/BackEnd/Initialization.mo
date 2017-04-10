@@ -146,6 +146,7 @@ algorithm
     ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
     ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.localKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
     ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.initialEqs, collectInitialEqns, (eqns, reeqns));
+    ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.removedEqs, collectInitialEqns, (eqns, reeqns));
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
     //  BackendDump.dumpEquationArray(eqns, "initial equations");
     //end if;
@@ -162,7 +163,7 @@ algorithm
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
     shared := BackendDAEUtil.createEmptyShared(BackendDAE.INITIALSYSTEM(), dae.shared.info, dae.shared.cache, dae.shared.graph);
-    shared.removedEqs := inDAE.shared.removedEqs;
+    shared := BackendDAEUtil.setSharedRemovedEqns(shared, BackendEquation.emptyEqns());
     shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
@@ -335,8 +336,13 @@ protected function inlineWhenForInitialization "author: lochel
   This function inlines when-clauses for the initialization."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  list<BackendDAE.Equation> eqnlst;
+  HashSet.HashSet leftCrs = HashSet.emptyHashSetSized(50) "dummy hash set - should always be empty";
 algorithm
   outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
+  (eqnlst, _) := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
+  outDAE.shared := BackendDAEUtil.setSharedRemovedEqns(outDAE.shared, BackendEquation.listEquation(eqnlst));
 end inlineWhenForInitialization;
 
 protected function inlineWhenForInitializationSystem "author: lochel"
@@ -407,6 +413,7 @@ protected
   DAE.ComponentRef cr;
   list<DAE.ComponentRef > crefLst, crefLst2;
   Boolean active;
+  DAE.ElementSource source;
 algorithm
   outEqns := match(inWEqn)
     case BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst=whenStmtLst) algorithm
@@ -422,6 +429,7 @@ algorithm
               outLeftCrs = List.fold(ComponentReference.expandCref(cr, true), BaseHashSet.add, outLeftCrs);
             end if;
           then ();
+
           case BackendDAE.ASSIGN(left = lhs as DAE.TUPLE(PR = eLst), right = e) algorithm
             if active then
               eqn := BackendEquation.generateEquation(lhs, e, inSource, inEqAttr);
@@ -436,8 +444,16 @@ algorithm
             end if;
           then ();
 
-            else
-            then fail();
+          case BackendDAE.NORETCALL(exp=e, source=source) algorithm
+            if active then
+              //eqn := BackendEquation.generateEquation(DAE.CREF(DAE.emptyCref, DAE.T_UNKNOWN_DEFAULT), e, inSource, inEqAttr);
+              eqn := BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)}), inSource, DAE.EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+              outEqns := eqn::outEqns;
+            end if;
+          then ();
+
+          // Everything else doesn't have to be handled
+          else ();
         end match;
       end for;
     then outEqns;

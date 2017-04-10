@@ -8624,6 +8624,20 @@ algorithm
   outSyst.removedEqs := removedEqs;
 end setEqSystRemovedEqns;
 
+public function setSharedRemovedEqns
+  input BackendDAE.Shared inShared;
+  input BackendDAE.EquationArray inRemovedEqs;
+  output BackendDAE.Shared outShared;
+algorithm
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED() algorithm
+      shared.removedEqs := inRemovedEqs;
+    then shared;
+  end match;
+end setSharedRemovedEqns;
+
 public function setSharedInitialEqns
   input BackendDAE.Shared inShared;
   input BackendDAE.EquationArray initialEqs;
