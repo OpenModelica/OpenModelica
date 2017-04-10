@@ -1365,71 +1365,26 @@ algorithm
   outEqns := addEquations(equationList(inEqns1), inEqns2);
 end mergeEquationArray;
 
-protected function findFirstUnusedEquOptEntry
-  input Integer inPos "initially call this with 1";
-  input Integer inSize;
-  input array<Option<BackendDAE.Equation>> inEquOptArr;
-  output Integer outIndex;
-algorithm
-  outIndex := findFirstUnusedEquOptEntryWork(inPos, inSize, inEquOptArr[inPos], inEquOptArr);
-end findFirstUnusedEquOptEntry;
-
-protected function findFirstUnusedEquOptEntryWork
-  input Integer inPos "initially call this with 1";
-  input Integer inSize;
-  input Option<BackendDAE.Equation> thisValue;
-  input array<Option<BackendDAE.Equation>> inEquOptArr;
-  output Integer outIndex;
-algorithm
-  outIndex := match (inPos, inSize, thisValue, inEquOptArr)
-    case (_, _, NONE(), _)
-      then inPos;
-
-    case (_, _, _, _)
-      then findFirstUnusedEquOptEntryWork(inPos+1, inSize, arrayGet(inEquOptArr,inPos+1), inEquOptArr);
-  end match;
-end findFirstUnusedEquOptEntryWork;
-
-public function addEquation "author: PA
-  Adds an equation to an EquationArray."
+public function addEquation
+  "Adds an equation to an EquationArray."
   input BackendDAE.Equation inEquation;
-  input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray;
+  input output BackendDAE.EquationArray equationArray;
+protected
+  array<Option<BackendDAE.Equation>> eq_arr;
+  Integer eq_size, count;
 algorithm
-  outEquationArray := matchcontinue (inEquationArray)
-    local
-      Integer n_1, numberOfElement, arrSize, expandsize, expandsize_1, newsize, size, index;
-      array<Option<BackendDAE.Equation>> arr_1, equOptArr, arr_2;
-      Real rsize, rexpandsize;
+  BackendDAE.EQUATION_ARRAY(eq_size, count, eq_arr) := equationArray;
+  count := count + 1;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) guard
-      (numberOfElement < arrayLength(equOptArr)) "Have space to add array elt."
-    equation
-      arrSize = arrayLength(equOptArr);
-      n_1 = numberOfElement + 1;
-      index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
-      arr_1 = arrayUpdate(equOptArr, index, SOME(inEquation));
-      size = equationSize(inEquation) + size;
-    then BackendDAE.EQUATION_ARRAY(size, n_1, arr_1);
+  // Expand the array if there's no space left.
+  if count >= arrayLength(eq_arr) then
+    eq_arr := Array.expand(max(count, realInt(arrayLength(eq_arr) * 1.4)), eq_arr, NONE());
+  end if;
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) guard /* Do NOT Have space to add array elt. Expand array 1.4 times */
-      not (numberOfElement < arrayLength(equOptArr))
-    equation
-      arrSize = arrayLength(equOptArr);
-      rsize = intReal(arrSize);
-      rexpandsize = rsize * 0.4;
-      expandsize = realInt(rexpandsize);
-      expandsize_1 = intMax(expandsize, 1);
-      arr_1 = Array.expand(expandsize_1, equOptArr, NONE());
-      n_1 = numberOfElement + 1;
-      arr_2 = arrayUpdate(arr_1, n_1, SOME(inEquation));
-      size = equationSize(inEquation) + size;
-    then BackendDAE.EQUATION_ARRAY(size, n_1, arr_2);
+  eq_size := eq_size + equationSize(inEquation);
+  eq_arr := arrayUpdate(eq_arr, count, SOME(inEquation));
 
-    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) equation
-      print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrayLength(equOptArr)) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
-    then fail();
-  end matchcontinue;
+  equationArray := BackendDAE.EQUATION_ARRAY(eq_size, count, eq_arr);
 end addEquation;
 
 public function equationAddDAE "author: Frenkel TUD 2011-05"

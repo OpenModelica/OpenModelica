@@ -152,7 +152,8 @@ algorithm
     //end if;
     execStat("collectInitialEqns (initialization)");
 
-    ((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters)));
+    //((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters)));
+    (vars, fixvars, eqns, reeqns) := collectInitialVarsEqnsSystem(dae.eqs, vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters);
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
     execStat("collectInitialBindings (initialization)");
 
@@ -2012,30 +2013,34 @@ end introducePreVarsForAliasVariables;
 //
 // =============================================================================
 
-protected function collectInitialVarsEqnsSystem "author: lochel
-  This function collects variables and equations for the initial system out of an given EqSystem."
-  input BackendDAE.EqSystem inEqSystem;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, list<BackendDAE.Var>> inTpl;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, list<BackendDAE.Var>> outTpl;
-protected
-  BackendDAE.Variables vars, fixvars;
-  BackendDAE.EquationArray eqns, reqns;
-  HashSet.HashSet hs;
-  list<BackendDAE.Var> allPrimaryParameters;
+protected function collectInitialVarsEqnsSystem
+  "This function collects variables and equations for the initial system out of an given EqSystem."
+  input list<BackendDAE.EqSystem> eqSystems;
+  input output BackendDAE.Variables vars;
+  input output BackendDAE.Variables fixVars;
+  input output BackendDAE.EquationArray eqns;
+  input output BackendDAE.EquationArray reEqns;
+  input HashSet.HashSet hs;
+  input list<BackendDAE.Var> allPrimaryParams;
 algorithm
-  (vars, fixvars, eqns, reqns, hs, allPrimaryParameters) := inTpl;
+  for eq in eqSystems loop
+    () := match eq
+      case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION())
+        algorithm
+          (vars, eqns) := BackendVariable.traverseBackendDAEVars(eq.orderedVars,
+            collectInitialClockedVarsEqns, (vars, eqns));
+        then
+          ();
 
-  outTpl := match inEqSystem
-    case BackendDAE.EQSYSTEM(partitionKind = BackendDAE.CLOCKED_PARTITION(_)) equation
-      ((vars, eqns)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialClockedVarsEqns, (vars, eqns));
-    then (vars, fixvars, eqns, reqns, hs, allPrimaryParameters);
-
-    else equation
-      ((vars, fixvars, eqns, hs, _)) = BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialVars, (vars, fixvars, eqns, hs, allPrimaryParameters));
-      ((eqns, reqns)) = BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, collectInitialEqns, (eqns, reqns));
-      //((fixvars, eqns)) = List.fold(inEqSystem.stateSets, collectInitialStateSetVars, (fixvars, eqns));
-    then (vars, fixvars, eqns, reqns, hs, allPrimaryParameters);
-  end match;
+      else
+        algorithm
+          (vars, fixVars, eqns, _, _) := BackendVariable.traverseBackendDAEVars(eq.orderedVars,
+            collectInitialVars, (vars, fixVars, eqns, hs, allPrimaryParams));
+          (eqns, reEqns) := BackendEquation.traverseEquationArray(eq.orderedEqs, collectInitialEqns, (eqns, reEqns));
+        then
+          ();
+    end match;
+  end for;
 end collectInitialVarsEqnsSystem;
 
 protected function collectInitialVars "author: lochel
