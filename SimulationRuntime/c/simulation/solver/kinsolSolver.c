@@ -748,11 +748,13 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
   case KIN_LSETUP_FAIL:
   case KIN_LSOLVE_FAIL:
     warningStreamPrint(LOG_NLS, 0, "kinsols matrix need new factorization. Try again.\n");
-    KINKLUReInit(kinsolData->kinsolMemory, kinsolData->size, kinsolData->nnz, 2);
+    if (nlsData->isPatternAvailable){
+      KINKLUReInit(kinsolData->kinsolMemory, kinsolData->size, kinsolData->nnz, 2);
+    }
     return 1;
   case KIN_MAXITER_REACHED:
   case KIN_REPTD_SYSFUNC_ERR:
-    warningStreamPrint(LOG_NLS, 0, "kinsols runs into issues retry with differnt configuration.\n");
+    warningStreamPrint(LOG_NLS, 0, "kinsols runs into issues retry with different configuration.\n");
     retValue = 1;
     break;
   default:
