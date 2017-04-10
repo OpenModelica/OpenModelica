@@ -1,7 +1,6 @@
 // name: whenTest2
 // keywords: event, when
 // status: correct
-// cflags: +g=MetaModelica
 // teardown_command: rm -rf eventTests.whenTest2* output.log
 //
 // example for when equation without equations, just with statements e.g. reinit, terminate
@@ -18,15 +17,15 @@ package eventTests
       reinit(x,1);
     end when;
     when sample(0,0.1) then
-      print(\"Time : \" + realString(time) + \"\\n\");
-      print(\"x : \" + realString(x) + \"\\n\");
+      print(\"Time : \" + String(time) + \"\\n\");
+      print(\"x : \" + String(x) + \"\\n\");
     end when;
     when time >= 0.9 then
       terminate(\"Terminate the model.\");
     end when;
     when x > 1.1 then
       assert(time<0.5, \"Assert does trigger.\", AssertionLevel.warning);
-    elsewhen x > 1.2 then 
+    elsewhen x > 1.2 then
       assert(time<0.55, \"Assert does triggered again .\", AssertionLevel.warning);
     end when;
   end whenTest2;
@@ -44,18 +43,18 @@ val(x, 0.9);
 // record SimulationResult
 //     resultFile = "eventTests.whenTest2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventTests.whenTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Time : 0.0
-// x : 1.0
+//     messages = "Time : 0
+// x : 1
 // Time : 0.1
-// x : 1.04995554143126
+// x : 1.04996
 // Time : 0.2
-// x : 1.199329343347173
+// x : 1.19933
 // Time : 0.3
-// x : 1.446628136786855
+// x : 1.44663
 // Time : 0.4
-// x : 1.289378240184119
+// x : 1.28938
 // Time : 0.5
-// x : 1.224156088965564
+// x : 1.22416
 // assert            | warning | The following assertion has been violated at time 0.573517
 // |                 | |       | time < 0.5
 // assert            | warning | Assert does trigger.
@@ -63,13 +62,13 @@ val(x, 0.9);
 // |                 | |       | time < 0.55
 // assert            | warning | Assert does triggered again .
 // Time : 0.6
-// x : 1.246620484002331
+// x : 1.24662
 // Time : 0.7
-// x : 1.351550139014931
-// Time : 0.7999999999999999
-// x : 1.032901161940794
-// Time : 0.8999999999999999
-// x : 1.283865558908967
+// x : 1.35155
+// Time : 0.8
+// x : 1.0329
+// Time : 0.9
+// x : 1.28387
 // [<interactive>:16:7-16:40:writable]
 // stdout            | info    | Simulation call terminate() at time 0.900000
 // |                 | |       | Message : Terminate the model.
