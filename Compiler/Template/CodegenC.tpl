@@ -5418,7 +5418,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
 ::=
   match eq
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE()) then
-      let helpIf = if intGt(listLength(conditions), 0) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+      let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
       let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
       <<
       if(<%helpIf%>)
@@ -5427,7 +5427,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
       }
       >>
     case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-      let helpIf = if intGt(listLength(conditions), 0) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+      let helpIf = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
       let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,&auxFunction)
       <<
@@ -5447,7 +5447,7 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=NONE())
   let helpIf = (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
   let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
 
-  if intGt(listLength(conditions), 0) then
+  if not listEmpty(conditions) then
     <<
     else if(<%helpIf%>)
     {
@@ -5458,7 +5458,7 @@ case SES_WHEN(whenStmtLst = whenStmtLst, conditions=conditions, elseWhen=SOME(el
   let helpIf = (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ")
   let assign = whenOperators(whenStmtLst, context, &varDecls, auxFunction)
   let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, auxFunction)
-  let body = if intGt(listLength(conditions), 0) then
+  let body = if not listEmpty(conditions) then
     <<
     else if(<%helpIf%>)
     {

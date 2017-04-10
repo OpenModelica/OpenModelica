@@ -3190,27 +3190,13 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls, Text &
     case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
-          let initial_condition = if initialCall then
-              'initial()'
-            else
-              '0'
-          let if_conditions = (conditions |> e => ' || (<%cref(e)%> && !<%crefPre(e)%> /* edge */)')
-          let statements = (statementLst |> stmt =>
-              algStatement(stmt, context, &varDecls, &auxFunction)
-            ;separator="\n")
-          let initial_statements = if initialCall then
-              '<%statements%>'
-            else
-              '/* nothing to do */'
+          let if_conditions = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+          let statements = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &auxFunction);separator="\n")
           let else_clause = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
           {
-            if(initial())
-            {
-              <%initial_statements%>
-            }
-            else if(0<%if_conditions%>)
+            if(<%if_conditions%>)
             {
               <%statements%>
             }
@@ -3227,13 +3213,11 @@ template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls, Text &
 ::=
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let statements = (when.statementLst |> stmt =>
-      algStatement(stmt, contextSimulationDiscrete, &varDecls, &auxFunction)
-    ;separator="\n")
+  let else_conditions = if not listEmpty(when.conditions) then (when.conditions |> e => '(<%cref(e)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationDiscrete, &varDecls, &auxFunction);separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls, &auxFunction)
-  let elseCondStr = (when.conditions |> e => ' || (<%cref(e)%> && !<%crefPre(e)%> /* edge */)')
   <<
-  else if(0<%elseCondStr%>)
+  else if(<%else_conditions%>)
   {
     <%statements%>
   }
