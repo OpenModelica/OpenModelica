@@ -123,9 +123,9 @@ void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qre
 {
   mExtentRectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
   /* Ticket:4340 Extend vertical space
-   * Make the drawing area 3 times larger than the actual size. So we can better use the panning feature.
+   * Make the drawing area 25% bigger than the actual size. So we can better use the panning feature.
    */
-  QRectF sceneRectangle(left * 3, bottom * 3, fabs(left - right) * 3, fabs(bottom - top) * 3);
+  QRectF sceneRectangle(left * 1.5, bottom * 1.5, fabs(left - right) * 1.5, fabs(bottom - top) * 1.5);
   setSceneRect(sceneRectangle);
   centerOn(sceneRectangle.center());
 }
