@@ -37,7 +37,7 @@ We will use the "Double pendulum" composite model which is a multibody system th
 consists of three sub-models: Two OpenModelica **Shaft** sub-models (**Shaft1**
 and **Shaft2**) and one **SKF/BEAST bearing** sub-model that together build a
 double pendulum. The **SKF/BEAST bearing** sub-model is a simplified model with
-only three balls to speed up the simulation.**Shaft1** is connected with a
+only three balls to speed up the simulation. **Shaft1** is connected with a
 spherical joint to the world coordinate system. The end of **Shaft1** is
 connected via a TLM interface to the outer ring of the BEAST bearing model. The
 inner ring of the bearing model is connected via another TLM interface to
@@ -47,15 +47,15 @@ spherical OpenModelica joint, and one BEAST bearing.
 To load the double pendulum composite model, select **File > Open Composite Model(s)** from the
 menu and select pendulum.xml.
 
-OMEdit starts loading the composite model and will be shown in the **Libraries
-Browser**. Double-clicking the composite model in the **Library Browser** will display
+OMEdit loads the composite model and show it in the **Libraries
+Browser**. Double-clicking the composite model in the **Libraries Browser** will display
 the double pendulum composite model as shown below in
-:numref:`tlm-double-pendulum-compositemodel-textview`.
+:numref:`tlm-double-pendulum-compositemodel`.
 
-.. figure :: media/tlm-double-pendulum-compositemodel-textview.png
-  :name: tlm-double-pendulum-compositemodel-textview
+.. figure :: media/tlm-double-pendulum-compositemodel.png
+  :name: tlm-double-pendulum-compositemodel
 
-  Double Pendulum Composite Model Text View.
+  Double Pendulum Composite Model.
 
 Co-Simulating the Composite Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,7 +68,7 @@ There are two ways to start co-simulation:
   :alt: Composite Model simulate Icon
   :height: 14pt
 
--  Right click the composite model in the **Library Browser** and choose **TLM Co-Simulation setup** from the popup menu (see :numref:`tlm-library-browser-popup-menu`)
+-  Right click the composite model in the **Libraries Browser** and choose **TLM Co-Simulation setup** from the popup menu (see :numref:`tlm-library-browser-popup-menu`)
 
 .. figure :: media/tlm-library-browser-popup-menu.png
   :name: tlm-library-browser-popup-menu
@@ -99,13 +99,18 @@ Plotting the Simulation Results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the co-simulation of the composite model is completed successful, simulation results are collected and visualized
-in the OMEdit plotting perspective as shown in :numref:`tlm-plotting-cosimulation-results`.
+in the OMEdit plotting perspective as shown in :numref:`tlm-plotting-cosimulation-results` and :numref:`tlm-cosimulation-visualization`.
 The **Variables Browser** display variables that can be plotted. Each variable has a checkbox, checking it will plot the variable.
 
 .. figure :: media/tlm-plotting-cosimulation-results.png
   :name: tlm-plotting-cosimulation-results
 
   TLM Co-Simulation Results Plotting.
+
+.. figure :: media/tlm-cosimulation-visualization.png
+  :name: tlm-cosimulation-visualization
+
+  TLM Co-Simulation Visualization.
 
 Composite Modeling in OMEdit
 ----------------------------
@@ -120,7 +125,7 @@ tool, such as **MATLAB/Simulink***, **BEAST**, **MSC/ADAMS**, **Dymola** and **W
 When the external models have all been prepared, the next step is to load external models
 in OMEdit by selecting the **File > Load External Model(s)** from the menu.
 
-OMEdit starts loading the external model and will be shown in the **Libraries Browser**
+OMEdit loads the external model and show it in the **Libraries Browser**
 as shown below in :numref:`tlm-loaded-external-models-library-browser`.
 
 .. figure :: media/tlm-loaded-external-models-library-browser.png
@@ -167,7 +172,7 @@ Fetching Submodels Interface Data
 
 To retrieve list of TLM interface data for sub-models, do any of the following methods:
 
-- Click **fetch interface points button** (|interface-data|) from the toolbar (requires a composite model to be active in ModelWidget)
+- Click **Fetch Interface Data button** (|interface-data|) from the toolbar (requires a composite model to be active in ModelWidget)
 
 .. |interface-data| image:: media/omedit-icons/interface-data.*
   :alt: Composite Model Interface Data Icon
@@ -175,6 +180,10 @@ To retrieve list of TLM interface data for sub-models, do any of the following m
 
 - Right click the composite model in the **Library Browser** and choose **Fetch Interface Data** from the popup menu
   (see :numref:`tlm-library-browser-popup-menu`).
+
+To retrieve list of TLM interface data for a specific sub-model,
+
+- Right click the sub-model inside the composite model and choose **Fetch Interface Data** from the popup menu.
 
 :numref:`tlm-fetch-interface-progress` will appear in which you will be able to see the progress information
 of fetching the interface data.
