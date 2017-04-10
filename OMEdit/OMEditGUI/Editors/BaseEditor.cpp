@@ -457,24 +457,24 @@ void CommentDefinition::clearCommentStyles()
 
 namespace {
 
-bool isComment(const QString &text,
-               int index,
-               const CommentDefinition &definition,
-               const QString & (CommentDefinition::* comment) () const)
-{
-  const QString &commentType = ((definition).*(comment))();
-  const int length = commentType.length();
+  bool isComment(const QString &text,
+                 int index,
+                 const CommentDefinition &definition,
+                 const QString & (CommentDefinition::* comment) () const)
+  {
+    const QString &commentType = ((definition).*(comment))();
+    const int length = commentType.length();
 
-  Q_ASSERT(text.length() - index >= length);
+    Q_ASSERT(text.length() - index >= length);
 
-  int i = 0;
-  while (i < length) {
-    if (text.at(index + i) != commentType.at(i))
-      return false;
-    ++i;
+    int i = 0;
+    while (i < length) {
+      if (text.at(index + i) != commentType.at(i))
+        return false;
+      ++i;
+    }
+    return true;
   }
-  return true;
-}
 
 }
 
@@ -674,7 +674,17 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
   // intialize the completer with QStandardItemModel
   mpStandardItemModel = new QStandardItemModel();
+  // sort the StandardItemModel using QSortFilterProxy
+  QSortFilterProxyModel *pSortFilterProxyModel = new QSortFilterProxyModel(this);
+  pSortFilterProxyModel->setSourceModel(mpStandardItemModel);
+  pSortFilterProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+  pSortFilterProxyModel->sort(0,Qt::AscendingOrder);
   mpCompleter = new QCompleter(this);
+  mpCompleter->setModel(pSortFilterProxyModel);
+  mpCompleter->setCaseSensitivity(Qt::CaseSensitive);
+  mpCompleter->setWrapAround(false);
+  mpCompleter->setWidget(this);
+  mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
   connect(mpCompleter, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
   updateLineNumberAreaWidth(0);
   updateHighlights();
@@ -723,27 +733,6 @@ void PlainTextEdit::insertCompleterTypes(QStringList types)
     pStandardItem->setToolTip("types");
     mpStandardItemModel->appendRow(pStandardItem);
   }
-}
-
-/*!
- * \brief PlainTextEdit::setCompleter
- * Sets the editor with the completer with items sorted alphabetically
- * This function is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
- * ModelicaEditor,CEditor
- */
-void PlainTextEdit::setCompleter()
-{
-  // sort the StandardItemModel using QSortFilterProxy
-  QSortFilterProxyModel *pSortFilterProxyModel = new QSortFilterProxyModel(this);
-  pSortFilterProxyModel->setSourceModel(mpStandardItemModel);
-  pSortFilterProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
-  pSortFilterProxyModel->sort(0,Qt::AscendingOrder);
-  // set the completer with the QAbstractitem model
-  mpCompleter->setModel(pSortFilterProxyModel);
-  mpCompleter->setCaseSensitivity(Qt::CaseSensitive);
-  mpCompleter->setWrapAround(false);
-  mpCompleter->setWidget(this);
-  mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
 }
 
 /*!
@@ -1523,22 +1512,22 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   }
   /* do not change the order of execution as the indentation event will fail when completer is on */
   if (mpCompleter && mpCompleter->popup()->isVisible()) {
-      // The following keys are forwarded by the completer to the widget
-     switch (pEvent->key()) {
-     case Qt::Key_Enter:
-     case Qt::Key_Return:
-     case Qt::Key_Escape:
-     case Qt::Key_Tab:
-     case Qt::Key_Backtab:
-          pEvent->ignore();
-          return; // let the completer do default behavior
-     default:
-         break;
-     }
+    // The following keys are forwarded by the completer to the widget
+    switch (pEvent->key()) {
+      case Qt::Key_Enter:
+      case Qt::Key_Return:
+      case Qt::Key_Escape:
+      case Qt::Key_Tab:
+      case Qt::Key_Backtab:
+        pEvent->ignore();
+        return; // let the completer do default behavior
+      default:
+        break;
+    }
   }
-  if (!mpCompleter || !isShortcut) // do not process the shortcut when we have a completer
-      QPlainTextEdit::keyPressEvent(pEvent);
-
+  if (!mpCompleter || !isShortcut) { // do not process the shortcut when we have a completer
+    QPlainTextEdit::keyPressEvent(pEvent);
+  }
   /* If user has pressed enter then a new line is inserted.
    * Indent the new line based on the indentation of previous line.
    */
@@ -1556,21 +1545,21 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   }
 
   const bool ctrlOrShift = pEvent->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier);
-  if (!mpCompleter || (ctrlOrShift && pEvent->text().isEmpty()))
-      return;
+  if (!mpCompleter || (ctrlOrShift && pEvent->text().isEmpty())) {
+    return;
+  }
 
   static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
   bool hasModifier = (pEvent->modifiers() != Qt::NoModifier) && !ctrlOrShift;
   QString completionPrefix = textUnderCursor();
-  if (!isShortcut && (hasModifier || pEvent->text().isEmpty()|| completionPrefix.length() < 3
-                      || eow.contains(pEvent->text().right(1)))) {
-      mpCompleter->popup()->hide();
-      return;
+  if (!isShortcut && (hasModifier || pEvent->text().isEmpty()|| completionPrefix.length() < 3 || eow.contains(pEvent->text().right(1)))) {
+    mpCompleter->popup()->hide();
+    return;
   }
 
   if (completionPrefix != mpCompleter->completionPrefix()) {
-      mpCompleter->setCompletionPrefix(completionPrefix);
-      mpCompleter->popup()->setCurrentIndex(mpCompleter->completionModel()->index(0, 0));
+    mpCompleter->setCompletionPrefix(completionPrefix);
+    mpCompleter->popup()->setCurrentIndex(mpCompleter->completionModel()->index(0, 0));
   }
   //pop up the completer according to editor instance
   mpBaseEditor->popUpCompleter();
@@ -1910,7 +1899,7 @@ QMenu* BaseEditor::createStandardContextMenu()
    * So don't use the standard context menu.
    * Added our custom undo/redo actions to the custom context menu.
    */
-//  QMenu *pMenu = mpPlainTextEdit->createStandardContextMenu();
+  //  QMenu *pMenu = mpPlainTextEdit->createStandardContextMenu();
   QMenu *pMenu = new QMenu;
   pMenu->addAction(MainWindow::instance()->getUndoAction());
   pMenu->addAction(MainWindow::instance()->getRedoAction());

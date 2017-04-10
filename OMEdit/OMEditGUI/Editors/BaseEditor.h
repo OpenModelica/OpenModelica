@@ -220,7 +220,6 @@ public:
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
   void insertCompleterKeywords(QStringList keywords);
   void insertCompleterTypes(QStringList types);
-  void setCompleter();
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
   bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
   int lineNumberAreaWidth();

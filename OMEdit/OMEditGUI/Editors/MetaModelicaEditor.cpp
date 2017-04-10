@@ -47,7 +47,6 @@ MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   QStringList types = MetaModelicaHighlighter::getTypes();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   mpPlainTextEdit->insertCompleterTypes(types);
-  mpPlainTextEdit->setCompleter();
 }
 
 /*!

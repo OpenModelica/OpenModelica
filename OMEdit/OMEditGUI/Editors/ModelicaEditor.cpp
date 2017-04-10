@@ -60,7 +60,6 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   QStringList types = ModelicaHighlighter::getTypes();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   mpPlainTextEdit->insertCompleterTypes(types);
-  mpPlainTextEdit->setCompleter();
 }
 
 /*!

@@ -44,7 +44,6 @@ CEditor::CEditor(QWidget *pParent)
   QStringList types = CHighlighter::getTypes();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   mpPlainTextEdit->insertCompleterTypes(types);
-  mpPlainTextEdit->setCompleter();
 }
 
 /*!
