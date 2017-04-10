@@ -398,7 +398,7 @@ void MetaModelicaHighlighter::highlightMultiLine(const QString &text)
           index = index + QString("end").length();
           foldingEndState = true;
         }
-        if ((foldingEndState || foldingStartIndex > -1) && text[index] == ';') {
+        if ((foldingEndState || foldingStartIndex > -1) && (index<text.length() && text[index] == ';')) {
           foldingEndState = false;
           foldingEnd = true;
         }
