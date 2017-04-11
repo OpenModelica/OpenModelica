@@ -67,7 +67,7 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(77,71.4%) 828}
+//  * Linear torn systems: 1 {(77,71.3%) 828}
 //  * Non-linear torn systems: 0
 // "
 // endResult

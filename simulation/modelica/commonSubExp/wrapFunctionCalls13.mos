@@ -1,0 +1,264 @@
+// name: wrapFunctionCalls13
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls13
+    record data
+      Integer d1;
+      Integer d2;
+    end data;
+    
+    function f1
+      input Integer x1;
+      input Integer x2;
+      input Integer x;
+      output Real y;
+    algorithm
+      y := x1 + x2 + x;
+    end f1;
+    
+    function f2
+      input Integer a;
+      input Integer b;
+      output data dataOut;
+    algorithm
+      dataOut.d1 := a;
+      dataOut.d2 := b;
+    end f2;
+
+    data dat;
+    parameter Integer p1 = 5;
+    Integer x;
+    Real z;
+  equation
+    dat = f2(p1, 2*p1);
+    f1(x, p1, 2*p1) = f1(dat.d1, p1, 2*p1);
+    z + 1 = sin(f1(x, p1, 2*p1));
+  end wrapFunctionCalls13;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE,dumpindxdae,paramdlowdump"); getErrorString();
+simulate(CSE.wrapFunctionCalls13); getErrorString();
+
+system("xz --keep --decompress --force ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat.xz");
+(success, failVars) := OpenModelica.Scripting.diffSimulationResults("CSE.wrapFunctionCalls13_res.mat", "./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat", "CSE.wrapFunctionCalls13_diff.csv"); getErrorString();
+if success then
+  print("Files equal!\n");
+else
+  print("Files not equal!\n");
+  for v in failVars loop
+    curFile := "CSE.wrapFunctionCalls13." + v + ".html";
+    success := writeFile(curFile, OpenModelica.Scripting.diffSimulationResultsHtml(v, "CSE.wrapFunctionCalls13_res.mat", "./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat", 0.01)); getErrorString();
+    if success then
+      print("Created diff file " + curFile + "\n");
+    else
+      print("Creating diff file " + curFile + " failed\n");
+    end if;
+  end for; getErrorString();
+end if;
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (5)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+// 2: x:DISCRETE()  type: Integer 
+// 3: $cse3:VARIABLE()  type: Real  unreplaceable
+// 4: $cse2:VARIABLE()  type: Real  unreplaceable
+// 5: $cse1:VARIABLE()  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (5, 5)
+// ========================================
+// 1/1 (1): $cse1 = $cse2   [dynamic]
+// 2/2 (1): 1.0 + z = $cse3   [dynamic]
+// 3/3 (1): $cse3 = sin($cse1)   [unknown]
+// 4/4 (1): $cse2 = CSE.wrapFunctionCalls13.f1(dat.d1, p1, 2 * p1)   [unknown]
+// 5/5 (1): $cse1 = CSE.wrapFunctionCalls13.f1(x, p1, 2 * p1)   [unknown]
+//
+//
+// ########### Updated globalKnownVars (simulation) (3)
+// ========================================
+// 1: p1:PARAM()  = 5  type: Integer 
+// 2: dat.d2 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 3: dat.d1 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+//
+//
+// ########### CSE Replacements (4/46)
+// ========================================
+// 1: dat - CSE.wrapFunctionCalls13.f2(p1, 2 * p1) - {}
+// 2: $cse1 - CSE.wrapFunctionCalls13.f1(x, p1, 2 * p1) - {}
+// 3: $cse2 - CSE.wrapFunctionCalls13.f1(dat.d1, p1, 2 * p1) - {}
+// 4: $cse3 - sin($cse1) - {}
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $cse2:VARIABLE()  type: Real  unreplaceable
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $cse2 = CSE.wrapFunctionCalls13.f1(dat.d1, p1, 2 * p1)   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+// 2: x:DISCRETE()  type: Integer 
+// 3: $cse3:VARIABLE()  type: Real  unreplaceable
+// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $cse1 = $cse2   [dynamic]
+// 2/2 (1): $cse3 = sin($cse1)   [unknown]
+// 3/3 (1): z = $cse3 - 1.0   [dynamic]
+// 4/4 (1): x = $cse1 - CSE.wrapFunctionCalls13.f1(0.0, p1, 2 * p1)   [unknown]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 3
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 2
+// var 4 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:4}
+// {2:3}
+// {3:1}
+// {4:2}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (3)
+// ========================================
+// 1: p1:PARAM()  = 5  type: Integer 
+// 2: dat.d1 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 3: dat.d2 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// parameters in order (1)
+// ========================================
+// 9:   dat := CSE.wrapFunctionCalls13.f2(p1, 2 * p1);
+// 	
+//
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls13_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls13', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0
+//
+// ""
+// Files equal!
+//
+// endResult

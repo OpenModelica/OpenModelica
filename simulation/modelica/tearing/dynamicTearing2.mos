@@ -47,9 +47,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // allEquations: 
 // ========================================
 //
-// 20: $cse6=sin(2.0 * time) [Real ]
+// 20: $cse4=sin(time) [Real ]
 // 21: $cse5=cos(time) [Real ]
-// 22: $cse4=sin(time) [Real ]
+// 22: $cse6=sin(2.0 * time) [Real ]
 // strict set:
 // 38:  (LINEAR) index:1 jacobian: true
 // 	variables:
@@ -114,9 +114,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 //
 // algebraicEquations (1 systems): 
 // ========================================
-// 20: $cse6=sin(2.0 * time) [Real ]
+// 20: $cse4=sin(time) [Real ]
 // 21: $cse5=cos(time) [Real ]
-// 22: $cse4=sin(time) [Real ]
+// 22: $cse6=sin(2.0 * time) [Real ]
 // strict set:
 // 38:  (LINEAR) index:1 jacobian: true
 // 	variables:
@@ -196,9 +196,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	6: 2.0 * x2 - sin(time) * x3 + x1 (RESIDUAL)
 // 	5: 5.0 * x5 - x6 + sin(time) * x4 (RESIDUAL)
 // 	Jacobian idx: 0
-// 	9: $cse3=sin(time) [Real ]
+// 	9: $cse1=sin(2.0 * time) [Real ]
 // 	10: $cse2=cos(time) [Real ]
-// 	11: $cse1=sin(2.0 * time) [Real ]
+// 	11: $cse3=sin(time) [Real ]
 // 	12: x3.$pDERLSJac0.dummyVarLSJac0=-0.5 * (-$cse2) * x2SeedLSJac0 - -2.0 * x4SeedLSJac0 [Real ]
 // 	13: $res.3.$pDERLSJac0.dummyVarLSJac0=x2SeedLSJac0 - $cse3 * x3.$pDERLSJac0.dummyVarLSJac0 [Real ]
 // 	14: x5.$pDERLSJac0.dummyVarLSJac0=(-x6SeedLSJac0) - 0.5 * $cse1 * x7SeedLSJac0 [Real ]
@@ -268,9 +268,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	37: $res.4.$pDERLSJac1.dummyVarLSJac1=x3SeedLSJac1 + -2.0 * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5SeedLSJac1 [Real ]
 // 	
 // 	Jacobian idx: 0
-// 	9: $cse3=sin(time) [Real ]
+// 	9: $cse1=sin(2.0 * time) [Real ]
 // 	10: $cse2=cos(time) [Real ]
-// 	11: $cse1=sin(2.0 * time) [Real ]
+// 	11: $cse3=sin(time) [Real ]
 // 	12: x3.$pDERLSJac0.dummyVarLSJac0=-0.5 * (-$cse2) * x2SeedLSJac0 - -2.0 * x4SeedLSJac0 [Real ]
 // 	13: $res.3.$pDERLSJac0.dummyVarLSJac0=x2SeedLSJac0 - $cse3 * x3.$pDERLSJac0.dummyVarLSJac0 [Real ]
 // 	14: x5.$pDERLSJac0.dummyVarLSJac0=(-x6SeedLSJac0) - 0.5 * $cse1 * x7SeedLSJac0 [Real ]

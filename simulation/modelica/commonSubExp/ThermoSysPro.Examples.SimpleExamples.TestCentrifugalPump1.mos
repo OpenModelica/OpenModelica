@@ -8,12 +8,27 @@ loadModel(ThermoSysPro); getErrorString();
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1, stopTime=1000);  getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults(
+system("xz --keep --decompress --force ./ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mat.xz");
+(success, failVars) := OpenModelica.Scripting.diffSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1_res.mat",
 "ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1_diff.csv",
-0.01, 0.0001,
-{"centrifugalPump.w"});
+vars={"centrifugalPump.w"}); getErrorString();
+
+if success then
+  print("Files equal!\n");
+else
+  print("Files not equal!\n");
+  for v in failVars loop
+    curFile := "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1." + v + ".html";
+    success := writeFile(curFile, OpenModelica.Scripting.diffSimulationResultsHtml(v, "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1_res.mat", "./ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mat", 0.01)); getErrorString();
+    if success then
+      print("Created diff file " + curFile + "\n");
+    else
+      print("Creating diff file " + curFile + " failed\n");
+    end if;
+  end for; getErrorString();
+end if;
 
 // Result:
 // true
@@ -64,5 +79,9 @@ res := OpenModelica.Scripting.compareSimulationResults(
 // [ThermoSysPro 3.1/ElectroMechanics/Connectors.mo:3:3-38:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // "
-// {"Files Equal!"}
+// 0
+//
+// ""
+// Files equal!
+//
 // endResult

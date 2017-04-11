@@ -45,19 +45,30 @@ simulate(CSE.TestCall6); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (3)
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (3)
 // ========================================
 // 1: a:VARIABLE()  type: Real 
 // 2: $cse1.y:VARIABLE()  type: Real  unreplaceable
 // 3: $cse1.x:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (2, 3)
+// ########### Updated Equation List (simulation) (2, 3)
 // ========================================
-// 1/1 (1): a = CSE.TestCall6.f2($cse1)   [unknown]
-// 2/2 (2): $cse1 = CSE.TestCall6.f(time)   [unknown]
+// 1/1 (2): $cse1 = CSE.TestCall6.f(time)   [unknown]
+// 2/3 (1): a = CSE.TestCall6.f2($cse1)   [unknown]
 //
-// cse replacements (2/43)
+//
+// ########### Updated globalKnownVars (simulation) (0)
+// ========================================
+//
+//
+// ########### CSE Replacements (2/43)
 // ========================================
 // 1: a - CSE.TestCall6.f2($cse1) - {}
 // 2: $cse1 - CSE.TestCall6.f(time) - {}

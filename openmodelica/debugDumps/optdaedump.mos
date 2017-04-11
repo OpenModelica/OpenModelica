@@ -4259,8 +4259,8 @@ buildModel(testOptdaedump); getErrorString();
 // 6/6 (1): iC = C * $DER.uC   [dynamic]
 // 7/7 (1): i0 = i1 + iC   [dynamic]
 // 8/8 (1): i1 = i2 + iL   [dynamic]
-// 9/9 (1): $cse1 = sin(time)   [unknown]
-// 10/10 (1): uC = cos(time)   [unknown]
+// 9/9 (1): uC = cos(time)   [unknown]
+// 10/10 (1): $cse1 = sin(time)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -4279,17 +4279,17 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 8
 // var 4 is solved in eqn 2
 // var 5 is solved in eqn 7
-// var 6 is solved in eqn 10
+// var 6 is solved in eqn 9
 // var 7 is solved in eqn 4
 // var 8 is solved in eqn 3
 // var 9 is solved in eqn 1
-// var 10 is solved in eqn 9
+// var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {10:6}
-// {9:10}
+// {10:10}
+// {9:6}
 // {2, 8, 4, 3:8, 7, 3, 4} Size: 4 Jacobian Linear
 // {5:2}
 // {1:9}
@@ -4395,8 +4395,8 @@ buildModel(testOptdaedump); getErrorString();
 // 6/6 (1): iC = C * $DER.uC   [dynamic]
 // 7/7 (1): i0 = i1 + iC   [dynamic]
 // 8/8 (1): i1 = i2 + iL   [dynamic]
-// 9/9 (1): $cse1 = sin(time)   [unknown]
-// 10/10 (1): uC = cos(time)   [unknown]
+// 9/9 (1): uC = cos(time)   [unknown]
+// 10/10 (1): $cse1 = sin(time)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -4415,17 +4415,17 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 8
 // var 4 is solved in eqn 2
 // var 5 is solved in eqn 7
-// var 6 is solved in eqn 10
+// var 6 is solved in eqn 9
 // var 7 is solved in eqn 4
 // var 8 is solved in eqn 3
 // var 9 is solved in eqn 1
-// var 10 is solved in eqn 9
+// var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {10:6}
-// {9:10}
+// {10:10}
+// {9:6}
 // {2, 8, 4, 3:8, 7, 3, 4} Size: 4 Jacobian Linear
 // {5:2}
 // {1:9}
@@ -4531,8 +4531,8 @@ buildModel(testOptdaedump); getErrorString();
 // 6/6 (1): iC = C * $DER.uC   [dynamic]
 // 7/7 (1): i0 = i1 + iC   [dynamic]
 // 8/8 (1): i1 = i2 + iL   [dynamic]
-// 9/9 (1): $cse1 = sin(time)   [unknown]
-// 10/10 (1): uC = cos(time)   [unknown]
+// 9/9 (1): uC = cos(time)   [unknown]
+// 10/10 (1): $cse1 = sin(time)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -4551,17 +4551,17 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 8
 // var 4 is solved in eqn 2
 // var 5 is solved in eqn 7
-// var 6 is solved in eqn 10
+// var 6 is solved in eqn 9
 // var 7 is solved in eqn 4
 // var 8 is solved in eqn 3
 // var 9 is solved in eqn 1
-// var 10 is solved in eqn 9
+// var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {10:6}
-// {9:10}
+// {10:10}
+// {9:6}
 // {2, 8, 4, 3:8, 7, 3, 4} Size: 4 Jacobian Linear
 // {5:2}
 // {1:9}
@@ -4667,8 +4667,8 @@ buildModel(testOptdaedump); getErrorString();
 // 6/6 (1): iC = C * $DER.uC   [dynamic]
 // 7/7 (1): i0 = i1 + iC   [dynamic]
 // 8/8 (1): i1 = i2 + iL   [dynamic]
-// 9/9 (1): $cse1 = sin(time)   [unknown]
-// 10/10 (1): uC = cos(time)   [unknown]
+// 9/9 (1): uC = cos(time)   [unknown]
+// 10/10 (1): $cse1 = sin(time)   [unknown]
 //
 //
 // Simple Equations (0, 0)
@@ -4687,17 +4687,17 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 8
 // var 4 is solved in eqn 2
 // var 5 is solved in eqn 7
-// var 6 is solved in eqn 10
+// var 6 is solved in eqn 9
 // var 7 is solved in eqn 4
 // var 8 is solved in eqn 3
 // var 9 is solved in eqn 1
-// var 10 is solved in eqn 9
+// var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {10:6}
-// {9:10}
+// {10:10}
+// {9:6}
 // {2, 8, 4, 3:8, 7, 3, 4} Size: 4 Jacobian Linear
 // {5:2}
 // {1:9}
@@ -4795,8 +4795,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -4823,22 +4823,22 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {6, 5, 4, 3:8, 4, 3, 7} Size: 4 Jacobian Linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -4931,8 +4931,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -4959,22 +4959,22 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {6, 5, 4, 3:8, 4, 3, 7} Size: 4 Jacobian Linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -5067,8 +5067,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -5095,22 +5095,22 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {6, 5, 4, 3:8, 4, 3, 7} Size: 4 Jacobian Linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -5203,8 +5203,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -5231,23 +5231,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -5340,8 +5340,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -5368,23 +5368,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -6692,8 +6692,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -6720,23 +6720,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -6829,8 +6829,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -6857,23 +6857,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -6966,8 +6966,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -6994,23 +6994,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -7103,8 +7103,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -7131,23 +7131,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -7240,8 +7240,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -7268,23 +7268,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -7377,8 +7377,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -7405,23 +7405,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //
@@ -7514,8 +7514,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (10, 10)
 // ========================================
-// 1/1 (1): uC = cos(time)   [unknown]
-// 2/2 (1): $cse1 = sin(time)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
 // 3/3 (1): u1 = R1 * i1   [dynamic]
 // 4/4 (1): i1 = i2 + iL   [dynamic]
 // 5/5 (1): uL = R2 * i2   [dynamic]
@@ -7542,23 +7542,23 @@ buildModel(testOptdaedump); getErrorString();
 // var 3 is solved in eqn 5
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 9
-// var 6 is solved in eqn 1
+// var 6 is solved in eqn 2
 // var 7 is solved in eqn 6
 // var 8 is solved in eqn 3
-// var 9 is solved in eqn 2
+// var 9 is solved in eqn 1
 // var 10 is solved in eqn 10
 //
 //
 // StrongComponents
 // ========================================
-// {2:9}
-// {8:1}
-// {10:10}
-// {1:6}
+// {2:6}
 // {{{6:8}, {5:3}, {3:4}}
 // ,{4:7}} Size: 1 linear
-// {9:5}
 // {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
 //
 //
 //

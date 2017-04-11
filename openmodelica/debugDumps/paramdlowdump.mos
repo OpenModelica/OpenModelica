@@ -32,12 +32,12 @@ buildModel(testParamdlowdump); getErrorString();
 //
 // parameters in order (6)
 // ========================================
-// 1: b2:PARAM()  = not b1  type: Boolean 
-// 2: b3:PARAM()  = b1 or b2  type: Boolean 
-// 3: i2:PARAM()  = 1 + i1  type: Integer 
-// 4: i3:PARAM()  = i1 + i2  type: Integer 
-// 5: r2:PARAM()  = 1.0 + r1  type: Real 
-// 6: r3:PARAM()  = r1 + r2  type: Real 
+// 1: r2=1.0 + r1 [Real ]
+// 2: r3=r1 + r2 [Real ]
+// 3: i2=1 + i1 [Integer ]
+// 4: i3=i1 + i2 [Integer ]
+// 5: b2=not b1 [Boolean ]
+// 6: b3=b1 or b2 [Boolean ]
 //
 // {"testParamdlowdump","testParamdlowdump_init.xml"}
 // ""

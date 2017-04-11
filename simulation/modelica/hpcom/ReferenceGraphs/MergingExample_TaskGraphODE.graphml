@@ -65,7 +65,7 @@
     
     <!-- Graph Idx: 1 -->
     <graph edgedefault="directed" id="TaskGraph">
-        <data key="cust16"><![CDATA[ ;; critical path with costs of 1786.0 cycles -- 2,3,6,7,8,9,10,11,12,13critical path' with costs of 1120.0 cycles -- 2,3,6,7,8,9,10,11,12,13 sum: (1505.0 ; 15)]]></data>
+        <data key="cust16"><![CDATA[ ;; critical path with costs of 1786.0 cycles -- 1,3,6,7,8,9,10,11,12,13critical path' with costs of 1120.0 cycles -- 1,3,6,7,8,9,10,11,12,13 sum: (1505.0 ; 15)]]></data>
         <node id="Node13">
             <data key="cust1"><![CDATA[{9:1}]]></data>
             <data key="cust3">35</data>
@@ -117,7 +117,7 @@
             </data>
         </node>
         <node id="Node11">
-            <data key="cust1"><![CDATA[{13:10}]]></data>
+            <data key="cust1"><![CDATA[{10:10}]]></data>
             <data key="cust3">271</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 11 ]]></data>
@@ -217,7 +217,7 @@
             </data>
         </node>
         <node id="Node7">
-            <data key="cust1"><![CDATA[{12:11}]]></data>
+            <data key="cust1"><![CDATA[{11:11}]]></data>
             <data key="cust3">145</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 7 ]]></data>
@@ -342,7 +342,7 @@
             </data>
         </node>
         <node id="Node2">
-            <data key="cust1"><![CDATA[{10:13}]]></data>
+            <data key="cust1"><![CDATA[{12:12}]]></data>
             <data key="cust3">271</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 2 ]]></data>
@@ -355,7 +355,7 @@
             <data key="cust17">false</data>
             <data key="cust18">false</data>
             <data key="cust19">false</data>
-            <data key="ddesc"><![CDATA[$cse1 = sin(time) FOR $cse1]]></data>
+            <data key="ddesc"><![CDATA[$cse2 = cos(time) FOR $cse2]]></data>
             <data key="gi1">
                 <y:ShapeNode>
                   <y:Fill color="#FFCC00" transparent="false"/>
@@ -367,7 +367,7 @@
             </data>
         </node>
         <node id="Node1">
-            <data key="cust1"><![CDATA[{11:12}]]></data>
+            <data key="cust1"><![CDATA[{13:13}]]></data>
             <data key="cust3">271</data>
             <data key="cust2">1</data>
             <data key="cust4"><![CDATA[ 1 ]]></data>
@@ -380,7 +380,7 @@
             <data key="cust17">false</data>
             <data key="cust18">false</data>
             <data key="cust19">false</data>
-            <data key="ddesc"><![CDATA[$cse2 = cos(time) FOR $cse2]]></data>
+            <data key="ddesc"><![CDATA[$cse1 = sin(time) FOR $cse1]]></data>
             <data key="gi1">
                 <y:ShapeNode>
                   <y:Fill color="#FFCC00" transparent="false"/>
@@ -568,7 +568,7 @@
             </y:PolyLineEdge>
           </data>
         </edge>
-        <edge id="Edge24" source="Node2" target="Node4">
+        <edge id="Edge26" source="Node2" target="Node6">
           <data key="cust10">74</data>
           <data key="cust11">1</data>
           <data key="cust12">0</data>
@@ -584,7 +584,23 @@
             </y:PolyLineEdge>
           </data>
         </edge>
-        <edge id="Edge23" source="Node2" target="Node3">
+        <edge id="Edge14" source="Node1" target="Node4">
+          <data key="cust10">74</data>
+          <data key="cust11">1</data>
+          <data key="cust12">0</data>
+          <data key="cust13">1</data>
+          <data key="cust14">0</data>
+          <data key="gi2">
+            <y:PolyLineEdge>
+              <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+              <y:LineStyle color="#000000" type="line" width="2.0"/>
+              <y:Arrows source="none" target="standard"/>
+              <y:BendStyle smoothed="false"/>
+              <y:EdgeLabel alignment="center" distance="2.0" fontFamily="Dialog" backgroundColor="#000000" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="side_slider" preferredPlacement="anywhere" visible="true">74</y:EdgeLabel>
+            </y:PolyLineEdge>
+          </data>
+        </edge>
+        <edge id="Edge13" source="Node1" target="Node3">
           <data key="cust10">74</data>
           <data key="cust11">1</data>
           <data key="cust12">0</data>
@@ -597,22 +613,6 @@
               <y:Arrows source="none" target="standard"/>
               <y:BendStyle smoothed="false"/>
               <y:EdgeLabel alignment="center" distance="2.0" fontFamily="Dialog" backgroundColor="#C0C0C0" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="side_slider" preferredPlacement="anywhere" visible="true">74</y:EdgeLabel>
-            </y:PolyLineEdge>
-          </data>
-        </edge>
-        <edge id="Edge16" source="Node1" target="Node6">
-          <data key="cust10">74</data>
-          <data key="cust11">1</data>
-          <data key="cust12">0</data>
-          <data key="cust13">1</data>
-          <data key="cust14">0</data>
-          <data key="gi2">
-            <y:PolyLineEdge>
-              <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
-              <y:LineStyle color="#000000" type="line" width="2.0"/>
-              <y:Arrows source="none" target="standard"/>
-              <y:BendStyle smoothed="false"/>
-              <y:EdgeLabel alignment="center" distance="2.0" fontFamily="Dialog" backgroundColor="#000000" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="side_slider" preferredPlacement="anywhere" visible="true">74</y:EdgeLabel>
             </y:PolyLineEdge>
           </data>
         </edge>

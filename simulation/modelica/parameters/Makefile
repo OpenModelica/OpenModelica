@@ -17,6 +17,7 @@ parameterTest13.mos \
 parameterTest14.mos \
 parameterTest15.mos \
 parameterTest16.mos \
+parameterTest17.mos \
 Engine1a_output.mos \
 revoluteConstraint.mos \
 hideResult.mos \

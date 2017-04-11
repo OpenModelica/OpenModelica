@@ -69,7 +69,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // true
 // ""
 //
-// ########### Updated Variable List (simulation) ########### (12)
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (12)
 // ========================================
 // 1: r.r1:VARIABLE()  type: Real 
 // 2: b[2]:VARIABLE()  type: Real  [2]
@@ -85,17 +91,23 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 // 12: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
-// ########### Updated Equation List (simulation) ########### (7, 12)
+// ########### Updated Equation List (simulation) (7, 12)
 // ========================================
 // 1/1 (1): x = $cse1 * r.r1   [dynamic]
 // 2/2 (3): (z, b) = (y, a)   [dynamic]
-// 3/5 (1): $cse1 = sin(time * $cse2)   [unknown]
-// 4/6 (1): $cse2 = cos(time)   [unknown]
-// 5/7 (3): (y, a) = CSE.functions.f5(time, x, $cse3)   [unknown]
-// 6/10 (2): $cse3 = CSE.functions.f6(time, x)   [unknown]
-// 7/12 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [unknown]
+// 3/5 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [unknown]
+// 4/6 (2): $cse3 = CSE.functions.f6(time, x)   [unknown]
+// 5/8 (3): (y, a) = CSE.functions.f5(time, x, $cse3)   [unknown]
+// 6/11 (1): $cse2 = cos(time)   [unknown]
+// 7/12 (1): $cse1 = sin(time * $cse2)   [unknown]
 //
-// cse replacements (5/50)
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: r.r2:DISCRETE()  = 65  type: Integer 
+//
+//
+// ########### CSE Replacements (5/50)
 // ========================================
 // 1: $cse1 - sin(time * $cse2) - {}
 // 2: $cse2 - cos(time) - {}
