@@ -2236,7 +2236,6 @@ void GraphicsView::leaveEvent(QEvent *event)
 WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   // main frame
   mpMainFrame = new QFrame;
   mpMainFrame->setContentsMargins(0, 0, 0, 0);
@@ -2255,6 +2254,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
 #ifndef Q_OS_MAC
   mpHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
 #endif
+  mpHeadingLabel->setElideMode(Qt::ElideMiddle);
   // top frame layout
   QHBoxLayout *topFrameLayout = new QHBoxLayout;
   topFrameLayout->setAlignment(Qt::AlignLeft);
