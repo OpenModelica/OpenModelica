@@ -27,35 +27,24 @@ provides the following general functionalities:
 
 Co-Simulating an Existing Composite Model
 -----------------------------------------
-This section demonstrates how to load an existing double pendulum
-composite model,co-simulate it, and look at the results using OMEdit.
+This section demonstrates how to load an existing composite model, 
+co-simulate it, and look at the results using OMEdit.
 
 Loading a Composite Model for Co-Simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We will use the "Double pendulum" composite model which is a multibody system that
-consists of three sub-models: Two OpenModelica **Shaft** sub-models (**Shaft1**
-and **Shaft2**) and one **SKF/BEAST bearing** sub-model that together build a
-double pendulum. The **SKF/BEAST bearing** sub-model is a simplified model with
-only three balls to speed up the simulation. **Shaft1** is connected with a
-spherical joint to the world coordinate system. The end of **Shaft1** is
-connected via a TLM interface to the outer ring of the BEAST bearing model. The
-inner ring of the bearing model is connected via another TLM interface to
-**Shaft2**. Together they build the double pendulum with two **shafts**, one
-spherical OpenModelica joint, and one BEAST bearing.
-
-To load the double pendulum composite model, select **File > Open Composite Model(s)** from the
-menu and select pendulum.xml.
+To load the composite model, select **File > Open Composite Model(s)** from the
+menu and select compositemodel.xml.
 
 OMEdit loads the composite model and show it in the **Libraries
 Browser**. Double-clicking the composite model in the **Libraries Browser** will display
-the double pendulum composite model as shown below in
+the composite model as shown below in
 :numref:`tlm-double-pendulum-compositemodel`.
 
 .. figure :: media/tlm-double-pendulum-compositemodel.png
   :name: tlm-double-pendulum-compositemodel
 
-  Double Pendulum Composite Model.
+  Composite Model with 3D View.
 
 Co-Simulating the Composite Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,6 +125,17 @@ as shown below in :numref:`tlm-loaded-external-models-library-browser`.
 Creating a New Composite Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+We will use the "Double pendulum" composite model which is a multibody system that
+consists of three sub-models: Two OpenModelica **Shaft** sub-models (**Shaft1**
+and **Shaft2**) and one **SKF/BEAST bearing** sub-model that together build a
+double pendulum. The **SKF/BEAST bearing** sub-model is a simplified model with
+only three balls to speed up the simulation. **Shaft1** is connected with a
+spherical joint to the world coordinate system. The end of **Shaft1** is
+connected via a TLM interface to the outer ring of the BEAST bearing model. The
+inner ring of the bearing model is connected via another TLM interface to
+**Shaft2**. Together they build the double pendulum with two **shafts**, one
+spherical OpenModelica joint, and one BEAST bearing.
+
 To create a new composite model select **File > New Composite Model** from the menu.
 
 Your new composite model will appear in the in the **Libraries Browser** once created.
@@ -147,11 +147,6 @@ includes the composite model XML elements and the default simulation parameters.
   :name: tlm-new-compositemodel-textview
 
   New composite model text view.
-
-Saving the Composite Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 
 Adding Submodels
 ^^^^^^^^^^^^^^^^
