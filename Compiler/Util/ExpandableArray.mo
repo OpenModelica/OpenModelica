@@ -46,6 +46,7 @@ end EXPANDABLE_ARRAY;
 protected
 import Array;
 import MetaModelica.Dangerous;
+import Util;
 
 public
 impure function new "O(n)
@@ -90,6 +91,18 @@ algorithm
   outExarray.data := arrayCreate(1, arrayCopy(Dangerous.arrayGetNoBoundsChecking(inExarray.data, 1)));
 end copy;
 
+function occupied "O(1)
+  Returns if the element at the given index is occupied or not."
+  input Integer index;
+  input ExpandableArray<T> exarray;
+  output Boolean b;
+protected
+  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
+  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+algorithm
+  b := index >= 1 and index <= lastUsedIndex and isSome(Dangerous.arrayGetNoBoundsChecking(data, index));
+end occupied;
+
 function get "O(1)
   Returns the value of the element at the given index.
   Fails if there is nothing assigned to the given index."
@@ -97,10 +110,9 @@ function get "O(1)
   input ExpandableArray<T> exarray;
   output T value;
 protected
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
 algorithm
-  if index >= 1 and index <= lastUsedIndex and isSome(Dangerous.arrayGetNoBoundsChecking(data, index)) then
+  if occupied(index, exarray) then
     SOME(value) := Dangerous.arrayGetNoBoundsChecking(data, index);
   else
     fail();
@@ -184,6 +196,23 @@ algorithm
   end if;
 end update;
 
+function toList
+  input ExpandableArray<T> exarray;
+  output list<T> listT;
+protected
+  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
+  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+algorithm
+  if numberOfElements == 0 then
+    listT := {};
+  elseif capacity == 1 then
+    listT := {Util.getOption(data[1])};
+  else
+    listT := list(Util.getOption(data[i]) for i guard isSome(data[i]) in 1:capacity);
+  end if;
+end toList;
+
 function compress "O(n)
   Reorders the elements in order to remove all the gaps.
   Be careful: This changes the indices of the elements."
@@ -193,12 +222,18 @@ protected
   Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
 algorithm
-  for i in 1:numberOfElements loop
+  if numberOfElements == 0 then
+    return;
+  end if;
+
+  for i in 1:numberOfElements/2+1 loop
     if isNone(Dangerous.arrayGetNoBoundsChecking(data, i)) then
+      Dangerous.arrayUpdateNoBoundsChecking(data, i, Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex));
+      Dangerous.arrayUpdateNoBoundsChecking(data, lastUsedIndex, NONE());
+      lastUsedIndex := lastUsedIndex-1;
       while isNone(Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
         lastUsedIndex := lastUsedIndex-1;
       end while;
-      Dangerous.arrayUpdateNoBoundsChecking(data, i, Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex));
     end if;
   end for;
 
@@ -262,6 +297,16 @@ function getNumberOfElements
   input ExpandableArray<T> exarray;
   output Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
 end getNumberOfElements;
+
+function getCapacity
+  input ExpandableArray<T> exarray;
+  output Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+end getCapacity;
+
+function getData
+  input ExpandableArray<T> exarray;
+  output array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+end getData;
 
 annotation(__OpenModelica_Interface="util");
 end ExpandableArray;

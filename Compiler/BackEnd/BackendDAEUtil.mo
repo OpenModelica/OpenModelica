@@ -84,6 +84,7 @@ import ErrorExt;
 import EvaluateFunctions;
 import EvaluateParameter;
 import ExecStat.execStat;
+import ExpandableArray;
 import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
@@ -153,11 +154,13 @@ algorithm
       Integer nVars, nEqns;
       Boolean samesize;
       BackendDAE.Variables vars;
+      BackendDAE.EquationArray orderedEqs;
 
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(size=nEqns))::{})) equation
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs)::{})) equation
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
       nVars = BackendVariable.varsSize(vars);
+      nEqns = BackendEquation.equationArraySize(orderedEqs);
       samesize = nVars == nEqns;
       if Flags.isSet(Flags.CHECK_BACKEND_DAE) then
         print("No. of Equations: " + intString(nVars) + " No. of BackendDAE.Variables: " + intString(nEqns) + " Samesize: " + boolString(samesize) + "\n");
@@ -962,7 +965,7 @@ public function systemSize
   "Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
   which not corresponds to the number of equations in a system."
   input BackendDAE.EqSystem inEqSystem;
-  output Integer outSize = equationSize(inEqSystem.orderedEqs);
+  output Integer outSize = BackendEquation.equationArraySize(inEqSystem.orderedEqs);
 end systemSize;
 
 public function maxSizeOfEqSystems
@@ -991,13 +994,6 @@ algorithm
   num := listLength(comps);
 end numOfComps;
 
-public function equationSize "author: PA
-  Returns the size of the equations in an BackendDAE.EquationArray, which not
-  corresponds to the number of equations in a system."
-  input BackendDAE.EquationArray inEquationArray;
-  output Integer outInteger = inEquationArray.size;
-end equationSize;
-
 public function equationArraySizeBDAE
 "author: Frenkel TUD
   Returns the size of the dae system, which correspondents to the number of variables."
@@ -1011,16 +1007,8 @@ public function equationArraySizeDAE
 "author: Frenkel TUD
   Returns the number of equations in a system."
   input BackendDAE.EqSystem inEqSystem;
-  output Integer n = equationArraySize(inEqSystem.orderedEqs);
+  output Integer n = BackendEquation.getNumberOfEquations(inEqSystem.orderedEqs);
 end equationArraySizeDAE;
-
-public function equationArraySize "author: PA
-  Returns the number of equations in an BackendDAE.EquationArray, which not
-  corresponds to the number of equations in a system but not
-  to the size of the system"
-  input BackendDAE.EquationArray inEquationArray;
-  output Integer outInteger = inEquationArray.numberOfElement;
-end equationArraySize;
 
 public function hasDAEMatching
   "Returns  true if all system have already a matching, otherwise return false."
@@ -2106,6 +2094,7 @@ protected
 algorithm
   try
     BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns) := syst;
+    ExpandableArray.compress(eqns);
     (outIncidenceMatrix, outIncidenceMatrixT, outMapEqnIncRow, outMapIncRowEqn) :=
       incidenceMatrixDispatchScalar(vars, eqns, inIndexType, functionTree);
   else
@@ -2151,7 +2140,7 @@ protected
   list<Integer> row;
   AvlSetInt.Tree rowTree;
 algorithm
-  num_eqs := equationArraySize(inEqns);
+  num_eqs := BackendEquation.getNumberOfEquations(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
   outIncidenceArray := arrayCreate(num_eqs, {});
   outIncidenceArrayT := arrayCreate(num_vars, {});
@@ -2182,7 +2171,7 @@ protected
   list<Integer> row;
   AvlSetInt.Tree rowTree;
 algorithm
-  num_eqs := equationArraySize(inEqns);
+  num_eqs := BackendEquation.getNumberOfEquations(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
   outIncidenceArray := arrayCreate(num_eqs, {});
   outIncidenceArrayT := arrayCreate(num_vars, {});
@@ -2219,7 +2208,7 @@ protected
   list<Integer> row, row_indices, imap = {};
   list<BackendDAE.IncidenceMatrixElement> iarr = {};
 algorithm
-  num_eqs := equationArraySize(inEqns);
+  num_eqs := BackendEquation.getNumberOfEquations(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
   outIncidenceArrayT := arrayCreate(num_vars, {});
   omapEqnIncRow := arrayCreate(num_eqs, {});
@@ -3247,10 +3236,10 @@ algorithm
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
-        newsize = equationArraySize(daeeqns);
+        newsize = BackendEquation.getNumberOfEquations(daeeqns);
         mapEqnIncRow = Array.expand(newsize-oldsize, iMapEqnIncRow, {});
         oldsize1 = arrayLength(iMapIncRowEqn);
-        newsize1 = equationSize(daeeqns);
+        newsize1 = BackendEquation.equationArraySize(daeeqns);
         deltasize = newsize1-oldsize1;
         mapIncRowEqn = Array.expand(deltasize, iMapIncRowEqn, 0);
         // extend the incidenceMatrix
@@ -3809,7 +3798,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(globalKnownVars=globalKnownVars))
       equation
         // get the size
-        numberOfEqs = equationArraySize(eqns);
+        numberOfEqs = BackendEquation.getNumberOfEquations(eqns);
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the Adjacency matrix
          arrT = arrayCreate(numberofVars, {});
@@ -3951,10 +3940,10 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(globalKnownVars=globalKnownVars))
       equation
         // get the size
-        numberOfEqs = equationArraySize(eqns);
+        numberOfEqs = BackendEquation.getNumberOfEquations(eqns);
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the Adjacency matrix
-        arr = arrayCreate(equationSize(eqns), {});
+        arr = arrayCreate(BackendEquation.equationArraySize(eqns), {});
         arrT = arrayCreate(numberofVars, {});
         // create the array to mark if a variable is allready found in the equation
         rowmark = arrayCreate(numberofVars, 0);
@@ -6274,7 +6263,6 @@ algorithm
 end traverseBackendDAEExpsVarsWithUpdate;
 
 public function traverseArrayNoCopy<ArrT, ElemT, ArgT>
-  "Help function to traverseBackendDAEExps."
   input array<ArrT> inArray;
   input ElemFuncType inElemFunc;
   input ArrayFuncType inArrayFunc;
@@ -6608,103 +6596,104 @@ algorithm
  end match;
 end traverseBackendDAEAttrDistribution;
 
-public function traverseBackendDAEExpsEqns "author: Frenkel TUD
-  Helper for traverseBackendDAEExpsEqns"
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.EquationArray inEquationArray;
+public function traverseBackendDAEExpsEqns<T> "author: lochel"
+  input BackendDAE.EquationArray equationArray;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input output T extraArg;
+
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
+    input output DAE.Exp exp;
+    input output T extraArg;
   end FuncExpType;
+protected
+  String name;
+  BackendDAE.Equation eqn, eqn_new;
 algorithm
-  outTypeA :=
-  matchcontinue (inEquationArray,func,inTypeA)
-    local
-      array<Option<BackendDAE.Equation>> equOptArr;
-      String name;
-
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      then traverseArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,inTypeA);
-
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      (_, _, name) = System.dladdr(func);
+  try
+    for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+      if ExpandableArray.occupied(i, equationArray) then
+        eqn := ExpandableArray.get(i, equationArray);
+        (eqn_new, extraArg) := BackendEquation.traverseExpsOfEquation(eqn, func, extraArg);
+        if not referenceEq(eqn, eqn_new) then
+          ExpandableArray.update(i, eqn_new, equationArray);
+        end if;
+      end if;
+    end for;
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      (_, _, name) := System.dladdr(func);
       Debug.trace("- BackendDAE.traverseBackendDAEExpsEqns failed for " + name + "\n");
-    then fail();
-  end matchcontinue;
+    end if;
+    fail();
+  end try;
 end traverseBackendDAEExpsEqns;
 
-public function traverseBackendDAEExpsEqnsWithStop "author: Frenkel TUD
-  Helper for traverseBackendDAEExpsEqns"
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.EquationArray inEquationArray;
+public function traverseBackendDAEExpsEqnsWithStop<T> "author: lochel"
+  input BackendDAE.EquationArray equationArray;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input output T extraArg;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
+protected
+  String name;
+  BackendDAE.Equation e, new_e;
+  Boolean continue_;
 algorithm
-  outTypeA :=
-  matchcontinue (inEquationArray,func,inTypeA)
-    local
-      array<Option<BackendDAE.Equation>> equOptArr;
-      String name;
-
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-    then traverseArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,inTypeA);
-
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      (_, _, name) = System.dladdr(func);
-      Debug.trace("- BackendDAE.traverseBackendDAEExpsEqnsWithStop failed for " + name + "\n");
-    then fail();
-  end matchcontinue;
+  try
+    for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+      if ExpandableArray.occupied(i, equationArray) then
+        e := ExpandableArray.get(i, equationArray);
+        (continue_, extraArg) := BackendEquation.traverseExpsOfEquation_WithStop(e, func, extraArg);
+        if not continue_ then
+          break;
+        end if;
+      end if;
+    end for;
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      (_, _, name) := System.dladdr(func);
+      Error.addInternalError("BackendDAEUtil.traverseBackendDAEExpsEqnsWithStop failed for " + name, sourceInfo());
+    end if;
+    fail();
+  end try;
 end traverseBackendDAEExpsEqnsWithStop;
 
-public function traverseBackendDAEExpsEqnsWithUpdate "author: Frenkel TUD
-
-  Helper for traverseBackendDAEExpsEqns
-"
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.EquationArray inEquationArray;
+public function traverseBackendDAEExpsEqnsWithUpdate<T> "author: lochel"
+  input BackendDAE.EquationArray equationArray;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input output T extraArg;
+
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
+    input output DAE.Exp exp;
+    input output T extraArg;
   end FuncExpType;
+protected
+  String name;
+  BackendDAE.Equation e, new_e;
 algorithm
-  outTypeA :=
-  matchcontinue (inEquationArray,func,inTypeA)
-    local
-      array<Option<BackendDAE.Equation>> equOptArr;
-      String name;
-
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_) equation
-      (_,outTypeA) = traverseArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
-    then outTypeA;
-
-    else
-    equation
-      if Flags.isSet(Flags.FAILTRACE) then
-        (_, _, name) = System.dladdr(func);
-        Error.addInternalError("traverseBackendDAEExpsEqnsWithUpdate failed for " + name, sourceInfo());
+  try
+    for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+      if ExpandableArray.occupied(i, equationArray) then
+        e := ExpandableArray.get(i, equationArray);
+        (new_e, extraArg) := BackendEquation.traverseExpsOfEquation(e, func, extraArg);
+        if not referenceEq(e, new_e) then
+          ExpandableArray.update(i, new_e, equationArray);
+        end if;
       end if;
-    then fail();
-  end matchcontinue;
+    end for;
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      (_, _, name) := System.dladdr(func);
+      Error.addInternalError("BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate failed for " + name, sourceInfo());
+    end if;
+    fail();
+  end try;
 end traverseBackendDAEExpsEqnsWithUpdate;
 
 public function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
@@ -6723,36 +6712,6 @@ public function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
 algorithm
   (_,outTypeA) := traverseBackendDAEExpsOptEqnWithUpdate(inEquation,func,inTypeA);
 end traverseBackendDAEExpsOptEqn;
-
-protected function traverseBackendDAEExpsOptEqnWithStop "author: Frenkel TUD 2010-11
-  Helper for traverseBackendDAEExpsOptEqnWithStop."
-  replaceable type Type_a subtypeof Any;
-  input Option<BackendDAE.Equation> inEquation;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output Boolean outBoolean;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Boolean cont;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  (outBoolean,outTypeA) := match (inEquation,func,inTypeA)
-    local
-      BackendDAE.Equation eqn;
-      Type_a ext_arg_1;
-      Boolean b;
-    case (SOME(eqn),_,_)
-      equation
-        (b,ext_arg_1) = BackendEquation.traverseExpsOfEquation_WithStop(eqn,func,inTypeA);
-      then
-        (b,ext_arg_1);
-    else (true,inTypeA);
-  end match;
-end traverseBackendDAEExpsOptEqnWithStop;
 
 protected function traverseBackendDAEExpsOptEqnWithUpdate "author: Frenkel TUD 2010-11
   Helper for traverseExpsOfEquation."
@@ -8121,7 +8080,7 @@ public function nonEmptySystem
   input BackendDAE.EqSystem syst;
   output Boolean nonEmpty;
 algorithm
-  nonEmpty := BackendVariable.varsSize(syst.orderedVars) <> 0 or BackendDAEUtil.equationArraySize(syst.removedEqs) <> 0;
+  nonEmpty := BackendVariable.varsSize(syst.orderedVars) <> 0 or BackendEquation.getNumberOfEquations(syst.removedEqs) <> 0;
 end nonEmptySystem;
 
 protected function filterEmptySystems
@@ -8152,7 +8111,7 @@ protected function filterEmptySystem
   input output BackendDAE.EqSystems systs;
 algorithm
   if BackendVariable.varsSize(inSyst.orderedVars) <> 0 or
-     (isClockedSyst(inSyst) and BackendDAEUtil.equationArraySize(inSyst.removedEqs) <> 0) then
+     (isClockedSyst(inSyst) and BackendEquation.getNumberOfEquations(inSyst.removedEqs) <> 0) then
     systs := inSyst::systs;
   else
      reqs := listAppend(BackendEquation.equationList(inSyst.removedEqs), reqs);

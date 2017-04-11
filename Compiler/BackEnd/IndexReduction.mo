@@ -616,9 +616,9 @@ algorithm
     // all equations are differentiated
     syst := inSystem;
     BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, m=SOME(m), mT=SOME(mt)) := syst;
-    numEqs := BackendDAEUtil.equationArraySize(eqns);
+    numEqs := BackendEquation.getNumberOfEquations(eqns);
     (v1,eqns_1,changedVars,outOrgEqnsLst) := replaceDifferentiatedEqns(inEqnsTpl,v,eqns,mt,imapIncRowEqn,{},inOrgEqnsLst);
-    numEqs1 := BackendDAEUtil.equationArraySize(eqns_1);
+    numEqs1 := BackendEquation.getNumberOfEquations(eqns_1);
     eqnslst := if intGt(numEqs1,numEqs) then List.intRange2(numEqs+1,numEqs1) else {};
     // set the assignments for the changed vars and for the assigned equations to -1
     assEqs := List.map1r(changedVars,arrayGet,inAss1);
@@ -1226,7 +1226,7 @@ algorithm
   if Flags.isSet(Flags.BLT_DUMP) then
     BackendDump.dumpStateOrder(so);
   end if;
-  outArg := (so,arrayCreate(BackendDAEUtil.equationArraySize(eqns),{}),mapEqnIncRow,mapIncRowEqn,BackendDAEUtil.equationArraySize(eqns));
+  outArg := (so,arrayCreate(BackendEquation.getNumberOfEquations(eqns),{}),mapEqnIncRow,mapIncRowEqn,BackendEquation.getNumberOfEquations(eqns));
 end getStructurallySingularSystemHandlerArg;
 
 // =============================================================================
@@ -2028,8 +2028,8 @@ algorithm
         end if;
         // generate incidence matrix from system and equations of that level and the states of that level
         nv = BackendVariable.varsSize(vars);
-        ne = BackendDAEUtil.equationSize(eqns);
-        neqnarr = BackendDAEUtil.equationArraySize(eqns);
+        ne = BackendEquation.equationArraySize(eqns);
+        neqnarr = BackendEquation.getNumberOfEquations(eqns);
         ne1 = ne + neqns;
         indexmap = arrayCreate(nfreeStates  + nv,-1);
         invindexmap = arrayCreate(nfreeStates,-1);
@@ -2082,7 +2082,7 @@ algorithm
         // get indicenceMatrix from Enhanced
         m = incidenceMatrixfromEnhanced2(me,vars);
         nv = BackendVariable.varsSize(vars);
-        ne = BackendDAEUtil.equationSize(eqns);
+        ne = BackendEquation.equationArraySize(eqns);
         mT = BackendDAEUtil.transposeMatrix(m,nv);
         // match the variables not the equations, to have prevered states unmatched
         Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
@@ -2542,7 +2542,7 @@ algorithm
         nassigned := nassigned+1;
         range := List.intRange2(nassigned,nunassigned);
         nv := BackendVariable.varsSize(vars);
-        ne := BackendDAEUtil.equationSize(eqns);
+        ne := BackendEquation.equationArraySize(eqns);
         (varlst,oStateSets) := selectDummyDerivatives2new(dstates1,states1,range,assigend1,vars,nv,eqns,ne,mapIncRowEqn1,level,oStateSets);
         dummyStates := List.map(varlst,BackendVariable.varCref);
         outDummyStates := listAppend(outDummyStates,dummyStates);
@@ -3862,7 +3862,7 @@ algorithm
   m := incidenceMatrixfromEnhanced2(me, vars);
   // match the equations, umatched are constrained equations
   nv := BackendVariable.varsSize(vars);
-  ne := BackendDAEUtil.equationSize(eqns);
+  ne := BackendEquation.equationArraySize(eqns);
   vec1 := arrayCreate(nv,-1);
   vec2 := arrayCreate(ne,-1);
   Matching.matchingExternalsetIncidenceMatrix(nv,ne,m);

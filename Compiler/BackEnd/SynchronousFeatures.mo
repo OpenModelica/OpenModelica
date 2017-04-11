@@ -229,7 +229,7 @@ algorithm
             solverMethod := "ImplicitEuler";
           end if;
           // replace der(x) with $DER.x and collect derVars x
-          for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+          for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
             eq := BackendEquation.equationNth1(eqs, i);
             (eq, derVars) := BackendEquation.traverseExpsOfEquation(eq, getDerVars1, derVars);
             lstEqs := eq :: lstEqs;
@@ -264,7 +264,7 @@ algorithm
           syst.orderedEqs := BackendEquation.listEquation(listReverse(lstEqs));
           if solverMethod == "SemiImplicitEuler" then
             // access previous values of clocked continuous states
-            for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+            for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
               eq := BackendEquation.equationNth1(eqs, i);
               (eq, _) := BackendEquation.traverseExpsOfEquation(eq, shiftDerVars1, derVars);
               eqs := BackendEquation.setAtIndex(eqs, i, eq);
@@ -427,11 +427,11 @@ algorithm
       arrayUpdate(isDerVarArr, idx, true);
     end for;
   end for;
-  for i in 1:BackendDAEUtil.equationArraySize(inSyst.orderedEqs) loop
+  for i in 1:BackendEquation.getNumberOfEquations(inSyst.orderedEqs) loop
     eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
     (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
   end for;
-  for i in 1:BackendDAEUtil.equationArraySize(inSyst.removedEqs) loop
+  for i in 1:BackendEquation.getNumberOfEquations(inSyst.removedEqs) loop
     eq := BackendEquation.equationNth1(inSyst.removedEqs, i);
     (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
   end for;
@@ -565,7 +565,7 @@ algorithm
       case syst as BackendDAE.EQSYSTEM(orderedEqs = eqs)
         algorithm
           lstEqs := {};
-          for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+          for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
             eq := BackendEquation.equationNth1(eqs, i);
             (eq, outHoldComps) := BackendEquation.traverseExpsOfEquation(eq, removeHoldExp1, outHoldComps);
             lstEqs := eq::lstEqs;
@@ -1530,7 +1530,7 @@ protected
   Integer partitionIdx;
   SourceInfo source;
 algorithm
-  for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+  for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
     eq := BackendEquation.equationNth1(eqs, i);
     partitionIdx := arrayGet(partitions, i);
     DAE.SOURCE(info = source) := BackendEquation.equationSource(eq);
@@ -1582,8 +1582,8 @@ protected
   BackendDAE.Equation eq;
   Integer i;
 algorithm
-  outClockEqsMask := arrayCreate(BackendDAEUtil.equationArraySize(inEqs), true);
-  for i in 1:BackendDAEUtil.equationArraySize(inEqs) loop
+  outClockEqsMask := arrayCreate(BackendEquation.getNumberOfEquations(inEqs), true);
+  for i in 1:BackendEquation.getNumberOfEquations(inEqs) loop
     eq := BackendEquation.equationNth1(inEqs, i);
     if isClockEquation(eq) then
       clockEqs := eq::clockEqs;
@@ -1927,7 +1927,7 @@ algorithm
   end if;
 
   //Partitioning finished
-  clockedEqs := arrayCreate(BackendDAEUtil.equationArraySize(eqs), NONE());
+  clockedEqs := arrayCreate(BackendEquation.getNumberOfEquations(eqs), NONE());
   clockedVars := arrayCreate(BackendVariable.varsSize(vars), NONE());
   clockedPartitions := arrayCreate(if partitionCnt > 0 then partitionCnt else 1, NONE());
   //Detect clocked equations and variables
@@ -2343,7 +2343,7 @@ algorithm
   ea := arrayCreate(n, {});
   rea := arrayCreate(n, {});
   va := arrayCreate(n, {});
-  i1 := BackendDAEUtil.equationSize(inSyst.orderedEqs);
+  i1 := BackendEquation.equationArraySize(inSyst.orderedEqs);
   i2 := BackendVariable.varsSize(inSyst.orderedVars);
 
   if i1 <> i2 and not throwNoError then
@@ -2414,7 +2414,7 @@ algorithm
   vars := BackendVariable.listVar1(vl);
   arr := BackendEquation.listEquation(el);
   remArr := BackendEquation.listEquation(rel);
-  i1 := BackendDAEUtil.equationSize(arr);
+  i1 := BackendEquation.equationArraySize(arr);
   i2 := BackendVariable.varsSize(vars);
 
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
@@ -2443,7 +2443,7 @@ protected
   list<BackendDAE.Equation> lst;
   BackendDAE.Equation eq;
 algorithm
-  for i in BackendDAEUtil.equationArraySize(arr):-1:1 loop
+  for i in BackendEquation.getNumberOfEquations(arr):-1:1 loop
     ix := ixs[i];
     eq := BackendEquation.equationNth1(arr, i);
     if ix == 0 then

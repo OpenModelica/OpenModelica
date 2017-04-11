@@ -413,7 +413,7 @@ algorithm
   tags := addHeadingTag(2, varlen_str, {});
   tags := printVarList(vars, prefixId, tags);
   eqnsl := BackendEquation.equationList(eqns);
-  eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + ", " + intString(BackendDAEUtil.equationSize(eqns)) + ")";
+  eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + ", " + intString(BackendEquation.equationArraySize(eqns)) + ")";
   tags := addHeadingTag(2, eqnlen_str, tags);
   tags := dumpEqns(eqnsl, prefixId, tags);
   //dumpOption(m, dumpIncidenceMatrix);

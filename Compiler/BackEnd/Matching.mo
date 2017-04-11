@@ -424,7 +424,7 @@ algorithm
          u1=u2 is kept. This is not the case for the original pantilides algorithm, where
          the original equation is removed from the system.";
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        nf_1 = BackendDAEUtil.equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
+        nf_1 = BackendEquation.equationArraySize(eqns) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
                                    could continue the matching as usual. This was tested (2004-11-22) and it does not
                                    work to continue without restarting.

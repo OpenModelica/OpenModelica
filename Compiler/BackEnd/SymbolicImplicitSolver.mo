@@ -172,11 +172,9 @@ protected function symSolverUpdateSyst
   output BackendDAE.Variables oKnVars = inKnVars;
 protected
   array<Option<BackendDAE.Equation>> equOptArr;
-  Option<BackendDAE.Equation> oeqn;
   BackendDAE.Equation eqn;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  Integer n;
   list<DAE.ComponentRef> crlst;
 algorithm
   oSyst := match iSyst
@@ -184,17 +182,14 @@ algorithm
       BackendDAE.EqSystem syst;
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
       algorithm
-        BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := eqns;
-        n := arrayLength(equOptArr);
         crlst := {};
         // for every equation in the input equation system
-        for i in 1:n loop
-          oeqn := arrayGet(equOptArr, i);
-          if isSome(oeqn) then
-            SOME(eqn) := oeqn;
+        for i in 1:ExpandableArray.getLastUsedIndex(eqns) loop
+          if ExpandableArray.occupied(i, eqns) then
+            eqn := ExpandableArray.get(i, eqns);
             // traverse all expression of the equation and replace der(x)
             (eqn, (crlst, _)) := BackendEquation.traverseExpsOfEquation(eqn, symSolverUpdateEqn, (crlst, syst.orderedVars));
-            arrayUpdate(equOptArr, i, SOME(eqn));
+            ExpandableArray.update(i, eqn, eqns);
           end if;
         end for;
         // change state variables to algebraic variables since der(x) is replaced by the difference quotient

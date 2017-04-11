@@ -48,6 +48,7 @@ protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEDump;
 protected import Error;
+protected import ExpandableArray;
 protected import Expression;
 protected import Flags;
 protected import HpcOmBenchmark;
@@ -140,7 +141,7 @@ public function createTaskGraph0 "author: marcusw, waurich
 protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables vars;
-  Integer numberOfEqs;
+  BackendDAE.EquationArray orderedEqs;
   DAE.FunctionTree sharedFuncs;
   TaskGraphMeta iGraphData;
   TaskGraphMeta tmpGraphData;
@@ -156,7 +157,7 @@ protected
   array<String> compNames;
   array<String> compDescs;
   list<Integer> eventEqLst, eventVarLst, rootVars;
-  Integer numberOfVars, numberOfEqs;
+  Integer numberOfVars;
   array<ComponentInfo> compInformations;
 
   Integer eqSysIdx;
@@ -166,14 +167,14 @@ protected
   BackendDAE.Matching matching;
   BackendDAE.IncidenceMatrix incidenceMatrix;
 algorithm
-  BackendDAE.EQSYSTEM(matching=matching, orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)) := iSyst;
+  BackendDAE.EQSYSTEM(matching=matching, orderedVars=vars, orderedEqs=orderedEqs) := iSyst;
   comps := BackendDAEUtil.getCompsOfMatching(matching);
   BackendDAE.SHARED(functionTree=sharedFuncs) := iShared;
   (iGraph,iGraphData,eqSysIdx) := iGraphInfo;
 
   (_,incidenceMatrix,_) := BackendDAEUtil.getIncidenceMatrix(iSyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
   numberOfVars := BackendVariable.varsSize(vars);
-  (tmpGraph,tmpGraphData) := getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
+  (tmpGraph,tmpGraphData) := getEmptyTaskGraph(listLength(comps), numberOfVars, ExpandableArray.getNumberOfElements(orderedEqs));
   TASKGRAPHMETA(inComps=inComps, compNames=compNames, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compInformations=compInformations) := tmpGraphData;
   //print("createTaskGraph0 try to get varCompMapping\n");
   (varCompMapping,eqCompMapping) := getVarEqCompMapping(comps, eqSysIdx, 0, 0, varCompMapping, eqCompMapping);
@@ -798,16 +799,16 @@ protected function getEventNodeEqs "author: Waurich TUD 2013-06
 protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Matching matching;
+  BackendDAE.EquationArray orderedEqs;
   list<Integer> eventEqs;
   list<Integer> eventEqsIn;
-  Integer numOfEqs;
   Integer offset;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),matching=matching) := systIn;
+  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs,matching=matching) := systIn;
   comps := BackendDAEUtil.getCompsOfMatching(matching);
   (eventEqsIn,offset) := eventInfoIn;
   eventEqs := getEventNodeEqs1(comps,offset,{});
-  offset := offset+numOfEqs;
+  offset := offset+ExpandableArray.getNumberOfElements(orderedEqs);
   eventEqs := listAppend(eventEqs,eventEqsIn);
   eventInfoOut := (eventEqs,offset);
 end getEventNodeEqs;
@@ -2550,16 +2551,17 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables orderedVars;
   BackendDAE.Matching matching;
+  BackendDAE.EquationArray orderedEqs;
   list<Integer> eventEqs;
   list<Integer> eventEqsIn;
   Integer numOfEqs;
   Integer offset;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement=numOfEqs),orderedVars=orderedVars,matching=matching) := systIn;
+  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs,orderedVars=orderedVars,matching=matching) := systIn;
   comps := BackendDAEUtil.getCompsOfMatching(matching);
   (eventEqsIn,offset) := eventInfoIn;
   eventEqs := getDiscreteNodesEqs1(comps,offset,orderedVars,{});
-  offset := offset+numOfEqs;
+  offset := offset+ExpandableArray.getNumberOfElements(orderedEqs);
   eventEqs := listAppend(eventEqs,eventEqsIn);
   eventInfoOut := (eventEqs,offset);
 end getDiscreteNodesEqs;

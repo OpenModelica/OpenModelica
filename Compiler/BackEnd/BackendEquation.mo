@@ -54,6 +54,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
+protected import ExpandableArray;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -69,76 +70,36 @@ public function listEquation "author: PA
   input list<BackendDAE.Equation> inEquationList;
   output BackendDAE.EquationArray outEquationArray;
 protected
-  Integer len, size, arrsize;
+  Integer len, size, pos=1;
   Real rlen;
-  array<Option<BackendDAE.Equation>> optarr;
 algorithm
   len := listLength(inEquationList);
   rlen := intReal(len) * 1.4;
-  arrsize := realInt(rlen);
-  optarr := arrayCreate(arrsize, NONE());
-  (size, optarr) := listEquation1(inEquationList, optarr);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, len, optarr);
-end listEquation;
+  size := realInt(rlen);
 
-protected function listEquation1
-  input list<BackendDAE.Equation> inEquationList;
-  input array<Option<BackendDAE.Equation>> inEquOptArr;
-  output Integer outSize = 0;
-  output array<Option<BackendDAE.Equation>> outEquOptArr = inEquOptArr;
-protected
-  Integer pos = 1;
-algorithm
+  outEquationArray := ExpandableArray.new(size, BackendDAE.DUMMY_EQUATION());
   for eq in inEquationList loop
-    outSize := outSize + equationSize(eq);
-    outEquOptArr := arrayUpdate(outEquOptArr, pos, SOME(eq));
+    ExpandableArray.add(eq, outEquationArray);
     pos := pos + 1;
   end for;
-end listEquation1;
+end listEquation;
 
-public function emptyEqns "
+public function emptyEqns "author: lochel
   Returns an empty expandable equation array."
-  output BackendDAE.EquationArray eqns;
-algorithm
-  eqns := listEquation({});
+  output BackendDAE.EquationArray equationArray = emptyEqnsSized(0);
 end emptyEqns;
 
-public function emptyEqnsSized "
+public function emptyEqnsSized "author: lochel
   Returns an empty expandable equation array with a given size."
   input Integer size;
-  output BackendDAE.EquationArray outEquationArray;
-protected
-  array<Option<BackendDAE.Equation>> equOptArr;
-algorithm
-  equOptArr := arrayCreate(size, NONE());
-  outEquationArray := BackendDAE.EQUATION_ARRAY(0, 0, equOptArr);
+  output BackendDAE.EquationArray outEquationArray = ExpandableArray.new(size, BackendDAE.DUMMY_EQUATION());
 end emptyEqnsSized;
 
-public function equationList "author: PA
+public function equationList "author: lochel
   Transform the expandable BackendDAE.Equation array to a list of Equations."
-  input BackendDAE.EquationArray inEquationArray;
-  output list<BackendDAE.Equation> outEquationLst;
-protected
-  array<Option<BackendDAE.Equation>> arr;
-  Integer n;
-algorithm
-  BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr) := inEquationArray;
-
-  outEquationLst  := if n == 0 then {}
-                     elseif n == 1 and isSome((arr[1])) then {Util.getOption(arr[1])}
-                     else equationList2(arr, n);
+  input BackendDAE.EquationArray equationArray;
+  output list<BackendDAE.Equation> outEquationLst = ExpandableArray.toList(equationArray);
 end equationList;
-
-protected function equationList2 "author: PA
-  Helper function toequationList
-  inputs:  (Equation option array, int /* pos */, int /* lastpos */)
-  outputs: BackendDAE.Equation list"
-  input array<Option<BackendDAE.Equation>> arr;
-  input Integer pos;
-  output list<BackendDAE.Equation> outEquationLst;
-algorithm
-  outEquationLst := list(Util.getOption(arr[i]) for i guard isSome(arr[i]) in 1:pos);
-end equationList2;
 
 public function getWhenEquationExpr "Get the left and right hand parts from an equation appearing in a when clause"
   input BackendDAE.WhenEquation inWhenEquation;
@@ -174,11 +135,10 @@ algorithm
   end match;
 end setWhenElsePart;
 
-public function copyEquationArray "Performs a deep copy of an expandable equation array."
+public function copyEquationArray
+  "Performs a deep copy of an expandable equation array."
   input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray = inEquationArray;
-algorithm
-  outEquationArray.equOptArr := arrayCopy(inEquationArray.equOptArr);
+  output BackendDAE.EquationArray outEquationArray = ExpandableArray.copy(inEquationArray, BackendDAE.DUMMY_EQUATION());
 end copyEquationArray;
 
 public function equationsLstVars
@@ -1125,52 +1085,53 @@ protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD
 
 end traverseExpsOfExpList_WithStop;
 
-public function traverseEquationArray<T> "author: Frenkel TUD
+public function traverseEquationArray<T> "author: lochel
   Traverses all equations of a BackendDAE.EquationArray."
-  input BackendDAE.EquationArray inEquationArray;
-  input FuncExpType func;
-  input T inTypeA;
-  output T outTypeA;
+  input BackendDAE.EquationArray equationArray;
+  input Func inFunc;
+  input output T extraArg;
 
-  partial function FuncExpType
-    input output BackendDAE.Equation inoutEq;
-    input output T inoutA;
-  end FuncExpType;
+  partial function Func
+    input output BackendDAE.Equation eq;
+    input output T extraArg;
+  end Func;
+protected
+  BackendDAE.Equation eqn;
 algorithm
-  //try
-    outTypeA := BackendDAEUtil.traverseArrayNoCopy(inEquationArray.equOptArr, func, traverseOptEquation, inTypeA);
-  //else
-  //  if Flags.isSet(Flags.FAILTRACE) then
-  //    Debug.trace("- BackendEquation.traverseEquationArray failed\n");
-  //  end if;
-  //  fail();
-  //end try;
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      eqn := ExpandableArray.get(i, equationArray);
+      (_, extraArg) := inFunc(eqn, extraArg);
+    end if;
+  end for;
 end traverseEquationArray;
 
-public function traverseEquationArray_WithStop "author: Frenkel TUD
+public function traverseEquationArray_WithStop<T> "author: lochel
   Traverses all equations of a BackendDAE.EquationArray."
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.EquationArray inEquationArray;
+  input BackendDAE.EquationArray equationArray;
   input FuncWithStop inFuncWithStop;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input output T extraArg;
 
   partial function FuncWithStop
-    input BackendDAE.Equation inEq;
-    input Type_a inA;
-    output BackendDAE.Equation outEq;
+    input output BackendDAE.Equation eq;
+    input T inExtraArg;
     output Boolean cont;
-    output Type_a outA;
+    output T outExtraArg;
   end FuncWithStop;
+protected
+  Boolean continue_ = true;
+  BackendDAE.Equation eqn;
 algorithm
-  //try
-    outTypeA := BackendDAEUtil.traverseArrayNoCopyWithStop(inEquationArray.equOptArr, inFuncWithStop, traverseOptEquation_WithStop, inTypeA);
-  //else
-  //  if Flags.isSet(Flags.FAILTRACE) then
-  //    Debug.trace("- BackendEquation.traverseEquationArray_WithStop failed\n");
-  //  end if;
-  //  fail();
-  //end try;
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      eqn := ExpandableArray.get(i, equationArray);
+      (_, continue_, extraArg) := inFuncWithStop(eqn, extraArg);
+
+      if not continue_ then
+        break;
+      end if;
+    end if;
+  end for;
 end traverseEquationArray_WithStop;
 
 protected function traverseOptEquation<T>
@@ -1220,64 +1181,32 @@ algorithm
   end if;
 end traverseOptEquation_WithStop;
 
-public function calculateOptArrEqnSizeProperly "author: lochel"
-  input array<Option<BackendDAE.Equation>> inEquOptArr;
-  output Integer outSize = 0;
-protected
-  BackendDAE.Equation eq;
-algorithm
-  for optEq in inEquOptArr loop
-    if isSome(optEq) then
-      SOME(eq) := optEq;
-      outSize := outSize + BackendEquation.equationSize(eq);
-    end if;
-  end for;
-end calculateOptArrEqnSizeProperly;
-
-public function traverseEquationArray_WithUpdate<T> "author: Frenkel TUD
-  Traverses all equations of a BackendDAE.EquationArray."
-  input BackendDAE.EquationArray inEquationArray;
+public function traverseEquationArray_WithUpdate<T>
+  "Traverses all equations of a BackendDAE.EquationArray."
+  input output BackendDAE.EquationArray equationArray;
   input FuncWithUpdate inFuncWithUpdate;
-  input T inTypeA;
-  output BackendDAE.EquationArray outEquationArray = inEquationArray;
-  output T outTypeA;
+  input output T extraArg;
 
   partial function FuncWithUpdate
     input output BackendDAE.Equation inoutEq;
     input output T inoutA;
   end FuncWithUpdate;
 protected
-  array<Option<BackendDAE.Equation>> equOptArr;
+  BackendDAE.Equation e, new_e;
 algorithm
-  (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(inEquationArray.equOptArr, inFuncWithUpdate, traverseOptEquation_WithUpdate, inTypeA);
-  outEquationArray.size := calculateOptArrEqnSizeProperly(equOptArr);
-  outEquationArray.equOptArr := equOptArr;
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      e := ExpandableArray.get(i, equationArray);
+      (new_e, extraArg) := inFuncWithUpdate(e, extraArg);
+      if not referenceEq(e, new_e) then
+        ExpandableArray.update(i, new_e, equationArray);
+      end if;
+    end if;
+  end for;
 end traverseEquationArray_WithUpdate;
 
-protected function traverseOptEquation_WithUpdate<T> "author: Frenkel TUD 2010-11
-  Helper for traverseBackendDAEExpsEqnsWithUpdate."
-  input output Option<BackendDAE.Equation> inEquation;
-  input FuncWithUpdate inFuncWithUpdate;
-  input output T inTypeA;
-
-  partial function FuncWithUpdate
-    input output BackendDAE.Equation inEq;
-    input output T inA;
-  end FuncWithUpdate;
-protected
-  BackendDAE.Equation eqn, eqn1;
-algorithm
-  if isSome(inEquation) then
-    SOME(eqn) := inEquation;
-    (eqn1, inTypeA) := inFuncWithUpdate(eqn, inTypeA);
-    if not referenceEq(eqn, eqn1) then
-      inEquation := SOME(eqn1);
-    end if;
-  end if;
-end traverseOptEquation_WithUpdate;
-
-public function equationEqual "
-  Returns true if two equations are equal"
+public function equationEqual
+  "Returns true if two equations are equal"
   input BackendDAE.Equation e1;
   input BackendDAE.Equation e2;
   output Boolean res = true;
@@ -1325,34 +1254,14 @@ algorithm
 end equationEqual;
 
 public function addEquations "author: hkiel
-  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray."
+  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray.
+  TODO: This shouldn't expand the array more than one times."
   input list<BackendDAE.Equation> eqnlst;
-  input output BackendDAE.EquationArray eqns;
-protected
-  Integer len = listLength(eqnlst);
-  Integer numberOfElement, size, arrSize, expandsize;
-  array<Option<BackendDAE.Equation>> equOptArr;
-  Real rsize, rexpandsize;
+  input output BackendDAE.EquationArray equationArray;
 algorithm
-  if len == 0 then return; end if;
-
-  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) := eqns;
-  arrSize := arrayLength(equOptArr);
-  if numberOfElement+len > arrSize then
-    rsize := intReal(arrSize);
-    rexpandsize := rsize * 0.4;
-    expandsize := intMax(realInt(rexpandsize), len);
-    arrSize := expandsize + arrSize;
-    equOptArr := Array.expand(expandsize, equOptArr, NONE());
-  end if;
-
   for e in eqnlst loop
-    numberOfElement := numberOfElement + 1;
-    arrayUpdate(equOptArr, numberOfElement, SOME(e));
-    size := equationSize(e) + size;
+    equationArray := addEquation(e, equationArray);
   end for;
-
-  eqns := BackendDAE.EQUATION_ARRAY(size, numberOfElement, equOptArr);
 end addEquations;
 
 public function mergeEquationArray "
@@ -1369,22 +1278,8 @@ public function addEquation
   "Adds an equation to an EquationArray."
   input BackendDAE.Equation inEquation;
   input output BackendDAE.EquationArray equationArray;
-protected
-  array<Option<BackendDAE.Equation>> eq_arr;
-  Integer eq_size, count;
 algorithm
-  BackendDAE.EQUATION_ARRAY(eq_size, count, eq_arr) := equationArray;
-  count := count + 1;
-
-  // Expand the array if there's no space left.
-  if count >= arrayLength(eq_arr) then
-    eq_arr := Array.expand(max(count, realInt(arrayLength(eq_arr) * 1.4)), eq_arr, NONE());
-  end if;
-
-  eq_size := eq_size + equationSize(inEquation);
-  eq_arr := arrayUpdate(eq_arr, count, SOME(inEquation));
-
-  equationArray := BackendDAE.EQUATION_ARRAY(eq_size, count, eq_arr);
+  ExpandableArray.add(inEquation, equationArray);
 end addEquation;
 
 public function equationAddDAE "author: Frenkel TUD 2011-05"
@@ -1416,28 +1311,25 @@ algorithm
     else BackendDAEUtil.setEqSystRemovedEqns(inSyst, addEquations(inEquations, inSyst.removedEqs));
 end requationsAddDAE;
 
-public function removeRemovedEqs "remove removedEqs"
-  input BackendDAE.EqSystem inSyst;
-  output BackendDAE.EqSystem outSyst = inSyst;
-protected
-  BackendDAE.EquationArray removedEqs = inSyst.removedEqs;
-  Integer N;
+public function removeRemovedEqs
+  "Remove all removedEqs."
+  input output BackendDAE.EqSystem eqSystem;
 algorithm
-  for i in 1:removedEqs.numberOfElement loop
-    removedEqs := equationRemove(i, removedEqs);
-  end for;
-  outSyst.removedEqs := removedEqs;
+  ExpandableArray.clear(eqSystem.removedEqs);
 end removeRemovedEqs;
 
 public function setAtIndex "author: lochel
   Sets the n-th array element of an EquationArray.
   Please note: one-based indexing"
-  input output BackendDAE.EquationArray inEquationArray;
+  input output BackendDAE.EquationArray equationArray;
   input Integer inPos "one-based indexing";
   input BackendDAE.Equation inEquation;
 algorithm
-  inEquationArray.size := inEquationArray.size -equationOptSize(arrayGet(inEquationArray.equOptArr, inPos)) +equationSize(inEquation);
-  inEquationArray.equOptArr := arrayUpdate(inEquationArray.equOptArr, inPos, SOME(inEquation));
+  if ExpandableArray.occupied(inPos, equationArray) then
+    ExpandableArray.update(inPos, inEquation, equationArray);
+  else
+    ExpandableArray.set(inPos, inEquation, equationArray);
+  end if;
 end setAtIndex;
 
 public function setAtIndexFirst "author: waurich
@@ -1458,26 +1350,12 @@ algorithm
   outEqns := List.map1r(inIndices, equationNth1, inEquationArray);
 end getEqns;
 
-public function equationNth1 "author: PA
-  Return the n-th equation from the expandable equation array
+public function equationNth1
+  "Return the n-th equation from the expandable equation array
   indexed from 1..N."
   input BackendDAE.EquationArray inEquationArray;
   input Integer inPos "one-based indexing";
-  output BackendDAE.Equation outEquation;
-protected
-  Integer n;
-  array<Option<BackendDAE.Equation>> arr;
-  String str;
-algorithm
-  BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr) := inEquationArray;
-  if intLe(inPos, n) then
-    outEquation := Util.getOption(arr[inPos]);
-  else
-    str := "BackendEquation.equationNth1 failed; numberOfElement=" + intString(n) + "; pos=" + intString(inPos);
-    print(str + "\n");
-    Error.addInternalError(str, sourceInfo());
-    fail();
-  end if;
+  output BackendDAE.Equation outEquation = ExpandableArray.get(inPos, inEquationArray);
 end equationNth1;
 
 public function equationNthSize
@@ -1501,7 +1379,6 @@ protected
   Integer size;
   String str;
 algorithm
-
   for eqn in inEqns loop
     size := equationSize(eqn);
     if (pos >= acc) and (pos < acc+size) then
@@ -1518,111 +1395,24 @@ algorithm
   print(str + "\n");
   Error.addInternalError(str, sourceInfo());
   fail();
-
 end equationNthSize1;
 
-public function equationDelete "author: Frenkel TUD 2010-12
-  Deletes all the equations from a given list of indices."
-  input BackendDAE.EquationArray inEquationArray;
-  input list<Integer> inIndices;
-  output BackendDAE.EquationArray outEquationArray;
+public function equationDelete
+  "Deletes all the equations from a given list of indices."
+  input output BackendDAE.EquationArray equationArray;
+  input list<Integer> inIndices "one-based indexing";
 algorithm
-  outEquationArray := matchcontinue inIndices
-    local
-      list<BackendDAE.Equation> eqnlst;
-      array<Option<BackendDAE.Equation>> equOptArr;
-
-    case {}
-    then inEquationArray;
-
-    case _ equation
-      equOptArr = List.fold1r(inIndices, arrayUpdate, NONE(), inEquationArray.equOptArr);
-      eqnlst = equationDelete1(arrayLength(inEquationArray.equOptArr), equOptArr);
-    then listEquation(eqnlst);
-
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      Debug.trace("- BackendDAE.equationDelete failed\n");
-    then fail();
-  end matchcontinue;
+  for index in inIndices loop
+    ExpandableArray.delete(index, equationArray);
+  end for;
 end equationDelete;
 
-protected function equationDelete1 "author: Frenkel TUD 2012-09
-  helper for equationDelete."
-  input Integer index;
-  input array<Option<BackendDAE.Equation>> equOptArr;
-  output list<BackendDAE.Equation> oAcc = {};
-protected
-  BackendDAE.Equation eqn;
-algorithm
-  for i in index:-1:1 loop
-    if isSome(equOptArr[i]) then
-      SOME(eqn) := equOptArr[i];
-      oAcc := eqn::oAcc;
-    end if;
-  end for;
-end equationDelete1;
-
-public function equationRemove "author: Frenkel TUD 2012-09
-  Removes the equations from the array on the given position but
-  does not scale down the array size"
+public function equationRemove
   input Integer inPos "one-based indexing";
-  input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray;
-protected
-  Integer numberOfElement, size, eqnsize;
-  array<Option<BackendDAE.Equation>> equOptArr;
+  input output BackendDAE.EquationArray equationArray;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, equOptArr=equOptArr) := inEquationArray;
-
-  if intLe(inPos, numberOfElement) then
-    if isSome(equOptArr[inPos]) then
-      eqnsize := equationSize(Util.getOption(equOptArr[inPos]));
-      equOptArr := arrayUpdate(equOptArr, inPos, NONE());
-      outEquationArray := BackendDAE.EQUATION_ARRAY(size - eqnsize, numberOfElement, equOptArr);
-      return ;
-    end if;
-  end if;
-  print("BackendDAE.equationRemove failed\n");
-  Error.addInternalError("BackendDAE.equationRemove failed", sourceInfo());
-  fail();
+  ExpandableArray.delete(inPos, equationArray);
 end equationRemove;
-
-public function compressEquations "author: Frenkel TUD 2012-11
-  Closes the gaps of an expandable equation array.
-  TODO: Not used. Should it get removed?"
-  input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray;
-algorithm
-  outEquationArray := matchcontinue (inEquationArray)
-    local
-      Integer numberOfElement;
-      array<Option<BackendDAE.Equation>> equOptArr;
-
-    case BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement, equOptArr=equOptArr) equation
-      outEquationArray = emptyEqnsSized(numberOfElement);
-    then compressEquations1(numberOfElement, equOptArr, outEquationArray);
-
-    else equation
-      print("BackendEquation.compressEquations failed\n");
-    then fail();
-  end matchcontinue;
-end compressEquations;
-
-protected function compressEquations1 "author: Frenkel TUD 2012-09"
-  input Integer nEqns;
-  input array<Option<BackendDAE.Equation>> equOptArr;
-  input output BackendDAE.EquationArray eqns;
-protected
-  BackendDAE.Equation eqn;
-algorithm
-  for index in 1:nEqns loop
-    _ := match equOptArr[index]
-        case SOME(eqn) equation eqns = addEquation(eqn, eqns); then ();
-        else ();
-      end match;
-  end for;
-end compressEquations1;
 
 public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
@@ -1900,8 +1690,8 @@ algorithm
   end match;
 end equationSource;
 
-public function equationSize "
-  Retrieve the size from a BackendDAE.BackendDAEequation"
+public function equationSize
+  "Retrieve the size from a BackendDAE.BackendDAEequation"
   input BackendDAE.Equation eq;
   output Integer osize;
 algorithm
@@ -1947,6 +1737,27 @@ algorithm
   end match;
 end equationSize;
 
+public function equationArraySize "author: lochel
+  Returns the size of the equations in an BackendDAE.EquationArray, which
+  should correspond to the number of variables."
+  input BackendDAE.EquationArray equationArray;
+  output Integer outSize;
+algorithm
+  outSize := 0;
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      outSize := outSize + equationSize(ExpandableArray.get(i, equationArray));
+    end if;
+  end for;
+end equationArraySize;
+
+public function getNumberOfEquations "author: lochel
+  Returns the number of equations in an BackendDAE.EquationArray, which not
+  corresponds to the number of equations in the system."
+  input BackendDAE.EquationArray inEquationArray;
+  output Integer outSize = ExpandableArray.getNumberOfElements(inEquationArray);
+end getNumberOfEquations;
+
 public function isInitialEquation
   input BackendDAE.Equation inEquation;
   output Boolean outBool;
@@ -1988,17 +1799,6 @@ algorithm
     then fail();
   end match;
 end equationKind;
-
-public function equationOptSize
-  input Option<BackendDAE.Equation> oeqn;
-  output Integer size;
-algorithm
-  size := match (oeqn)
-    local BackendDAE.Equation eqn;
-    case (SOME(eqn)) then equationSize(eqn);
-    else 0;
-  end match;
-end equationOptSize;
 
 public function equationLstSize
   input list<BackendDAE.Equation> inEqns;

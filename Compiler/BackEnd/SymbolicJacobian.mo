@@ -60,6 +60,7 @@ import Differentiate;
 import DynamicOptimization;
 import ElementSource;
 import ExecStat.execStat;
+import ExpandableArray;
 import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
@@ -869,12 +870,12 @@ algorithm
           //print("the sysEqs stuff \n");
           //BackendDump.printEquationList(sysEqs);
         //build comps
-          //print("size"+intString(BackendDAEUtil.equationSize(eqns))+"\n");
-          //print("numberOfElement"+intString(BackendDAEUtil.equationArraySize(eqns))+"\n");
+          //print("size"+intString(BackendEquation.equationArraySize(eqns))+"\n");
+          //print("numberOfElement"+intString(BackendEquation.getNumberOfEquations(eqns))+"\n");
           //print("arrSize"+intString(BackendDAEUtil.equationArraySize2(eqns))+"\n");
           //print("length"+intString(listLength(BackendEquation.equationList(eqns)))+"\n");
         bVarIdcs = List.intRange2(BackendVariable.varsSize(vars)+1, BackendVariable.varsSize(vars)+listLength(bVars));
-        bEqIdcs = List.intRange2(BackendDAEUtil.equationArraySize(eqns)+1, BackendDAEUtil.equationArraySize(eqns)+listLength(bEqs));
+        bEqIdcs = List.intRange2(BackendEquation.getNumberOfEquations(eqns)+1, BackendEquation.getNumberOfEquations(eqns)+listLength(bEqs));
         bComps = List.threadMap(bEqIdcs, bVarIdcs, BackendDAEUtil.makeSingleEquationComp);
         sysComps = List.threadMap( List.map1(arrayList(order), List.getIndexFirst, eindex), listReverse(vindx),
                                    BackendDAEUtil.makeSingleEquationComp );
@@ -3039,16 +3040,15 @@ protected function calculateJacobianRows "author: PA
 protected
   Integer size, i, j, n, k;
   BackendDAE.Equation eqn;
-  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   i := eqn_indx;
   j := scalar_eqn_indx;
   size := 0;
-  (n, equOptArr) := match inEquationArray case BackendDAE.EQUATION_ARRAY(numberOfElement = n, equOptArr = equOptArr) then (n, equOptArr); end match;
+  n := ExpandableArray.getLastUsedIndex(inEquationArray);
   // print("CalcJac(Eqs:" + intString(n) + ")\n");
   for k in 1:n loop
-    if isSome(equOptArr[k]) then
-      eqn := Util.getOption(equOptArr[k]);
+    if ExpandableArray.occupied(k, inEquationArray) then
+      eqn := ExpandableArray.get(k, inEquationArray);
       (outLst, size, oShared) := calculateJacobianRow(eqn, vars,  m, i, j, differentiateIfExp, oShared, varsInEqn, outLst);
       i := i+1;
       j := j+size;
@@ -3508,7 +3508,7 @@ protected function rhsConstant "author: PA
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  if BackendDAEUtil.equationSize(eqns) == 0 then
+  if BackendEquation.equationArraySize(eqns) == 0 then
     outBoolean:= true;
   else
     repl := BackendDAEUtil.makeZeroReplacements(vars);

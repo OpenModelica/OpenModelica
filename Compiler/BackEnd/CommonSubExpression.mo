@@ -187,7 +187,7 @@ algorithm
       end if;
 
       // Phase 3: Substitution
-      orderedEqs_new := BackendEquation.emptyEqnsSized(orderedEqs.numberOfElement + ExpandableArray.getNumberOfElements(exarray));
+      orderedEqs_new := BackendEquation.emptyEqnsSized(ExpandableArray.getNumberOfElements(orderedEqs) + ExpandableArray.getNumberOfElements(exarray));
       (HT, exarray, orderedEqs_new) := BackendEquation.traverseEquationArray(orderedEqs, wrapFunctionCalls_substitution, (HT, exarray, orderedEqs_new));
 
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then

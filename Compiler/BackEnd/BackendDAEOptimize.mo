@@ -67,6 +67,7 @@ import DAEDump;
 import Debug;
 import Differentiate;
 import ElementSource;
+import ExpandableArray;
 import Expression;
 import ExpressionDump;
 import ExpressionSolve;
@@ -4113,7 +4114,6 @@ protected
   Integer ne,nv;
   array<Integer> w_vars, w_eqns;
   DAE.FunctionTree functionTree;
-  array<Option<BackendDAE.Equation>> equOptArr;
   list<tuple<Integer,Integer>> tplIndexWeight;
   list<Integer> indexs;
   list<BackendDAE.Var> var_lst;
@@ -4136,7 +4136,7 @@ algorithm
           end if;
 
           BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements = nv)) := vars;
-          BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr, numberOfElement = ne) := eqns;
+          ne := ExpandableArray.getNumberOfElements(eqns);
           //init weights
           w_vars := arrayCreate(nv, -1);
           w_eqns := arrayCreate(ne, -1);
@@ -4254,7 +4254,7 @@ algorithm
 
   for syst in inDAE.eqs loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) := syst;
-    BackendDAE.EQUATION_ARRAY(numberOfElement = n) := eqns;
+    n := ExpandableArray.getNumberOfElements(eqns);
     update := false;
     indRemove := {};
 
@@ -4634,7 +4634,6 @@ protected
   Inline.Functiontuple fns = (SOME(functionTree),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE(), DAE.DEFAULT_INLINE()});
   Boolean inlined;
   BackendDAE.Equation eq, eqNew;
-  Option<BackendDAE.Equation> eqn;
   BackendDAE.EqSystem tmpEqs, tmpEqs1;
   list<Integer> idEqns;
   Boolean inlined1;
@@ -4644,7 +4643,6 @@ algorithm
   inlined1 := false;
   tmpEqs1 := BackendDAEUtil.createEqSystem( BackendVariable.listVar({}), BackendEquation.listEquation({}));
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching as BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
-  //BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := eqns;
   for comp in comps
   loop
       if BackendEquation.isEquationsSystem(comp) or BackendEquation.isTornSystem(comp)  or
@@ -4659,8 +4657,7 @@ algorithm
            eq := BackendEquation.equationNth1(eqns, id);
            //eqn := BackendInline.inlineEqOpt(SOME(eq), fns);
            //eqns := BackendEquation.setAtIndexFirst(id, eq, eqns);
-           (eqn, tmpEqs, inlined, shared) := BackendInline.inlineEqOptAppend(SOME(eq), fns, shared);
-           SOME(eqNew) := eqn;
+           (eqNew, tmpEqs, inlined, shared) := BackendInline.inlineEqAppend_debug(eq, fns, shared);
            if inlined or not BackendEquation.equationEqual(eq, eqNew)
            then
              tmpEqs1 := BackendDAEUtil.mergeEqSystems(tmpEqs, tmpEqs1);
@@ -4737,7 +4734,7 @@ algorithm
     compOrders := {};
     ii := 1;
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching as BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
-    BackendDAE.EQUATION_ARRAY(numberOfElement=ne) := eqns;
+    ne := ExpandableArray.getNumberOfElements(eqns);
     BackendDAE.VARIABLES(numberOfVars= nv) := vars;
 
     for comp in comps loop
@@ -5131,7 +5128,7 @@ algorithm
     outIndx := outIndx + 1;
     outUpdate := update;
     if not para then
-      BackendDAE.EQUATION_ARRAY(numberOfElement=ne) := inEqns;
+      ne := ExpandableArray.getNumberOfElements(inEqns);
       BackendDAE.VARIABLES(numberOfVars= nv) := inVars;
       ass1 := ne :: ass1;
       ass2 := nv :: ass2;

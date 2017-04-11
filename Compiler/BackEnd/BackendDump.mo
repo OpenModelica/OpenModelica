@@ -670,7 +670,7 @@ public function dumpEquationArray "function dumpEquationArray"
   input BackendDAE.EquationArray inEqns;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(BackendEquation.equationList(inEqns))) + ", " + intString(BackendDAEUtil.equationSize(inEqns)) + ")\n" + UNDERLINE + "\n");
+  print("\n" + heading + " (" + intString(listLength(BackendEquation.equationList(inEqns))) + ", " + intString(BackendEquation.equationArraySize(inEqns)) + ")\n" + UNDERLINE + "\n");
   printEquationArray(inEqns);
   print("\n");
 end dumpEquationArray;
@@ -3988,7 +3988,7 @@ protected
   GraphML.GraphInfo graphInfo;
   Integer graphIdx;
 algorithm
-  numEqs := BackendDAEUtil.equationArraySize(eqsIn);
+  numEqs := BackendEquation.getNumberOfEquations(eqsIn);
   numVars := BackendVariable.varsSize(varsIn);
   varRange := List.intRange(numVars);
   eqRange := List.intRange(numEqs);

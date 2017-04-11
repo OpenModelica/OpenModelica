@@ -56,6 +56,7 @@ protected
  import Debug;
  import DAEDump;
  import DAEUtil;
+ import ExpandableArray;
  import ExpressionDump;
  import Flags;
  import InlineArrayEquations;
@@ -137,68 +138,39 @@ function: inlineEquationArray
   inlines function calls in an equation array"
   input BackendDAE.EquationArray inEquationArray;
   input Inline.Functiontuple inElementList;
-  output BackendDAE.EquationArray outEquationArray;
+  output BackendDAE.EquationArray outEquationArray = inEquationArray;
   output Boolean oInlined;
 algorithm
-  (outEquationArray,oInlined) := matchcontinue(inEquationArray,inElementList)
-    local
-      Inline.Functiontuple fns;
-      Integer i1,size;
-      array<Option<BackendDAE.Equation>> eqarr;
-    case(BackendDAE.EQUATION_ARRAY(size,i1,eqarr),fns)
-      equation
-        oInlined = inlineEquationOptArray(eqarr,fns);
-      then
-        (BackendDAE.EQUATION_ARRAY(size,i1,eqarr),oInlined);
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("Inline.inlineEquationArray failed\n");
-      then
-        fail();
-  end matchcontinue;
+  try
+    oInlined := inlineEquationOptArray(outEquationArray, inElementList);
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("Inline.inlineEquationArray failed\n");
+    end if;
+    fail();
+  end try;
 end inlineEquationArray;
 
 protected function inlineEquationOptArray
-"functio: inlineEquationrOptArray
-  inlines calls in a equation option"
-  input array<Option<BackendDAE.Equation>> inEqnArray;
+  "inlines calls in a equation option"
+  input BackendDAE.EquationArray inEqnArray;
   input Inline.Functiontuple fns;
   output Boolean oInlined = false;
 protected
-  Option<BackendDAE.Equation> eqn;
+  BackendDAE.Equation eqn;
   Boolean inlined;
 algorithm
-  for i in 1:arrayLength(inEqnArray) loop
-    (eqn, inlined) := inlineEqOpt(inEqnArray[i], fns);
+  for i in 1:ExpandableArray.getLastUsedIndex(inEqnArray) loop
+    if ExpandableArray.occupied(i, inEqnArray) then
+      (eqn, inlined) := inlineEq(ExpandableArray.get(i, inEqnArray), fns);
 
-    if inlined then
-      arrayUpdate(inEqnArray, i, eqn);
-      oInlined := true;
+      if inlined then
+        ExpandableArray.update(i, eqn, inEqnArray);
+        oInlined := true;
+      end if;
     end if;
   end for;
 end inlineEquationOptArray;
-
-public function inlineEqOpt "
-function: inlineEqOpt
-  inlines function calls in equations"
-  input Option<BackendDAE.Equation> inEquationOption;
-  input Inline.Functiontuple inElementList;
-  output Option<BackendDAE.Equation> outEquationOption;
-  output Boolean inlined;
-algorithm
-  (outEquationOption,inlined) := match(inEquationOption,inElementList)
-    local
-      BackendDAE.Equation eqn;
-      Boolean b;
-    case(NONE(),_) then (NONE(),false);
-    case(SOME(eqn),_)
-      equation
-        (eqn,b) = inlineEq(eqn,inElementList);
-      then
-        (SOME(eqn),b);
-  end match;
-end inlineEqOpt;
 
 protected function inlineEq "
   inlines function calls in equations"
@@ -666,7 +638,7 @@ function: inlineEquationArray
   input BackendDAE.EquationArray inEquationArray;
   input Inline.Functiontuple fns;
   input BackendDAE.Shared iShared;
-  output BackendDAE.EquationArray outEquationArray;
+  output BackendDAE.EquationArray outEquationArray = inEquationArray;
   output BackendDAE.EqSystem outEqs;
   output Boolean oInlined;
   output BackendDAE.Shared shared = iShared;
@@ -675,11 +647,8 @@ protected
   array<Option<BackendDAE.Equation>> eqarr;
 algorithm
   try
-    BackendDAE.EQUATION_ARRAY(size,i1,eqarr) := inEquationArray;
-    (outEqs, oInlined, shared) := inlineEquationOptArrayAppend(inEquationArray, fns, shared);
-    outEquationArray := BackendDAE.EQUATION_ARRAY(size,i1,eqarr);
+    (outEqs, oInlined, shared) := inlineEquationOptArrayAppend(outEquationArray, fns, shared);
  else
-   outEquationArray := inEquationArray;
    oInlined := false;
    outEqs := BackendDAEUtil.createEqSystem( BackendVariable.listVar({}), BackendEquation.listEquation({}));
    if Flags.isSet(Flags.FAILTRACE) then
@@ -699,50 +668,42 @@ protected function inlineEquationOptArrayAppend
   output Boolean oInlined = false;
   output BackendDAE.Shared shared = iShared;
 protected
-  Option<BackendDAE.Equation> eqn;
+  BackendDAE.Equation eqn;
   Boolean inlined;
   BackendDAE.EqSystem tmpEqs;
 algorithm
-  outEqs := BackendDAEUtil.createEqSystem( BackendVariable.listVar({}), BackendEquation.listEquation({}));
-  for i in 1:inEqnArray.numberOfElement loop
-    (eqn, tmpEqs, inlined, shared) := inlineEqOptAppend(inEqnArray.equOptArr[i], fns, shared);
-    if inlined then
-      outEqs := BackendDAEUtil.mergeEqSystems(tmpEqs, outEqs);
-      arrayUpdate(inEqnArray.equOptArr, i, eqn);
-      oInlined := true;
+  outEqs := BackendDAEUtil.createEqSystem(BackendVariable.listVar({}), BackendEquation.listEquation({}));
+  for i in 1:ExpandableArray.getLastUsedIndex(inEqnArray) loop
+    if ExpandableArray.occupied(i, inEqnArray) then
+      (eqn, tmpEqs, inlined, shared) := inlineEqAppend_debug(ExpandableArray.get(i, inEqnArray), fns, shared);
+      if inlined then
+        outEqs := BackendDAEUtil.mergeEqSystems(tmpEqs, outEqs);
+        ExpandableArray.update(i, eqn, inEqnArray);
+        oInlined := true;
+      end if;
     end if;
   end for;
 end inlineEquationOptArrayAppend;
 
-public function inlineEqOptAppend "
-function: inlineEqOpt
+public function inlineEqAppend_debug "
   inlines function calls in equations"
-  input Option<BackendDAE.Equation> inEquationOption;
+  input BackendDAE.Equation inEquationOption;
   input Inline.Functiontuple inElementList;
   input BackendDAE.Shared iShared;
-  output Option<BackendDAE.Equation> outEquationOption;
+  output BackendDAE.Equation outEquationOption;
   output BackendDAE.EqSystem outEqs;
   output Boolean inlined;
   output BackendDAE.Shared shared = iShared;
-protected
-  BackendDAE.Equation eqn, eqn1;
 algorithm
-  outEqs := BackendDAEUtil.createEqSystem( BackendVariable.listVar({}), BackendEquation.listEquation({}));
-  if isSome(inEquationOption) then
-     SOME(eqn) := inEquationOption;
-     (eqn1,outEqs,inlined,shared) := inlineEqAppend(eqn,inElementList,outEqs,shared);
+  outEqs := BackendDAEUtil.createEqSystem(BackendVariable.listVar({}), BackendEquation.listEquation({}));
+  (outEquationOption,outEqs,inlined,shared) := inlineEqAppend(inEquationOption,inElementList,outEqs,shared);
 
-     // debug
-     if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) and inlined then
-       print("Equation before inline: "+BackendDump.equationString(eqn)+"\n");
-       BackendDump.dumpEqSystem(outEqs, "Tmp DAE after Inline Eqn: "+BackendDump.equationString(eqn1)+"\n");
-     end if;
-     outEquationOption  := SOME(eqn1);
-  else
-    outEquationOption := NONE();
-    inlined := false;
+  // debug
+  if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) and inlined then
+    print("Equation before inline: "+BackendDump.equationString(inEquationOption)+"\n");
+    BackendDump.dumpEqSystem(outEqs, "Tmp DAE after Inline Eqn: "+BackendDump.equationString(outEquationOption)+"\n");
   end if;
-end inlineEqOptAppend;
+end inlineEqAppend_debug;
 
 protected function inlineEqAppend "
   inlines function calls in equations"

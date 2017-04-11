@@ -1274,7 +1274,7 @@ algorithm
 
     // nVars = nEqns
     nVars := BackendVariable.varsSize(inEqSystem.orderedVars);
-    nEqns := BackendDAEUtil.equationSize(inEqSystem.orderedEqs);
+    nEqns := BackendEquation.equationArraySize(inEqSystem.orderedEqs);
     syst := BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
     funcs := BackendDAEUtil.getFunctions(inShared);
     (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
@@ -1509,7 +1509,7 @@ algorithm
 
     case currRedundantEqn::restRedundantEqns equation
       _ = BackendVariable.varsSize(inVars);
-      _ = BackendDAEUtil.equationSize(inEqns);
+      _ = BackendEquation.equationArraySize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
     //BackendDump.dumpMatchingEqns(vecEqsToVar);
     //BackendDump.dumpVariables(inVars, "inVars");
@@ -1816,7 +1816,7 @@ algorithm
 
     case _ equation
       nVars = BackendVariable.varsSize(vars);
-      nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
+      nEqns = BackendEquation.equationArraySize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
       eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
@@ -1831,7 +1831,7 @@ algorithm
 
     case _ equation
       nVars = BackendVariable.varsSize(vars);
-      nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
+      nEqns = BackendEquation.equationArraySize(inEqnsOrig);
       true = intGt(counter, nEqns-nVars);
 
       Error.addCompilerError("Initialization problem is structural singular. Please, check the initial conditions.");
@@ -1839,7 +1839,7 @@ algorithm
 
     case _ equation
       nVars = BackendVariable.varsSize(vars);
-      nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
+      nEqns = BackendEquation.equationArraySize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
 
       eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
@@ -1857,7 +1857,7 @@ algorithm
 
     case _ equation
       nVars = BackendVariable.varsSize(vars);
-      nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
+      nEqns = BackendEquation.equationArraySize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
       eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
@@ -1884,7 +1884,7 @@ algorithm
     case _ equation
       //true = listEmpty(inM[inUnassignedEqn]);
       nVars = BackendVariable.varsSize(vars);
-      nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
+      nEqns = BackendEquation.equationArraySize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
       eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;

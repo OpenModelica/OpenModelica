@@ -38,6 +38,7 @@ encapsulated package BackendDAE
 import Absyn;
 import DAE;
 import DoubleEndedList;
+import ExpandableArray;
 import FCore;
 import HashTable3;
 import HashTableCG;
@@ -211,13 +212,7 @@ uniontype VariableArray "array of Equations are expandable, to amortize the cost
 end VariableArray;
 
 public
-uniontype EquationArray
-  record EQUATION_ARRAY
-    Integer size "size of the Equations in scalar form";
-    Integer numberOfElement "no. elements";
-    array<Option<Equation>> equOptArr;
-  end EQUATION_ARRAY;
-end EquationArray;
+type EquationArray = ExpandableArray<Equation>;
 
 public
 uniontype Var "variables"
@@ -381,6 +376,8 @@ uniontype Equation
     EquationAttributes attr;
   end FOR_EQUATION;
 
+  record DUMMY_EQUATION
+  end DUMMY_EQUATION;
 end Equation;
 
 public

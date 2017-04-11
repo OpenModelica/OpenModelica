@@ -86,8 +86,8 @@ algorithm
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
-        neqns = BackendDAEUtil.equationArraySize(eqns);
-        //neqns = BackendDAEUtil.equationSize(eqns);
+        neqns = BackendEquation.getNumberOfEquations(eqns);
+        //neqns = BackendEquation.equationArraySize(eqns);
         eqnsids = List.intRange(neqns);
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
         ((_,_,graphInfo)) = List.fold(eqnsids,addEdgesGraph,(1,m,graphInfo));
@@ -101,8 +101,8 @@ algorithm
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
-        neqns = BackendDAEUtil.equationArraySize(eqns);
-        //neqns = BackendDAEUtil.equationSize(eqns);
+        neqns = BackendEquation.getNumberOfEquations(eqns);
+        //neqns = BackendEquation.equationArraySize(eqns);
         eqnsids = List.intRange(neqns);
         mapIncRowEqn = Array.createIntRange(arrayLength(m));
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
@@ -122,8 +122,8 @@ algorithm
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(numberMode,1,vec1,(graphInfo,graph)));
-        //neqns = BackendDAEUtil.equationArraySize(eqns);
-        neqns = BackendDAEUtil.equationSize(eqns);
+        //neqns = BackendEquation.getNumberOfEquations(eqns);
+        neqns = BackendEquation.equationArraySize(eqns);
         eqnsids = List.intRange(neqns);
         eqnsflag = arrayCreate(neqns,false);
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraphMatch,eqns,(vec2,mapIncRowEqn,eqnsflag),numberMode,(graphInfo,graph));
@@ -141,7 +141,7 @@ algorithm
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
-        neqns = BackendDAEUtil.equationSize(eqns);
+        neqns = BackendEquation.equationArraySize(eqns);
         eqnsids = List.intRange(neqns);
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
         ((_,_,_,_,graphInfo)) = List.fold(eqnsids,addDirectedNumEdgesGraph,(1,m,vec2,vec3,graphInfo));

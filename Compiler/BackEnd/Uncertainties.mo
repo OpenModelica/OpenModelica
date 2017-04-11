@@ -174,7 +174,7 @@ algorithm
 
               printSep(getMathematicaText("== Initial system =="));
         //      printSep(getMathematicaText("Equations (Function calls represent more than one equation"));
-        //      printSep(equationsToMathematicaGrid(List.intRange(BackendDAEUtil.equationSize(allEqs)),allEqs,allVars,globalKnownVars,mapIncRowEqn));
+        //      printSep(equationsToMathematicaGrid(List.intRange(BackendEquation.equationArraySize(allEqs)),allEqs,allVars,globalKnownVars,mapIncRowEqn));
 
         //      printSep(getMathematicaText("All variables"));
         //      printSep(variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars));
@@ -188,7 +188,7 @@ algorithm
 
               printSep(getMathematicaText("After Symbolic Elimination"));
               printSep(getMathematicaText("Equations (Function calls represent more than one equation)"));
-              printSep(equationsToMathematicaGrid(List.intRange(BackendDAEUtil.equationSize(allEqs)),allEqs,allVars,globalKnownVars,mapIncRowEqn));
+              printSep(equationsToMathematicaGrid(List.intRange(BackendEquation.equationArraySize(allEqs)),allEqs,allVars,globalKnownVars,mapIncRowEqn));
               printSep(getMathematicaText("Variables"));
               printSep(variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars));
 

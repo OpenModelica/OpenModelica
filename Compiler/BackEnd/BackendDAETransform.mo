@@ -94,7 +94,7 @@ algorithm
     case syst as BackendDAE.EQSYSTEM(mT=SOME(mt), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) algorithm
       comps_m := Sorting.TarjanTransposed(mt, ass2);
 
-      markarray := arrayCreate(BackendDAEUtil.equationArraySize(inSystem.orderedEqs), -1);
+      markarray := arrayCreate(BackendEquation.getNumberOfEquations(inSystem.orderedEqs), -1);
       comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
       GC.free(markarray);
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);

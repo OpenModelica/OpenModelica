@@ -49,6 +49,7 @@ import BaseHashTable;
 import ComponentReference;
 import Config;
 import Error;
+import ExpandableArray;
 import Expression;
 import Flags;
 import GraphML;
@@ -2454,12 +2455,10 @@ import Util;
     output array<list<Integer>> oMapping; //eqIdx -> list<scVarIdx>
   protected
     BackendDAE.EquationArray orderedEqs;
-    array<Option<BackendDAE.Equation>> equOptArr;
     list<Option<BackendDAE.Equation>> equOptList;
   algorithm
     BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := iEqSystem;
-    BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := orderedEqs;
-    equOptList := arrayList(equOptArr);
+    equOptList := arrayList(ExpandableArray.getData(orderedEqs));
     oMapping := listArray(List.map1Option(equOptList, getEqSCVarMapping0, iHt));
   end getEqSCVarMappingByEqSystem;
 

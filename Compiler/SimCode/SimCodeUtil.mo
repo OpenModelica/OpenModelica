@@ -2383,7 +2383,7 @@ protected
   Integer i = 1;
   Integer size;
 algorithm
-  size := BackendDAEUtil.equationArraySize(eqns);
+  size := BackendEquation.getNumberOfEquations(eqns);
   res := {};
   while i <= size loop
     b:= match BackendEquation.equationNth1(eqns, i)

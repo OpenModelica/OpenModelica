@@ -169,7 +169,7 @@ algorithm
                                                     ));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   varSize := BackendVariable.varsSize(vars_1);
-  eqnSize := BackendDAEUtil.equationSize(eqnarr);
+  eqnSize := BackendEquation.equationArraySize(eqnarr);
   neqStr := intString(eqnSize);
   nvarStr := intString(varSize);
 
