@@ -797,7 +797,7 @@ algorithm
         ts = BackendDAEUtil.setTearingSelectAttribute(comment);
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, b, name);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false));
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false));
   end match;
 end lowerDynamicVar;
 
@@ -862,7 +862,7 @@ algorithm
         ts = NONE();
         hideResult = BackendDAEUtil.setHideResultAttribute(comment, b, name);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false), iInlineHT, eqLst);
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false), iInlineHT, eqLst);
 
     else
       equation
@@ -1181,7 +1181,7 @@ algorithm
         ts = NONE();
         hideResult = DAE.BCONST(false);
       then
-        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false);
+        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false);
   end match;
 end lowerExtObjVar;
 
@@ -1845,7 +1845,7 @@ algorithm
   outVars := BackendDAE.VAR (
                   varName = cr, varKind = BackendDAE.VARIABLE(),
                   varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
-                  varType = DAE.T_CLOCK_DEFAULT, bindExp = NONE(),
+                  varType = DAE.T_CLOCK_DEFAULT, bindExp = NONE(), tplExp = NONE(),
                   arryDim = {}, source = DAE.emptyElementSource,
                   values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()), hideResult = DAE.BCONST(false),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),

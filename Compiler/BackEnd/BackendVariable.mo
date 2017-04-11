@@ -318,7 +318,7 @@ algorithm
 end varBindExp;
 
 public function varHasConstantBindExp
-"Returns the true if the bindExp is constant otherwise false."
+"Returns true if the bindExp is constant otherwise false."
   input BackendDAE.Var v;
   output Boolean  out;
 algorithm
@@ -332,6 +332,22 @@ algorithm
     else false;
   end match;
 end varHasConstantBindExp;
+
+public function varHasNonConstantBindExpOrStartValue
+"Returns true if the bindExp is not constant otherwise false."
+  input BackendDAE.Var v;
+  output Boolean  out;
+algorithm
+  out := match(v)
+    local
+      DAE.Exp e;
+
+    case (BackendDAE.VAR(bindExp=SOME(e)))
+    then not Expression.isConst(e);
+
+    else not varHasConstantStartExp(v);
+  end match;
+end varHasNonConstantBindExpOrStartValue;
 
 public function varHasConstantStartExp
 "Returns the true if the binding/start value is constant otherwise false."
@@ -1430,7 +1446,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   cr := ComponentReference.prependStringCref(BackendDAE.derivativeNamePrefix, inCref);
-  outVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),{},
+  outVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                           DAE.emptyElementSource,
                           NONE(),
                           NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
@@ -1474,12 +1490,12 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
       source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), {}, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
     else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
 end createCSEVar;
@@ -1493,7 +1509,7 @@ public function generateVar
   input Option<DAE.VariableAttributes> attr;
   output BackendDAE.Var var;
 algorithm
-  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),subs,DAE.emptyElementSource,attr,NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
+  var := BackendDAE.VAR(cr,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),subs,DAE.emptyElementSource,attr,NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false);
 end generateVar;
 
 public function generateArrayVar
@@ -1530,7 +1546,7 @@ algorithm
         vars;
     case (_,_,_,_)
       equation
-        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),{},DAE.emptyElementSource,attr,NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
+        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
       then
         {var};
   end match;
@@ -1554,12 +1570,12 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
       source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), inArryDim, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
     else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), inArryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
 end createCSEArrayVar;
@@ -2082,6 +2098,24 @@ algorithm
   end for;
 end areAllCrefsInVarList;
 
+public function areAllCrefsPrimaryParameters
+  input list<DAE.ComponentRef> inCrefs;
+  input BackendDAE.Variables inVars;
+  output Boolean isPrimary = true;
+protected
+  BackendDAE.Var v;
+algorithm
+  for cref in inCrefs loop
+    try
+      (v, _) := getVar2(cref, inVars);
+      true := isParam(v) and varFixed(v);
+    else
+      isPrimary := false;
+      return;
+    end try;
+  end for;
+end areAllCrefsPrimaryParameters;
+
 public function varList
   "Takes a BackendDAE.Variables and returns a list of all variables in it,
    useful for e.g. dumping.
@@ -2358,6 +2392,24 @@ algorithm
   end match;
 end deleteVar;
 
+public function deleteVarIfExistsAndReturn
+"author: ptaeuber
+  Deletes a variable from Variables and returns it."
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst = {};
+  output BackendDAE.Variables outVariables = inVariables;
+protected
+  list<Integer> ilst;
+algorithm
+  try
+    (outVarLst,ilst) := getVar(inComponentRef,inVariables);
+    (outVariables,_) := removeVars(ilst,inVariables,{});
+    outVariables := listVar1(varList(outVariables));
+  else
+  end try;
+end deleteVarIfExistsAndReturn;
+
 public function removeCrefs "author: wbraun
   Removes a list of DAE.ComponentRef from BackendDAE.Variables"
   input list<DAE.ComponentRef> varlst;
@@ -2512,7 +2564,7 @@ protected
   DAE.Type tp = ComponentReference.crefLastType(cr);
   DAE.Dimensions dims = Expression.arrayDimension(tp);
 algorithm
- v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+ v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeVar;
 
 public function addVarDAE

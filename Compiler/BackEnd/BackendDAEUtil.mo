@@ -381,7 +381,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -6433,26 +6433,27 @@ algorithm
       Boolean unreplaceable;
       String name;
       Option<BackendDAE.Var> v;
+      Option<DAE.Exp> tplExp;
 
     case NONE()
     then (NONE(), inTypeA);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
       (e1_, ext_arg_1) = func(e1, inTypeA);
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
       if referenceEq(e1,e1_) and referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
       end if;
     then (v, ext_arg_2);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable)) equation
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
       if referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable));
       end if;
     then (v, ext_arg_2);
 
@@ -6862,8 +6863,6 @@ public function getSolvedSystem "Run the equation system pipeline."
   output Boolean outUseHomotopy "true if homotopy(...) is used during initialization";
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
-  output list<BackendDAE.Var> outPrimaryParameters "already sorted";
-  output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
   BackendDAE.BackendDAE dae, simDAE;
   list<tuple<BackendDAEFunc.optimizationModule, String>> preOptModules;
@@ -6920,7 +6919,7 @@ algorithm
   end if;
 
   // generate system for initialization
-  (outInitDAE, outUseHomotopy, outInitDAE_lambda0, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters, globalKnownVars) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outUseHomotopy, outInitDAE_lambda0, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
 
   // use function tree from initDAE further for simDAE
   simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
@@ -6936,6 +6935,9 @@ algorithm
 
   // post-optimization phase
   outSimDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
+
+  // sort the globalKnownVars
+  outSimDAE := sortGlobalKnownVarsInDAE(outSimDAE);
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
     BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");
@@ -7303,6 +7305,58 @@ algorithm
   //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outDAE);
   //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outDAE, "system for jacobians");
 end getSolvedSystemforJacobians;
+
+protected function sortGlobalKnownVarsInDAE "
+author: ptaeuber
+This function adds the external objects to globalKnownVars and sorts the globalKnownVars"
+  input output BackendDAE.BackendDAE backendDAE;
+protected
+  BackendDAE.Variables globalKnownVars, globalKnownVars_sorted;
+  BackendDAE.EquationArray parameterEqns;
+  BackendDAE.EqSystem paramSystem;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.Var var;
+  array<Integer> ass1, ass2;
+  list<list<Integer>> comps;
+  list<Integer> flatComps;
+algorithm
+  globalKnownVars := backendDAE.shared.globalKnownVars;
+  globalKnownVars := BackendVariable.addVariables(backendDAE.shared.externalObjects, globalKnownVars);
+  parameterEqns := BackendEquation.emptyEqns();
+  parameterEqns := BackendVariable.traverseBackendDAEVars(globalKnownVars, createParameterEquations, parameterEqns);
+
+  paramSystem := BackendDAEUtil.createEqSystem(globalKnownVars, parameterEqns);
+  (m, _) := BackendDAEUtil.incidenceMatrix(paramSystem, BackendDAE.NORMAL(), NONE());
+  (ass1, ass2) := Matching.PerfectMatching(m);
+  comps := Sorting.Tarjan(m, ass1);
+  flatComps := list(Initialization.flattenParamComp(comp, globalKnownVars) for comp in comps);
+
+  globalKnownVars_sorted := BackendVariable.emptyVars();
+  for i in flatComps loop
+      var := BackendVariable.getVarAt(globalKnownVars, i);
+      globalKnownVars_sorted := BackendVariable.addVar(var, globalKnownVars_sorted);
+  end for;
+
+  backendDAE := setDAEGlobalKnownVars(backendDAE, globalKnownVars_sorted);
+end sortGlobalKnownVarsInDAE;
+
+protected function createParameterEquations
+  input output BackendDAE.Var var;
+  input output BackendDAE.EquationArray parameterEqns;
+protected
+  DAE.Exp lhs, rhs;
+  BackendDAE.Equation eqn;
+algorithm
+  lhs := BackendVariable.varExp(var);
+  try
+    rhs := BackendVariable.varBindExpStartValue(var);
+  else
+    rhs := DAE.RCONST(0.0);
+  end try;
+  eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+  parameterEqns := BackendEquation.addEquation(eqn, parameterEqns);
+end createParameterEquations;
+
 
 /*************************************************
  * index reduction method Selection

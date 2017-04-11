@@ -227,10 +227,11 @@ uniontype Var "variables"
     .DAE.VarDirection varDirection "input, output or bidirectional";
     .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
     Type varType "built-in type or enumeration";
-    Option< .DAE.Exp> bindExp "Binding expression e.g. for parameters";
+    Option<.DAE.Exp> bindExp "Binding expression e.g. for parameters";
+    Option<.DAE.Exp> tplExp "Variable is part of a tuple. Needed for the globalKnownVars and localKnownVars";
     .DAE.InstDims arryDim "array dimensions of non-expanded var";
     .DAE.ElementSource source "origin of variable";
-    Option< .DAE.VariableAttributes> values "values on built-in attributes";
+    Option<.DAE.VariableAttributes> values "values on built-in attributes";
     Option<TearingSelect> tearingSelectOption "value for TearingSelect";
     .DAE.Exp hideResult "expression from the hideResult annotation";
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";

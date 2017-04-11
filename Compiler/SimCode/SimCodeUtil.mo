@@ -92,6 +92,7 @@ import GC;
 import Global;
 import Graph;
 import HashSet;
+import HashSetExp;
 import HpcOmSimCode;
 import Inline;
 import List;
@@ -151,8 +152,6 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
-  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
-  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inFileDir;
@@ -181,7 +180,7 @@ protected
   HashTableCrIListArray.HashTable varToArrayIndexMapping "maps each array-variable to a array of positions";
   HashTableCrILst.HashTable varToIndexMapping "maps each variable to an array position";
   Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
-  Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
+  Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberofFixedParameters;
   Option<SimCode.FmiModelStructure> modelStruct;
   SimCode.BackendMapping backendMapping;
   SimCode.ExtObjInfo extObjInfo;
@@ -194,8 +193,6 @@ protected
   //list<BackendDAE.Equation> paramAsserts, remEqLst;
   list<BackendDAE.Equation> removedInitialEquationLst;
   list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.Var> allPrimaryParameters "already sorted";
-  list<BackendDAE.Var> primaryParameters "already sorted";
   BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
   DoubleEndedList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
@@ -330,7 +327,7 @@ algorithm
 
     // Assertions and crap
     // create parameter equations
-    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, inAllPrimaryParameters));
+    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, globalKnownVars));
     if debug then execStat("simCode: createStartValueEquations"); end if;
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createNominalValueEquations"); end if;
@@ -340,7 +337,7 @@ algorithm
     if debug then execStat("simCode: createMaxValueEquations"); end if;
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createVarNominalAssertFromVars"); end if;
-    (uniqueEqIndex, parameterEquations) := createParameterEquations(uniqueEqIndex, parameterEquations, inPrimaryParameters, inAllPrimaryParameters);
+    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars);
     if debug then execStat("simCode: createParameterEquations"); end if;
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
@@ -500,7 +497,7 @@ algorithm
 
     if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
       tmpSimVars := modelInfo.vars;
-      (sensitivityVars, countSenParams) := createSimVarsForSensitivities(tmpSimVars.stateVars, tmpSimVars.paramVars, inAllPrimaryParameters);
+      (sensitivityVars, countSenParams) := createSimVarsForSensitivities(tmpSimVars.stateVars, tmpSimVars.paramVars, numberofFixedParameters);
       sensitivityVars := rewriteIndex(sensitivityVars, 0);
       tmpSimVars.sensitivityVars := sensitivityVars;
       modelInfo.vars := tmpSimVars;
@@ -6333,8 +6330,8 @@ end createVarNominalAssertFromVars;
 protected function createStartValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input tuple<Integer, list<SimCode.SimEqSystem>, list<BackendDAE.Var>> acc;
-  output tuple<Integer, list<SimCode.SimEqSystem>, list<BackendDAE.Var>> startValueEquations;
+  input tuple<Integer, list<SimCode.SimEqSystem>, BackendDAE.Variables > acc;
+  output tuple<Integer, list<SimCode.SimEqSystem>, BackendDAE.Variables> startValueEquations;
 algorithm
   startValueEquations := matchcontinue (syst, shared, acc)
     local
@@ -6342,11 +6339,11 @@ algorithm
       list<BackendDAE.Equation>  startValueEquationsTmp2;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
-      list<BackendDAE.Var> allPrimaryParameters;
+      BackendDAE.Variables globalKnownVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns, allPrimaryParameters)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av), (uniqueEqIndex, simeqns, globalKnownVars)) equation
       // vars
-      ((startValueEquationsTmp2, _, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromStart, ({}, av, allPrimaryParameters));
+      ((startValueEquationsTmp2, _, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromStart, ({}, av, globalKnownVars));
       startValueEquationsTmp2 = listReverse(startValueEquationsTmp2);
       // kvars
       // ((startValueEquationsTmp, _)) = BackendVariable.traverseBackendDAEVars(globalKnownVars, createInitialAssignmentsFromStart, ({}, av));
@@ -6354,7 +6351,7 @@ algorithm
       // startValueEquationsTmp2 = listAppend(startValueEquationsTmp2, startValueEquationsTmp);
 
       (simeqns1, uniqueEqIndex) = List.mapFold(startValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
-    then ((uniqueEqIndex, listAppend(simeqns1, simeqns), allPrimaryParameters));
+    then ((uniqueEqIndex, listAppend(simeqns1, simeqns), globalKnownVars));
 
     else equation
       Error.addInternalError("function createStartValueEquations failed", sourceInfo());
@@ -6467,12 +6464,13 @@ algorithm
 end makeSolved_SES_SIMPLE_ASSIGN_fromStartValue;
 
 protected function createParameterEquations
+"Traverses the globalKnownVars and creates simEqns for the variable if necessary."
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
-  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
-  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
+  input BackendDAE.Variables globalKnownVars;
   output Integer outUniqueEqIndex = inUniqueEqIndex;
   output list<SimCode.SimEqSystem> outParameterEquations = {};
+  output Integer nFixedParameters;
 protected
   list<SimCode.SimEqSystem> simvarasserts;
   list<DAE.Algorithm> varasserts;
@@ -6480,21 +6478,13 @@ protected
   BackendDAE.Var p;
   SimCode.SimEqSystem simEq;
 algorithm
+  (outUniqueEqIndex, outParameterEquations, varasserts, nFixedParameters, _) := BackendVariable.traverseBackendDAEVars(globalKnownVars, createSimEqsForGlobalKnownVars, (outUniqueEqIndex, outParameterEquations, {}, 0, HashSetExp.emptyHashSetSized(Util.nextPrime(globalKnownVars.numberOfVars))));
+
   if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
-    BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
+    print("\nparameters in order (" + intString(listLength(outParameterEquations)) + ")\n" + UNDERLINE + "\n");
+    dumpSimEqSystemLst(listReverse(outParameterEquations), "\n");
+    print("\n");
   end if;
-
-  for p in inPrimaryParameters loop
-    (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
-    outParameterEquations := simEq::outParameterEquations;
-  end for;
-
-  // get min/max and nominal asserts
-  varasserts := {};
-  for p in inAllPrimaryParameters loop
-    varasserts2 := createVarAsserts(p);
-    varasserts := List.append_reverse(varasserts2, varasserts);
-  end for;
 
   varasserts := MetaModelica.Dangerous.listReverseInPlace(varasserts);
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
@@ -6504,11 +6494,93 @@ algorithm
   outParameterEquations := listReverse(outParameterEquations);
 end createParameterEquations;
 
+
+protected function createSimEqsForGlobalKnownVars
+"Decides if a simEq is generated from the globalKnownVar and creates it.
+ author: ptaeuber"
+  input output BackendDAE.Var globalKnownVar;
+  input tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> inTuple;
+  output tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> outTuple;
+protected
+  Integer uniqueEqIndex, nFixedParameters;
+  SimCode.SimEqSystem simEq;
+  list<SimCode.SimEqSystem> parameterEquations;
+  list<DAE.Algorithm> varasserts, varasserts2;
+  HashSetExp.HashSet tplExpHT;
+algorithm
+  (uniqueEqIndex, parameterEquations, varasserts, nFixedParameters, tplExpHT) := inTuple;
+
+  // Get min/max and nominal asserts for fixed parameters
+  if BackendVariable.isParam(globalKnownVar) and BackendVariable.varFixed(globalKnownVar) then
+    varasserts2 := createVarAsserts(globalKnownVar);
+    varasserts := List.append_reverse(varasserts2, varasserts);
+    nFixedParameters := nFixedParameters + 1;
+  end if;
+
+  // Create SimCode Equation for special globalKnownVars
+  if (BackendVariable.isParam(globalKnownVar) and BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
+    or (BackendVariable.isVarAlg(globalKnownVar) and not BackendVariable.isInput(globalKnownVar))
+    or (BackendVariable.isExtObj(globalKnownVar) and BackendVariable.varHasBindExp(globalKnownVar))
+   then
+
+    _ := match(globalKnownVar)
+      local
+        DAE.Exp call, tplExp, rec;
+        DAE.ElementSource source;
+        list<DAE.Exp> expl;
+        DAE.Type tp;
+
+      // tuple_cse = call
+      case BackendDAE.VAR(tplExp = SOME(tplExp as DAE.TUPLE(expl)))
+        algorithm
+          if BaseHashSet.has(tplExp, tplExpHT) then
+            outTuple := (uniqueEqIndex, parameterEquations, varasserts, nFixedParameters, tplExpHT);
+            return;
+          else
+            tp := Expression.typeof(tplExp);
+            SOME(call) := globalKnownVar.bindExp;
+            source := BackendVariable.getVarSource(globalKnownVar);
+            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, call, source)});
+            uniqueEqIndex := uniqueEqIndex+1;
+            tplExpHT := BaseHashSet.add(tplExp, tplExpHT);
+          end if;
+       then ();
+
+      // record_cse = call
+      case BackendDAE.VAR(tplExp = SOME(rec))
+        algorithm
+          if BaseHashSet.has(rec, tplExpHT) then
+            outTuple := (uniqueEqIndex, parameterEquations, varasserts, nFixedParameters, tplExpHT);
+            return;
+          else
+            tp := Expression.typeof(rec);
+            SOME(call) := globalKnownVar.bindExp;
+            source := BackendVariable.getVarSource(globalKnownVar);
+            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_ASSIGN(tp, rec, call, source)});
+            uniqueEqIndex := uniqueEqIndex+1;
+            tplExpHT := BaseHashSet.add(rec, tplExpHT);
+          end if;
+       then ();
+
+      // 'normal' globalKnownVars
+      else
+        algorithm
+          (simEq, uniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(globalKnownVar, uniqueEqIndex);
+       then ();
+      end match;
+
+    parameterEquations := simEq::parameterEquations;
+  end if;
+
+  outTuple := (uniqueEqIndex, parameterEquations, varasserts, nFixedParameters, tplExpHT);
+end createSimEqsForGlobalKnownVars;
+
+
 protected function createInitialAssignmentsFromStart
   input BackendDAE.Var inVar;
-  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables, list<BackendDAE.Var>> inTpl;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.Variables, BackendDAE.Variables> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables, list<BackendDAE.Var>> outTpl;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.Variables, BackendDAE.Variables> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
@@ -6519,22 +6591,22 @@ algorithm
       DAE.Exp startExp;
       DAE.ElementSource source;
       BackendDAE.Variables av;
-      list<BackendDAE.Var> allPrimaryParameters;
+      BackendDAE.Variables globalKnownVars;
       list<DAE.ComponentRef> parameters;
 
       // also add an assignment for variables that have non-constant
       // expressions, e.g. parameter values, as start.  NOTE: such start
       // attributes can then not be changed in the text file, since the initial
       // calc. will override those entries!
-    case (var as BackendDAE.VAR(varName=cref, source=source), (eqns, av, allPrimaryParameters))
+    case (var as BackendDAE.VAR(varName=cref, source=source), (eqns, av, globalKnownVars))
       equation
         startExp = BackendVariable.varStartValueFail(var);
         parameters = Expression.getAllCrefs(startExp);
-        true = BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) "add equations if the start value depends only on primary parameters";
+        true = BackendVariable.areAllCrefsPrimaryParameters(parameters, globalKnownVars) "add equations if the start value depends only on primary parameters";
         false = Expression.isConst(startExp) "don't add equations for constant start values";
         SimCodeVar.NOALIAS() = getAliasVar(var, SOME(av));
         initialEquation = BackendDAE.SOLVED_EQUATION(ComponentReference.crefPrefixStart(cref), startExp, source, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      then (var, (initialEquation :: eqns, av, allPrimaryParameters));
+      then (var, (initialEquation :: eqns, av, globalKnownVars));
 
     else (inVar,inTpl);
   end matchcontinue;
@@ -12882,7 +12954,7 @@ protected function createSimVarsForSensitivities
 "
   input list<SimCodeVar.SimVar> inStateSimVars;
   input list<SimCodeVar.SimVar> inParamSimVars;
-  input list<BackendDAE.Var> inPrimaryParameters;
+  input Integer nFixedParameters;
   output list<SimCodeVar.SimVar> outSimCodeVars;
   output Integer countSensitivityParams = 0;
 protected
@@ -12894,7 +12966,7 @@ protected
   list<SimCodeVar.SimVar> sensitivityParams = {};
 algorithm
   emptyVars := BackendVariable.emptyVars();
-  tmpVariables := BackendVariable.emptyVarsSized(listLength(inStateSimVars)*listLength(inPrimaryParameters));
+  tmpVariables := BackendVariable.emptyVarsSized(listLength(inStateSimVars)*nFixedParameters);
 
   for param in inParamSimVars loop
     // take for now only parameters that are changeable and topLevel

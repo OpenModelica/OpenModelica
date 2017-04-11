@@ -1157,7 +1157,7 @@ algorithm
         aName = "$a"+intString(tornSysIdx)+"_"+intString(resIdx)+"_"+intString(iIdx);
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
-        a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+        a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
         a_ii = BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
 
         // build the equations to solve for the coefficients
@@ -1186,7 +1186,7 @@ algorithm
         aName = "$a"+intString(tornSysIdx)+"_"+intString(resIdx)+"_"+intString(iIdx);
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
-        a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+        a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
         a_ii = BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
 
         // build the equations to solve for the coefficients
@@ -1471,7 +1471,7 @@ algorithm
   varExp := Expression.crefExp(cRef);
   replacementOut := BackendVarTransform.addReplacement(replacementIn,oVarCRef,varExp,NONE());
   ty := ComponentReference.crefLastType(cRef);
-  replVar := BackendDAE.VAR(cRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+  replVar := BackendDAE.VAR(cRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
   replVar := BackendVariable.setVarStartValue(replVar,DAE.RCONST(0.0));
   replVarLstOut := replVar::replVarLstIn;
   tplOut := (replVarLstOut,replacementOut);
@@ -1777,7 +1777,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   cr := ComponentReference.makeCrefIdent(ident,ty,{});
-  var := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
+  var := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
 end makeVarOfIdent;
 
 protected function getNewChioRow
@@ -1831,7 +1831,7 @@ algorithm
   (detExp,_) := ExpressionSimplify.simplify(detExp);
   detVarName := "$det_a"+intString(iter)+"__"+intString(row-1)+"_"+intString(col-1);
   detCR := ComponentReference.makeCrefIdent(detVarName,ty,{});
-  detAVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false), NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
+  detAVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false), NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
   detVarExp := Expression.crefExp(detCR);
   detAeq :=  BackendDAE.EQUATION(exp=detVarExp,scalar=detExp,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
   matrixB := Array.consToElement(row-1,detVarExp,matrixB);
@@ -1846,7 +1846,7 @@ algorithm
   (detExp,_) := ExpressionSimplify.simplify(detExp);
   detVarName := "$det_b"+intString(iter)+"__"+intString(row-1)+"_"+intString(col-1);
   detCR := ComponentReference.makeCrefIdent(detVarName,ty,{});
-  detAiVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
+  detAiVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.BCONST(false),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
   detVarExp := Expression.crefExp(detCR);
   detAieq :=  BackendDAE.EQUATION(exp=detVarExp,scalar=detExp,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
   arrayUpdate(vecAi,row-1,detVarExp);

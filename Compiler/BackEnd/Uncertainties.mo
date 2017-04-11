@@ -2152,7 +2152,8 @@ protected
   DAE.VarDirection dir;
   DAE.VarParallelism prl;
   DAE.Type tp;
-  Option<DAE.Exp> bind ;
+  Option<DAE.Exp> bind;
+  Option<DAE.Exp> tplExp;
   DAE.InstDims ad;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
@@ -2162,8 +2163,8 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,ad,source,attr,ts,hideResult,cmt,ct,io,_) := inVar;
-  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,ad,source,attr,ts,hideResult,cmt,ct,io,false);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,io,_) := inVar;
+  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,io,false);
 end setVarCref;
 
 public function setVarBindingOpt "author: PA
@@ -2177,7 +2178,8 @@ protected
   DAE.VarDirection dir;
   DAE.VarParallelism prl;
   BackendDAE.Type tp;
-  Option<DAE.Exp> bind ;
+  Option<DAE.Exp> bind;
+  Option<DAE.Exp> tplExp;
   DAE.InstDims ad;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
@@ -2187,8 +2189,8 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter innerOuter;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,_) := inVar;
-  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,false);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,_) := inVar;
+  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,false);
 end setVarBindingOpt;
 
 public function moveVariables "
