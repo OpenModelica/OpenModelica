@@ -5174,9 +5174,7 @@ algorithm
       list<BackendDAE.Var> vars,knvars,extvars,aliasvars;
       BackendDAE.Variables vars_knownVars;
       BackendDAE.Variables vars_externalObject;
-      BackendDAE.VariableArray varArr_externalObject;
       BackendDAE.Variables vars_aliasVars;
-      BackendDAE.VariableArray varArr_aliasVars;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.EquationArray reqns,ieqns;
       list<DAE.Constraint> constrs;

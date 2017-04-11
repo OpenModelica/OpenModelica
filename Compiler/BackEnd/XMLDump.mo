@@ -958,7 +958,6 @@ algorithm
       BackendDAE.Variables vars_knownVars;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_knownVars;
-      BackendDAE.VariableArray varArr_knownVars;
       Integer bucketSize_knownVars;
       Integer numberOfVars_knownVars;
 
@@ -966,7 +965,6 @@ algorithm
       BackendDAE.Variables vars_externalObject;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_externalObject;
-      BackendDAE.VariableArray varArr_externalObject;
       Integer bucketSize_externalObject;
       Integer numberOfVars_externalObject;
 
@@ -974,7 +972,6 @@ algorithm
       BackendDAE.Variables vars_aliasVars;
       //VARIABLES record for aliasVars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_aliasVars;
-      BackendDAE.VariableArray varArr_aliasVars;
       Integer bucketSize_aliasVars;
       Integer numberOfVars_aliasVars;
 

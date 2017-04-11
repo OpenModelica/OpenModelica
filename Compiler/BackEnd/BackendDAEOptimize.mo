@@ -4113,7 +4113,6 @@ protected
   Integer ne,nv;
   array<Integer> w_vars, w_eqns;
   DAE.FunctionTree functionTree;
-  array<Option<BackendDAE.Var>> varOptArr;
   array<Option<BackendDAE.Equation>> equOptArr;
   list<tuple<Integer,Integer>> tplIndexWeight;
   list<Integer> indexs;
@@ -4136,7 +4135,7 @@ algorithm
             BackendDump.dumpIncidenceMatrixT(mT);
           end if;
 
-          BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = varOptArr, numberOfElements = nv)) := vars;
+          BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements = nv)) := vars;
           BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr, numberOfElement = ne) := eqns;
           //init weights
           w_vars := arrayCreate(nv, -1);
