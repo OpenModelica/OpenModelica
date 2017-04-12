@@ -84,7 +84,7 @@ end if;
 // 5: d in (d, b, _):VARIABLE()  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real 
 // 6: $cse4:VARIABLE()  = cos(p1)  type: Real  unreplaceable
 // 7: $cse3:VARIABLE()  = sin($cse4)  type: Real  unreplaceable
-// 8: $cse2:VARIABLE()  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real  unreplaceable
+// 8: $cse2 in ($cse2, _, _):VARIABLE()  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real  unreplaceable
 // 9: $cse1:VARIABLE()  = sin($cse2)  type: Real  unreplaceable
 //
 //
