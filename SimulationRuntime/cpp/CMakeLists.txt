@@ -602,7 +602,7 @@ IF(USE_KLU)
   SET(KLU_INLCUDE_HOME ${Klu_Path}/include/omc/c/suitesparse/Include) #${Klu_Path}/KLU/Include)
   SET(KLU_LIBRARY_RELEASE_HOME ${Klu_Path}/lib/omc) #${Klu_Path}/build)
   ELSE(MSVC)
-  SET(KLU_INLCUDE_HOME ${Klu_Path}/Include) #${Klu_Path}/KLU/Include)
+  SET(KLU_INLCUDE_HOME ${Klu_Path}/KLU/Include) #${Klu_Path}/KLU/Include)
   SET(KLU_LIBRARY_RELEASE_HOME ${Klu_Path}/build) #${Klu_Path}/build)
   ENDIF(MSVC)
 
