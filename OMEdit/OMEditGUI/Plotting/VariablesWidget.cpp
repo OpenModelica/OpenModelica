@@ -507,18 +507,21 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mpRootVariablesTreeItem->insertChild(row, pTopVariablesTreeItem);
   endInsertRows();
   /* open the model_init.xml file for reading */
+  QString initFileName;
   if (simulationOptions.isValid()) {
-    QString initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
-    QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
-    if (initFile.open(QIODevice::ReadOnly)) {
-      QXmlStreamReader initXmlReader(&initFile);
-      parseInitXml(initXmlReader);
-      initFile.close();
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
-    }
+    initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
+  } else {
+    initFileName = QString(text).append("_init.xml");
+  }
+  QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
+  if (initFile.open(QIODevice::ReadOnly)) {
+    QXmlStreamReader initXmlReader(&initFile);
+    parseInitXml(initXmlReader);
+    initFile.close();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                          .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
