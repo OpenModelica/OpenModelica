@@ -540,7 +540,7 @@ algorithm
             var := BackendVariable.setBindExp(var, SOME(call));
 
             // If it is a tuple or a record (or record within tuple)
-            if intGt(listLength(varList), 1) then
+            if intGt(listLength(varList), 1) or Expression.isTuple(cse) then
               if debug then print("\ndebug 11 - It is a tuple! Add it to tplExp\n"); end if;
               var.tplExp := SOME(cse);
             end if;
