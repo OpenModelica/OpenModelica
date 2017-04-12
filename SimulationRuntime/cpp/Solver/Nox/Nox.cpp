@@ -377,7 +377,7 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 	// Create step size sublist
 	Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
 	stepSizeList.set("Method", "Adaptive");             // Default
-	stepSizeList.set("Initial Step Size", 1.0e-3);   // Should set
+	stepSizeList.set("Initial Step Size", 1.0e-8);   // Should set
 	stepSizeList.set("Min Step Size", 1.0e-9);    // Should set
 	stepSizeList.set("Max Step Size", 1.0);      // Should set
 
