@@ -308,7 +308,7 @@ algorithm
   outGraph := match(inNode, eqns, mapIncRowEqn, numberMode, inGraph)
     case(_,_,_,false,(graphInfo,graph))
       equation
-        eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
+        eqn = BackendEquation.get(eqns, mapIncRowEqn[inNode]);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
         str = intString(inNode) + ": " + BackendDump.equationString(eqn);
@@ -318,7 +318,7 @@ algorithm
       then ((graphInfo,graph));
     case(_,_,_,true,(graphInfo,graph))
       equation
-        eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
+        eqn = BackendEquation.get(eqns, mapIncRowEqn[inNode]);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
         //str = intString(inNode) + ": " + BackendDump.equationString(eqn);
@@ -372,7 +372,7 @@ algorithm
       equation
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
-       eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
+       eqn = BackendEquation.get(eqns, mapIncRowEqn[inNode]);
        str = BackendDump.equationString(eqn);
        str = intString(e) + ": " +  str;
        //str = intString(inNode);
@@ -385,7 +385,7 @@ algorithm
       equation
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
-       eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
+       eqn = BackendEquation.get(eqns, mapIncRowEqn[inNode]);
        str = BackendDump.equationString(eqn);
        //str = intString(e) + ": " +  str;
        //str = intString(inNode);

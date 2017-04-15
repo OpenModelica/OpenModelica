@@ -334,7 +334,7 @@ algorithm
       BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := eq;
       if BackendVariable.existsAnyVar(rightCrefs, orderedVars, false) then
         orderedVars := BackendVariable.addVar(var, orderedVars);
-        orderedEqs := BackendEquation.addEquation(eqn, orderedEqs);
+        orderedEqs := BackendEquation.add(eqn, orderedEqs);
         eqs1 := BackendDAEUtil.setEqSystEqs(BackendDAEUtil.setEqSystVars(eq, orderedVars), orderedEqs)::eqs1;
         false := done;
         done := true;
@@ -382,7 +382,7 @@ algorithm
       BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := eq;
       if BackendVariable.existsAnyVar(rightCrefs, orderedVars, false) then
         orderedVars := BackendVariable.addVar(var, orderedVars);
-        orderedEqs := BackendEquation.addEquation(eqn, orderedEqs);
+        orderedEqs := BackendEquation.add(eqn, orderedEqs);
         eqs1 := BackendDAEUtil.setEqSystEqs(BackendDAEUtil.setEqSystVars(eq, orderedVars), orderedEqs)::eqs1;
         false := done;
         done := true;
@@ -752,52 +752,52 @@ algorithm
     case ({}, _, _, _) then inTypeA;
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(iEqns, e);
+        eqn = BackendEquation.get(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst)::rest, _, _, _)
       equation
-        eqnlst = BackendEquation.getEqns(elst, iEqns);
+        eqnlst = BackendEquation.getList(elst, iEqns);
         arg = inFunc(eqnlst, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEARRAY(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(iEqns, e);
+        eqn = BackendEquation.get(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(iEqns, e);
+        eqn = BackendEquation.get(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(iEqns, e);
+        eqn = BackendEquation.get(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(iEqns, e);
+        eqn = BackendEquation.get(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e)::rest, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(iEqns, e);
+        eqn = BackendEquation.get(iEqns, e);
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=elst, innerEquations=innerEquations))::rest, _, _, _)
       equation
         // collect all equations
-        eqnlst = BackendEquation.getEqns(elst, iEqns);
+        eqnlst = BackendEquation.getList(elst, iEqns);
         (elst,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        eqnlst1 = BackendEquation.getEqns(elst, iEqns);
+        eqnlst1 = BackendEquation.getList(elst, iEqns);
         eqnlst = listAppend(eqnlst, eqnlst1);
         arg = inFunc(eqnlst, inTypeA);
       then

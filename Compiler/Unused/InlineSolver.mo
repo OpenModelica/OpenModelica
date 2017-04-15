@@ -201,23 +201,23 @@ algorithm
   dt := DAE.CREF(DAE.CREF_IDENT("$dt", ty, {}), ty);
 
   eqn := BackendDAE.SOLVED_EQUATION(t0, t, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.1726731646460114281008537718766),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t1, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.50),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t2, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.8273268353539885718991462281234),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t3, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   rhs := Expression.expAdd(dt,t);
   eqn := BackendDAE.SOLVED_EQUATION(t4, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
   (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
@@ -246,15 +246,15 @@ algorithm
   eqns2 := BackendEquation.emptyEqns();
   // change function call der(x) in  variable xder
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t0","$t0_der"));
-  eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
+  eqns2 :=  BackendEquation.merge(eqns1,eqns2);
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t1","$t1_der"));
-  eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
+  eqns2 :=  BackendEquation.merge(eqns1,eqns2);
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t2","$t2_der"));
-  eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
+  eqns2 :=  BackendEquation.merge(eqns1,eqns2);
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t3","$t3_der"));
-  eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
+  eqns2 :=  BackendEquation.merge(eqns1,eqns2);
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t4","$t4_der"));
-  eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
+  eqns2 :=  BackendEquation.merge(eqns1,eqns2);
   // change kind: state in known variable
   ((vars, eqns, outvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2, invars));
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
@@ -282,7 +282,7 @@ algorithm
   derEq := isDerEq(e1);
   (eqn1, (_,_,_,_)) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerStateCref, (vars, 0, preState, preDer));
   eqn1 := EqSolvedEq(eqn1, derEq);
-  eqns := BackendEquation.addEquation(eqn1, eqns);
+  eqns := BackendEquation.add(eqn1, eqns);
   outTpl := (eqn, (vars, eqns,preState,preDer));
 end replaceStates_eqs;
 
@@ -436,8 +436,8 @@ algorithm
       dt = DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
 
       eqn = stepLobatt(x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4, dt, ty);
-      eqns = BackendEquation.mergeEquationArray(eqn, eqns);
-      eqns = BackendEquation.addEquation(BackendDAE.SOLVED_EQUATION(cr, DAE.CREF(x4, ty), DAE.emptyElementSource, false), eqns);
+      eqns = BackendEquation.merge(eqn, eqns);
+      eqns = BackendEquation.add(BackendDAE.SOLVED_EQUATION(cr, DAE.CREF(x4, ty), DAE.emptyElementSource, false), eqns);
     then ((var, (vars, eqns,vars0)));
 
     // else
@@ -490,7 +490,7 @@ algorithm
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k3}),dt));
   rhs := Expression.expAdd(z1, Expression.expMul(Expression.expAdd(k2, k4),dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
       DAE.RCONST(0.08125000000000000000000000000000),  //(0)
@@ -504,7 +504,7 @@ algorithm
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k4}),dt));
   rhs := Expression.expAdd(z1, Expression.expMul(k3,dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
       DAE.RCONST(0.0649080108944342854789983145097),  //(0)
@@ -518,7 +518,7 @@ algorithm
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k3}),dt));
   rhs := Expression.expAdd(z1, Expression.expMul(k4,dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
     DAE.RCONST(0.05000000000000000000000000000000),  //(0)
@@ -532,7 +532,7 @@ algorithm
   lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k3,k4}),dt));
   rhs := z1;
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
-  eqns := BackendEquation.addEquation(eqn, eqns);
+  eqns := BackendEquation.add(eqn, eqns);
 
 end stepLobatt;
 

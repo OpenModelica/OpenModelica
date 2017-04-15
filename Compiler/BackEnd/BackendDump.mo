@@ -231,7 +231,7 @@ algorithm
       BackendDAE.EquationArray eqns;
     case (eqno,BackendDAE.EQSYSTEM(orderedEqs = eqns))
       equation
-        eq = BackendEquation.equationNth1(eqns, eqno);
+        eq = BackendEquation.get(eqns, eqno);
         printEquation(eq);
       then
         ();
@@ -1021,7 +1021,7 @@ algorithm
         print("SingleEquation: " + intString(e) + "\n");
         var = BackendVariable.getVarAt(vars,v);
         printVarList({var});
-        eqn = BackendEquation.equationNth1(eqns,e);
+        eqn = BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1032,7 +1032,7 @@ algorithm
         print("Equationsystem " + jacobianTypeStr(jacType) + ":\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqnlst = BackendEquation.getEqns(elst,eqns);
+        eqnlst = BackendEquation.getList(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
         print("Jac:\n" + dumpJacobianStr(jac) + "\n");
@@ -1045,7 +1045,7 @@ algorithm
         print("ArrayEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.equationNth1(eqns,e);
+        eqn = BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1056,7 +1056,7 @@ algorithm
         print("IfEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.equationNth1(eqns,e);
+        eqn = BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1067,7 +1067,7 @@ algorithm
         print("Algorithm:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.equationNth1(eqns,e);
+        eqn = BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1078,7 +1078,7 @@ algorithm
         print("ComplexEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.equationNth1(eqns,e);
+        eqn = BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1089,7 +1089,7 @@ algorithm
         print("WhenEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.equationNth1(eqns,e);
+        eqn = BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1109,10 +1109,10 @@ algorithm
         print("\nresidual vars\n");
         printVarList(varlst);
         print("\ninternal equation\n");
-        eqnlst = BackendEquation.getEqns(elst1,eqns);
+        eqnlst = BackendEquation.getList(elst1,eqns);
         printEquationList(eqnlst);
         print("\nresidual equations\n");
-        eqnlst = BackendEquation.getEqns(elst,eqns);
+        eqnlst = BackendEquation.getList(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1130,10 +1130,10 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         print("\n");
-        eqnlst = BackendEquation.getEqns(elst1,eqns);
+        eqnlst = BackendEquation.getList(elst1,eqns);
         printEquationList(eqnlst);
         print("\n");
-        eqnlst = BackendEquation.getEqns(elst,eqns);
+        eqnlst = BackendEquation.getList(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1145,10 +1145,10 @@ algorithm
         varlst = List.map1r(vlst2, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         print("\n");
-        eqnlst = BackendEquation.getEqns(elst1,eqns);
+        eqnlst = BackendEquation.getList(elst1,eqns);
         printEquationList(eqnlst);
         print("\n");
-        eqnlst = BackendEquation.getEqns(elst2,eqns);
+        eqnlst = BackendEquation.getList(elst2,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -3056,7 +3056,7 @@ protected
   String s1,s2,s3;
   BackendDAE.Equation eqn;
 algorithm
-  eqn := BackendEquation.equationNth1(eqns, e);
+  eqn := BackendEquation.get(eqns, e);
   s2 := equationString(eqn);
   s3 := intString(e);
   outS := stringAppendList({inS,s3,": ",s2,";\n"});
@@ -4149,7 +4149,7 @@ algorithm
   isResEq := Util.tuple21(listGet(attsIn,indx));
   daeIdxStr := Util.tuple22(listGet(attsIn,indx));
   typeStr := if isResEq then "residualEq" else "otherEq";
-  {eq} := BackendEquation.getEqns({indx}, eqs);
+  {eq} := BackendEquation.getList({indx}, eqs);
   eqString := BackendDump.equationString(eq);
   eqNodeId := getEqNodeIdx(indx);
   idxString := intString(indx);

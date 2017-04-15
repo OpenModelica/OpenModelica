@@ -138,7 +138,7 @@ algorithm
         syst.removedEqs := removedEqs;
 
         syst.orderedVars := BackendVariable.addVars(DoubleEndedList.toListNoCopyNoClear(varLst), orderedVars);
-        syst.orderedEqs := BackendEquation.addEquations(DoubleEndedList.toListNoCopyNoClear(eqnLst), orderedEqs);
+        syst.orderedEqs := BackendEquation.addList(DoubleEndedList.toListNoCopyNoClear(eqnLst), orderedEqs);
       then BackendDAEUtil.clearEqSyst(syst);
   end match;
 end encapsulateWhenConditions_EqSystem;
@@ -172,7 +172,7 @@ algorithm
       DoubleEndedList.push_list_back(vars, vars1);
       DoubleEndedList.push_list_back(eqns, eqns1);
       eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source, attr);
-      equationArray = BackendEquation.addEquation(eqn, equationArray);
+      equationArray = BackendEquation.add(eqn, equationArray);
     then (eqn, (equationArray, vars, eqns, index, ht));
 
     // removed algorithm
@@ -192,7 +192,7 @@ algorithm
 
       alg_ := DAE.ALGORITHM_STMTS(stmts);
       eqn := BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
-      equationArray := BackendEquation.addEquation(eqn, equationArray);
+      equationArray := BackendEquation.add(eqn, equationArray);
 
       if sizePre > 0 then
         alg_ := DAE.ALGORITHM_STMTS(allPreStmts);
@@ -212,11 +212,11 @@ algorithm
 
       alg_ = DAE.ALGORITHM_STMTS(stmts);
       eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
-      equationArray = BackendEquation.addEquation(eqn, equationArray);
+      equationArray = BackendEquation.add(eqn, equationArray);
     then (eqn, (equationArray, vars, eqns, index, ht));
 
     case (_, (equationArray, vars, eqns, index, ht)) equation
-      equationArray = BackendEquation.addEquation(inEq, equationArray);
+      equationArray = BackendEquation.add(inEq, equationArray);
     then (inEq, (equationArray, vars, eqns, index, ht));
   end match;
 end encapsulateWhenConditions_Equation;

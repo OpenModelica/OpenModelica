@@ -127,7 +127,7 @@ algorithm
     BackendDAE.DAE({syst}, shared) := BackendDAEOptimize.collapseIndependentBlocks(BackendDAE.DAE(systs, shared));
     (systs, clockedSysts1, unpartRemEqs) := baseClockPartitioning(syst, shared);
     assert(listLength(clockedSysts1) == 0, "Get clocked system in SynchronousFeatures.addContVarsEqs");
-    shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
+    shared.removedEqs := BackendEquation.addList(unpartRemEqs, shared.removedEqs);
   end if;
 
   outDAE := BackendDAE.DAE(listAppend(systs, clockedSysts), shared);
@@ -153,7 +153,7 @@ algorithm
   (clockedSysts, shared) := subClockPartitioning1(clockedSysts, shared, holdComps);
 
   unpartRemEqs := createBoolClockWhenClauses(shared, unpartRemEqs);
-  shared.removedEqs := BackendEquation.addEquations(unpartRemEqs, shared.removedEqs);
+  shared.removedEqs := BackendEquation.addList(unpartRemEqs, shared.removedEqs);
 
   systs := listAppend(contSysts, clockedSysts);
   outDAE := BackendDAE.DAE(systs, shared);
@@ -230,7 +230,7 @@ algorithm
           end if;
           // replace der(x) with $DER.x and collect derVars x
           for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
-            eq := BackendEquation.equationNth1(eqs, i);
+            eq := BackendEquation.get(eqs, i);
             (eq, derVars) := BackendEquation.traverseExpsOfEquation(eq, getDerVars1, derVars);
             lstEqs := eq :: lstEqs;
           end for;
@@ -265,7 +265,7 @@ algorithm
           if solverMethod == "SemiImplicitEuler" then
             // access previous values of clocked continuous states
             for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
-              eq := BackendEquation.equationNth1(eqs, i);
+              eq := BackendEquation.get(eqs, i);
               (eq, _) := BackendEquation.traverseExpsOfEquation(eq, shiftDerVars1, derVars);
               eqs := BackendEquation.setAtIndex(eqs, i, eq);
             end for;
@@ -428,11 +428,11 @@ algorithm
     end for;
   end for;
   for i in 1:BackendEquation.getNumberOfEquations(inSyst.orderedEqs) loop
-    eq := BackendEquation.equationNth1(inSyst.orderedEqs, i);
+    eq := BackendEquation.get(inSyst.orderedEqs, i);
     (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
   end for;
   for i in 1:BackendEquation.getNumberOfEquations(inSyst.removedEqs) loop
-    eq := BackendEquation.equationNth1(inSyst.removedEqs, i);
+    eq := BackendEquation.get(inSyst.removedEqs, i);
     (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
   end for;
   for cr in prevVars loop
@@ -566,7 +566,7 @@ algorithm
         algorithm
           lstEqs := {};
           for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
-            eq := BackendEquation.equationNth1(eqs, i);
+            eq := BackendEquation.get(eqs, i);
             (eq, outHoldComps) := BackendEquation.traverseExpsOfEquation(eq, removeHoldExp1, outHoldComps);
             lstEqs := eq::lstEqs;
           end for;
@@ -649,7 +649,7 @@ algorithm
   (newClockEqs, newClockVars, contPartitions, subclksCnt)
       := collectSubclkInfo(eqs, inEqSystem.removedEqs, partitionsCnt, partitions, reqsPartitions, vars, mT);
 
-  clockEqs := BackendEquation.addEquations(newClockEqs, clockEqs);
+  clockEqs := BackendEquation.addList(newClockEqs, clockEqs);
   clockVars := BackendVariable.addVars(newClockVars, clockVars);
   clockSyst := BackendDAEUtil.createEqSystem(clockVars, clockEqs, {});
 
@@ -729,7 +729,7 @@ algorithm
     outClockKind := matchcontinue comp
       case BackendDAE.SINGLEEQUATION(eqIdx, varIdx)
         algorithm
-          eq := BackendEquation.equationNth1(inEqs, eqIdx);
+          eq := BackendEquation.get(inEqs, eqIdx);
           exp := match eq
             local
               DAE.Exp e;
@@ -1531,7 +1531,7 @@ protected
   SourceInfo source;
 algorithm
   for i in 1:BackendEquation.getNumberOfEquations(eqs) loop
-    eq := BackendEquation.equationNth1(eqs, i);
+    eq := BackendEquation.get(eqs, i);
     partitionIdx := arrayGet(partitions, i);
     DAE.SOURCE(info = source) := BackendEquation.equationSource(eq);
 
@@ -1584,7 +1584,7 @@ protected
 algorithm
   outClockEqsMask := arrayCreate(BackendEquation.getNumberOfEquations(inEqs), true);
   for i in 1:BackendEquation.getNumberOfEquations(inEqs) loop
-    eq := BackendEquation.equationNth1(inEqs, i);
+    eq := BackendEquation.get(inEqs, i);
     if isClockEquation(eq) then
       clockEqs := eq::clockEqs;
       arrayUpdate(outClockEqsMask, i, false);
@@ -1950,14 +1950,14 @@ algorithm
     partitionType := arrayGet(clockedVars, i);
     cr := BackendVariable.varCref(BackendVariable.getVarAt(vars, i));
     for j in arrayGet(mT, i) loop
-      info := BackendEquation.equationInfo(BackendEquation.equationNth1(eqs, j));
+      info := BackendEquation.equationInfo(BackendEquation.get(eqs, j));
       arrayUpdate(clockedEqs, j, setClockedPartition(partitionType, arrayGet(clockedEqs, j), SOME(cr), info));
     end for;
   end for;
   //Detect clocked partitions (clocked equations should belong to clocked partitions)
   for i in 1:arrayLength(clockedEqs) loop
     partitionType := arrayGet(clockedEqs, i);
-    info := BackendEquation.equationInfo(BackendEquation.equationNth1(eqs, i));
+    info := BackendEquation.equationInfo(BackendEquation.get(eqs, i));
     j := arrayGet(eqsPartition, i);
     arrayUpdate(clockedPartitions, j, setClockedPartition(partitionType, arrayGet(clockedPartitions, j), NONE(), info));
   end for;
@@ -2445,7 +2445,7 @@ protected
 algorithm
   for i in BackendEquation.getNumberOfEquations(arr):-1:1 loop
     ix := ixs[i];
-    eq := BackendEquation.equationNth1(arr, i);
+    eq := BackendEquation.get(arr, i);
     if ix == 0 then
       restEqs := eq::restEqs;
     else

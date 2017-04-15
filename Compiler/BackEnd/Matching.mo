@@ -6418,7 +6418,7 @@ algorithm
        randarr1 = Array.createIntRange(nv);
        setrandArray(nv, randarr1);
        syst.orderedEqs = randSortSystem1( ne, 0, randarr, eqns, BackendEquation.listEquation({}),
-                                          BackendEquation.equationNth1, BackendEquation.addEquation );
+                                          BackendEquation.get, BackendEquation.add );
        syst.orderedVars = randSortSystem1( nv, 0, randarr1, vars, BackendVariable.emptyVars(),
                                            BackendVariable.getVarAt, BackendVariable.addVar );
        (syst, _, _) = BackendDAEUtil.getIncidenceMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE() );

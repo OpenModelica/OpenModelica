@@ -1292,7 +1292,7 @@ protected
 algorithm
   for eqIdx in iEqnIdc loop
     incidenceVars := listAppend(arrayGet(iIncidenceMatrix,eqIdx), incidenceVars);
-    eqs := BackendEquation.equationNth1(iOrderedEquations, eqIdx)::eqs;
+    eqs := BackendEquation.get(iOrderedEquations, eqIdx)::eqs;
   end for;
   oIncidenceVars := List.map(incidenceVars, getVarTuple);
 

@@ -292,7 +292,7 @@ algorithm
       (eq, (HT, exarray, orderedEqs_new)) = BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_substitution2, (HT, exarray, orderedEqs_new));
 
       if not isEquationRedundant(eq) then
-        orderedEqs_new = BackendEquation.addEquation(eq, orderedEqs_new);
+        orderedEqs_new = BackendEquation.add(eq, orderedEqs_new);
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           BackendDump.dumpEquationList({eq}, "isEquationRedundant? no");
         end if;
@@ -311,13 +311,13 @@ algorithm
       (eq, (HT, exarray, orderedEqs_new)) = BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_substitution2, (HT, exarray, orderedEqs_new));
 
       if not isEquationRedundant(eq) then
-        orderedEqs_new = BackendEquation.addEquation(eq, orderedEqs_new);
+        orderedEqs_new = BackendEquation.add(eq, orderedEqs_new);
       end if;
     then ();
 
     // all other cases are not handled (e.g. algorithms)
     else equation
-      orderedEqs_new = BackendEquation.addEquation(inEq, orderedEqs_new);
+      orderedEqs_new = BackendEquation.add(inEq, orderedEqs_new);
     then ();
   end match;
 
@@ -479,7 +479,7 @@ protected
   DAE.ComponentRef cr;
   BackendDAE.Var var;
   list<BackendDAE.Var> varList, delVars;
-  Boolean isGlobalKnown, eqRedundant, addEquation;
+  Boolean isGlobalKnown, eqRedundant, add;
   list<Integer> var_indexes;
 algorithm
   if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
@@ -488,7 +488,7 @@ algorithm
     print("\nTraverse expandable array\n"  + UNDERLINE + "\n");
   end if;
   for i in ExpandableArray.getNumberOfElements(exarray):-1:1 loop
-    addEquation := true;
+    add := true;
     CSE_EQUATION(cse=cse, call=call) := ExpandableArray.get(i, exarray);
     if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
       print("\n--> cse-equation: " + ExpressionDump.printExpStr(cse) + " = " + ExpressionDump.printExpStr(call) + "\n");
@@ -503,7 +503,7 @@ algorithm
       varList := createVarsForExp(cse);
       // If cse is a constant number add the equation
       if listEmpty(varList) then
-        orderedEqs := BackendEquation.addEquation(eq, orderedEqs);
+        orderedEqs := BackendEquation.add(eq, orderedEqs);
       else
         for var in varList loop
           if debug then print("\ndebug 3 - handle var: " + BackendDump.varString(var) + " Is it a globalKnownVar?\n"); end if;
@@ -511,10 +511,10 @@ algorithm
           // Variable is not in globalKnownVars HT
           if not isGlobalKnown then
             if debug then print("\ndebug 4 - The variable is not a globalKnownVar. Should an equation be added?\n"); end if;
-            if addEquation then
+            if add then
               if debug then print("\ndebug 5 - yes, definitely!\n"); end if;
-              orderedEqs := BackendEquation.addEquation(eq, orderedEqs);
-              addEquation := false;
+              orderedEqs := BackendEquation.add(eq, orderedEqs);
+              add := false;
             end if;
             if debug then print("\ndebug 6 - Is this cref a CSE cref?: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n"); end if;
             if isCSECref(cr) then
@@ -1644,7 +1644,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           print("\n");
         end if;
-      syst.orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
+      syst.orderedEqs = BackendEquation.addList(eqList, orderedEqs);
       syst.orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
         BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List ###########");
@@ -1970,7 +1970,7 @@ algorithm
     // check for CSE of length 1 (all eqs with 2 variables)
       //print("CHECK FOR CSE 2\n");
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 2, range);
-    (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getEqns(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
+    (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getList(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
     eqs := BackendEquation.listEquation(eqLst);
     varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
@@ -1994,7 +1994,7 @@ algorithm
     // check for CSE of length 2
       //print("CHECK FOR CSE 3\n");
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 3, range);
-    (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getEqns(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
+    (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getList(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
     eqs := BackendEquation.listEquation(eqLst);
     varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
@@ -2119,7 +2119,7 @@ algorithm
       {varIdx1} = varIdcs1;
       {varIdx2} = varIdcs2;
       {sharedVarIdx} = sharedVarIdcs;
-      {eq1, eq2} = BackendEquation.getEqns(partition, eqs);
+      {eq1, eq2} = BackendEquation.getList(partition, eqs);
       _ = BackendVariable.getVarAt(vars, sharedVarIdx);
       var1 = BackendVariable.getVarAt(vars, varIdx1);
       var2 = BackendVariable.getVarAt(vars, varIdx2);
@@ -2180,7 +2180,7 @@ algorithm
         //print("varIdcs2 "+stringDelimitList(List.map(varIdcs2, intString), ", ")+"\n");
       {varIdx1} = varIdcs1;
       {varIdx2} = varIdcs2;
-      {eq1, eq2} = BackendEquation.getEqns(loop1, eqs);
+      {eq1, eq2} = BackendEquation.getList(loop1, eqs);
       var1 = BackendVariable.getVarAt(vars, varIdx1);
       var2 = BackendVariable.getVarAt(vars, varIdx2);
 
@@ -2270,7 +2270,7 @@ algorithm
 
      //replace in equations
      eqIdcs = arrayGet(mT, varIdxAlias);
-     eqLst = BackendEquation.getEqns(eqIdcs, eqs);
+     eqLst = BackendEquation.getList(eqIdcs, eqs);
      //(eqLst, _) = BackendVarTransform.replaceEquations(eqLst, repl, NONE());
      eqs = List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
 
@@ -2280,7 +2280,7 @@ algorithm
 
 case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
     equation
-      {eq1, eq2} = BackendEquation.getEqns({eqIdx1, eqIdx2}, eqs);
+      {eq1, eq2} = BackendEquation.getList({eqIdx1, eqIdx2}, eqs);
       var = BackendVariable.getVarAt(vars, sharedVar);
       varExp = BackendVariable.varExp(var);
       _ = Expression.typeof(varExp);

@@ -841,7 +841,7 @@ algorithm
                                                     jacType=BackendDAE.JAC_CONSTANT() )))
       equation
         //the A-matrix and the b-Vector are constant
-        eqn_lst = BackendEquation.getEqns(eindex, syst.orderedEqs);
+        eqn_lst = BackendEquation.getList(eindex, syst.orderedEqs);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, syst.orderedVars);
         (syst,shared) = solveLinearSystem(syst, shared, eqn_lst, eindex, var_lst, vindx, jac);
       then (syst,shared,true,sysIdxIn,compIdxIn+1);
@@ -852,7 +852,7 @@ algorithm
       equation
         true = BackendDAEUtil.isSimulationDAE(ishared);
         //only the A-matrix is constant, apply Gaussian Elimination
-        eqn_lst = BackendEquation.getEqns(eindex, eqns);
+        eqn_lst = BackendEquation.getList(eindex, eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         true = jacobianIsConstant(jac);
         true = Flags.isSet(Flags.CONSTJAC);
@@ -860,7 +860,7 @@ algorithm
         //print("ITS CONSTANT\n");
         //print("THE COMPIDX: "+intString(compIdxIn)+" THE SYSIDX"+intString(sysIdxIn)+"\n");
           //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
-        eqn_lst = BackendEquation.getEqns(eindex,eqns);
+        eqn_lst = BackendEquation.getList(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         (sysEqs, bEqs, bVars, order, sysIdx) =
             solveConstJacLinearSystem(syst, shared, eqn_lst, eindex, listReverse(var_lst), vindx, jac, sysIdxIn, compIdxIn);
@@ -885,7 +885,7 @@ algorithm
           //BackendDump.dumpComponents(sysComps);
         //build system
         syst.orderedVars = List.fold(bVars, BackendVariable.addVar, vars);
-        eqns = BackendEquation.addEquations(bEqs, eqns);
+        eqns = BackendEquation.addList(bEqs, eqns);
         syst.orderedEqs = List.threadFold(eindex, sysEqs, BackendEquation.setAtIndexFirst, eqns);
         syst = BackendDAEUtil.setEqSystMatrices(syst);
         syst = replaceStrongComponent(syst,compIdxIn,sysComps,bComps);
@@ -936,7 +936,7 @@ algorithm
         (v, eqns, shared) = changeConstantLinearSystemVars( var_lst, solvedVals, sources, var_indxs,
                                                                            syst.orderedVars, syst.orderedEqs, ishared );
         syst.orderedVars = v;
-        syst.orderedEqs = List.fold(eqn_indxs, BackendEquation.equationRemove, eqns);
+        syst.orderedEqs = List.fold(eqn_indxs, BackendEquation.delete, eqns);
       then
         (BackendDAEUtil.setEqSystMatrices(syst), shared);
   end match;
@@ -975,7 +975,7 @@ algorithm
       equation
         e = Expression.makeCrefExp(cref, tp);
         e = Expression.expDer(e);
-        eqns = BackendEquation.addEquation(BackendDAE.EQUATION(e, DAE.RCONST(r), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), eqns);
+        eqns = BackendEquation.add(BackendDAE.EQUATION(e, DAE.RCONST(r), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), eqns);
         (vars2,eqns,shared) = changeConstantLinearSystemVars(varlst,rlst,slst,vindxs,vars,eqns,ishared);
       then (vars2,eqns,shared);
     case (v::varlst,r::rlst,_::slst,indx::vindxs,vars,eqns,_)
@@ -2316,7 +2316,7 @@ try
   end if;
 
   // get residual eqns
-  reqns := BackendEquation.getEqns(inResidualequations, inEqns);
+  reqns := BackendEquation.getList(inResidualequations, inEqns);
   reqns := BackendEquation.replaceDerOpInEquationList(reqns);
   outResidualEqns := BackendEquation.listEquation(reqns);
   // create  residual equations
@@ -2335,7 +2335,7 @@ try
 
   // get other eqns
   (otherEqnsInts,otherVarsIntsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-  otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, inEqns);
+  otherEqnsLst := BackendEquation.getList(otherEqnsInts, inEqns);
   otherEqnsLst := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
   outOtherEqns := BackendEquation.listEquation(otherEqnsLst);
 
@@ -2502,7 +2502,7 @@ algorithm
           diffVars = BackendVariable.listVar1(iterationvars);
 
           // get residual eqns
-          reqns = BackendEquation.getEqns(residualequations, inEqns);
+          reqns = BackendEquation.getList(residualequations, inEqns);
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
 
           //check if we are able to calc symbolic jacobian
@@ -2671,7 +2671,7 @@ algorithm
 
         // dependentVarsLst = listReverse(dependentVarsLst);
         dependentVars = BackendVariable.mergeVariables(inResVars, inotherVars);
-        eqns = BackendEquation.mergeEquationArray(inResEquations, inotherEquations);
+        eqns = BackendEquation.merge(inResEquations, inotherEquations);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ created backend system +++---\n");
@@ -2938,7 +2938,7 @@ algorithm
   for comp in inComp loop
     (elst, vlst) := BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
     if foundMarked(vlst, marked) then
-      eqnlst := BackendEquation.getEqns(elst, inEquationArray);
+      eqnlst := BackendEquation.getList(elst, inEquationArray);
       varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
       outEquations := listAppend(eqnlst, outEquations);
       outVars := listAppend(varlst, outVars);

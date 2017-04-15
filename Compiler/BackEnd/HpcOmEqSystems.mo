@@ -247,7 +247,7 @@ algorithm
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
          // get equations and variables
-         eqLst = BackendEquation.getEqns(eqIdcs, eqs);
+         eqLst = BackendEquation.getList(eqIdcs, eqs);
          eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
          varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
          varLstRepl = List.map(varLst, BackendVariable.transformXToXd);
@@ -444,13 +444,13 @@ algorithm
    derRepl := List.threadFold(tvars,tvarsReplaced,addDerReplacement,derRepl);
 
    // get residual eqns
-   reqns := BackendEquation.getEqns(resEqIdcs0, eqns);
+   reqns := BackendEquation.getList(resEqIdcs0, eqns);
    reqns := BackendEquation.replaceDerOpInEquationList(reqns);
 
    // get the other equations and the other variables
    // otherEqnsInts := List.map(otherEqsVarTpl, Util.tuple21);
    (otherEqnsInts,otherVarsIntsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-   otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, eqns);
+   otherEqnsLst := BackendEquation.getList(otherEqnsInts, eqns);
    oeqns := BackendEquation.listEquation(otherEqnsLst);
    otherEqnsLstReplaced := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);   // for computing the new equations
 
@@ -586,7 +586,7 @@ algorithm
   //take the non-assigned vars only
   (_,varIdcs,_) := List.intersection1OnTrue(List.intRange(size),varIdcs,intEq);
   (_,eqIdcs,_) := List.intersection1OnTrue(List.intRange(size),eqIdcs,intEq);
-  eqsOut := BackendEquation.getEqns(eqIdcs,eqArr);
+  eqsOut := BackendEquation.getList(eqIdcs,eqArr);
   varsOut := List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varArr);
   if numIterNew<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numAux,numIterNew-1);
     else (eqsOut,varsOut,resEqsOut) := (eqsOut,varsOut,resEqsOut);
@@ -622,7 +622,7 @@ algorithm
        {varIdx} := arrayGet(m,eqIdx);
        true := varIdx <= numAuxiliaryVars;
        var := BackendVariable.getVarAt(varArr,varIdx);
-       eq := BackendEquation.equationNth1(eqArr,eqIdx);
+       eq := BackendEquation.get(eqArr,eqIdx);
        //solve for it
        varCref := BackendVariable.varCref(var);
        varExp := Expression.crefExp(varCref);
@@ -637,7 +637,7 @@ algorithm
        repl := BackendVarTransform.emptyReplacements();
        repl := BackendVarTransform.addReplacement(repl,varCref,rhs,NONE());
        updEqIdcs := arrayGet(mt,varIdx);
-       eqLst := BackendEquation.getEqns(updEqIdcs,eqArr);
+       eqLst := BackendEquation.getList(updEqIdcs,eqArr);
        (eqLst,_) := BackendVarTransform.replaceEquations(eqLst,repl,NONE());
        (resEqLst,_) := BackendVarTransform.replaceEquations(resEqLst,repl,NONE());
        _ := List.threadFold(updEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqArr);

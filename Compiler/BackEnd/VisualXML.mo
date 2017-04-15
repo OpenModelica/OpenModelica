@@ -241,7 +241,7 @@ algorithm
   case(BackendDAE.VAR(bindExp=NONE(), values=SOME(_)),(idx,ass1,eqs))
     equation
       true = (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn));
-      eq = BackendEquation.equationNth1(eqs,arrayGet(ass1,idx));
+      eq = BackendEquation.get(eqs,arrayGet(ass1,idx));
       BackendDAE.EQUATION(exp=exp1, scalar=exp2) = eq;
       (exp1,_) =  ExpressionSolve.solve(exp1,exp2,BackendVariable.varExp(varIn));
       var = BackendVariable.setBindExp(varIn,SOME(exp1));

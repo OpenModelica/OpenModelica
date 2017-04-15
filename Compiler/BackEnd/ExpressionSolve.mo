@@ -86,7 +86,7 @@ DAE.eqs := list( (match syst
     case BackendDAE.SINGLEEQUATION()
       algorithm
        BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx) := comp;
-       eqn := BackendEquation.equationNth1(syst.orderedEqs, eindex);
+       eqn := BackendEquation.get(syst.orderedEqs, eindex);
        var := BackendVariable.getVarAt(syst.orderedVars, vindx);
        tmpComp := comp;
        if BackendEquation.isEquation(eqn) then

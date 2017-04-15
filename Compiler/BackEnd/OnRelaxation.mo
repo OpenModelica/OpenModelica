@@ -140,7 +140,7 @@ algorithm
         esize = listLength(eindex);
         ass1 = arrayCreate(size, -1);
         ass2 = arrayCreate(size, -1);
-        eqn_lst = BackendEquation.getEqns(eindex, BackendEquation.getEqnsFromEqSystem(isyst));
+        eqn_lst = BackendEquation.getList(eindex, BackendEquation.getEqnsFromEqSystem(isyst));
         eqns = BackendEquation.listEquation(eqn_lst);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
         vars = BackendVariable.listVar1(var_lst);
@@ -364,7 +364,7 @@ algorithm
           BackendDAEUtil.profilerstart1();
         /*
         vars = BackendVariable.addVars(var_lst, vars);
-        eqns = BackendEquation.addEquations(neweqns, teqns);
+        eqns = BackendEquation.addList(neweqns, teqns);
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
           (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
           print("Relaxed System:\n");
@@ -1535,7 +1535,7 @@ algorithm
     case (e::_, _, _)
       equation
         len = listLength(ass[e]);
-        size = BackendEquation.equationSize(BackendEquation.equationNth1(eqnsarr, e));
+        size = BackendEquation.equationSize(BackendEquation.get(eqnsarr, e));
         true = intLt(len, size);
       then
         e;
@@ -1821,7 +1821,7 @@ algorithm
       sb = intString(b);
       cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
       cexp = Expression.crefExp(cr);
-      eqns = BackendEquation.addEquation(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
+      eqns = BackendEquation.add(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
       v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
       vars = BackendVariable.addVar(v, inVars);
     then
@@ -1980,7 +1980,7 @@ algorithm
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _, _)
       equation
         i = mapIncRowEqn[r];
-        eqn = BackendEquation.equationNth1(eqns, i);
+        eqn = BackendEquation.get(eqns, i);
         b1 = BackendEquation.isArrayEquation(eqn);
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
@@ -2186,9 +2186,9 @@ protected
 algorithm
  (eqns, vars, ass2, eqnssort, varssort) := inTpl;
  // get Eqn
- e := BackendEquation.equationNth1(eqns, indx);
+ e := BackendEquation.get(eqns, indx);
  // add equation
- eqnssort := BackendEquation.addEquation(e, eqnssort);
+ eqnssort := BackendEquation.add(e, eqnssort);
  // get vars of equations
  vindxs := ass2[indx];
  vlst := List.map1r(vindxs, BackendVariable.getVarAt, vars);

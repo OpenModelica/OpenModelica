@@ -33,36 +33,92 @@ encapsulated package BackendEquation
 " file:        BackendEquation.mo
   package:     BackendEquation
   description: BackendEquation contains functions that do something with
-               BackendDAEEquation data type.
+               BackendDAE.Equation data type."
 
-"
+import Absyn;
+import BackendDAE;
+import DAE;
 
-public import Absyn;
-public import BackendDAE;
-public import DAE;
+protected
+import Algorithm;
+import Array;
+import BackendDAEUtil;
+import BackendDump;
+import BackendVariable;
+import BaseHashTable;
+import AvlSetInt;
+import ClassInf;
+import ComponentReference;
+import DAEUtil;
+import Debug;
+import ElementSource;
+import Error;
+import ExpandableArray;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import ExpressionSolve;
+import Flags;
+import HashTable;
+import List;
 
-protected import Algorithm;
-protected import Array;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendVariable;
-protected import BaseHashTable;
-protected import AvlSetInt;
-protected import ClassInf;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import ExpandableArray;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import Flags;
-protected import HashTable;
-protected import List;
-protected import Util;
+public function emptyEqns "author: lochel
+  Returns an empty expandable equation array."
+  output BackendDAE.EquationArray equationArray = emptyEqnsSized(0);
+end emptyEqns;
+
+public function emptyEqnsSized "author: lochel
+  Returns an empty expandable equation array with a given size."
+  input Integer size;
+  output BackendDAE.EquationArray outEquationArray = ExpandableArray.new(size, BackendDAE.DUMMY_EQUATION());
+end emptyEqnsSized;
+
+public function add "author: lochel
+  Adds an equation to an EquationArray."
+  input BackendDAE.Equation inEquation;
+  input output BackendDAE.EquationArray equationArray;
+algorithm
+  ExpandableArray.add(inEquation, equationArray);
+end add;
+
+public function addList "author: hkiel
+  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray.
+  TODO: This shouldn't expand the array more than one times."
+  input list<BackendDAE.Equation> eqnlst;
+  input output BackendDAE.EquationArray equationArray;
+algorithm
+  for e in eqnlst loop
+    equationArray := add(e, equationArray);
+  end for;
+end addList;
+
+public function delete
+  input Integer inPos "one-based indexing";
+  input output BackendDAE.EquationArray equationArray;
+algorithm
+  ExpandableArray.delete(inPos, equationArray);
+end delete;
+
+public function deleteList
+  "Deletes all equations from the given list of indices."
+  input output BackendDAE.EquationArray equationArray;
+  input list<Integer> inIndices "one-based indexing";
+algorithm
+  for index in inIndices loop
+    ExpandableArray.delete(index, equationArray);
+  end for;
+end deleteList;
+
+public function merge "
+  This function returns an EquationArray containing all the equations from both
+  inputs.
+  TODO: Fix side-effect"
+  input BackendDAE.EquationArray inEqns1;
+  input BackendDAE.EquationArray inEqns2;
+  output BackendDAE.EquationArray outEqns;
+algorithm
+  outEqns := addList(equationList(inEqns1), inEqns2);
+end merge;
 
 public function listEquation "author: PA
   Transform the a list of equations into an expandable BackendDAE.Equation
@@ -84,22 +140,151 @@ algorithm
   end for;
 end listEquation;
 
-public function emptyEqns "author: lochel
-  Returns an empty expandable equation array."
-  output BackendDAE.EquationArray equationArray = emptyEqnsSized(0);
-end emptyEqns;
-
-public function emptyEqnsSized "author: lochel
-  Returns an empty expandable equation array with a given size."
-  input Integer size;
-  output BackendDAE.EquationArray outEquationArray = ExpandableArray.new(size, BackendDAE.DUMMY_EQUATION());
-end emptyEqnsSized;
-
 public function equationList "author: lochel
   Transform the expandable BackendDAE.Equation array to a list of Equations."
   input BackendDAE.EquationArray equationArray;
   output list<BackendDAE.Equation> outEquationLst = ExpandableArray.toList(equationArray);
 end equationList;
+
+public function copyEquationArray
+  "Performs a deep copy of an expandable equation array."
+  input BackendDAE.EquationArray inEquationArray;
+  output BackendDAE.EquationArray outEquationArray = ExpandableArray.copy(inEquationArray, BackendDAE.DUMMY_EQUATION());
+end copyEquationArray;
+
+public function setAtIndex "author: lochel
+  Sets the n-th array element of an EquationArray.
+  Please note: one-based indexing"
+  input output BackendDAE.EquationArray equationArray;
+  input Integer inPos "one-based indexing";
+  input BackendDAE.Equation inEquation;
+algorithm
+  if ExpandableArray.occupied(inPos, equationArray) then
+    ExpandableArray.update(inPos, inEquation, equationArray);
+  else
+    ExpandableArray.set(inPos, inEquation, equationArray);
+  end if;
+end setAtIndex;
+
+public function setAtIndexFirst "author: waurich
+  Sets the n-th array element of an EquationArray but with index at first argument.
+  Please note: one-based indexing"
+  input Integer inPos "one-based indexing";
+  input BackendDAE.Equation inEquation;
+  input BackendDAE.EquationArray inEquationArray;
+  output BackendDAE.EquationArray outEquationArray = setAtIndex(inEquationArray, inPos, inEquation);
+end setAtIndexFirst;
+
+public function get
+  "Return the n-th equation from the expandable equation array
+  indexed from 1..N."
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer inPos "one-based indexing";
+  output BackendDAE.Equation outEquation = ExpandableArray.get(inPos, inEquationArray);
+end get;
+
+public function getList "author: Frenkel TUD 2011-05
+  returns the equations given by the list of indexes"
+  input list<Integer> inIndices "one-based indexing";
+  input BackendDAE.EquationArray inEquationArray;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := List.map1r(inIndices, get, inEquationArray);
+end getList;
+
+public function equationArraySize "author: lochel
+  Returns the size of the equations in an BackendDAE.EquationArray, which
+  should correspond to the number of variables."
+  input BackendDAE.EquationArray equationArray;
+  output Integer outSize;
+algorithm
+  outSize := 0;
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      outSize := outSize + equationSize(ExpandableArray.get(i, equationArray));
+    end if;
+  end for;
+end equationArraySize;
+
+public function getNumberOfEquations "author: lochel
+  Returns the number of equations in an BackendDAE.EquationArray, which not
+  corresponds to the number of equations in the system."
+  input BackendDAE.EquationArray inEquationArray;
+  output Integer outSize = ExpandableArray.getNumberOfElements(inEquationArray);
+end getNumberOfEquations;
+
+public function traverseEquationArray<T> "author: lochel
+  Traverses all equations of a BackendDAE.EquationArray."
+  input BackendDAE.EquationArray equationArray;
+  input Func inFunc;
+  input output T extraArg;
+
+  partial function Func
+    input output BackendDAE.Equation eq;
+    input output T extraArg;
+  end Func;
+protected
+  BackendDAE.Equation eqn;
+algorithm
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      eqn := ExpandableArray.get(i, equationArray);
+      (_, extraArg) := inFunc(eqn, extraArg);
+    end if;
+  end for;
+end traverseEquationArray;
+
+public function traverseEquationArray_WithStop<T> "author: lochel
+  Traverses all equations of a BackendDAE.EquationArray."
+  input BackendDAE.EquationArray equationArray;
+  input FuncWithStop inFuncWithStop;
+  input output T extraArg;
+
+  partial function FuncWithStop
+    input output BackendDAE.Equation eq;
+    input T inExtraArg;
+    output Boolean cont;
+    output T outExtraArg;
+  end FuncWithStop;
+protected
+  Boolean continue_ = true;
+  BackendDAE.Equation eqn;
+algorithm
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      eqn := ExpandableArray.get(i, equationArray);
+      (_, continue_, extraArg) := inFuncWithStop(eqn, extraArg);
+
+      if not continue_ then
+        break;
+      end if;
+    end if;
+  end for;
+end traverseEquationArray_WithStop;
+
+public function traverseEquationArray_WithUpdate<T>
+  "Traverses all equations of a BackendDAE.EquationArray."
+  input output BackendDAE.EquationArray equationArray;
+  input FuncWithUpdate inFuncWithUpdate;
+  input output T extraArg;
+
+  partial function FuncWithUpdate
+    input output BackendDAE.Equation inoutEq;
+    input output T inoutA;
+  end FuncWithUpdate;
+protected
+  BackendDAE.Equation e, new_e;
+algorithm
+  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
+    if ExpandableArray.occupied(i, equationArray) then
+      e := ExpandableArray.get(i, equationArray);
+      (new_e, extraArg) := inFuncWithUpdate(e, extraArg);
+      if not referenceEq(e, new_e) then
+        ExpandableArray.update(i, new_e, equationArray);
+      end if;
+    end if;
+  end for;
+end traverseEquationArray_WithUpdate;
 
 public function getWhenEquationExpr "Get the left and right hand parts from an equation appearing in a when clause"
   input BackendDAE.WhenEquation inWhenEquation;
@@ -135,16 +320,9 @@ algorithm
   end match;
 end setWhenElsePart;
 
-public function copyEquationArray
-  "Performs a deep copy of an expandable equation array."
-  input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray = ExpandableArray.copy(inEquationArray, BackendDAE.DUMMY_EQUATION());
-end copyEquationArray;
-
-public function equationsLstVars
-"author: Frenkel TUD 2011-05
+public function equationsLstVars "author: Frenkel TUD 2011-05
   From the equations and a variable array return all
-  occurring variables form the array."
+  occurring variables from the array."
   input list<BackendDAE.Equation> inEquationLst;
   input BackendDAE.Variables inVars;
   output list<BackendDAE.Var> outVars;
@@ -161,10 +339,9 @@ algorithm
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsLstVars;
 
-public function equationsVars
-"author: Frenkel TUD 2011-05
+public function equationsVars "author: Frenkel TUD 2011-05
   From the equations and a variable array return all
-  occurring variables form the array."
+  occurring variables from the array."
   input BackendDAE.EquationArray inEquations;
   input BackendDAE.Variables inVars;
   output list<BackendDAE.Var> outVars;
@@ -177,8 +354,7 @@ algorithm
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsVars;
 
-public function equationVars
-"author: Frenkel TUD 2012-03
+public function equationVars "author: Frenkel TUD 2012-03
   From the equation and a variable array return all
   variables in the equation."
   input BackendDAE.Equation inEquation;
@@ -193,8 +369,7 @@ algorithm
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationVars;
 
-public function expressionVars
-"author: Frenkel TUD 2012-03
+public function expressionVars "author: Frenkel TUD 2012-03
   From the expression and a variable array return all
   variables in the expression."
   input DAE.Exp inExp;
@@ -271,39 +446,6 @@ algorithm
     else (true, tree);
   end matchcontinue;
 end checkEquationsVarsExpTopDown;
-
-public function equationsStates "author: Frenkel TUD
-  From a list of equations return all occurring state variables references."
-  input list<BackendDAE.Equation> inEquationLst;
-  input BackendDAE.Variables inVars;
-  output list<DAE.ComponentRef> outExpComponentRefLst;
-algorithm
-  (_, (_,(outExpComponentRefLst, _))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingStateRefFinder, ({}, inVars)));
-end equationsStates;
-
-protected function traversingStateRefFinder "author: Frenkel TUD 2011-05"
-  input DAE.Exp inExp;
-  input tuple<list<DAE.ComponentRef>, BackendDAE.Variables> inTpl;
-  output DAE.Exp outExp;
-  output tuple<list<DAE.ComponentRef>, BackendDAE.Variables> outTpl;
-algorithm
-  outExp := inExp;
-
-  (outTpl) := match (inExp,inTpl)
-    local
-      BackendDAE.Variables vars;
-      list<DAE.ComponentRef> crefs, crefs2;
-      DAE.ComponentRef cr;
-
-    case (DAE.CREF(componentRef=cr), (crefs, vars))
-      guard BackendVariable.isState(cr, vars)
-    equation
-      crefs2 = List.unionEltOnTrue(cr, crefs, ComponentReference.crefEqual);
-    then if referenceEq(crefs, crefs2) then inTpl else (crefs2, vars);
-
-    else inTpl;
-  end match;
-end traversingStateRefFinder;
 
 public function assertWithCondTrue "author: Frenkel TUD 2012-12"
   input BackendDAE.Equation inEqn;
@@ -429,11 +571,11 @@ algorithm
 end equationsCrefs;
 
 public function equationCrefs "author: PA
-  From one equation return all occurring component references."
+  From one equation return all occurring variables/component references."
   input BackendDAE.Equation inEquation;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
-  outExpComponentRefLst := equationsCrefs({inEquation});
+  (_, (_, outExpComponentRefLst)) := traverseExpsOfEquation(inEquation, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, {}));
 end equationCrefs;
 
 public function getAllCrefFromEquations
@@ -572,7 +714,6 @@ public function traverseExpsOfEquationList_WithStop "author: Frenkel TUD 2012-09
     output Type_a outA;
   end FuncExpType;
 algorithm
-
   for eqn in inEquations loop
     (outBoolean, outTypeA) := traverseExpsOfEquation_WithStop(eqn, inFunc, outTypeA);
     if not outBoolean then
@@ -788,7 +929,7 @@ algorithm
   end match;
 end traverseExpsOfEquation_WithStop;
 
-public function traverseExpsOfWhenEquation<T>
+protected function traverseExpsOfWhenEquation<T>
 "Traverses all expressions of a when equation.
   Helper function of traverseExpsOfEquation."
   input BackendDAE.WhenEquation inWhenEquation;
@@ -826,7 +967,7 @@ algorithm
   end match;
 end traverseExpsOfWhenEquation;
 
-public function traverseExpsOfWhenOps<T>
+protected function traverseExpsOfWhenOps<T>
 "Traverses all expressions of a when equation.
   Helper function of traverseExpsOfEquation."
   input list<BackendDAE.WhenOperator> inWhenOps;
@@ -889,7 +1030,7 @@ algorithm
   end match;
 end traverseExpsOfWhenOps;
 
-public function traverseExpsOfWhenEquation_WithStop<T>
+protected function traverseExpsOfWhenEquation_WithStop<T>
 "Traverses all expressions of a when equation.
   Helper function of traverseExpsOfEquation."
   input BackendDAE.WhenEquation inWhenEquation;
@@ -955,7 +1096,7 @@ algorithm
   end match;
 end statementEq;
 
-public function traverseExpsOfWhenOps_WithStop<T>
+protected function traverseExpsOfWhenOps_WithStop<T>
 "Traverses all expressions of a when equation.
   Helper function of traverseExpsOfEquation."
   input list<BackendDAE.WhenOperator> inWhenOps;
@@ -1073,137 +1214,15 @@ protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD
     output DAE.Exp outExp;
     output Boolean cont;
     output T outA;
-  end FuncExpType;algorithm
-
-
+  end FuncExpType;
+algorithm
   for e in inExpl loop
     (_, outBoolean, outTypeA) := rel(e, outTypeA);
     if not outBoolean then
       break;
     end if;
   end for;
-
 end traverseExpsOfExpList_WithStop;
-
-public function traverseEquationArray<T> "author: lochel
-  Traverses all equations of a BackendDAE.EquationArray."
-  input BackendDAE.EquationArray equationArray;
-  input Func inFunc;
-  input output T extraArg;
-
-  partial function Func
-    input output BackendDAE.Equation eq;
-    input output T extraArg;
-  end Func;
-protected
-  BackendDAE.Equation eqn;
-algorithm
-  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
-    if ExpandableArray.occupied(i, equationArray) then
-      eqn := ExpandableArray.get(i, equationArray);
-      (_, extraArg) := inFunc(eqn, extraArg);
-    end if;
-  end for;
-end traverseEquationArray;
-
-public function traverseEquationArray_WithStop<T> "author: lochel
-  Traverses all equations of a BackendDAE.EquationArray."
-  input BackendDAE.EquationArray equationArray;
-  input FuncWithStop inFuncWithStop;
-  input output T extraArg;
-
-  partial function FuncWithStop
-    input output BackendDAE.Equation eq;
-    input T inExtraArg;
-    output Boolean cont;
-    output T outExtraArg;
-  end FuncWithStop;
-protected
-  Boolean continue_ = true;
-  BackendDAE.Equation eqn;
-algorithm
-  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
-    if ExpandableArray.occupied(i, equationArray) then
-      eqn := ExpandableArray.get(i, equationArray);
-      (_, continue_, extraArg) := inFuncWithStop(eqn, extraArg);
-
-      if not continue_ then
-        break;
-      end if;
-    end if;
-  end for;
-end traverseEquationArray_WithStop;
-
-protected function traverseOptEquation<T>
-  input Option<BackendDAE.Equation> inEquation;
-  input FuncExpType func;
-  input T inTypeA;
-  output T outTypeA;
-
-  partial function FuncExpType
-    input output BackendDAE.Equation inoutEq;
-    input output T inoutA;
-  end FuncExpType;
-protected
-  BackendDAE.Equation eqn;
-algorithm
-  if isSome(inEquation) then
-    SOME(eqn) := inEquation;
-    (_, outTypeA) := func(eqn, inTypeA);
-  else
-    outTypeA := inTypeA;
-  end if;
-end traverseOptEquation;
-
-protected function traverseOptEquation_WithStop<T>
-  input Option<BackendDAE.Equation> inEquation;
-  input FuncWithStop inFuncWithStop;
-  input T inTypeA;
-  output Boolean outBoolean;
-  output T outTypeA;
-
-  partial function FuncWithStop
-    input BackendDAE.Equation inEq;
-    input T inA;
-    output BackendDAE.Equation outEq;
-    output Boolean cont;
-    output T outA;
-  end FuncWithStop;
-protected
-  BackendDAE.Equation eqn;
-algorithm
-  if isSome(inEquation) then
-    SOME(eqn) := inEquation;
-    (_, outBoolean, outTypeA) := inFuncWithStop(eqn, inTypeA);
-  else
-    outTypeA := inTypeA;
-    outBoolean := true;
-  end if;
-end traverseOptEquation_WithStop;
-
-public function traverseEquationArray_WithUpdate<T>
-  "Traverses all equations of a BackendDAE.EquationArray."
-  input output BackendDAE.EquationArray equationArray;
-  input FuncWithUpdate inFuncWithUpdate;
-  input output T extraArg;
-
-  partial function FuncWithUpdate
-    input output BackendDAE.Equation inoutEq;
-    input output T inoutA;
-  end FuncWithUpdate;
-protected
-  BackendDAE.Equation e, new_e;
-algorithm
-  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
-    if ExpandableArray.occupied(i, equationArray) then
-      e := ExpandableArray.get(i, equationArray);
-      (new_e, extraArg) := inFuncWithUpdate(e, extraArg);
-      if not referenceEq(e, new_e) then
-        ExpandableArray.update(i, new_e, equationArray);
-      end if;
-    end if;
-  end for;
-end traverseEquationArray_WithUpdate;
 
 public function equationEqual
   "Returns true if two equations are equal"
@@ -1253,41 +1272,12 @@ algorithm
   end match;
 end equationEqual;
 
-public function addEquations "author: hkiel
-  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray.
-  TODO: This shouldn't expand the array more than one times."
-  input list<BackendDAE.Equation> eqnlst;
-  input output BackendDAE.EquationArray equationArray;
-algorithm
-  for e in eqnlst loop
-    equationArray := addEquation(e, equationArray);
-  end for;
-end addEquations;
-
-public function mergeEquationArray "
-  This function returns an EquationArray containing all the equations from both
-  inputs."
-  input BackendDAE.EquationArray inEqns1;
-  input BackendDAE.EquationArray inEqns2;
-  output BackendDAE.EquationArray outEqns;
-algorithm
-  outEqns := addEquations(equationList(inEqns1), inEqns2);
-end mergeEquationArray;
-
-public function addEquation
-  "Adds an equation to an EquationArray."
-  input BackendDAE.Equation inEquation;
-  input output BackendDAE.EquationArray equationArray;
-algorithm
-  ExpandableArray.add(inEquation, equationArray);
-end addEquation;
-
 public function equationAddDAE "author: Frenkel TUD 2011-05"
   input BackendDAE.Equation inEquation;
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 algorithm
-  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, addEquation(inEquation, inEqSystem.orderedEqs));
+  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, add(inEquation, inEqSystem.orderedEqs));
   outEqSystem.matching := BackendDAE.NO_MATCHING();
 end equationAddDAE;
 
@@ -1296,7 +1286,7 @@ public function equationsAddDAE "author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem = inEqSystem;
 algorithm
-  outEqSystem.orderedEqs := addEquations(inEquations, outEqSystem.orderedEqs);
+  outEqSystem.orderedEqs := addList(inEquations, outEqSystem.orderedEqs);
   outEqSystem.matching := BackendDAE.NO_MATCHING();
 end equationsAddDAE;
 
@@ -1308,7 +1298,7 @@ public function requationsAddDAE "author: Frenkel TUD 2012-10
   output BackendDAE.EqSystem outSyst;
 algorithm
   outSyst := if listEmpty(inEquations) then inSyst
-    else BackendDAEUtil.setEqSystRemovedEqns(inSyst, addEquations(inEquations, inSyst.removedEqs));
+    else BackendDAEUtil.setEqSystRemovedEqns(inSyst, addList(inEquations, inSyst.removedEqs));
 end requationsAddDAE;
 
 public function removeRemovedEqs
@@ -1317,102 +1307,6 @@ public function removeRemovedEqs
 algorithm
   ExpandableArray.clear(eqSystem.removedEqs);
 end removeRemovedEqs;
-
-public function setAtIndex "author: lochel
-  Sets the n-th array element of an EquationArray.
-  Please note: one-based indexing"
-  input output BackendDAE.EquationArray equationArray;
-  input Integer inPos "one-based indexing";
-  input BackendDAE.Equation inEquation;
-algorithm
-  if ExpandableArray.occupied(inPos, equationArray) then
-    ExpandableArray.update(inPos, inEquation, equationArray);
-  else
-    ExpandableArray.set(inPos, inEquation, equationArray);
-  end if;
-end setAtIndex;
-
-public function setAtIndexFirst "author: waurich
-  Sets the n-th array element of an EquationArray but with index at first argument.
-  Please note: one-based indexing"
-  input Integer inPos "one-based indexing";
-  input BackendDAE.Equation inEquation;
-  input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray = setAtIndex(inEquationArray, inPos, inEquation);
-end setAtIndexFirst;
-
-public function getEqns "author: Frenkel TUD 2011-05
-  returns the equations given by the list of indexes"
-  input list<Integer> inIndices "one-based indexing";
-  input BackendDAE.EquationArray inEquationArray;
-  output list<BackendDAE.Equation> outEqns;
-algorithm
-  outEqns := List.map1r(inIndices, equationNth1, inEquationArray);
-end getEqns;
-
-public function equationNth1
-  "Return the n-th equation from the expandable equation array
-  indexed from 1..N."
-  input BackendDAE.EquationArray inEquationArray;
-  input Integer inPos "one-based indexing";
-  output BackendDAE.Equation outEquation = ExpandableArray.get(inPos, inEquationArray);
-end equationNth1;
-
-public function equationNthSize
-  input BackendDAE.EquationArray inEquationArray;
-  input Integer pos;
-  output BackendDAE.Equation outEquation;
-protected
-  list<BackendDAE.Equation> eqns;
-algorithm
-  eqns := equationList(inEquationArray);
-  outEquation := equationNthSize1(eqns, pos, 1);
-end equationNthSize;
-
-public function equationNthSize1
-  input list<BackendDAE.Equation> inEqns;
-  input Integer pos;
-  input Integer inAcc;
-  output BackendDAE.Equation outEquation;
-protected
-  Integer acc = inAcc;
-  Integer size;
-  String str;
-algorithm
-  for eqn in inEqns loop
-    size := equationSize(eqn);
-    if (pos >= acc) and (pos < acc+size) then
-      outEquation := eqn;
-      return;
-    elseif (pos >= acc+size) then
-      acc := acc + size;
-    else
-     break;
-    end if;
-  end for;
-
-  str := "BackendEquation.equationNthSize1 failed";
-  print(str + "\n");
-  Error.addInternalError(str, sourceInfo());
-  fail();
-end equationNthSize1;
-
-public function equationDelete
-  "Deletes all the equations from a given list of indices."
-  input output BackendDAE.EquationArray equationArray;
-  input list<Integer> inIndices "one-based indexing";
-algorithm
-  for index in inIndices loop
-    ExpandableArray.delete(index, equationArray);
-  end for;
-end equationDelete;
-
-public function equationRemove
-  input Integer inPos "one-based indexing";
-  input output BackendDAE.EquationArray equationArray;
-algorithm
-  ExpandableArray.delete(inPos, equationArray);
-end equationRemove;
 
 public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
@@ -1667,7 +1561,7 @@ public function markedEquationSource
   input Integer inPos "one-based indexing";
   output DAE.ElementSource outSource;
 algorithm
-  outSource := equationSource(equationNth1(inEqSystem.orderedEqs, inPos));
+  outSource := equationSource(get(inEqSystem.orderedEqs, inPos));
 end markedEquationSource;
 
 public function equationSource "
@@ -1736,27 +1630,6 @@ algorithm
     then fail();
   end match;
 end equationSize;
-
-public function equationArraySize "author: lochel
-  Returns the size of the equations in an BackendDAE.EquationArray, which
-  should correspond to the number of variables."
-  input BackendDAE.EquationArray equationArray;
-  output Integer outSize;
-algorithm
-  outSize := 0;
-  for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
-    if ExpandableArray.occupied(i, equationArray) then
-      outSize := outSize + equationSize(ExpandableArray.get(i, equationArray));
-    end if;
-  end for;
-end equationArraySize;
-
-public function getNumberOfEquations "author: lochel
-  Returns the number of equations in an BackendDAE.EquationArray, which not
-  corresponds to the number of equations in the system."
-  input BackendDAE.EquationArray inEquationArray;
-  output Integer outSize = ExpandableArray.getNumberOfElements(inEquationArray);
-end getNumberOfEquations;
 
 public function isInitialEquation
   input BackendDAE.Equation inEquation;
@@ -2186,7 +2059,7 @@ algorithm
         para := true;
       end if;
     else
-      oeqns := BackendEquation.addEquation(eqn, oeqns);
+      oeqns := BackendEquation.add(eqn, oeqns);
       ovars := BackendVariable.addVar(tmpvar, ovars);
     end if;
 

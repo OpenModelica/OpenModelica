@@ -455,7 +455,7 @@ algorithm
   DAEtypeStr := BackendDump.printBackendDAEType2String(ishared.backendDAEType);
   // generate Subsystem to get the incidence matrix
   size := listLength(vindx);
-  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
+  eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
@@ -1738,7 +1738,7 @@ algorithm
 
   // Generate Subsystem to get the incidence matrix
   size := listLength(vindx);
-  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
+  eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
@@ -3812,7 +3812,7 @@ algorithm
           (var as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindex);
           all_vars := cr :: all_vars;
           arrayUpdate(indx_var,i,vindex);
-          eqn := BackendEquation.equationNth1(eqns, eqindex);
+          eqn := BackendEquation.get(eqns, eqindex);
           if BackendVariable.isStateVar(var) then
             eqn := BackendEquation.solveEquation(eqn, Expression.expDer(Expression.crefExp(cr)), SOME(funcs));
           else
@@ -3844,7 +3844,7 @@ algorithm
         for i in 1:m loop
           eqindex :: residualequations := residualequations;
           arrayUpdate(indx_res, i , eqindex);
-          eqn := BackendEquation.equationNth1(eqns, eqindex);
+          eqn := BackendEquation.get(eqns, eqindex);
           if Flags.isSet(Flags.DUMP_RTEARING) then
             print("INres => " + BackendDump.equationString(eqn) + "[" + intString(i) + "]\n");
           end if;
@@ -4141,7 +4141,7 @@ algorithm
 
   // Generate Subsystem to get the incidence matrix
   size := listLength(vindx);
-  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
+  eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
@@ -4502,7 +4502,7 @@ algorithm
 
   // Generate Subsystem to get the incidence matrix
   size := listLength(vindx);
-  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
+  eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);

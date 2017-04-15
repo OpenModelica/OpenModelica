@@ -504,7 +504,7 @@ public function mergeEqSystems
   input BackendDAE.EqSystem System1;
   input output BackendDAE.EqSystem System2;
 algorithm
-  System2.orderedEqs := BackendEquation.mergeEquationArray(System1.orderedEqs,System2.orderedEqs);
+  System2.orderedEqs := BackendEquation.merge(System1.orderedEqs,System2.orderedEqs);
   System2.orderedVars := BackendVariable.mergeVariables(System1.orderedVars,System2.orderedVars);
 end mergeEqSystems;
 
@@ -1558,7 +1558,7 @@ algorithm
       equation
       (eqnsNew,varsNew) = splitoutEquationAndVars(rest,inEqns,inVars,eqnsNew,varsNew);
       (eqn_lst,var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, inEqns, inVars);
-      eqnsNew = BackendEquation.addEquations(eqn_lst, eqnsNew);
+      eqnsNew = BackendEquation.addList(eqn_lst, eqnsNew);
       varsNew = BackendVariable.addVars(var_lst, varsNew);
     then (eqnsNew,varsNew);
  end match;
@@ -1692,7 +1692,7 @@ algorithm
 
         indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
 
-        el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);
+        el := BackendEquation.getList(indx_lst_e, ordererdEqs);
         arrEqs := BackendEquation.listEquation(el);
         vl := BackendEquation.equationsVars(arrEqs, v);
 
@@ -2147,7 +2147,7 @@ algorithm
 
   for idx in 1:num_eqs loop
     // Get the equation.
-    eq := BackendEquation.equationNth1(inEqns, idx);
+    eq := BackendEquation.get(inEqns, idx);
     // Compute the row.
     rowTree := incidenceRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY());
     row := AvlSetInt.listKeys(rowTree);
@@ -2179,7 +2179,7 @@ algorithm
   for idx in 1:num_eqs loop
     if inMask[idx] then
       // Get the equation.
-      eq := BackendEquation.equationNth1(inEqns, idx);
+      eq := BackendEquation.get(inEqns, idx);
       // Compute the row.
       rowTree := incidenceRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY());
       row := AvlSetInt.listKeys(rowTree);
@@ -2215,7 +2215,7 @@ algorithm
 
   for idx in 1:num_eqs loop
     // Get the equation.
-    eq := BackendEquation.equationNth1(inEqns, idx);
+    eq := BackendEquation.get(inEqns, idx);
 
     // Compute the row.
     (rowTree, size) := incidenceRow(eq, inVars, inIndexType, functionTree, AvlSetInt.EMPTY());
@@ -3183,7 +3183,7 @@ algorithm
     case (_,_,_,_,_,_,(e::eqns))
       equation
         abse = intAbs(e);
-        eqn = BackendEquation.equationNth1(daeeqns, abse);
+        eqn = BackendEquation.get(daeeqns, abse);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,AvlSetInt.EMPTY());
         oldvars = getOldVars(m,abse);
         m_1 = Array.replaceAtWithFill(abse,AvlSetInt.listKeys(row),{},m);
@@ -3299,7 +3299,7 @@ algorithm
     case (_,_,_,_,e::eqns,_,_,_,_)
       equation
         abse = intAbs(e);
-        eqn = BackendEquation.equationNth1(daeeqns, abse);
+        eqn = BackendEquation.get(daeeqns, abse);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,AvlSetInt.Tree.EMPTY());
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listHead(scalarindxs));
@@ -3351,7 +3351,7 @@ algorithm
         not intGt(index,n)
       equation
         abse = intAbs(index);
-        eqn = BackendEquation.equationNth1(daeeqns, abse);
+        eqn = BackendEquation.get(daeeqns, abse);
         rowsize = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,AvlSetInt.EMPTY());
         new_size = size+rowsize;
@@ -3900,7 +3900,7 @@ protected
 algorithm
   for i1 in 1:numberOfEqs loop
     // get the equation
-    e := BackendEquation.equationNth1(eqArr, i1);
+    e := BackendEquation.get(eqArr, i1);
     // compute the row
     (row,size,varsSolvedInWhenEqnsTuple) := adjacencyRowEnhanced(vars, e, i1, rowmark, globalKnownVars, trytosolve);
     rowindxs := List.intRange2(rowSize+1, rowSize+size);
@@ -3995,7 +3995,7 @@ algorithm
         i1 = index+1;
 
         // get the equation
-        e = BackendEquation.equationNth1(eqArr, i1);
+        e = BackendEquation.get(eqArr, i1);
         // compute the row
         (row,_,_) = adjacencyRowEnhanced(vars, e, i1, rowmark, globalKnownVars, trytosolve);
         // put it in the arrays
@@ -7312,7 +7312,7 @@ algorithm
     rhs := DAE.RCONST(0.0);
   end try;
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
-  parameterEqns := BackendEquation.addEquation(eqn, parameterEqns);
+  parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createParameterEquations;
 
 
@@ -8102,7 +8102,7 @@ algorithm
     outSysts := Dangerous.listReverseInPlace(outSysts);
   end if;
 
-  outShared.removedEqs := BackendEquation.addEquations(reqns, outShared.removedEqs);
+  outShared.removedEqs := BackendEquation.addList(reqns, outShared.removedEqs);
 end filterEmptySystems;
 
 protected function filterEmptySystem
@@ -8910,37 +8910,37 @@ algorithm
   case(BackendDAE.SINGLEEQUATION(eqn=eidx,var=vidx),_,_)
     equation
       var = BackendVariable.getVarAt(varArr,vidx);
-      eq = BackendEquation.equationNth1(eqArr,eidx);
+      eq = BackendEquation.get(eqArr,eidx);
     then ({var},{vidx},{eq},{eidx});
   case(BackendDAE.EQUATIONSYSTEM(eqns=eidxs,vars=vidxs),_,_)
     equation
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eqs = BackendEquation.getEqns(eidxs,eqArr);
+      eqs = BackendEquation.getList(eidxs,eqArr);
     then (vars,vidxs,eqs,eidxs);
   case(BackendDAE.SINGLEARRAY(eqn=eidx,vars=vidxs),_,_)
     equation
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eq = BackendEquation.equationNth1(eqArr,eidx);
+      eq = BackendEquation.get(eqArr,eidx);
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.SINGLEALGORITHM(eqn=eidx,vars=vidxs),_,_)
     equation
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eq = BackendEquation.equationNth1(eqArr,eidx);
+      eq = BackendEquation.get(eqArr,eidx);
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eidx,vars=vidxs),_,_)
     equation
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eq = BackendEquation.equationNth1(eqArr,eidx);
+      eq = BackendEquation.get(eqArr,eidx);
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.SINGLEWHENEQUATION(eqn=eidx,vars=vidxs),_,_)
     equation
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eq = BackendEquation.equationNth1(eqArr,eidx);
+      eq = BackendEquation.get(eqArr,eidx);
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.SINGLEIFEQUATION(eqn=eidx,vars=vidxs),_,_)
     equation
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eq = BackendEquation.equationNth1(eqArr,eidx);
+      eq = BackendEquation.get(eqArr,eidx);
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(residualequations=eidxs,tearingvars=vidxs, innerEquations=innerEquations)),_,_)
     equation
@@ -8949,7 +8949,7 @@ algorithm
       eidxs = listAppend(otherEqns,eidxs);
       vidxs = listAppend(otherVars,vidxs);
       vars = List.map1(vidxs,BackendVariable.getVarAtIndexFirst,varArr);
-      eqs = BackendEquation.getEqns(eidxs,eqArr);
+      eqs = BackendEquation.getList(eidxs,eqArr);
     then (vars,vidxs,eqs,eidxs);
   end match;
 end getStrongComponentVarsAndEquations;

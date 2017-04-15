@@ -1550,7 +1550,7 @@ algorithm
           eqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), appendSccIdx, index, eqBackendSimCodeMapping);
           backendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), {index}, backendMapping);
         end if;
-        if BackendEquation.isWhenEquation(BackendEquation.equationNth1(syst.orderedEqs, index)) then
+        if BackendEquation.isWhenEquation(BackendEquation.get(syst.orderedEqs, index)) then
           allEquations = equations1::allEquations;
         else
           (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
@@ -1659,7 +1659,7 @@ algorithm
           eqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), appendSccIdx, index, eqBackendSimCodeMapping);
           backendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1),{index}, backendMapping);
         end if;
-        if BackendEquation.isWhenEquation(BackendEquation.equationNth1(syst.orderedEqs, index)) then
+        if BackendEquation.isWhenEquation(BackendEquation.get(syst.orderedEqs, index)) then
           allEquations = equations1::allEquations;
         else
           (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
@@ -1761,7 +1761,7 @@ algorithm
 
       // ignore when equations if we should not generate them
     case (false, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index))
-      guard(BackendEquation.isWhenEquation(BackendEquation.equationNth1(eqns, index)))
+      guard(BackendEquation.isWhenEquation(BackendEquation.get(eqns, index)))
      then ({}, {}, iuniqueEqIndex, itempvars);
 
     case (false, _, _, BackendDAE.EQSYSTEM(), _, BackendDAE.SINGLEWHENEQUATION())
@@ -1784,7 +1784,7 @@ algorithm
     case (_, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex))
       equation
         if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and not listEmpty(cons) then
-          print("Single Equation with constraint:\n" + BackendDump.equationString(BackendEquation.equationNth1(syst.orderedEqs, index)) + "\n");
+          print("Single Equation with constraint:\n" + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, index)) + "\n");
           print("Constraints:" + ExpressionDump.constraintDTlistToString(cons,"\n") + "\n\n");
         end if;
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars, cons);
@@ -2075,7 +2075,7 @@ algorithm
 
       //collect also the BackendDAE versions for sparsity and jacobains
       bdaeVars := BackendVariable.addVars(varlst, bdaeVars);
-      bdaeEqns := BackendEquation.addEquations(listReverse(orgeqnLst), bdaeEqns);
+      bdaeEqns := BackendEquation.addList(listReverse(orgeqnLst), bdaeEqns);
 
       // result --> resVarsTmp, algVarsTmp, daeEquationsTmp, bdaeVars, bdaeEqns
     end if;
@@ -2386,7 +2386,7 @@ algorithm
   size := BackendEquation.getNumberOfEquations(eqns);
   res := {};
   while i <= size loop
-    b:= match BackendEquation.equationNth1(eqns, i)
+    b:= match BackendEquation.get(eqns, i)
       case BackendDAE.WHEN_EQUATION() then true;
       else false;
     end match;
@@ -2523,7 +2523,7 @@ algorithm
     // solved equation
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        BackendDAE.SOLVED_EQUATION(exp=e2, source=source) = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.SOLVED_EQUATION(exp=e2, source=source) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2533,7 +2533,7 @@ algorithm
     // when eq
     case (_, _,  BackendDAE.EQSYSTEM(orderedEqs=eqns), BackendDAE.SHARED(), _, _, _)
       equation
-        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendEquation.get(eqns, eqNum);
         BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelseWhen) = whenEquation;
         if isSome(oelseWhen) then
           SOME(elseWhen) = oelseWhen;
@@ -2550,7 +2550,7 @@ algorithm
     // single equation
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        eqn = BackendEquation.equationNth1(eqns, eqNum);
+        eqn = BackendEquation.get(eqns, eqNum);
         BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = eqn;
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
@@ -2576,7 +2576,7 @@ algorithm
     // change branches without variable to var - pre(var)
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        BackendDAE.EQUATION(exp=e1 as DAE.RCONST(_), scalar=e2 as DAE.IFEXP(), source=source) = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.EQUATION(exp=e1 as DAE.RCONST(_), scalar=e2 as DAE.IFEXP(), source=source) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2594,7 +2594,7 @@ algorithm
     // non-linear
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        (eqn as BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.equationNth1(eqns, eqNum);
+        (eqn as BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2609,7 +2609,7 @@ algorithm
     // Algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, true, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)  = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)  = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
@@ -2624,7 +2624,7 @@ algorithm
     // algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _,false, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
@@ -2638,7 +2638,7 @@ algorithm
     // inverse Algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // We need to solve an inverse problem of an algorithm section.
@@ -2651,7 +2651,7 @@ algorithm
     // inverse Algorithm for single variable failed
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // We need to solve an inverse problem of an algorithm section.
@@ -3633,7 +3633,7 @@ algorithm
          ((simVars, _)) = List.fold(tvars, traversingdlowvarToSimvarFold, ({}, globalKnownVars));
          simVars = listReverse(simVars);
          // get residual eqns
-         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         reqns = BackendEquation.getList(residualEqns, eqns);
          // solve other equations
          repl = BackendVarTransform.emptyReplacements();
          repl = solveInnerEquations(otherEqns, eqns, vars, ishared, repl);
@@ -3678,7 +3678,7 @@ algorithm
        simVars = listReverse(simVars);
 
        // get residual eqns
-       reqns = BackendEquation.getEqns(residualEqns, eqns);
+       reqns = BackendEquation.getList(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
        (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
@@ -3698,7 +3698,7 @@ algorithm
          simVars = listReverse(simVars);
 
          // get residual eqns
-         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         reqns = BackendEquation.getList(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
          (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
@@ -3721,7 +3721,7 @@ algorithm
        tvars = List.map(tvars, BackendVariable.transformXToXd);
 
        // get residual eqns
-       reqns = BackendEquation.getEqns(residualEqns, eqns);
+       reqns = BackendEquation.getList(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate residual replacements
        tcrs = List.map(tvars, BackendVariable.varCref);
@@ -3743,7 +3743,7 @@ algorithm
          tvars = List.map(tvars, BackendVariable.transformXToXd);
 
          // get residual eqns
-         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         reqns = BackendEquation.getList(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate residual replacements
          tcrs = List.map(tvars, BackendVariable.varCref);
@@ -3791,7 +3791,7 @@ algorithm
     case ({}, _, _, _, _) then inRepl;
     case (BackendDAE.INNEREQUATION(eqn=e, vars={v})::rest, _, _, _, _)
       equation
-        (BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.equationNth1(inEqns, e);
+        (BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.get(inEqns, e);
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
@@ -3805,7 +3805,7 @@ algorithm
         solveInnerEquations(rest, inEqns, inVars, ishared, repl);
     case (BackendDAE.INNEREQUATION(eqn=e, vars=vlst)::rest, _, _, _, _)
       equation
-        (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.equationNth1(inEqns, e);
+        (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.get(inEqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
         subslst = Expression.dimensionSizesSubscripts(ds);
         subslst = Expression.rangesToSubscripts(subslst);
@@ -3818,7 +3818,7 @@ algorithm
         solveInnerEquations(rest, inEqns, inVars, ishared, repl);
      case (BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=e, vars={v})::rest, _, _, _, _)
       equation
-        (BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.equationNth1(inEqns, e);
+        (BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.get(inEqns, e);
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
@@ -3832,7 +3832,7 @@ algorithm
         solveInnerEquations(rest, inEqns, inVars, ishared, repl);
      case (BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=e, vars=vlst)::rest, _, _, _, _)
       equation
-        (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.equationNth1(inEqns, e);
+        (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2)) = BackendEquation.get(inEqns, e);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
         subslst = Expression.dimensionSizesSubscripts(ds);
         subslst = Expression.rangesToSubscripts(subslst);
@@ -3929,7 +3929,7 @@ end solveInnerEquations1;
 //
 //     case((eqnindx, vars)::rest, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, _, _, _) equation
 //       // get Eqn
-//       eqn = BackendEquation.equationNth1(eqns, eqnindx);
+//       eqn = BackendEquation.get(eqns, eqnindx);
 //       // generate comp
 //       comp = createTornSystemOtherEqns1(eqn, eqnindx, vars);
 //       (simequations, _, uniqueEqIndex, tempvars) = createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared, {comp}, iuniqueEqIndex, itempvars);
@@ -3974,7 +3974,7 @@ algorithm
   for eq in innerEquations loop
     // get Eqn
     (eqnindx, vars, cons) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
-    eqn := BackendEquation.equationNth1(eqns, eqnindx);
+    eqn := BackendEquation.get(eqns, eqnindx);
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
     (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(genDiscrete, false, genDiscrete, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
@@ -6996,7 +6996,7 @@ algorithm
       varIdx := arrayGet(varMap,intAbs(varIdx0));
       var := BackendVariable.getVarAt(varArr,varIdx);
       cref := BackendVariable.varCref(var);
-      eq := BackendEquation.equationNth1(eqs,eqIdx);
+      eq := BackendEquation.get(eqs,eqIdx);
       //print("solve eq("+intString(eqIdx)+"): ");
       //BackendDump.printEquationList({eq});
       //print(" for var("+intString(varIdx0)+"): "+ComponentReference.printComponentRefStr(cref)+"\n");
@@ -7014,7 +7014,7 @@ algorithm
       workList := List.append_reverse(newEqIdcs,workList);
       //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
       // replace the var with the new start value in these equations
-      eqLst := List.map1r(newEqIdcs,BackendEquation.equationNth1,eqs);
+      eqLst := List.map1r(newEqIdcs,BackendEquation.get,eqs);
       (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,varArr);
       eqArr := List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
       // update the incidenceMatrix m and remove the idcs for the calculated var

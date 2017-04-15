@@ -190,7 +190,7 @@ algorithm
     comp := List.map1r(inComp, arrayGet, mapIncRowEqn);
     comp := List.fold2(comp, uniqueComp, imark, markarray, {});
     //comp = List.unique(comp);
-    eqn_lst := List.map1r(comp, BackendEquation.equationNth1, eqns);
+    eqn_lst := List.map1r(comp, BackendEquation.get, eqns);
     outComp := analyseStrongComponentBlock(comp, eqn_lst, varlst, vlst, syst, shared);
   else
     Error.addInternalError("function analyseStrongComponentScalar failed", sourceInfo());
@@ -437,47 +437,47 @@ algorithm
       BackendDAE.InnerEquations innerEquations;
 
     case BackendDAE.SINGLEEQUATION(eqn=e, var=v) equation
-      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      eqn = BackendEquation.get(inEquationArray, e);
       var = BackendVariable.getVarAt(inVariables, v);
     then ({eqn}, {var}, e);
 
     case BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst) equation
-      eqnlst = BackendEquation.getEqns(elst, inEquationArray);
+      eqnlst = BackendEquation.getList(elst, inEquationArray);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
       e = listHead(elst);
     then (eqnlst, varlst, e);
 
     case BackendDAE.SINGLEARRAY(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      eqn = BackendEquation.get(inEquationArray, e);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
     case BackendDAE.SINGLEIFEQUATION(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      eqn = BackendEquation.get(inEquationArray, e);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
     case BackendDAE.SINGLEALGORITHM(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      eqn = BackendEquation.get(inEquationArray, e);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      eqn = BackendEquation.get(inEquationArray, e);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
     case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.equationNth1(inEquationArray, e);
+      eqn = BackendEquation.get(inEquationArray, e);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
     case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) equation
-      eqnlst = BackendEquation.getEqns(elst, inEquationArray);
+      eqnlst = BackendEquation.getList(elst, inEquationArray);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
       (otherEqns,otherVarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
       otherVars = List.flatten(otherVarsLst);
-      eqnlst1 = BackendEquation.getEqns(otherEqns, inEquationArray);
+      eqnlst1 = BackendEquation.getList(otherEqns, inEquationArray);
       varlst1 = List.map1r(otherVars, BackendVariable.getVarAt, inVariables);
       e = listHead(elst);
     then (listAppend(eqnlst, eqnlst1), listAppend(varlst, varlst1), e);

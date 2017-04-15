@@ -578,7 +578,7 @@ algorithm
         false = BackendVariable.isStateorStateDerVar(var);
         // try to solve the equation
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        eqn = BackendEquation.equationNth1(eqns,pos);
+        eqn = BackendEquation.get(eqns,pos);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
         globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
@@ -597,7 +597,7 @@ algorithm
         false = BackendVariable.isStateorStateDerVar(var);
         // try to solve the equation
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        eqn = BackendEquation.equationNth1(eqns,pos);
+        eqn = BackendEquation.get(eqns,pos);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
         globalKnownVars = BackendVariable.daeGlobalKnownVars(shared);
@@ -611,7 +611,7 @@ algorithm
     case ({_,_},_,_,_,_)
       equation
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        eqn = BackendEquation.equationNth1(eqns,pos);
+        eqn = BackendEquation.get(eqns,pos);
         (cr,_,_,_,_) = BackendEquation.derivativeEquation(eqn);
         // select candidate
         vars = BackendVariable.daeVars(syst);
@@ -621,7 +621,7 @@ algorithm
     case ({_,_},_,_,_,_)
       equation
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        (eqn as BackendDAE.EQUATION()) = BackendEquation.equationNth1(eqns,pos);
+        (eqn as BackendDAE.EQUATION()) = BackendEquation.get(eqns,pos);
         _ = BackendEquation.aliasEquation(eqn);
       then ();
   end matchcontinue;
@@ -961,7 +961,7 @@ algorithm
       equation
         // check number of vars in eqns
         _::_ = elem;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.equationNth1(eqns,pos);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.get(eqns,pos);
         // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
         (ecr,exp) = functionCallEqn(e1,e2,vars);
         // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
@@ -1080,7 +1080,7 @@ algorithm
     case ({},_,_,_,_) then (inEqns,ichanged);
     case (pos::rest,_,_,_,_)
       equation
-        eqn = BackendEquation.equationNth1(inEqns,pos);
+        eqn = BackendEquation.get(inEqns,pos);
         //BackendDump.printEquationList({eqn});
         //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
         (eqn1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
@@ -1575,8 +1575,8 @@ protected
   BackendDAE.StateSets stateSets;
 algorithm
   vars := BackendVariable.addVariables(syst1.orderedVars, syst2.orderedVars);
-  eqs := BackendEquation.addEquations(BackendEquation.equationList(syst1.orderedEqs), syst2.orderedEqs);
-  removedEqs := BackendEquation.addEquations(BackendEquation.equationList(syst1.removedEqs), syst2.removedEqs);
+  eqs := BackendEquation.addList(BackendEquation.equationList(syst1.orderedEqs), syst2.orderedEqs);
+  removedEqs := BackendEquation.addList(BackendEquation.equationList(syst1.removedEqs), syst2.removedEqs);
   stateSets := listAppend(syst1.stateSets, syst2.stateSets);
   syst := BackendDAEUtil.createEqSystem(vars, eqs, stateSets, BackendDAE.UNKNOWN_PARTITION(), removedEqs);
 end mergeIndependentBlocks;
@@ -1767,7 +1767,7 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=eqIdx)::rest,_,_,_)
       equation
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
-        eqn = BackendEquation.equationNth1(eqns, eqIdx);
+        eqn = BackendEquation.get(eqns, eqIdx);
           //BackendDump.dumpBackendDAEEqnList({eqn},"AN EQUATION",true);
         //BackendDump.dumpEquationList({eqn},"");
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1777,7 +1777,7 @@ algorithm
 
     case (BackendDAE.SINGLEWHENEQUATION(eqn=eqIdx)::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         eqn = BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          //BackendDump.printEquation(eqn);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
          compInfo = BackendDAE.COUNTER(listHead(inComps),numAdd,numMul,numDiv,numTrig,numRel,numLog+1,numOth,numFuncs);
@@ -1809,7 +1809,7 @@ algorithm
 
     case ((comp as BackendDAE.SINGLEARRAY(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         eqn = BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
          compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
       then
@@ -1817,7 +1817,7 @@ algorithm
 
     case ((comp as BackendDAE.SINGLEIFEQUATION(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         eqn = BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
          compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
@@ -1825,7 +1825,7 @@ algorithm
 
     case ((comp as BackendDAE.SINGLEALGORITHM(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         eqn = BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
          compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
@@ -1833,7 +1833,7 @@ algorithm
 
     case ((comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         eqn = BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
          compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
@@ -1845,7 +1845,7 @@ algorithm
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         vars = BackendVariable.daeVars(isyst);
         // the torn equations
-        eqnlst = BackendEquation.getEqns(tornEqs,eqns);
+        eqnlst = BackendEquation.getList(tornEqs,eqns);
         varlst = List.map1(vlst,BackendVariable.getVarAtIndexFirst, vars);
         (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1853,7 +1853,7 @@ algorithm
         // the other eqs
         (otherEqs,vLstLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         vlst = List.flatten(vLstLst);
-        eqnlst = BackendEquation.getEqns(otherEqs,eqns);
+        eqnlst = BackendEquation.getList(otherEqs,eqns);
         varlst = List.map1(vlst,BackendVariable.getVarAtIndexFirst, vars);
         (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1867,13 +1867,13 @@ algorithm
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         _ = BackendVariable.daeVars(isyst);
         // the torn equations
-        eqnlst = BackendEquation.getEqns(tornEqs,eqns);
+        eqnlst = BackendEquation.getList(tornEqs,eqns);
         explst = List.map(eqnlst,BackendEquation.getEquationRHS);
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         torn = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
         // the other eqs
         (otherEqs,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        eqnlst = BackendEquation.getEqns(otherEqs,eqns);
+        eqnlst = BackendEquation.getList(otherEqs,eqns);
         explst = List.map(eqnlst,BackendEquation.getEquationRHS);
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         other = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
@@ -3622,7 +3622,7 @@ algorithm
       //print("Equation: " + intString(eindex) + "\n\n");
 
       potentialLocalKnownVar := BackendVariable.getVarAt(orderedVars,vindex);
-      potentialGlobalKnownEquation := BackendEquation.equationNth1(orderedEqs,eindex);
+      potentialGlobalKnownEquation := BackendEquation.get(orderedEqs,eindex);
 
       try
         BackendDAE.EQUATION(exp = lhs, scalar = rhs) := potentialGlobalKnownEquation;
@@ -3645,7 +3645,7 @@ algorithm
   end for;
 
   for eqn in localKnownEqns loop
-    orderedEqs := BackendEquation.equationRemove(eqn, orderedEqs);
+    orderedEqs := BackendEquation.delete(eqn, orderedEqs);
   end for;
 
   // delete adjacency matrix
@@ -4030,7 +4030,7 @@ algorithm
             lhs := Expression.crefExp(cref);
             eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
             //print("\n" + BackendDump.equationString(eqn));
-            eqns := BackendEquation.addEquation(eqn, eqns);
+            eqns := BackendEquation.add(eqn, eqns);
             vars := BackendVariable.addVar(tmpv, vars);
           end for;
           syst1.orderedVars := vars;
@@ -4083,7 +4083,7 @@ algorithm
           lhs := Expression.crefExp(cref);
           eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
           //print("\n" + BackendDump.equationString(eqn));
-          eqns := BackendEquation.addEquation(eqn, eqns);
+          eqns := BackendEquation.add(eqn, eqns);
           vars := BackendVariable.addVar(tmpv, vars);
         end for;
         syst1.orderedEqs := eqns;
@@ -4159,7 +4159,7 @@ algorithm
           tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntGt);
           //new order eqns indexs
           indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
-          eqn_lst := list(BackendEquation.equationNth1(eqns, i) for i in indexs);
+          eqn_lst := list(BackendEquation.get(eqns, i) for i in indexs);
           //new eqns
           eqns := BackendEquation.listEquation(eqn_lst);
           syst1.orderedEqs := eqns;
@@ -4260,7 +4260,7 @@ algorithm
 
     for i in 1:n loop
       try
-        eqn := BackendEquation.equationNth1(eqns, i);
+        eqn := BackendEquation.get(eqns, i);
       else
         continue;
       end try;
@@ -4283,7 +4283,7 @@ algorithm
             if not Expression.isWild(e1) then
               if Expression.isScalar(e2) then
                 eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
-                eqns := BackendEquation.addEquation(eqn1, eqns);
+                eqns := BackendEquation.add(eqn1, eqns);
                 //print(BackendDump.equationString(eqn1) + "--new--\n");
               else
                 expLst := simplifyComplexFunction2(e1);
@@ -4291,7 +4291,7 @@ algorithm
                 for e_asub in arrayLst loop
                   e3 :: expLst := expLst;
                   eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
-                  eqns := BackendEquation.addEquation(eqn1, eqns);
+                  eqns := BackendEquation.add(eqn1, eqns);
                   //print(BackendDump.equationString(eqn1) + "--new--\n");
                 end for;
               end if; //isScalar
@@ -4311,7 +4311,7 @@ algorithm
           if not Expression.isWild(e1) then
             if Expression.isScalar(e2) then
             eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
-            eqns := BackendEquation.addEquation(eqn1, eqns);
+            eqns := BackendEquation.add(eqn1, eqns);
             //print(BackendDump.equationString(eqn1) + "--new--\n");
             else
             expLst := simplifyComplexFunction2(e1);
@@ -4319,7 +4319,7 @@ algorithm
             for e_asub in arrayLst loop
               e3 :: expLst := expLst;
               eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
-              eqns := BackendEquation.addEquation(eqn1, eqns);
+              eqns := BackendEquation.add(eqn1, eqns);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
             end for;
             end if; //isScalar
@@ -4346,7 +4346,7 @@ algorithm
               vars := BackendVariable.addVar(tmpvar, vars);
 
               eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-              eqns := BackendEquation.addEquation(eqn1, eqns);
+              eqns := BackendEquation.add(eqn1, eqns);
             else
               e := e1;
             end if;
@@ -4360,7 +4360,7 @@ algorithm
               vars := BackendVariable.addVar(tmpvar, vars);
               eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
-              eqns := BackendEquation.addEquation(eqn1, eqns);
+              eqns := BackendEquation.add(eqn1, eqns);
              elseif Expression.isArray(e1) then
               update := true;
               DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
@@ -4378,7 +4378,7 @@ algorithm
                 e3 :: arrayLst := arrayLst;
                 eqn1 := BackendDAE.EQUATION(e2, e3, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
                 //print(BackendDump.equationString(eqn1) + "--new--\n");
-                eqns := BackendEquation.addEquation(eqn1, eqns);
+                eqns := BackendEquation.add(eqn1, eqns);
                 cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
                 j := j + 1;
                 tmpvar.varName := cr;
@@ -4403,7 +4403,7 @@ algorithm
       for i in listReverse(indRemove) loop
       //print("\neqns:" + intString(i) + "\n");
       //BackendDump.printEquationArray(eqns);
-        eqns := BackendEquation.equationRemove(i,eqns);
+        eqns := BackendEquation.delete(i,eqns);
       end for;
       eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));
       systlst := BackendDAEUtil.createEqSystem(vars, eqns, syst.stateSets, syst.partitionKind, syst.removedEqs) :: systlst;
@@ -4492,7 +4492,7 @@ algorithm
         for innerEquation in innerEquations loop
            try
             (i,{j},_) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
-            eqn := BackendEquation.equationNth1(eqns, i);
+            eqn := BackendEquation.get(eqns, i);
             BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, j);
             eqn := BackendEquation.solveEquation(eqn, Expression.crefExp(cr), SOME(shared.functionTree));
             eqn := hetsSplitRhs(eqn);
@@ -4502,14 +4502,14 @@ algorithm
         end for;
 
         for i in teqns loop
-          eqn := BackendEquation.equationNth1(eqns, i);
+          eqn := BackendEquation.get(eqns, i);
           eqn := hetsSplitRes(eqn);
           eqns := BackendEquation.setAtIndex(eqns, i, eqn);
         end for;
       elseif BackendEquation.isEquationsSystem(comp) then
         BackendDAE.EQUATIONSYSTEM(eqns=teqns) := comp;
         for i in teqns loop
-          eqn := BackendEquation.equationNth1(eqns, i);
+          eqn := BackendEquation.get(eqns, i);
           eqn := hetsSplitRes(eqn);
           eqns := BackendEquation.setAtIndex(eqns, i, eqn);
         end for;
@@ -4654,7 +4654,7 @@ algorithm
                    end match;
          for id in idEqns
          loop
-           eq := BackendEquation.equationNth1(eqns, id);
+           eq := BackendEquation.get(eqns, id);
            //eqn := BackendInline.inlineEqOpt(SOME(eq), fns);
            //eqns := BackendEquation.setAtIndexFirst(id, eq, eqns);
            (eqNew, tmpEqs, inlined, shared) := BackendInline.inlineEqAppend_debug(eq, fns, shared);
@@ -4662,7 +4662,7 @@ algorithm
            then
              tmpEqs1 := BackendDAEUtil.mergeEqSystems(tmpEqs, tmpEqs1);
              eqns := BackendEquation.setAtIndexFirst(id, eqNew, eqns);
-             //BackendDump.printEquation(BackendEquation.equationNth1(eqns, id));
+             //BackendDump.printEquation(BackendEquation.get(eqns, id));
              inlined1 := true;
            end if;
          end for;
@@ -4919,7 +4919,7 @@ algorithm
 
   for i in eqns loop
     try
-      eqn := BackendEquation.equationNth1(outEqns, i);
+      eqn := BackendEquation.get(outEqns, i);
       if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
         print("update eqn[" + intString(i) + "]\n");
         print(BackendDump.equationString(eqn) + "--old--\n");
@@ -5209,7 +5209,7 @@ algorithm
         (eqns, (vars, eqnsList, _, _)) :=
               BackendEquation.traverseEquationArray_WithUpdate( eqns, traverserintroduceDerAliasEquation,
                                                                 (vars, {}, shared, true) );
-        eqns := BackendEquation.addEquations(eqnsList, eqns);
+        eqns := BackendEquation.addList(eqnsList, eqns);
         syst.orderedEqs := eqns; syst.orderedVars := vars;
       then syst;
   end match;
@@ -5546,7 +5546,7 @@ algorithm
   var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
   orderedVars := BackendVariable.addVar(var, orderedVars);
   orderedEqs := BackendEquation.emptyEqns();
-  orderedEqs := BackendEquation.addEquation(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(DAE.crefTimeState, DAE.T_REAL_DEFAULT)}, DAE.callAttrBuiltinReal), DAE.RCONST(1.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), orderedEqs);
+  orderedEqs := BackendEquation.add(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(DAE.crefTimeState, DAE.T_REAL_DEFAULT)}, DAE.callAttrBuiltinReal), DAE.RCONST(1.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), orderedEqs);
   eq := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, {}, BackendDAE.CONTINUOUS_TIME_PARTITION());
   outDAE := BackendDAE.DAE(eq::eqs, shared);
 end addTimeAsState;

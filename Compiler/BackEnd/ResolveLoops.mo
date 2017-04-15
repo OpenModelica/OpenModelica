@@ -149,7 +149,7 @@ algorithm
 
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         // get the graphML for the resolved System
-        simpEqLst = BackendEquation.getEqns(eqMapping,eqs);
+        simpEqLst = BackendEquation.getList(eqMapping,eqs);
         simpEqs = BackendEquation.listEquation(simpEqLst);
         numSimpEqs = listLength(simpEqLst);
         numVars = listLength(simpVarLst);
@@ -736,7 +736,7 @@ algorithm
 
         //TODO: check if the assigned cref occurs in this equation!!!!
 
-        if listLength(BackendEquation.equationVars(BackendEquation.equationNth1(daeEqsIn,arrayGet(eqMap,eq1)),daeVarsIn)) >= listLength(BackendEquation.equationVars(BackendEquation.equationNth1(daeEqsIn,arrayGet(eqMap,eq2)),daeVarsIn)) then
+        if listLength(BackendEquation.equationVars(BackendEquation.get(daeEqsIn,arrayGet(eqMap,eq1)),daeVarsIn)) >= listLength(BackendEquation.equationVars(BackendEquation.get(daeEqsIn,arrayGet(eqMap,eq2)),daeVarsIn)) then
           pos := eq1;
         else
           pos := eq2;
@@ -928,7 +928,7 @@ algorithm
   startEqDaeIdx := arrayGet(eqMap,startEqIdx);
   loop1 := sortLoop(restLoop,m,mT,{startEqIdx});
     //print("solve the loop: "+stringDelimitList(List.map(loop1,intString),",")+"\n");
-  eq := BackendEquation.equationNth1(daeEqsIn,startEqDaeIdx);
+  eq := BackendEquation.get(daeEqsIn,startEqDaeIdx);
   eqOut := resolveClosedLoop2(eq,loop1,m,mT,eqMap,varMap,daeEqsIn,daeVarsIn);
 end resolveClosedLoop;
 
@@ -962,7 +962,7 @@ algorithm
         // the equation to add
         eqIdx2 = listHead(restLoop);
         eqDaeIdx2 = arrayGet(eqMap,eqIdx2);
-        eq2 = BackendEquation.equationNth1(daeEqsIn,eqDaeIdx2);
+        eq2 = BackendEquation.get(daeEqsIn,eqDaeIdx2);
 
         // get the vars that are shared of the 2 equations
         adjVars1 = arrayGet(m,eqIdx1);
@@ -1951,7 +1951,7 @@ algorithm
   size := listLength(varIdcs);
   BackendDAE.EQSYSTEM(orderedVars=daeVars, orderedEqs=daeEqs, matching=BackendDAE.MATCHING(ass1=ass1Sys,ass2=ass2Sys)) := dae;
   funcs := BackendDAEUtil.getFunctions(shared);
-  eqLst := BackendEquation.getEqns(eqIdcs,daeEqs);
+  eqLst := BackendEquation.getList(eqIdcs,daeEqs);
   eqs := BackendEquation.listEquation(eqLst);
   varLst := List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
   vars := BackendVariable.listVar1(varLst);
@@ -2243,7 +2243,7 @@ algorithm
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
       equation
         // remove empty entries from vars/eqns
-        eqns = List.fold(ii,BackendEquation.equationRemove,eqns);
+        eqns = List.fold(ii,BackendEquation.delete,eqns);
         syst.orderedVars = BackendVariable.listVar1(BackendVariable.varList(vars));
         syst.orderedEqs = BackendEquation.listEquation(BackendEquation.equationList(eqns));
       then
@@ -2284,7 +2284,7 @@ algorithm
            (BackendDAE.EQUATIONSYSTEM( eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)), jacType=BackendDAE.JAC_LINEAR()))
          )
       equation
-        eqn_lst = BackendEquation.getEqns(eindex,eqns);
+        eqn_lst = BackendEquation.getList(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         true = listLength(var_lst) <= maxSize;
         ({},_) = List.splitOnTrue(var_lst, BackendVariable.isStateVar) "TODO: fix BackendDAEUtil.getEqnSysRhs for x and der(x)";
@@ -2333,7 +2333,7 @@ algorithm
         (eqns, vars, n, shared) := solveLinearSystem4(beqs, jac, names, var_lst, n, eqns, vars, offset, shared);
         syst.orderedVars := vars; syst.orderedEqs := eqns;
         syst := BackendDAEUtil.setEqSystMatrices(syst);
-        //eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns);
+        //eqns = List.fold(eqn_indxs,BackendEquation.delete,eqns);
       then
         (syst, shared, n);
   end match;
@@ -2448,7 +2448,7 @@ algorithm
     a := Expression.makeSum1(list(Expression.expMul(arrayGet(R, m + j), arrayGet(scaled_x, j)) for j in i:n));
     eqn := BackendDAE.EQUATION(a, arrayGet(Qb,i), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     eqn := BackendEquation.solveEquation(eqn, arrayGet(scaled_x,i), NONE());
-    oeqns := BackendEquation.addEquation(eqn, oeqns);
+    oeqns := BackendEquation.add(eqn, oeqns);
   end for;
 
 end solveLinearSystem4;

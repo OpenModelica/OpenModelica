@@ -732,7 +732,7 @@ protected
   BackendDAE.Equation eqn;
   Option<BackendDAE.Equation> diffEqn;
 algorithm
-  eqn := BackendEquation.equationNth1(eqns, eqIdx);
+  eqn := BackendEquation.get(eqns, eqIdx);
 
   if BackendEquation.isDifferentiated(eqn) then
     if Flags.isSet(Flags.BLT_DUMP) then
@@ -1111,7 +1111,7 @@ protected
 algorithm
   (eqns, changedEqns, repl) := inTpl;
   // get the equation
-  eqn := BackendEquation.equationNth1(eqns, e);
+  eqn := BackendEquation.get(eqns, e);
   // reaplace final vars
   (eqn, (_, b, repl)) := BackendEquation.traverseExpsOfEquation(eqn, replaceFinalVarsEqn, (vars, false, repl));
   // if replaced set eqn
@@ -1638,8 +1638,8 @@ algorithm
     // add set states
     oVars := BackendVariable.addVars(setVars,oVars);
     // add equations
-    oEqns := BackendEquation.addEquation(eqn, oEqns);
-    oEqns := BackendEquation.addEquation(deqn, oEqns);
+    oEqns := BackendEquation.add(eqn, oEqns);
+    oEqns := BackendEquation.add(deqn, oEqns);
     // set varkind to dummy_state
     stateCandidates := List.map1(stateCandidates,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
     otherVars := List.map1(otherVars,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
@@ -2058,18 +2058,18 @@ algorithm
         comps = List.select1(comps, selectBlock, ne);
         //  BackendDump.dumpComponentsOLD(comps);
         //  eqns1 = BackendEquation.listEquation(BackendEquation.equationList(eqns));
-        //  eqns1 = BackendEquation.addEquations(eqnslst, eqns1);
+        //  eqns1 = BackendEquation.addList(eqnslst, eqns1);
         //  List.map3_0(comps, dumpBlock, mapIncRowEqn, nv, BackendDAE.EQSYSTEM(vars,eqns1,SOME(m1),NONE(),BackendDAE.MATCHING(invindexmap,vec2,{}),{}) );
         // traverse the blocks and collect the additional equations and vars
         ilst = List.fold1(comps,getCompsExtraEquations,ne,{});
         ilst = List.map1r(ilst,arrayGet,iMapIncRowEqn);
         ilst = List.uniqueIntN(ilst, ne);
-        eqnslst1 = BackendEquation.getEqns(ilst,eqns);
+        eqnslst1 = BackendEquation.getList(ilst,eqns);
         ilst = List.fold2(comps,getCompsExtraVars,nv,vec2,{});
         vlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
         // generate system
         eqns = BackendEquation.listEquation(eqnslst);
-        eqns = BackendEquation.addEquations(eqnslst1, eqns);
+        eqns = BackendEquation.addList(eqnslst1, eqns);
         vars = BackendVariable.listVar1(vlst);
         vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst = BackendDAEUtil.createEqSystem(vars, eqns);
@@ -2520,10 +2520,10 @@ algorithm
         assigend1 := List.map1r(unassigned,arrayGet,inMapIncRowEqn);
         n := arrayLength(inMapIncRowEqn);
         assigend1 := List.uniqueIntN(assigend1,n);
-        //  print("BackendEquation.getEqns " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
-        eqnlst := BackendEquation.getEqns(assigend1, eqns1);
-        //  print("BackendEquation.equationRemove " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
-        eqns1 := List.fold(assigend1,BackendEquation.equationRemove,eqns1);
+        //  print("BackendEquation.getList " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
+        eqnlst := BackendEquation.getList(assigend1, eqns1);
+        //  print("BackendEquation.delete " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
+        eqns1 := List.fold(assigend1,BackendEquation.delete,eqns1);
         nassigned := listLength(assigned);
         flag := arrayCreate(inEqnsSize,true);
         (eqnlst,varlst,ass1,ass2,eqns1) := getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqns1,flag,nassigned,eqnlst,varlst,ass1,ass2);
@@ -2597,9 +2597,9 @@ algorithm
       guard flag[e] and intGt(vec1[e],0)
       equation
         e1 = inMapIncRowEqn[e];
-        // print("BackendEquation.equationNth1 " + intString(e1) + "\n");
-        eqn = BackendEquation.equationNth1(iEqnsArr,e1);
-        eqnarr = BackendEquation.equationRemove(e1,iEqnsArr);
+        // print("BackendEquation.get " + intString(e1) + "\n");
+        eqn = BackendEquation.get(iEqnsArr,e1);
+        eqnarr = BackendEquation.delete(e1,iEqnsArr);
         eqns = inMapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,false,flag);
         vindx = List.map1r(eqns,arrayGet,vec1);
@@ -3099,10 +3099,10 @@ algorithm
         // collect information for stateset
         statecandidates = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
         unassignedEqns1 = List.uniqueIntN(List.map1r(unassignedEqns,arrayGet,mapIncRowEqn), eqnsSize);
-        eqnlst = BackendEquation.getEqns(unassignedEqns1, eqns);
+        eqnlst = BackendEquation.getList(unassignedEqns1, eqns);
         ovarlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         assignedEqns1 = List.uniqueIntN(List.map1r(assignedEqns,arrayGet,mapIncRowEqn), eqnsSize);
-        oeqnlst = BackendEquation.getEqns(assignedEqns1, eqns);
+        oeqnlst = BackendEquation.getList(assignedEqns1, eqns);
         // add dummy states
         varlst = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
       then
@@ -3872,10 +3872,10 @@ algorithm
   assigned := Matching.getAssigned(ne, vec2, {});
   unassigned := List.map1r(unassigned,arrayGet,mapIncRowEqn);
   unassigned := List.uniqueIntN(unassigned, ne);
-  outCEqnsLst := BackendEquation.getEqns(unassigned, eqns);
+  outCEqnsLst := BackendEquation.getList(unassigned, eqns);
   assigned := List.map1r(assigned,arrayGet,mapIncRowEqn);
   assigned := List.uniqueIntN(assigned, ne);
-  outOEqnsLst := BackendEquation.getEqns(assigned, eqns);
+  outOEqnsLst := BackendEquation.getList(assigned, eqns);
 end splitEqnsinConstraintAndOther;
 
 protected function changeDerVariablesToStatesFinder

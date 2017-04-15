@@ -130,7 +130,7 @@ algorithm
       print("\neqs");
       BackendDump.printEquationList(eqnsLst);
     end if;
-    eqns := BackendEquation.addEquations(eqnsLst, eqns);
+    eqns := BackendEquation.addList(eqnsLst, eqns);
 
 end addOptimizationVarsEqns;
 
@@ -635,7 +635,7 @@ algorithm
            BackendDAE.SINGLEEQUATION(eqn=eindex_, var=vindx_) )
     guard l2p_all or not l2p_l
     algorithm
-      BackendDAE.EQUATION(exp=e1, scalar=e2) := BackendEquation.equationNth1(eqns, eindex_);
+      BackendDAE.EQUATION(exp=e1, scalar=e2) := BackendEquation.get(eqns, eindex_);
       (v as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx_);
       varexp := Expression.crefExp(cr);
       varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -675,7 +675,7 @@ protected function res2Con
   output BackendDAE.Variables ovars = ivars;
   output BackendDAE.Shared oshared = ishared;
 protected
-  list<BackendDAE.Equation> eqn_lst = BackendEquation.getEqns(eindex,ieqns);
+  list<BackendDAE.Equation> eqn_lst = BackendEquation.getList(eindex,ieqns);
   BackendDAE.Equation eqn;
   list<BackendDAE.Var> var_lst = List.map1r(vindx, BackendVariable.getVarAt, ivars);
   BackendDAE.Var var, var_;
@@ -710,7 +710,7 @@ algorithm
     res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
     res := Expression.createResidualExp(res, Expression.makeConstZeroE(res));
 
-    //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
+    //oeqns := BackendEquation.add(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
     oeqns := BackendEquation.setAtIndex(oeqns,ind_e, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
     // new input(resvar)
     (cr,var) := makeVar("$" +  ComponentReference.crefModelicaStr(cr_var));
@@ -726,7 +726,7 @@ algorithm
       var := BackendVariable.setVarKind(var, BackendDAE.OPT_LOOP_INPUT(cr_var));
     end if;
     oshared := BackendVariable.addGlobalKnownVarDAE(var, oshared);
-    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
+    oeqns := BackendEquation.add(BackendDAE.EQUATION(e, Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
   end for;
 
 
@@ -784,7 +784,7 @@ algorithm
          b3 := BackendVariable.isRealOptimizeConstraintsVars(var_con);
          if b3 then
            try
-             (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.equationNth1(eqns, eindex);
+             (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.get(eqns, eindex);
              true := Expression.expEqual(e1, BackendVariable.varExp(var_con));
            else
              b3 := false;
@@ -879,7 +879,7 @@ algorithm
                 end try;
 
                 //(vars,_) := BackendVariable.removeVar(vindx, vars);
-                //eqns := BackendEquation.equationRemove(eindex, eqns);
+                //eqns := BackendEquation.delete(eindex, eqns);
                 b := true;
               end if;
              else
