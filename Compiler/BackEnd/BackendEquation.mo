@@ -109,15 +109,15 @@ algorithm
   end for;
 end deleteList;
 
-public function merge "
+public function merge "author: lochel
   This function returns an EquationArray containing all the equations from both
-  inputs.
-  TODO: Fix side-effect"
+  inputs."
   input BackendDAE.EquationArray inEqns1;
   input BackendDAE.EquationArray inEqns2;
   output BackendDAE.EquationArray outEqns;
 algorithm
-  outEqns := addList(equationList(inEqns1), inEqns2);
+  outEqns := copyEquationArray(inEqns2);
+  outEqns := addList(equationList(inEqns1), outEqns);
 end merge;
 
 public function listEquation "author: PA
