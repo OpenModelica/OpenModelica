@@ -2619,124 +2619,109 @@ protected function getSymbolicJacobian "author: wbraun
   input Boolean inOnlySparsePattern;
   output BackendDAE.Jacobian outJacobian;
   output BackendDAE.Shared outShared;
+protected
+  BackendDAE.BackendDAE backendDAE;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.ExtraInfo einfo;
+  BackendDAE.Shared shared;
+  BackendDAE.SparseColoring sparseColoring;
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.Variables dependentVars, globalKnownVars;
+  DAE.FunctionTree funcs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  list<BackendDAE.Var> knvarLst1, knvarLst2, independentVarsLst, dependentVarsLst, otherVarsLst;
+  list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs, otherVarsLstComRefs;
+  Option<BackendDAE.SymbolicJacobian> symJacBDAE;
 algorithm
-  (outJacobian, outShared) := matchcontinue(inDiffVars, inResEquations, inResVars, inotherEquations, inotherVars, inShared, inAllVars, inName)
-    local
-      FCore.Cache cache;
-      FCore.Graph graph;
-      BackendDAE.BackendDAE backendDAE, jacBackendDAE;
+  try
+    globalKnownVars := BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
+    funcs := BackendDAEUtil.getFunctions(inShared);
+    einfo := BackendDAEUtil.getExtraInfo(inShared);
 
-      BackendDAE.Variables emptyVars, dependentVars, independentVars, globalKnownVars, allvars;
-      BackendDAE.EquationArray emptyEqns, eqns;
-      list<BackendDAE.Var> knvarLst1, knvarLst2, independentVarsLst, dependentVarsLst,  otherVarsLst;
-      list<BackendDAE.Equation> residual_eqnlst;
-      list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      print("---+++ create analytical jacobian +++---");
+      print("\n---+++ independent variables +++---\n");
+      BackendDump.printVariables(inDiffVars);
+      print("\n---+++ equation system +++---\n");
+      BackendDump.printEquationArray(inResEquations);
+    end if;
 
-      DAE.ComponentRef x;
-      Option<BackendDAE.SymbolicJacobian> symJacBDAE;
-      BackendDAE.SparsePattern sparsePattern;
-      BackendDAE.SparseColoring sparseColoring;
+    independentVarsLst := BackendVariable.varList(inDiffVars);
+    independentComRefs := List.map(independentVarsLst, BackendVariable.varCref);
 
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      BackendDAE.StrongComponents comps;
-      BackendDAE.ExtraInfo einfo;
+    otherVarsLst := BackendVariable.varList(inotherVars);
+    otherVarsLstComRefs := List.map(otherVarsLst, BackendVariable.varCref);
 
-      DAE.FunctionTree funcs;
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      print("\n---+++ known variables +++---\n");
+      BackendDump.printVariables(globalKnownVars);
+    end if;
 
-    case(_, _, _, _, _, _, _, _)
-      equation
-        globalKnownVars = BackendDAEUtil.getGlobalKnownVarsFromShared(inShared);
-        funcs = BackendDAEUtil.getFunctions(inShared);
-        einfo = BackendDAEUtil.getExtraInfo(inShared);
+    // dependentVarsLst = listReverse(dependentVarsLst);
+    dependentVars := BackendVariable.mergeVariables(inResVars, inotherVars);
+    eqns := BackendEquation.merge(inResEquations, inotherEquations);
 
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("---+++ create analytical jacobian +++---");
-          print("\n---+++ independent variables +++---\n");
-          BackendDump.printVariables(inDiffVars);
-          print("\n---+++ equation system +++---\n");
-          BackendDump.printEquationArray(inResEquations);
-        end if;
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      print("\n---+++ created backend system +++---\n");
+      print("\n---+++ vars +++---\n");
+      BackendDump.printVariables(dependentVars);
+      print("\n---+++ equations +++---\n");
+      BackendDump.printEquationArray(eqns);
+    end if;
 
-        independentVarsLst = BackendVariable.varList(inDiffVars);
-        independentComRefs = List.map(independentVarsLst, BackendVariable.varCref);
+    // create known variables
+    knvarLst1 := BackendEquation.equationsVars(eqns, globalKnownVars);
+    knvarLst2 := BackendEquation.equationsVars(eqns, inAllVars);
+    // Create a list of known variables true *only* for this shared system
+    globalKnownVars := BackendVariable.listVar2(knvarLst1,knvarLst2);
+    // Remove inputs for the jacobian
+    globalKnownVars := BackendVariable.removeCrefs(independentComRefs, globalKnownVars);
+    globalKnownVars := BackendVariable.removeCrefs(otherVarsLstComRefs, globalKnownVars);
 
-        otherVarsLst = BackendVariable.varList(inotherVars);
-        otherVarsLstComRefs = List.map(otherVarsLst, BackendVariable.varCref);
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      print("\n---+++ known variables +++---\n");
+      BackendDump.printVariables(globalKnownVars);
+    end if;
 
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("\n---+++ known variables +++---\n");
-          BackendDump.printVariables(globalKnownVars);
-        end if;
+    // prepare vars and equations for BackendDAE
+    cache := FCore.emptyCache();
+    graph := FGraph.empty();
+    shared := BackendDAEUtil.createEmptyShared(BackendDAE.ALGEQSYSTEM(), einfo, cache, graph);
+    shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
+    shared := BackendDAEUtil.setSharedFunctionTree(shared, funcs);
+    backendDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(dependentVars, eqns)}, shared);
 
-        // dependentVarsLst = listReverse(dependentVarsLst);
-        dependentVars = BackendVariable.mergeVariables(inResVars, inotherVars);
-        eqns = BackendEquation.merge(inResEquations, inotherEquations);
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      BackendDump.bltdump("System",backendDAE);
+    end if;
 
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("\n---+++ created backend system +++---\n");
-          print("\n---+++ vars +++---\n");
-          BackendDump.printVariables(dependentVars);
-          print("\n---+++ equations +++---\n");
-          BackendDump.printEquationArray(eqns);
-        end if;
+    backendDAE := BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+    BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE;
 
-        // create known variables
-        knvarLst1 = BackendEquation.equationsVars(eqns, globalKnownVars);
-        knvarLst2 = BackendEquation.equationsVars(eqns, inAllVars);
-        // Create a list of known variables true *only* for this shared system
-        globalKnownVars = BackendVariable.listVar2(knvarLst1,knvarLst2);
-        // Remove inputs for the jacobian
-        globalKnownVars = BackendVariable.removeCrefs(independentComRefs, globalKnownVars);
-        globalKnownVars = BackendVariable.removeCrefs(otherVarsLstComRefs, globalKnownVars);
+    // prepare creation of symbolic jacobian
+    // create dependent variables
+    dependentVarsLst := BackendVariable.varList(dependentVars);
 
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("\n---+++ known variables +++---\n");
-          BackendDump.printVariables(globalKnownVars);
-        end if;
+    (symJacBDAE, funcs, sparsePattern, sparseColoring) := generateGenericJacobian(backendDAE,
+      independentVarsLst,
+      BackendVariable.emptyVars(),
+      BackendVariable.emptyVars(),
+      globalKnownVars,
+      inResVars,
+      dependentVarsLst,
+      inName,
+      inOnlySparsePattern);
 
-        // prepare vars and equations for BackendDAE
-        emptyVars =  BackendVariable.emptyVars();
-        cache = FCore.emptyCache();
-        graph = FGraph.empty();
-        shared = BackendDAEUtil.createEmptyShared(BackendDAE.ALGEQSYSTEM(), einfo, cache, graph);
-        shared = BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
-        shared = BackendDAEUtil.setSharedFunctionTree(shared, funcs);
-        backendDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(dependentVars, eqns)}, shared);
-
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          BackendDump.bltdump("System",backendDAE);
-        end if;
-
-        backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) = backendDAE;
-
-        // prepare creation of symbolic jacobian
-        // create dependent variables
-        dependentVarsLst = BackendVariable.varList(dependentVars);
-
-        (symJacBDAE, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE,
-          independentVarsLst,
-          emptyVars,
-          emptyVars,
-          globalKnownVars,
-          inResVars,
-          dependentVarsLst,
-          inName,
-          inOnlySparsePattern);
-
-        shared = BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
-
-      then (BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring), shared);
-
-    case(_, _, _, _, _, _, _, _)
-      equation
-        true = Flags.isSet(Flags.JAC_DUMP);
-        Error.addInternalError("function getSymbolicJacobian failed", sourceInfo());
-      then (BackendDAE.EMPTY_JACOBIAN(), inShared);
-
-        else (BackendDAE.EMPTY_JACOBIAN(), inShared);
-  end matchcontinue;
+    outJacobian := BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring);
+    outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
+  else
+    if Flags.isSet(Flags.JAC_DUMP) then
+      Error.addInternalError("function getSymbolicJacobian failed", sourceInfo());
+    end if;
+    outJacobian := BackendDAE.EMPTY_JACOBIAN();
+    outShared := inShared;
+  end try;
 end getSymbolicJacobian;
 
 public function hasGenericSymbolicJacobian
