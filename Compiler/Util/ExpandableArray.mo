@@ -119,6 +119,22 @@ algorithm
   end if;
 end get;
 
+function expandToSize "O(n)
+  Expands an array to the given size, or does nothing if the array is already
+  large enough."
+  input Integer minCapacity;
+  input output ExpandableArray<T> exarray;
+protected
+  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+algorithm
+  if minCapacity > capacity then
+    Dangerous.arrayUpdateNoBoundsChecking(exarray.capacity, 1, minCapacity);
+    data := Array.expandToSize(minCapacity, data, NONE());
+    Dangerous.arrayUpdateNoBoundsChecking(exarray.data, 1, data);
+  end if;
+end expandToSize;
+
 function set "if index <= capacity then O(1) otherwise O(n)
   Sets the element at the given index to the given value.
   Fails if the index is already used."
@@ -133,10 +149,8 @@ protected
 algorithm
   if index > 0 and (index > capacity or isNone(Dangerous.arrayGetNoBoundsChecking(data, index))) then
     if index > capacity then
-      capacity := intMax(2*capacity, index);
-      Dangerous.arrayUpdateNoBoundsChecking(exarray.capacity, 1, capacity);
-      data := Array.expandToSize(capacity, data, NONE());
-      Dangerous.arrayUpdateNoBoundsChecking(exarray.data, 1, data);
+      expandToSize(index, exarray);
+      data := Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
     end if;
 
     arrayUpdate(data, index, SOME(value));

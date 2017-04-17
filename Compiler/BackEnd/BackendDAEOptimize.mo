@@ -5545,7 +5545,7 @@ algorithm
   var := BackendVariable.setVarFixed(var, true);
   var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
   orderedVars := BackendVariable.addVar(var, orderedVars);
-  orderedEqs := BackendEquation.emptyEqns();
+  orderedEqs := BackendEquation.emptyEqnsSized(1);
   orderedEqs := BackendEquation.add(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(DAE.crefTimeState, DAE.T_REAL_DEFAULT)}, DAE.callAttrBuiltinReal), DAE.RCONST(1.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), orderedEqs);
   eq := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, {}, BackendDAE.CONTINUOUS_TIME_PARTITION());
   outDAE := BackendDAE.DAE(eq::eqs, shared);

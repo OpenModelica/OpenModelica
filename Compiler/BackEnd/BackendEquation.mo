@@ -82,11 +82,11 @@ algorithm
 end add;
 
 public function addList "author: hkiel
-  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray.
-  TODO: This shouldn't expand the array more than one times."
+  Adds a list of BackendDAE.Equation to BackendDAE.EquationArray."
   input list<BackendDAE.Equation> eqnlst;
   input output BackendDAE.EquationArray equationArray;
 algorithm
+  ExpandableArray.expandToSize(ExpandableArray.getLastUsedIndex(equationArray) + listLength(eqnlst), equationArray);
   for e in eqnlst loop
     equationArray := add(e, equationArray);
   end for;
@@ -121,22 +121,13 @@ algorithm
 end merge;
 
 public function listEquation "author: PA
-  Transform the a list of equations into an expandable BackendDAE.Equation
-  array."
+  Transform a list of equations into an expandable BackendDAE.Equation array."
   input list<BackendDAE.Equation> inEquationList;
   output BackendDAE.EquationArray outEquationArray;
-protected
-  Integer len, size, pos=1;
-  Real rlen;
 algorithm
-  len := listLength(inEquationList);
-  rlen := intReal(len) * 1.4;
-  size := realInt(rlen);
-
-  outEquationArray := ExpandableArray.new(size, BackendDAE.DUMMY_EQUATION());
+  outEquationArray := ExpandableArray.new(listLength(inEquationList), BackendDAE.DUMMY_EQUATION());
   for eq in inEquationList loop
     ExpandableArray.add(eq, outEquationArray);
-    pos := pos + 1;
   end for;
 end listEquation;
 
@@ -189,7 +180,7 @@ public function getList "author: Frenkel TUD 2011-05
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := List.map1r(inIndices, get, inEquationArray);
+  outEqns := list(get(inEquationArray, index) for index in inIndices);
 end getList;
 
 public function equationArraySize "author: lochel

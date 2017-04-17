@@ -7280,7 +7280,7 @@ protected
 algorithm
   globalKnownVars := backendDAE.shared.globalKnownVars;
   globalKnownVars := BackendVariable.addVariables(backendDAE.shared.externalObjects, globalKnownVars);
-  parameterEqns := BackendEquation.emptyEqns();
+  parameterEqns := BackendEquation.emptyEqnsSized(BackendVariable.varsSize(globalKnownVars));
   parameterEqns := BackendVariable.traverseBackendDAEVars(globalKnownVars, createParameterEquations, parameterEqns);
 
   paramSystem := BackendDAEUtil.createEqSystem(globalKnownVars, parameterEqns);
