@@ -29,6 +29,7 @@ else
     end if;
   end for; getErrorString();
 end if;
+system("rm -f ./ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1.mat");
 
 // Result:
 // true
@@ -84,4 +85,5 @@ end if;
 // ""
 // Files equal!
 //
+// 0
 // endResult

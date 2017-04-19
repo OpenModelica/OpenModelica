@@ -64,6 +64,7 @@ else
     end if;
   end for; getErrorString();
 end if;
+system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 
 // Result:
 // true
@@ -112,4 +113,5 @@ end if;
 // ""
 // Files equal!
 //
+// 0
 // endResult
