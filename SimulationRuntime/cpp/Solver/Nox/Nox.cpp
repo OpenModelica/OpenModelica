@@ -128,10 +128,10 @@ void Nox::solve()
 	//_solverParametersPtr->sublist("Direction").set("Method", "Steepest Descent");
 
 	//resetting Line search method to default (Full Step, ie. Standard Newton with lambda=1)
-	// _solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
-	_solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
-	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
-	_solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
+	_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
+	// _solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
+	// _solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
+	// _solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
 
 	if (_generateoutput) std::cout << "creating noxLapackInterface" << std::endl;
 
@@ -277,7 +277,7 @@ void Nox::solve()
 				// _currentIterateNorm=_statusTestNormF->getNormF();
 			// }
 
-			if ((iter==0) || (iter==1) || (iter==2)) iter = 3;
+			if ((iter==0) || (iter==1) || (iter==1)) iter = 2;//do not skip iter =2
 
 
 			modifySolverParameters(_solverParametersPtr,iter);
@@ -536,7 +536,7 @@ void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solv
 		//default Nox Line Search failed -> Try Backtracking instead
 	case 2:
 		solverParametersPtr->sublist("Line Search").set("Method", "Backtrack");
-		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Default Step", 1024.0*1024.0);
+		//solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Default Step", 1024.0*1024.0);
 		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Minimum Step", 1.0e-30);
 		solverParametersPtr->sublist("Line Search").sublist("Backtrack").set("Recovery Step", 0.0);
 		//std::cout << "we just set the solver parameters to use backtrack. the currently used options are:" << std::endl;
@@ -771,8 +771,10 @@ void Nox::printLogger(){
 void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr){
 		solverParametersPtr->sublist("Printing").set("Output Precision", 15);
 		solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error);
-		solverParametersPtr->sublist("Printing").set("Output Stream", _output);
-		solverParametersPtr->sublist("Printing").set("Error Stream", _output);
+    if(!_generateoutput){
+      solverParametersPtr->sublist("Printing").set("Output Stream", _output);
+      solverParametersPtr->sublist("Printing").set("Error Stream", _output);
+    }
 }
 
 void Nox::copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* const algLoopSolution){
