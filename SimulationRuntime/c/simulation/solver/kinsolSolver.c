@@ -78,6 +78,7 @@
 
 #define SCALING_NOMINALSTART  1
 #define SCALING_ONES          2
+#define SCALING_JACOBIAN      3
 
 
 
@@ -107,7 +108,8 @@ typedef struct NLS_KINSOL_DATA
   N_Vector xScale;
   N_Vector fScale;
   N_Vector fRes;
-  N_Vector fx;
+  N_Vector fTmp;
+
   int iflag;
   long countResCalls;        /* case of sparse function not avaiable */
 
@@ -189,6 +191,7 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
   kinsolData->xScale = N_VNew_Serial(size);
   kinsolData->fScale = N_VNew_Serial(size);
   kinsolData->fRes = N_VNew_Serial(size);
+  kinsolData->fTmp = N_VNew_Serial(size);
 
   kinsolData->kinsolMemory = KINCreate();
 
@@ -252,10 +255,10 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
   nlsKinsolConfigSetup(kinsolData);
 
   /* debug print level of kinsol */
-  if (ACTIVE_STREAM(LOG_NLS))
-    printLevel = 1;
-  else if (ACTIVE_STREAM(LOG_NLS_V))
+  if (ACTIVE_STREAM(LOG_NLS_V))
     printLevel = 3;
+  else if (ACTIVE_STREAM(LOG_NLS))
+    printLevel = 1;
   else
     printLevel = 0;
   KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
@@ -273,6 +276,7 @@ int nlsKinsolFree(void** solverData)
   N_VDestroy_Serial(kinsolData->xScale);
   N_VDestroy_Serial(kinsolData->fScale);
   N_VDestroy_Serial(kinsolData->fRes);
+  N_VDestroy_Serial(kinsolData->fTmp);
   free(kinsolData);
 
   return 0;
@@ -297,6 +301,7 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData)
   void *dataAndThreadData[2] = {data, threadData};
   NONLINEAR_SYSTEM_DATA *nlsData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA*) nlsData->solverData;
+  long eqSystemNumber = nlsData->equationIndex;
   int iflag = 1;
 
   kinsolData->countResCalls++;
@@ -308,6 +313,9 @@ static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData)
   /* call residual function */
   data->simulationInfo->nonlinearSystemData[sysNumber].residualFunc(dataAndThreadData, xdata,  fdata, (const int*) &iflag);
   iflag = 0;
+
+  _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, fdata),
+        "fResiduals", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
 
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -685,12 +693,70 @@ void nlsKinsolXScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
 }
 
 static
+void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA* nlsData, int mode)
+{
+  double *fScaling = NV_DATA_S(kinsolData->fScale);
+  N_Vector x = kinsolData->initialGuess;
+  int i,j;
+  SlsMat spJac;
+  /* Use nominal value or the actual working point for scaling */
+  switch (mode)
+  {
+    case SCALING_JACOBIAN:
+    {
+      N_Vector tmp1 = N_VNew_Serial(kinsolData->size);
+      N_Vector tmp2 = N_VNew_Serial(kinsolData->size);
+
+      /* calculate the right jacobian */
+      nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
+      if(nlsData->isPatternAvailable && kinsolData->linearSolverMethod == 3)
+      {
+        spJac = NewSparseMat(kinsolData->size,kinsolData->size,kinsolData->nnz);
+        if (nlsData->analyticalJacobianColumn != NULL){
+          nlsSparseSymJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
+        } else {
+          nlsSparseJac(x, kinsolData->fTmp, spJac, &kinsolData->userData, tmp1, tmp2);
+        }
+      }
+      else
+      {
+        DlsMat denseJac = NewDenseMat(kinsolData->size,kinsolData->size);
+        nlsDenseJac(nlsData->size, x, kinsolData->fTmp, denseJac, &kinsolData->userData, tmp1, tmp2);
+        spJac = SlsConvertDls(denseJac);
+      }
+
+      /* debug */
+      if (ACTIVE_STREAM(LOG_NLS_JAC)){
+        infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Matrix for F-Scaling:");
+        PrintSparseMat(spJac);
+        messageClose(LOG_NLS_JAC);
+      }
+
+      _omc_fillVector(_omc_createVector(nlsData->size,fScaling), 1.);
+      for(i=0; i<spJac->NNZ; ++i){
+        if (fScaling[spJac->rowvals[i]] < fabs(spJac->data[i])){
+          fScaling[spJac->rowvals[i]] = fabs(spJac->data[i]);
+        }
+      }
+
+      N_VDestroy_Serial(tmp1);
+      N_VDestroy_Serial(tmp2);
+      break;
+    }
+    case SCALING_ONES:
+      _omc_fillVector(_omc_createVector(nlsData->size,fScaling), 1.);
+      break;
+  }
+}
+
+static
 int nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nlsData)
 {
   int retValue;
   double fNorm;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double *xScaling = NV_DATA_S(kinsolData->xScale);
+  double *fScaling = NV_DATA_S(kinsolData->fScale);
   DATA* data = kinsolData->userData.data;
   int eqSystemNumber = nlsData->equationIndex;
 
@@ -700,6 +766,9 @@ int nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nls
 
   _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, xScaling),
       "xScaling", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
+
+  _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, fScaling),
+      "fScaling", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
 
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL F tolerance: %g", (*(KINMem)kinsolData->kinsolMemory).kin_fnormtol);
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL minimal step size %g", (*(KINMem)kinsolData->kinsolMemory).kin_scsteptol);
@@ -783,8 +852,9 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     switch(kinsolData->retries)
     {
     case 0:
-      /* try without x scaling  */
+      /* try without scaling  */
       nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_ONES);
+      nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_ONES);
       break;
     case 1:
       /* try without line-search and oldValues */
@@ -799,6 +869,7 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     case 3:
       /* try with exact newton  */
       nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_NOMINALSTART);
+      nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
       nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
       KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
       kinsolData->kinsolStrategy = KIN_LINESEARCH;
@@ -806,6 +877,7 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     case 4:
       /* try with exact newton to with out x scaling values */
       nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_ONES);
+      nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_ONES);
       nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_OLDVALUES);
       KINSetMaxSetupCalls(kinsolData->kinsolMemory, 1);
       kinsolData->kinsolStrategy = KIN_LINESEARCH;
@@ -853,7 +925,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
   nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_NOMINALSTART);
 
   /* set f scaling */
-  _omc_fillVector(_omc_createVector(nlsData->size, fScaling), 1.);
+  nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
 
   /*  */
   do{
@@ -897,7 +969,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
     infoStreamPrint(LOG_NLS, 0, "scaled Euclidean norm of F(u) = %e", fNormValue);
     if (FTOL_WITH_LESS_ACCURANCY<fNormValue)
     {
-      warningStreamPrint(LOG_NLS, 0, "False positive solution. FNorm is too small.");
+      warningStreamPrint(LOG_NLS, 0, "False positive solution. FNorm is not small enough.");
       success = 0;
     }
     else /* solved system for reuse linear solver information */
