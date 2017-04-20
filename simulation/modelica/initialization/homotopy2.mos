@@ -42,15 +42,15 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // allEquations: 
 // ========================================
 //
-// 19:  (NONLINEAR) index:1 jacobian: true
+// 14:  (NONLINEAR) index:1 jacobian: true
 // crefs: x
-// 	13: z=5.0 + x ^ 2.0 - 5.0 [Real ]
-// 	14: y=z - (9.0 + x) [Real ]
-// 	15: z - y ^ 2.0 (RESIDUAL)
-// 	Jacobian idx: 2
-// 	16: z.$pDERNLSJac2.dummyVarNLSJac2=2.0 * x * xSeedNLSJac2 [Real ]
-// 	17: y.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 - xSeedNLSJac2 [Real ]
-// 	18: $res.1.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 + -2.0 * y * y.$pDERNLSJac2.dummyVarNLSJac2 [Real ]
+// 	8: z=5.0 + x ^ 2.0 - 5.0 [Real ]
+// 	9: y=z - (9.0 + x) [Real ]
+// 	10: z - y ^ 2.0 (RESIDUAL)
+// 	Jacobian idx: 1
+// 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * xSeedNLSJac1 [Real ]
+// 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - xSeedNLSJac1 [Real ]
+// 	13: $res.1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + -2.0 * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
 // 	
 //
 // ========================================
@@ -65,15 +65,15 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // algebraicEquations (1 systems): 
 // ========================================
-// 19:  (NONLINEAR) index:1 jacobian: true
+// 14:  (NONLINEAR) index:1 jacobian: true
 // crefs: x
-// 	13: z=5.0 + x ^ 2.0 - 5.0 [Real ]
-// 	14: y=z - (9.0 + x) [Real ]
-// 	15: z - y ^ 2.0 (RESIDUAL)
+// 	8: z=5.0 + x ^ 2.0 - 5.0 [Real ]
+// 	9: y=z - (9.0 + x) [Real ]
+// 	10: z - y ^ 2.0 (RESIDUAL)
 // 	Jacobian idx: -1
-// 	16: z.$pDERNLSJac2.dummyVarNLSJac2=2.0 * x * xSeedNLSJac2 [Real ]
-// 	17: y.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 - xSeedNLSJac2 [Real ]
-// 	18: $res.1.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 + -2.0 * y * y.$pDERNLSJac2.dummyVarNLSJac2 [Real ]
+// 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * xSeedNLSJac1 [Real ]
+// 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - xSeedNLSJac1 [Real ]
+// 	13: $res.1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + -2.0 * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
 // 	
 //
 // ========================================
@@ -99,22 +99,6 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	
 //
 // ========================================
-//
-//
-//
-// initialEquations_lambda0: (1)
-// ========================================
-// 12:  (LINEAR) index:0 jacobian: true
-// 	variables:
-// index: -1: z (no alias)  initial: 	no arrCref index:() [] 
-// 	b-vector:
-// 	8: y=10.0 - (10.0 + z) [Real ]
-// 	9: x=5.0 + z - 5.0 [Real ]
-// 	10: 9.0 + y + x - z (RESIDUAL)
-// 	Jacobian idx: 1
-// 	11: $res.1.$pDERLSJac1.dummyVarLSJac1=-zSeedLSJac1 [Real ]
-// 	
-// 	simJac:
 //
 //
 //
@@ -150,26 +134,23 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // jacobianMatrices: 
 // ========================================
-// 	Jacobian idx: 2
-// 	16: z.$pDERNLSJac2.dummyVarNLSJac2=2.0 * x * xSeedNLSJac2 [Real ]
-// 	17: y.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 - xSeedNLSJac2 [Real ]
-// 	18: $res.1.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 + -2.0 * y * y.$pDERNLSJac2.dummyVarNLSJac2 [Real ]
-// 	
 // 	Jacobian idx: 1
-// 	11: $res.1.$pDERLSJac1.dummyVarLSJac1=-zSeedLSJac1 [Real ]
+// 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * xSeedNLSJac1 [Real ]
+// 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - xSeedNLSJac1 [Real ]
+// 	13: $res.1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + -2.0 * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
 // 	
 // 	Jacobian idx: 0
 // 	4: z.$pDERNLSJac0.dummyVarNLSJac0=ySeedNLSJac0 * (-1.0 + 2.0 * y * __HOM_LAMBDA + __HOM_LAMBDA) [Real ]
 // 	5: x.$pDERNLSJac0.dummyVarNLSJac0=z.$pDERNLSJac0.dummyVarNLSJac0 - ySeedNLSJac0 [Real ]
 // 	6: $res.1.$pDERNLSJac0.dummyVarNLSJac0=2.0 * x * x.$pDERNLSJac0.dummyVarNLSJac0 * __HOM_LAMBDA + x.$pDERNLSJac0.dummyVarNLSJac0 * (1.0 - __HOM_LAMBDA) - z.$pDERNLSJac0.dummyVarNLSJac0 [Real ]
 // 	
-// 	Jacobian idx: 6
-// 	
 // 	Jacobian idx: 5
 // 	
 // 	Jacobian idx: 4
 // 	
 // 	Jacobian idx: 3
+// 	
+// 	Jacobian idx: 2
 // 	
 //
 // modelInfo: 
