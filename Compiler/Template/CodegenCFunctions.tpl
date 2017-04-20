@@ -4951,7 +4951,7 @@ case BINARY(__) then
               {
                 <%if acceptMetaModelicaGrammar()
                   then '<%generateThrow()%>;<%\n%>'
-                  else 'throwStreamPrint(threadData, "Invalid root: (%g)^(%g)", <%tmp1%>, <%tmp2%>);<%\n%>'%>
+                  else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
               }
             }
           }
@@ -4963,7 +4963,7 @@ case BINARY(__) then
           {
             <%if acceptMetaModelicaGrammar()
               then '<%generateThrow()%>;<%\n%>'
-              else 'throwStreamPrint(threadData, "Invalid root: (%g)^(%g)", <%tmp1%>, <%tmp2%>);<%\n%>'%>
+              else 'throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__, __LINE__, <%tmp1%>, <%tmp2%>);<%\n%>'%>
           }
           >>
         '<%tmp3%>'
