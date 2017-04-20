@@ -3513,17 +3513,35 @@ protected
   BackendDAE.Variables vars;
   Boolean b;
   BackendVarTransform.VariableReplacements repl;
+  DAE.Exp crExp;
 algorithm
-  (outExp, outHomotopy) := match(inExp, inHomotopy)
+  (outExp, outHomotopy) := Expression.traverseExpTopDown(inExp, containsHomotopyCall2, inHomotopy);
+end containsHomotopyCall;
+
+protected function containsHomotopyCall2
+  input DAE.Exp inExp;
+  input Boolean inHomotopy;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output Boolean outHomotopy;
+protected
+  BackendDAE.Variables vars;
+  Boolean b;
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  (outExp, outHomotopy, cont) := match(inExp, inHomotopy)
     case (_, true)
-    then (inExp, true);
+     then (inExp, true, false);
 
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy")), _)
-    then (inExp, true);
+     then (inExp, true, false);
 
-    else (inExp, inHomotopy);
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=BackendDAE.homotopyLambda)), _)
+     then (inExp, true, false);
+
+    else (inExp, inHomotopy, true);
   end match;
-end containsHomotopyCall;
+end containsHomotopyCall2;
 
 protected function checkLinearSystem
   input Integer info;

@@ -7544,6 +7544,7 @@ protected function allInitOptimizationModules
   "This list contains all back end init-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allInitOptimizationModules = {
     (SymbolicJacobian.constantLinearSystem, "constantLinearSystem"),
+    (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy"),
     (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing

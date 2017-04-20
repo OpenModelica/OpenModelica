@@ -5767,5 +5767,65 @@ algorithm
   b := intLt(arrayGet(varArr,idx),0);
 end stateVarIsNotVisited;
 
+
+// =============================================================================
+// section for initOptModule >>inlineHomotopy<<
+//
+// =============================================================================
+
+public function inlineHomotopy
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAE.EquationArray orderedEqs;
+  BackendDAE.Variables orderedVars;
+  Boolean foundHomotopy;
+algorithm
+  for syst in inDAE.eqs loop
+    orderedEqs := syst.orderedEqs;
+    (orderedEqs, foundHomotopy) := BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, inlineHomotopy2, false);
+    syst.orderedEqs := orderedEqs;
+  end for;
+end inlineHomotopy;
+
+public function inlineHomotopy2
+  input BackendDAE.Equation inEq;
+  input Boolean inFoundHomotopy;
+  output BackendDAE.Equation outEq;
+  output Boolean outFoundHomotopy = inFoundHomotopy;
+algorithm
+  (outEq, outFoundHomotopy) := BackendEquation.traverseExpsOfEquation(inEq, inlineHomotopy3, inFoundHomotopy);
+end inlineHomotopy2;
+
+protected function inlineHomotopy3
+  input DAE.Exp inExp;
+  input Boolean inFoundHomotopy;
+  output DAE.Exp outExp;
+  output Boolean outFoundHomotopy = inFoundHomotopy;
+algorithm
+  (outExp, outFoundHomotopy) := Expression.traverseExpTopDown(inExp, replaceHomotopyWithLambdaExpression, inFoundHomotopy);
+end inlineHomotopy3;
+
+protected function replaceHomotopyWithLambdaExpression
+  input DAE.Exp inExp;
+  input Boolean inFoundHomotopy;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont = true;
+  output Boolean outFoundHomotopy;
+algorithm
+  outFoundHomotopy := match(inExp)
+    local
+      DAE.Exp actual, simplified, lambda;
+
+    case DAE.CALL(path=Absyn.IDENT("homotopy"), expLst={actual,simplified})
+      algorithm
+        lambda := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
+        outExp := DAE.BINARY(DAE.BINARY(simplified, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), lambda)), DAE.ADD(DAE.T_REAL_DEFAULT), DAE.BINARY(actual, DAE.MUL(DAE.T_REAL_DEFAULT), lambda));
+     then true;
+
+    else inFoundHomotopy;
+  end match;
+end replaceHomotopyWithLambdaExpression;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEOptimize;

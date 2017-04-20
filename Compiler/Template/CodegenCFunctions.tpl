@@ -4043,6 +4043,7 @@ end contextIteratorName;
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
+  case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, 0, false, false)
 end cref;
