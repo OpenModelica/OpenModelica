@@ -12,8 +12,6 @@ function getSolvedSystem<A>
   output A outSODE;
   output A outInitDAE;
   output Option<BackendDAE.InlineData> inlineData;
-  output Boolean outUseHomotopy;
-  output Option<A> outInitDAE_lambda0;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
 algorithm
   assert(false, getInstanceName());

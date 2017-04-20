@@ -104,7 +104,7 @@ int sim_noemit = 0;           /* Flag for not emitting data */
 const std::string *init_method = NULL; /* method for  initialization. */
 
 static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
-      double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime, const char *argv_0);
+      double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0);
 
 /*! \fn void setGlobalVerboseLevel(int argc, char**argv)
  *
@@ -551,7 +551,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   string init_time_string = "";
   double init_time = 0.0;
   string init_lambda_steps_string = "";
-  int init_lambda_steps = 1;
   string outputVariablesAtEnd = "";
   int cpuTime = omc_flag[FLAG_CPU];
 
@@ -581,7 +580,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
-  retVal = callSolver(data, threadData, init_initMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime, argv[0]);
+  retVal = callSolver(data, threadData, init_initMethod, init_file, init_time, outputVariablesAtEnd, cpuTime, argv[0]);
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
@@ -682,7 +681,7 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
  */
 static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
-      double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
+      double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
 {
   TRACE_PUSH
   int retVal = -1;
@@ -736,7 +735,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
                         simData->simulationInfo->numSteps, simData->simulationInfo->tolerance, 3);
     } else /* standard solver interface */
 #endif
-      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars, argv_0);
+      retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
   }
 
   MMC_CATCH_INTERNAL(mmc_jumper)

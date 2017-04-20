@@ -627,7 +627,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    if(initialization(comp->fmuData, comp->threadData, "", "", 0.0, 5))
+    if(initialization(comp->fmuData, comp->threadData, "", "", 0.0))
     {
       comp->state = modelError;
       if(comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",

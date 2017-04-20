@@ -135,12 +135,6 @@ int (*function_storeDelayed)(DATA *data, threadData_t*);
  */
 int (*updateBoundVariableAttributes)(DATA *data, threadData_t*);
 
-/*! \var useHomotopy
- *
- * is 1 if homotopy(...) is used during initialization, otherwise 0
- */
-const int useHomotopy;
-
 /*! \fn functionInitialEquations
  *
  * function for calculate initial values from the initial equations and initial algorithms
@@ -148,14 +142,6 @@ const int useHomotopy;
  *  \param [ref] [data]
  */
 int (*functionInitialEquations)(DATA *data, threadData_t*);
-
-/*! \fn functionInitialEquations_lambda0
- *
- * function for calculate initial values from the initial equations and initial algorithms
- *
- *  \param [ref] [data]
- */
-int (*functionInitialEquations_lambda0)(DATA *data, threadData_t*);
 
 /*! \fn functionRemovedInitialEquations
  *

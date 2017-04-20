@@ -168,20 +168,17 @@ void dumpInitialSolution(DATA *simData)
   messageClose(LOG_SOTI);
 }
 
-/*! \fn static int symbolic_initialization(DATA *data)
+/*! \fn static int symbolic_initialization(DATA *data, threadData_t *threadData)
  *
  *  \param [ref] [data]
+ *  \param [ref] [threadData]
  *
  *  \author lochel
  */
-static int symbolic_initialization(DATA *data, threadData_t *threadData, long numLambdaSteps)
+static int symbolic_initialization(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
-  long step;
   int retVal;
-  FILE *pFile = NULL;
-  long i;
-  MODEL_DATA *mData = data->modelData;
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -191,73 +188,8 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData, long nu
   storePreValues(data);
   overwriteOldSimulationData(data);
 
-  if (data->callback->useHomotopy && numLambdaSteps > 1)
-  {
-    char buffer[4096];
-
-#if !defined(OMC_NO_FILESYSTEM)
-    if(ACTIVE_STREAM(LOG_INIT))
-    {
-      sprintf(buffer, "%s_homotopy.csv", mData->modelFilePrefix);
-      pFile = fopen(buffer, "wt");
-      fprintf(pFile, "%s,", "lambda");
-      for(i=0; i<mData->nVariablesReal; ++i)
-        fprintf(pFile, "%s,", mData->realVarsData[i].info.name);
-      fprintf(pFile, "\n");
-    }
-#endif
-
-    infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
-    for(step=0; step<numLambdaSteps-1; ++step)
-    {
-      data->simulationInfo->lambda = ((double)step)/(numLambdaSteps-1);
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
-
-      if(data->simulationInfo->lambda > 1.0) {
-        data->simulationInfo->lambda = 1.0;
-      }
-
-      if(0 == step)
-        data->callback->functionInitialEquations_lambda0(data, threadData);
-      else
-        data->callback->functionInitialEquations(data, threadData);
-
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
-
-#if !defined(OMC_NO_FILESYSTEM)
-      if(ACTIVE_STREAM(LOG_INIT))
-      {
-        fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
-        for(i=0; i<mData->nVariablesReal; ++i)
-          fprintf(pFile, "%.16g,", data->localData[0]->realVars[i]);
-        fprintf(pFile, "\n");
-      }
-#endif
-
-      if(check_nonlinear_solutions(data, 0) ||
-         check_linear_solutions(data, 0) ||
-         check_mixed_solutions(data, 0))
-        break;
-    }
-    messageClose(LOG_INIT);
-    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = 1");
-  }
-
-  data->simulationInfo->lambda = 1.0;
   data->callback->functionInitialEquations(data, threadData);
   storeRelations(data);
-
-#if !defined(OMC_NO_FILESYSTEM)
-  if(data->callback->useHomotopy && numLambdaSteps > 1 && ACTIVE_STREAM(LOG_INIT))
-  {
-    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
-    fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
-    for(i=0; i<mData->nVariablesReal; ++i)
-      fprintf(pFile, "%.16g,", data->localData[0]->realVars[i]);
-    fprintf(pFile, "\n");
-    fclose(pFile);
-  }
-#endif
 
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
@@ -515,7 +447,7 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
  *
  *  \author lochel
  */
-int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps)
+int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime)
 {
   TRACE_PUSH
   int initMethod = IIM_SYMBOLIC; /* default method */
@@ -600,7 +532,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   if(IIM_NONE == initMethod) {
     retVal = 0;
   } else if(IIM_SYMBOLIC == initMethod) {
-    retVal = symbolic_initialization(data, threadData, lambda_steps);
+    retVal = symbolic_initialization(data, threadData);
   } else {
     throwStreamPrint(threadData, "unsupported option -iim");
   }

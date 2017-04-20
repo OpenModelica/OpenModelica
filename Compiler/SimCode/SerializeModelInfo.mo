@@ -88,7 +88,6 @@ algorithm
         File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
         min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
         min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
-        min(serializeEquation(file,eq,"initial-lambda0",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations_lambda0));
         min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
         min(serializeEquation(file,eq,"synchronous",withOperations) for eq in SimCodeUtil.sortEqSystems(SimCodeUtil.getClockedEquations(SimCodeUtil.getSubPartitions(code.clockedPartitions))));
         min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));

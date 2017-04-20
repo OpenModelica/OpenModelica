@@ -6818,8 +6818,6 @@ public function getSolvedSystem "Run the equation system pipeline."
   output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
   output Option<BackendDAE.InlineData > outInlineData;
-  output Boolean outUseHomotopy "true if homotopy(...) is used during initialization";
-  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
 protected
   BackendDAE.BackendDAE dae, simDAE;
@@ -6877,7 +6875,7 @@ algorithm
   end if;
 
   // generate system for initialization
-  (outInitDAE, outUseHomotopy, outInitDAE_lambda0, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
 
   // use function tree from initDAE further for simDAE
   simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));

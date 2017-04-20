@@ -53,6 +53,8 @@
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
+int init_lambda_steps = 1;
+
 struct dataNewtonAndHybrid
 {
   void* newtonData;
@@ -691,56 +693,12 @@ int updateInnerEquation(void **dataIn, int sysNumber, int discrete)
 }
 
 
-/*! \fn solve non-linear systems
- *
- *  \param [in]  [data]
- *  \param [in]  [sysNumber] index of corresponding non-linear system
- *
- *  \author wbraun
- */
-int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
+int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
 {
-  void *dataAndThreadData[2] = {data, threadData};
-  int success = 0, saveJumpState, constraintsSatisfied = 1;
+  int success = 0, constraintsSatisfied = 1;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   struct dataNewtonAndHybrid *mixedSolverData;
-
-  data->simulationInfo->currentNonlinearSystemIndex = sysNumber;
-
-  /* enable to avoid division by zero */
-  data->simulationInfo->noThrowDivZero = 1;
-  ((DATA*)data)->simulationInfo->solveContinuous = 1;
-
-  /* performance measurement */
-  rt_ext_tp_tick(&nonlinsys->totalTimeClock);
-
-  /* grab the initial guess */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
-  /* if last solving is too long ago use just old values  */
-  if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
-  {
-    getInitialGuess(nonlinsys, data->localData[0]->timeValue);
-  }
-  else
-  {
-    nonlinsys->getIterationVars(data, nonlinsys->nlsx);
-    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
-  }
-  /* update non continuous */
-  if (data->simulationInfo->discreteCall)
-  {
-    constraintsSatisfied = updateInnerEquation(dataAndThreadData, sysNumber, 1);
-  }
-
-  /* try */
-#ifndef OMC_EMCC
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-
-  /* handle asserts */
-  saveJumpState = threadData->currentErrorStage;
-  threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
 
   /* use the selected solver for solving nonlinear system */
   switch(data->simulationInfo->nlsMethod)
@@ -797,8 +755,113 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   default:
     throwStreamPrint(threadData, "unrecognized nonlinear solver");
   }
-  /* set result */
-  nonlinsys->solved = success;
+
+  return success;
+}
+
+/*! \fn solve non-linear systems
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [threadData]
+ *  \param [in]  [sysNumber] index of corresponding non-linear system
+ */
+int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
+{
+  void *dataAndThreadData[2] = {data, threadData};
+  int success = 0, saveJumpState, constraintsSatisfied = 1;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
+  int step;
+  int lambda_steps = 1;
+  int j;
+  char buffer[4096];
+  FILE *pFile = NULL;
+
+  data->simulationInfo->currentNonlinearSystemIndex = sysNumber;
+
+  /* enable to avoid division by zero */
+  data->simulationInfo->noThrowDivZero = 1;
+  ((DATA*)data)->simulationInfo->solveContinuous = 1;
+
+  /* performance measurement */
+  rt_ext_tp_tick(&nonlinsys->totalTimeClock);
+
+  /* grab the initial guess */
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  /* if last solving is too long ago use just old values  */
+  if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
+  {
+    getInitialGuess(nonlinsys, data->localData[0]->timeValue);
+  }
+  else
+  {
+    nonlinsys->getIterationVars(data, nonlinsys->nlsx);
+    memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+  }
+  /* update non continuous */
+  if (data->simulationInfo->discreteCall)
+  {
+    constraintsSatisfied = updateInnerEquation(dataAndThreadData, sysNumber, 1);
+  }
+
+  /* try */
+#ifndef OMC_EMCC
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
+  /* handle asserts */
+  saveJumpState = threadData->currentErrorStage;
+  threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+
+  if(data->simulationInfo->initial && nonlinsys->homotopySupport && init_lambda_steps > 1)
+    lambda_steps = init_lambda_steps;
+
+#if !defined(OMC_NO_FILESYSTEM)
+  if(lambda_steps > 1 && ACTIVE_STREAM(LOG_INIT))
+  {
+    sprintf(buffer, "%s_homotopy_nls_%d.csv", data->modelData->modelFilePrefix, sysNumber);
+    infoStreamPrint(LOG_INIT, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
+    pFile = fopen(buffer, "wt");
+    fprintf(pFile, "%s,", "lambda");
+    for(j=0; j<nonlinsys->size; ++j)
+      fprintf(pFile, "%s,", modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
+    fprintf(pFile, "\n");
+  }
+#endif
+
+  for(step=0; step<lambda_steps-1; ++step)
+  {
+    data->simulationInfo->lambda = ((double)step)/(lambda_steps-1);
+    infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
+    solveNLS(data, threadData, sysNumber);
+
+#if !defined(OMC_NO_FILESYSTEM)
+    if(ACTIVE_STREAM(LOG_INIT))
+    {
+      infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
+      fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
+      for(j=0; j<nonlinsys->size; ++j)
+        fprintf(pFile, "%.16g,", nonlinsys->nlsx[j]);
+      fprintf(pFile, "\n");
+    }
+#endif
+  }
+
+  data->simulationInfo->lambda = 1.0;
+  /* SOLVE! */
+  nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+
+#if !defined(OMC_NO_FILESYSTEM)
+  if(lambda_steps > 1 && ACTIVE_STREAM(LOG_INIT))
+  {
+    infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
+    fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
+    for(j=0; j<nonlinsys->size; ++j)
+      fprintf(pFile, "%.16g,", nonlinsys->nlsx[j]);
+    fprintf(pFile, "\n");
+    fclose(pFile);
+  }
+#endif
 
   /* handle asserts */
   threadData->currentErrorStage = saveJumpState;

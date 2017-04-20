@@ -80,14 +80,11 @@ public function solveInitialSystem "author: lochel
   This function generates a algebraic system of equations for the initialization and solves it."
   input BackendDAE.BackendDAE inDAE "simulation system";
   output BackendDAE.BackendDAE outInitDAE "initialization system";
-  output Boolean outUseHomotopy;
-  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0 "initialization system for lambda=0";
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output BackendDAE.Variables outGlobalKnownVars;
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.BackendDAE initdae;
-  BackendDAE.BackendDAE initdae0;
   BackendDAE.EqSystem initsyst;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray eqns, reeqns;
@@ -207,9 +204,6 @@ algorithm
 
     // solve system
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-    if useHomotopy then
-      initdae0 := BackendDAEUtil.copyBackendDAE(initdae);
-    end if;
 
     // simplify system
     initOptModules := BackendDAEUtil.getInitOptModules(NONE());
@@ -222,16 +216,6 @@ algorithm
       if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
         BackendDump.graphvizBackendDAE(initdae, "dumpinitialsystem");
       end if;
-    end if;
-
-    // compute system for lambda=0
-    if useHomotopy then
-      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
-      initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, (replaceHomotopyWithSimplified, "replaceHomotopyWithSimplified")::initOptModules, matchingAlgorithm, daeHandler);
-      outInitDAE_lambda0 := SOME(initdae0);
-      initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared));
-    else
-      outInitDAE_lambda0 := NONE();
     end if;
 
     // Remove the globalKnownVars for the initialization set again
@@ -278,7 +262,6 @@ algorithm
     end if;
 
     outInitDAE := initdae;
-    outUseHomotopy := useHomotopy;
     outRemovedInitialEquations := removedEqns;
   else
     Error.addCompilerError("No system for the symbolic initialization was generated");
@@ -1136,13 +1119,9 @@ protected function preBalanceInitialSystem1 "author: lochel"
 algorithm
   (outVars, outEqs, outB, outDumpVars) := match (n, inB)
     local
-      list<Integer> row;
-      Boolean b, useHomotopy;
+      Boolean b;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqs;
-      list<BackendDAE.Var> rvarlst;
-      BackendDAE.Var var;
-      DAE.ComponentRef cref;
       list<BackendDAE.Var> dumpVars;
 
     case (0, false)

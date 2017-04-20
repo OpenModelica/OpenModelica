@@ -453,7 +453,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    if (initialization(comp->fmuData, comp->threadData, "", "", 0.0, 5)) {
+    if (initialization(comp->fmuData, comp->threadData, "", "", 0.0)) {
       comp->state = modelError;
       FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
       return fmi2Error;

@@ -418,18 +418,17 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 
 
 /*! \fn initializeModel(DATA* data, const char* init_initMethod,
- *   const char* init_file, double init_time, int lambda_steps)
+ *   const char* init_file, double init_time)
  *
  *  \param [ref] [data]
  *  \param [in]  [pInitMethod] user defined initialization method
  *  \param [in]  [pInitFile] extra argument for initialization-method "file"
  *  \param [in]  [initTime] extra argument for initialization-method "file"
- *  \param [in]  [lambda_steps] ???
  *
  *  This function starts the initialization process of the model .
  */
 int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
-    const char* init_file, double init_time, int lambda_steps)
+    const char* init_file, double init_time)
 {
   TRACE_PUSH
   int retValue = 0;
@@ -453,8 +452,6 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   data->localData[0]->timeValue = simInfo->startTime;
 
-
-
   threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */
   {
@@ -462,7 +459,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    if(initialization(data, threadData, init_initMethod, init_file, init_time, lambda_steps))
+    if(initialization(data, threadData, init_initMethod, init_file, init_time))
     {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
@@ -625,14 +622,13 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
  *  \param [in]  [pOptiMethod] user defined optimization method
  *  \param [in]  [pInitFile] extra argument for initialization-method "file"
  *  \param [in]  [initTime] extra argument for initialization-method "file"
- *  \param [in]  [lambda_steps] ???
  *  \param [in]  [solverID] selects the ode solver
  *  \param [in]  [outputVariablesAtEnd] ???
  *
  *  This is the main function of the solver, it performs the simulation.
  */
 int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod, const char* init_file,
-    double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd, const char *argv_0)
+    double init_time, int solverID, const char* outputVariablesAtEnd, const char *argv_0)
 {
   TRACE_PUSH
 
@@ -687,7 +683,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 
   omc_alloc_interface.collect_a_little();
   /* initialize all parts of the model */
-  retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time, lambda_steps);
+  retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
   omc_alloc_interface.collect_a_little();
 
   if(0 == retVal) {

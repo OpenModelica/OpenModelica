@@ -23,8 +23,6 @@ function generateModelCode<T,A,B,C,D,E,F>
   input T inBackendDAE;
   input T inInitDAE;
   input Option<F> inInlineDAE;
-  input Boolean inUseHomotopy;
-  input Option<T> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input A p;
   input C className;

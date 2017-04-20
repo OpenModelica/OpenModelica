@@ -83,7 +83,7 @@ typedef struct SOLVER_INFO
 #endif
 
 extern int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod,
-    const char* init_file, double init_time, int lambda_steps,
+    const char* init_file, double init_time,
     int solverID, const char* outputVariablesAtEnd, const char *argv_0);
 
 /* Provide solver interface to interactive stuff */
@@ -91,7 +91,7 @@ extern int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INF
 extern int freeSolverData(DATA* data, SOLVER_INFO* solverInfo);
 
 extern int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
-    const char* init_file, double init_time, int lambda_steps);
+    const char* init_file, double init_time);
 
 extern int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd);
 
