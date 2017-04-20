@@ -32,6 +32,7 @@ filterBlock1.mos \
 fullRobot.mos \
 gaspropreties.mos \
 homotopy1.mos \
+homotopy2.mos \
 initial_equation.mos \
 parameters.mos \
 parameterWithoutBinding.mos \
