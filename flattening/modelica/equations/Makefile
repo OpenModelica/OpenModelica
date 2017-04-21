@@ -42,6 +42,7 @@ InOutBool.mo \
 LotkaVolterra.mo \
 ModifiedFiltersInSeries.mo \
 SimplePeriodicSampler.mo \
+Ticket4157.mos \
 TwoRateSampler.mo \
 VanDerPol.mo \
 VariableRange.mo \

@@ -1,0 +1,66 @@
+// name:     Ticket4157.mos [ticket:4157]
+// keywords: equation, complex
+// status:   correct
+//
+// Check some handling of compex equations
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("Ticket4157.mo");
+
+instantiateModel(Ticket4157.when_init_complex); getErrorString();
+instantiateModel(Ticket4157.if_complex_if_expression); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "function Complex \"Automatically generated record constructor for Complex\"
+//   input Real re;
+//   input Real im;
+//   output Complex res;
+// end Complex;
+//
+// function Complex.'+' \"Inline before index reduction\" \"Add two complex numbers\"
+//   input Complex c1 \"Complex number 1\";
+//   input Complex c2 \"Complex number 2\";
+//   output Complex c3 \"= c1 + c2\";
+// algorithm
+//   c3 := Complex(c1.re + c2.re, c1.im + c2.im);
+// end Complex.'+';
+//
+// class Ticket4157.when_init_complex
+//   Real a_re;
+//   Real a_im;
+//   Real Eo.re \"Real part of complex number\";
+//   Real Eo.im \"Imaginary part of complex number\";
+// equation
+//   a_re = 10.0;
+//   a_im = 0.0;
+//   when initial() then
+//     Eo = Complex.'+'(Complex(a_re, a_im), Complex(10.0, 0.0));
+//   end when;
+// end Ticket4157.when_init_complex;
+// "
+// ""
+// "function Complex \"Automatically generated record constructor for Complex\"
+//   input Real re;
+//   input Real im;
+//   output Complex res;
+// end Complex;
+//
+// class Ticket4157.if_complex_if_expression
+//   parameter Real E.re = 1.0 \"Real part of complex number\";
+//   parameter Real E.im = 0.0 \"Imaginary part of complex number\";
+//   parameter Real Z.re = 0.1 \"Real part of complex number\";
+//   parameter Real Z.im = 0.1 \"Imaginary part of complex number\";
+//   Real V.re \"Real part of complex number\";
+//   Real V.im \"Imaginary part of complex number\";
+//   parameter Boolean model_type = true;
+// equation
+//   Complex(E.re - V.re, E.im - V.im) = if model_type then Complex(0.0, 0.0) else Complex(Z.re, Z.im);
+// end Ticket4157.if_complex_if_expression;
+// "
+// ""
+// endResult

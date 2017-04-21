@@ -10,6 +10,7 @@ model ConditionalArrayExpression1
 equation
   0 = if a > b then c else [d; e];
 end ConditionalArrayExpression1;
+
 // Result:
 // Error processing file: ConditionalArrayExpression1.mo
 // [flattening/modelica/equations/ConditionalArrayExpression1.mo:11:3-11:34:writable] Error: Type mismatch in if-expression in component <NO COMPONENT>. True branch: {c[1], c[2]} has type Real[2], false branch: {{d}, {e}} has type Real[2, 1].
