@@ -2883,6 +2883,8 @@ algorithm
         //print("\nInst.instantiateClass");
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
 
+        dae = DAEUtil.mergeAlgorithmSections(dae);
+
         //FGraphDump.dumpGraph(env, "F:\\dev\\" + Absyn.pathString(className) + ".graph.graphml");
 
         //System.stopTimer();

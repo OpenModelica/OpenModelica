@@ -6445,6 +6445,64 @@ algorithm
   end match;
 end toSCodeConnectorType;
 
+public function mergeAlgorithmSections
+"@author: adrpo
+ experimental merging of all algorithm sections into:
+ - one for initial algorithms
+ - one for normal algorithms
+ - only happens on a flag (-d=mergeAlgSections)"
+  input DAE.DAElist inDae;
+  output DAE.DAElist outDae;
+protected
+  list<DAE.Element> els, newEls = {}, dAElist;
+  list<DAE.Statement> istmts = {}, stmts = {}, s;
+  DAE.ElementSource source, src;
+  DAE.Ident ident;
+  Option<SCode.Comment> comment;
+algorithm
+  // do nothing if the flag is not activated
+  if not Flags.isSet(Flags.MERGE_ALGORITHM_SECTIONS) then
+    outDae := inDae;
+    return;
+  end if;
+
+  DAE.DAE(els) := inDae;
+  for e in els loop
+    _ :=
+    match e
+      case DAE.COMP(ident, dAElist, src, comment)
+        equation
+          DAE.DAE(dAElist) = mergeAlgorithmSections(DAE.DAE(dAElist));
+          newEls = DAE.COMP(ident, dAElist, src, comment)::newEls;
+        then
+          ();
+
+      case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(s), source = source)
+        equation
+          stmts = listAppend(stmts, s);
+        then ();
+      case DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(s), source = source)
+        equation
+          istmts = listAppend(istmts, s);
+        then ();
+      else
+        equation
+          newEls = e::newEls;
+        then ();
+    end match;
+  end for;
+  newEls := listReverse(newEls);
+  if not listEmpty(istmts) then
+    newEls := listAppend(newEls, {DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(istmts), source)});
+  end if;
+  if not listEmpty(stmts) then
+    newEls := listAppend(newEls, {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts), source)});
+  end if;
+
+  outDae := DAE.DAE(newEls);
+
+end mergeAlgorithmSections;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
 
