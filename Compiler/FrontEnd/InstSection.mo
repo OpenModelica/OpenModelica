@@ -5067,7 +5067,7 @@ algorithm
           Static.elabCrefNoEval(cache, inEnv, cr, inImpl, false, inPre, info);
         Static.checkAssignmentToInput(var, attr, inEnv, false, info);
         (cache, ce_1) = Static.canonCref(cache, inEnv, ce, inImpl);
-        (cache, ce_1) = PrefixUtil.prefixCref(cache, inEnv, inIH, inPre, ce_1);
+        (cache, ce_1) = PrefixUtil.prefixCrefInnerOuter(cache, inEnv, inIH, ce_1, inPre);
 
         (cache, t) = PrefixUtil.prefixExpressionsInType(cache, inEnv, inIH, inPre, t);
 
