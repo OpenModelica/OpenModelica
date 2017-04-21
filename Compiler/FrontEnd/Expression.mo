@@ -11936,8 +11936,10 @@ algorithm
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
-      list<DAE.Exp> expl;
+      list<DAE.Exp> expl = {}, expl1, expl2;
       String msg;
+      DAE.Exp e1, e2;
+      DAE.Operator op;
 
     case (DAE.CREF(cr,_))
       algorithm
@@ -11948,6 +11950,28 @@ algorithm
     case (DAE.UNARY(operator=DAE.UMINUS()))
       algorithm
         expl := list(DAE.UNARY(inExp.operator, exp) for exp in expandExpression(inExp.exp));
+      then expl;
+
+    case (DAE.BINARY())
+      algorithm
+        // TODO! FIXME! we should change the type in the operator,
+        // i.e. use Types.unliftArray on the type inside the operator
+        op := inExp.operator;
+        expl1 := expandExpression(inExp.exp1);
+        expl2 := expandExpression(inExp.exp2);
+        // TODO! FIXME! maybe we should also support (array op scalar)
+        // make sure the lists have the same length
+        if listLength(expl1) <> listLength(expl2) then
+          fail();
+        end if;
+        e1 := listGet(expl1, 1);
+        e2 := listGet(expl1, 2);
+        for i in 1:listLength(expl1) loop
+          e1 := listGet(expl1, i);
+          e2 := listGet(expl2, i);
+          expl := DAE.BINARY(e1, op, e2)::expl;
+        end for;
+        expl := listReverse(expl);
       then expl;
 
     case DAE.ARRAY(_,_,expl)
@@ -11962,6 +11986,7 @@ algorithm
       then
         fail();
   end match;
+
 end expandExpression;
 
 public function extendArrExp "author: Frenkel TUD 2010-07

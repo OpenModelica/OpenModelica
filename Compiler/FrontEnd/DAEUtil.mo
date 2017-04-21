@@ -3126,6 +3126,10 @@ outCrefs := match inElems
       equation crefs = collectWhenCrefs1(e, source, inCrefs);
       then verifyBoolWhenEquation1(rest, initCond, crefs);
 
+    case DAE.COMPLEX_EQUATION(lhs = e, source = source)::rest
+      equation crefs = collectWhenCrefs1(e, source, inCrefs);
+      then verifyBoolWhenEquation1(rest, initCond, crefs);
+
     case DAE.EQUEQUATION(cr1 = cr)::rest
       then verifyBoolWhenEquation1(rest, initCond, cr::inCrefs);
 
