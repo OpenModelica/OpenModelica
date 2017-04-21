@@ -96,6 +96,7 @@ Summation.mo \
 SumSeriesWhile.mo \
 SumVectorForIf.mo \
 TestGravityAcceleration.mo \
+Ticket4365.mos \
 TupleError.mo \
 TupleSingleAssign.mo \
 TupleAssignmentMismatch1.mo \
