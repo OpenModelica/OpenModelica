@@ -3071,6 +3071,13 @@ annotation(
   preferredView="text");
 end removeExtendsModifiers;
 
+function getConnectionCount "Counts the number of connect equation in a class."
+  input TypeName className;
+  output Integer count;
+external "builtin";
+annotation(preferredView="text");
+end getConnectionCount;
+
 function getNthConnection "Returns the Nth connection.
   Example command:
   getNthConnection(A) => {\"from\", \"to\", \"comment\"}"

@@ -1174,12 +1174,6 @@ algorithm
       then
         outResult;
 
-    case "getConnectionCount"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getConnectionCount(cr, p);
-
     case "setConnectionComment"
       algorithm
         {Absyn.CREF(componentRef = cr),
@@ -10227,36 +10221,6 @@ algorithm
   end match;
 end getComponentitemsCondition;
 
-protected function getConnectionCount "
-  This function takes a `ComponentRef\' and a `Program\' and returns a
-  string containing the number of connections in the model identified by
-  the `ComponentRef\'.
-"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Integer numconn;
-      String res;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    case (model_,p)
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        numconn = countConnections(cdef);
-        res = intString(numconn);
-      then
-        res;
-    else "Error";
-  end matchcontinue;
-end getConnectionCount;
-
 public function getNthConnection "
   This function takes a `ComponentRef\' and a `Program\' and an int and
   returns a comma separated string for the nth connection, e.g. \"R1.n,C.p\".
@@ -10282,7 +10246,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) = getNthConnectionitemInClass(cdef, n);
+        Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) = listGet(getConnections(cdef), n);
         str = getStringComment(cmt);
         (s1, s2) = getConnectionStr(eq);
         vals = {Values.STRING(s1), Values.STRING(s2), Values.STRING(str)};
@@ -11387,7 +11351,7 @@ algorithm
     case (modelpath,p,n)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        citem = getNthConnectionitemInClass(cdef, n);
+        citem = listGet(getConnections(cdef), n);
         s1 = getConnectionAnnotationStr(citem, cdef, p, modelpath);
         str = stringAppendList({"{", s1, "}"});
       then
@@ -13102,116 +13066,6 @@ algorithm
   end matchcontinue;
 end createFuncargsFromElementargs;
 
-protected function getNthConnectionitemInClass
-" This function takes a Class and  an int ane returns the nth
-   `EquationItem\' containing a connect statement in that class."
-  input Absyn.Class inClass;
-  input Integer inInteger;
-  output Absyn.EquationItem outEquationItem;
-algorithm
-  outEquationItem := match (inClass,inInteger)
-    local
-      Absyn.EquationItem eq;
-      list<Absyn.ClassPart> parts;
-      Integer n;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
-      equation
-        eq = getNthConnectionitemInClassparts(parts, n);
-      then
-        eq;
-
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
-      equation
-        eq = getNthConnectionitemInClassparts(parts, n);
-      then
-        eq;
-  end match;
-end getNthConnectionitemInClass;
-
-protected function getNthConnectionitemInClassparts
-"This function takes a `ClassPart\' list and an int and returns
-  the nth connections as an `EquationItem\'."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Integer inInteger;
-  output Absyn.EquationItem outEquationItem;
-algorithm
-  outEquationItem := matchcontinue (inAbsynClassPartLst,inInteger)
-    local
-      Absyn.EquationItem eq;
-      list<Absyn.EquationItem> e;
-      list<Absyn.ClassPart> xs;
-      Integer n,c1,newn;
-
-    case ((Absyn.EQUATIONS(contents = e) :: _),n)
-      equation
-        eq = getNthConnectionitemInEquations(e, n);
-      then
-        eq;
-
-    case ((Absyn.EQUATIONS(contents = e) :: xs),n) /* The rule above failed, subtract the number of connections in the first equation section and try with the rest of the classparts */
-      equation
-        c1 = countConnectionsInEquations(e, 0);
-        newn = n - c1;
-        eq = getNthConnectionitemInClassparts(xs, newn);
-      then
-        eq;
-
-    case ((_ :: xs),n)
-      equation
-        eq = getNthConnectionitemInClassparts(xs, n);
-      then
-        eq;
-  end matchcontinue;
-end getNthConnectionitemInClassparts;
-
-protected function getNthConnectionitemInEquations
-" This function takes  an Equation list and an int
-   and returns the nth connection as an Equation.
-   If the number is larger than the number of connections
-   in the list, the function fails."
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  input Integer inInteger;
-  output Absyn.EquationItem outEquationItem;
-algorithm
-  outEquationItem := matchcontinue (inAbsynEquationItemLst,inInteger)
-    local
-      Absyn.EquationItem eq;
-      list<Absyn.EquationItem> xs;
-      list<Absyn.EquationItem> forEqList;
-      Integer newn,n;
-
-    case (((eq as Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT())) :: _),1) then eq;
-
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT()) :: xs),n)
-      equation
-        newn = n - 1;
-        eq = getNthConnectionitemInEquations(xs, newn);
-      then
-        eq;
-
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR(forEquations = forEqList)) :: xs), n)
-      algorithm
-        try
-          eq := getNthConnectionitemInEquations(forEqList, n);
-        else
-          newn := n - listLength(forEqList);
-          eq := getNthConnectionitemInEquations(xs, newn);
-        end try;
-      then
-        eq;
-
-    case ((_ :: xs),n)
-      equation
-        eq = getNthConnectionitemInEquations(xs, n);
-      then
-        eq;
-
-    case ({},_) then fail();
-
-  end matchcontinue;
-end getNthConnectionitemInEquations;
-
 protected function getConnectionStr
 " This function takes an Equation assumed to contain a connection and
    returns a comma separated string of componentreferences, e.g \"R1.n,C.p\"
@@ -13234,98 +13088,100 @@ algorithm
   end match;
 end getConnectionStr;
 
-protected function countConnections
-"This function takes a Class and returns an int
-  with the number of connections in the Class."
+public function getConnections
+"This function takes a Class and returns a list of connections in the Class."
   input Absyn.Class inClass;
-  output Integer outInteger;
+  output list<Absyn.EquationItem> outList;
 algorithm
-  outInteger := match (inClass)
+  outList := match (inClass)
     local
-      Integer count;
+      list<Absyn.EquationItem> connectionsList;
       list<Absyn.ClassPart> parts;
 
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       equation
-        count = countConnectionsInClassparts(parts);
+        connectionsList = getConnectionsInClassparts(parts);
       then
-        count;
+        connectionsList;
 
     // adrpo: handle also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       equation
-        count = countConnectionsInClassparts(parts);
+        connectionsList = getConnectionsInClassparts(parts);
       then
-        count;
+        connectionsList;
 
-    case Absyn.CLASS(body = Absyn.DERIVED()) then 0;
+    case Absyn.CLASS(body = Absyn.DERIVED()) then {};
 
   end match;
-end countConnections;
+end getConnections;
 
-protected function countConnectionsInClassparts
+protected function getConnectionsInClassparts
 " This function takes a ClassPart list and returns
-   an int with the number of connections in that list."
+   a list of connections in that list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output Integer outInteger;
+  output list<Absyn.EquationItem> outList;
 algorithm
-  outInteger := matchcontinue (inAbsynClassPartLst)
+  outList := matchcontinue (inAbsynClassPartLst)
     local
-      Integer r1,r2,res;
-      list<Absyn.EquationItem> eqlist;
+      list<Absyn.EquationItem> eqlist1, eqlist2;
       list<Absyn.ClassPart> xs;
 
-    case ((Absyn.EQUATIONS(contents = eqlist) :: xs))
+    case ((Absyn.EQUATIONS(contents = eqlist1) :: xs))
       equation
-        r1 = countConnectionsInEquations(eqlist, 0);
-        r2 = countConnectionsInClassparts(xs);
+        eqlist1 = getConnectionsInEquations(eqlist1);
+        eqlist2 = getConnectionsInClassparts(xs);
       then
-        r1 + r2;
+        listAppend(eqlist1, eqlist2);
 
     case ((_ :: xs))
       equation
-        res = countConnectionsInClassparts(xs);
+        eqlist1 = getConnectionsInClassparts(xs);
       then
-        res;
+        eqlist1;
 
-    case ({}) then 0;
+    case ({}) then {};
 
   end matchcontinue;
-end countConnectionsInClassparts;
+end getConnectionsInClassparts;
 
-protected function countConnectionsInEquations
-" This function takes an Equation list and returns an int
-   with the number of connect statements in that list."
+protected function getConnectionsInEquations
+" This function takes an Equation list and returns a list
+   of connect statements in that list."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  input Integer inInteger;
-  output Integer outInteger;
+  output list<Absyn.EquationItem> outList;
 algorithm
-  outInteger := match (inAbsynEquationItemLst)
+  outList := match (inAbsynEquationItemLst)
     local
-      Integer r1,res;
+      Absyn.EquationItem eq;
+      list<Absyn.EquationItem> eqlist1, eqlist2;
       list<Absyn.EquationItem> xs;
       list<Absyn.EquationItem> forEqList;
 
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT()) :: xs))
+    case (((eq as Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT())) :: xs))
+      equation
+        eqlist1 = getConnectionsInEquations(xs);
       then
-        countConnectionsInEquations(xs, inInteger + 1);
+        eq::eqlist1;
+
 
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR(forEquations = forEqList)) :: xs))
       equation
-        outInteger = countConnectionsInEquations(forEqList, inInteger);
+        eqlist1 = getConnectionsInEquations(forEqList);
+        eqlist2 = getConnectionsInEquations(xs);
       then
-        countConnectionsInEquations(xs, outInteger);
+        listAppend(eqlist1, eqlist2);
 
     case ((_ :: xs))
+      equation
+        eqlist1 = getConnectionsInEquations(xs);
       then
-        countConnectionsInEquations(xs, inInteger);
+        eqlist1;
 
-    case ({})
-      then
-        inInteger;
+    case ({}) then {};
 
   end match;
-end countConnectionsInEquations;
+end getConnectionsInEquations;
 
 protected function getComponentAnnotationsFromElts
 "Helper function to getComponentAnnotations."

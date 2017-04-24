@@ -2334,6 +2334,15 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,_,"getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        n = listLength(Interactive.getConnections(absynClass));
+      then
+        (cache,Values.INTEGER(n),st);
+
+    case (cache,_,"getConnectionCount",_,st,_) then (cache,Values.INTEGER(0),st);
+
     case (cache,_,"getNthConnection",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         vals = Interactive.getNthConnection(Absyn.pathToCref(path), p, n);
