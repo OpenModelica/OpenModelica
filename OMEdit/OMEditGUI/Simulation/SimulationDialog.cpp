@@ -261,7 +261,8 @@ void SimulationDialog::setUpForm()
   pIntegrationGridLayout->addWidget(mpDasslOptionsGroupBox, 3, 0, 1, 3);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
-  mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
+  mpCflagsLabel = new Label(tr("C/C++ Compiler Flags (Optional):"));
+  mpCflagsLabel->setToolTip(tr("Space separated list of C/C++ compiler flags"));
   mpCflagsTextBox = new QLineEdit;
   // Number of Processors
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
