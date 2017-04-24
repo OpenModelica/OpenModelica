@@ -134,8 +134,12 @@ algorithm
       fixvars := BackendVariable.listVar(outAllPrimaryParameters);
     end if;
 
-    eqns := BackendEquation.emptyEqns();
-    reeqns := BackendEquation.emptyEqns();
+    eqns := BackendEquation.emptyEqnsSized(BackendVariable.varsSize(dae.shared.aliasVars)
+                                         + BackendVariable.varsSize(dae.shared.globalKnownVars)
+                                         + BackendVariable.varsSize(dae.shared.localKnownVars)
+                                         + BackendEquation.getNumberOfEquations(dae.shared.initialEqs)
+                                         + BackendDAEUtil.daeSize(dae));
+    reeqns := BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(dae.shared.removedEqs));
 
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
     ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
