@@ -1097,19 +1097,7 @@ QString OMCProxy::getDiagramAnnotation(QString className)
   */
 int OMCProxy::getConnectionCount(QString className)
 {
-  QString expression = "getConnectionCount(" + className + ")";
-  sendCommand(expression);
-  QString result = getResult();
-  if (!result.isEmpty()) {
-    bool ok;
-    int result_number = result.toInt(&ok);
-    if (ok) {
-      return result_number;
-    } else {
-      return 0;
-    }
-  }
-  return 0;
+  return mpOMCInterface->getConnectionCount(className);
 }
 
 /*!
