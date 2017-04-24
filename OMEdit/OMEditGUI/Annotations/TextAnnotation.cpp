@@ -244,28 +244,28 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   mTextString = StringHandler::removeFirstLastQuotes(mTextString);
   mTextString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
   QFont font;
+  font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
+  // set font underline
+  if (StringHandler::getFontUnderline(mTextStyles)) {
+    font.setUnderline(true);
+  }
+  painter->setFont(font);
+  QRect fontBoundRect = painter->fontMetrics().boundingRect(boundingRect().toRect(), Qt::TextDontClip, mTextString);
+  bool calculateFontSize = true;
   if (mFontSize > 0) {
-    font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
-    // set font underline
-    if (StringHandler::getFontUnderline(mTextStyles)) {
-      font.setUnderline(true);
+    if (boundingRect().width() != 0 && fontBoundRect.width() <= boundingRect().width()) {
+      calculateFontSize = false;
+    } else if (boundingRect().height() != 0 && fontBoundRect.height() <= boundingRect().height()) {
+      calculateFontSize = false;
     }
-    font.setPointSizeF(mFontSize / painter->transform().m11());
-    painter->setFont(font);
-  } else {
-    font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
-    // set font underline
-    if (StringHandler::getFontUnderline(mTextStyles)) {
-      font.setUnderline(true);
-    }
-    painter->setFont(font);
-    QRect fontBoundRect = painter->fontMetrics().boundingRect(boundingRect().toRect(), Qt::TextDontClip, mTextString);
+  }
+  if (calculateFontSize) {
     float xFactor = boundingRect().width() / fontBoundRect.width();
     float yFactor = boundingRect().height() / fontBoundRect.height();
     /* Ticket:4256
-     * Text aspect when x1=x2 i.e, width is 0.
-     * Use height.
-     */
+       * Text aspect when x1=x2 i.e, width is 0.
+       * Use height.
+       */
     float factor = (boundingRect().width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
     QFont f = painter->font();
     qreal fontSizeFactor = f.pointSizeF()*factor;
