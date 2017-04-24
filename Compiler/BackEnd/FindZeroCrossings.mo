@@ -93,7 +93,7 @@ algorithm
   // shared removedEqns
   ((removedEqs, vars, eqns, index, ht)) :=
       BackendEquation.traverseEquationArray(shared.removedEqs, encapsulateWhenConditions_Equation,
-                                             (BackendEquation.emptyEqns(), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), index, ht) );
+                                             (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(shared.removedEqs)), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), index, ht) );
   shared.removedEqs := removedEqs;
   eqns_ := BackendEquation.listEquation(DoubleEndedList.toListNoCopyNoClear(eqns));
   vars_ := BackendVariable.listVar(DoubleEndedList.toListNoCopyNoClear(vars));
@@ -129,12 +129,12 @@ algorithm
       algorithm
         ((orderedEqs, varLst, eqnLst, outIndex, outHT)) :=
             BackendEquation.traverseEquationArray( orderedEqs, encapsulateWhenConditions_Equation,
-                                                   (BackendEquation.emptyEqns(), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), inIndex, inHT) );
+                                                   (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(orderedEqs)), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), inIndex, inHT) );
 
         // removed equations
         ((removedEqs, varLst, eqnLst, outIndex, outHT)) :=
             BackendEquation.traverseEquationArray( syst.removedEqs, encapsulateWhenConditions_Equation,
-                                                   (BackendEquation.emptyEqns(), varLst, eqnLst, outIndex, outHT) );
+                                                   (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(syst.removedEqs)), varLst, eqnLst, outIndex, outHT) );
         syst.removedEqs := removedEqs;
 
         syst.orderedVars := BackendVariable.addVars(DoubleEndedList.toListNoCopyNoClear(varLst), orderedVars);
