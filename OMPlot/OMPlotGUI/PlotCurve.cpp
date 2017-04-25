@@ -71,7 +71,7 @@ void PlotCurve::setTitleLocal()
   if (getDisplayUnit().isEmpty()) {
     QwtPlotItem::setTitle(getName());
   } else {
-    QwtPlotItem::setTitle(getName() + " [" + getDisplayUnit() + "]");
+    QwtPlotItem::setTitle(QString("%1 (%2)").arg(getName(), getDisplayUnit()));
   }
 }
 

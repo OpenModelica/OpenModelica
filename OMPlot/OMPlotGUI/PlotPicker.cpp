@@ -163,10 +163,10 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
     mpPointMarker->setVisible(true);
     QString timeUnit = "";
     if (!mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
-      timeUnit = QString("[%1]").arg(mpPlot->getParentPlotWindow()->getTimeUnit());
+      timeUnit = QString("%1").arg(mpPlot->getParentPlotWindow()->getTimeUnit());
     }
-    QString toolTip = QString("Name: <b>%1</b><br />Value: <b>%2</b> at <b>%3 %4</b><br />Filename: <b>%5</b>")
-        .arg(pPlotCurve->title().text())
+    QString toolTip = QString("Name: <b>%1</b> %2<br />Value: <b>%3</b> at <b>%4</b> %5<br />Filename: <b>%6</b>")
+        .arg(pPlotCurve->getName()).arg(pPlotCurve->getDisplayUnit())
         .arg(pPlotCurve->mYAxisVector.at(index))
         .arg(pPlotCurve->mXAxisVector.at(index))
         .arg(timeUnit)
