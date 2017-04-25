@@ -1648,7 +1648,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
 
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
-  if (mSkipBackground || mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mSkipBackground) {
     return;
   }
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
@@ -5465,7 +5465,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
+  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel));
   MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel));
   MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel));
