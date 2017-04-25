@@ -164,7 +164,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
-    pPlotWindow->setXLabel(QString("time [%1]").arg(pPlotWindow->getTimeUnit()));
+    pPlotWindow->setXLabel(QString("time (%1)").arg(pPlotWindow->getTimeUnit()));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
