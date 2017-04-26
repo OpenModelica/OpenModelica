@@ -12448,6 +12448,8 @@ end clockedPartFunctions;
 
 template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
   let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
   let equation_all_func_calls = (List.partition(allEquationsPlusWhen, 100) |> eqs hasindex i0 =>
@@ -12458,8 +12460,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
-
-    <%createTimeConditionTreatments(timeEventLength(simCode))%>
+    <%createTimeConditionTreatments(timeEventLength(simCode), clockedPartitions)%>
 
     // Evaluate Equations
     <%equation_all_func_calls%>
@@ -12471,19 +12472,57 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen, SimCode simC
   >>
 end createEvaluateAll;
 
-template createTimeConditionTreatments(String numberOfTimeEvents)
+template createTimeConditionTreatments(String numberOfTimeEvents, list<ClockedPartition> clockPartitions)
 ::=
+  let booleanSubClocks = (clockPartitions |> baseClock hasindex i0  =>
+                    booleanSubClockActivation1(absoluteClockIdxForBaseClock(intAdd(i0,1),clockPartitions), baseClock, numberOfTimeEvents)
+                    ;separator="\n")
   <<
   // treatment of clocks in model as time events
   for (int i = <%numberOfTimeEvents%>; i < _dimTimeEvent; i++) {
     if (_time_conditions[i]) {
       evaluateClocked(i - <%numberOfTimeEvents%> + 1);
+      <%booleanSubClocks%>
       _time_conditions[i] = false; // reset clock after one evaluation
       _clockSubactive[i - <%numberOfTimeEvents%>] = false;
     }
   }
   >>
 end createTimeConditionTreatments;
+
+template booleanSubClockActivation1(Integer absBaseClockIdx, ClockedPartition baseClock, String numberOfTimeEvents)
+::=
+match baseClock
+case CLOCKED_PARTITION(baseClock = BOOLEAN_CLOCK(__)) then
+  let subClocks = (subPartitions |> subClock  hasindex i0  =>
+                    booleanSubClockActivation2(absBaseClockIdx, i0, subClock, numberOfTimeEvents)
+                    ;separator="\n")
+  <<
+  //the subclocks <%absBaseClockIdx%>
+  <%subClocks%>
+  >>
+else
+  <<
+  //no subclock <%absBaseClockIdx%>
+  >>
+end match
+end booleanSubClockActivation1;
+
+template booleanSubClockActivation2(Integer absClockIdx, Integer subClockIdx, SubPartition subPartition, String numberOfTimeEvents)
+::=
+if intNe(subClockIdx,0) then
+  let absSubClockIdx = intAdd(absClockIdx,subClockIdx)
+  <<
+  //activate boolean triggered subclock <%absSubClockIdx%> of the base sub-clock <%absClockIdx%> is triggered
+  if (_time_conditions[<%absClockIdx%> -1+<%numberOfTimeEvents%>] && (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1])) {
+  _time_conditions[<%absSubClockIdx%> -1+<%numberOfTimeEvents%>] = (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1]);
+  }
+  >>
+else
+  <<
+
+  >>
+end booleanSubClockActivation2;
 
 template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=

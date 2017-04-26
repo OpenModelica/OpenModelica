@@ -773,6 +773,8 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
                  SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<tuple<Schedule, Schedule, Schedule>> schedulesOpt, Context context, Text stateDerVectorName /*=__zDot*/,
                  String modelNamePrefixStr, Boolean useFlatArrayNotation)
 ::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
   let &varDecls = buffer "" /*BUFD*/
   let measureTimeEvaluateOdeStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
   let measureTimeEvaluateOdeEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
@@ -801,7 +803,7 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
   {
     <%measureTimeEvaluateAllStart%>
 
-    <%createTimeConditionTreatments(timeEventLength(simCode))%>
+    <%createTimeConditionTreatments(timeEventLength(simCode), clockedPartitions)%>
 
     <%varDecls%>
 

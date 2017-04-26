@@ -756,6 +756,7 @@ algorithm
     off := off + basePartition.nSubClocks;
     clockedPartitions := SimCode.CLOCKED_PARTITION(basePartition.clock, simSubPartitions)::clockedPartitions;
   end for;
+    clockedPartitions := listReverse(clockedPartitions); // in order to keep the correct indexes for the correct clkfire-calls
 end createClockedSimPartitions;
 
 protected function collectClockedVars "author: rfranke
@@ -13174,6 +13175,27 @@ algorithm
 
   end match;
 end isModelTooBigForCSharpInOneFile;
+
+public function absoluteClockIdxForBaseClock
+  input Integer baseClockIdx; // one-based
+  input list<SimCode.ClockedPartition> allBaseClockPartitions;
+  output Integer absBaseClockIdx;
+protected
+  Integer i = 1;
+algorithm
+  absBaseClockIdx := 1;
+  while i < baseClockIdx loop
+    absBaseClockIdx := absBaseClockIdx + listLength(getSubPartition(listGet(allBaseClockPartitions,i)));
+    i := i+1;
+  end while;
+end absoluteClockIdxForBaseClock;
+
+public function getClockedPartitions
+  input SimCode.SimCode simcode;
+  output list<SimCode.ClockedPartition> clockedPartitions;
+algorithm
+   clockedPartitions := simcode.clockedPartitions;
+end getClockedPartitions;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

@@ -811,6 +811,17 @@ end SimCodeFunction;
 
 package SimCodeUtil
 
+  function absoluteClockIdxForBaseClock
+    input Integer baseClockIdx;
+    input list<SimCode.ClockedPartition> allBaseClockPartitions;
+    output Integer absBaseClockIdx;
+  end absoluteClockIdxForBaseClock;
+
+  function getClockedPartitions
+    input SimCode.SimCode simcode;
+    output list<SimCode.ClockedPartition> clockedPartitions;
+  end getClockedPartitions;
+
   function functionInfo
     input SimCodeFunction.Function fn;
     output builtin.SourceInfo info;

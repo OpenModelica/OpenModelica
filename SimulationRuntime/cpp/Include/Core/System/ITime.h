@@ -11,8 +11,7 @@ public:
   virtual ~ITime() {};
   virtual int getDimTimeEvent() const = 0;
   virtual std::pair<double, double>* getTimeEventData() const = 0;
-  // gibt die Time events (Startzeit und Frequenz) zurück
-  virtual void initTimeEventData() = 0;
+  virtual void initTimeEventData() = 0;// sets the start time and interval length in the timeEventData
   virtual void computeTimeEventConditions(double currTime) = 0;
   virtual double computeNextTimeEvents(double currTime) = 0;
   virtual void resetTimeConditions() = 0;
