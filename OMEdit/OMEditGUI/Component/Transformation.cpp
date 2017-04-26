@@ -225,7 +225,7 @@ void Transformation::setOrigin(QPointF origin)
   }
 }
 
-QPointF Transformation::getOrigin()
+QPointF Transformation::getOrigin() const
 {
   switch (mViewType) {
     case StringHandler::Icon:
@@ -247,6 +247,18 @@ QPointF Transformation::getPosition()
     default:
       return getPositionDiagram();
   }
+}
+
+bool Transformation::operator==(const Transformation &transformation) const
+{
+  return (transformation.getVisible() == this->getVisible()) &&
+      (transformation.getOrigin().x() == this->getOrigin().x()) &&
+      (transformation.getOrigin().y() == this->getOrigin().y()) &&
+      (transformation.getExtent1().x() == this->getExtent1().x()) &&
+      (transformation.getExtent1().y() == this->getExtent1().y()) &&
+      (transformation.getExtent2().x() == this->getExtent2().x()) &&
+      (transformation.getExtent2().y() == this->getExtent2().y()) &&
+      (transformation.getRotateAngle() == this->getRotateAngle());
 }
 
 void Transformation::setExtent1(QPointF extent)
@@ -315,7 +327,7 @@ void Transformation::setRotateAngle(qreal rotateAngle)
   }
 }
 
-qreal Transformation::getRotateAngle()
+qreal Transformation::getRotateAngle() const
 {
   switch (mViewType) {
     case StringHandler::Icon:

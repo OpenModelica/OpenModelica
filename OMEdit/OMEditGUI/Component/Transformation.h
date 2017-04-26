@@ -57,14 +57,16 @@ public:
   void adjustPosition(qreal x, qreal y);
   bool hasOrigin();
   void setOrigin(QPointF origin);
-  QPointF getOrigin();
+  QPointF getOrigin() const;
   void setExtent1(QPointF extent);
   QPointF getExtent1() const;
   void setExtent2(QPointF extent);
   QPointF getExtent2() const;
   void setRotateAngle(qreal rotateAngle);
-  qreal getRotateAngle();
+  qreal getRotateAngle() const;
   QPointF getPosition();
+  // operator overloading
+  bool operator==(const Transformation &transformation) const;
 private:
   bool mValid;
   Component *mpComponent;

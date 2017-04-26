@@ -280,6 +280,7 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInte
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
+  mpIconOrDiagramComponent = 0;
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
   setText(QString("Update Component %1 Transformations").arg(mpComponent->getName()));
@@ -291,6 +292,25 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInte
  */
 void UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::redo()
 {
+  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
+      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
+    } else {
+      mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
+    }
+    if (mpIconOrDiagramComponent && (mOldTransformation == mpIconOrDiagramComponent->mTransformation)) {
+      mpIconOrDiagramComponent->resetTransform();
+      bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+      mpIconOrDiagramComponent->setPos(0, 0);
+      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+      mpIconOrDiagramComponent->setTransform(mNewTransformation.getTransformationMatrix());
+      mpIconOrDiagramComponent->mTransformation = mNewTransformation;
+      mpIconOrDiagramComponent->emitTransformChange();
+    }
+  }
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
@@ -308,6 +328,25 @@ void UpdateComponentTransformationsCommand::UpdateComponentTransformationsComman
  */
 void UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::undo()
 {
+  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
+      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
+    } else {
+      mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
+    }
+    if (mpIconOrDiagramComponent && (mpComponent->mTransformation == mpIconOrDiagramComponent->mTransformation)) {
+      mpIconOrDiagramComponent->resetTransform();
+      bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+      mpIconOrDiagramComponent->setPos(0, 0);
+      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+      mpIconOrDiagramComponent->setTransform(mOldTransformation.getTransformationMatrix());
+      mpIconOrDiagramComponent->mTransformation = mOldTransformation;
+      mpIconOrDiagramComponent->emitTransformChange();
+    }
+  }
   mpComponent->resetTransform();
   bool state = mpComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);

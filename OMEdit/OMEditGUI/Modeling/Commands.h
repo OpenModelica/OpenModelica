@@ -105,6 +105,7 @@ private:
     void undo();
   private:
     Component *mpComponent;
+    Component *mpIconOrDiagramComponent;
     Transformation mOldTransformation;
     Transformation mNewTransformation;
   };
