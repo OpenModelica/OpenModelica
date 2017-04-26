@@ -2274,6 +2274,22 @@ void MainWindow::openModelicaWebReference()
   QDesktopServices::openUrl(modelicaWebReference);
 }
 
+/*!
+ * \brief MainWindow::openOpenModelicaTLMSimulatorDocumentationAction
+ * Opens the OpenModelica TLM Simulator documentation.
+ */
+void MainWindow::openOpenModelicaTLMSimulatorDocumentationAction()
+{
+  QUrl openModelicaTLMSimulatorDocumentation (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                                              .append("/OMTLMSimulator/Documentation/OMTLMSimulator.pdf"));
+  if (!QDesktopServices::openUrl(openModelicaTLMSimulatorDocumentation)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE)
+                                                          .arg(openModelicaTLMSimulatorDocumentation.toString()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
 void MainWindow::openAboutOMEdit()
 {
   AboutOMEditDialog *pAboutOMEditDialog = new AboutOMEditDialog(this);
@@ -3014,6 +3030,10 @@ void MainWindow::createActions()
   mpModelicaWebReferenceAction = new QAction(tr("Modelica Web Reference"), this);
   mpModelicaWebReferenceAction->setStatusTip(tr("Opens the Modelica Web Reference"));
   connect(mpModelicaWebReferenceAction, SIGNAL(triggered()), SLOT(openModelicaWebReference()));
+  // OMTLMSimulator documenatation action
+  mpOpenModelicaTLMSimulatorDocumentationAction = new QAction(tr("OpenModelica TLM Simulator Documentation"), this);
+  mpOpenModelicaTLMSimulatorDocumentationAction->setStatusTip(tr("Opens the OpenModelica TLM Simulator Documentation"));
+  connect(mpOpenModelicaTLMSimulatorDocumentationAction, SIGNAL(triggered()), SLOT(openOpenModelicaTLMSimulatorDocumentationAction()));
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
@@ -3344,6 +3364,8 @@ void MainWindow::createMenus()
   //  pHelpMenu->addAction(mpModelicaByExampleAction);
   //  pHelpMenu->addAction(mpModelicaWebReferenceAction);
   //  pHelpMenu->addSeparator();
+  pHelpMenu->addAction(mpOpenModelicaTLMSimulatorDocumentationAction);
+  pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
   menuBar()->addAction(pHelpMenu->menuAction());
