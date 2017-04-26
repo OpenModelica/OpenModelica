@@ -804,9 +804,9 @@ algorithm
   outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, selectInitializationVariables2, outInitVars);
 
   // select all parameters
-  allParameters := BackendVariable.emptyVars();
-  allParameterEqns := BackendEquation.emptyEqns();
-  otherVariables := BackendVariable.emptyVars();
+  allParameters := BackendVariable.emptyVarsSized(BackendVariable.varsSize(dae.shared.globalKnownVars) + BackendVariable.varsSize(dae.shared.externalObjects));
+  allParameterEqns := BackendEquation.emptyEqnsSized(BackendVariable.varsSize(dae.shared.globalKnownVars) + BackendVariable.varsSize(dae.shared.externalObjects));
+  otherVariables := BackendVariable.emptyVarsSized(BackendVariable.varsSize(dae.shared.globalKnownVars) + BackendVariable.varsSize(dae.shared.externalObjects));
   (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectParameter2, (allParameters, allParameterEqns, otherVariables));
   (allParameters, allParameterEqns, otherVariables) := BackendVariable.traverseBackendDAEVars(dae.shared.externalObjects, selectParameter2, (allParameters, allParameterEqns, otherVariables));
   nParam := BackendVariable.varsSize(allParameters);
