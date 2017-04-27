@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+boolSubClocks.mos \
 Bug3503.mos \
 EventClock.mos \
 EventClock_cpp.mos \
