@@ -89,10 +89,12 @@ void Nox::initialize()
     _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
     _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
     _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
+    _statusTestSgnChange = Teuchos::rcp(new NOX::StatusTest::SgnChange(5.0e-7));
 
 	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
 	_statusTestsCombo->addStatusTest(_statusTestStagnation);
 	_statusTestsCombo->addStatusTest(_statusTestDivergence);
+	_statusTestsCombo->addStatusTest(_statusTestSgnChange);
 
 	if (_generateoutput) std::cout << "ending init" << std::endl;
 }
@@ -122,7 +124,7 @@ void Nox::solve()
 	// Set the level of output
 	addPrintingList(_solverParametersPtr);
     if (_generateoutput){
-		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
+		_solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::InnerIteration + NOX::Utils::Details + NOX::Utils::Debug); //(there are also more options, but error and outer iteration are the ones that I commonly use.
 	}
 
 	//_solverParametersPtr->sublist("Direction").set("Method", "Steepest Descent");
@@ -575,6 +577,7 @@ void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solv
 		//Polynomial failed -> Try More'-Thuente instead
 	case 4:
 		solverParametersPtr->sublist("Line Search").set("Method", "More'-Thuente");
+		// solverParametersPtr->sublist("Line Search").sublist("More'-Thuente").set("Recovery Step", std::numeric_limits<double>::min());//I would set this to 0.0, but then More Thuente throws an error:/
 		//solverParametersPtr->sublist("Line Search").sublist("More'-Thuente").set("Sufficient Decrease", 1.0e-2);
 		break;
 
@@ -590,6 +593,7 @@ void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solv
 	case 6:
 		//solverParametersPtr->sublist("Trust Region").set("Use Dogleg Segment Minimization", true);
 		solverParametersPtr->set("Nonlinear Solver", "Inexact Trust Region Based");
+    solverParametersPtr->sublist("Trust Region").set("Recovery Step", 0.0);
 		break;
 
 		//Inexact Trust Region failed -> Try Tensor instead

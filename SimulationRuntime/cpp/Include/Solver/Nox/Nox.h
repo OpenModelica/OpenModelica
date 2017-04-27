@@ -5,6 +5,8 @@
  */
 
 
+#include <Solver/Nox/NOX_StatusTest_SgnChange.H>
+
 
 class Nox : public IAlgLoopSolver
 {
@@ -75,6 +77,7 @@ private:
   Teuchos::RCP<NOX::StatusTest::MaxIters> _statusTestMaxIters;
   Teuchos::RCP<NOX::StatusTest::Stagnation> _statusTestStagnation;
   Teuchos::RCP<NOX::StatusTest::Divergence> _statusTestDivergence;
+  Teuchos::RCP<NOX::StatusTest::SgnChange> _statusTestSgnChange;
 
   Teuchos::RCP<NOX::StatusTest::Combo> _statusTestsCombo;
 

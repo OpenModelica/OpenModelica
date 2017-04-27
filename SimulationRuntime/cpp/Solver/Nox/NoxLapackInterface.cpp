@@ -116,7 +116,7 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 };
 
 bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
-//if (_algLoop->getSimTime()>0.088421) _generateoutput=true;
+// if (_algLoop->getSimTime()>0.0) _generateoutput=true;
 	checkdimensionof(x);
 
 	for (int i=0;i<_dimSys;i++){
@@ -212,7 +212,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		// std::cout << std::endl;
 		// std::cout << "or also" << std::endl;
 		// f.print(std::cout);
-	}
+	}//_generateoutput=false;
 	return true;
 }
 

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.9)
 
 project(${NoxName})
 
-add_library(${NoxName} Nox.cpp NoxSettings.cpp FactoryExport.cpp NoxLapackInterface.cpp)
+add_library(${NoxName} Nox.cpp NoxSettings.cpp FactoryExport.cpp NoxLapackInterface.cpp NOX_StatusTest_SgnChange.C)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${NoxName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
@@ -18,4 +18,5 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Solver/Nox/NoxSettings.h
   ${CMAKE_SOURCE_DIR}/Include/Solver/Nox/FactoryExport.h
   ${CMAKE_SOURCE_DIR}/Include/Solver/Nox/NoxLapackInterface.h
+  ${CMAKE_SOURCE_DIR}/Include/Solver/Nox/NOX_StatusTest_SgnChange.H
   DESTINATION include/omc/cpp/Solver/Nox)
