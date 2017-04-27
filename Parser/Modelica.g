@@ -1676,19 +1676,23 @@ interactive_stmt returns [void* ast]
 @declarations { int last_sc = 0; }
 @init{ ss = 0; } :
   // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
-  BOM? ss=interactive_stmt_list[&last_sc] EOF
+  BOM? ss=interactive_stmt_list (SEMICOLON {last_sc=1;})? EOF
     {
       ast = GlobalScript__ISTMTS(or_nil(ss), mmc_mk_bcon(last_sc));
     }
   ;
 
-interactive_stmt_list [int *last_sc] returns [void* ast]
-@init { a.ast = 0; $ast = 0; void *val; } :
-  a=top_algorithm ( (SEMICOLON ss=interactive_stmt_list[last_sc]) | (SEMICOLON { *last_sc = 1; }) | /* empty */ )
-    {
-      $ast = mmc_mk_cons(a.ast, or_nil(ss));
-    }
+interactive_stmt_list returns [void* ast]
+@init { a.ast = 0; $ast = mmc_mk_nil(); void *val; } :
+  a=top_algorithm {$ast = mmc_mk_cons(a.ast, $ast);} (SEMICOLON a=top_algorithm {$ast = mmc_mk_cons(a.ast, $ast);})*
+  {
+    /* We build the list using iteration instead of recursion to save
+     * stack space, so we need to reverse the result. */
+    $ast = listReverseInPlace($ast);
+  }
   ;
+
+
 
 /* MetaModelica */
 match_expression returns [void* ast]
