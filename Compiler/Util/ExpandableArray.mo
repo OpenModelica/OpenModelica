@@ -243,12 +243,10 @@ protected
   Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
   Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer i = 0;
 algorithm
-  if numberOfElements == 0 or numberOfElements == lastUsedIndex then
-    return;
-  end if;
-
-  for i in 1:numberOfElements/2+1 loop
+  while lastUsedIndex > numberOfElements loop
+    i := i+1;
     if isNone(Dangerous.arrayGetNoBoundsChecking(data, i)) then
       Dangerous.arrayUpdateNoBoundsChecking(data, i, Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex));
       Dangerous.arrayUpdateNoBoundsChecking(data, lastUsedIndex, NONE());
@@ -257,7 +255,7 @@ algorithm
         lastUsedIndex := lastUsedIndex-1;
       end while;
     end if;
-  end for;
+  end while;
 
   Dangerous.arrayUpdateNoBoundsChecking(exarray.lastUsedIndex, 1, lastUsedIndex);
 end compress;
