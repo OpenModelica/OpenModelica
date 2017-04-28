@@ -1326,9 +1326,11 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
       if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+        bool showPlotWindow = true;
 #if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
         if (mpLaunchAnimationCheckBox->isChecked()) {
+          showPlotWindow = false;
           if (simulationOptions.getResultFileName().endsWith(".mat")) {
             MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
             AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
@@ -1340,9 +1342,19 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
             MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                                   Helper::notificationLevel));
           }
+        } else {
+          showPlotWindow = true;
         }
 #endif
         MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
+        if (showPlotWindow) {
+          OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
+          if (pPlotWindow) {
+            MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
+          } else {
+            MainWindow::instance()->getPlotWindowContainer()->addPlotWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+          }
+        }
       } else {
         // stay in current perspective and show variables browser
         MainWindow::instance()->getVariablesDockWidget()->show();

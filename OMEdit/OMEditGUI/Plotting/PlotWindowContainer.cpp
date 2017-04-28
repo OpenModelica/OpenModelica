@@ -106,6 +106,36 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
   }
 }
 
+/*!
+ * \brief PlotWindowContainer::getTopPlotWindow
+ * Finds the top PlotWindow and returns it. If there is no PlotWindow then return 0.
+ * \return
+ */
+PlotWindow* PlotWindowContainer::getTopPlotWindow()
+{
+  QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+    if (0 != subWindowsList.at(i)->widget()->objectName().compare(QString("animationWidget"))) {
+      return qobject_cast<PlotWindow*>(subWindowsList.at(i)->widget());
+    }
+  }
+  return 0;
+}
+
+/*!
+ * \brief PlotWindowContainer::setTopPlotWindowActive
+ * Finds the top PlotWindow and sets it as active subwindow.
+ */
+void PlotWindowContainer::setTopPlotWindowActive()
+{
+  QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+    if (0 != subWindowsList.at(i)->widget()->objectName().compare(QString("animationWidget"))) {
+      setActiveSubWindow(subWindowsList.at(i));
+    }
+  }
+}
+
 #if !defined(WITHOUT_OSG)
 /*!
  * \brief PlotWindowContainer::getCurrentAnimationWindow
