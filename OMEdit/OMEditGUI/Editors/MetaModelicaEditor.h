@@ -45,6 +45,7 @@ public:
   MetaModelicaEditor(QWidget *pParent);
   void setPlainText(const QString &text);
   virtual void popUpCompleter();
+  static QList<CompleterItem> getCodeSnippets();
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

@@ -685,7 +685,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   mpCompleter->setWrapAround(false);
   mpCompleter->setWidget(this);
   mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
-  connect(mpCompleter, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
+  connect(mpCompleter, SIGNAL(activated(QModelIndex)), this, SLOT(insertCompletionItem(QModelIndex)));
   updateLineNumberAreaWidth(0);
   updateHighlights();
   updateCursorPosition();
@@ -702,6 +702,24 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
 }
 
 /*!
+ * \class CompleterItem
+ * The constructor is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
+ * ModelicaEditor,CEditor etc..
+ */
+
+CompleterItem::CompleterItem()
+{
+
+}
+
+CompleterItem::CompleterItem(QString key, QString value, QString select)
+{
+  mKey=key;
+  mValue=value;
+  mSelect=select;
+}
+
+/*!
  * \brief PlainTextEdit::insertCompleterKeywords
  * add Keyword list to the QStandardItemModel which will be used by the Completer
  * This function is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
@@ -714,7 +732,8 @@ void PlainTextEdit::insertCompleterKeywords(QStringList keywords)
     QStandardItem *pStandardItem = new QStandardItem(keywords[i]);
     pStandardItem->setIcon(QIcon(":/Resources/icons/completerkeyword.svg"));
     pStandardItem->setToolTip("keywords");
-    mpStandardItemModel->setItem(i, 0, pStandardItem);
+    pStandardItem->setData(QVariant::fromValue(CompleterItem(keywords[i],keywords[i],"")),Qt::UserRole);
+    mpStandardItemModel->appendRow(pStandardItem);
   }
 }
 
@@ -731,6 +750,19 @@ void PlainTextEdit::insertCompleterTypes(QStringList types)
     QStandardItem *pStandardItem = new QStandardItem(types[k]);
     pStandardItem->setIcon(QIcon(":/Resources/icons/completerType.svg"));
     pStandardItem->setToolTip("types");
+    pStandardItem->setData(QVariant::fromValue(CompleterItem(types[k],types[k],"")),Qt::UserRole);
+    mpStandardItemModel->appendRow(pStandardItem);
+  }
+}
+
+void PlainTextEdit::insertCompleterCodeSnippets(QList<CompleterItem>  items)
+{
+  for (int var = 0; var < items.length(); ++var)
+  {
+    QStandardItem *pStandardItem = new QStandardItem(items[var].mKey);
+    pStandardItem->setIcon(QIcon(":/Resources/icons/completerCodeSnippets.svg"));
+    pStandardItem->setToolTip("codeSnippets");
+    pStandardItem->setData(QVariant::fromValue(items[var]),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
 }
@@ -1442,16 +1474,45 @@ QCompleter *PlainTextEdit::completer()
   return mpCompleter;
 }
 
-/* insert the keywords from the completer popup */
-void PlainTextEdit::insertCompletion(const QString& completion)
+/*!
+ * PlainTextEdit::insertCompletionItem
+ * insert the completerItems from the completer popup
+ */
+void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
 {
+  QVariant value = index.data(Qt::UserRole);
+  CompleterItem completerItem = qvariant_cast<CompleterItem>(value);
+  QString selectiontext = completerItem.mSelect;
+  QStringList completionlength = completerItem.mValue.split("\n");
   QTextCursor cursor = textCursor();
-  int extra = completion.length() - mpCompleter->completionPrefix().length();
-  //cursor.movePosition(QTextCursor::Left);
+  int extra = completionlength[0].length() - mpCompleter->completionPrefix().length();
   cursor.movePosition(QTextCursor::EndOfWord);
-  cursor.insertText(completion.right(extra));
+  cursor.insertText(completionlength[0].right(extra));
+  // store the cursor position to be used for selecting text when inserting code snippets
+  int currentpos = cursor.position();
+  int startpos = currentpos-completionlength[0].length();
   setTextCursor(cursor);
-}
+  // To insert CodeSnippets
+  if (completionlength.length()>1)
+  {
+    // Calculate the indentation spaces for the inserted text
+    TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
+    cursor.insertText("\n");
+    const QTextBlock previousBlock = cursor.block().previous();
+    QString indentText = previousBlock.text();
+    cursor.deletePreviousChar();
+    for (int var = 1; var < completionlength.length(); ++var) {
+      cursor.insertText("\n");
+      cursor.insertText(indentText.left(tabSettings.firstNonSpace(indentText)));
+      cursor.insertText(completionlength[var]);
+    }
+    // set the cursor to appropriate selection text
+    int indexpos=completionlength[0].indexOf(selectiontext,0); //find the index position of the selection text from the word
+    cursor.setPosition(startpos+indexpos,QTextCursor::MoveAnchor);
+    cursor.setPosition(startpos+indexpos+selectiontext.length(), QTextCursor::KeepAnchor);
+    setTextCursor(cursor);
+  }
+ }
 
 QString PlainTextEdit::textUnderCursor() const
 {

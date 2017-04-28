@@ -45,6 +45,8 @@ MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   QStringList keywords = MetaModelicaHighlighter::getKeywords();
   QStringList types = MetaModelicaHighlighter::getTypes();
+  QList<CompleterItem>  codesnippets = getCodeSnippets();
+  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   mpPlainTextEdit->insertCompleterTypes(types);
 }
@@ -75,6 +77,32 @@ void MetaModelicaEditor::popUpCompleter()
   QRect cr = mpPlainTextEdit->cursorRect();
   cr.setWidth(completer->popup()->sizeHintForColumn(0)+ completer->popup()->verticalScrollBar()->sizeHint().width());
   completer->complete(cr);
+}
+
+/*!
+ * \brief MetaModelicaEditor::getCodeSnippets()
+ * returns the list of CompleterItem to the autocompleter
+ */
+
+QList<CompleterItem> MetaModelicaEditor::getCodeSnippets()
+{
+  QList<CompleterItem> codesnippetslist;
+  codesnippetslist << CompleterItem("match" ,"match (control)\n" "  case (condition) then (value);\n" "  case (condition) then (value);\n" "end match;", "control")
+                   << CompleterItem("matchcontinue" ,"matchcontinue (control)\n" "  case (condition) then (value);\n" "  case (condition) then (value);\n" "end matchcontinue;", "control")
+                   << CompleterItem("function" ,"function name\n" "end name;", "name")
+                   << CompleterItem("block" ,"block name\n" "end name;", "name")
+                   << CompleterItem("model" ,"model name\n" "end name;", "name")
+                   << CompleterItem("class" ,"class name\n" "end name;", "name")
+                   << CompleterItem("connector" ,"connector name\n" "end name;", "name")
+                   << CompleterItem("package" ,"package name\n" "end name;", "name")
+                   << CompleterItem("record" ,"record name\n" "end name;", "name")
+                   << CompleterItem("while" ,"while condition loop\n" "end while;", "condition")
+                   << CompleterItem("if" ,"if condition then\n" "end if;", "condition")
+                   << CompleterItem("if" ,"if condition then\n" "elseif condition then\n" "else\n" "end if;", "condition")
+                   << CompleterItem("for" ,"for condition loop\n" "end for;", "condition")
+                   << CompleterItem("when", "when condition then\n" "end when;", "condition")
+                   << CompleterItem("when", "when condition then\n" "elsewhen condition then\n" "end when;", "condition");
+  return codesnippetslist;
 }
 
 /*!
@@ -240,7 +268,7 @@ QStringList MetaModelicaHighlighter::getKeywords()
                << "when"
                << "while"
                << "within"
-                  /* MetaModelica specific keywords */
+               /* MetaModelica specific keywords */
                << "as"
                << "case"
                << "continue"

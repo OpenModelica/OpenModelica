@@ -58,6 +58,7 @@ public:
   void setTextChanged(bool changed) {mTextChanged = changed;}
   bool isTextChanged() {return mTextChanged;}
   virtual void popUpCompleter();
+  static QList<CompleterItem> getCodeSnippets();
 private:
   QString mLastValidText;
   bool mTextChanged;

@@ -58,6 +58,8 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   QStringList keywords = ModelicaHighlighter::getKeywords();
   QStringList types = ModelicaHighlighter::getTypes();
+  QList<CompleterItem>  codesnippets = getCodeSnippets();
+  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   mpPlainTextEdit->insertCompleterTypes(types);
 }
@@ -74,6 +76,28 @@ void ModelicaEditor::popUpCompleter()
   completer->complete(cr);
 }
 
+/*!
+ * \brief ModelicaEditor::getCodeSnippets()
+ * returns the list of CompleterItems to the autocompleter
+ */
+QList<CompleterItem> ModelicaEditor::getCodeSnippets()
+{
+  QList<CompleterItem> codesnippetslist;
+  codesnippetslist << CompleterItem("function" ,"function name\n" "end name;", "name")
+                   << CompleterItem("block" ,"block name\n" "end name;", "name")
+                   << CompleterItem("model" ,"model name\n" "end name;", "name")
+                   << CompleterItem("class" ,"class name\n" "end name;", "name")
+                   << CompleterItem("connector" ,"connector name\n" "end name;", "name")
+                   << CompleterItem("package" ,"package name\n" "end name;", "name")
+                   << CompleterItem("record" ,"record name\n" "end name;", "name")
+                   << CompleterItem("while" ,"while condition loop\n" "end while;", "condition")
+                   << CompleterItem("if" ,"if condition then\n" "end if;", "condition")
+                   << CompleterItem("if" ,"if condition then\n" "elseif condition then\n" "else\n" "end if;", "condition")
+                   << CompleterItem("for" ,"for condition loop\n" "end for;", "condition")
+                   << CompleterItem("when", "when condition then\n" "end when;", "condition")
+                   << CompleterItem("when", "when condition then\n" "elsewhen condition then\n" "end when;", "condition");
+  return codesnippetslist;
+}
 /*!
  * \brief ModelicaEditor::getClassNames
  * Uses the OMC parseString API to check the class names inside the Modelica Text

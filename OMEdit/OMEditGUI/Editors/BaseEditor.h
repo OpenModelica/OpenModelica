@@ -210,6 +210,18 @@ public:
   bool mHasBreakpoint;
 };
 
+class CompleterItem
+{
+public:
+  CompleterItem();
+  CompleterItem(QString key , QString value , QString select);
+  QString mKey;
+  QString mValue;
+  QString mSelect;
+};
+
+Q_DECLARE_METATYPE(CompleterItem)
+
 class BaseEditor;
 class QCompleter;
 class PlainTextEdit : public QPlainTextEdit
@@ -220,6 +232,7 @@ public:
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
   void insertCompleterKeywords(QStringList keywords);
   void insertCompleterTypes(QStringList types);
+  void insertCompleterCodeSnippets(QList<CompleterItem> items);
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
   bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
   int lineNumberAreaWidth();
@@ -249,7 +262,7 @@ private:
   void toggleBlockVisible(const QTextBlock &block);
   QString textUnderCursor() const;
 private slots:
-  void insertCompletion(const QString &completion);
+  void insertCompletionItem(const QModelIndex & index);
 public slots:
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
