@@ -18,26 +18,7 @@ simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
 // record SimulationResult
 //     resultFile = "ThermoPower.Examples.CISE.CISESim120501_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1200.0, numberOfIntervals = 1000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'ThermoPower.Examples.CISE.CISESim120501', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// assert            | debug   | division leads to inf or nan at time 0, (a=6) / (b=0), where divisor b is: Plant.Drum.xrv
-// "
+//     messages = ""
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
