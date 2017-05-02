@@ -13,6 +13,7 @@ loadFiles({
   prefixPath + "Error.mo",
   prefixPath + "Util.mo",
   prefixPath + "List.mo",
+  prefixPath + "Mutable.mo",
   prefixPath + "System.mo",
   prefixPath + "StringUtil.mo",
   "UtilTest.mo"

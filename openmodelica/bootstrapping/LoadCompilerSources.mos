@@ -270,6 +270,8 @@ if true then /* Suppress output */
     prefixPath + "Util/Lapack.mo",
     prefixPath + "Util/List.mo",
     prefixPath + "Util/ModelicaExternalC.mo",
+    prefixPath + "Util/Mutable.mo",
+    prefixPath + "Util/Pointer.mo",
     prefixPath + "Util/Print.mo",
     prefixPath + "Util/PriorityQueue.mo",
     prefixPath + "Util/Settings.mo",
