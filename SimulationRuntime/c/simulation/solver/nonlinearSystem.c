@@ -53,7 +53,7 @@
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
-int init_lambda_steps = 4;
+int init_lambda_steps = 1;
 
 struct dataNewtonAndHybrid
 {
