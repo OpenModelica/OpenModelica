@@ -32,9 +32,11 @@
 encapsulated uniontype DoubleEndedList<T> "Implementation of a mutable double-ended list. O(1) push_front, push_back, pop_front, toListAndClear"
 
 record LIST
-  array<Integer> length;
-  array<list<T>> front, back;
+  Mutable<Integer> length;
+  Mutable<list<T>> front, back;
 end LIST;
+
+import Mutable;
 
 protected
 import GC;
@@ -48,7 +50,7 @@ impure function new
 protected
   list<T> lst={first};
 algorithm
-  delst := LIST(arrayCreate(1,1),arrayCreate(1,lst),arrayCreate(1,lst));
+  delst := LIST(Mutable.create(1),Mutable.create(lst),Mutable.create(lst));
 end new;
 
 impure function fromList
@@ -60,7 +62,7 @@ protected
   T t;
 algorithm
   if listEmpty(lst) then
-    delst := LIST(arrayCreate(1,0),arrayCreate(1,{}),arrayCreate(1,{}));
+    delst := LIST(Mutable.create(0),Mutable.create({}),Mutable.create({}));
     return;
   end if;
   t::tmp := lst;
@@ -73,71 +75,71 @@ algorithm
     tail := tmp;
     length := length+1;
   end for;
-  delst := LIST(arrayCreate(1,length),arrayCreate(1,head),arrayCreate(1,tail));
+  delst := LIST(Mutable.create(length),Mutable.create(head),Mutable.create(tail));
 end fromList;
 
 impure function empty
   input T dummy;
   output DoubleEndedList<T> delst;
 algorithm
-  delst := LIST(arrayCreate(1,0),arrayCreate(1,{}),arrayCreate(1,{}));
+  delst := LIST(Mutable.create(0),Mutable.create({}),Mutable.create({}));
 end empty;
 
 function length
   input DoubleEndedList<T> delst;
   output Integer length;
 algorithm
-  length := arrayGet(delst.length,1);
+  length := Mutable.access(delst.length);
 end length;
 
 function pop_front
   input DoubleEndedList<T> delst;
   output T elt;
 protected
-  Integer length=arrayGet(delst.length,1);
+  Integer length=Mutable.access(delst.length);
   list<T> lst;
 algorithm
   true := length>0;
-  arrayUpdate(delst.length, 1, length-1);
+  Mutable.update(delst.length, length-1);
   if length==1 then
-    arrayUpdate(delst.front, 1, {});
-    arrayUpdate(delst.back, 1, {});
+    Mutable.update(delst.front, {});
+    Mutable.update(delst.back, {});
     return;
   end if;
-  elt::lst := arrayGet(delst.front,1);
-  arrayUpdate(delst.front, 1, lst);
+  elt::lst := Mutable.access(delst.front);
+  Mutable.update(delst.front, lst);
 end pop_front;
 
 function currentBackCell
   input DoubleEndedList<T> delst;
   output list<T> last;
 algorithm
-  last := arrayGet(delst.back,1);
+  last := Mutable.access(delst.back);
 end currentBackCell;
 
 function push_front
   input DoubleEndedList<T> delst;
   input T elt;
 protected
-  Integer length=arrayGet(delst.length,1);
+  Integer length=Mutable.access(delst.length);
   list<T> lst;
 algorithm
-  arrayUpdate(delst.length, 1, length+1);
+  Mutable.update(delst.length, length+1);
   if length==0 then
     lst := {elt};
-    arrayUpdate(delst.front, 1, lst);
-    arrayUpdate(delst.back, 1, lst);
+    Mutable.update(delst.front, lst);
+    Mutable.update(delst.back, lst);
     return;
   end if;
-  lst := arrayGet(delst.front,1);
-  arrayUpdate(delst.front, 1, elt::lst);
+  lst := Mutable.access(delst.front);
+  Mutable.update(delst.front, elt::lst);
 end push_front;
 
 function push_list_front
   input DoubleEndedList<T> delst;
   input list<T> lst;
 protected
-  Integer length=arrayGet(delst.length,1), lstLength;
+  Integer length=Mutable.access(delst.length), lstLength;
   list<T> work, oldHead, tmp, head;
   T t;
 algorithm
@@ -145,18 +147,18 @@ algorithm
   if lstLength==0 then
     return;
   end if;
-  arrayUpdate(delst.length, 1, length+lstLength);
+  Mutable.update(delst.length, length+lstLength);
   t::tmp := lst;
   head := {t};
-  oldHead := arrayGet(delst.front, 1);
-  arrayUpdate(delst.front, 1, head);
+  oldHead := Mutable.access(delst.front);
+  Mutable.update(delst.front, head);
   for l in tmp loop
     work := {l};
     Dangerous.listSetRest(head, work);
     head := work;
   end for;
   if length==0 then
-    arrayUpdate(delst.back, 1, head);
+    Mutable.update(delst.back, head);
   else
     Dangerous.listSetRest(head, oldHead);
   end if;
@@ -166,26 +168,26 @@ function push_back<T>
   input DoubleEndedList<T> delst;
   input T elt;
 protected
-  Integer length=arrayGet(delst.length,1);
+  Integer length=Mutable.access(delst.length);
   list<T> lst;
 algorithm
-  arrayUpdate(delst.length, 1, length+1);
+  Mutable.update(delst.length, length+1);
   if length==0 then
     lst := {elt};
-    arrayUpdate(delst.front, 1, lst);
-    arrayUpdate(delst.back, 1, lst);
+    Mutable.update(delst.front, lst);
+    Mutable.update(delst.back, lst);
     return;
   end if;
   lst := {elt};
-  Dangerous.listSetRest(arrayGet(delst.back,1), lst);
-  arrayUpdate(delst.back, 1, lst);
+  Dangerous.listSetRest(Mutable.access(delst.back), lst);
+  Mutable.update(delst.back, lst);
 end push_back;
 
 function push_list_back
   input DoubleEndedList<T> delst;
   input list<T> lst;
 protected
-  Integer length=arrayGet(delst.length,1), lstLength;
+  Integer length=Mutable.access(delst.length), lstLength;
   list<T> tail, tmp;
   T t;
 algorithm
@@ -193,13 +195,13 @@ algorithm
   if lstLength==0 then
     return;
   end if;
-  arrayUpdate(delst.length, 1, length+lstLength);
+  Mutable.update(delst.length, length+lstLength);
   t := listGet(lst, 1);
   tmp := {t};
   if length==0 then
-    arrayUpdate(delst.front, 1, tmp);
+    Mutable.update(delst.front, tmp);
   else
-    Dangerous.listSetRest(arrayGet(delst.back, 1), tmp);
+    Dangerous.listSetRest(Mutable.access(delst.back), tmp);
   end if;
   tail := tmp;
   for l in listRest(lst) loop
@@ -207,7 +209,7 @@ algorithm
     Dangerous.listSetRest(tail, tmp);
     tail := tmp;
   end for;
-  arrayUpdate(delst.back, 1, tail);
+  Mutable.update(delst.back, tail);
 end push_list_back;
 
 impure function toListAndClear
@@ -215,24 +217,24 @@ impure function toListAndClear
   input list<T> prependToList={};
   output list<T> res;
 algorithm
-  if arrayGet(delst.length,1)==0 then
+  if Mutable.access(delst.length)==0 then
     res := prependToList;
     return;
   end if;
-  res := arrayGet(delst.front,1);
+  res := Mutable.access(delst.front);
   if not listEmpty(prependToList) then
-    Dangerous.listSetRest(arrayGet(delst.back,1), prependToList);
+    Dangerous.listSetRest(Mutable.access(delst.back), prependToList);
   end if;
-  arrayUpdate(delst.back, 1, {});
-  arrayUpdate(delst.front, 1, {});
-  arrayUpdate(delst.length, 1, 0);
+  Mutable.update(delst.back, {});
+  Mutable.update(delst.front, {});
+  Mutable.update(delst.length, 0);
 end toListAndClear;
 
 impure function toListNoCopyNoClear "Returns the working list, which may be changed later on!"
   input DoubleEndedList<T> delst;
   output list<T> res;
 algorithm
-  res := arrayGet(delst.front,1);
+  res := Mutable.access(delst.front);
 end toListNoCopyNoClear;
 
 impure function clear
@@ -240,10 +242,10 @@ impure function clear
 protected
   list<T> lst;
 algorithm
-  lst := arrayGet(delst.front,1);
-  arrayUpdate(delst.back, 1, {});
-  arrayUpdate(delst.front, 1, {});
-  arrayUpdate(delst.length, 1, 0);
+  lst := Mutable.access(delst.front);
+  Mutable.update(delst.back, {});
+  Mutable.update(delst.front, {});
+  Mutable.update(delst.length, 0);
   for l in lst loop
     GC.free(l);
   end for;
@@ -259,7 +261,7 @@ impure function mapNoCopy_1<ArgT1>
     output T outElement;
   end MapFunc;
 protected
-  list<T> lst=arrayGet(delst.front,1);
+  list<T> lst=Mutable.access(delst.front);
 algorithm
   while not listEmpty(lst) loop
     Dangerous.listSetFirst(lst, inMapFunc(listGet(lst,1), inArg1));
@@ -277,7 +279,7 @@ impure function mapFoldNoCopy<ArgT1>
   end MapFunc;
 protected
   T element;
-  list<T> lst=arrayGet(delst.front,1);
+  list<T> lst=Mutable.access(delst.front);
 algorithm
   while not listEmpty(lst) loop
     (element,arg) := inMapFunc(listGet(lst,1), arg);
