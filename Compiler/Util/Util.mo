@@ -1077,7 +1077,7 @@ algorithm
   end match;
 end mulListIntegerOpt;
 
-public type StatefulBoolean = array<Boolean> "A single boolean value that can be updated (a destructive operation)";
+public type StatefulBoolean = array<Boolean> "A single boolean value that can be updated (a destructive operation). NOTE: Use Mutable<Boolean> instead. This implementation is kept since Susan cannot use that type.";
 
 public function makeStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"

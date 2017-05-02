@@ -38,32 +38,35 @@ encapsulated package Tearing
                - Cellier Tearing"
 
 
-public import BackendDAE;
-public import DAE;
+import BackendDAE;
+import DAE;
 
-protected import Array;
-protected import BackendDAEEXT;
-protected import BackendDAEOptimize;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import Config;
-protected import DoubleEndedList;
-protected import DumpGraphML;
-protected import Error;
-protected import ExecStat.execStat;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import Flags;
-protected import Global;
-protected import List;
-protected import Matching;
-protected import MetaModelica.Dangerous;
-protected import Util;
-protected import Sorting;
+protected
+
+import Array;
+import BackendDAEEXT;
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import Config;
+import DoubleEndedList;
+import DumpGraphML;
+import Error;
+import ExecStat.execStat;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import ExpressionSolve;
+import Flags;
+import Global;
+import List;
+import Matching;
+import MetaModelica.Dangerous;
+import Mutable;
+import Util;
+import Sorting;
 
 // =============================================================================
 // section for type definitions
@@ -2323,7 +2326,7 @@ algorithm
   // 6. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-       me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+       me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
      ), ({},0,1,{}));
 
   // 7. convert indexes from msel2t to indexes from mtIn
@@ -2368,7 +2371,7 @@ algorithm
   // 3. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
 
   // 4. convert indexes from msel2t to indexes from mtIn
@@ -2425,7 +2428,7 @@ algorithm
   // 6. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
 
   // 7. convert indexes from msel2t to indexes from mtIn
@@ -2476,7 +2479,7 @@ algorithm
   // 3. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
 
   // 4. convert indexes from msel2t to indexes from mtIn
@@ -2545,7 +2548,7 @@ algorithm
   // 7. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
 
   // 8. convert indexes from msel2t to indexes from mtIn
@@ -2596,7 +2599,7 @@ algorithm
   // 4. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
 
   // 5. convert indexes from msel2t to indexes from mtIn
@@ -2653,7 +2656,7 @@ algorithm
   // 6. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
   counts1 := listReverse(counts1);
 
@@ -2710,7 +2713,7 @@ algorithm
   // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
   counts1 := listReverse(counts1);
 
@@ -2772,7 +2775,7 @@ algorithm
   // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
   counts1 := listReverse(counts1);
 
@@ -2807,7 +2810,7 @@ algorithm
   // 10. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=arrayCreate(1,selectedcols1)
+      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
     ),({},0,1,{}));
   counts1 := listReverse(counts1);
 
@@ -2900,7 +2903,7 @@ algorithm
 
   // 4.1 Determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   mtsel := Array.select(mtIn,potentialTVars);
-  ((_,_,_,counts1)) := Array.fold(mtsel,function selectCausalVars(me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(causEq, arrayLength(ass1In)),selVars=arrayCreate(1,potentialTVars)),({},0,1,{}));
+  ((_,_,_,counts1)) := Array.fold(mtsel,function selectCausalVars(me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(causEq, arrayLength(ass1In)),selVars=Mutable.create(potentialTVars)),({},0,1,{}));
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.1"); end if;
 
   // 4.2 Determine for each variable the number of impossible assignments and save them in counts2
@@ -3091,7 +3094,7 @@ protected function selectCausalVars
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1In;
   input array<Boolean> selEqsSetArray;
-  input array<list<Integer>> selVars;
+  input Mutable<list<Integer>> selVars;
   output tuple<list<Integer>,Integer,Integer,list<Integer>> OutValue;
 protected
   list<Integer> cVars,interEqs,counts,selVarsNext;
@@ -3101,8 +3104,8 @@ algorithm
   (cVars,num,indx,counts) := inValue;
   // interEqs := List.intersectionOnTrue(row,selEqs,intEq);
   interEqs := list(i for i guard arrayGet(selEqsSetArray,i) in row);
-  Var::selVarsNext := arrayGet(selVars,1);
-  arrayUpdate(selVars, 1, selVarsNext);
+  Var::selVarsNext := Mutable.access(selVars);
+  Mutable.update(selVars, selVarsNext);
   arrayUpdate(ass1In,Var,1);
   size := List.fold2(interEqs,sizeOfAssignable,me,ass1In,0);
   arrayUpdate(ass1In,Var,-1);

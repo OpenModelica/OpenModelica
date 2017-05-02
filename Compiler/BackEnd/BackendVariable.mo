@@ -30,40 +30,40 @@
  */
 
 encapsulated package BackendVariable
-" file:        mo
-  package:     BackendVariable
-  description: BackendVariables contains the function that deals with the datytypes
-               BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
-
+"BackendVariables contains the function that deals with the datytypes
+BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
 "
 
-public import BackendDAE;
-public import DAE;
-public import SCode;
-public import Values;
+import BackendDAE;
+import DAE;
+import SCode;
+import Values;
 
-protected import Absyn;
-protected import Array;
-protected import BackendDAEUtil;
-protected import BaseHashSet;
-protected import BaseHashTable;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import Global;
-protected import HashSet;
-protected import List;
-protected import MetaModelica.Dangerous;
-protected import StringUtil;
-protected import System;
-protected import Util;
-protected import Types;
+protected
+
+import Absyn;
+import Array;
+import BackendDAEUtil;
+import BaseHashSet;
+import BaseHashTable;
+import ComponentReference;
+import DAEUtil;
+import Debug;
+import ElementSource;
+import Error;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import Global;
+import HashSet;
+import List;
+import MetaModelica.Dangerous;
+import Mutable;
+import StringUtil;
+import System;
+import Types;
+import Util;
 
 /* =======================================================
  *
@@ -3115,34 +3115,30 @@ public function getVarIndexFromVariablesIndexInFirstSet
   input BackendDAE.Variables inVariables2;
   output list<Integer> v_lst;
 protected
-  array<list<Integer>> a;
+  Mutable<list<Integer>> a;
 algorithm
-  (a,_) := traverseBackendDAEVars(inVariables,
-    function traversingVarIndexInFirstSetFinder(inVars = inVariables2), (arrayCreate(1,{}),arrayCreate(1,1)));
-  v_lst := listReverse(a[1]);
+  (_,a,_) := traverseBackendDAEVars(inVariables, traversingVarIndexInFirstSetFinder, (inVariables2,Mutable.create({}),Mutable.create(1)));
+  v_lst := listReverse(Mutable.access(a));
 end getVarIndexFromVariablesIndexInFirstSet;
 
 protected function traversingVarIndexInFirstSetFinder
 "author: Frenkel TUD 2010-11"
-  input BackendDAE.Var inVar;
-  input BackendDAE.Variables inVars;
-  input tuple<array<list<Integer>>,array<Integer>> inIndices;
-  output BackendDAE.Var outVar = inVar;
-  output tuple<array<list<Integer>>,array<Integer>> outIndices;
+  input output BackendDAE.Var var;
+  input output tuple<BackendDAE.Variables,Mutable<list<Integer>>,Mutable<Integer>> data;
 protected
   DAE.ComponentRef cr;
-  array<list<Integer>> l;
-  array<Integer> i;
+  BackendDAE.Variables vars;
+  Mutable<list<Integer>> l;
+  Mutable<Integer> i;
 algorithm
-  (l,i) := inIndices;
-  outIndices := inIndices;
+  (vars,l,i) := data;
   try
-    cr := varCref(inVar);
-    getVar(cr, inVars);
-    l[1] := i[1]::l[1];
+    cr := varCref(var);
+    getVar(cr, vars);
+    Mutable.update(l, Mutable.access(i)::Mutable.access(l));
   else
   end try;
-  i[1] := i[1]+1;
+  Mutable.update(i, Mutable.access(i)+1);
 end traversingVarIndexInFirstSetFinder;
 
 public function mergeVariables
