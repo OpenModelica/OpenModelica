@@ -850,6 +850,9 @@ algorithm
         i = listLength(el);
       then DAE.ICONST(i);
 
+    case DAE.CALL(path=Absyn.IDENT("mmc_mk_some"),expLst={e})
+      then DAE.META_OPTION(SOME(e));
+
     case DAE.CALL(path=Absyn.IDENT("sourceInfo"))
       equation
         print("sourceInfo() - simplify?\n");

@@ -124,6 +124,11 @@ static inline void *mmc_mk_some(void *x)
     return mmc_mk_box1(1, x);
 }
 
+static inline void *mmc__mk__some(void *x)
+{
+    return mmc_mk_some(x);
+}
+
 extern void *mmc_mk_box_arr(mmc_sint_t _slots, mmc_uint_t ctor, void** args);
 static inline void *mmc_mk_box_no_assign(mmc_sint_t _slots, mmc_uint_t ctor, int is_atomic)
 {

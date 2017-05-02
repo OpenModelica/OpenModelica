@@ -218,6 +218,7 @@ if true then /* Suppress output */
     "../Util/List.mo",
     "../Util/ModelicaExternalC.mo",
     "../Util/Mutable.mo",
+    "../Util/Pointer.mo",
     "../Util/Print.mo",
     "../Util/Settings.mo",
     "../Util/StackOverflow.mo",
