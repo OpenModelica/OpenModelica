@@ -5381,10 +5381,10 @@ protected
   Values.Value val;
   FCore.Cache cache;
   FCore.StructuralParameters structuralParameters;
-  array<DAE.FunctionTree> functionTree;
+  Mutable<DAE.FunctionTree> functionTree;
 algorithm
   structuralParameters := (AvlSetCR.EMPTY(),{});
-  functionTree := arrayCreate(1,functions);
+  functionTree := Mutable.create(functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""), Absyn.dummyProgram);
   (_,val,_) := ceval(cache, FGraph.empty(), exp, false, NONE(), Absyn.NO_MSG(),0);
   oexp := ValuesUtil.valueExp(val);

@@ -7657,7 +7657,7 @@ algorithm
   ocache := match cache
     local
       Option<FCore.Graph> ie;
-      array<DAE.FunctionTree> f;
+      Mutable<DAE.FunctionTree> f;
       AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> crs;
       Absyn.Path p;
@@ -7676,7 +7676,7 @@ algorithm
   ocache := match (cache,pre)
     local
       Option<FCore.Graph> ie;
-      array<DAE.FunctionTree> f;
+      Mutable<DAE.FunctionTree> f;
       AvlSetCR.Tree ht;
       list<DAE.ComponentRef> crs;
       list<list<DAE.ComponentRef>> crss;

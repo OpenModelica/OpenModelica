@@ -2853,7 +2853,8 @@ algorithm
 
         (dae, funcs) := NFInst.instClassInProgram(className, scodeP);
 
-        cache := FCore.setCachedFunctionTree(FCore.emptyCache(), funcs);
+        cache := FCore.emptyCache();
+        FCore.setCachedFunctionTree(cache, funcs);
         env := FGraph.empty();
         st := inInteractiveSymbolTable;
 

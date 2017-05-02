@@ -1103,7 +1103,7 @@ protected
   list<Extends> bcl;
   list<SCode.Element> re;
   NFSCodeEnv.ImportTable imps;
-  Option<Util.StatefulBoolean> iu;
+  Option<Mutable<Boolean>> iu;
 algorithm
   NFSCodeEnv.FRAME(name, ty, tree,
     NFSCodeEnv.EXTENDS_TABLE(bcl, re, _), imps, iu) :: rest_env := inEnv;

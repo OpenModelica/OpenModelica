@@ -47,6 +47,7 @@ import SCode.{Mod, Comment};
 import DAE;
 import Builtin = NFBuiltin;
 import Binding = NFBinding;
+import Pointer;
 
 // Dummy SCode component, since we usually don't need the definition for anything.
 constant SCode.Element DUMMY_ELEMENT = SCode.COMPONENT("dummy",
@@ -93,7 +94,7 @@ constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
 constant Function INTEGER = Function.FUNCTION(Path.IDENT("Integer"),
   InstNode.EMPTY_NODE(), {ENUM_PARAM}, {}, {}, {
     Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE())
-  }, Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
+  }, Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
 // String(r, significantDigits=d, minimumLength=0, leftJustified=true)
 constant InstNode STRING_NODE = NFInstNode.CLASS_NODE("String", DUMMY_ELEMENT,
@@ -105,14 +106,14 @@ constant Function STRING_REAL = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("significantDigits", SlotType.NAMED, SOME(Expression.INTEGER(6)), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
 // String(r, format="-0.6g")
 constant Function STRING_REAL_FORMAT = Function.FUNCTION(Path.IDENT("String"),
   STRING_NODE, {REAL_PARAM, STRING_PARAM}, {STRING_PARAM}, {}, {
     Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("format", SlotType.NAMED, NONE(), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
 // String(i, minimumLength=0, leftJustified=true)
 constant Function STRING_INT = Function.FUNCTION(Path.IDENT("String"),
@@ -120,7 +121,7 @@ constant Function STRING_INT = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("i", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
 // String(b, minimumLength=0, leftJustified=true)
 constant Function STRING_BOOL = Function.FUNCTION(Path.IDENT("String"),
@@ -128,7 +129,7 @@ constant Function STRING_BOOL = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("b", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
 // String(e, minimumLength=0, leftJustified=true)
 constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
@@ -136,7 +137,7 @@ constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, listArray({true}));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

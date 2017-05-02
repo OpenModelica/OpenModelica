@@ -73,6 +73,7 @@ protected import InstUtil;
 protected import InnerOuter;
 protected import List;
 protected import Mod;
+protected import Mutable;
 protected import Prefix;
 protected import PrefixUtil;
 protected import Static;
@@ -484,7 +485,7 @@ algorithm
     // normal case
     case (_, _, _)
       equation
-         (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), inInfo);
+         (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Mutable.create(false), inInfo);
          // print("CLRET: " + SCode.elementName(outClass) + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
       then
         (outCache,outClass,outEnv);
@@ -501,7 +502,7 @@ public function lookupClassIdent "Like lookupClass, but takes a String as ident 
   output SCode.Element outClass;
   output FCore.Graph outEnv;
 algorithm
-  (outCache,outClass,outEnv) := lookupClassInEnv(inCache, inEnv, ident, {}, Util.makeStatefulBoolean(false), inInfo);
+  (outCache,outClass,outEnv) := lookupClassInEnv(inCache, inEnv, ident, {}, Mutable.create(false), inInfo);
 end lookupClassIdent;
 
 protected function lookupClass1 "help function to lookupClass, does all the work."
@@ -509,7 +510,7 @@ protected function lookupClass1 "help function to lookupClass, does all the work
   input FCore.Graph inEnv;
   input Absyn.Path inPath "The path of the class to lookup";
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
-  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
+  input Mutable<Boolean> inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -537,7 +538,7 @@ protected function lookupClass2 "help function to lookupClass, does all the work
   input FCore.Graph inEnv;
   input Absyn.Path inPath "The path of the class to lookup";
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
-  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
+  input Mutable<Boolean> inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -560,7 +561,7 @@ algorithm
     case (cache,env,Absyn.FULLYQUALIFIED(path),{})
       equation
         r::prevFrames = listReverse(FGraph.currentScope(env));
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
         env = FGraph.setScope(env, {r});
         (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,inInfo);
       then
@@ -597,7 +598,7 @@ protected function lookupClassQualified
   input Absyn.Path path;
   input Option<FCore.Ref> inOptFrame;
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
-  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
+  input Mutable<Boolean> inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -617,7 +618,7 @@ algorithm
     // Qualified names first identifier cached in previous frames
     case (cache,env,_,_,SOME(frame),prevFrames)
       equation
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
         env = FGraph.pushScopeRef(env, frame);
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,inInfo);
       then
@@ -642,7 +643,7 @@ protected function lookupClassQualified2
   input SCode.Element inC;
   input Option<FCore.Ref> optFrame;
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
-  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
+  input Mutable<Boolean> inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -848,7 +849,7 @@ algorithm
         cref = ComponentReference.pathToCref(path);
         cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.T_UNKNOWN_DEFAULT);
         env = FGraph.setScope(env, {f});
-        (cache,_,_,_,_,_,_,_,_) = lookupVarInPackages(cache,env,cref,prevFrames,Util.makeStatefulBoolean(false));
+        (cache,_,_,_,_,_,_,_,_) = lookupVarInPackages(cache,env,cref,prevFrames,Mutable.create(false));
       then
         (cache,true);
 
@@ -905,7 +906,7 @@ algorithm
         cref = ComponentReference.pathToCref(path);
         cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.T_UNKNOWN_DEFAULT);
         env2 = FGraph.setScope(env, {f});
-        (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env2,cref,prevFrames,Util.makeStatefulBoolean(false));
+        (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env2,cref,prevFrames,Mutable.create(false));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache, rest, env, ident);
         unique = boolNot(more);
       then
@@ -926,7 +927,7 @@ protected function lookupQualifiedImportedClassInFrame
   input list<Absyn.Import> inImport;
   input FCore.Graph inEnv;
   input SCode.Ident inIdent;
-  input Util.StatefulBoolean inState;
+  input Mutable<Boolean> inState;
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -948,10 +949,10 @@ algorithm
     case (cache,Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id)) :: _,env,ident,_)
       equation
         true = id == ident "For imported paths A, not possible to assert sub-path package";
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,env,id,prevFrames,Util.makeStatefulBoolean(false),inInfo);
+        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,env,id,prevFrames,Mutable.create(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -959,27 +960,27 @@ algorithm
       equation
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
         true = id == ident;
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
 
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
         // strippath = Absyn.stripLast(path);
-        // (cache,c2,env_1,_) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
+        // (cache,c2,env_1,_) = lookupClass2(cache,{fr},strippath,prevFrames,Mutable.create(false),true);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Mutable.create(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
     case (cache,Absyn.NAMED_IMPORT(name = id,path = path) :: _,env,ident,_)
       equation
         true = id == ident "Named imports";
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
 
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
         // strippath = Absyn.stripLast(path);
         // Debug.traceln("named import " + id + " is " + Absyn.pathString(path));
-        // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
-        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
+        // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Mutable.create(false),true);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Mutable.create(false),inInfo);
       then
         (cache,c,env_1,prevFrames);
 
@@ -1084,7 +1085,7 @@ algorithm
         env3 = FGraph.setScope(env, {r});
         (cache,(c as
                 SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames)
-        = lookupClass2(cache,env3,path,prevFrames,Util.makeStatefulBoolean(false),inInfo);
+        = lookupClass2(cache,env3,path,prevFrames,Mutable.create(false),inInfo);
         env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
@@ -1093,7 +1094,7 @@ algorithm
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
-        (cache,c_1,env2,prevFrames) = lookupClassInEnv(cache,env2,ident,prevFrames,Util.makeStatefulBoolean(true),inInfo) "Restrict import to the imported scope only, not its parents..." ;
+        (cache,c_1,env2,prevFrames) = lookupClassInEnv(cache,env2,ident,prevFrames,Mutable.create(true),inInfo) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
         unique = boolNot(more);
       then
@@ -1293,7 +1294,7 @@ algorithm
     // then look in classes (implicitly instantiated packages)
     case (cache,env,cref)
       equation
-        (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
+        (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Mutable.create(false));
         checkPackageVariableConstant(env,classEnv,componentEnv,attr,ty,cref);
         // optional Expression.exp to return
       then
@@ -1350,7 +1351,7 @@ algorithm
       equation
         // TODO: Skip makeCrefIdent by rewriting lookupVarInPackages
         cref = ComponentReference.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, ss);
-        (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
+        (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Mutable.create(false));
         checkPackageVariableConstant(env,classEnv,componentEnv,attr,ty,cref);
         // optional Expression.exp to return
       then
@@ -1547,7 +1548,7 @@ public function lookupVarInPackages "This function is called when a lookup of a 
   input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
-  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
+  input Mutable<Boolean> inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
   output FCore.Cache outCache;
   output FCore.Graph outClassEnv;
   output DAE.Attributes outAttributes;
@@ -1594,7 +1595,7 @@ algorithm
           // first part of name is a previous frame
           case (SOME(f))
             equation
-              Util.setStatefulBoolean(inState,true);
+              Mutable.update(inState,true);
               env5 = FGraph.pushScopeRef(env, f);
             then
               ();
@@ -1606,9 +1607,9 @@ algorithm
                              env,
                              id,
                              prevFrames,
-                             Util.makeStatefulBoolean(true), // In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon!
+                             Mutable.create(true), // In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon!
                              NONE());
-              Util.setStatefulBoolean(inState,true);
+              Mutable.update(inState,true);
               // see if we have an instance of a component!
               rr = FNode.child(FGraph.lastScopeRef(env2), id);
               if FNode.isRefInstance(rr) // is an instance, use it
@@ -1652,7 +1653,7 @@ algorithm
      // Search parent scopes
     case (cache,FCore.G(scope = f::fs),cr as DAE.CREF_QUAL(),prevFrames,_)
       equation
-        false = Util.getStatefulBoolean(inState);
+        false = Mutable.access(inState);
         env = FGraph.setScope(inEnv, fs);
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cr,f::prevFrames,inState);
       then
@@ -1682,7 +1683,7 @@ public function lookupVarInPackagesIdent "This function is called when a lookup 
   input String id;
   input list<DAE.Subscript> ss;
   input FCore.Scope inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
-  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
+  input Mutable<Boolean> inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
   output FCore.Cache outCache;
   output FCore.Graph outClassEnv;
   output DAE.Attributes outAttributes;
@@ -1725,7 +1726,7 @@ algorithm
     case (cache,env,_,_)
       equation
         (cache,attr,ty,bind,cnstForRange,splicedExpData,_,componentEnv,name) = lookupVarInternalIdent(cache, env, id, ss);
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
       then
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
@@ -1747,7 +1748,7 @@ algorithm
           case (_::_, _)
             equation
               cr = lookupQualifiedImportedVarInFrame(qimports, id);
-              Util.setStatefulBoolean(inState,true);
+              Mutable.update(inState,true);
         // if the first name of the import A.B is equal with the scope we are in, skip it!
         cr = if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReference.crefFirstIdent(cr)
              then ComponentReference.crefStripFirstIdent(cr)
@@ -1761,7 +1762,7 @@ algorithm
             equation
               (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) = lookupUnqualifiedImportedVarInFrame(cache, uqimports, env, id);
               reportSeveralNamesError(unique,id);
-              Util.setStatefulBoolean(inState,true);
+              Mutable.update(inState,true);
             then ();
         end matchcontinue;
       then
@@ -1770,7 +1771,7 @@ algorithm
      // Search parent scopes
     case (cache,FCore.G(scope = f::fs),prevFrames,_)
       equation
-        false = Util.getStatefulBoolean(inState);
+        false = Mutable.access(inState);
         env = FGraph.setScope(inEnv, fs);
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackagesIdent(cache,env,id,ss,f::prevFrames,inState);
       then
@@ -2780,7 +2781,7 @@ protected function lookupClassInEnv
   input FCore.Graph inEnv;
   input String id;
   input FCore.Scope inPrevFrames;
-  input Util.StatefulBoolean inState;
+  input Mutable<Boolean> inState;
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -2803,7 +2804,7 @@ algorithm
       equation
         frame = FNode.fromRef(r);
         (cache,c,env_1,prevFrames) = lookupClassInFrame(cache, frame, env, id, prevFrames, inState, inInfo);
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
       then
         (cache,c,env_1,prevFrames);
 
@@ -2816,7 +2817,7 @@ algorithm
         true = stringEq(id, sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
         (env, _) = FGraph.stripLastScopeRef(env);
         (cache,c,env,prevFrames) = lookupClassInEnv(cache, env, id, r::prevFrames, inState, inInfo);
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
       then
         (cache,c,env,prevFrames);
 
@@ -2841,7 +2842,7 @@ algorithm
         true = FNode.isEncapsulated(frame);
         i_env = FGraph.topScope(env);
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, i_env, id, {}, inState, inInfo);
-        Util.setStatefulBoolean(inState,true);
+        Mutable.update(inState,true);
       then
         (cache,c,env_1,prevFrames);
 
@@ -2851,10 +2852,10 @@ algorithm
         false = FNode.isRefTop(r);
         frame = FNode.fromRef(r);
         false = FNode.isEncapsulated(frame);
-        false = Util.getStatefulBoolean(inState);
+        false = Mutable.access(inState);
         (env, _) = FGraph.stripLastScopeRef(env);
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, env, id, r::prevFrames, inState, inInfo);
-        Util.setStatefulBoolean(inState, true);
+        Mutable.update(inState, true);
       then
         (cache,c,env_1,prevFrames);
 
@@ -2867,7 +2868,7 @@ protected function lookupClassInFrame "Search for a class within one frame."
   input FCore.Graph inEnv;
   input SCode.Ident inIdent;
   input FCore.Scope inPrevFrames;
-  input Util.StatefulBoolean inState;
+  input Mutable<Boolean> inState;
   input Option<SourceInfo> inInfo;
   output FCore.Cache outCache;
   output SCode.Element outClass;
@@ -2909,7 +2910,7 @@ algorithm
           case (_, _::_)
             equation
               (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,uqimports,totenv,name,inInfo);
-              Util.setStatefulBoolean(inState,true);
+              Mutable.update(inState,true);
               reportSeveralNamesError(unique,name);
             then ();
         end matchcontinue;

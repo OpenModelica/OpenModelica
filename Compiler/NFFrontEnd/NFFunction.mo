@@ -33,6 +33,7 @@ encapsulated package NFFunction
 
 import Absyn;
 import Expression = NFExpression;
+import Pointer;
 import NFInstNode.InstNode;
 import Type = NFType;
 
@@ -159,7 +160,7 @@ uniontype Function
     list<Slot> slots;
     Type returnType;
     DAE.FunctionAttributes attributes;
-    Util.StatefulBoolean collected "Whether this function has already been added to the function tree or not.";
+    Pointer<Boolean> collected "Whether this function has already been added to the function tree or not.";
   end FUNCTION;
 
   function new
@@ -171,13 +172,13 @@ uniontype Function
     list<InstNode> inputs, outputs, locals;
     list<Slot> slots;
     DAE.FunctionAttributes attr;
-    array<Boolean> collected;
+    Pointer<Boolean> collected;
   algorithm
     (inputs, outputs, locals) := collectParams(node);
     // Slots should be created after typing
     // slots := makeSlots(inputs);
     attr := makeAttributes(node, inputs, outputs);
-    collected := Util.makeStatefulBoolean(false);
+    collected := Pointer.create(false);
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
 
     // Make sure builtin functions aren't added to the function tree.
@@ -293,14 +294,23 @@ uniontype Function
     "Returns true if this function has already been added to the function tree
      (or shouldn't be added, e.g. if it's builtin), otherwise false."
     input Function fn;
-    output Boolean collected = Util.getStatefulBoolean(fn.collected);
+    output Boolean collected;
+  protected
+    Pointer<Boolean> coll;
+  algorithm
+    collected := match fn
+      case FUNCTION(collected=coll) then Pointer.access(coll);
+    end match;
   end isCollected;
 
   function collect
     "Marks this function as collected for addition to the function tree."
     input Function fn;
   algorithm
-    Util.setStatefulBoolean(fn.collected, true);
+    if not Pointer.access(fn.collected) then
+      // Check if the pointer is false first; if they are true they might be immutable
+      Pointer.update(fn.collected, true);
+    end if;
   end collect;
 
   function name

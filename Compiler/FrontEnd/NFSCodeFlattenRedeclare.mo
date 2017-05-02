@@ -636,7 +636,7 @@ algorithm
   outNewItem := match(inOriginalItem, inNewItem)
     local
       SCode.Element el1, el2;
-      Option<Util.StatefulBoolean> iu1, iu2;
+      Option<Mutable<Boolean>> iu1, iu2;
       Env env1, env2;
       NFSCodeEnv.ClassType ty1, ty2;
       Item item;

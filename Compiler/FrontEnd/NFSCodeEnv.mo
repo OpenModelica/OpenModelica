@@ -40,6 +40,7 @@ encapsulated package NFSCodeEnv
 "
 
 import Absyn;
+import Mutable;
 import SCode;
 import Util;
 
@@ -121,7 +122,7 @@ uniontype Frame
     EnvTree.Tree clsAndVars;
     ExtendsTable extendsTable;
     ImportTable importTable;
-    Option<Util.StatefulBoolean> isUsed "Used by SCodeDependency.";
+    Option<Mutable<Boolean>> isUsed "Used by SCodeDependency.";
   end FRAME;
 end Frame;
 
@@ -135,7 +136,7 @@ end ClassType;
 uniontype Item
   record VAR
     SCode.Element var;
-    Option<Util.StatefulBoolean> isUsed "Used by SCodeDependency.";
+    Option<Mutable<Boolean>> isUsed "Used by SCodeDependency.";
   end VAR;
 
   record CLASS
@@ -317,12 +318,12 @@ protected
   EnvTree.Tree tree;
   ExtendsTable exts;
   ImportTable imps;
-  Util.StatefulBoolean is_used;
+  Mutable<Boolean> is_used;
 algorithm
   tree := EnvTree.new();
   exts := newExtendsTable();
   imps := newImportTable();
-  is_used := Util.makeStatefulBoolean(false);
+  is_used := Mutable.create(false);
   outFrame := FRAME(inName, inType, tree, exts, imps, SOME(is_used));
 end newFrame;
 
@@ -377,9 +378,9 @@ public function newVarItem
   input Boolean inIsUsed;
   output Item outVarItem;
 protected
-  Util.StatefulBoolean is_used;
+  Mutable<Boolean> is_used;
 algorithm
-  is_used := Util.makeStatefulBoolean(inIsUsed);
+  is_used := Mutable.create(inIsUsed);
   outVarItem := VAR(inVar, SOME(is_used));
 end newVarItem;
 
@@ -440,7 +441,7 @@ protected
   ImportTable imps;
   ExtendsTable exts;
   Env rest;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = tree, importTable = imps,
     isUsed = is_used) :: rest := inEnv;
@@ -459,7 +460,7 @@ protected
   EnvTree.Tree tree;
   ImportTable imps;
   Env rest;
-  Option<Util.StatefulBoolean> iu;
+  Option<Mutable<Boolean>> iu;
   list<Extends> bcl;
   list<SCode.Element> re;
   Option<SCode.Element> cei;
@@ -492,7 +493,7 @@ protected
   ImportTable imps;
   ExtendsTable exts;
   Env rest;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
   list<Extends> bc;
   Option<SCode.Element> cei;
 algorithm
@@ -527,7 +528,7 @@ protected
   EnvTree.Tree tree;
   ImportTable imps;
   ExtendsTable exts;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = outClsAndVars,
     extendsTable = exts, importTable = imps, isUsed = is_used) := inFrame;
@@ -549,7 +550,7 @@ protected
   ExtendsTable exts;
   Env rest;
   list<Import> qi, uqi;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable = exts,
     importTable = IMPORT_TABLE(qualifiedImports = qi, unqualifiedImports = uqi),
@@ -587,14 +588,14 @@ public function isItemUsed
 algorithm
   isUsed := match(inItem)
     local
-      Util.StatefulBoolean is_used;
+      Mutable<Boolean> is_used;
       Item item;
 
     case CLASS(env = {FRAME(isUsed = SOME(is_used))})
-      then Util.getStatefulBoolean(is_used);
+      then Mutable.access(is_used);
 
     case VAR(isUsed = SOME(is_used))
-      then Util.getStatefulBoolean(is_used);
+      then Mutable.access(is_used);
 
     case ALIAS() then true;
 
@@ -613,7 +614,7 @@ public function linkItemUsage
 algorithm
   outDestItem := match(inSrcItem, inDestItem)
     local
-      Option<Util.StatefulBoolean> is_used;
+      Option<Mutable<Boolean>> is_used;
       SCode.Element elem;
       ClassType cls_ty;
       Option<String> name;
@@ -754,12 +755,12 @@ protected function extendEnvWithVar
   output Env outEnv;
 protected
   String var_name;
-  Util.StatefulBoolean is_used;
+  Mutable<Boolean> is_used;
   Absyn.TypeSpec ty;
   SourceInfo info;
 algorithm
   SCode.COMPONENT(name = var_name, typeSpec = ty, info = info) := inVar;
-  is_used := Util.makeStatefulBoolean(false);
+  is_used := Mutable.create(false);
   outEnv := extendEnvWithItem(VAR(inVar, SOME(is_used)), inEnv, var_name);
 end extendEnvWithVar;
 
@@ -776,7 +777,7 @@ protected
   ImportTable imps;
   FrameType ty;
   Env rest;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
 algorithm
   FRAME(name, ty, tree, exts, imps, is_used) :: rest := inEnv;
   tree := EnvTree.add(tree, inItemName, inItem, extendEnvWithItemConflict);
@@ -804,7 +805,7 @@ protected
   ImportTable imps;
   FrameType ty;
   Env rest;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
 algorithm
   FRAME(name, ty, tree, exts, imps, is_used) :: rest := inEnv;
   tree := EnvTree.add(tree, inItemName, inItem);
@@ -828,7 +829,7 @@ algorithm
       Env rest;
       SourceInfo info;
       Boolean hidden;
-      Option<Util.StatefulBoolean> is_used;
+      Option<Mutable<Boolean>> is_used;
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT()),
@@ -1619,7 +1620,7 @@ protected
   FrameType ty;
   EnvTree.Tree tree;
   ImportTable imps;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
   Env rest_env;
 algorithm
   FRAME(name, ty, tree, _, imps, is_used) :: rest_env := inEnv;
@@ -1635,7 +1636,7 @@ protected
   FrameType ty;
   ExtendsTable ext;
   ImportTable imps;
-  Option<Util.StatefulBoolean> is_used;
+  Option<Mutable<Boolean>> is_used;
   Env rest_env;
 algorithm
   FRAME(name, ty, _, ext, imps, is_used) :: rest_env := inEnv;
@@ -1763,14 +1764,14 @@ protected
   EnvTree.Tree tree;
   ExtendsTable exts;
   ImportTable imps;
-  Util.StatefulBoolean is_used;
+  Mutable<Boolean> is_used;
   SCode.Program p;
   list<Absyn.Class> initialClasses;
 algorithm
   tree := EnvTree.new();
   exts := newExtendsTable();
   imps := newImportTable();
-  is_used := Util.makeStatefulBoolean(false);
+  is_used := Mutable.create(false);
 
   tree := addDummyClassToTree("String", tree);
   tree := addDummyClassToTree("Integer", tree);

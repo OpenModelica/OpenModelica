@@ -118,6 +118,7 @@ protected import InstTypes;
 protected import InnerOuter;
 protected import List;
 protected import Lookup;
+protected import Mutable;
 protected import OperatorOverloading;
 protected import Patternm;
 protected import Print;
@@ -7166,7 +7167,7 @@ function: elabCallArgs
   output DAE.Properties outProperties;
 algorithm
   (outCache,SOME((outExp,outProperties))) :=
-  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inST,inPrefix,info,Error.getNumErrorMessages());
+  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Mutable.create(false),inST,inPrefix,info,Error.getNumErrorMessages());
   (outCache,outProperties) := elabCallArgsEvaluateArrayLength(outCache,inEnv,outProperties,inPrefix,info);
 end elabCallArgs;
 
@@ -7283,7 +7284,7 @@ function: elabCallArgs
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Util.StatefulBoolean stopElab;
+  input Mutable<Boolean> stopElab;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
@@ -7386,7 +7387,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
         expProps = SOME((call_exp,prop_1));
 
-        Util.setStatefulBoolean(stopElab,true);
+        Mutable.update(stopElab,true);
         ErrorExt.rollBack("RecordConstructor");
 
       then
@@ -7399,7 +7400,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,_,st,pre,_,_)
       equation
 
-        false = Util.getStatefulBoolean(stopElab);
+        false = Mutable.access(stopElab);
 
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn);
         true = SCode.isOperatorRecord(recordCl);
@@ -7411,7 +7412,7 @@ algorithm
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(recordCl);
         (cache,typelist as _::_) = Lookup.lookupFunctionsListInEnv(cache, recordEnv, operNames, info, {});
 
-        Util.setStatefulBoolean(stopElab,true);
+        Mutable.update(stopElab,true);
         (cache,expProps) = elabCallArgs3(cache,env,typelist,fn_1,args,nargs,impl,st,pre,info);
 
         ErrorExt.rollBack("RecordConstructor");
@@ -7426,9 +7427,9 @@ algorithm
         ErrorExt.delCheckpoint("RecordConstructor");
 
         true = Config.acceptMetaModelicaGrammar();
-        false = Util.getStatefulBoolean(stopElab);
+        false = Mutable.access(stopElab);
         (cache,t as DAE.T_METARECORD(),_) = Lookup.lookupType(cache, env, fn, NONE());
-        Util.setStatefulBoolean(stopElab,true);
+        Mutable.update(stopElab,true);
         (cache,expProps) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
       then
         (cache,expProps);
@@ -7439,7 +7440,7 @@ algorithm
 
         ErrorExt.setCheckpoint("elabCallArgs2FunctionLookup");
 
-        false = Util.getStatefulBoolean(stopElab);
+        false = Mutable.access(stopElab);
         (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache, env, fn, info)
         "PR. A function can have several types. Taking an array with
          different dimensions as parameter for example. Because of this we
@@ -7448,7 +7449,7 @@ algorithm
          functiontype of several possibilites. The solution is to send
          in the function type of the user function and check both the
          function name and the function\'s type." ;
-        Util.setStatefulBoolean(stopElab,true);
+        Mutable.update(stopElab,true);
         (cache,expProps) = elabCallArgs3(cache,env,typelist,fn,args,nargs,impl,st,pre,info);
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
@@ -7876,7 +7877,7 @@ protected function elabCallArgsMetarecord
   input list<Absyn.Exp> inPosArgs;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImplicit;
-  input Util.StatefulBoolean stopElab;
+  input Mutable<Boolean> stopElab;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
