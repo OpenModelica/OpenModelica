@@ -658,7 +658,7 @@ static int foldBoxWidth(const QFontMetrics &fm)
  * Internal QPlainTextEdit for Editor.
  */
 PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
-  : QPlainTextEdit(pBaseEditor),mpCompleter(0),mpBaseEditor(pBaseEditor)
+  : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
   QTextDocument *pTextDocument = document();
@@ -672,6 +672,15 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   // parentheses matcher
   mParenthesesMatchFormat = Utilities::getParenthesesMatchFormat();
   mParenthesesMisMatchFormat = Utilities::getParenthesesMisMatchFormat();
+  // Completer Tooltip widget
+  mpCompleterToolTipWidget = new QWidget(this, Qt::ToolTip);
+  mpCompleterToolTipWidget->installEventFilter(this);
+  mpCompleterToolTipLabel = new Label;
+  QHBoxLayout *pCompleterToolTipLayout = new QHBoxLayout;
+  pCompleterToolTipLayout->setSpacing(0);
+  pCompleterToolTipLayout->setContentsMargins(5, 5, 5, 5);
+  pCompleterToolTipLayout->addWidget(mpCompleterToolTipLabel);
+  mpCompleterToolTipWidget->setLayout(pCompleterToolTipLayout);
   // intialize the completer with QStandardItemModel
   mpStandardItemModel = new QStandardItemModel();
   // sort the StandardItemModel using QSortFilterProxy
@@ -685,6 +694,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   mpCompleter->setWrapAround(false);
   mpCompleter->setWidget(this);
   mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
+  connect(mpCompleter, SIGNAL(highlighted(QModelIndex)), this, SLOT(showCompletionItemToolTip(QModelIndex)));
   connect(mpCompleter, SIGNAL(activated(QModelIndex)), this, SLOT(insertCompletionItem(QModelIndex)));
   updateLineNumberAreaWidth(0);
   updateHighlights();
@@ -702,16 +712,41 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
 }
 
 /*!
+ * \brief PlainTextEdit::eventFilter
+ * Adds the background color and border to completer tooltip.
+ * \param pObject
+ * \param pEvent
+ * \return
+ */
+bool PlainTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pObject != mpCompleterToolTipWidget) {
+    return QObject::eventFilter(pObject, pEvent);
+  }
+
+  QWidget *pCompleterToolTipWidget = qobject_cast<QWidget*>(pObject);
+  if (pCompleterToolTipWidget && pEvent->type() == QEvent::Paint) {
+    QPainter painter (pCompleterToolTipWidget);
+    painter.setPen(Qt::black);
+    painter.setBrush(Qt::white);
+    QRect rectangle = pCompleterToolTipWidget->rect();
+    rectangle.setWidth(pCompleterToolTipWidget->rect().width() - 1);
+    rectangle.setHeight(pCompleterToolTipWidget->rect().height() - 1);
+    painter.drawRect(rectangle);
+    return true;
+  }
+  return QObject::eventFilter(pObject, pEvent);
+}
+
+/*!
  * \class CompleterItem
+ * \brief CompleterItem::CompleterItem
+ * \param key
+ * \param value
+ * \param select
  * The constructor is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
  * ModelicaEditor,CEditor etc..
  */
-
-CompleterItem::CompleterItem()
-{
-
-}
-
 CompleterItem::CompleterItem(QString key, QString value, QString select)
 {
   mKey=key;
@@ -721,17 +756,16 @@ CompleterItem::CompleterItem(QString key, QString value, QString select)
 
 /*!
  * \brief PlainTextEdit::insertCompleterKeywords
+ * \param keywords
  * add Keyword list to the QStandardItemModel which will be used by the Completer
  * This function is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
  * ModelicaEditor,CEditor etc..
  */
 void PlainTextEdit::insertCompleterKeywords(QStringList keywords)
 {
-  for (int i = 0; i < keywords.size(); ++i)
-  {
+  for (int i = 0; i < keywords.size(); ++i) {
     QStandardItem *pStandardItem = new QStandardItem(keywords[i]);
     pStandardItem->setIcon(QIcon(":/Resources/icons/completerkeyword.svg"));
-    pStandardItem->setToolTip("keywords");
     pStandardItem->setData(QVariant::fromValue(CompleterItem(keywords[i],keywords[i],"")),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
@@ -739,29 +773,33 @@ void PlainTextEdit::insertCompleterKeywords(QStringList keywords)
 
 /*!
  * \brief PlainTextEdit::insertCompleterTypes
+ * \param types
  * add types list to the QStandardItemModel which will be used by the Completer
  * This function is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
  * ModelicaEditor,CEditor etc..
  */
 void PlainTextEdit::insertCompleterTypes(QStringList types)
 {
-  for (int k = 0; k < types.size(); ++k)
-  {
+  for (int k = 0; k < types.size(); ++k) {
     QStandardItem *pStandardItem = new QStandardItem(types[k]);
     pStandardItem->setIcon(QIcon(":/Resources/icons/completerType.svg"));
-    pStandardItem->setToolTip("types");
     pStandardItem->setData(QVariant::fromValue(CompleterItem(types[k],types[k],"")),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
 }
 
-void PlainTextEdit::insertCompleterCodeSnippets(QList<CompleterItem>  items)
+/*!
+ * \brief PlainTextEdit::insertCompleterCodeSnippets
+ * \param items
+ * Add codesnippet list to the QStandardItemModel which will be used by the Completer
+ * This function is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
+ * ModelicaEditor,CEditor etc..
+ */
+void PlainTextEdit::insertCompleterCodeSnippets(QList<CompleterItem> items)
 {
-  for (int var = 0; var < items.length(); ++var)
-  {
+  for (int var = 0; var < items.length(); ++var) {
     QStandardItem *pStandardItem = new QStandardItem(items[var].mKey);
     pStandardItem->setIcon(QIcon(":/Resources/icons/completerCodeSnippets.svg"));
-    pStandardItem->setToolTip("codeSnippets");
     pStandardItem->setData(QVariant::fromValue(items[var]),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
@@ -1475,6 +1513,22 @@ QCompleter *PlainTextEdit::completer()
 }
 
 /*!
+ * \brief PlainTextEdit::showCompletionItemToolTip
+ * \param index
+ * Shows the tooltip widget for the CompleterItem represented by QModelIndex.
+ */
+void PlainTextEdit::showCompletionItemToolTip(const QModelIndex &index)
+{
+  QVariant value = index.data(Qt::UserRole);
+  CompleterItem completerItem = qvariant_cast<CompleterItem>(value);
+  mpCompleterToolTipLabel->setText(completerItem.mValue);
+  mpCompleterToolTipWidget->adjustSize();
+  QRect rect = mpCompleter->popup()->visualRect(index);
+  mpCompleterToolTipWidget->move(mpCompleter->popup()->mapToGlobal(QPoint(rect.x() + mpCompleter->popup()->width() + 2, rect.y() + 2)));
+  mpCompleterToolTipWidget->show();
+}
+
+/*!
  * PlainTextEdit::insertCompletionItem
  * insert the completerItems from the completer popup
  */
@@ -1493,8 +1547,7 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
   int startpos = currentpos-completionlength[0].length();
   setTextCursor(cursor);
   // To insert CodeSnippets
-  if (completionlength.length()>1)
-  {
+  if (completionlength.length()>1) {
     // Calculate the indentation spaces for the inserted text
     TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
     cursor.insertText("\n");
@@ -1512,7 +1565,7 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
     cursor.setPosition(startpos+indexpos+selectiontext.length(), QTextCursor::KeepAnchor);
     setTextCursor(cursor);
   }
- }
+}
 
 QString PlainTextEdit::textUnderCursor() const
 {
@@ -1736,6 +1789,14 @@ void PlainTextEdit::focusOutEvent(QFocusEvent *event)
  */
 void PlainTextEdit::paintEvent(QPaintEvent *e)
 {
+  if (mpCompleterToolTipWidget->isVisible()) {
+    mpCompleterToolTipWidget->setVisible(mpCompleter->popup()->isVisible());
+    QModelIndexList modelIndexes = mpCompleter->popup()->selectionModel()->selectedIndexes();
+    if (!modelIndexes.isEmpty()) {
+      QRect rect = mpCompleter->popup()->visualRect(modelIndexes.at(0));
+      mpCompleterToolTipWidget->move(mpCompleter->popup()->mapToGlobal(QPoint(rect.x() + mpCompleter->popup()->width() + 2, rect.y() + 2)));
+    }
+  }
   QPlainTextEdit::paintEvent(e);
 
   QPointF offset(contentOffset());

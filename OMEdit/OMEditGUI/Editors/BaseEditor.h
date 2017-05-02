@@ -213,7 +213,7 @@ public:
 class CompleterItem
 {
 public:
-  CompleterItem();
+  CompleterItem() {}
   CompleterItem(QString key , QString value , QString select);
   QString mKey;
   QString mValue;
@@ -229,6 +229,7 @@ class PlainTextEdit : public QPlainTextEdit
   Q_OBJECT
 public:
   PlainTextEdit(BaseEditor *pBaseEditor);
+  bool eventFilter(QObject *pObject, QEvent *pEvent);
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
   void insertCompleterKeywords(QStringList keywords);
   void insertCompleterTypes(QStringList types);
@@ -241,13 +242,16 @@ public:
   void goToLineNumber(int lineNumber);
   QCompleter *completer();
 private:
-  QStandardItemModel* mpStandardItemModel;
-  QCompleter *mpCompleter;
   BaseEditor *mpBaseEditor;
   LineNumberArea *mpLineNumberArea;
   bool mCanHaveBreakpoints;
   QTextCharFormat mParenthesesMatchFormat;
   QTextCharFormat mParenthesesMisMatchFormat;
+  QWidget *mpCompleterToolTipWidget;
+  Label *mpCompleterToolTipLabel;
+  QStandardItemModel* mpStandardItemModel;
+  QCompleter *mpCompleter;
+
   void highlightCurrentLine();
   void highlightParentheses();
   void setLineWrapping();
@@ -262,6 +266,7 @@ private:
   void toggleBlockVisible(const QTextBlock &block);
   QString textUnderCursor() const;
 private slots:
+  void showCompletionItemToolTip(const QModelIndex & index);
   void insertCompletionItem(const QModelIndex & index);
 public slots:
   void updateLineNumberAreaWidth(int newBlockCount);

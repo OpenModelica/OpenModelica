@@ -44,11 +44,11 @@ MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   QStringList keywords = MetaModelicaHighlighter::getKeywords();
-  QStringList types = MetaModelicaHighlighter::getTypes();
-  QList<CompleterItem>  codesnippets = getCodeSnippets();
-  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
   mpPlainTextEdit->insertCompleterKeywords(keywords);
+  QStringList types = MetaModelicaHighlighter::getTypes();
   mpPlainTextEdit->insertCompleterTypes(types);
+  QList<CompleterItem> codesnippets = getCodeSnippets();
+  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
 }
 
 /*!

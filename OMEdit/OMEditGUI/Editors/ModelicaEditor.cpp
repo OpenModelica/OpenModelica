@@ -57,11 +57,11 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   QStringList keywords = ModelicaHighlighter::getKeywords();
-  QStringList types = ModelicaHighlighter::getTypes();
-  QList<CompleterItem>  codesnippets = getCodeSnippets();
-  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
   mpPlainTextEdit->insertCompleterKeywords(keywords);
+  QStringList types = ModelicaHighlighter::getTypes();
   mpPlainTextEdit->insertCompleterTypes(types);
+  QList<CompleterItem> codesnippets = getCodeSnippets();
+  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
 }
 
 /*!
