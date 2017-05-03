@@ -83,19 +83,19 @@ void ModelicaEditor::popUpCompleter()
 QList<CompleterItem> ModelicaEditor::getCodeSnippets()
 {
   QList<CompleterItem> codesnippetslist;
-  codesnippetslist << CompleterItem("function" ,"function name\n" "end name;", "name")
-                   << CompleterItem("block" ,"block name\n" "end name;", "name")
-                   << CompleterItem("model" ,"model name\n" "end name;", "name")
-                   << CompleterItem("class" ,"class name\n" "end name;", "name")
-                   << CompleterItem("connector" ,"connector name\n" "end name;", "name")
-                   << CompleterItem("package" ,"package name\n" "end name;", "name")
-                   << CompleterItem("record" ,"record name\n" "end name;", "name")
-                   << CompleterItem("while" ,"while condition loop\n" "end while;", "condition")
-                   << CompleterItem("if" ,"if condition then\n" "end if;", "condition")
-                   << CompleterItem("if" ,"if condition then\n" "elseif condition then\n" "else\n" "end if;", "condition")
-                   << CompleterItem("for" ,"for condition loop\n" "end for;", "condition")
-                   << CompleterItem("when", "when condition then\n" "end when;", "condition")
-                   << CompleterItem("when", "when condition then\n" "elsewhen condition then\n" "end when;", "condition");
+  codesnippetslist << CompleterItem("function" ,"function name\n  \nend name;", "name")
+                   << CompleterItem("block" ,"block name\n  \nend name;", "name")
+                   << CompleterItem("model" ,"model name\n  \nend name;", "name")
+                   << CompleterItem("class" ,"class name\n  \nend name;", "name")
+                   << CompleterItem("connector" ,"connector name\n  \nend name;", "name")
+                   << CompleterItem("package" ,"package name\n  \nend name;", "name")
+                   << CompleterItem("record" ,"record name\n  \nend name;", "name")
+                   << CompleterItem("while" ,"while condition loop\n  \nend while;", "condition")
+                   << CompleterItem("if" ,"if condition then\n  \nend if;", "condition")
+                   << CompleterItem("if" ,"if condition then\n  \nelseif condition then\n  \nelse\n  \nend if;", "condition")
+                   << CompleterItem("for" ,"for condition loop\n  \nend for;", "condition")
+                   << CompleterItem("when", "when condition then\n  \nend when;", "condition")
+                   << CompleterItem("when", "when condition then\n  \nelsewhen condition then\n  \nend when;", "condition");
   return codesnippetslist;
 }
 /*!

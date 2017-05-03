@@ -1539,15 +1539,15 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
   QString selectiontext = completerItem.mSelect;
   QStringList completionlength = completerItem.mValue.split("\n");
   QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
   int extra = completionlength[0].length() - mpCompleter->completionPrefix().length();
   cursor.movePosition(QTextCursor::EndOfWord);
   cursor.insertText(completionlength[0].right(extra));
   // store the cursor position to be used for selecting text when inserting code snippets
   int currentpos = cursor.position();
   int startpos = currentpos-completionlength[0].length();
-  setTextCursor(cursor);
   // To insert CodeSnippets
-  if (completionlength.length()>1) {
+  if (completionlength.length() > 1) {
     // Calculate the indentation spaces for the inserted text
     TabSettings tabSettings = OptionsDialog::instance()->getTabSettings();
     cursor.insertText("\n");
@@ -1562,9 +1562,10 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
     // set the cursor to appropriate selection text
     int indexpos=completionlength[0].indexOf(selectiontext,0); //find the index position of the selection text from the word
     cursor.setPosition(startpos+indexpos,QTextCursor::MoveAnchor);
-    cursor.setPosition(startpos+indexpos+selectiontext.length(), QTextCursor::KeepAnchor);
-    setTextCursor(cursor);
+	cursor.setPosition(startpos+indexpos+selectiontext.length(), QTextCursor::KeepAnchor);
   }
+  cursor.endEditBlock();
+  setTextCursor(cursor);
 }
 
 QString PlainTextEdit::textUnderCursor() const
