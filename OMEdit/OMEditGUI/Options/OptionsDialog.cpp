@@ -307,6 +307,9 @@ void OptionsDialog::readTextEditorSettings()
     // select font size item
     mpTextEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("textEditor/fontSize").toDouble());
   }
+  if (mpSettings->contains("textEditor/enableAutocomplete")) {
+    mpTextEditorPage->getAutoCompleteCheckBox()->setChecked(mpSettings->value("textEditor/enableAutocomplete").toBool());
+  }
 }
 
 /*!
@@ -909,6 +912,7 @@ void OptionsDialog::saveTextEditorSettings()
   mpSettings->setValue("textEditor/enableLineWrapping", mpTextEditorPage->getLineWrappingCheckbox()->isChecked());
   mpSettings->setValue("textEditor/fontFamily", mpTextEditorPage->getFontFamilyComboBox()->currentFont().family());
   mpSettings->setValue("textEditor/fontSize", mpTextEditorPage->getFontSizeSpinBox()->value());
+  mpSettings->setValue("textEditor/enableAutocomplete", mpTextEditorPage->getAutoCompleteCheckBox()->isChecked());
 }
 
 /*!
@@ -2306,6 +2310,14 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingGroupBox, 0, 0);
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
   mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
+  // AutoCompleter group box
+  mpAutoCompleteGroupBox = new QGroupBox(tr("Autocomplete"));
+  // autocompleter checkbox
+  mpAutoCompleteCheckBox = new QCheckBox(tr("Enable Autocomplete"));
+  mpAutoCompleteCheckBox->setChecked(true);
+  QGridLayout *pAutoCompleteGroupBoxLayout = new QGridLayout;
+  pAutoCompleteGroupBoxLayout->addWidget(mpAutoCompleteCheckBox,0,0);
+  mpAutoCompleteGroupBox->setLayout(pAutoCompleteGroupBoxLayout);
   // font groupbox
   mpFontGroupBox = new QGroupBox(tr("Font"));
   // font family combobox
@@ -2334,6 +2346,7 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpFormatGroupBox);
   pMainLayout->addWidget(mpTabsAndIndentation);
   pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
+  pMainLayout->addWidget(mpAutoCompleteGroupBox);
   pMainLayout->addWidget(mpFontGroupBox);
   setLayout(pMainLayout);
 }

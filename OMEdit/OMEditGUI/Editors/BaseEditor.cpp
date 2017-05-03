@@ -1519,13 +1519,16 @@ QCompleter *PlainTextEdit::completer()
  */
 void PlainTextEdit::showCompletionItemToolTip(const QModelIndex &index)
 {
-  QVariant value = index.data(Qt::UserRole);
-  CompleterItem completerItem = qvariant_cast<CompleterItem>(value);
-  mpCompleterToolTipLabel->setText(completerItem.mValue);
-  mpCompleterToolTipWidget->adjustSize();
-  QRect rect = mpCompleter->popup()->visualRect(index);
-  mpCompleterToolTipWidget->move(mpCompleter->popup()->mapToGlobal(QPoint(rect.x() + mpCompleter->popup()->width() + 2, rect.y() + 2)));
-  mpCompleterToolTipWidget->show();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
+  if (pTextEditorPage->getAutoCompleteCheckBox()->isChecked()) {
+    QVariant value = index.data(Qt::UserRole);
+    CompleterItem completerItem = qvariant_cast<CompleterItem>(value);
+    mpCompleterToolTipLabel->setText(completerItem.mValue);
+    mpCompleterToolTipWidget->adjustSize();
+    QRect rect = mpCompleter->popup()->visualRect(index);
+    mpCompleterToolTipWidget->move(mpCompleter->popup()->mapToGlobal(QPoint(rect.x() + mpCompleter->popup()->width() + 2, rect.y() + 2)));
+    mpCompleterToolTipWidget->show();
+  }
 }
 
 /*!
@@ -1585,6 +1588,21 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
   bool isShortcut = (controlModifier && pEvent->key() == Qt::Key_Space); // CTRL+space
+  /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
+  if (mpCompleter && mpCompleter->popup()->isVisible()) {
+    // The following keys are forwarded by the completer to the widget
+    switch (pEvent->key()) {
+      case Qt::Key_Enter:
+      case Qt::Key_Return:
+      case Qt::Key_Escape:
+      case Qt::Key_Tab:
+      case Qt::Key_Backtab:
+        pEvent->ignore();
+        return; // let the completer do default behavior
+      default:
+        break;
+    }
+  }
   if (pEvent->key() == Qt::Key_Escape) {
     if (mpBaseEditor->getFindReplaceWidget()->isVisible()) {
       mpBaseEditor->getFindReplaceWidget()->close();
@@ -1626,20 +1644,6 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     pEvent->setModifiers(Qt::NoModifier);
   }
   /* do not change the order of execution as the indentation event will fail when completer is on */
-  if (mpCompleter && mpCompleter->popup()->isVisible()) {
-    // The following keys are forwarded by the completer to the widget
-    switch (pEvent->key()) {
-      case Qt::Key_Enter:
-      case Qt::Key_Return:
-      case Qt::Key_Escape:
-      case Qt::Key_Tab:
-      case Qt::Key_Backtab:
-        pEvent->ignore();
-        return; // let the completer do default behavior
-      default:
-        break;
-    }
-  }
   if (!mpCompleter || !isShortcut) { // do not process the shortcut when we have a completer
     QPlainTextEdit::keyPressEvent(pEvent);
   }
@@ -1677,7 +1681,11 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     mpCompleter->popup()->setCurrentIndex(mpCompleter->completionModel()->index(0, 0));
   }
   //pop up the completer according to editor instance
-  mpBaseEditor->popUpCompleter();
+  TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
+  if (pTextEditorPage->getAutoCompleteCheckBox()->isChecked())
+  {
+    mpBaseEditor->popUpCompleter();
+  }
 }
 
 /*!
