@@ -326,6 +326,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
       textCursor.select(QTextCursor::Document);
       textCursor.insertText(contents);
       textCursor.endEditBlock();
+      mpPlainTextEdit->setTextCursor(textCursor);
     }
     if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
       storeLeadingSpaces(leadingSpacesMap);
@@ -333,6 +334,10 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
     setTextChanged(false);
     mForceSetPlainText = false;
     mLastValidText = contents;
+    /* ticket:4409 Object moving in block diagram unfolds all annotations in text view.
+     * Make sure ModelicaHighlighter::highlightBlock is called before calling foldAll.
+     */
+    OptionsDialog::instance()->emitModelicaEditorSettingsChanged();
     mpPlainTextEdit->foldAll();
   }
 }

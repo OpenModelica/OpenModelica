@@ -147,6 +147,7 @@ public:
   FMIPage* getFMIPage() {return mpFMIPage;}
   TLMPage* getTLMPage() {return mpTLMPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
+  void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
   void show();
   TabSettings getTabSettings();

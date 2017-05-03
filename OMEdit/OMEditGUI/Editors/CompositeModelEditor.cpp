@@ -1277,6 +1277,7 @@ void CompositeModelEditor::setPlainText(const QString &text, bool useInserText)
       textCursor.select(QTextCursor::Document);
       textCursor.insertText(mXmlDocument.toString());
       textCursor.endEditBlock();
+      mpPlainTextEdit->setTextCursor(textCursor);
     }
     mForceSetPlainText = false;
     mLastValidText = text;
