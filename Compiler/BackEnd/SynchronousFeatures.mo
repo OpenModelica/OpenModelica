@@ -616,11 +616,12 @@ protected
   DAE.FunctionTree funcs;
   BackendDAE.EquationArray eqs, clockEqs;
   BackendDAE.Variables vars, clockVars;
-  BackendDAE.EqSystem clockSyst;
+  BackendDAE.EqSystem clockSyst,outSys;
   BackendDAE.IncidenceMatrix m, mT, rm, rmT;
   Integer partitionsCnt;
   array<Integer> partitions, reqsPartitions;
   list<BackendDAE.Equation> newClockEqs;
+  array<BackendDAE.EqSystem> outSysts_noOrder;
   list<BackendDAE.Var> newClockVars;
   array<Option<Boolean>> contPartitions;
   array<tuple<BackendDAE.SubClock, Integer>> subclocksTree;
@@ -672,7 +673,16 @@ algorithm
     fail();
   end if;
 
-  (outSysts, _) := List.map2Fold(outSysts, makeClockedSyst, order, off, 1);
+  //order the partitions according to their causality order and corresponding subclock order
+  outSysts_noOrder := arrayCreate(listLength(outSysts), listHead(outSysts));
+  for i in List.intRange(arrayLength(order)) loop
+    outSys := listGet(outSysts,i);
+    outSys.partitionKind := BackendDAE.CLOCKED_PARTITION(order[i] + off);
+    arrayUpdate(outSysts_noOrder, order[i], outSys);
+  end for;
+  //(outSysts, _) := List.map2Fold(outSysts, makeClockedSyst, order, off, 1);
+  outSysts := arrayList(outSysts_noOrder);
+
   outSubClocks := {};
   subclocksOutArr := arrayCopy(subclocks);
   for i in List.intRange(arrayLength(subclocksOutArr)) loop
@@ -771,7 +781,7 @@ algorithm
                 // apply inverse clock conversion to a parent without base
                 // as the clock propagates backwards
                 subClock.factor := MMath.divRational(MMath.RAT1, subClock.factor);
-                subClock.shift := MMath.subRational(MMath.RAT0, subClock.shift);
+                //subClock.shift := MMath.subRational(MMath.RAT0, subClock.shift); //vwaurich: Disabled because of negative shifts
                 updateIdx := parentIdx;
                 (_, parentIdx) := arrayGet(outSubClocks, updateIdx);
               then
