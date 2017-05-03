@@ -80,17 +80,19 @@ translateModel(test_subSample); getErrorString();
 // no matching
 //
 //
-// clocked partition(3)
+// clocked partition(1)
 // ========================================
 //
-// Variables (1)
+// Variables (2)
 // ========================================
-// 1: u3:DISCRETE()  type: Real 
+// 1: u:DISCRETE(start = 0.0 )  type: Real 
+// 2: vd:DISCRETE()  type: Real 
 //
 //
-// Equations (1, 1)
+// Equations (2, 2)
 // ========================================
-// 1/1 (1): u3 = $getPart(u2)   [dynamic]
+// 1/1 (1): vd = $getPart(v)   [dynamic]
+// 2/2 (1): u = K * (vref - vd)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -128,19 +130,17 @@ translateModel(test_subSample); getErrorString();
 // no matching
 //
 //
-// clocked partition(1)
+// clocked partition(3)
 // ========================================
 //
-// Variables (2)
+// Variables (1)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 )  type: Real 
-// 2: vd:DISCRETE()  type: Real 
+// 1: u3:DISCRETE()  type: Real 
 //
 //
-// Equations (2, 2)
+// Equations (1, 1)
 // ========================================
-// 1/1 (1): vd = $getPart(v)   [dynamic]
-// 2/2 (1): u = K * (vref - vd)   [dynamic]
+// 1/1 (1): u3 = $getPart(u2)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -162,9 +162,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Sub clocks (3)
 // ========================================
-// 1: factor(1/1) shift(0/1)  event(false)
+// 1: factor(1/1) shift(0/1)  event(true)
 // 2: factor(2/1) shift(0/1)  event(false)
-// 3: factor(6/1) shift(0/1)  event(true)
+// 3: factor(6/1) shift(0/1)  event(false)
 //
 // synchronous features post-phase: synchronousFeatures
 //
@@ -214,17 +214,19 @@ translateModel(test_subSample); getErrorString();
 // {3:2}
 //
 //
-// clocked partition(3)
+// clocked partition(1)
 // ========================================
 //
-// Variables (1)
+// Variables (2)
 // ========================================
-// 1: u3:DISCRETE()  type: Real 
+// 1: u:DISCRETE(start = 0.0 )  type: Real 
+// 2: vd:DISCRETE()  type: Real 
 //
 //
-// Equations (1, 1)
+// Equations (2, 2)
 // ========================================
-// 1/1 (1): u3 = $getPart(u2)   [dynamic]
+// 1/1 (1): vd = $getPart(v)   [dynamic]
+// 2/2 (1): u = K * (vref - vd)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -262,19 +264,17 @@ translateModel(test_subSample); getErrorString();
 // no matching
 //
 //
-// clocked partition(1)
+// clocked partition(3)
 // ========================================
 //
-// Variables (2)
+// Variables (1)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 )  type: Real 
-// 2: vd:DISCRETE()  type: Real 
+// 1: u3:DISCRETE()  type: Real 
 //
 //
-// Equations (2, 2)
+// Equations (1, 1)
 // ========================================
-// 1/1 (1): vd = $getPart(v)   [dynamic]
-// 2/2 (1): u = K * (vref - vd)   [dynamic]
+// 1/1 (1): u3 = $getPart(u2)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -296,9 +296,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Sub clocks (3)
 // ========================================
-// 1: factor(1/1) shift(0/1)  event(false)
+// 1: factor(1/1) shift(0/1)  event(true)
 // 2: factor(2/1) shift(0/1)  event(false)
-// 3: factor(6/1) shift(0/1)  event(true)
+// 3: factor(6/1) shift(0/1)  event(false)
 //
 // true
 // ""

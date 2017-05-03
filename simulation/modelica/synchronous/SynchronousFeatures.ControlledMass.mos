@@ -87,45 +87,23 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // no matching
 //
 //
-// clocked partition(4)
+// clocked partition(1)
 // ========================================
 //
-// Variables (3)
+// Variables (4)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
-// 2: vref:DISCRETE()  type: Real 
-// 3: vd:DISCRETE()  type: Real 
+// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
+// 2: intE:DISCRETE(start = 0.0 )  type: Real 
+// 3: eOuter:DISCRETE()  type: Real 
+// 4: xd:DISCRETE()  type: Real 
 //
 //
-// Equations (3, 3)
+// Equations (4, 4)
 // ========================================
-// 1/1 (1): vd = $getPart($var2)   [dynamic]
-// 2/2 (1): vref = $getPart($var3)   [dynamic]
-// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-// clocked partition(3)
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: $var3:VARIABLE()  type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic]
+// 1/1 (1): xd = $getPart(x)   [dynamic]
+// 2/2 (1): eOuter = xref - xd   [dynamic]
+// 3/3 (1): intE = previous(intE) + eOuter   [dynamic]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -165,23 +143,45 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // no matching
 //
 //
-// clocked partition(1)
+// clocked partition(3)
 // ========================================
 //
-// Variables (4)
+// Variables (1)
 // ========================================
-// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
-// 2: intE:DISCRETE(start = 0.0 )  type: Real 
-// 3: eOuter:DISCRETE()  type: Real 
-// 4: xd:DISCRETE()  type: Real 
+// 1: $var3:VARIABLE()  type: Real 
 //
 //
-// Equations (4, 4)
+// Equations (1, 1)
 // ========================================
-// 1/1 (1): xd = $getPart(x)   [dynamic]
-// 2/2 (1): eOuter = xref - xd   [dynamic]
-// 3/3 (1): intE = previous(intE) + eOuter   [dynamic]
-// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic]
+// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
+// 2: vref:DISCRETE()  type: Real 
+// 3: vd:DISCRETE()  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): vd = $getPart($var2)   [dynamic]
+// 2/2 (1): vref = $getPart($var3)   [dynamic]
+// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -203,10 +203,10 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Sub clocks (4)
 // ========================================
-// 1: factor(5/1) shift(2/3)  event(true)
+// 1: factor(5/1) shift(2/3)  event(false)
 // 2: factor(1/2) shift(0/1)  event(false)
 // 3: factor(1/1) shift(2/3)  event(false)
-// 4: factor(1/1) shift(0/1)  event(false)
+// 4: factor(1/1) shift(0/1)  event(true)
 //
 // synchronous features post-phase: synchronousFeatures
 //
@@ -256,45 +256,23 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // {3:2}
 //
 //
-// clocked partition(4)
+// clocked partition(1)
 // ========================================
 //
-// Variables (3)
+// Variables (4)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
-// 2: vref:DISCRETE()  type: Real 
-// 3: vd:DISCRETE()  type: Real 
+// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
+// 2: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real 
+// 3: eOuter:DISCRETE()  type: Real 
+// 4: xd:DISCRETE()  type: Real 
 //
 //
-// Equations (3, 3)
+// Equations (4, 4)
 // ========================================
-// 1/1 (1): vd = $getPart($var2)   [dynamic]
-// 2/2 (1): vref = $getPart($var3)   [dynamic]
-// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-// clocked partition(3)
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: $var3:VARIABLE()  type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic]
+// 1/1 (1): xd = $getPart(x)   [dynamic]
+// 2/2 (1): eOuter = xref - xd   [dynamic]
+// 3/3 (1): intE = previous(intE) + eOuter   [dynamic]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -334,23 +312,45 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // no matching
 //
 //
-// clocked partition(1)
+// clocked partition(3)
 // ========================================
 //
-// Variables (4)
+// Variables (1)
 // ========================================
-// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
-// 2: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real 
-// 3: eOuter:DISCRETE()  type: Real 
-// 4: xd:DISCRETE()  type: Real 
+// 1: $var3:VARIABLE()  type: Real 
 //
 //
-// Equations (4, 4)
+// Equations (1, 1)
 // ========================================
-// 1/1 (1): xd = $getPart(x)   [dynamic]
-// 2/2 (1): eOuter = xref - xd   [dynamic]
-// 3/3 (1): intE = previous(intE) + eOuter   [dynamic]
-// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic]
+// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
+// 2: vref:DISCRETE()  type: Real 
+// 3: vd:DISCRETE()  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): vd = $getPart($var2)   [dynamic]
+// 2/2 (1): vref = $getPart($var3)   [dynamic]
+// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -372,10 +372,10 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Sub clocks (4)
 // ========================================
-// 1: factor(5/1) shift(2/3)  event(true)
+// 1: factor(5/1) shift(2/3)  event(false)
 // 2: factor(1/2) shift(0/1)  event(false)
 // 3: factor(1/1) shift(2/3)  event(false)
-// 4: factor(1/1) shift(0/1)  event(false)
+// 4: factor(1/1) shift(0/1)  event(true)
 //
 // true
 // ""
