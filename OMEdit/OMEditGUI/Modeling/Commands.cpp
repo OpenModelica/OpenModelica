@@ -294,12 +294,9 @@ void UpdateComponentTransformationsCommand::UpdateComponentTransformationsComman
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
+      mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-      mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
-    } else {
-      mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-    }
+    mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
     if (mpIconOrDiagramComponent && (mOldTransformation == mpIconOrDiagramComponent->mTransformation)) {
       mpIconOrDiagramComponent->resetTransform();
       bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -330,12 +327,9 @@ void UpdateComponentTransformationsCommand::UpdateComponentTransformationsComman
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
+      mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-      mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
-    } else {
-      mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-    }
+    mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
     if (mpIconOrDiagramComponent && (mpComponent->mTransformation == mpIconOrDiagramComponent->mTransformation)) {
       mpIconOrDiagramComponent->resetTransform();
       bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
