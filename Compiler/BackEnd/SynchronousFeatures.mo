@@ -673,15 +673,16 @@ algorithm
     fail();
   end if;
 
-  //order the partitions according to their causality order and corresponding subclock order
-  outSysts_noOrder := arrayCreate(listLength(outSysts), listHead(outSysts));
-  for i in List.intRange(arrayLength(order)) loop
-    outSys := listGet(outSysts,i);
-    outSys.partitionKind := BackendDAE.CLOCKED_PARTITION(order[i] + off);
-    arrayUpdate(outSysts_noOrder, order[i], outSys);
-  end for;
-  //(outSysts, _) := List.map2Fold(outSysts, makeClockedSyst, order, off, 1);
-  outSysts := arrayList(outSysts_noOrder);
+  if (not listEmpty(outSysts)) then
+	  //order the partitions according to their causality order and corresponding subclock order
+	  outSysts_noOrder := arrayCreate(listLength(outSysts), listHead(outSysts));
+	  for i in List.intRange(arrayLength(order)) loop
+	    outSys := listGet(outSysts,i);
+	    outSys.partitionKind := BackendDAE.CLOCKED_PARTITION(order[i] + off);
+	    arrayUpdate(outSysts_noOrder, order[i], outSys);
+	  end for;
+	  outSysts := arrayList(outSysts_noOrder);
+	end if;
 
   outSubClocks := {};
   subclocksOutArr := arrayCopy(subclocks);
