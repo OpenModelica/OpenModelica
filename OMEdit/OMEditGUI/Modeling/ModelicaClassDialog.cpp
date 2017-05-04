@@ -718,6 +718,7 @@ void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   : QDialog(pParent), mpLibraryTreeItem(pLibraryTreeItem)
 {
+  setMinimumWidth(400);
   setAttribute(Qt::WA_DeleteOnClose);
   mSaveAs = saveAs;
   QString heading = mSaveAs ? Helper::saveAs : Helper::duplicate;
