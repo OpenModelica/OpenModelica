@@ -1331,12 +1331,9 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   /* set the curve visibility */
   pPlotCurve->setVisible(!pVariablePageWidget->getHideCheckBox()->isChecked());
   QwtText text = pPlotCurve->title();
-  if (pPlotCurve->isVisible())
-  {
+  if (pPlotCurve->isVisible()) {
     text.setColor(QColor(Qt::black));
-  }
-  else
-  {
+  } else {
     text.setColor(QColor(Qt::gray));
   }
   pPlotCurve->setTitle(text);

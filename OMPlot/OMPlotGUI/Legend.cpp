@@ -127,3 +127,31 @@ QWidget* Legend::createWidget(const QwtLegendData &data) const
   pWidget->setMouseTracking(true);
   return pWidget;
 }
+
+/*!
+ * \brief Legend::mouseDoubleClickEvent
+ * Reimplementation of QWidget::mouseDoubleClickEvent()
+ * Show/hide the PlotCurve item double clicked in the legend.
+ * \param event
+ */
+void Legend::mouseDoubleClickEvent(QMouseEvent *event)
+{
+#if QWT_VERSION >= 0x060100
+  QwtPlotItem *pQwtPlotItem = qvariant_cast<QwtPlotItem*>(itemInfo(childAt(event->pos())));
+  mpPlotCurve = dynamic_cast<PlotCurve*>(pQwtPlotItem);
+#else
+  mpPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(event->pos())));
+#endif
+  if (mpPlotCurve) {
+    /* set the curve visibility */
+    mpPlotCurve->setVisible(!mpPlotCurve->isVisible());
+    QwtText text = mpPlotCurve->title();
+    if (mpPlotCurve->isVisible()) {
+      text.setColor(QColor(Qt::black));
+    } else {
+      text.setColor(QColor(Qt::gray));
+    }
+    mpPlotCurve->setTitle(text);
+  }
+  QwtLegend::mouseDoubleClickEvent(event);
+}
