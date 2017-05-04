@@ -1653,8 +1653,9 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   }
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
-  //painter->setPen(pen);
-  if (mViewType == StringHandler::Icon) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+    painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
+  } else if (mViewType == StringHandler::Icon) {
     painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
   } else {
     painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
@@ -1664,7 +1665,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   painter->drawRect(getExtentRectangle());
-  if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()) {
+  if (mpModelWidget->getModelWidgetContainer()->isShowGridLines() && !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
     /* Draw left half vertical lines */
@@ -5488,7 +5489,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
   MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel));
   MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel));
   MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel));
