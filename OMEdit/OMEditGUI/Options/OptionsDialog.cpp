@@ -518,6 +518,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/switchToPlottingPerspectiveAfterSimulation")) {
     mpSimulationPage->getSwitchToPlottingPerspectiveCheckBox()->setChecked(mpSettings->value("simulation/switchToPlottingPerspectiveAfterSimulation").toBool());
   }
+  if (mpSettings->contains("simulation/closeSimulationOutputWidgetsBeforeSimulation")) {
+    mpSimulationPage->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->setChecked(mpSettings->value("simulation/closeSimulationOutputWidgetsBeforeSimulation").toBool());
+  }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
   }
@@ -1045,6 +1048,7 @@ void OptionsDialog::saveSimulationSettings()
   // save class before simulation.
   mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
   mpSettings->setValue("simulation/switchToPlottingPerspectiveAfterSimulation", mpSimulationPage->getSwitchToPlottingPerspectiveCheckBox()->isChecked());
+  mpSettings->setValue("simulation/closeSimulationOutputWidgetsBeforeSimulation", mpSimulationPage->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
 }
 
@@ -3287,6 +3291,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   /* switch to plotting perspective after simulation checkbox */
   mpSwitchToPlottingPerspectiveCheckBox = new QCheckBox(tr("Switch to plotting perspective after simulation"));
   mpSwitchToPlottingPerspectiveCheckBox->setChecked(true);
+  /* Close completed SimulationOutputWidgets before simulation checkbox */
+  mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox = new QCheckBox(tr("Close completed simulation output windows before simulation"));
+  mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox->setChecked(true);
   // simulation output format
   mpOutputGroupBox = new QGroupBox(Helper::output);
   mpStructuredRadioButton = new QRadioButton(tr("Structured"));
@@ -3324,7 +3331,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, 6, 0, 1, 3);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 7, 0, 1, 3);
   pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, 8, 0, 1, 3);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 9, 0, 1, 3);
+  pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, 9, 0, 1, 3);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 10, 0, 1, 3);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;

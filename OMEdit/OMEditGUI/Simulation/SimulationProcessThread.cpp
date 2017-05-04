@@ -186,11 +186,11 @@ void SimulationProcessThread::readCompilationStandardError()
 void SimulationProcessThread::compilationProcessError(QProcess::ProcessError error)
 {
   Q_UNUSED(error);
+  mIsCompilationProcessRunning = false;
   /* this signal is raised when we kill the compilation process forcefully. */
   if (isCompilationProcessKilled()) {
     return;
   }
-  mIsCompilationProcessRunning = false;
   emit sendCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
 }
 
@@ -263,11 +263,11 @@ void SimulationProcessThread::readSimulationStandardError()
 void SimulationProcessThread::simulationProcessError(QProcess::ProcessError error)
 {
   Q_UNUSED(error);
+  mIsSimulationProcessRunning = false;
   /* this signal is raised when we kill the simulation process forcefully. */
   if (isSimulationProcessKilled()) {
     return;
   }
-  mIsSimulationProcessRunning = false;
   emit sendSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error, true);
 }
 

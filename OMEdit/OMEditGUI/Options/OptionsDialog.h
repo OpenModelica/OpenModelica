@@ -569,6 +569,7 @@ public:
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   QCheckBox* getSwitchToPlottingPerspectiveCheckBox() {return mpSwitchToPlottingPerspectiveCheckBox;}
+  QCheckBox* getCloseSimulationOutputWidgetsBeforeSimulationCheckBox() {return mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
 private:
@@ -589,6 +590,7 @@ private:
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QCheckBox *mpSwitchToPlottingPerspectiveCheckBox;
+  QCheckBox *mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;

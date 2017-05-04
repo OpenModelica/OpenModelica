@@ -1024,6 +1024,17 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
     showAlgorithmicDebugger(simulationOptions);
   } else {
+    /* ticket:4406 Option to automatically close Simulation Completed Window
+     * Close all completed SimulationOutputWidget windows
+     */
+    if (OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
+      foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
+        if (!(pSimulationOutputWidget->getSimulationProcessThread()->isCompilationProcessRunning() ||
+              pSimulationOutputWidget->getSimulationProcessThread()->isSimulationProcessRunning())) {
+          pSimulationOutputWidget->close();
+        }
+      }
+    }
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
