@@ -324,7 +324,7 @@ protected function inlineWhenForInitialization "author: lochel
   output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   list<BackendDAE.Equation> eqnlst;
-  HashSet.HashSet leftCrs = HashSet.emptyHashSetSized(50) "dummy hash set - should always be empty";
+  HashSet.HashSet leftCrs = HashSet.emptyHashSet() "dummy hash set - should always be empty";
 algorithm
   outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
   (eqnlst, _) := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
@@ -336,7 +336,7 @@ protected function inlineWhenForInitializationSystem "author: lochel"
   output BackendDAE.EqSystem outEqSystem;
 protected
   list<BackendDAE.Equation> eqnlst;
-  HashSet.HashSet leftCrs = HashSet.emptyHashSetSized(50) "hack for #3209";
+  HashSet.HashSet leftCrs = HashSet.emptyHashSet() "hack for #3209";
   list<DAE.ComponentRef> crefLst;
 algorithm
   (eqnlst, leftCrs) := BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
@@ -455,7 +455,7 @@ protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
   output list< DAE.Statement> outStmts;
   output HashSet.HashSet outLeftCrs;
 algorithm
-  (outStmts, outLeftCrs) := matchcontinue(inStmts)
+  (outStmts, outLeftCrs) := match(inStmts)
     local
       DAE.Statement stmt;
       list<DAE.Statement> stmts, rest;
@@ -476,7 +476,7 @@ algorithm
     case stmt::rest equation
       (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(rest, stmt::inAcc, inLeftCrs);
     then (stmts, leftCrs);
-  end matchcontinue;
+  end match;
 end inlineWhenForInitializationWhenAlgorithm;
 
 protected function inlineWhenForInitializationWhenStmt "author: lochel
@@ -487,7 +487,7 @@ protected function inlineWhenForInitializationWhenStmt "author: lochel
   output list< DAE.Statement> outStmts;
   output HashSet.HashSet outLeftCrs;
 algorithm
-  (outStmts, outLeftCrs) := matchcontinue(inWhenStatement)
+  (outStmts, outLeftCrs) := match(inWhenStatement)
     local
       DAE.Exp condition;
       list<DAE.ComponentRef> crefLst;
@@ -496,21 +496,20 @@ algorithm
       HashSet.HashSet leftCrs;
 
     // active when equation during initialization
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts) equation
-      true = Expression.containsInitialCall(condition, false);
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts) guard
+      Expression.containsInitialCall(condition, false)
+    equation
       stmts = List.foldr(stmts, List.consr, inAcc);
     then (stmts, inLeftCrs);
 
     // inactive when equation during initialization
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()) equation
-      false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, BaseHashSet.add, inLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)) equation
-      false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, BaseHashSet.add, inLeftCrs);
       (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
@@ -519,7 +518,7 @@ algorithm
     else equation
       Error.addInternalError("function inlineWhenForInitializationWhenStmt failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end inlineWhenForInitializationWhenStmt;
 
 protected function generateInactiveWhenEquationForInitialization "author: lochel"
