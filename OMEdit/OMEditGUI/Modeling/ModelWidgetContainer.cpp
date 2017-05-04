@@ -1978,6 +1978,29 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
       return;
     }
   }
+  // handle double click on the Component.
+  QGraphicsItem *pGraphicsItem = itemAt(event->pos());
+  if (pGraphicsItem && pGraphicsItem->parentItem()) {
+    Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
+    if (pComponent) {
+      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        pComponent->showSubModelAttributes();
+        return;
+      } else {
+        if (!pComponent->getParentComponent()) { // if root component is double clicked.
+          removeCurrentConnection();
+          /* ticket:4401 Open component class with shift + double click */
+          if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
+            pComponent->openClass();
+            return;
+          } else {
+            pComponent->showParameters();
+            return;
+          }
+        }
+      }
+    }
+  }
   QGraphicsView::mouseDoubleClickEvent(event);
 }
 

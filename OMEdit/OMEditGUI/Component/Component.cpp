@@ -2444,26 +2444,6 @@ void Component::showSubModelAttributes()
 }
 
 /*!
- * \brief Component::mouseDoubleClickEvent
- * Event when mouse is double clicked on a component.
- * Shows the component properties dialog.
- * \param event
- */
-void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
-{
-  Q_UNUSED(event);
-  LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-  if(pLibraryTreeItem->getLibraryType()== LibraryTreeItem::CompositeModel) {
-    emit showSubModelAttributes();
-  } else {
-    if (!mpParentComponent) { // if root component is double clicked then show parameters.
-      mpGraphicsView->removeCurrentConnection();
-      emit showParameters();
-    }
-  }
-}
-
-/*!
  * \brief Component::contextMenuEvent
  * Reimplementation of contextMenuEvent.\n
  * Creates a context menu for the component.\n

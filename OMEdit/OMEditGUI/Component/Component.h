@@ -352,7 +352,6 @@ public slots:
   void viewDocumentation();
   void showSubModelAttributes();
 protected:
-  virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };
