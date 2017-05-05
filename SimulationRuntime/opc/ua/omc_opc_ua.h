@@ -47,7 +47,7 @@
   #endif
 #endif
 
-OPC_UA_EXPORT void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling));
+OPC_UA_EXPORT void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port);
 OPC_UA_EXPORT void omc_embedded_server_deinit(void*);
 OPC_UA_EXPORT void omc_embedded_server_update(void*, double t);
 

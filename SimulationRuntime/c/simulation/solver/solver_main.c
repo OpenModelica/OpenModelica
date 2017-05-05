@@ -694,7 +694,18 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 #if !defined(OMC_MINIMAL_RUNTIME)
   dllHandle = embedded_server_load_functions(omc_flagValue[FLAG_EMBEDDED_SERVER]);
   omc_real_time_sync_init(threadData, data);
-  data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update);
+  int port = 4841;
+  /* If an embedded server is specified */
+  if (dllHandle != NULL) {
+    if (omc_flag[FLAG_EMBEDDED_SERVER_PORT]) {
+      port = atoi(omc_flagValue[FLAG_EMBEDDED_SERVER_PORT]);
+      /* In case of a bad conversion, don't spawn a server on port 0...*/
+      if (port == 0) {
+        port = 4841;
+      }
+    }
+  }
+  data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update, port);
 #endif
   if(0 == retVal) {
     retVal = -1;

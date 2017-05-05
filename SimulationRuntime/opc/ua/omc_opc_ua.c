@@ -448,14 +448,14 @@ static inline omc_opc_ua_state* addAliasVars(omc_opc_ua_state *state, var_kind_t
   }
   return state;
 }
-void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling))
+void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port)
 {
   MODEL_DATA *modelData = data->modelData;
   omc_opc_ua_state *state = (omc_opc_ua_state*) malloc(sizeof(omc_opc_ua_state));
   UA_ServerConfig config = UA_ServerConfig_standard;
   var_kind_t vk;
   state->logger = Logger_Stdout;
-  state->nl = UA_ServerNetworkLayerTCP(UA_ConnectionConfig_standard, 4841);
+  state->nl = UA_ServerNetworkLayerTCP(UA_ConnectionConfig_standard, port);
   config.logger = Logger_Stdout;
   config.networkLayers = &state->nl;
   config.networkLayersSize = 1;
