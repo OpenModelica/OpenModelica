@@ -183,6 +183,7 @@
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/TestSwitch1.mat
 ./simulation/libraries/3rdParty/MathematicalAspects/ReferenceFiles/TestSwitch2.mat
 ./simulation/libraries/3rdParty/Modelica_Synchronous/simulateAll.sh
+./simulation/libraries/3rdParty/Modelica_DeviceDrivers/simulateAll.sh
 ./simulation/libraries/3rdParty/PNlib/ReferenceFiles/PNlib.Examples.Test10.mat
 ./simulation/libraries/3rdParty/PNlib/ReferenceFiles/PNlib.Examples.Test11.mat
 ./simulation/libraries/3rdParty/PNlib/ReferenceFiles/PNlib.Examples.Test12.mat
