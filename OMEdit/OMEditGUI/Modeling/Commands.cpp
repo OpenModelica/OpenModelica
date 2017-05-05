@@ -294,9 +294,9 @@ void UpdateComponentTransformationsCommand::UpdateComponentTransformationsComman
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
-      mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon &&
+      mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
+    mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
     if (mpIconOrDiagramComponent && (mOldTransformation == mpIconOrDiagramComponent->mTransformation)) {
       mpIconOrDiagramComponent->resetTransform();
       bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -327,9 +327,9 @@ void UpdateComponentTransformationsCommand::UpdateComponentTransformationsComman
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
-      mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon &&
+      mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    mpIconOrDiagramComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
+    mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
     if (mpIconOrDiagramComponent && (mpComponent->mTransformation == mpIconOrDiagramComponent->mTransformation)) {
       mpIconOrDiagramComponent->resetTransform();
       bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
