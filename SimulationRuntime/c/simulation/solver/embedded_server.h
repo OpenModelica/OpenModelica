@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-extern void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port);
+extern void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port, int *didEventStep);
 extern void (*embedded_server_deinit)(void *handle);
 /* Tells the embedded server that a simulation step has passed; the server
  * can read/write values from/to the simulator
