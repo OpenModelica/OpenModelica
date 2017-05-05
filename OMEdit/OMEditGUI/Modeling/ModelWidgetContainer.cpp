@@ -1984,18 +1984,19 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   if (pGraphicsItem && pGraphicsItem->parentItem()) {
     Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
     if (pComponent) {
-      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-        pComponent->showSubModelAttributes();
-        return;
-      } else {
-        if (!pComponent->getParentComponent()) { // if root component is double clicked.
+      Component *pRootComponent = pComponent->getRootParentComponent();
+      if (pRootComponent) {
+        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+          pRootComponent->showSubModelAttributes();
+          return;
+        } else {
           removeCurrentConnection();
           /* ticket:4401 Open component class with shift + double click */
           if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
-            pComponent->openClass();
+            pRootComponent->openClass();
             return;
           } else {
-            pComponent->showParameters();
+            pRootComponent->showParameters();
             return;
           }
         }
@@ -2098,6 +2099,18 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->beginMacro("Flip vertical by key press");
     emit keyPressFlipVertical();
     mpModelWidget->endMacro();
+  } else if (shiftModifier && !controlModifier && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)) {
+    /* ticket:4401 Open component class with shift + Enter */
+    QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
+    if (selectedItems.size() == 1) {
+      Component *pComponent = dynamic_cast<Component*>(selectedItems.at(0));
+      if (pComponent) {
+        Component *pRootComponent = pComponent->getRootParentComponent();
+        if (pRootComponent) {
+          pRootComponent->openClass();
+        }
+      }
+    }
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
     removeCurrentConnection();
   } else {
