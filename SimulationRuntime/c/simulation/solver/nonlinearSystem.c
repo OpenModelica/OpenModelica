@@ -822,7 +822,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     sprintf(buffer, "%s_homotopy_nls_%d.csv", data->modelData->modelFilePrefix, sysNumber);
     infoStreamPrint(LOG_INIT, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
     pFile = fopen(buffer, "wt");
-    fprintf(pFile, "%s,", "lambda");
+    fprintf(pFile, "\"sep=,\"\n%s,", "lambda");
     for(j=0; j<nonlinsys->size; ++j)
       fprintf(pFile, "%s,", modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
     fprintf(pFile, "\n");
