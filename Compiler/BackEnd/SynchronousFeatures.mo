@@ -674,15 +674,15 @@ algorithm
   end if;
 
   if (not listEmpty(outSysts)) then
-	  //order the partitions according to their causality order and corresponding subclock order
-	  outSysts_noOrder := arrayCreate(listLength(outSysts), listHead(outSysts));
-	  for i in List.intRange(arrayLength(order)) loop
-	    outSys := listGet(outSysts,i);
-	    outSys.partitionKind := BackendDAE.CLOCKED_PARTITION(order[i] + off);
-	    arrayUpdate(outSysts_noOrder, order[i], outSys);
-	  end for;
-	  outSysts := arrayList(outSysts_noOrder);
-	end if;
+    //order the partitions according to their causality order and corresponding subclock order
+    outSysts_noOrder := arrayCreate(listLength(outSysts), listHead(outSysts));
+    for i in List.intRange(arrayLength(order)) loop
+      outSys := listGet(outSysts,i);
+      outSys.partitionKind := BackendDAE.CLOCKED_PARTITION(order[i] + off);
+      arrayUpdate(outSysts_noOrder, order[i], outSys);
+    end for;
+    outSysts := arrayList(outSysts_noOrder);
+  end if;
 
   outSubClocks := {};
   subclocksOutArr := arrayCopy(subclocks);
@@ -783,10 +783,10 @@ algorithm
                 // as the clock propagates backwards
                 subClock.factor := MMath.divRational(MMath.RAT1, subClock.factor);
                 //subClock.shift := MMath.subRational(MMath.RAT0, subClock.shift); //vwaurich: Disabled because of negative shifts
-                updateIdx := parentIdx;
-                (_, parentIdx) := arrayGet(outSubClocks, updateIdx);
+                //updateIdx := parentIdx;
+                (_, parentIdx) := arrayGet(outSubClocks, parentIdx);
               then
-                updateIdx;
+                varIdx;
             else
               // regular subClock update
               varIdx;
