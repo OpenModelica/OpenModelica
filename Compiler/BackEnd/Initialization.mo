@@ -852,7 +852,9 @@ algorithm
         outGlobalKnownVars := BackendVariable.addVar(p, outGlobalKnownVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
-        if (not Expression.isConst(bindExp)) or BackendVariable.isFinalOrProtectedVar(p) or BackendVariable.isExtObj(p) then
+        if BackendVariable.isExtObj(p) then
+          p := BackendVariable.setVarFixed(p, true);
+          outGlobalKnownVars := BackendVariable.addVar(p, outGlobalKnownVars);
         end if;
         hs := BaseHashSet.add(BackendVariable.varCref(p), hs);
       end if;

@@ -7267,7 +7267,7 @@ end getSolvedSystemforJacobians;
 
 protected function sortGlobalKnownVarsInDAE "
 author: ptaeuber
-This function adds the external objects to globalKnownVars and sorts the globalKnownVars"
+This function sorts the globalKnownVars"
   input output BackendDAE.BackendDAE backendDAE;
 protected
   BackendDAE.Variables globalKnownVars, globalKnownVars_sorted;
@@ -7280,7 +7280,6 @@ protected
   list<Integer> flatComps;
 algorithm
   globalKnownVars := backendDAE.shared.globalKnownVars;
-  globalKnownVars := BackendVariable.addVariables(backendDAE.shared.externalObjects, globalKnownVars);
   parameterEqns := BackendEquation.emptyEqnsSized(BackendVariable.varsSize(globalKnownVars));
   parameterEqns := BackendVariable.traverseBackendDAEVars(globalKnownVars, createParameterEquations, parameterEqns);
 
