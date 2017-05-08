@@ -664,8 +664,19 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
-    /* filter internal variables */
-    if(modelData->realAlias[i].info.name[0] == '$') {
+    if(modelData->realAlias[i].info.name[0] == '$')
+    {
+      /* filter internal variables */
+      modelData->realAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "hideResult"), "true"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->realAlias[i].info.name);
+      modelData->realAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_IGNORE_HIDERESULT] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "hideResult"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "isProtected"), "false"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", modelData->realAlias[i].info.name);
       modelData->realAlias[i].filterOutput = 1;
     }
 
@@ -711,7 +722,18 @@ void read_input_xml(MODEL_DATA* modelData,
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
     /* filter internal variables */
-    if(modelData->integerAlias[i].info.name[0] == '$') {
+    if(modelData->integerAlias[i].info.name[0] == '$')
+    {
+      modelData->integerAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "hideResult"), "true"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->integerAlias[i].info.name);
+      modelData->integerAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_IGNORE_HIDERESULT] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "hideResult"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "isProtected"), "false"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", modelData->integerAlias[i].info.name);
       modelData->integerAlias[i].filterOutput = 1;
     }
     read_value_string(findHashStringString(*findHashLongVar(mi.iAli,i),"aliasVariable"), &aliasTmp);
@@ -753,8 +775,19 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
-    /* filter internal variables */
-    if(modelData->booleanAlias[i].info.name[0] == '$') {
+    if(modelData->booleanAlias[i].info.name[0] == '$')
+    {
+      /* filter internal variables */
+      modelData->booleanAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "hideResult"), "true"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->booleanAlias[i].info.name);
+      modelData->booleanAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_IGNORE_HIDERESULT] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "hideResult"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "isProtected"), "false"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", modelData->booleanAlias[i].info.name);
       modelData->booleanAlias[i].filterOutput = 1;
     }
     read_value_string(findHashStringString(*findHashLongVar(mi.bAli,i),"aliasVariable"), &aliasTmp);
@@ -795,8 +828,19 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
-    /* filter internal variables */
-    if(modelData->stringAlias[i].info.name[0] == '$') {
+    if(modelData->stringAlias[i].info.name[0] == '$')
+    {
+      /* filter internal variables */
+      modelData->stringAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "hideResult"), "true"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->stringAlias[i].info.name);
+      modelData->stringAlias[i].filterOutput = 1;
+    }
+    else if (!omc_flag[FLAG_IGNORE_HIDERESULT] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "hideResult"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "isProtected"), "false"))
+    {
+      infoStreamPrint(LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", modelData->stringAlias[i].info.name);
       modelData->stringAlias[i].filterOutput = 1;
     }
 
