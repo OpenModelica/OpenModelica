@@ -1,17 +1,12 @@
 // name: diesel_model_warm_start
 // status: correct
 
-setCommandLineOptions("+g=Optimica");
-getErrorString();
+setCommandLineOptions("+g=Optimica"); getErrorString();
+loadFile("DM.mo"); getErrorString();
 
-loadFile("DM.mo");
-getErrorString();
+optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected"); getErrorString();
 
-optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12");
-getErrorString();
-
-res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_res.csv",0.05,0.0005);
-getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_res.csv",0.05,0.0005); getErrorString();
 
 // Result:
 // true
@@ -20,7 +15,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "diesel_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected'",
 //     messages = "
 // Optimizer Variables
 // ========================================================
@@ -53,7 +48,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 2.52825e-08 for the approximation of the state p_em(time = 0.485556)
 // LOG_IPOPT_ERROR   | info    | max error is 3.66997e-09 for the approximation of the state p_em(time = 0.485556)
 // LOG_IPOPT_ERROR   | info    | max error is 1.48205e-10 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 2.86256e-13 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.86215e-13 for the approximation of the state p_em(time = 0.485556)
 // "
 // end SimulationResult;
 // ""
