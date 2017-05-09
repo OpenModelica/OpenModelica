@@ -129,13 +129,18 @@ QWidget* Legend::createWidget(const QwtLegendData &data) const
 }
 
 /*!
- * \brief Legend::mouseDoubleClickEvent
- * Reimplementation of QWidget::mouseDoubleClickEvent()
- * Show/hide the PlotCurve item double clicked in the legend.
+ * \brief Legend::mousePressEvent
+ * Reimplementation of QWidget::mousePressEvent()
+ * Show/hide the PlotCurve item clicked in the legend.
  * \param event
  */
-void Legend::mouseDoubleClickEvent(QMouseEvent *event)
+void Legend::mousePressEvent(QMouseEvent *event)
 {
+  if (event->button() == Qt::RightButton) {
+    QwtLegend::mousePressEvent(event);
+    return;
+  }
+  QwtLegend::mousePressEvent(event);
 #if QWT_VERSION >= 0x060100
   QwtPlotItem *pQwtPlotItem = qvariant_cast<QwtPlotItem*>(itemInfo(childAt(event->pos())));
   mpPlotCurve = dynamic_cast<PlotCurve*>(pQwtPlotItem);
@@ -143,15 +148,34 @@ void Legend::mouseDoubleClickEvent(QMouseEvent *event)
   mpPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(event->pos())));
 #endif
   if (mpPlotCurve) {
-    /* set the curve visibility */
-    mpPlotCurve->setVisible(!mpPlotCurve->isVisible());
-    QwtText text = mpPlotCurve->title();
-    if (mpPlotCurve->isVisible()) {
-      text.setColor(QColor(Qt::black));
-    } else {
-      text.setColor(QColor(Qt::gray));
-    }
-    mpPlotCurve->setTitle(text);
+    mpPlotCurve->toggleVisibility();
   }
+
+}
+
+/*!
+ * \brief Legend::mouseDoubleClickEvent
+ * Reimplementation of QWidget::mouseDoubleClickEvent()
+ * Show the PlotCurve item double clicked in the legend and hide all other.
+ * \param event
+ */
+void Legend::mouseDoubleClickEvent(QMouseEvent *event)
+{
   QwtLegend::mouseDoubleClickEvent(event);
+#if QWT_VERSION >= 0x060100
+  QwtPlotItem *pQwtPlotItem = qvariant_cast<QwtPlotItem*>(itemInfo(childAt(event->pos())));
+  mpPlotCurve = dynamic_cast<PlotCurve*>(pQwtPlotItem);
+#else
+  mpPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(event->pos())));
+#endif
+  if (mpPlotCurve) {
+    foreach (PlotCurve *pPlotCurve, mpPlot->getPlotCurvesList()) {
+      if (pPlotCurve == mpPlotCurve) {
+        pPlotCurve->setVisible(false);
+      } else {
+        pPlotCurve->setVisible(true);
+      }
+      pPlotCurve->toggleVisibility();
+    }
+  }
 }

@@ -109,37 +109,39 @@ bool PlotPicker::curveAtPosition(const QPoint pos, PlotCurve *&pPlotCurve, int &
   const QwtPlotItemList plotCurves = plot()->itemList(QwtPlotItem::Rtti_PlotCurve);
   for (int i = 0 ; i < plotCurves.size() ; i++) {
     pPlotCurve = static_cast<PlotCurve*>(plotCurves[i]);
-    // find the closest point
-    index = pPlotCurve->closestPoint(pos);
-    if (index > -1) {
-      int index1, previousIndex, nextIndex;
-      if (index == 0) {
-        index1 = 1;
-      } else if (index == pPlotCurve->mXAxisVector.size()) {
-        index1 = index - 1;
-      } else {
-        previousIndex = index - 1;
-        nextIndex = index + 1;
-        QPointF previousCurvePoint(pPlotCurve->mXAxisVector.at(previousIndex), pPlotCurve->mYAxisVector.at(previousIndex));
-        QPointF nextCurvePoint(pPlotCurve->mXAxisVector.at(nextIndex), pPlotCurve->mYAxisVector.at(nextIndex));
-        // find which point is closest to mouse point.
-        qreal pseudoDistance1 = qPow(posF.x() - previousCurvePoint.x(), 2) + qPow(posF.y() - previousCurvePoint.y(), 2);
-        qreal pseudoDistance2 = qPow(posF.x() - nextCurvePoint.x(), 2) + qPow(posF.y() - nextCurvePoint.y(), 2);
-        if (pseudoDistance1 < pseudoDistance2) {
-          index1 = previousIndex;
+    if (pPlotCurve->isVisible()) {
+      // find the closest point
+      index = pPlotCurve->closestPoint(pos);
+      if (index > -1) {
+        int index1, previousIndex, nextIndex;
+        if (index == 0) {
+          index1 = 1;
+        } else if (index == pPlotCurve->mXAxisVector.size()) {
+          index1 = index - 1;
         } else {
-          index1 = nextIndex;
+          previousIndex = index - 1;
+          nextIndex = index + 1;
+          QPointF previousCurvePoint(pPlotCurve->mXAxisVector.at(previousIndex), pPlotCurve->mYAxisVector.at(previousIndex));
+          QPointF nextCurvePoint(pPlotCurve->mXAxisVector.at(nextIndex), pPlotCurve->mYAxisVector.at(nextIndex));
+          // find which point is closest to mouse point.
+          qreal pseudoDistance1 = qPow(posF.x() - previousCurvePoint.x(), 2) + qPow(posF.y() - previousCurvePoint.y(), 2);
+          qreal pseudoDistance2 = qPow(posF.x() - nextCurvePoint.x(), 2) + qPow(posF.y() - nextCurvePoint.y(), 2);
+          if (pseudoDistance1 < pseudoDistance2) {
+            index1 = previousIndex;
+          } else {
+            index1 = nextIndex;
+          }
         }
-      }
-      QList<double> xMajorTicks = mpPlot->getPlotGrid()->xScaleDiv().ticks(QwtScaleDiv::MajorTick);
-      QList<double> yMajorTicks = mpPlot->getPlotGrid()->yScaleDiv().ticks(QwtScaleDiv::MajorTick);
-      if (xMajorTicks.size() > 1 && yMajorTicks.size() > 1) {
-        double x = (xMajorTicks[1] - xMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::xBottom);
-        double y = (yMajorTicks[1] - yMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::yLeft);
-        QPointF curvePointA(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
-        QPointF curvePointB(pPlotCurve->mXAxisVector.at(index1), pPlotCurve->mYAxisVector.at(index1));
-        if (containsPoint(posF, curvePointA, curvePointB, x, y)) {
-          return true;
+        QList<double> xMajorTicks = mpPlot->getPlotGrid()->xScaleDiv().ticks(QwtScaleDiv::MajorTick);
+        QList<double> yMajorTicks = mpPlot->getPlotGrid()->yScaleDiv().ticks(QwtScaleDiv::MajorTick);
+        if (xMajorTicks.size() > 1 && yMajorTicks.size() > 1) {
+          double x = (xMajorTicks[1] - xMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::xBottom);
+          double y = (yMajorTicks[1] - yMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::yLeft);
+          QPointF curvePointA(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
+          QPointF curvePointB(pPlotCurve->mXAxisVector.at(index1), pPlotCurve->mYAxisVector.at(index1));
+          if (containsPoint(posF, curvePointA, curvePointB, x, y)) {
+            return true;
+          }
         }
       }
     }

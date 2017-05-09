@@ -214,6 +214,22 @@ bool PlotCurve::hasCustomColor()
   return mCustomColor;
 }
 
+/*!
+ * \brief PlotCurve::toggleVisibility
+ * Toggles the curve visibility.
+ */
+void PlotCurve::toggleVisibility()
+{
+  setVisible(!isVisible());
+  QwtText text = title();
+  if (isVisible()) {
+    text.setColor(QColor(Qt::black));
+  } else {
+    text.setColor(QColor(Qt::gray));
+  }
+  setTitle(text);
+}
+
 void PlotCurve::setData(const double* xData, const double* yData, int size)
 {
 #if QWT_VERSION >= 0x060000

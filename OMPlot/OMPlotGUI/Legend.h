@@ -56,6 +56,7 @@ private:
   QAction *mpSetupAction;
 protected:
   virtual QWidget *createWidget(const QwtLegendData &data) const;
+  virtual void mousePressEvent(QMouseEvent *event);
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
 };
 }
