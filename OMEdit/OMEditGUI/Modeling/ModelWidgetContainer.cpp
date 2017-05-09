@@ -278,6 +278,12 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       return true;
     }
   } else {
+    // Only allow drag & drop of Modelica LibraryTreeItem on a Modelica LibraryTreeItem
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != pLibraryTreeItem->getLibraryType()) {
+      QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                               tr("You can only dag & drop Modelica models."), Helper::ok);
+      return false;
+    }
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
     OptionsDialog *pOptionsDialog = OptionsDialog::instance();
     // item not to be dropped on itself; if dropping an item on itself
