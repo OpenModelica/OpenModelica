@@ -281,7 +281,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     // Only allow drag & drop of Modelica LibraryTreeItem on a Modelica LibraryTreeItem
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != pLibraryTreeItem->getLibraryType()) {
       QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               tr("You can only dag & drop Modelica models."), Helper::ok);
+                               tr("You can only drag & drop Modelica models."), Helper::ok);
       return false;
     }
     StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
