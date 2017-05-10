@@ -36,7 +36,8 @@ evalConstFuncs.log \
 flatteningBuildings.log \
 buildings.log \
 requirements.log \
-scalable.log
+scalable.log \
+device.log
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -563,6 +564,9 @@ scalable.log: omc-diff
 	@echo $@ done
 requirements.log: omc-diff
 	$(MAKE) -C openmodelica/requirements -f Makefile test > $@
+	@echo $@ done
+device.log: omc-diff
+	$(MAKE) -C simulation/libraries/3rdParty/Modelica_DeviceDrivers -f Makefile test > $@
 	@echo $@ done
 
 failingtest: omc-diff
