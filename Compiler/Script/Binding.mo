@@ -787,7 +787,7 @@ algorithm
     case {} then {prefix};
     case s::rest
       equation
-      then (prefix + "." + s )::buildAllComponentModifiers2(rest, name_list2);
+      then (s+ "." + prefix )::buildAllComponentModifiers2(rest, name_list2);
            end match;
 end buildAllComponentModifiers3;
 
