@@ -342,37 +342,24 @@ protected function encapsulateWhenConditions_EquationsWithArrayConditions "autho
   input DAE.ElementSource inSource;
   input Integer inIndex;
   input HashTableExpToIndex.HashTable inHT;
-  output list<DAE.Exp> outConditionList;
-  output list<BackendDAE.Var> outVars;
-  output list<BackendDAE.Equation> outEqns;
-  output Integer outIndex;
-  output HashTableExpToIndex.HashTable outHT;
+  output list<DAE.Exp> outConditionList = {};
+  output list<BackendDAE.Var> outVars = {};
+  output list<BackendDAE.Equation> outEqns = {};
+  output Integer outIndex = inIndex;
+  output HashTableExpToIndex.HashTable outHT = inHT;
+protected
+  list<BackendDAE.Var> vars1;
+  list<BackendDAE.Equation> eqns1;
 algorithm
-  (outConditionList, outVars, outEqns, outIndex, outHT) := match inConditionList
-    local
-      Integer index;
-      list<BackendDAE.Var> vars1, vars2;
-      list<BackendDAE.Equation> eqns1, eqns2;
-
-      DAE.Exp condition;
-      list<DAE.Exp> conditionList;
-
-      HashTableExpToIndex.HashTable ht;
-
-    case {} equation
-    then ({}, {}, {}, inIndex, inHT);
-
-    case condition::conditionList equation
-      (condition, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
-      (conditionList, vars2, eqns2, index, ht) = encapsulateWhenConditions_EquationsWithArrayConditions(conditionList, inSource, index, ht);
-      vars1 = listAppend(vars1, vars2);
-      eqns1 = listAppend(eqns1, eqns2);
-    then (condition::conditionList, vars1, eqns1, index, ht);
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_EquationsWithArrayConditions failed"});
-    then fail();
-  end match;
+  for condition in inConditionList loop
+    (condition, vars1, eqns1, outIndex, outHT) := encapsulateWhenConditions_Equations1(condition, inSource, outIndex, outHT);
+    outVars := List.append_reverse(vars1,outVars);
+    outEqns := List.append_reverse(eqns1,outEqns);
+    outConditionList := condition::outConditionList;
+  end for;
+  outVars := listReverse(outVars);
+  outEqns := listReverse(outEqns);
+  outConditionList := listReverse(outConditionList);
 end encapsulateWhenConditions_EquationsWithArrayConditions;
 
 protected function encapsulateWhenConditions_Algorithms "author: lochel"
@@ -529,34 +516,23 @@ protected function encapsulateWhenConditions_AlgorithmsWithArrayConditions "auth
   input list<DAE.Exp> inConditionList;
   input DAE.ElementSource inSource;
   input Integer inIndex;
-  output list<DAE.Exp> outConditionList;
-  output list<BackendDAE.Var> outVars;
-  output list<DAE.Statement> outStmts;
-  output Integer outIndex;
+  output list<DAE.Exp> outConditionList = {};
+  output list<BackendDAE.Var> outVars = {};
+  output list<DAE.Statement> outStmts = {};
+  output Integer outIndex = inIndex;
+protected
+  list<BackendDAE.Var> vars1;
+  list<DAE.Statement> stmt1;
 algorithm
-  (outConditionList, outVars, outStmts, outIndex) := match inConditionList
-    local
-      Integer index;
-      list<BackendDAE.Var> vars1, vars2;
-      list<DAE.Statement> stmt1, stmt2;
-
-      DAE.Exp condition;
-      list<DAE.Exp> conditionList;
-
-    case {} equation
-    then ({}, {}, {}, inIndex);
-
-    case condition::conditionList equation
-      (condition, vars1, stmt1, index) = encapsulateWhenConditions_Algorithms1(condition, inSource, inIndex);
-      (conditionList, vars2, stmt2, index) = encapsulateWhenConditions_AlgorithmsWithArrayConditions(conditionList, inSource, index);
-      vars1 = listAppend(vars1, vars2);
-      stmt1 = listAppend(stmt1, stmt2);
-    then (condition::conditionList, vars1, stmt1, index);
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_AlgorithmsWithArrayConditions failed"});
-    then fail();
-  end match;
+  for condition in inConditionList loop
+    (condition, vars1, stmt1, outIndex) := encapsulateWhenConditions_Algorithms1(condition, inSource, outIndex);
+    outVars := List.append_reverse(vars1,outVars);
+    outStmts := List.append_reverse(stmt1,outStmts);
+    outConditionList := condition::outConditionList;
+  end for;
+  outVars := listReverse(outVars);
+  outStmts := listReverse(outStmts);
+  outConditionList := listReverse(outConditionList);
 end encapsulateWhenConditions_AlgorithmsWithArrayConditions;
 
 
