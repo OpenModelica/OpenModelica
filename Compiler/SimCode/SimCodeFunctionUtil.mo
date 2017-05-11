@@ -2109,6 +2109,12 @@ algorithm
         Error.addCompilerNotification("rt library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
+   //do not link Ws2_32.dll for Modelica Device Drivers as it is not needed under windows
+    case Absyn.STRING("Ws2_32") guard System.os()=="Windows_NT"
+      equation
+        Error.addCompilerNotification("Ws2_32 library is not needed under Windows. It is not linked from the external library resource directory.\n");
+      then  ({},{});
+
     //user32 is already linked under windows
     case Absyn.STRING("User32") guard System.os()=="Windows_NT"
       equation
