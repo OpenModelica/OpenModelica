@@ -2,6 +2,9 @@
 TEST = ../../rtest
 
 TESTFILES = \
+run.mos \
+runScenarios.mos \
+
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
