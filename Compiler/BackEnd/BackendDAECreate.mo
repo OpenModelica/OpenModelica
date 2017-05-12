@@ -103,7 +103,7 @@ public function lower "This function translates a DAE, which is the result from 
 protected
   list<BackendDAE.Var> varlst, globalKnownVarLst, extvarlst;
   BackendDAE.Variables vars, globalKnownVars, localKnownVars, vars_1, extVars, aliasVars, extAliasVars;
-  list<BackendDAE.Equation> eqns, reqns, ieqns, algeqns, algeqns1, ialgeqns, multidimeqns, imultidimeqns, eqns_1, ceeqns, iceeqns;
+  list<BackendDAE.Equation> eqns, reqns, ieqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
   BackendDAE.EquationArray eqnarr, reqnarr, ieqnarr;
@@ -111,10 +111,9 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.EventInfo einfo;
   list<DAE.Element> elems, aliaseqns;
-  list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
   list<BackendDAE.TimeEvent> timeEvents;
-  String neqStr,nvarStr;
+  String neqStr, nvarStr;
   Integer varSize, eqnSize, numCheckpoints;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
@@ -336,9 +335,8 @@ protected
   list<DAE.Element> dae_elts;
   DAE.ClassAttributes class_attrs;
   DAE.Constraint constraints;
-  DAE.Element el, el1;
+  DAE.Element el;
   BackendDAE.EquationAttributes eq_attrs;
-  DAE.ComponentRef cr;
   Integer whenClkCnt = 1;
   DAE.Exp e;
   list<BackendDAE.Equation> eqns, reqns;
