@@ -4221,7 +4221,7 @@ end indexStateSets;
 //
 // =============================================================================
 
-protected function createSymbolicSimulationJacobian "fuction createSymbolicSimulationJacobian
+protected function createSymbolicSimulationJacobian "function createSymbolicSimulationJacobian
   author: wbraun
   function creates a symbolic jacobian column for
   non-linear systems and tearing systems."
@@ -4435,7 +4435,7 @@ algorithm
 end checkForEmptyBDAE;
 
 protected function createSymbolicJacobianssSimCode
-"fuction creates the linear model matrices column-wise
+"function creates the linear model matrices column-wise
  author: wbraun"
   input BackendDAE.SymbolicJacobians inSymJacobians;
   input SimCode.HashTableCrefToSimVar inSimVarHT;
@@ -5019,7 +5019,7 @@ algorithm
 end dumpSparsePattern;
 
 protected function createSimCodeSparsePattenDAEmode
-"fuction translates the sparse pattern of the daeMode
+"function translates the sparse pattern of the daeMode
  author: wbraun"
   input BackendDAE.SymbolicJacobians inSymJacobian;
   input SimCode.HashTableCrefToSimVar inSimVarHT;

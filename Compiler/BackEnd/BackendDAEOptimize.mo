@@ -2049,7 +2049,7 @@ algorithm
       func = DAEUtil.getNamedFunction(path,BackendDAEUtil.getFunctions(shared));
       elemLst = DAEUtil.getFunctionElements(func);
       //print(ExpressionDump.dumpExpStr(e,0)+"\n");
-      //print("THE FUCNTION CALL\n "+DAEDump.dumpElementsStr(elemLst)+"\n");
+      //print("THE FUNCTION CALL\n "+DAEDump.dumpElementsStr(elemLst)+"\n");
       (i1,i2,i3,i4,i5,i6,i7,i8) = countOperationsInFunction(elemLst,shared,inTuple);
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
     else

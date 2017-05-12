@@ -545,7 +545,6 @@ algorithm
   exp := match(dim)
     local
       Integer i;
-      DAE.Exp e;
 
     case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);
     case DAE.DIM_ENUM(size = i) then DAE.ICONST(i);
@@ -782,7 +781,7 @@ algorithm
 end stripNoEventExp;
 
 public function addNoEventToRelations
-"Function that adds a  noEvent() call to all relations in an expression"
+"Function that adds a noEvent() call to all relations in an expression"
   input DAE.Exp e;
   output DAE.Exp outE;
 algorithm
@@ -11114,7 +11113,7 @@ end arrayContent;
 
 public function fromAbsynExp
 "@author: adrpo
- transform Absyn.Exp into DAE.Exp, uknown types are used"
+ transform Absyn.Exp into DAE.Exp, unknown types are used"
   input Absyn.Exp inAExp;
   output DAE.Exp outDExp;
 algorithm

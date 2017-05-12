@@ -1283,7 +1283,7 @@ algorithm
   end matchcontinue;
 end buildVariableFunctionParts;
 
-protected function buildConstFunctionCrefs "builds the new crefs (for example the scalars from a record) for the constant functino outputs"
+protected function buildConstFunctionCrefs "builds the new crefs (for example the scalars from a record) for the constant function outputs"
   input list<DAE.ComponentRef> constScalarCrefs;
   input list<DAE.ComponentRef> constComplCrefs;
   input list<DAE.ComponentRef> allOutputCrefs;
@@ -3274,7 +3274,7 @@ algorithm
   posOut := if b1 and b2 then posLst else posIn;
 end compareConstantExps2;
 
-protected function makeAssignmentMap "mapping functino fo build the statements for a list of lhs and rhs exps.
+protected function makeAssignmentMap "mapping function fo build the statements for a list of lhs and rhs exps.
 author:Waurich TUD 2014-04"
   input Integer idx;
   input list<DAE.Exp> lhs;

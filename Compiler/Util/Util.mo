@@ -384,7 +384,7 @@ end stringContainsChar;
 
 public function stringDelimitListPrintBuf "
 Author: BZ, 2009-11
-Same funcitonality as stringDelimitListPrint, but writes to print buffer instead of string variable.
+Same functionality as stringDelimitListPrint, but writes to print buffer instead of string variable.
 Usefull for heavy string operations(causes malloc error on some models when generating init file).
 "
   input list<String> inStringLst;

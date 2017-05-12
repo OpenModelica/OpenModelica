@@ -4842,7 +4842,7 @@ algorithm
   end matchcontinue;
 end typeConvert;
 
-protected function liftExpType "help funciton to typeConvert. Changes the DAE.Type stored
+protected function liftExpType "help function to typeConvert. Changes the DAE.Type stored
 in expression (which is typically a CAST) by adding a dimension to it, making it into an array
 type."
  input DAE.Exp ie;

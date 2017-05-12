@@ -35,7 +35,7 @@ encapsulated package SimCodeMain
   description: Code generation using Susan templates
 
   The entry points to this module are the translateModel function and the
-  translateFunctions fuction."
+  translateFunctions function."
 
 
 // public imports

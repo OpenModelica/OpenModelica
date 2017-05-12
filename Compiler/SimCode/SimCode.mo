@@ -36,7 +36,7 @@ encapsulated package SimCode
 
 
   The entry points to this module are the translateModel function and the
-  translateFunctions fuction.
+  translateFunctions function.
 
   Except for the entry points, the only other public functions are those that
   can be imported and called from templates.

@@ -714,7 +714,7 @@ encapsulated package NFFunc
 //// adrpo:
 //// - see Static.mo for how to check the input arguments or any other checks we need that should be ported
 //// - try to use Expression.makePureBuiltinCall everywhere instead of creating the typedExp via DAE.CALL
-//// - all the fuctions that are defined *with no input/output type* in ModelicaBuiltin.mo such as:
+//// - all the functions that are defined *with no input/output type* in ModelicaBuiltin.mo such as:
 ////     function NAME "Transpose a matrix"
 ////       external "builtin";
 ////     end NAME;

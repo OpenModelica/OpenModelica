@@ -30,7 +30,7 @@
  */
 
 encapsulated package SimCodeFunction
-"The entry points to this module is the translateFunctions fuction."
+"The entry points to this module is the translateFunctions function."
 
 // public imports
 public

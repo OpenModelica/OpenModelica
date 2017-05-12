@@ -3541,8 +3541,8 @@ template expTypeShort(DAE.Type type)
   case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then if acceptMetaModelicaGrammar() /* TODO: Don't do this to me! */
-                          then "complex /* assumming void* for unknown type! when +g=MetaModelica */ "
-                          else "real /* assumming real for uknown type! */"
+                          then "complex /* assuming void* for unknown type! when +g=MetaModelica */ "
+                          else "real /* assuming real for unknown type! */"
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
   else error(sourceInfo(),'expTypeShort: <%unparseType(type)%>')
 end expTypeShort;
