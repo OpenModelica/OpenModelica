@@ -2837,7 +2837,7 @@ template getIterationVars(list<ComponentRef> crefs, String indexName)
   ;separator="\n")
   <<
 
-  void getIterationVars<%indexName%>(void *inData, double *array)
+  void getIterationVars<%indexName%>(struct DATA *inData, double *array)
   {
     DATA* data = (DATA*) inData;
     <%vars%>
