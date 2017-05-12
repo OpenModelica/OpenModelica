@@ -159,14 +159,14 @@ algorithm
     case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e2, _})))
       then Expression.compare(e1,e2);
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={_, e4, _})))
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("mod"), expLst={e3, e4, _})))
       algorithm
-        comp := Expression.compare(e1,e2);
+        comp := Expression.compare(e1,e3);
       then if comp==0 then Expression.compare(e2, e4) else comp;
 
-    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={_, e4, _})))
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e3, e4, _})))
       algorithm
-        comp := Expression.compare(e1,e2);
+        comp := Expression.compare(e1,e3);
       then if comp==0 then Expression.compare(e2, e4) else comp;
 
     case (BackendDAE.ZERO_CROSSING(relation_=e1), BackendDAE.ZERO_CROSSING(relation_=e2))
