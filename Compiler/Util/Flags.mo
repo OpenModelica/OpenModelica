@@ -1221,7 +1221,8 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
     ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")),
     ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")),
     ("solveSimpleEquations", Util.notrans("Solves simple equations")),
-    ("tearingSystem", Util.notrans("For method selection use flag tearingMethod."))
+    ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")),
+	("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
 
