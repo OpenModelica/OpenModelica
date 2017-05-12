@@ -5740,7 +5740,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       if acceptMetaModelicaGrammar()
         then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(cstr)%>");}<%\n%>'
-    'trunc((<%var1%>) / <%tvar%>)'
+    'trunc((<%var1%>) / (<%tvar%>))'
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

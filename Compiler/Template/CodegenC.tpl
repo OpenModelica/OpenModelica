@@ -4317,7 +4317,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls, Text &aux
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    gout[<%index1%>] = (trunc(<%e1%>/<%e2%>) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
+    gout[<%index1%>] = (trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
     >>
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
