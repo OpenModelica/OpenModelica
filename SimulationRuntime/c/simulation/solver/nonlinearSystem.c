@@ -822,9 +822,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     sprintf(buffer, "%s_homotopy_nls_%d.csv", data->modelData->modelFilePrefix, sysNumber);
     infoStreamPrint(LOG_INIT, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
     pFile = fopen(buffer, "wt");
-    fprintf(pFile, "\"sep=,\"\n%s,", "lambda");
+    fprintf(pFile, "\"sep=,\"\n%s", "lambda");
     for(j=0; j<nonlinsys->size; ++j)
-      fprintf(pFile, "%s,", modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
+      fprintf(pFile, ",%s", modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);
     fprintf(pFile, "\n");
   }
 #endif
@@ -839,9 +839,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     if(ACTIVE_STREAM(LOG_INIT))
     {
       infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
-      fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
+      fprintf(pFile, "%.16g", data->simulationInfo->lambda);
       for(j=0; j<nonlinsys->size; ++j)
-        fprintf(pFile, "%.16g,", nonlinsys->nlsx[j]);
+        fprintf(pFile, ",%.16g", nonlinsys->nlsx[j]);
       fprintf(pFile, "\n");
     }
 #endif
@@ -855,9 +855,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   if(lambda_steps > 1 && ACTIVE_STREAM(LOG_INIT))
   {
     infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
-    fprintf(pFile, "%.16g,", data->simulationInfo->lambda);
+    fprintf(pFile, "%.16g", data->simulationInfo->lambda);
     for(j=0; j<nonlinsys->size; ++j)
-      fprintf(pFile, "%.16g,", nonlinsys->nlsx[j]);
+      fprintf(pFile, ",%.16g", nonlinsys->nlsx[j]);
     fprintf(pFile, "\n");
     fclose(pFile);
   }
