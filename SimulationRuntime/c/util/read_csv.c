@@ -100,11 +100,23 @@ int read_csv_dataset_size(const char* filename)
   FILE *f;
   struct csv_parser p;
   struct cell_row_count count = {0};
+  size_t offset=0;
+  unsigned char delim = CSV_COMMA;
   f = fopen(filename,"r");
   if (f == NULL) {
     return -1;
   }
-  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
+
+  /* determine delim */
+  fread(buf, 1, 5, f);
+  if (0 == strcmp(buf, "\"sep="))
+  {
+    fread(&delim, 1, 1, f);
+    offset = 8;
+  }
+  fseek(f, offset, SEEK_SET);
+
+  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL, delim);
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
@@ -122,15 +134,14 @@ int read_csv_dataset_size(const char* filename)
   return count.row_count - 1; /* The header is excluded */
 }
 
-char** read_csv_variables(FILE *fin, int *length)
+char** read_csv_variables(FILE *fin, int *length, unsigned char delim)
 {
   const int buf_size = 4096;
   char buf[4096];
   char **res;
   struct csv_parser p;
   struct csv_head head = {0};
-  fseek(fin,0,SEEK_SET);
-  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
+  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL, delim);
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
@@ -205,10 +216,22 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   struct csv_parser p;
   struct csv_body body = {0};
   FILE *fin = fopen(filename, "r");
+  size_t offset = 0;
+  unsigned char delim = CSV_COMMA;
   if (!fin) {
     return NULL;
   }
-  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
+
+  /* determine delim */
+  fread(buf, 1, 5, fin);
+  if (0 == strcmp(buf, "\"sep="))
+  {
+    fread(&delim, 1, 1, fin);
+    offset = 8;
+  }
+  fseek(fin, offset, SEEK_SET);
+
+  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL, delim);
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
@@ -238,18 +261,30 @@ struct csv_data* read_csv(const char *filename)
   struct csv_parser p;
   struct csv_body body = {0};
   struct csv_data *res;
+  size_t offset = 0;
+  unsigned char delim = CSV_COMMA;
   FILE *fin = fopen(filename, "r");
   if (!fin) {
     return NULL;
   }
-  variables = read_csv_variables(fin,&dummy);
+
+  /* determine delim */
+  fread(buf, 1, 5, fin);
+  if (0 == strcmp(buf, "\"sep="))
+  {
+    fread(&delim, 1, 1, fin);
+    offset = 8;
+  }
+  fseek(fin, offset, SEEK_SET);
+
+  variables = read_csv_variables(fin, &dummy, delim);
   if (!variables) {
     fclose(fin);
     return NULL;
   }
-  fseek(fin,0,SEEK_SET);
+  fseek(fin,offset,SEEK_SET);
 
-  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL);
+  csv_init(&p, CSV_STRICT | CSV_REPALL_NL | CSV_STRICT_FINI | CSV_APPEND_NULL | CSV_EMPTY_IS_NULL, delim);
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {

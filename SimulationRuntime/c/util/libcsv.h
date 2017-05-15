@@ -58,7 +58,7 @@ struct csv_parser {
 };
 
 /* Function Prototypes */
-int csv_init(struct csv_parser *p, unsigned char options);
+int csv_init(struct csv_parser *p, unsigned char options, unsigned char delim);
 int csv_fini(struct csv_parser *p, void (*cb1)(void *, size_t, void *), void (*cb2)(int, void *), void *data);
 void csv_free(struct csv_parser *p);
 int csv_error(struct csv_parser *p);

@@ -44,7 +44,7 @@ extern "C" {
 
 int read_csv_dataset_size(const char* filename);
 
-char** read_csv_variables(FILE *fin, int *length);
+char** read_csv_variables(FILE *fin, int *length, unsigned char delim);
 
 struct csv_data* read_csv(const char *filename);
 double* read_csv_dataset(struct csv_data *data, const char *var);

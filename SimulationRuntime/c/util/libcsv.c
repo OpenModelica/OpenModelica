@@ -113,7 +113,7 @@ csv_set_opts(struct csv_parser *p, unsigned char options)
 }
 
 int
-csv_init(struct csv_parser *p, unsigned char options)
+csv_init(struct csv_parser *p, unsigned char options, unsigned char delim)
 {
   /* Initialize a csv_parser object returns 0 on success, -1 on error */
   if (p == NULL)
@@ -128,7 +128,7 @@ csv_init(struct csv_parser *p, unsigned char options)
   p->status = 0;
   p->options = options;
   p->quote_char = CSV_QUOTE;
-  p->delim_char = CSV_COMMA;
+  p->delim_char = delim;
   p->is_space = NULL;
   p->is_term = NULL;
   p->blk_size = MEM_BLK_SIZE;
