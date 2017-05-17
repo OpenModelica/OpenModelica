@@ -1377,9 +1377,10 @@ algorithm
       then
         (e,  inFunctionTree);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")), _, _, _, _)
-      then
-        (e,  inFunctionTree);
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")), _, _, _, _) equation
+      tp = Expression.typeof(e);
+      zero = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+    then (zero, inFunctionTree);
 
     case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
       then
@@ -1479,7 +1480,11 @@ algorithm
       DAE.Type tp;
       list<DAE.Exp> expl;
 
-    case ("previous",_) then (exp, inFuncs);
+    case ("previous",_) equation
+      tp = Expression.typeof(exp);
+      exp_1 = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+    then (exp_1, inFuncs);
+
     case ("$getPart",_) then (exp, inFuncs);
     case ("firstTick",_) then (exp, inFuncs);
     case ("interval",_) then (exp, inFuncs);
