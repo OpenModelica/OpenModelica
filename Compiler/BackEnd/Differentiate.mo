@@ -1373,10 +1373,6 @@ algorithm
 
       String s1, s2, serr, matrixName, name;
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")), _, _, _, _)
-      then
-        (e,  inFunctionTree);
-
     case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")), _, _, _, _) equation
       tp = Expression.typeof(e);
       zero = Expression.makeZeroExpression(Expression.arrayDimension(tp));
@@ -1479,6 +1475,12 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.Type tp;
       list<DAE.Exp> expl;
+
+    case ("pre",_) equation
+      tp = Expression.typeof(exp);
+      (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter, expStack);
+      exp_2 = Expression.makePureBuiltinCall("pre", {exp_1}, tp);
+    then (exp_2, inFuncs);
 
     case ("previous",_) equation
       tp = Expression.typeof(exp);
