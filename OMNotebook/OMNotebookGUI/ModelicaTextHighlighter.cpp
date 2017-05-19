@@ -38,7 +38,6 @@
 #include <QtGui/QTextLayout>
 #include <QtXml/QDomDocument>
 #include <QMessageBox>
-#include <QDebug>
 
 // IAEX Headers
 #include "ModelicaTextHighlighter.h"

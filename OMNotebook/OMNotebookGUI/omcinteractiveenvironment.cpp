@@ -39,8 +39,8 @@
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #else
-#include <QtCore/QDebug>
 #include <QtCore/QDir>
+#include <QtCore/QLocale>
 #include <QtCore/QProcess>
 #include <QtCore/QThread>
 #include <QtCore/QMutex>

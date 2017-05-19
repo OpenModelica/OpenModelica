@@ -94,7 +94,7 @@ void Indent::ISM::newToken(QString s, QString s2)
       lMod = true;
       break;
     }
-    else if(s == "class" || s == "package" || s == "function" || s == "model" || s == "record" || s == "connector")
+    else if(s == "class" || s == "package" || s == "function" || s == "model" || s == "block" || s == "record" || s == "connector")
     {
       ++level;
       skipNext = true;

@@ -79,9 +79,14 @@ namespace IAEX
     int commandStartPos_;
     int commandEndPos_;
 
+    QList<QRegExp> keywords_;
+
     QStringList *currentList_;
     QStringList commandList_;
-        QHash<QString,CommandUnit*> commands_;
+    QStringList elementList_;
+    QHash<QString,CommandUnit*> *cmds_;
+    QHash<QString,CommandUnit*> commands_;
+    QHash<QString,CommandUnit*> elements_;
   };
 }
 #endif

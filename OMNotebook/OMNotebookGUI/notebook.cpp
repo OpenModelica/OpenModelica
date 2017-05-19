@@ -1462,7 +1462,7 @@ void NotebookWindow::createInsertMenu()
   autoIndentAction->setCheckable(true);
   //    autoIndentAction->setChecked(true);
 
-  b->hide(); //Disable indentation button
+  //b->hide(); //Disable indentation button
 
   QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
   autoIndentAction->setChecked(s.value("AutoIndent", true).toBool());
@@ -2522,7 +2522,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   QString filename = QFileInfo( subject_->getFilename() ).fileName();
   filename.remove( "\n" );
 
-  qDebug()<<"enter notbook exit \n";
+  //qDebug()<<"enter notbook exit \n";
   QDir dir;
   dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
 
@@ -2543,12 +2543,12 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   while( subject_->hasChanged() )
   {
     int res = QMessageBox::question(this, "Document is unsaved", tr("The document \"%1\" is unsaved, do you want to save the document?").arg(filename),
-                                    QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+                                    QMessageBox::Save | QMessageBox::Discard |  QMessageBox::Cancel, QMessageBox::Save);
 
-    if( res == QMessageBox::No ) {
+    if( res == QMessageBox::Discard ) {
       break;
     }
-    else if(res == QMessageBox::Yes) {
+    else if(res == QMessageBox::Save) {
       save();
     }
     else if(res == QMessageBox::Cancel)

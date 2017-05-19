@@ -262,21 +262,13 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
-    else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_W)
-    {
-      inCommand = false;
-      indentText();
-      event->ignore();
-      //      QTextBrowser::keyPressEvent( event );
-      //      update();
-
-    }
-
+    // CTRL+E: autoindent cell
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
     {
       inCommand = false;
       indentText();
     }
+    // CTRL+K: kill text until EOL
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       inCommand = false;
@@ -355,7 +347,6 @@ namespace IAEX {
     }
 
     updatePosition();
-
   }
 
   void MyTextEdit2::setAutoIndent(bool b)

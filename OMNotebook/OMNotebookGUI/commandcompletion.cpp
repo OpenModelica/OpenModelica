@@ -47,6 +47,7 @@
 
 //QT Headers
 #include <QtCore/QFile>
+#include <QtGui/QTextDocument>
 
 //IAEX Headers
 #include "commandcompletion.h"
@@ -161,12 +162,24 @@ namespace IAEX
 
       if( !command.isNull() && !command.isEmpty() )
       {
-        // check if any comman match the current word in the text
+        QStringList commandList = commandList_;
+        cmds_ = &commands_;
+        QString content = cursor.document()->toPlainText();
+        QRegExp key;
+        // check if alternative list is to be used (depending on keywords in the code)
+        foreach (key, keywords_) {
+          if (content.contains(key)) {
+            commandList = elementList_;
+            cmds_ = &elements_;
+            break;
+          }
+        }
+        // check if any command matches the current word in the text
         currentList_ = new QStringList();
-        for( int i = 0; i < commandList_.size(); ++i )
+        for( int i = 0; i < commandList.size(); ++i )
         {
-          if( 0 == commandList_.at(i).indexOf( command, 0, Qt::CaseInsensitive ))
-            currentList_->append( commandList_.at(i) );
+          if( 0 == commandList.at(i).indexOf( command, 0, Qt::CaseInsensitive ))
+            currentList_->append( commandList.at(i) );
         }
 
         //cout << "Found commands (" << command.toStdString() << "):" << endl;
@@ -256,8 +269,8 @@ namespace IAEX
       if( currentList_->size() > currentCommand_ )
       {
         QString command = currentList_->at( currentCommand_ );
-        if( commands_.contains( command ))
-          return commands_[command]->helptext();
+        if( cmds_->contains( command ))
+          return (*cmds_)[command]->helptext();
       }
     }
 
@@ -284,16 +297,16 @@ namespace IAEX
       {
         QString command = currentList_->at( currentCommand_ );
 
-        if( commands_.contains( command ))
+        if( cmds_->contains( command ))
         {
-          if( currentField_ < (commands_[command]->numbersField() - 1) )
+          if( currentField_ < ((*cmds_)[command]->numbersField() - 1) )
           {
             //next field
             currentField_++;
             QString fieldID;
             fieldID.setNum( currentField_ );
             fieldID = "$" + fieldID;
-            QString field = commands_[command]->datafield( fieldID );
+            QString field = (*cmds_)[command]->datafield( fieldID );
 
             if( !field.isNull() )
             {
@@ -358,6 +371,17 @@ namespace IAEX
 
           commands_.insert( unit->fullName(), unit );
           commandList_.append( unit->fullName() );
+        } else if( element.tagName() == "element" )
+        {
+          CommandUnit *unit = new CommandUnit( element.attribute( "name" ));
+          QDomNode n = element.firstChild();
+          parseCommand( n, unit );
+
+          elements_.insert( unit->fullName(), unit );
+          elementList_.append( unit->fullName() );
+        } else if( element.tagName() == "keyword" )
+        {
+          keywords_.append( QRegExp(element.attribute( "name" )) );
         }
       }
       node = node.nextSibling();

@@ -13,10 +13,11 @@
 <!-- 	names, starting with 0.						-->
 
 <commands>
+	<!-- Shell commands -->
 	<command name="cd()">
 		<helptext>Return the current directory.</helptext>
 	</command>
-	<command name="cd($0)">
+	<command name='cd("$0")'>
 		<field name="$0">dir</field>
 		<helptext>Change directory to the directory given as a string. Ex: cd("myModels/myLibrary").</helptext>
 	</command>
@@ -27,7 +28,23 @@
 		<helptext>Clear the variables.</helptext>
 	</command>
 	<command name="help()">
-		<helptext>Print this helptext (returned as a string).</helptext>
+		<helptext>Print helptext (returned as a string).</helptext>
+	</command>
+	<command name='help("omc")'>
+		<helptext>The command-line options available for omc.</helptext>
+	</command>
+	<command name='help("debug")'>
+		<helptext>Flags that enable debugging, diagnostics, and research prototypes.</helptext>
+	</command>
+	<command name='help("optmodules")'>
+		<helptext>Flags that enable debugging, diagnostics, and research prototypes.</helptext>
+	</command>
+	<command name='help("simulation")'>
+		<helptext>Flags that enable debugging, diagnostics, and research prototypes.</helptext>
+	</command>
+	<command name='help("$0")'>
+		<helptext>Flags that enable debugging, diagnostics, and research prototypes.</helptext>
+		<field name="$0">flagname</field>
 	</command>
 	<command name="instantiateModel($0)">
 		<field name="$0">modelname</field>
@@ -43,11 +60,11 @@
 	<command name="listVariables()">
 		<helptext>Return a vector of the currently defined variable names.</helptext>
 	</command>
-	<command name="loadFile($0)">
+	<command name='loadFile("$0")'>
 		<field name="$0">strFile</field>
 		<helptext>Load modelica file given as string argument. Ex: loadFile("../myLibrary/myModels.mo").</helptext>
 	</command>
-	<command name="loadFiles({$0})">
+	<command name='loadFiles({"$0"})'>
 		<field name="$0">strFiles</field>
 		<helptext>Load modelica files given as string arrray. Ex: loadFile({"modelA.mo", "modelB.mo").</helptext>
 	</command>
@@ -68,32 +85,37 @@
 		<field name="$1">var2</field>
 		<helptext>Plot var2 relative to var1 from the most recently simulated model. Ex: plotParametric(x,y).</helptext>
 	</command>
-  <command name="plotAll($0)">
+  <command name='plotAll("$0")'>
     <field name="$0">"className_res.mat"</field>
     <helptext>Plot all variables from the specified file. Ex: plotAll("Class_res.mat").</helptext>
   </command>
-  <command name="readFile($0)">
+  <command name='readFile("$0")'>
 		<field name="$0">str</field>
 		<helptext>Load file given as string and return a string of the file content. Ex: readFile("myModel/myModelr.mo").</helptext>
 	</command>
-	<command name="readSimulationResultSize($0)">
+	<command name='readSimulationResultSize("$0")'>
 		<field name="$0">strFile</field>
 		<helptext>Return the size of the record resulting from a simulation. The size is read from the result file, given as a string. Ex:  readSimulationResultSize("dcmotor_res.plt").</helptext>
 	</command>
-	<command name="readSimulationResult($0, $1, $2)">
+	<command name='readSimulationResult("$0", $1, $2)'>
 		<field name="$0">strFile</field>
 		<field name="$1">variables</field>
 		<field name="$2">size</field>
 		<helptext>Read the results of a simulation from a file named by the string argument strFile. Here size is the size of the resulting record and variables is a vector of the variables to investigate. Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10).</helptext>
 	</command>
-	<command name="runScript($0)">
+	<command name='runScript("$0")'>
 		<field name="$0">strFile</field>
 		<helptext>Exectute script file (.mos) given as string argument. Ex: runScript("simulation.mos").</helptext>
 	</command>
-	<command name="saveModel($0, $1)">
+	<command name='saveModel("$0", $1)'>
 		<field name="$0">strFile</field>
 		<field name="$1">modelname</field>
 		<helptext>Save the model/class with name modelname in the file given by the strFile string argument.</helptext>
+	</command>
+	<command name="simulate($0, stopTime=$1)">
+		<field name="$0">modelname</field>
+		<field name="$1">1</field>
+		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor, stopTime=10).</helptext>
 	</command>
 	<command name="simulate($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, method=$5, outputFormat=$6)">
 		<field name="$0">modelname</field>
@@ -103,7 +125,7 @@
 		<field name="$4">1e-6</field>
     <field name="$5">"dassl"</field>
     <field name="$6">"mat"</field>
-		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
+		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor, startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="buildModel($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, storeInTemp=$5, method=$6, outputFormat=$7)">
 		<field name="$0">modelname</field>
@@ -114,9 +136,9 @@
 		<field name="$5">false</field>
     <field name="$6">"dassl"</field>
     <field name="$7">"mat"</field>
-		<helptext>Translates a model and build it. It does not run the code! Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
+		<helptext>Translates a model and build it. It does not run the code! Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor, startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
-	<command name="system($0)">
+	<command name='system("$0")'>
 		<field name="$0">str</field>
 		<helptext>Execute str as a system(shell) command, return integer success value. Ex: system("touch myFile").</helptext>
 	</command>
@@ -138,9 +160,115 @@
 	</command>
 	<command name="class $0">
 		<field name="$0">name</field>
+		<helptext>New generic class.</helptext>
 	</command>
 	<command name="model $0">
-		<field name="$0">name</field>
+    <field name="$0">name</field>
+		<helptext>New model.</helptext>
 	</command>
-	<command name="equation"></command>
+	<command name="block $0">
+		<field name="$0">name</field>
+		<helptext>New block.</helptext>
+	</command>
+	<command name="package $0">
+		<field name="$0">name</field>
+		<helptext>New package.</helptext>
+	</command>
+	<command name="record $0">
+		<field name="$0">name</field>
+		<helptext>New record.</helptext>
+	</command>
+	<command name="connector $0">
+		<field name="$0">name</field>
+		<helptext>New connector.</helptext>
+	</command>
+	<command name="type $0">
+		<field name="$0">name</field>
+		<helptext>New type.</helptext>
+	</command>
+	<command name="function $0">
+		<field name="$0">name</field>
+		<helptext>New function.</helptext>
+	</command>
+
+	<!-- keywords -->
+	<keyword name="\bclass\b"></keyword>
+	<keyword name="\bmodel\b"></keyword>
+	<keyword name="\bblock\b"></keyword>
+	<keyword name="\bpackage\b"></keyword>
+	<keyword name="\brecord\b"></keyword>
+	<keyword name="\bconnector\b"></keyword>
+	<keyword name="\btype\b"></keyword>
+	<keyword name="\bfunction\b"></keyword>
+
+	<!-- Modelica language elements -->
+	<element name="Real $0">
+		<field name="$0">name</field>
+	</element>
+	<element name="Integer $0">
+		<field name="$0">name</field>
+	</element>
+	<element name="Boolean $0">
+		<field name="$0">name</field>
+	</element>
+	<element name="String $0">
+		<field name="$0">name</field>
+	</element>
+	<element name="enumeration ($0,$1)">
+		<field name="$0">e1</field>
+		<field name="$1">e2</field>
+	</element>
+	<element name="class $0">
+		<field name="$0">name</field>
+		<helptext>New class.</helptext>
+	</element>
+	<element name="model $0">
+		<field name="$0">name</field>
+		<helptext>New model.</helptext>
+	</element>
+	<element name="block $0">
+		<field name="$0">name</field>
+		<helptext>New block.</helptext>
+	</element>
+	<element name="package $0">
+		<field name="$0">name</field>
+		<helptext>New package.</helptext>
+	</element>
+	<element name="record $0">
+		<field name="$0">name</field>
+		<helptext>New record.</helptext>
+	</element>
+	<element name="connector $0">
+		<field name="$0">name</field>
+		<helptext>New connector.</helptext>
+	</element>
+	<element name="type $0">
+		<field name="$0">name</field>
+		<helptext>New type.</helptext>
+	</element>
+	<element name="function $0">
+		<field name="$0">name</field>
+		<helptext>New function.</helptext>
+	</element>
+	<element name="equation"></element>
+	<element name="extends $0">
+		<field name="$0">BaseClass</field>
+		<helptext>Extends existing class (inheritance).</helptext>
+	</element>
+	<element name="input"></element>
+	<element name="ouput"></element>
+	<element name="flow"></element>
+	<element name="constant">
+		<helptext>Value of variable will be the same for all possible simulations.</helptext>
+	</element>
+	<element name="parameter">
+		<helptext>Variable may change from one simulation to another, but will not change during given simulation.</helptext>
+	</element>
+	<element name="discrete"></element>
+	<element name="connect"></element>
+	<element name="noEvent($0)">
+		<field name="$0">cond</field>
+		<helptext>Suppresses generation of events.</helptext>
+	</element>
+
 </commands>

@@ -1147,7 +1147,6 @@ namespace IAEX
    */
   void InputCell::nextCommand()
   {
-    qDebug("Next Command");
     CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
     QTextCursor cursor = input_->textCursor();
 
@@ -1163,7 +1162,6 @@ namespace IAEX
    */
   void InputCell::nextField()
   {
-    qDebug("Next Field");
     CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
     QTextCursor cursor = input_->textCursor();
 
