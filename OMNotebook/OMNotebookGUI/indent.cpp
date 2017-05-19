@@ -368,7 +368,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
 {
   buffer1 = buffer1.replace('\n', " <newLine> ") + " <newLine> " + " <newLine> ";
   buffer1 = buffer1.replace("//", " //");
-  buffer1 = buffer1.replace("=", " = ");
+  buffer1 = buffer1.replace(QRegExp("(==|:=|<=|>=|=)"), " \\1 ");
   QTextStream ts(&buffer1, QIODevice::ReadWrite);
 
   //QString current, next, comment;
