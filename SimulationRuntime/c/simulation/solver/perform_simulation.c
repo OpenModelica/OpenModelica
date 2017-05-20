@@ -183,7 +183,7 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
   }
 }
 
-static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, int didEventStep)
+static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, SOLVER_INFO* solverInfo)
 {
   if(mt->fmtReal)
   {
@@ -218,11 +218,17 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   /* prevent emit if noEventEmit flag is used, if it's an event */
-  if ((omc_flag[FLAG_NOEVENTEMIT] && didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
+  if ((omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT]) {
     sim_result.emit(&sim_result, data, threadData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
-  embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue);
+  if (embedded_server_update(data->embeddedServerState, data->localData[0]->timeValue)) {
+    solverInfo->didEventStep = 1;
+    overwriteOldSimulationData(data);
+    storePreValues(data); // Maybe??
+    storeOldValues(data); // Maybe??
+    sim_result.emit(&sim_result, data, threadData);
+  }
   if (data->real_time_sync.enabled) {
     double time = data->localData[0]->timeValue;
     int64_t res = rt_ext_tp_sync_nanosec(&data->real_time_sync.clock, (uint64_t) (data->real_time_sync.scaling*(time-data->real_time_sync.time)*1e9));
@@ -455,7 +461,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         syncStep = simulationUpdate(data, threadData, solverInfo);
         retry = 0; /* reset retry */
 
-        fmtEmitStep(data, threadData, &fmt, solverInfo->didEventStep);
+        fmtEmitStep(data, threadData, &fmt, solverInfo);
         saveIntegratorStats(solverInfo);
         checkSimulationTerminated(data, solverInfo);
 

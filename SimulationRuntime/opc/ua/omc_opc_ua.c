@@ -58,7 +58,6 @@ typedef struct {
   int *boolValsInputIndex;
   int reinitStateFlag;
   int *stateWasUpdatedFlag;
-  int *didEventStep;
   double *updatedStates;
   double real_time_sync_scaling;
   void (*omc_real_time_sync_update)(DATA *data, double scaling);
@@ -449,7 +448,7 @@ static inline omc_opc_ua_state* addAliasVars(omc_opc_ua_state *state, var_kind_t
   }
   return state;
 }
-void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port, int *didEventStep)
+void* omc_embedded_server_init(DATA *data, double t, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port)
 {
   MODEL_DATA *modelData = data->modelData;
   omc_opc_ua_state *state = (omc_opc_ua_state*) malloc(sizeof(omc_opc_ua_state));
@@ -467,7 +466,6 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
   state->server_running = 1;
   state->time = t;
   state->omc_real_time_sync_update = omc_real_time_sync_update;
-  state->didEventStep = didEventStep;
 
   pthread_cond_init(&state->cond_pause, NULL);
   pthread_mutex_init(&state->mutex_pause, NULL);
@@ -620,12 +618,14 @@ void omc_embedded_server_deinit(void *state_vp)
   free(state);
 }
 
-void omc_embedded_server_update(void *state_vp, double t)
+int omc_embedded_server_update(void *state_vp, double t)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) state_vp;
-  int i, realIndex=0, boolIndex=0;
+  int i, realIndex=0, boolIndex=0, res=0;
   DATA *data = state->data;
   MODEL_DATA *modelData = data->modelData;
+
+  waitForStep(state);
 
   pthread_rwlock_wrlock(&state->rwlock);
 
@@ -639,12 +639,12 @@ void omc_embedded_server_update(void *state_vp, double t)
   }
 
   if (state->gotNewInput) {
-    *state->didEventStep = 1; /* Trigger an event in the solver, restarting it */
+    res = 1; /* Trigger an event in the solver, restarting it */
     memcpy(data->simulationInfo->inputVars, state->inputVarsBackup, modelData->nInputVars * sizeof(double));
   }
 
   if (state->reinitStateFlag) {
-    *state->didEventStep = 1; /* Trigger an event in the solver, restarting it */
+    res = 1; /* Trigger an event in the solver, restarting it */
     for (i = 0; i < modelData->nStates; i++) {
       if (state->stateWasUpdatedFlag[i]) {
         state->stateWasUpdatedFlag[i] = 0;
@@ -654,6 +654,5 @@ void omc_embedded_server_update(void *state_vp, double t)
   }
 
   pthread_rwlock_unlock(&state->rwlock);
-
-  waitForStep(state);
+  return res;
 }

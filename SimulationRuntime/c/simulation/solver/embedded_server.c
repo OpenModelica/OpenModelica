@@ -42,7 +42,7 @@
 #define DLL_EXT ".so"
 #endif
 
-void* no_embedded_server_init(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port, int *didEventStep)
+void* no_embedded_server_init(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port)
 {
   return NULL;
 }
@@ -51,15 +51,16 @@ void no_embedded_server_deinit(void *handle)
 {
 }
 
-void no_embedded_server_update(void *handle, double tout)
+int no_embedded_server_update(void *handle, double tout)
 {
+  return 0;
 }
 
-void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port, int *didEventStep) = no_embedded_server_init;
+void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port) = no_embedded_server_init;
 void (*embedded_server_deinit)(void*) = no_embedded_server_deinit;
 // Tells the embedded server that a simulation step has passed; the server
 // can read/write values from/to the simulator
-void (*embedded_server_update)(void*, double tout) = no_embedded_server_update;
+int (*embedded_server_update)(void*, double tout) = no_embedded_server_update;
 
 void* embedded_server_load_functions(const char *server_name)
 {
