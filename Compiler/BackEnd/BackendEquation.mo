@@ -713,6 +713,22 @@ algorithm
   end for;
 end traverseExpsOfEquationList_WithStop;
 
+public function traverseExpsOfEquationList_WithoutChange<ArgT> "
+  Traverse all expressions of a list of Equations"
+  input BackendDAE.Equation inEquation;
+  input FuncExpType func;
+  input ArgT inArg;
+  output ArgT outArg = inArg;
+
+  partial function FuncExpType
+    input output DAE.Exp inoutExp;
+    input output ArgT inoutArg;
+  end FuncExpType;
+algorithm
+  (_, outArg) := traverseExpsOfEquation(inEquation, func, outArg);
+end traverseExpsOfEquationList_WithoutChange;
+
+
 protected function traverseExpsOfEquationListList_WithStop<T> "author: Frenkel TUD 2012-09
   Traverses all expressions of a list of equations.
   It is possible to change the equations."

@@ -1358,8 +1358,12 @@ end checkUnusedVariablesExp;
 public function removeUnusedFunctions "author: Frenkel TUD 2012-03
   This function remove unused functions from DAE.FunctionTree to get speed up
   for compilation of target code."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.EqSystems inEqs;
+  input BackendDAE.Shared inShared;
+  input list<BackendDAE.Equation> inEquationLst;
+  input DAE.FunctionTree inFunctionTree;
+  input DAE.FunctionTree inusedFunctions;
+  output DAE.FunctionTree outFunctionTree;
 protected
   partial function FuncType
     input DAE.Exp inExp;
@@ -1369,27 +1373,31 @@ protected
   end FuncType;
 
   FuncType func;
-  BackendDAE.EqSystems eqs;
-  BackendDAE.Shared shared;
   DAE.FunctionTree funcs, usedfuncs;
 algorithm
-  BackendDAE.DAE(eqs, shared) := inDAE;
-  funcs := shared.functionTree;
-  usedfuncs := copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
+  funcs := inFunctionTree;
+  usedfuncs := inusedFunctions;
   func := function checkUnusedFunctions(inFunctions = funcs);
-  usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, usedfuncs);
-  usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.globalKnownVars, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.externalObjects, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, func, usedfuncs);
-  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, func, usedfuncs);
-  usedfuncs := removeUnusedFunctionsSymJacs(shared.symjacs, funcs, usedfuncs);
-  shared.functionTree := usedfuncs;
-  outDAE := BackendDAE.DAE(eqs, shared);
+
+  // equation system
+  usedfuncs := List.fold1(inEqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, usedfuncs);
+  usedfuncs := List.fold1(inEqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, usedfuncs);
+
+  // equation list
+  usedfuncs := List.fold1(inEquationLst, BackendEquation.traverseExpsOfEquationList_WithoutChange, func, usedfuncs);
+
+  // shared object
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(inShared.globalKnownVars, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(inShared.externalObjects, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(inShared.aliasVars, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inShared.removedEqs, func, usedfuncs);
+  usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inShared.initialEqs, func, usedfuncs);
+  usedfuncs := removeUnusedFunctionsSymJacs(inShared.symjacs, funcs, usedfuncs);
+
+  outFunctionTree := usedfuncs;
 end removeUnusedFunctions;
 
-protected function copyRecordConstructorAndExternalObjConstructorDestructor
+public function copyRecordConstructorAndExternalObjConstructorDestructor
   input DAE.FunctionTree inFunctions;
   output DAE.FunctionTree outFunctions;
 protected
@@ -1440,12 +1448,13 @@ algorithm
       local
         BackendDAE.BackendDAE bdae;
         DAE.FunctionTree usedfuncs;
+        BackendDAE.Shared shared;
 
       case (SOME((bdae, _, _, _, _)), _, _)
         equation
           bdae = BackendDAEUtil.setFunctionTree(bdae, inFunctions);
-          BackendDAE.DAE(shared = BackendDAE.SHARED(functionTree = usedfuncs)) =
-            removeUnusedFunctions(bdae);
+          shared = bdae.shared;
+          usedfuncs = removeUnusedFunctions(bdae.eqs, shared, {}, shared.functionTree, inUsedFunctions);
           outUsedFunctions = DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
         then
           ();

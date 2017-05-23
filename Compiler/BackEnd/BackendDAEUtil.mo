@@ -6831,6 +6831,7 @@ protected
   BackendDAE.InlineData inlineData;
   BackendDAE.Variables globalKnownVars;
   Integer numCheckpoints;
+  DAE.FunctionTree funcTree;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -6861,9 +6862,6 @@ algorithm
     BackendDump.dumpBackendDAE(dae, "synchronousFeatures");
   end if;
 
-  dae := BackendDAEOptimize.removeUnusedFunctions(dae);
-  execStat("remove unused functions");
-
   if Flags.isSet(Flags.GRAPHML) then
     BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
   end if;
@@ -6893,10 +6891,18 @@ algorithm
   outInlineData := SymbolicImplicitSolver.symSolver(simDAE);
 
   // post-optimization phase
-  outSimDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
+  simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
   // sort the globalKnownVars
-  outSimDAE := sortGlobalKnownVarsInDAE(outSimDAE);
+  simDAE := sortGlobalKnownVarsInDAE(simDAE);
+  execStat("sort global known variables");
+
+  // remove unused functions
+  funcTree := BackendDAEOptimize.copyRecordConstructorAndExternalObjConstructorDestructor(BackendDAEUtil.getFunctions(simDAE.shared));
+  funcTree := BackendDAEOptimize.removeUnusedFunctions(outInitDAE.eqs, outInitDAE.shared, outRemovedInitialEquationLst, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
+  funcTree := BackendDAEOptimize.removeUnusedFunctions(simDAE.eqs, simDAE.shared, {}, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
+  outSimDAE := BackendDAEUtil.setFunctionTree(simDAE, funcTree);
+  execStat("remove unused functions");
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
     BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");
