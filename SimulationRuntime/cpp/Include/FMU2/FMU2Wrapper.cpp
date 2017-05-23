@@ -449,7 +449,7 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
   bool state_vars_reinitialized = _model->handleSystemEvents(events);
   //time events
   eventInfo->nextEventTime = _model->computeNextTimeEvents(_model->getTime());
-  if ((eventInfo->nextEventTime != 0.0) and (eventInfo->nextEventTime != std::numeric_limits<double>::max()))
+  if ((eventInfo->nextEventTime != 0.0) && (eventInfo->nextEventTime != std::numeric_limits<double>::max()))
     eventInfo->nextEventTimeDefined = fmi2True;
   else
     eventInfo->nextEventTimeDefined = fmi2False;
