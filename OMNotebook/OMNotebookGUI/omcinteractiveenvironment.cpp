@@ -139,6 +139,17 @@ namespace IAEX
     return error_;
   }
 
+  /*!
+   * \author Hennning Kiel
+   * \date 2017-05-24
+   *
+   *\brief Method to get error message severity from OMC
+   */
+  int OmcInteractiveEnvironment::getErrorLevel()
+  {
+    return severity;
+  }
+
   // QMutex omcMutex;
 
   /*!
@@ -172,14 +183,24 @@ namespace IAEX
     error_ = MMC_STRINGDATA(reply_str);
     error_ = error_.trimmed();
     if( error_.size() > 2 ) {
-      error_ = QString( "OMC-ERROR: \n" ) + error_;
+      if (error_.contains("Error:")) {
+        severity = 2;
+        error_ = QString( "OMC-ERROR: \n" ) + error_;
+      } else if (error_.contains("Warning:")) {
+        severity = 1;
+        error_ = QString( "OMC-WARNING: \n" ) + error_;
+      } else {
+        severity = 0;
+      }
     } else { // no errors, clear the error.
       error_.clear();
+      severity = 0;
     }
 
     MMC_ELSE()
       result_ = "";
       error_ = "";
+      severity = 3;
       fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n    Include the following trace:\n");
       printStacktraceMessages();
       fflush(NULL);

@@ -1396,6 +1396,7 @@ namespace IAEX {
   {
     QString res   = delegate->getResult();
     QString error = delegate->getError();
+    int errorLevel= delegate->getErrorLevel();
 
     //delete sender();
     guard->unlock();
@@ -1421,6 +1422,16 @@ namespace IAEX {
 
     output_->selectAll();
     output_->textCursor().insertText( res );
+
+    QPalette pal = output_->palette(); // define pallete for textEdit..
+    if (errorLevel >= 2) {
+      pal.setColor(QPalette::Base, QColor(0xff,0xe0,0xe0));
+    } else if (errorLevel == 1) {
+      pal.setColor(QPalette::Base, QColor(0xff,0xff,0xe0));
+    } else {
+      pal.setColor(QPalette::Base, Qt::white);
+    }
+    output_->setPalette(pal);
 
     QList<QAction*> actions;
     while((p=res.indexOf(e, p)) > 0)

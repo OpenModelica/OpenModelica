@@ -53,6 +53,7 @@ namespace IAEX
     static OmcInteractiveEnvironment* getInstance();
     virtual QString getResult();
     virtual QString getError();
+    virtual int getErrorLevel();
     virtual void evalExpression(const QString expr);
     static QString OMCVersion();
     static QString OpenModelicaHome();
@@ -62,6 +63,7 @@ namespace IAEX
     static OmcInteractiveEnvironment* selfInstance;
     QString result_;
     QString error_;
+    int severity;
   };
 }
 #endif
