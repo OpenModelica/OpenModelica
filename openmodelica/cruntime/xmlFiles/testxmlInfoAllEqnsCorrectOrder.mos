@@ -43,7 +43,7 @@ if 0<>system("sort -h testModel_info.json.filtered | diff - testModel_info.json.
 // ""
 // true
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // 0
 // "OK"

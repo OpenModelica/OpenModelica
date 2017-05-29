@@ -43,7 +43,7 @@ runScript(modelTesting);getErrorString();
 // [Modelica 3.1/Thermal/FluidHeatFlow.mo:1116:9-1118:45:writable] Warning: Parameter volumeFlow.duration_1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.2) as default value.
 // [Modelica 3.1/Thermal/FluidHeatFlow.mo:1121:9-1123:45:writable] Warning: Parameter volumeFlow.duration_2 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.2) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true
 // "

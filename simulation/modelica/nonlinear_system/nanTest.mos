@@ -19,7 +19,7 @@ val(z, 1);  // sin(1.0)
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nanTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // 1.0
 // 0.0

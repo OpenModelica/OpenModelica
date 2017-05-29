@@ -64,7 +64,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
 // endResult

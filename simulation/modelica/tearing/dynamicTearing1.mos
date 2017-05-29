@@ -1103,7 +1103,7 @@ val(z2,1.1); getErrorString();
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   2.0000000000e+00
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // x at time=0.0
 // 0.0

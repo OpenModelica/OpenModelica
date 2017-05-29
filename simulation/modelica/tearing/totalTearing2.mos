@@ -604,7 +604,7 @@ simulate(totalTearing2); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 3
 //  * Number of variables: 3
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)

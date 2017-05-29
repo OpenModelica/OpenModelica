@@ -15,6 +15,6 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyState
 // {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy_init.xml"}
 // "Notification: It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

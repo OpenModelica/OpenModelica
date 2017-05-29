@@ -30,7 +30,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Cir
 // "[Modelica 3.1/Electrical/Analog/Basic.mo:68:3-69:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.1/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter src.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter src.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
 // endResult

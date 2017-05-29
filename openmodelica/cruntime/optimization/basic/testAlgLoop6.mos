@@ -418,7 +418,7 @@ getErrorString();
 // "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
 //   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
 //   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
 // "
