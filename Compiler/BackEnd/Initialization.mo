@@ -248,7 +248,7 @@ algorithm
     end if;
 
     // warn about iteration variables with default zero start attribute
-    b := warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
+    (initdae, b) := warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
     if b and (not Flags.isSet(Flags.INITIALIZATION)) then
       Error.addMessage(Error.INITIALIZATION_ITERATION_VARIABLES, {msg});
     end if;
@@ -624,39 +624,39 @@ end collectPreVariablesTraverseExp2;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute "author: lochel
   This function ... read the function name."
-  input BackendDAE.BackendDAE inDAE;
+  input output BackendDAE.BackendDAE inDAE;
   output Boolean outWarning;
+protected
+  list<BackendDAE.EqSystem> eqs;
 algorithm
-  outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(inDAE.eqs, Flags.isSet(Flags.INITIALIZATION));
+  (eqs, outWarning) := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(inDAE.eqs, Flags.isSet(Flags.INITIALIZATION));
+  inDAE.eqs := eqs;
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "author: lochel"
-  input list<BackendDAE.EqSystem> inEqs;
+  input output list<BackendDAE.EqSystem> inEqs;
   input Boolean inShowWarnings;
   output Boolean outWarning = false;
 protected
   Boolean warn;
+  BackendDAE.Variables orderedVars;
 algorithm
   for eqs in inEqs loop
-    warn := warnAboutIterationVariablesWithDefaultZeroStartAttribute1(eqs, inShowWarnings);
+    (orderedVars, warn) := warnAboutIterationVariablesWithDefaultZeroStartAttribute1(eqs, inShowWarnings);
+    eqs.orderedVars := orderedVars;
     outWarning := outWarning or warn;
-
-    // If we found an iteration variable with default zero start attribute but
-    // -d=initialization wasn't given, we don't need to continue searching.
-    if warn and not inShowWarnings then
-      return;
-    end if;
   end for;
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute0;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input Boolean inShowWarnings;
+  output BackendDAE.Variables orderedVars = inEqSystem.orderedVars;
   output Boolean outWarning = false "True if any warnings were printed.";
 protected
   BackendDAE.StrongComponents comps;
   list<Integer> vlst = {};
-  list<BackendDAE.Var> vars;
+  list<BackendDAE.Var> vars, vars1={}, vars2={};
   String err;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
@@ -681,19 +681,34 @@ algorithm
       // Filter out the variables that are missing start values.
       vars := List.map1r(vlst, BackendVariable.getVarAt, inEqSystem.orderedVars);
       //vars := list(BackendVariable.getVarAt(inEqSystem.orderedVars, idx) for idx in vlst);
-      vars := list(v for v guard(not BackendVariable.varHasStartValue(v)) in vars);
-      //vars := List.filterOnTrue(vars, BackendVariable.varHasStartValue);
+
+      for v in vars loop
+        if not BackendVariable.varHasStartValue(v) then
+          // If the variable has a nominal value, use it as start value
+          if BackendVariable.varHasNominalValue(v) then
+            v := BackendVariable.setVarStartValue(v, DAE.RCONST(BackendVariable.varNominal(v)));
+            orderedVars := BackendVariable.addVar(v, inEqSystem.orderedVars);
+            vars2 := v::vars2;
+          else
+            vars1 := v::vars1;
+          end if;
+        end if;
+      end for;
 
       // Print a warning if we found any variables with missing start values.
-      if not listEmpty(vars) then
+      if not listEmpty(vars1) then
         outWarning := true;
 
         if inShowWarnings then
-          Error.addCompilerWarning("Iteration variables with default zero start attribute in " + err + warnAboutVars2(vars));
-        else
-          // If -d=initialization wasn't given we don't need to continue searching
-          // once we've found one.
-          return;
+          Error.addCompilerWarning("Iteration variables with default zero start attribute in " + err + warnAboutVars2(vars1));
+        end if;
+      end if;
+
+      if not listEmpty(vars2) then
+        outWarning := true;
+
+        if inShowWarnings then
+          Error.addCompilerWarning("Iteration variables with nominal value as start attribute in " + err + warnAboutVars2(vars2));
         end if;
       end if;
     end if;
