@@ -49,7 +49,7 @@ Plot::Plot(PlotWindow *pParent)
   mpParentPlotWindow = pParent;
   // create an instance of legend
   mpLegend = new Legend(this);
-  insertLegend(mpLegend, QwtPlot::TopLegend);
+  insertLegend(mpLegend, QwtPlot::TopLegend, 0.1);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
   // create an instance of zoomer
