@@ -23,6 +23,6 @@ simulate(OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent); 
 // end SimulationResult;
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: V1.medium.p = V1.p_start (V2.p_start = V1.p_start)
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

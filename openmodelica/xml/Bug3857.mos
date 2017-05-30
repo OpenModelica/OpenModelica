@@ -23,7 +23,7 @@ readFile("Bug3857.xml"); getErrorString();
 // true
 // ""
 // true
-// "Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // true
 // ""
@@ -1554,7 +1554,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"118\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.570796326794897\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
+//       <Real start=\"1.57\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"driveAngle\"/>
 //       </QualifiedName>
@@ -2279,7 +2279,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         <exp:QualifiedNamePart name=\"driveAngle\"/>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>1.570796326794897</exp:RealLiteral>
+//         <exp:RealLiteral>1.57</exp:RealLiteral>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //

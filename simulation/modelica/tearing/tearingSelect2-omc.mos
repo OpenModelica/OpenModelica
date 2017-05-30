@@ -24,7 +24,7 @@ simulate(tearingSelect2); getErrorString();
 //  * Number of equations: 6
 //  * Number of variables: 6
 // Warning: The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use -d=tearingdump and -d=tearingdumpV for more information.
-// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)

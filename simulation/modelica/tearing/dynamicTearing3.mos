@@ -384,6 +384,6 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // |                 | |       | abs(x) > 1e-12
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

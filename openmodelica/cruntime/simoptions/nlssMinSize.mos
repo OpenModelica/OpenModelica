@@ -21,6 +21,6 @@ simulate(M, simflags="-nlssMinSize=1"); getErrorString();
 //     messages = "stdout            | info    | Maximum system size for using non-linear sparse solver changed to 1
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

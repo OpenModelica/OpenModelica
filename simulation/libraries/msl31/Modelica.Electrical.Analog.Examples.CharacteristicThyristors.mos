@@ -38,7 +38,7 @@ runScript(modelTesting);getErrorString();
 // Files Equal!
 // [Modelica 3.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter SineVoltage1.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true
 // "

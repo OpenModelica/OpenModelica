@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // 600.0
 // {"heater.mediums[1].h","heater.mediums[1].p","pipe.mediums[1].h","pipe.mediums[2].h","pipe.mediums[2].p","radiator.mediums[1].h","radiator.mediums[1].p","tank.level","tank.medium.h"}
 // Compilation succeeded
-// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: The linear system: 
 // 1 : pump.dp_pump = pump.p_b_nominal - tank.ports[2].p
 // 2 : pump.dp_pump = pump.medium.p - tank.ports[2].p

@@ -35,7 +35,7 @@ getErrorString();
 // "
 // end SimulationResult;
 // {"Files Equal!"}
-// "Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
 // "
 // endResult

@@ -38,7 +38,7 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 3000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = 'time|inertia3.phi|inertia3.w|clutch.phi_rel|clutch.w_rel|spring.phi_rel|spring.w_rel|der[(]inertia3.phi[)]|der[(]inertia3.w[)]|der[(]clutch.phi_rel[)]|der[(]clutch.w_rel[)]|der[(]spring.phi_rel[)]|der[(]spring.w_rel[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.Friction_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute or nominal value as start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true
 // "
