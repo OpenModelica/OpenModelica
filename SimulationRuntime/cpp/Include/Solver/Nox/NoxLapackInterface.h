@@ -43,4 +43,5 @@ class NoxLapackInterface : public LOCA::LAPACK::Interface {
 	int _numberofhomotopytries;
 	bool _evaluatedJacobianAtInitialGuess;
 	Teuchos::RCP<NOX::LAPACK::Matrix<double>> _J;//F'(x_0)
+  bool _UseAccurateJacobian;
 };

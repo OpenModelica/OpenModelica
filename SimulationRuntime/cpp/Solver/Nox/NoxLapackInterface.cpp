@@ -18,6 +18,7 @@ NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop, int numberofh
 	,_computedinitialguess(false)
 	,_numberofhomotopytries(numberofhomotopytries)
 	,_evaluatedJacobianAtInitialGuess(false)
+  ,_UseAccurateJacobian(false)
 {
 	_dimSys = _algLoop->getDimReal();
 	_initialGuess = Teuchos::rcp(new NOX::LAPACK::Vector(_dimSys));
@@ -225,9 +226,10 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 	double beta=1.0e-9;
 	NOX::LAPACK::Vector f1(_dimSys);//f(x+(alpha*|x_i|+beta)*e_i)
 	NOX::LAPACK::Vector f2(_dimSys);//f(x)
+	NOX::LAPACK::Vector f3(_dimSys);//f(x)
+	NOX::LAPACK::Vector f4(_dimSys);//f(x)
 	NOX::LAPACK::Vector xplushei(x);//x+(alpha*|x_i|+beta)*e_i
 
-	computeF(f2,x);
 
 	if (_generateoutput){
 		std::cout << "we are at simtime " << _algLoop->getSimTime() << " and at position (seen by NOX) x=(";
@@ -240,30 +242,48 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 		x.print(std::cout);
 	}
 
+  if(_UseAccurateJacobian){
+    for (int i=0;i<_dimSys;i++){
+      double h = std::max(1.0e-3,1.0e-10*std::abs(xplushei(i)));
+      //adding the denominator of the difference quotient
+      xplushei(i)+=h;
+      computeF(f2,xplushei);
+      xplushei(i)+=h;
+      computeF(f1,xplushei);
+      xplushei(i)=x(i);
 
-	for (int i=0;i<_dimSys;i++){
-		//adding the denominator of the difference quotient
-		xplushei(i)+=alpha*std::abs(xplushei(i))+beta;
-		computeF(f1,xplushei);
-		for (int j=0;j<_dimSys;j++){
-			J(j,i) = (f1(j)-f2(j))/(xplushei(i)-x(i));//=\partial_i f_j
-		}
-		xplushei(i)=x(i);
-	}
+      xplushei(i)-=h;
+      computeF(f3,xplushei);
+      xplushei(i)-=h;
+      computeF(f4,xplushei);
 
-	//if (_generateoutput){
-		// std::cout << "the Jacobian is given by (the transpose of) " << std::endl;
-		// for (int i=0;i<_dimSys;i++){
-			// for (int j=0;j<_dimSys;j++){
-				// std::cout << J(j,i) << " ";
-			// }
-			// std::cout << std::endl;
-		// }
-		// std::cout << std::endl << "done computing Jacobian" << std::endl;
-	//}
+      for (int j=0;j<_dimSys;j++){
+        //J(j,i) = (f1(j)-f2(j))/(xplushei(i)-x(i));//=\partial_i f_j
+        J(j,i) = (8*(f2(j)-f3(j))-(f1(j)-f4(j)))/(6.0*(x(i)-xplushei(i)));//=\partial_i f_j
+        //print error compared with central difference
+        if (std::abs(J(j,i)-(f2(j)-f3(j))/(2*h))>1.0e-10){
+          std::cout << "absolute error of J(" << j << "," << i << "): " << std::abs(J(j,i)-(f2(j)-f3(j))/(2*h)) << std::endl;
+          std::cout << "relative error of J(" << j << "," << i << "): " << (std::abs((J(j,i)-(f2(j)-f3(j))/(2*h))/(J(j,i)))-1.0)/100.0 << "%" << std::endl;
+        }
+      }
+      xplushei(i)=x(i);
+    }
+  }else{
+    computeF(f2,x);
+    for (int i=0;i<_dimSys;i++){
+      //adding the denominator of the difference quotient
+      xplushei(i)+=alpha*std::abs(xplushei(i))+beta;
+      computeF(f1,xplushei);
+      for (int j=0;j<_dimSys;j++){
+        J(j,i) = (f1(j)-f2(j))/(xplushei(i)-x(i));//=\partial_i f_j
+      }
+      xplushei(i)=x(i);
+    }
+  }
+
 	if (_generateoutput){
 		std::cout << "the Jacobian is given by" << std::endl;
-		J.print(std::cout);//is correct, no transposing necessary.
+		J.print(std::cout);
 	}
 	return true;
 }
