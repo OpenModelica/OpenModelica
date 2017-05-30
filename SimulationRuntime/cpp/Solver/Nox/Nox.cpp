@@ -159,7 +159,22 @@ void Nox::solve()
 		}
 	}
 
+  if(BasicNLSsolve()==NOX::StatusTest::Converged){
+    _iterationStatus=DONE;
+    return;
+  }
 
+
+  int VaryInitGuess=0;
+  while((_iterationStatus==CONTINUE) && (VaryInitGuess<std::pow(2,_dimSys))){
+    modify_y(VaryInitGuess);
+    if(BasicNLSsolve()==NOX::StatusTest::Converged){
+      _iterationStatus=DONE;
+      return;
+    }
+    VaryInitGuess++;
+  }
+  memcpy(_y,_y0,_dimSys*sizeof(double));
 
 	if (_generateoutput) std::cout << "starting while loop" << std::endl;
 
@@ -522,7 +537,7 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 	{
 		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error in Algloop " + std::to_string(_algLoop->getEquationIndex()) + " at simtime " + std::to_string(_algLoop->getSimTime()) + ", with error message: " + ex.what());
 	}
-    return status;
+  return status;
 }
 
 void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter){
@@ -758,6 +773,40 @@ void Nox::divisionbyzerohandling(double const * const y0){
 			}
 		}
 	}
+}
+
+void Nox::BinRep(std::vector<double> &result, const int number){
+  if (number > std::pow(2.0,static_cast<double>(result.size()))-1.0) throw std::range_error("Binary representation out of range");
+  for(unsigned int i=0;i<result.size();i++)
+	{
+		result[i]=static_cast<int>(number/std::floor(std::pow(2.0,static_cast<double>(i))))%2;
+	}
+}
+
+bool Nox::modify_y(const int counter){
+	std::vector<double> startvaluemodifier(_dimSys);
+
+	memcpy(_y,_y0,_dimSys*sizeof(double));
+
+  BinRep(startvaluemodifier,counter);
+
+  //replace 0 by -1.
+  std::for_each(startvaluemodifier.begin(),startvaluemodifier.end(), [](double d){return (d==0.0) ? -1.0 : d;});
+
+  std::cout << "Varying initial guess by 10%:" << std::endl;
+	for (int i=0;i<_dimSys;i++){
+    _y[i] += (_y[i]!=0.0) ? 0.1*_y[i]*startvaluemodifier[i] : 0.1*startvaluemodifier[i];
+	}
+
+	_algLoop->setReal(_y);
+	try{
+		_algLoop->evaluate();
+    return true;
+	}
+	catch(const std::exception &ex){
+		std::cout << ex.what() << " Error occured when varying initial guess." << std::endl;
+	}
+  return false;
 }
 
 //writes output

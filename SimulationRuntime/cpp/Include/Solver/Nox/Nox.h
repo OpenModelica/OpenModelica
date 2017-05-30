@@ -42,6 +42,8 @@ private:
   bool isdivisionbyzeroerror(const std::exception &ex);
   void modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter);
 
+  bool modify_y(const int counter);
+  void BinRep(std::vector<double> &result, const int number);
 
   //void check4EventRetry(double* y)
 
