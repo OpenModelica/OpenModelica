@@ -33,7 +33,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::SgnChange::checkStatus(const NOX::S
 {
   if(_firstCall) initialize(problem);
   std::vector<bool> fSignChange(_dimSys, false);
-  Teuchos::RCP<NOX::LAPACK::Group> grp=Teuchos::rcp(new NOX::LAPACK::Group(dynamic_cast<const NOX::LAPACK::Group&>(problem.getSolutionGroup())));//(problem.getSolutionGroup());//solutiongroup is constant, thus we need to assign it to be able to modify it.
+  Teuchos::RCP<NOX::LAPACK::Group> grp=Teuchos::rcp(new NOX::LAPACK::Group(dynamic_cast<const NOX::LAPACK::Group&>(problem.getSolutionGroup())));//(problem.getSolutionGroup());//solutiongroup is constant, thus we need to assign it to be able to modify it.//throws an error if used in conjunction with lapack
   *_x1=*_x0=grp->getX();
   grp->computeF();
   *_f0=grp->getF();

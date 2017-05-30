@@ -167,7 +167,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 
 		//new, experimental version. Delete comments, when this is tested.
 		for(int i=0;i<_dimSys;i++){
-			_rhs[i]= ((_rhs[i]<0.0) ? -1.0e6 : 1.0e6);
+			_rhs[i]= ((_rhs[i]<0.0) ? -1.0e12 : 1.0e12);
 		}
 		//Maybe this should have conical form, ie. in case of high values, use 1.0e6*x+1.0e6 instead.
 
