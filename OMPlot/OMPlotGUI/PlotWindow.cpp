@@ -38,6 +38,7 @@
 #if QWT_VERSION >= 0x060000
 #include "qwt_plot_renderer.h"
 #endif
+#include "qwt_scale_draw.h"
 
 using namespace OMPlot;
 
@@ -711,8 +712,9 @@ void PlotWindow::setYLabel(QString label)
 
 void PlotWindow::setXRange(double min, double max)
 {
-  if(!(max == 0 && min == 0))
+  if (!(max == 0 && min == 0)) {
     mpPlot->setAxisScale(QwtPlot::xBottom, min, max);
+  }
   mXRangeMin = QString::number(min);
   mXRangeMax = QString::number(max);
 }
@@ -729,8 +731,9 @@ QString PlotWindow::getXRangeMax()
 
 void PlotWindow::setYRange(double min, double max)
 {
-  if(!(max == 0 && min == 0))
+  if (!(max == 0 && min == 0)) {
     mpPlot->setAxisScale(QwtPlot::yLeft, min, max);
+  }
   mYRangeMin = QString::number(min);
   mYRangeMax = QString::number(max);
 }
@@ -1192,7 +1195,7 @@ void VariablePageWidget::pickColor()
   \param pPlotWindow - pointer to PlotWindow
   */
 SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
-  : QDialog(pPlotWindow, Qt::WindowTitleHint)
+  : QDialog(pPlotWindow)
 {
   setWindowTitle(tr("Plot Setup"));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -1206,8 +1209,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpVariablesListWidget = new QListWidget;
   mpVariablePagesStackedWidget = new QStackedWidget;
   QList<PlotCurve*> plotCurves = mpPlotWindow->getPlot()->getPlotCurvesList();
-  foreach (PlotCurve *pPlotCurve, plotCurves)
-  {
+  foreach (PlotCurve *pPlotCurve, plotCurves) {
     mpVariablePagesStackedWidget->addWidget(new VariablePageWidget(pPlotCurve, this));
     QListWidgetItem *pListItem = new QListWidgetItem(mpVariablesListWidget);
     pListItem->setText(pPlotCurve->getName());
@@ -1253,16 +1255,60 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpLegendPositionComboBox->addItem(tr("Right"), "right");
   mpLegendPositionComboBox->addItem(tr("Bottom"), "bottom");
   mpLegendPositionComboBox->addItem(tr("Left"), "left");
-  // title tab layout
+  // legend tab layout
   QGridLayout *pLegendTabGridLayout = new QGridLayout;
   pLegendTabGridLayout->setAlignment(Qt::AlignTop);
   pLegendTabGridLayout->addWidget(mpLegendPositionLabel, 0, 0);
   pLegendTabGridLayout->addWidget(mpLegendPositionComboBox, 0, 1);
   mpLegendTab->setLayout(pLegendTabGridLayout);
+  // range tab
+  mpRangeTab = new QWidget;
+  mpAutoScaleCheckbox = new QCheckBox(tr("Auto Scale"));
+  mpAutoScaleCheckbox->setChecked(mpPlotWindow->getAutoScaleButton()->isChecked());
+  connect(mpAutoScaleCheckbox, SIGNAL(toggled(bool)), SLOT(autoScaleChecked(bool)));
+  // x-axis
+  mpXAxisGroupBox = new QGroupBox(tr("X-Axis"));
+  mpXMinimumLabel = new QLabel(tr("Minimum"));
+  mpXMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).lowerBound()));
+  mpXMaximumLabel = new QLabel(tr("Maximum"));
+  mpXMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).upperBound()));
+  QGridLayout *pXGridLayout = new QGridLayout;
+  pXGridLayout->addWidget(mpXMinimumLabel, 0, 0);
+  pXGridLayout->addWidget(mpXMinimumTextBox, 0, 1);
+  pXGridLayout->addWidget(mpXMaximumLabel, 1, 0);
+  pXGridLayout->addWidget(mpXMaximumTextBox, 1, 1);
+  mpXAxisGroupBox->setLayout(pXGridLayout);
+  mpXAxisGroupBox->setEnabled(!mpAutoScaleCheckbox->isChecked());
+  // y-axis
+  mpYAxisGroupBox = new QGroupBox(tr("Y-Axis"));
+  mpYMinimumLabel = new QLabel(tr("Minimum"));
+  mpYMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).lowerBound()));
+  mpYMaximumLabel = new QLabel(tr("Maximum"));
+  mpYMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound()));
+  QGridLayout *pYGridLayout = new QGridLayout;
+  pYGridLayout->addWidget(mpYMinimumLabel, 0, 0);
+  pYGridLayout->addWidget(mpYMinimumTextBox, 0, 1);
+  pYGridLayout->addWidget(mpYMaximumLabel, 1, 0);
+  pYGridLayout->addWidget(mpYMaximumTextBox, 1, 1);
+  mpYAxisGroupBox->setLayout(pYGridLayout);
+  mpYAxisGroupBox->setEnabled(!mpAutoScaleCheckbox->isChecked());
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpXMinimumTextBox->setValidator(pDoubleValidator);
+  mpXMaximumTextBox->setValidator(pDoubleValidator);
+  mpYMinimumTextBox->setValidator(pDoubleValidator);
+  mpXMaximumTextBox->setValidator(pDoubleValidator);
+  // range tab layout
+  QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
+  pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
+  pRangeTabVerticalLayout->addWidget(mpAutoScaleCheckbox);
+  pRangeTabVerticalLayout->addWidget(mpXAxisGroupBox);
+  pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
+  mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
   mpSetupTabWidget->addTab(mpTitlesTab, tr("Titles"));
   mpSetupTabWidget->addTab(mpLegendTab, tr("Legend"));
+  mpSetupTabWidget->addTab(mpRangeTab, tr("Range"));
   // Create the buttons
   mpOkButton = new QPushButton(tr("OK"));
   mpOkButton->setAutoDefault(true);
@@ -1283,8 +1329,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pMainLayout->addWidget(mpButtonBox, 1, 0, 1, 1, Qt::AlignRight);
   setLayout(pMainLayout);
   // select the first variable if its available.
-  if (mpVariablesListWidget->count() > 0)
-  {
+  if (mpVariablesListWidget->count() > 0) {
     mpVariablesListWidget->setCurrentRow(0, QItemSelectionModel::Select);
   }
 }
@@ -1341,10 +1386,23 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
 
 void SetupDialog::variableSelected(QListWidgetItem *current, QListWidgetItem *previous)
 {
-  if (!current)
+  if (!current) {
     current = previous;
+  }
 
   mpVariablePagesStackedWidget->setCurrentIndex(mpVariablesListWidget->row(current));
+}
+
+/*!
+ * \brief SetupDialog::autoScaleChecked
+ * SLOT activated when mpAutoScaleCheckbox toggled SIGNAL is raised.\n
+ * Enabled/disables the range controls.
+ * \param checked
+ */
+void SetupDialog::autoScaleChecked(bool checked)
+{
+  mpXAxisGroupBox->setEnabled(!checked);
+  mpYAxisGroupBox->setEnabled(!checked);
 }
 
 void SetupDialog::saveSetup()
@@ -1356,8 +1414,7 @@ void SetupDialog::saveSetup()
 void SetupDialog::applySetup()
 {
   // set the variables attributes
-  for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++)
-  {
+  for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++) {
     setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
   }
   // set the titles
@@ -1367,6 +1424,16 @@ void SetupDialog::applySetup()
   mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
   // set the legend
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
+  // set the auto scale
+  mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
+  // set the range
+  if (mpAutoScaleCheckbox->isChecked()) {
+    mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::xBottom);
+    mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yLeft);
+  } else {
+    mpPlotWindow->setXRange(mpXMinimumTextBox->text().toDouble(), mpXMaximumTextBox->text().toDouble());
+    mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
+  }
   // replot
   mpPlotWindow->getPlot()->replot();
 }

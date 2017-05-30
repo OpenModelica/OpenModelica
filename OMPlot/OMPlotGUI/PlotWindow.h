@@ -230,6 +230,19 @@ private:
   QWidget *mpLegendTab;
   QLabel *mpLegendPositionLabel;
   QComboBox *mpLegendPositionComboBox;
+  /* range tab */
+  QWidget *mpRangeTab;
+  QCheckBox *mpAutoScaleCheckbox;
+  QGroupBox *mpXAxisGroupBox;
+  QLabel *mpXMinimumLabel;
+  QLineEdit *mpXMinimumTextBox;
+  QLabel *mpXMaximumLabel;
+  QLineEdit *mpXMaximumTextBox;
+  QGroupBox *mpYAxisGroupBox;
+  QLabel *mpYMinimumLabel;
+  QLineEdit *mpYMinimumTextBox;
+  QLabel *mpYMaximumLabel;
+  QLineEdit *mpYMaximumTextBox;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;
@@ -241,6 +254,7 @@ public:
   void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
 public slots:
   void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
+  void autoScaleChecked(bool checked);
   void saveSetup();
   void applySetup();
 };
