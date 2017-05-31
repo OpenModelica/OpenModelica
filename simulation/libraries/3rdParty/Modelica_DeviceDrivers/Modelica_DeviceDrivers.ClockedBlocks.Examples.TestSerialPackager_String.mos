@@ -1,6 +1,6 @@
-// name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager
+// name: Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager_String
 // keywords: simulation Modelica_DeviceDrivers examples
-// status: correct
+// status: omc failure
 //
 // Simulation Results
 // Modelica_DeviceDrivers
@@ -8,11 +8,10 @@
 
 runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
 
-echo(false);
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
-modelName := $TypeName(Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager);
+modelName := $TypeName(Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager_String);
 compareVars :=
-{"unpackInt.y", "getInteger.y[1]", "unpackInt1.y"};
+{"unpackInt.y", "findString.y", "getInteger.y[1]"};
 
 runScript("common.mos");getErrorString();
 
@@ -22,10 +21,18 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager', options = '', outputFormat = 'mat', variableFilter = 'time|unpackInt.y|getInteger.y.1.|unpackInt1.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
-// Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_res.mat
-// Files Equal!
-// Warning: Alias equations of external objects are not Modelica compliant as in:
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager
+// {"unpackInt.y","unpackInt1.y","getInteger.y[1]","getBoolean.y[1]"}
+// "Modelica_DeviceDrivers
+// \"\"
+// true
+// \"Modelica_DeviceDrivers\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager', options = '', outputFormat = 'mat', variableFilter = 'time|unpackInt.y|unpackInt1.y|getInteger.y.1.|getBoolean.y.1.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Error: Simulation did not produce a result-file
+// Errors: Failed to build model: Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackagerWarning: Alias equations of external objects are not Modelica compliant as in:
 //     addBoolean.pkgOut[1].pkg = resetPointer.pkgIn.pkg
 //     getBoolean.pkgIn.pkg = getInteger.pkgOut[1].pkg
 //     addBoolean.pkgIn.pkg = addInteger.pkgOut[1].pkg
@@ -43,8 +50,6 @@ runScript(modelTesting);getErrorString();
 //     packInt1.pkgOut[1].pkg = packInt1.pkgIn.pkg
 //     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
 //     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
+// Error: Too many equations, over-determined system. The model has 100 equation(s) and 99 variable(s).
 //
-// "true
-// "
-// ""
 // endResult

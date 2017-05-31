@@ -2,6 +2,9 @@
 // keywords: simulation Modelica_DeviceDrivers examples
 // status: correct
 //
+// Simulation Results
+// Modelica_DeviceDrivers
+//
 
 runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
 

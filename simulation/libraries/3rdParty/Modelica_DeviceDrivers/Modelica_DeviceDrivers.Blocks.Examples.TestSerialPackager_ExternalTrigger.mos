@@ -1,9 +1,9 @@
 // name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger
-// keywords: simulation Modelica_Synchronous examples
+// keywords: simulation Modelica_DeviceDrivers examples
 // status: correct
 //
 // Simulation Results
-// Modelica_Synchronous
+// Modelica_DeviceDrivers
 //
 
 runScript("../../common/ModelTestingDefaults.mos"); getErrorString();

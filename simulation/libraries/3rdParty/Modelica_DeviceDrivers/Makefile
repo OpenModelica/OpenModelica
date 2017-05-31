@@ -10,6 +10,8 @@ Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=  \
+Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager.mos \
+Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager_String.mos \
 
 # 2017-05-31 bthiele: MDD specific manual tests
 # The problem with the cases below is, that they open sockets and if
