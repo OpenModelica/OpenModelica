@@ -4,12 +4,23 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager.mos \
-
+Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String.mos \
+Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=  \
+
+# 2017-05-31 bthiele: MDD specific manual tests
+# The problem with the cases below is, that they open sockets and if
+# executed in parallel, this will fail due to the same address being already in use.
+# There is also a source of indeterminism due to UDP communication delays.
+# Don't know yet how to provide good automatic regression tests for these and for
+# similar guys (the hardware related tests of MDD are difficult to automatize).
+MANUALTESTFILES=  \
 Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDP.mos \
+Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger.mos \
+Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPAutoBufferSize.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
@@ -59,3 +70,9 @@ failingtest :
 	@echo Running failing tests...
 	@echo
 	@$(TEST) $(FAILINGTESTFILES) \
+
+manualtest :
+	@echo
+	@echo Running manual tests...
+	@echo
+	@$(TEST) $(MANUALTESTFILES) \

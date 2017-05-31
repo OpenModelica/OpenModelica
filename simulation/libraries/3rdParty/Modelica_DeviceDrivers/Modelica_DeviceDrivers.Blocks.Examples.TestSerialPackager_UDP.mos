@@ -1,0 +1,45 @@
+// name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDP
+// keywords: simulation Modelica_DeviceDrivers examples
+// status: correct
+//
+// Simulation Results
+// Modelica_DeviceDrivers
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+echo(false);
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelName := $TypeName(Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDP);
+simflags := "-rt=1";
+compareVars :=
+{"getInteger.y[1]"};
+
+runScript("common.mos");getErrorString();
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDP', options = '', outputFormat = 'mat', variableFilter = 'time|getInteger.y.1.', cflags = '', simflags = '-rt=1 -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDP_res.mat
+// Files Equal!
+// Warning: Alias equations of external objects are not Modelica compliant as in:
+//     getFloat.pkgOut[1].pkg = getInteger.pkgIn.pkg
+//     getFloat.pkgIn.pkg = getReal.pkgOut[1].pkg
+//     addInteger.pkgOut[1].pkg = uDPSend.pkgIn.pkg
+//     addFloat.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     addFloat.pkgIn.pkg = addReal.pkgOut[1].pkg
+//     getReal.pkgIn.pkg = uDPReceive.pkgOut.pkg
+//     addReal.pkgIn.pkg = packager.pkgOut.pkg
+//     getFloat.pkgOut[1].pkg = getFloat.pkgIn.pkg
+//     addFloat.pkgOut[1].pkg = addFloat.pkgIn.pkg
+//     getReal.pkgOut[1].pkg = getReal.pkgIn.pkg
+//     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     addReal.pkgOut[1].pkg = addReal.pkgIn.pkg
+//
+// "true
+// "
+// ""
+// endResult
