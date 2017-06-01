@@ -738,6 +738,8 @@ void ComponentParameters::setUpDialog()
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
               pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
             pGroupBoxGridLayout->addWidget(pParameter->getFileSelectorButton(), layoutIndex, columnIndex++);
+          } else {
+            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           if (pParameter->getUnitComboBox()->count() > 0) { // only add the unit combobox if we really have a unit
             pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
@@ -867,8 +869,8 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     QString groupBox = "";
     bool enable = true;
     bool showStartAttribute = false;
-    QString loadSelectorFilter, loadSelectorCaption, saveSelectorFilter, saveSelectorCaption;
-    QString start, fixed = "";
+    QString loadSelectorFilter = "-", loadSelectorCaption = "-", saveSelectorFilter = "-", saveSelectorCaption = "-";
+    QString start = "", fixed = "";
     bool isParameter = (pComponent->getComponentInfo()->getVariablity().compare("parameter") == 0);
     // If not a parameter then check for start and fixed bindings. See Modelica.Electrical.Analog.Basic.Resistor parameter R.
     if (!isParameter) {
