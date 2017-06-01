@@ -385,7 +385,7 @@ algorithm
       // variables is fine
       case DAE.PROP(constFlag = DAE.C_VAR()) then ();
       // constant
-      case DAE.PROP(ty, DAE.C_CONST())
+      case DAE.PROP(_, DAE.C_CONST())
         equation
           l = stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
           r = ExpressionDump.printExpStr(rhs);
@@ -406,7 +406,7 @@ algorithm
         then
           ();
       // tuples? TODO! FIXME! can we get tuple here? maybe only for MetaModelica
-      case DAE.PROP_TUPLE(ty, _) then ();
+      case DAE.PROP_TUPLE(_, _) then ();
     end matchcontinue;
     i := i + 1;
   end for;
