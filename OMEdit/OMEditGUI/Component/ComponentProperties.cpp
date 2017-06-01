@@ -742,7 +742,14 @@ void ComponentParameters::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
           if (pParameter->getUnitComboBox()->count() > 0) { // only add the unit combobox if we really have a unit
-            pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
+            /* ticket:4421
+             * Show a fixed value when there is only one unit.
+             */
+            if (pParameter->getUnitComboBox()->count() == 1) {
+              pGroupBoxGridLayout->addWidget(new Label(pParameter->getUnitComboBox()->currentText()), layoutIndex, columnIndex++);
+            } else {
+              pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
+            }
           } else {
             pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
           }
