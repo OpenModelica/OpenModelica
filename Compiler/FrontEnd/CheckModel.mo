@@ -510,16 +510,16 @@ algorithm
       DAE.Expand expand;
 
     // Skip wild
-    case (e as DAE.CREF(componentRef=DAE.WILD()), (expand,ht))
-      then (e, false, (expand,ht));
+    case (e as DAE.CREF(componentRef=DAE.WILD()), _)
+      then (e, false, inTpl);
 
     // Skip time
-    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time", subscriptLst={})), (expand,ht))
-      then (e, false, (expand,ht));
+    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time", subscriptLst={})), _)
+      then (e, false, inTpl);
 
     // Skip external Objects
-    case (e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())), (expand,ht))
-      then (e, false, (expand,ht));
+    case (e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())), _)
+      then (e, false, inTpl);
 
     // records are not arays, expand them always
     case (e as DAE.CREF(componentRef=cr, ty=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), (expand,ht))
@@ -549,29 +549,29 @@ algorithm
         ht = List.fold(crlst, BaseHashSet.add, ht);
       then (e, false, (expand,ht));
 
-    case (e as DAE.ASUB(exp=exp), (expand,ht))
+    case (e as DAE.ASUB(exp=exp), _)
       equation
-        (_, (expand,ht)) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
-      then (e, false, (expand,ht));
+        (_, outTpl) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, inTpl);
+      then (e, false, outTpl);
 
-    case (e as DAE.TSUB(exp=exp), (expand,ht))
+    case (e as DAE.TSUB(exp=exp), _)
       equation
-        (_, (expand,ht)) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
-      then (e, false, (expand,ht));
+        (_, outTpl) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, inTpl);
+      then (e, false, outTpl);
 
-    case (e as DAE.RELATION(), (expand,ht))
-      then (e, false, (expand,ht));
+    case (e as DAE.RELATION(), _)
+      then (e, false, inTpl);
 
-    case (e as DAE.RANGE(), (expand,ht))
-      then (e, false, (expand,ht));
+    case (e as DAE.RANGE(), _)
+      then (e, false, inTpl);
 
-    case (e as DAE.IFEXP(expThen=e1, expElse=e2), (expand,ht))
+    case (e as DAE.IFEXP(expThen=e1, expElse=e2), _)
       equation
-        (_, (expand,ht)) = Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, (expand,ht));
-        (_, (expand,ht)) = Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, (expand,ht));
-      then (e, false, (expand,ht));
+        (_, outTpl) = Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, inTpl);
+        (_, outTpl) = Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, outTpl);
+      then (e, false, outTpl);
 
-    case (e, (expand,ht)) then (e, true, (expand,ht));
+    case (e, _) then (e, true, inTpl);
 
   end matchcontinue;
 end statementOutputsCrefFinder;
@@ -862,7 +862,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e;
 
-    case (DAE.CREF(componentRef = DAE.WILD()), (_, _))
+    case (DAE.CREF(componentRef = DAE.WILD()), _)
       then (inExp,inTpl);
 
     case (e as DAE.CREF(componentRef=cr), (hs, crefs))
