@@ -397,7 +397,7 @@ protected
   BackendDAE.Equation eqn;
   list<BackendDAE.WhenOperator> whenStmtLst;
   DAE.ComponentRef cr;
-  list<DAE.ComponentRef > crefLst, crefLst2;
+  list<DAE.ComponentRef > crefLst;
   Boolean active;
   DAE.ElementSource source;
 algorithm
@@ -422,11 +422,9 @@ algorithm
               outEqns := eqn::outEqns;
             else
               crefLst := List.flatten(List.map(eLst,Expression.getAllCrefs));
-              crefLst2 := {};
               for cr in crefLst loop
-                crefLst2 := listAppend(ComponentReference.expandCref(cr, true), crefLst2);
+                outLeftCrs := List.fold(ComponentReference.expandCref(cr, true), BaseHashSet.add, outLeftCrs);
               end for;
-              outLeftCrs := List.fold(crefLst2, BaseHashSet.add, outLeftCrs);
             end if;
           then ();
 
@@ -1914,7 +1912,7 @@ algorithm
       end if;
     then ((parameters, anyStartValue), not anyStartValue);
 
-    else ((parameters, anyStartValue), true);
+    else (inParams, true);
   end match;
 end parameterCheck2;
 
