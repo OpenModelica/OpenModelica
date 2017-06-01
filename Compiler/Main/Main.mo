@@ -211,36 +211,25 @@ public function handleCommand
   input GlobalScript.SymbolTable inSymbolTable;
   output Boolean outContinue;
   output String outResult;
-  output GlobalScript.SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable = inSymbolTable;
 protected
+  Option<GlobalScript.Statements> stmts;
+  Option<Absyn.Program> prog;
+  GlobalScript.SymbolTable st;
 algorithm
   Print.clearBuf();
 
-  (outContinue, outResult, outSymbolTable) :=
-  matchcontinue(inCommand, inSymbolTable)
-    local
-      Option<GlobalScript.Statements> stmts;
-      Option<Absyn.Program> prog;
-      GlobalScript.SymbolTable st;
-      String result;
+  if Util.strncmp("quit()", inCommand, 6) then
+    outContinue := false;
+    outResult := "Ok\n";
+  else
+    outContinue := true;
 
-    case (_, _)
-      equation
-        true = Util.strncmp("quit()", inCommand, 6);
-      then
-        (false, "Ok\n", inSymbolTable);
-
-    else
-      equation
-        (stmts, prog) = parseCommand(inCommand);
-        (result, st) = handleCommand2(stmts, prog, inCommand, inSymbolTable);
-        result = makeDebugResult(Flags.DUMP, result);
-        result = makeDebugResult(Flags.DUMP_GRAPHVIZ, result);
-      then
-        (true, result, st);
-
-  end matchcontinue;
-
+    (stmts, prog) := parseCommand(inCommand);
+    (outResult, outSymbolTable) := handleCommand2(stmts, prog, inCommand, outSymbolTable);
+    outResult := makeDebugResult(Flags.DUMP, outResult);
+    outResult := makeDebugResult(Flags.DUMP_GRAPHVIZ, outResult);
+  end if;
 end handleCommand;
 
 protected function handleCommand2
@@ -945,4 +934,3 @@ end main2;
 
 annotation(__OpenModelica_Interface="backend");
 end Main;
-
