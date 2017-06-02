@@ -17,7 +17,7 @@ TraceabilityInformationURI::TraceabilityInformationURI()
 {
 }
 
-void TraceabilityInformationURI::translateModelCreationURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString fileNameURI)
+void TraceabilityInformationURI::translateModelCreationURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString fileNameURI, QString entityType, QString path, QString gitHash)
 {
   QString  email, userName;
   userName = OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
@@ -25,17 +25,19 @@ void TraceabilityInformationURI::translateModelCreationURIToJsonMessageFormat(QS
   QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
                                        "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
                                        "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
-                                       "      \"messageFormatVersion\": \"0.1\",\n"
+                                       "      \"messageFormatVersion\": \"1.4\",\n"
                                        "      \"prov:Entity\": [\n"
                                        "            {\n"
                                        "            \"rdf:about\": \"%4\",\n"
-                                       "            \"type\": \"softwareTool\",\n"
+                                       "            \"type\": \"Simulation Tool\",\n"
+                                       "            \"version\": \"OpenModelica\",\n"
                                        "            \"name\": \"OpenModelica\"\n"
                                        "            },\n"
                                        "            {\n"
                                        "            \"rdf:about\" : \"%1\",\n"
-                                       "            \"path\" : \"%1\",\n"
-                                       "            \"type\" : \"%7\",\n"
+                                       "            \"path\" : \"%9\",\n"
+                                       "            \"type\" : \"%8\",\n"
+                                       "            \"hash\" : \"%10\",\n"
                                        "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
                                        "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%2\"}}\n"
                                        "            }\n"
@@ -44,22 +46,23 @@ void TraceabilityInformationURI::translateModelCreationURIToJsonMessageFormat(QS
                                        "            {\n"
                                        "            \"rdf:about\": \"%3\",\n"
                                        "            \"name\": \"%5\",\n"
-                                       "            \"Email\": \"%6\"\n"
+                                       "            \"email\": \"%6\"\n"
                                        "            }\n"
                                        "     ],\n"
                                        "     \"prov:Activity\": [\n"
                                        "            {\n"
+                                       "            \"time\": \"2016-09-19T13:53:06Z\",\n"
                                        "            \"type\": \"%7\",\n"
                                        "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%3\"}},\n"
-                                       "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%4\"}},\n"
+                                       "            \"prov:used\": {\"prov:Entity\": [ {\"rdf:about\": \"%4\"}]},\n"
                                        "            \"rdf:about\": \"%2\"\n"
                                        "            }\n"
                                        "     ]\n"
-                                       "}}").arg(fileNameURI.simplified()).arg(activityURI.simplified()).arg(agentURI.simplified()).arg(toolURI.simplified()).arg(userName).arg(email).arg(modelingActivity);
+                                       "}}").arg(fileNameURI.simplified()).arg(activityURI.simplified()).arg(agentURI.simplified()).arg(toolURI.simplified()).arg(userName).arg(email).arg(modelingActivity).arg(entityType.simplified()).arg(path.simplified()).arg(gitHash.simplified());
   sendTraceabilityInformation(jsonMessageFormat);
 }
 
-void TraceabilityInformationURI::translateURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString sourceModelFileNameURI, QString fmuFileNameURI)
+void TraceabilityInformationURI::translateURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString sourceModelFileNameURI, QString fmuFileNameURI, QString entityType, QString path, QString gitHash)
 {
   QString  email, userName;
   userName = OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
@@ -71,37 +74,41 @@ void TraceabilityInformationURI::translateURIToJsonMessageFormat(QString modelin
   QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
                                        "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
                                        "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
-                                       "      \"messageFormatVersion\": \"0.1\",\n"
+                                       "      \"messageFormatVersion\": \"1.4\",\n"
                                        "      \"prov:Entity\": [\n"
                                        "            {\n"
                                        "            \"rdf:about\": \"%2\",\n"
-                                       "            \"type\": \"softwareTool\",\n"
+                                       "            \"type\": \"Simulation Tool\",\n"
+                                       "            \"version\": \"OpenModelica\",\n"
                                        "            \"name\": \"OpenModelica\"\n"
                                        "            },\n"
                                        "            {\n"
                                        "            \"rdf:about\" : \"%3\",\n"
-                                       "            \"type\" : \"%1\",\n"
+                                       "            \"type\" : \"%9\",\n"
+                                       "            \"path\" : \"%10\",\n"
+                                       "            \"hash\" : \"%11\",\n"
                                        "            \"prov:wasAttributedTo\": {\"prov:Agent\": {\"rdf:about\": \"%4\"}},\n"
                                        "            \"prov:wasGeneratedBy\": {\"prov:Activity\": {\"rdf:about\": \"%5\"}},\n"
-                                       "            \"prov:wasDerivedFrom\": [{\"prov:Entity\": {\"rdf:about\": \"%6\"}}]\n"
+                                       "            \"prov:wasDerivedFrom\": {\"prov:Entity\": [{\"rdf:about\": \"%6\"}]}\n"
                                        "            }\n"
                                        "      ],\n "
                                        "     \"prov:Agent\": [\n"
                                        "            {\n"
                                        "            \"rdf:about\": \"%4\",\n"
                                        "            \"name\": \"%7\",\n"
-                                       "            \"Email\": \"%8\"\n"
+                                       "            \"email\": \"%8\"\n"
                                        "            }\n"
                                        "     ],\n"
                                        "     \"prov:Activity\": [\n"
                                        "            {\n"
+                                       "            \"time\": \"2016-09-19T13:53:06Z\",\n"
                                        "            \"type\": \"%1\",\n"
                                        "            \"prov:wasAssociatedWith\": {\"prov:Agent\": {\"rdf:about\": \"%4\"}},\n"
-                                       "            \"prov:used\": {\"prov:Entity\": {\"rdf:about\": \"%2\"}},\n"
+                                       "            \"prov:used\": {\"prov:Entity\": [{\"rdf:about\": \"%2\"}]},\n"
                                        "            \"rdf:about\": \"%5\"\n"
                                        "            }\n"
                                        "     ]\n"
-                                       "}}").arg(modelingActivity.simplified()).arg(toolURI.simplified()).arg(fmuFileNameURI.simplified()).arg(agentURI.simplified()).arg(activityURI.simplified()).arg(sourceModelFileNameURI.simplified()).arg(userName).arg(email);
+                                       "}}").arg(modelingActivity.simplified()).arg(toolURI.simplified()).arg(fmuFileNameURI.simplified()).arg(agentURI.simplified()).arg(activityURI.simplified()).arg(sourceModelFileNameURI.simplified()).arg(userName).arg(email).arg(entityType.simplified()).arg(path.simplified()).arg(gitHash.simplified());
   sendTraceabilityInformation(jsonMessageFormat);
 }
 

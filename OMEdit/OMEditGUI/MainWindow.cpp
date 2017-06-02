@@ -831,7 +831,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   //trace export FMU
   if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
     //Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("FMU Export", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
+    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
   }
   // hide progress bar
   hideProgressBar();

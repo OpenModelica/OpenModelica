@@ -171,9 +171,9 @@ void CommitChangesDialog::addFile(QString fileStatus, QString fileName, bool che
 QString CommitChangesDialog::getFileStatus(QString status)
 {
  if (status.trimmed().compare("M")== 0)
-    return "Model Modification";
+    return "modelModification";
   else if (status.trimmed().compare("A")== 0)
-    return "Model Creation";
+    return "modelCreation";
   else if (status.trimmed().compare("D")== 0)
     return "Deleted";
   else if (status.trimmed().compare("R")== 0)
@@ -181,9 +181,9 @@ QString CommitChangesDialog::getFileStatus(QString status)
   else if (status.trimmed().compare("C")== 0)
     return "Copied";
   else if (status.trimmed().compare("??")== 0)
-    return "Model Creation";
+    return "modelCreation";
  else if (status.trimmed().compare("AM")== 0)
-   return "Model Creation";
+   return "modelCreation";
   else
     // should never be reached
     return "UnknownFileStatus";
@@ -218,20 +218,26 @@ void CommitChangesDialog::commitFiles()
 
 void CommitChangesDialog::generateTraceabilityURI(QString activity, QString modelFileName, QString nameStructure, QString fmuFileName)
 {
-  QString toolURI, activityURI, agentURI, sourceModelFileNameURI, fmuFileNameURI;
+  QString toolURI, activityURI, agentURI, sourceModelFileNameURI, fmuFileNameURI, entityType, path, gitHash;
   QDir dir(OptionsDialog::instance()->getTraceabilityPage()->getGitRepository()->text());
   QDateTime time = QDateTime::currentDateTime();
-  if(activity.compare("ModelDescription Import")== 0) {
-    fmuFileNameURI = "Entity.model: " + dir.relativeFilePath(modelFileName) + "#" + GitCommands::instance()->commitAndGetFileHash(modelFileName, activity);
-    sourceModelFileNameURI = "Entity.modelDescription xml:" + dir.relativeFilePath(fmuFileName) + "#" + GitCommands::instance()->getGitHash(fmuFileName);
+  if(activity.compare("modelDescriptionImport")== 0) {
+    entityType = "modelDescriptionFile";
+    path = dir.relativeFilePath(modelFileName);
+    gitHash = GitCommands::instance()->commitAndGetFileHash(modelFileName, activity);
+    fmuFileNameURI = "Entity.modelFile:" + path + "#" + gitHash ;
+    sourceModelFileNameURI = "Entity.modelDescriptionFile:" + dir.relativeFilePath(fmuFileName) + "#" + GitCommands::instance()->getGitHash(fmuFileName);
   }else {
-    fmuFileNameURI = "Entity.fmu: " + dir.relativeFilePath(fmuFileName) + "#" + GitCommands::instance()->commitAndGetFileHash(fmuFileName, activity);
-    sourceModelFileNameURI = "Entity.model:" + dir.relativeFilePath(modelFileName) + "#" + GitCommands::instance()->getGitHash(modelFileName);
+    entityType = "fmu";
+    path = dir.relativeFilePath(fmuFileName);
+    gitHash = GitCommands::instance()->commitAndGetFileHash(fmuFileName, activity);
+    fmuFileNameURI = "Entity.fmu:" + path + "#" + gitHash;
+    sourceModelFileNameURI = "Entity.modelFile:" + dir.relativeFilePath(modelFileName) + "#" + GitCommands::instance()->getGitHash(modelFileName);
   }
-  toolURI = "Entity.softwareTool: " + MainWindow::instance()->getOMCProxy()->getVersion();
-  agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
-  activityURI = "Activity."+ activity +":" + time.toString("yyyy-MM-dd-hh-mm-ss");
-  MainWindow::instance()->getTraceabilityInformationURI()->translateURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI,  fmuFileNameURI);
+  toolURI = "Entity.softwareTool:OpenModelica: " + MainWindow::instance()->getOMCProxy()->getVersion();
+  agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
+  activityURI = "Activity."+ activity +":" + time.toTimeSpec(Qt::OffsetFromUTC).toString(Qt::ISODate)+ "#" + QUuid::createUuid().toString().mid(1, 36);
+  MainWindow::instance()->getTraceabilityInformationURI()->translateURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI,  fmuFileNameURI, entityType, path, gitHash);
 }
 
 void CommitChangesDialog::commitAndGenerateTraceabilityURI(QString fileName)
@@ -243,20 +249,23 @@ void CommitChangesDialog::commitAndGenerateTraceabilityURI(QString fileName)
    commitMessage = QInputDialog::getMultiLineText(MainWindow::instance(), tr("Commit Message "), "Please Enter Commit Description:");
 #else // Qt4
 #endif
-  QString toolURI, activityURI, agentURI, sourceModelFileNameURI, fmuFileNameURI;
+  QString toolURI, activityURI, agentURI, sourceModelFileNameURI, fmuFileNameURI, gitHash, path;
   QDir dir(OptionsDialog::instance()->getTraceabilityPage()->getGitRepository()->text());
   QDateTime time = QDateTime::currentDateTime();
-  toolURI = "Entity.softwareTool: " + MainWindow::instance()->getOMCProxy()->getVersion();
-  agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
-  activityURI = "Activity."+ activity +":" + time.toString("yyyy-MM-dd-hh-mm-ss");
-  if(activity.compare("Model Modification")== 0) {
-    sourceModelFileNameURI = "Entity.model:" + dir.relativeFilePath(fileName) + "#" + GitCommands::instance()->getGitHash(fileName);
-    fmuFileNameURI = "Entity.model:" + dir.relativeFilePath(fileName) + "#" + GitCommands::instance()->commitAndGetFileHash(fileName, commitMessage);
-    MainWindow::instance()->getTraceabilityInformationURI()->translateURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI,  fmuFileNameURI);
+  toolURI = "Entity.softwareTool:OpenModelica: " + MainWindow::instance()->getOMCProxy()->getVersion();
+  agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
+  activityURI = "Activity."+ activity +":" + time.toTimeSpec(Qt::OffsetFromUTC).toString(Qt::ISODate)+ "#" + QUuid::createUuid().toString().mid(1, 36);
+  path = dir.relativeFilePath(fileName);
+  if(activity.compare("modelModification")== 0) {
+    gitHash = GitCommands::instance()->getGitHash(fileName);
+    sourceModelFileNameURI = "Entity.modelFile:" + path + "#" + gitHash;
+    fmuFileNameURI = "Entity.modelFile:" + path + "#" + GitCommands::instance()->commitAndGetFileHash(fileName, commitMessage);
+    MainWindow::instance()->getTraceabilityInformationURI()->translateURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI,  fmuFileNameURI, "modelFile", path, gitHash);
   }
-  else if(activity.compare("Model Creation")== 0) {
-    sourceModelFileNameURI = "Entity.model: " + dir.relativeFilePath(fileName) + "#" + GitCommands::instance()->commitAndGetFileHash(fileName, commitMessage);
-    MainWindow::instance()->getTraceabilityInformationURI()->translateModelCreationURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI);
+  else if(activity.compare("modelCreation")== 0) {
+    gitHash = GitCommands::instance()->commitAndGetFileHash(fileName, commitMessage);
+    sourceModelFileNameURI = "Entity.modelFile:" + path + "#" + gitHash;
+    MainWindow::instance()->getTraceabilityInformationURI()->translateModelCreationURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI, "modelFile", path, gitHash);
   }
 }
 
