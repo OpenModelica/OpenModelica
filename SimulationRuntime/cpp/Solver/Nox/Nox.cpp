@@ -94,7 +94,7 @@ void Nox::initialize()
 	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
 	_statusTestsCombo->addStatusTest(_statusTestStagnation);
 	_statusTestsCombo->addStatusTest(_statusTestDivergence);
-	_statusTestsCombo->addStatusTest(_statusTestSgnChange);
+	//_statusTestsCombo->addStatusTest(_statusTestSgnChange);
 
 	if (_generateoutput) std::cout << "ending init" << std::endl;
 }
@@ -113,7 +113,10 @@ void Nox::solve()
 	_locTol=5.0e-7;
 	_currentIterateNorm=1.0e2;
 
-    if (_firstCall) initialize();
+    if (_firstCall){
+      initialize();
+      _statusTestsCombo->addStatusTest(_statusTestSgnChange);
+    }
 
 
 	// Create the list of solver parameters. For detailed calibration, check https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
@@ -357,6 +360,10 @@ void Nox::restoreNewValues()
 void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 {
     if (_firstCall) initialize();
+
+	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
+	_statusTestsCombo->addStatusTest(_statusTestStagnation);
+	_statusTestsCombo->addStatusTest(_statusTestDivergence);
 
 	if(_generateoutput) std::cout << "We are going to solve algloop " << _algLoop->getEquationIndex() << std::endl;
 
