@@ -509,8 +509,8 @@ namespace IAEX {
 
   int MyTextEdit3::indentationLevel(QString s, bool includeNegative)
   {
-    QRegExp e1("\\b(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
-    QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
+    QRegExp e1("\\b(model|class|type|connector|block|record|function|for|when|package|if)\\b");
+    QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|for|when|package|if)\\b");
     QRegExp e2("\\b(end|then)\\b");
 
     QRegExp newLineEnd("^end\\b");
@@ -558,8 +558,7 @@ namespace IAEX {
     else
     {
       // 2006-01-30 AF, add message box
-      QString msg = "No Output style defened, please define a Output style in stylesheet.xml";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -1102,7 +1101,7 @@ void LatexCell::eval(bool silent)
         if (Latexversion.isEmpty())
         {
           if (!silent)
-            QMessageBox::warning( 0, "Error", "Latex is not installed in your System. This cell cannot be evaluated.", "OK" );
+            QMessageBox::warning( 0, tr("Error"), tr("Latex is not installed in your System. This cell cannot be evaluated."), "OK" );
         }
         /*Generate the DVI file from tex through latex */
         else
@@ -1168,7 +1167,7 @@ void LatexCell::eval(bool silent)
             else
             {
 
-                QMessageBox::warning( 0, "Warning", "Maximum of 1 page document generation is supported per Latexcell, The script generates more than 1 page", "OK" );
+                QMessageBox::warning( 0, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."), "OK" );
             }
         }
     }
@@ -1176,7 +1175,7 @@ void LatexCell::eval(bool silent)
     {
         //qDebug()<< "Empty cells can't be evaluated";
         input_->clear();
-        input_->textCursor().insertText("Message: Empty Latex Cells cannot be Evaluated");
+        input_->textCursor().insertText(tr("Message: Empty Latex Cells cannot be evaluated."));
         setClosed(false);
     }
     input_->blockSignals(false);
@@ -1190,16 +1189,16 @@ void LatexCell::setState(int state_)
     switch(state_)
     {
     case Modified_l:
-      emit newState("Ready");
+      emit newState(tr("Ready"));
       break;
     case Eval_l:
-      emit newState("Evaluating...");
+      emit newState(tr("Evaluating..."));
       break;
     case Finished_l:
-      emit newState("Done");
+      emit newState(tr("Done"));
       break;
     case Error_l:
-      emit newState("Error");
+      emit newState(tr("Error"));
       break;
     }
   }

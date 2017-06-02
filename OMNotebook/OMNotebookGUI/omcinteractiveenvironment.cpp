@@ -231,7 +231,7 @@ namespace IAEX
     catch( exception &e )
     {
       e.what();
-      QMessageBox::critical( 0, "OMC Error", "Unable to get OMC version, OMC is not started." );
+      QMessageBox::critical( 0, QObject::tr("OMC Error"), QObject::tr("Unable to get OMC version, OMC is not started.") );
     }
 
     return version;

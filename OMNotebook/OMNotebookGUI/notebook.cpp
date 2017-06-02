@@ -142,7 +142,7 @@ NotebookWindow::NotebookWindow(Document *subject,
   //    subject_->attach(this);
   //    setMinimumSize( 150, 220 );    //AF
 
-  toolBar = new QToolBar("Show toolbar", this);
+  toolBar = new QToolBar(tr("Show toolbar"), this);
 
 
   posIndicator = new QLabel("");
@@ -175,7 +175,7 @@ NotebookWindow::NotebookWindow(Document *subject,
   // 2006-01-16 AF, Added an icon to the window
   setWindowIcon( QIcon(":/Resources/OMNotebook_icon.svg"));
 
-  statusBar()->showMessage("Ready");
+  statusBar()->showMessage(tr("Ready"));
   resize(800, 600);
 
   connect( subject_->getCursor(), SIGNAL( changedPosition() ),
@@ -2226,14 +2226,14 @@ void NotebookWindow::updateChapterCounters()
 void NotebookWindow::setStatusMessage( QString msg )
 {
   if( msg.isEmpty() )
-    statusBar()->showMessage("Ready");
+    statusBar()->showMessage(tr("Ready"));
   else
     statusBar()->showMessage( msg );
 }
 
 void NotebookWindow::setPosition(int r, int c)
 {
-  posIndicator->setText(QString("Ln %1, Col %2").arg(r).arg(c));
+  posIndicator->setText(QString("Ln %1, Col %2").arg(r,c));
 }
 
 void NotebookWindow::setState(QString s)
@@ -2388,7 +2388,7 @@ void NotebookWindow::newFile()
   {
     if(subject_->hasChanged())
     {
-      int res = QMessageBox::question(this, QString("Save document?"), QString("The document has been modified. Do you want to save the changes?"),  QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+      int res = QMessageBox::question(this, tr("Save document?"), tr("The document has been modified. Do you want to save the changes?"),  QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
       if(res == QMessageBox::Yes)
       {
         save();
@@ -2481,8 +2481,7 @@ void NotebookWindow::openFile(const QString filename)
   }
   catch(exception &e)
   {
-    QString msg = QString("In OpenFile(), Exception: \n") + e.what();
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QMessageBox::warning( 0, tr("Warning"), tr("In OpenFile(), Exception: \n") + e.what(), "OK" );
     openFile();
   }
 }
@@ -2542,7 +2541,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
   // user wants to save the document
   while( subject_->hasChanged() )
   {
-    int res = QMessageBox::question(this, "Document is unsaved", tr("The document \"%1\" is unsaved, do you want to save the document?").arg(filename),
+    int res = QMessageBox::question(this, tr("Document is unsaved"), tr("The document \"%1\" is unsaved, do you want to save the document?").arg(filename),
                                     QMessageBox::Save | QMessageBox::Discard |  QMessageBox::Cancel, QMessageBox::Save);
 
     if( res == QMessageBox::Discard ) {
@@ -2659,14 +2658,13 @@ void NotebookWindow::helpText()
     }
     else
     {
-      QString msg = QString( "Could not find the help document OMNotebookHelp.onb" );
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("Could not find the help document OMNotebookHelp.onb"), "OK" );
     }
   }
   catch(exception &e)
   {
-    QString msg = QString("In HelpText(), Exception: \n") + e.what();
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QString msg = tr("In HelpText(), Exception: \n") + e.what();
+    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
   }
 }
 
@@ -2724,11 +2722,11 @@ void NotebookWindow::saveas()
 
     //QMessageBox::about(this,"entered ","image witten ");
 
-    statusBar()->showMessage("Saving file");
+    statusBar()->showMessage(tr("Saving file"));
     application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_, filename));
 
     filename_ = filename;
-    statusBar()->showMessage("Ready");
+    statusBar()->showMessage(tr("Ready"));
 
     updateRecentFiles(filename_);
 
@@ -2757,9 +2755,9 @@ void NotebookWindow::save()
   }
   else
   {
-    statusBar()->showMessage("Saving file");
+    statusBar()->showMessage(tr("Saving file"));
     application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_));
-    statusBar()->showMessage("Ready");
+    statusBar()->showMessage(tr("Ready"));
 
     updateWindowTitle();
   }
@@ -2809,10 +2807,7 @@ void NotebookWindow::print()
     if( title.isEmpty() )
       title = "(untitled)";
 
-    QString msg = QString( "The document " ) + title +
-        QString( " has been printed on " ) +
-        printer.printerName() + QString( "." );
-    QMessageBox::information( 0, "Document printed", msg, "OK" );
+    QMessageBox::information( 0, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()), "OK" );
   }
 
   delete dlg;
@@ -2839,7 +2834,7 @@ void NotebookWindow::pdf()
     // open save as dialog
     filename = QFileDialog::getSaveFileName(
         this,
-        "Choose a filename to save PDF under",
+        tr("Choose a filename to save PDF under"),
         fi2.filePath(),
         "PDF (*.pdf)");
   }
@@ -2848,7 +2843,7 @@ void NotebookWindow::pdf()
   // open save as dialog
   filename = QFileDialog::getSaveFileName(
         this,
-        "Choose a filename to save PDF under",
+        tr("Choose a filename to save PDF under"),
         saveDir_,
         "PDF (*.pdf)");
   }
@@ -2875,7 +2870,7 @@ void NotebookWindow::pdf()
     title.remove( "\n" );
     if( title.isEmpty() )
       title = "(untitled)";
-    QMessageBox::information( 0, "Document exported", tr("The document %1 has been exported as PDF to %2.").arg(title,filename), "OK" );
+    QMessageBox::information( 0, tr("Document exported"), tr("The document %1 has been exported as PDF to %2.").arg(title, filename), "OK" );
   }
 }
 
@@ -2932,8 +2927,7 @@ void NotebookWindow::changeStyle(QAction *action)
   else
   {
     // 2006-01-30 AF, add message box
-    QString msg = "Not a valid style name: " + action->text();
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QMessageBox::warning( 0, tr("Warning"), tr("Not a valid style name: %1").arg(action->text()), "OK" );
   }
 
   updateChapterCounters();
@@ -3042,8 +3036,7 @@ void NotebookWindow::changeFontSize( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 6 and 200";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(6).arg(200), "OK" );
       }
     }
   }
@@ -3058,7 +3051,7 @@ void NotebookWindow::changeFontSize( QAction *action )
     {
       // 2006-01-30 AF, add message box
       QString msg = "Not a correct font size";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
     }
   }
 }
@@ -3151,7 +3144,7 @@ void NotebookWindow::changeTextAlignment( QAction *action )
   {
     // 2006-01-30 AF, add message box
     QString msg = "Unable to find the correct alignment";
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
   }
 }
 
@@ -3182,7 +3175,7 @@ void NotebookWindow::changeVerticalAlignment( QAction *action )
   {
     // 2006-01-30 AF, add message box
     QString msg = "Unable to find the correct vertical alignment";
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
   }
 }
 
@@ -3209,8 +3202,7 @@ void NotebookWindow::changeBorder( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 0 and 30";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(30), "OK" );
       }
     }
   }
@@ -3225,8 +3217,7 @@ void NotebookWindow::changeBorder( QAction *action )
     else
     {
       // 2006-01-30 AF, add message box
-      QString msg = "Error converting QString to Int (border)";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("Error converting string to integer."), "OK" );
     }
   }
 }
@@ -3253,8 +3244,7 @@ void NotebookWindow::changeMargin( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 0 and 80.";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(80), "OK" );
       }
     }
   }
@@ -3268,8 +3258,7 @@ void NotebookWindow::changeMargin( QAction *action )
     else
     {
       // 2006-01-30 AF, add message box
-      QString msg = "Error converting QString to Int (margin)";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("Error converting string to integer."), "OK" );
     }
   }
 }
@@ -3296,8 +3285,7 @@ void NotebookWindow::changePadding( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QString msg = "Not a value between 0 and 60.";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(60), "OK" );
       }
     }
   }
@@ -3311,8 +3299,7 @@ void NotebookWindow::changePadding( QAction *action )
     else
     {
       // 2006-01-30 AF, add message box
-      QString msg = "Error converting QString to Int (padding)";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("Error converting string to integer."), "OK" );
     }
   }
 }
@@ -3680,7 +3667,7 @@ void NotebookWindow::openOldFile()
   catch( exception &e )
   {
     QString msg = QString("In NotebookWindow(), Exception:\r\n") + e.what();
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
     openOldFile();
   }
 }
@@ -3831,7 +3818,7 @@ void NotebookWindow::groupCellsAction()
   {
     if( cell->treeView()->isHidden() )
     {
-      QMessageBox::information( 0, "Can make groupcell",
+      QMessageBox::information( 0, tr("Warning"),
                                 tr("A textcell, latexcell or inputcell must first be added, before a groupcell can be done") );
     }
     else
@@ -3973,7 +3960,7 @@ void NotebookWindow::shiftselectedcells()
     else
     {
         QString msg=tr("This functionality works only on the selected cells. Put the cursor to a position where you want to shift and then select cells you like to move and press this button.");
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
     }
 }
 
@@ -3988,13 +3975,13 @@ void NotebookWindow::shiftcellsUp()
     {
       if( typeid(CellGroup) == typeid( *current->previous()))
       {
-        QMessageBox::warning( 0, "Warning", err_hierarchy, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
       }
       else
       {
         if (current->isClosed())
         {
-          QMessageBox::warning( 0, "Warning", tr("Cannot move closed cells."), "OK" );
+          QMessageBox::warning( 0, tr("Warning"), tr("Cannot move closed cells."), "OK" );
           return;
         }
         //qDebug()<<"not a groupcell" ;
@@ -4071,12 +4058,12 @@ void NotebookWindow::shiftcellsUp()
     }
     else
     {
-      QMessageBox::warning( 0, "Warning", err_hierarchy, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
     }
   }
   else
   {
-    QMessageBox::warning( 0, "Warning", tr("This functionality does not work on selected cells. Click on the cell to move up, and press this action."), "OK" );
+    QMessageBox::warning( 0, tr("Warning"), tr("This functionality does not work on selected cells. Click on the cell to move up, and press this action."), "OK" );
   }
 }
 
@@ -4095,13 +4082,13 @@ void NotebookWindow::shiftcellsDown()
       if( typeid(CellGroup) == typeid(*next))
       {
           //qDebug()<<"group cell";
-          QMessageBox::warning( 0, "Warning", err_hierarchy, "OK" );
+          QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
       }
       else
       {
         if (current->isClosed())
         {
-          QMessageBox::warning( 0, "Warning", tr("Cannot move closed cells."), "OK" );
+          QMessageBox::warning( 0, tr("Warning"), tr("Cannot move closed cells."), "OK" );
           return;
         }
         //qDebug()<<"not a group cell";
@@ -4182,7 +4169,7 @@ void NotebookWindow::shiftcellsDown()
   }
   else
   {
-      QMessageBox::warning( 0, "Warning", "This functionality does not work on selected cells. Click on the cell to move down, and press this action", "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("This functionality does not work on selected cells. Click on the cell to move down, and press this action"), "OK" );
   }
 }
 

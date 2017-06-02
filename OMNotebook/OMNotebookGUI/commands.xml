@@ -255,6 +255,9 @@
 		<field name="$0">BaseClass</field>
 		<helptext>Extends existing class (inheritance).</helptext>
 	</element>
+	<element name="initial equation"></element>
+	<element name="initial algorithm"></element>
+	<element name="initial()"></element>
 	<element name="input"></element>
 	<element name="ouput"></element>
 	<element name="flow"></element>
@@ -270,5 +273,13 @@
 		<field name="$0">cond</field>
 		<helptext>Suppresses generation of events.</helptext>
 	</element>
-
+	<element name="for $0 in $1 loop">
+		<field name="$0">element</field>
+		<field name="$1">expression</field>
+		<helptext>Iterate over elements.</helptext>
+	</element>
+	<element name="while $0 loop">
+		<field name="$0">cond</field>
+		<helptext>While-statement.</helptext>
+	</element>
 </commands>

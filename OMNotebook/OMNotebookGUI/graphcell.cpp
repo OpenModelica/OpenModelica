@@ -523,7 +523,7 @@ namespace IAEX {
     input_ = new MyTextEdit2( mainWidget() );
     mpModelicaTextHighlighter = new ModelicaTextHighlighter(input_->document());
     variableButton = new QPushButton("D",input_);
-    variableButton->setToolTip("New simulation data available");
+    variableButton->setToolTip(tr("New simulation data available"));
 
     variableButton->setMaximumWidth(25);
     layout_->addWidget( input_, 1, 1 );
@@ -637,8 +637,8 @@ namespace IAEX {
 
   int MyTextEdit2::indentationLevel(QString s, bool includeNegative)
   {
-    QRegExp e1("\\b(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
-    QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
+    QRegExp e1("\\b(model|class|type|connector|block|record|function|for|when|package|if)\\b");
+    QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|for|when|package|if)\\b");
     QRegExp e2("\\b(end|then)\\b");
 
     QRegExp newLineEnd("^end\\b");
@@ -686,8 +686,7 @@ namespace IAEX {
     else
     {
       // 2006-01-30 AF, add message box
-      QString msg = "No Output style defened, please define a Output style in stylesheet.xml";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -1304,7 +1303,7 @@ namespace IAEX {
     }
     catch (PlotException &e)
     {
-      QMessageBox::warning( 0, "Error", e.what(), "OK" );
+      QMessageBox::warning( 0, tr("Error"), e.what(), "OK" );
     }
   }
 
@@ -1415,15 +1414,17 @@ namespace IAEX {
     else
       setState(Finished);
 
+#if 0
     QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
 
     // bool b;
     int p=0;
+#endif
 
     output_->selectAll();
     output_->textCursor().insertText( res );
 
-    QPalette pal = output_->palette(); // define pallete for textEdit..
+    QPalette pal = output_->palette(); // define palette for textEdit.
     if (errorLevel >= 2) {
       pal.setColor(QPalette::Base, QColor(0xff,0xe0,0xe0));
     } else if (errorLevel == 1) {
@@ -1433,6 +1434,7 @@ namespace IAEX {
     }
     output_->setPalette(pal);
 
+#if 0
     QList<QAction*> actions;
     while((p=res.indexOf(e, p)) > 0)
     {
@@ -1477,6 +1479,7 @@ namespace IAEX {
       }
     }
     emit setStatusMenu(actions);
+#endif
 
     ++numEvals_;
     contentChanged();
@@ -1498,16 +1501,16 @@ namespace IAEX {
     switch(state_)
     {
     case Modified:
-      emit newState("Ready");
+      emit newState(tr("Ready"));
       break;
     case Eval:
-      emit newState("Evaluating...");
+      emit newState(tr("Evaluating..."));
       break;
     case Finished:
-      emit newState("Done");
+      emit newState(tr("Done"));
       break;
     case Error:
-      emit newState("Error");
+      emit newState(tr("Error"));
       break;
     }
   }

@@ -114,7 +114,7 @@ namespace IAEX
       }
       catch( exception e )
       {
-        QMessageBox::warning( 0, "Warning", e.what(), "OK" );
+        QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
       }
 
       try
@@ -196,12 +196,12 @@ namespace IAEX
 
           text->setStyle( cstyle );
         else
-          throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+          throw runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
       catch( exception e )
       {
 
-        QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
+        QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
       }
 
       QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
@@ -260,11 +260,11 @@ namespace IAEX
         if( cstyle.name() != "null" )
           text->setStyle( cstyle );
         else
-          throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+          throw runtime_error("No Input style defined, the inputcell may not work correctly, please define an Input style in stylesheet.xml");
       }
       catch( exception e )
       {
-        QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
+        QMessageBox::warning( 0, QObject::tr("Warning"), e.what(), "OK" );
       }
 
       try

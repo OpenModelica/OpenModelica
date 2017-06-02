@@ -393,11 +393,11 @@ namespace IAEX
   void CellDocument::cursorDeleteCell()
   {
     executeCommand(new DeleteSelectedCellsCommand());
-    qDebug("cursorDeleteCell");
+    //qDebug("cursorDeleteCell");
 
     //emit cursorChanged(); //This causes an untracable segfault.
 
-    qDebug("Finished");
+    //qDebug("Finished");
   }
 
   /*!
@@ -666,7 +666,7 @@ namespace IAEX
 
     // save the image temporary to the harddrive
     QImageWriter writer( name, "png" );
-    writer.setDescription( "Temporary OMNotebook image" );
+    writer.setDescription( tr("Temporary OMNotebook image") );
     writer.setQuality( 100 );
     writer.write( *image );
 

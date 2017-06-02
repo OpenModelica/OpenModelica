@@ -66,8 +66,7 @@ namespace IAEX
       minW.setNum( min_ );
       maxW.setNum( max_ );
 
-      QString text = tr("Enter value (") + minW +
-        QString("-") + maxW + QString(")");
+      QString text = tr("Enter value (%1-%2)").arg(minW).arg(maxW);
 
       ui.label->setText( text );
 

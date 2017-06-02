@@ -473,8 +473,7 @@ namespace IAEX
     else
     {
       // 2006-01-30 AF, add message box
-      QString msg = "No Output style defened, please define a Output style in stylesheet.xml";
-      QMessageBox::warning( 0, "Warning", msg, "OK" );
+      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -1074,9 +1073,8 @@ namespace IAEX
       // 2006-02-17 AF, set text '{evaluation expression}" during
       // evaluation of expressiuon
       output_->selectAll();
-      output_->textCursor().insertText( "{evaluating expression}" );
+      output_->textCursor().insertText( tr("{evaluating expression}") );
       setOutputStyle();
-      //output_->setPlainText( "{evaluating expression}" );
       output_->update();
       QCoreApplication::processEvents();
       delegate()->evalExpression(expr);

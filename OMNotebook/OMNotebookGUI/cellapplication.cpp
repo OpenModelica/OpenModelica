@@ -120,7 +120,7 @@ namespace IAEX
     const char *omhome = getenv("OPENMODELICAHOME");
   #ifdef WIN32
     if (!omhome) {
-      QMessageBox::critical(0, "OMNotebook", "OPENMODELICAHOME not set", "OK");
+      QMessageBox::critical(0, tr("Error"), tr("OPENMODELICAHOME not set"), "OK");
       app_->quit();
       exit(1);
     }
@@ -156,7 +156,7 @@ namespace IAEX
 
     if(!QDir().exists(openmodelica))
     {
-      QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME="+openmodelica+" is not a valid directory" );
+      QMessageBox::critical( 0, "OpenModelica Error", tr("The environment variable OPENMODELICAHOME=%1 is not a valid directory").arg(openmodelica) );
       exit(1);
     }
 
@@ -174,7 +174,7 @@ namespace IAEX
     QString cdRes = env->getResult();
     cdRes.remove("\"");
     if (0 != tmpDir.compare(cdRes)) {
-      QMessageBox::critical( 0, "OpenModelica Error", "Could not create or cd to temp-dir\nCommand:\n  "+tmpDir+"\nReturned:\n  "+cdRes);
+      QMessageBox::critical( 0, "OpenModelica Error", tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
       exit(1);
     }
 
@@ -192,7 +192,7 @@ namespace IAEX
     }
     catch( exception &e )
     {
-      QMessageBox::warning( 0, "Error", e.what(), "OK" );
+      QMessageBox::warning( 0, tr("Error"), e.what(), "OK" );
       exit(-1);
     }
 
@@ -212,7 +212,7 @@ namespace IAEX
     {
       QString msg = e.what();
       msg += "\nCould not create command completion class, exiting OMNotebook";
-      QMessageBox::warning( 0, "Error", msg, "OK" );
+      QMessageBox::warning( 0, tr("Error"), msg, "OK" );
       std::exit(-1);
     }
 
@@ -311,8 +311,7 @@ namespace IAEX
     {
       if( !dir.remove( removeList_.at(i) ))
       {
-        QString msg = "Could not remove temporary image " + removeList_.at(i) + " from harddrive.";
-        QMessageBox::warning( 0, "Warning", msg, "OK" );
+        QMessageBox::warning( 0, tr("Warning"), tr("Could not remove temporary image %1 from harddrive.").arg(removeList_.at(i)), "OK" );
       }
     }
   }
