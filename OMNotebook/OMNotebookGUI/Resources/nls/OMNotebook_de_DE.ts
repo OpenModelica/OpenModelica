@@ -655,6 +655,11 @@ The script generates more than 1 page.</source>
         <translation>Setzt Streckung der Schrift auf ultra gestreckt</translation>
     </message>
     <message>
+        <location filename="../../notebook.cpp" line="2236"/>
+        <source>Ln %1, Col %2</source>
+        <translation>Zeile %1, Spalte %2</translation>
+    </message>
+    <message>
         <location filename="../../notebook.cpp" line="2391"/>
         <source>Save document?</source>
         <translation>Dokument speichern?</translation>

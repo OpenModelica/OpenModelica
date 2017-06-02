@@ -2233,7 +2233,7 @@ void NotebookWindow::setStatusMessage( QString msg )
 
 void NotebookWindow::setPosition(int r, int c)
 {
-  posIndicator->setText(QString("Ln %1, Col %2").arg(r,c));
+  posIndicator->setText(tr("Ln %1, Col %2").arg(r).arg(c));
 }
 
 void NotebookWindow::setState(QString s)
