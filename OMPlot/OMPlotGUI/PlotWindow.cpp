@@ -774,19 +774,19 @@ void PlotWindow::setLegendPosition(QString position)
   {
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::LeftLegend, 0.1);
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::LeftLegend);
   }
   else if (position.toLower().compare("right") == 0)
   {
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::RightLegend, 0.1);
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::RightLegend);
   }
   else if (position.toLower().compare("top") == 0)
   {
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend, 0.1);
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
 #if QWT_VERSION > 0x060000
     /* we also want to align the legend to left. Stupid Qwt align it HCenter by default. */
     QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
@@ -798,7 +798,7 @@ void PlotWindow::setLegendPosition(QString position)
   {
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend, 0.1);
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend);
 #if QWT_VERSION > 0x060000
     /* we also want to align the legend to left. Stupid Qwt align it HCenter by default. */
     QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
