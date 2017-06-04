@@ -85,7 +85,7 @@ void Nox::initialize()
 
 
 	// Set up the status tests
-    _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
+    _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(5.0e-8));
     _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
     _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
     _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
@@ -115,7 +115,7 @@ void Nox::solve()
 
     if (_firstCall){
       initialize();
-      _statusTestsCombo->addStatusTest(_statusTestSgnChange);
+      //_statusTestsCombo->addStatusTest(_statusTestSgnChange);
     }
 
 
@@ -162,23 +162,24 @@ void Nox::solve()
 		}
 	}
 
-  if(BasicNLSsolve()==NOX::StatusTest::Converged){
-    _iterationStatus=DONE;
-    return;
-  }
-
-
-  int VaryInitGuess=0;
-  while((_iterationStatus==CONTINUE) && (VaryInitGuess<std::pow(2,_dimSys))){
-    modify_y(VaryInitGuess);
+  if(false){
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
       return;
     }
-    VaryInitGuess++;
-  }
-  memcpy(_y,_y0,_dimSys*sizeof(double));
 
+
+    int VaryInitGuess=0;
+    while((_iterationStatus==CONTINUE) && (VaryInitGuess<std::pow(2,_dimSys))){
+      modify_y(VaryInitGuess);
+      if(BasicNLSsolve()==NOX::StatusTest::Converged){
+        _iterationStatus=DONE;
+        return;
+      }
+      VaryInitGuess++;
+    }
+    memcpy(_y,_y0,_dimSys*sizeof(double));
+  }
 	if (_generateoutput) std::cout << "starting while loop" << std::endl;
 
 	while(_iterationStatus==CONTINUE){
