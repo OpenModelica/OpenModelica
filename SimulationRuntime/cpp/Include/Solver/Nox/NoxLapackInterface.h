@@ -6,7 +6,7 @@ class NoxLapackInterface : public LOCA::LAPACK::Interface {
   public:
 
     //! Constructor
-    NoxLapackInterface(INonLinearAlgLoop *algLoop, int numberofhomotopytries);
+    NoxLapackInterface(INonLinearAlgLoop *algLoop);
 
     //! Destructor
     ~NoxLapackInterface();
@@ -16,6 +16,9 @@ class NoxLapackInterface : public LOCA::LAPACK::Interface {
     bool computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x);
 
     bool computeJacobian(NOX::LAPACK::Matrix<double>& J, const NOX::LAPACK::Vector & x);
+
+    void setNumberOfHomotopyTries(const int & number);
+    int getMaxNumberOfHomotopyTries();
 
 	//! Sets parameters
 	void setParams(const LOCA::ParameterVector& p);

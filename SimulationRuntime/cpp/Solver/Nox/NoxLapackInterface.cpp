@@ -5,7 +5,7 @@
 //! Constructor
 
 
-NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop, int numberofhomotopytries)//second argument unnecessary. Just initialize _lambda to 1.0
+NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argument unnecessary. Just initialize _lambda to 1.0
 	:_algLoop(algLoop)
 	,_generateoutput(false)
 	,_useDomainScaling(false)
@@ -16,9 +16,9 @@ NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop, int numberofh
 	,_rhs(NULL)
 	,_lambda(1.0)//set to 1.0 in case we do not use homotopy.
 	,_computedinitialguess(false)
-	,_numberofhomotopytries(numberofhomotopytries)
 	,_evaluatedJacobianAtInitialGuess(false)
   ,_UseAccurateJacobian(false)
+  ,_numberofhomotopytries(-1)
 {
 	_dimSys = _algLoop->getDimReal();
 	_initialGuess = Teuchos::rcp(new NOX::LAPACK::Vector(_dimSys));
@@ -63,21 +63,8 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 	if (!_computedinitialguess){
 		double* x = new double[_dimSys];
 
-
-		// alternative calculation of huge values.
-		// _algLoop->getRHS(_hugeabsolutevalues);
-		// for(int i=0;i<_dimSys;i++){
-			// _hugeabsolutevalues[i]= ((_hugeabsolutevalues[i]==0.0) ? 1000000.0 : (1000000.0*std::abs(_hugeabsolutevalues[i])));
-		// }
-		// with call to
-		// for(int i=0;i<_dimSys;i++){
-			// rhs[i] *= ((rhs[i]>0.0) ? _hugeabsolutevalues[i] : -_hugeabsolutevalues[i]);
-		// }
-
 		_algLoop->getReal(x);
 		_algLoop->evaluate();
-
-		if (_generateoutput) std::cout << "computing initial guess" << std::endl;
 
 		for(int i=0;i<_dimSys;i++){
 			if (_useDomainScaling) {
@@ -85,17 +72,6 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 			}else{
 				(*_initialGuess)(i)=x[i];
 			}
-
-			//quick test whether the scaling worked correctly
-			if (_useDomainScaling) if ((*_initialGuess)(i)>1e4 || ((*_initialGuess)(i)<1e-4 && (*_initialGuess)(i)>1e-12)) std::cout << "scaling initial guess failed. Initial Guess (" << i << ")=" << (*_initialGuess)(i) << std::endl;
-		}
-
-		if (_generateoutput) {
-			std::cout << "Initial guess is given by " << std::endl;
-			// for(int i=0;i<_dimSys;i++) std::cout << (*_initialGuess)(i) << " ";
-			// std::cout << std::endl;
-			// std::cout << "or" << std::endl;
-			_initialGuess->print(std::cout);
 		}
 
 		if (_useFunctionValueScaling){
@@ -134,13 +110,6 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 			std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << _xtemp[i] << " ";
 		}
 		std::cout << ")" << std::endl;
-		std::cout << "The position seen by NOX is given by x=(";
-		// for (int i=0;i<_dimSys;i++){
-			// std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << x(i) << " ";
-		// }
-		// std::cout << ")" << std::endl;
-		// std::cout << "or" << std::endl;
-		x.print(std::cout);
 	}
 
 	_algLoop->setReal(_xtemp);
@@ -153,36 +122,9 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		if (_generateoutput) std::cout << "calculating right hand side failed with error message:" << std::endl << ex.what() << std::endl;
 		//the following should be done when some to be implemented flag like "continue if function evaluation fails" is activated.
 
-
-		//even newer, experimental version. Delete comments, when this is tested.
-		// for(int i=0;i<_dimSys;i++){
-			// _rhs[i]=_fScale[i]*(std::abs(x(i)-(getInitialGuess())(i))+1)*((_rhs[i]<0.0) ? -1.0e6 : 1.0e6);
-			// this has conical form.
-			// it is based on the assumption that getInitialGuess is contained in the domain.
-			// We have two goals: One is to ensure, that the rhs is at least 1.0e6.
-			// The other is to make sure, that if there is an open ball around the area where we cannot evaluate, that the next newton iterate is the initial guess.
-			// That is actually not good, the initial guess is where we started...
-			// _rhs[i]=_fScale[i]*(std::abs(x(i))+1)*((_rhs[i]<0.0) ? -1.0e6 : 1.0e6);
-			// this has conical form with center 0.
-		// }
-
-		//new, experimental version. Delete comments, when this is tested.
 		for(int i=0;i<_dimSys;i++){
 			_rhs[i]= ((_rhs[i]<0.0) ? -1.0e12 : 1.0e12);
 		}
-		//Maybe this should have conical form, ie. in case of high values, use 1.0e6*x+1.0e6 instead.
-
-		//old version
-		// if (_generateoutput) std::cout << "setting high values into right hand side:" << std::endl << "(";
-		// for(int i=0;i<_dimSys;i++){
-			// if (rhs[i]==0.0){
-				// rhs[i]=1000000.0;
-			// }else{
-				// rhs[i]=1000000.0*rhs[i];
-			// }
-			// if (_generateoutput) std::cout << rhs[i] << " ";
-		// }
-		// if (_generateoutput) std::cout << ")" << std::endl;
 	}
 
 
@@ -192,7 +134,6 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 			std::cout << _rhs[i] << " ";
 		}
 		std::cout << ")" << std::endl;
-		// std::cout << "the right hand side seen by NOX is given by (";
 	}
 	for (int i=0;i<_dimSys;i++){
 
@@ -206,14 +147,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		if (f(i)<=-std::numeric_limits<double>::max()) f(i)=-1.0e12;
 		//checking for NaN. Do NOT delete the next line, it makes sense.
 		if (!(f(i)==f(i))) f(i)=1.0e12;
-		// if (_generateoutput) std::cout << f(i) << " ";
 	}
-	if (_generateoutput){
-		// std::cout << ")" << std::endl;
-		// std::cout << std::endl;
-		// std::cout << "or also" << std::endl;
-		// f.print(std::cout);
-	}//_generateoutput=false;
 	return true;
 }
 
@@ -233,12 +167,6 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 
 	if (_generateoutput){
 		std::cout << "we are at simtime " << _algLoop->getSimTime() << " and at position (seen by NOX) x=(";
-		// for (int i=0;i<_dimSys;i++){
-			// std::cout << x(i) << " ";
-		// }
-		// std::cout << ")" << std::endl;
-		// std::cout << std::endl;
-		// std::cout << "or" << std::endl;
 		x.print(std::cout);
 	}
 
@@ -297,9 +225,6 @@ void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const doubl
 {
 	if(_generateoutput){
 		std::cout << "At parameter value: " << std::setprecision(8) << conParam << " the solution vector (norm=" << x.norm() << ") is" << std::endl;
-		// for (int i=0; i<_dimSys; i++) std::cout << " " << x(i);
-		// std::cout << ")" << std::endl;
-		// std::cout << "or" << std::endl;
 		x.print(std::cout);
 		std::cout << "Simtime: " << _algLoop->getSimTime() << std::endl;
 	}
@@ -308,9 +233,6 @@ void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const doubl
 //replace this function once it is implemented in Trilinos
 NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::Matrix<double> &A, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector result(A.numRows());
-	//check whether the dimensions match
-	if (A.numCols()!=x.length())
-		throw ModelicaSimulationError(ALGLOOP_SOLVER, "Dimension mismatch during computing matrix-vector-product!");
 	for(int i=0;i<A.numRows();i++){
 		for(int j=0;j<A.numCols();j++){
 			result(i)+=A(i,j)*x(j);
@@ -319,11 +241,22 @@ NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::M
 	return result;
 }
 
+int NoxLapackInterface::getMaxNumberOfHomotopyTries(){
+  return 6;
+}
+
+void NoxLapackInterface::setNumberOfHomotopyTries(const int & number){
+  if ((number>-1) && (number < getMaxNumberOfHomotopyTries())){
+    _numberofhomotopytries=number;
+  }else{
+    std::cout << "set illegal value for number of homotopy tries. Abort" << std::endl;
+    throw ModelicaSimulationError(ALGLOOP_SOLVER,"set illegal value for number of homotopy tries. Abort!");
+  }
+}
+
 bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector zeroandtempvec(_dimSys);
 	double templambda=_lambda;//storing _lambda temporarily.
-
-	checkdimensionof(x);
 
 	switch(_numberofhomotopytries){
 		case -1:
@@ -364,7 +297,7 @@ bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::L
 			break;
 		default:
 			if (_generateoutput) std::cout << "We are at AlgLoop " << _algLoop->getEquationIndex() << " and simtime " << _algLoop->getSimTime() << std::endl;
-			throw ModelicaSimulationError(ALGLOOP_SOLVER,"Running out of homotopy methods!");
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"_numberofhomotopytries has illegal value!");
 			break;
 	}
 	return true;

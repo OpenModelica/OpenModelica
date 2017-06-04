@@ -94,5 +94,7 @@ private:
   bool _firstCall;
   bool _generateoutput;
   bool _useDomainScaling;
+
+  bool _OutOfProperMethods;
 };
 /** @} */ // end of solverNox
