@@ -67,6 +67,11 @@ void TransformationsEditor::popUpCompleter()
 void TransformationsEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
+  pMenu->addSeparator();
+  pMenu->addAction(mpToggleCommentSelectionAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpFoldAllAction);
+  pMenu->addAction(mpUnFoldAllAction);
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }

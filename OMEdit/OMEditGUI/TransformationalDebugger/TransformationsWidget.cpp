@@ -32,6 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MainWindow.h"
 #include "TransformationsWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Util/StringHandler.h"
@@ -705,16 +706,9 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
   mpTransformationsVerticalSplitter->setChildrenCollapsible(false);
   mpTransformationsVerticalSplitter->setHandleWidth(4);
   mpTransformationsVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpTransformationsVerticalSplitter->addWidget(pTSourceEditorFrame);
   mpTransformationsVerticalSplitter->addWidget(pVariablesMainFrame);
   mpTransformationsVerticalSplitter->addWidget(pEquationsMainFrame);
-  /* Transformations horizontal splitter */
-  mpTransformationsHorizontalSplitter = new QSplitter;
-  mpTransformationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  mpTransformationsHorizontalSplitter->setChildrenCollapsible(false);
-  mpTransformationsHorizontalSplitter->setHandleWidth(4);
-  mpTransformationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
-  mpTransformationsHorizontalSplitter->addWidget(mpTransformationsVerticalSplitter);
-  mpTransformationsHorizontalSplitter->addWidget(pTSourceEditorFrame);
   /* Load the transformations before setting the layout */
   loadTransformations();
   /* set the layout */
@@ -722,7 +716,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(pStatusBar, 0, 0);
-  pMainLayout->addWidget(mpTransformationsHorizontalSplitter, 1, 0);
+  pMainLayout->addWidget(mpTransformationsVerticalSplitter, 1, 0);
   setLayout(pMainLayout);
   /* restore the TransformationsWidget geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
@@ -737,7 +731,6 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
     mpEquationsNestedVerticalSplitter->restoreState(pSettings->value("equationsNestedVerticalSplitter").toByteArray());
     mpEquationsHorizontalSplitter->restoreState(pSettings->value("equationsHorizontalSplitter").toByteArray());
     mpTransformationsVerticalSplitter->restoreState(pSettings->value("transformationsVerticalSplitter").toByteArray());
-    mpTransformationsHorizontalSplitter->restoreState(pSettings->value("transformationsHorizontalSplitter").toByteArray());
     pSettings->endGroup();
   }
 }
@@ -1076,7 +1069,16 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     return;
   }
   /* open the model with and go to the equation line */
-  QFile file(equation->info.file);
+  QString fileName = equation->info.file;
+  QFileInfo fileInfo(fileName);
+  if (fileInfo.isRelative()) {
+    // find the class
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(fileName);
+    if (pLibraryTreeItem) {
+      fileName = pLibraryTreeItem->getFileName();
+    }
+  }
+  QFile file(fileName);
   if (file.exists()) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
@@ -1085,6 +1087,7 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     mpTSourceEditorInfoBar->hide();
     file.close();
     mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(equation->info.lineStart);
+    mpTransformationsEditor->getPlainTextEdit()->foldAll();
   }
 }
 
@@ -1239,7 +1242,16 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
   if (!variable.info.isValid)
     return;
   /* open the model with and go to the variable line */
-  QFile file(variable.info.file);
+  QString fileName = variable.info.file;
+  QFileInfo fileInfo(fileName);
+  if (fileInfo.isRelative()) {
+    // find the class
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(fileName);
+    if (pLibraryTreeItem) {
+      fileName = pLibraryTreeItem->getFileName();
+    }
+  }
+  QFile file(fileName);
   if (file.exists()) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
@@ -1248,6 +1260,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     mpTSourceEditorInfoBar->hide();
     file.close();
     mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(variable.info.lineStart);
+    mpTransformationsEditor->getPlainTextEdit()->foldAll();
   }
 }
 

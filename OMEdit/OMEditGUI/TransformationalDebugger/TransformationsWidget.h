@@ -169,7 +169,6 @@ public:
   QSplitter* getEquationsNestedVerticalSplitter() {return mpEquationsNestedVerticalSplitter;}
   QSplitter* getEquationsHorizontalSplitter() {return mpEquationsHorizontalSplitter;}
   QSplitter* getTransformationsVerticalSplitter() {return mpTransformationsVerticalSplitter;}
-  QSplitter* getTransformationsHorizontalSplitter() {return mpTransformationsHorizontalSplitter;}
   void loadTransformations();
   void fetchDefinedInEquations(const OMVariable &variable);
   void fetchUsedInEquations(const OMVariable &variable);
@@ -207,7 +206,6 @@ private:
   QSplitter *mpEquationsNestedVerticalSplitter;
   QSplitter *mpEquationsHorizontalSplitter;
   QSplitter *mpTransformationsVerticalSplitter;
-  QSplitter *mpTransformationsHorizontalSplitter;
   QHash<QString,OMVariable> mVariables;
   QList<OMEquation*> mEquations;
   bool hasOperationsEnabled;

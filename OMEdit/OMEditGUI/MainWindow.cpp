@@ -549,7 +549,6 @@ void MainWindow::beforeClosingMainWindow()
       pSettings->setValue("equationsNestedVerticalSplitter", pTransformationsWidget->getEquationsNestedVerticalSplitter()->saveState());
       pSettings->setValue("equationsHorizontalSplitter", pTransformationsWidget->getEquationsHorizontalSplitter()->saveState());
       pSettings->setValue("transformationsVerticalSplitter", pTransformationsWidget->getTransformationsVerticalSplitter()->saveState());
-      pSettings->setValue("transformationsHorizontalSplitter", pTransformationsWidget->getTransformationsHorizontalSplitter()->saveState());
       pSettings->endGroup();
     }
   }
