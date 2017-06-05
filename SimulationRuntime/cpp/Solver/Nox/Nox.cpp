@@ -91,7 +91,7 @@ void Nox::initialize()
 
 
 	// Set up the status tests
-  _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(5.0e-13));
+  _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-13));
   _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
   _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
   _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
@@ -174,11 +174,12 @@ void Nox::solve()
 			throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");
 		}
 
+    // Get the answer
+    copySolution(_solver,_y);
+
     if (_generateoutput) std::cout << "solving done" << std::endl;
 
 		if (status==NOX::StatusTest::Converged){
-      // Get the answer
-      copySolution(_solver,_y);
       _algLoop->setReal(_y);
       _algLoop->evaluate();
 			_iterationStatus=DONE;
@@ -191,7 +192,7 @@ void Nox::solve()
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
         EvalAfterSolveFailed=true;
-
+        std::cout << "EvalAfterSolveFailed" << std::endl;
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
       if((!EvalAfterSolveFailed) && (CheckWhetherSolutionIsNearby(_y))){
@@ -214,10 +215,13 @@ void Nox::solve()
     }
     catch(const std::exception &e){
       std::string errorstring(e.what());
-      std::cout << "Solving with Homotopy failed with error message " + errorstring << " at numberofhomotopytries = " << numberofhomotopytries << std::endl;
+      if ((_generateoutput)) std::cout << "Solving with Homotopy failed with error message " + errorstring << " at numberofhomotopytries = " << numberofhomotopytries << std::endl;
     }
     numberofhomotopytries++;
   }
+
+
+
 
   if (_iterationStatus==DONE){
     LOGGER_WRITE("Solution found!", _lc, LL_DEBUG);
@@ -281,7 +285,7 @@ void Nox::check4EventRetry(double* y)
 
 void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 {
-	if((_generateoutput) || (true)) std::cout << "We are going to solve algloop " << _algLoop->getEquationIndex() << "using homotopy with numberofhomotopytries=" << numberofhomotopytries << std::endl;
+	if((_generateoutput)) std::cout << "We are going to solve algloop " << _algLoop->getEquationIndex() << "using homotopy with numberofhomotopytries=" << numberofhomotopytries << std::endl;
 
 	// Reset initial guess
 	memcpy(_y,_y0,_dimSys*sizeof(double));
@@ -367,9 +371,9 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 		printLogger();
 		// Check for convergence
 		if (status != LOCA::Abstract::Iterator::Finished){
-			if((_generateoutput) || (true)) std::cout << "Stepper failed to converge!" << std::endl;
+			if((_generateoutput)) std::cout << "Stepper failed to converge!" << std::endl;
 		}else{
-       if((_generateoutput) || (true)) std::cout << "Stepper was successful!" << std::endl;
+       if((_generateoutput)) std::cout << "Stepper was successful!" << std::endl;
 			_iterationStatus=DONE;
 		}
 	}
@@ -447,9 +451,9 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 		Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(grp, _statusTestsCombo, solverParametersPtr);
 		status = solver->solve();
 		printLogger();
+    copySolution(solver,_y);
 
 		if (status == NOX::StatusTest::Converged){
-			copySolution(solver,_y);
 			_algLoop->setReal(_y);
 			_algLoop->evaluate();
 		}
@@ -556,11 +560,11 @@ bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 
 	for (int i=0;i<_dimSys;i++){
 		// evaluate algLoop at ypluseps=y+eps*e_i and save in rhs2
-		ypluseps[i]=y[i];
 		ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],std::numeric_limits<double>::max()),std::numeric_limits<double>::max());
 		_algLoop->setReal(ypluseps);
 		_algLoop->evaluate();
 		_algLoop->getRHS(rhs2);
+		ypluseps[i]=y[i];
 		// compare
 		for(int j=0;j<_dimSys;j++){
 			if (rhs[j]*rhs2[j]<=0.0){
@@ -569,11 +573,11 @@ bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 		}
 
 		// do the same for y-eps*e_i
-		ypluseps[i]=y[i];
 		ypluseps[i]=std::nextafter(std::nextafter(ypluseps[i],-std::numeric_limits<double>::max()),-std::numeric_limits<double>::max());
 		_algLoop->setReal(ypluseps);
 		_algLoop->evaluate();
 		_algLoop->getRHS(rhs2);
+		ypluseps[i]=y[i];
 
 		for(int j=0;j<_dimSys;j++){
 			if (rhs[j]*rhs2[j]<=0.0){
@@ -581,6 +585,9 @@ bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 			}
 		}
 	}
+
+  _algLoop->setReal(y);
+  _algLoop->evaluate();
 	delete [] ypluseps;
 	delete [] rhs2;
 	delete [] rhs;
