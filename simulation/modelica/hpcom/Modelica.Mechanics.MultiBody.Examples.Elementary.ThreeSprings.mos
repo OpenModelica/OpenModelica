@@ -53,6 +53,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 // assert            | debug   | division leads to inf or nan at time 0, (a=-0.152299) / (b=0), where divisor b is: $cse3
 // "
 // end SimulationResult;
-// ""
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
 // {"Files Equal!"}
 // endResult

@@ -41,6 +41,8 @@ runScript(modelTesting);getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0, (a=0.00843471) / (b=0), where divisor b is: $cse1
 //
 // Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
 // "true
 // "
 // ""

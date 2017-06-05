@@ -38,7 +38,7 @@ simulate(Tearing11); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 8}
+//  * Linear torn systems: 1 {(1,100.0%) 9}
 //  * Non-linear torn systems: 0
 // Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
 //   i5:VARIABLE(start = 0.0 )  type: Real

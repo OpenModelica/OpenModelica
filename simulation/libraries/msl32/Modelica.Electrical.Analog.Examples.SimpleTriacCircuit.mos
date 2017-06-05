@@ -4312,6 +4312,8 @@ runScript(modelTesting);getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0.00097, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 //
 // Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
 // "true
 // "
 // ""
