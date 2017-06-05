@@ -58,8 +58,6 @@ NoxLapackInterface::~NoxLapackInterface()
 //we could replace this by the x0 in Nox.cpp
 const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 {
-	checkdimensionof(*_initialGuess);
-
 	if (!_computedinitialguess){
 		double* x = new double[_dimSys];
 
@@ -93,9 +91,6 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 };
 
 bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
-// if (_algLoop->getSimTime()>0.0) _generateoutput=true;
-	checkdimensionof(x);
-
 	for (int i=0;i<_dimSys;i++){
 		if (_useDomainScaling){
 			_xtemp[i]=x(i)/_yScale[i];
@@ -152,9 +147,6 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 }
 
 bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const NOX::LAPACK::Vector & x){
-
-	checkdimensionof(x);
-
 	//setting the forward difference parameters. We divide by the denominator alpha*|x_i|+beta in the computation of the difference quotient. It is similar to the Finite Difference implementation by Nox, which can be found under https://trilinos.org/docs/dev/packages/nox/doc/html/classNOX_1_1Epetra_1_1FiniteDifference.html
 	double alpha=1.0e-11;
 	double beta=1.0e-9;
@@ -230,7 +222,6 @@ void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const doubl
 	}
 }
 
-//replace this function once it is implemented in Trilinos
 NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::Matrix<double> &A, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector result(A.numRows());
 	for(int i=0;i<A.numRows();i++){
@@ -313,8 +304,4 @@ bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vec
 	//f(x)=lambda*g(x)+(1-lambda)*h(x)
 	f.update(_lambda, g, 1.0-_lambda, h);
 	return true;
-}
-
-void NoxLapackInterface::checkdimensionof(const NOX::LAPACK::Vector &x){
-	if (_dimSys!=x.length()) throw ModelicaSimulationError(ALGLOOP_SOLVER,"Dimension of solution vector is wrong in method of NoxLapackInterface!");
 }

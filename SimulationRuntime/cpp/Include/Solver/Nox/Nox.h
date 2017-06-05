@@ -38,10 +38,10 @@ private:
   void copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* const algLoopSolution);
   void printLogger();
   void divisionbyzerohandling(double const * const y0);
-  bool checkwhethersolutionisnearby(double const * const y);
+  bool CheckWhetherSolutionIsNearby(double const * const y);
   bool isdivisionbyzeroerror(const std::exception &ex);
   void modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter);
-
+  Teuchos::RCP<Teuchos::ParameterList> setLocaParams();
   bool modify_y(const int counter);
   void BinRep(std::vector<double> &result, const int number);
 
@@ -96,5 +96,6 @@ private:
   bool _useDomainScaling;
 
   bool _OutOfProperMethods;
+  LogCategory _lc;
 };
 /** @} */ // end of solverNox

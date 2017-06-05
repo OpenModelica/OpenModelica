@@ -31,10 +31,9 @@ class NoxLapackInterface : public LOCA::LAPACK::Interface {
 	bool computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x);
 	bool computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x);
 	NOX::LAPACK::Vector applyMatrixtoVector(const NOX::LAPACK::Matrix<double> &A, const NOX::LAPACK::Vector &x);
-	void checkdimensionof(const NOX::LAPACK::Vector &x);
 
-    //! Initial guess
-    Teuchos::RCP<NOX::LAPACK::Vector> _initialGuess;
+  //! Initial guess
+  Teuchos::RCP<NOX::LAPACK::Vector> _initialGuess;
 	INonLinearAlgLoop *_algLoop;///< Algebraic loop to be solved, required to obtain value of f
 	double *_yScale, *_fScale, *_hugeabsolutevalues, *_xtemp, *_rhs;
 	int _dimSys;
