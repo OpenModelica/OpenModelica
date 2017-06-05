@@ -825,8 +825,9 @@ void TransformationsWidget::loadTransformations()
       OMVariable *var = new OMVariable();
       var->name = iter.key();
       var->comment = value["comment"].toString();
+      QVariantMap sourceMap = value["source"].toMap();
       variantToSource(value["source"].toMap(), var->info, var->types, var->ops);
-      if (!hasOperationsEnabled && var->ops.size() > 0) {
+      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
         hasOperationsEnabled = true;
       }
       mVariables[iter.key()] = *var;
@@ -870,8 +871,9 @@ void TransformationsWidget::loadTransformations()
       } else {
         eq->display = eq->tag;
       }
+      QVariantMap sourceMap = veq["source"].toMap();
       variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
-      if (!hasOperationsEnabled && eq->ops.size() > 0) {
+      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
         hasOperationsEnabled = true;
       }
     }

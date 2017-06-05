@@ -805,6 +805,10 @@ bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // reset simulation setting
   OptionsDialog::instance()->saveSimulationSettings();
+  // set the infoXMLOperations flag
+  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
+  }
   // check reset messages number before simulation option
   if (OptionsDialog::instance()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
     MessagesWidget::instance()->resetMessagesNumber();
@@ -832,6 +836,10 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation setting
   OptionsDialog::instance()->saveSimulationSettings();
+  // set the infoXMLOperations flag
+  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
+  }
   return result;
 }
 
