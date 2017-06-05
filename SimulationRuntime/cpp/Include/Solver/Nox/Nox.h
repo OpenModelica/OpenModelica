@@ -45,6 +45,8 @@ private:
   bool modify_y(const int counter);
   void BinRep(std::vector<double> &result, const int number);
 
+  void check4EventRetry(double* y);
+
   //void check4EventRetry(double* y)
 
 // Member variables
@@ -66,6 +68,7 @@ private:
       *_y_old,
       *_y_new,
       *_yScale,
+      *_helpArray,
 	  _locTol,
 	  _currentIterateNorm,
 	  *_currentIterate;
@@ -96,6 +99,7 @@ private:
   bool _useDomainScaling;
 
   bool _OutOfProperMethods;
+  bool _eventRetry;
   LogCategory _lc;
 };
 /** @} */ // end of solverNox

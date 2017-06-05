@@ -27,6 +27,7 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _y_old              (NULL)
 	, _y_new              (NULL)
 	, _yScale             (NULL)
+  , _helpArray          (NULL)
 	, _firstCall		  (true)
 	, _generateoutput     (false)
 	, _useDomainScaling         (false)
@@ -45,7 +46,7 @@ Nox::~Nox()
     if(_y_new)              delete [] _y_new;
     if(_yScale)              delete [] _yScale;
 	if(_currentIterate) delete [] _currentIterate;
-
+	if(_helpArray) delete [] _helpArray;
 }
 
 void Nox::initialize()
@@ -60,6 +61,7 @@ void Nox::initialize()
 	if(_y_old) delete [] _y_old;
 	if(_y_new) delete [] _y_new;
     if(_yScale) delete [] _yScale;
+    if(_helpArray) delete [] _helpArray;
 
 
 	_output = Teuchos::rcp(new std::stringstream);
@@ -69,6 +71,9 @@ void Nox::initialize()
 	_y_new            = new double[_dimSys];
 	_yScale            = new double[_dimSys];
 	_currentIterate            = new double[_dimSys];
+	_helpArray            = new double[_dimSys];
+
+  memset(_helpArray, 0, _dimSys*sizeof(double));
 
 	_algLoop->getReal(_y);
 	_algLoop->getReal(_y0);
@@ -105,6 +110,7 @@ void Nox::solve()
 	NOX::StatusTest::StatusType status;
 	bool handleddivisionbyzeroerror=false;
   _OutOfProperMethods=false;
+  _eventRetry=false;
 
   LOGGER_WRITE_BEGIN("Nox: start solving " + to_string(_algLoop->getEquationIndex()) + " at Simulation time " + to_string(_algLoop->getSimTime()), _lc, LL_DEBUG);
 
@@ -177,22 +183,26 @@ void Nox::solve()
       _algLoop->evaluate();
 			_iterationStatus=DONE;
 		}else{
+
+      bool EvalAfterSolveFailed=false;
+
+      _algLoop->setReal(_y);
       try{
-        if(CheckWhetherSolutionIsNearby(_y)){
+        _algLoop->evaluate();
+			}catch(const std::exception & ex){
+        EvalAfterSolveFailed=true;
+
+      }
+      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
+      if((!EvalAfterSolveFailed) && (CheckWhetherSolutionIsNearby(_y))){
           _algLoop->setReal(_y);
           _algLoop->evaluate();
           _iterationStatus=DONE;
-          break;
-        }
+      }else{
+        check4EventRetry(_y);
+        if ((iter==0) || (iter==1)) iter = 2;
+        modifySolverParameters(_solverParametersPtr,iter);
       }
-      catch(const std::exception &ex)
-      {
-        if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl;
-      }
-
-			if ((iter==0) || (iter==1)) iter = 2;
-
-			modifySolverParameters(_solverParametersPtr,iter);
 		}
 	}
 
@@ -214,10 +224,16 @@ void Nox::solve()
     LOGGER_WRITE_VECTOR("Solution", _y, _dimSys, _lc, LL_DEBUG);
     LOGGER_WRITE_END(_lc, LL_DEBUG);
   }else{
-    LOGGER_WRITE("Nox Failed!", _lc, LL_DEBUG);
-    LOGGER_WRITE_END(_lc, LL_DEBUG);
-    _iterationStatus=SOLVERERROR;
-    throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+    if(_eventRetry)
+    {
+      memcpy(_y, _helpArray ,_dimSys*sizeof(double));
+      _iterationStatus = CONTINUE;
+    }else{
+      LOGGER_WRITE("Nox Failed!", _lc, LL_DEBUG);
+      LOGGER_WRITE_END(_lc, LL_DEBUG);
+      _iterationStatus=SOLVERERROR;
+      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+    }
   }
 }
 
@@ -251,6 +267,16 @@ void Nox::restoreOldValues()
 void Nox::restoreNewValues()
 {
     memcpy(_y,_y_new,_dimSys*sizeof(double));
+}
+
+void Nox::check4EventRetry(double* y)
+{
+	_algLoop->setReal(y);
+	if(!(_algLoop->isConsistent()) && !_eventRetry)
+	{
+		memcpy(_helpArray, y,_dimSys*sizeof(double));
+		_eventRetry = true;
+	}
 }
 
 void Nox::LocaHomotopySolve(const int numberofhomotopytries)
