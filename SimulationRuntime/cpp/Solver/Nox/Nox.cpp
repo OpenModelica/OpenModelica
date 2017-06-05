@@ -220,6 +220,31 @@ void Nox::solve()
     numberofhomotopytries++;
   }
 
+  //try varying initial guess
+  int VaryInitGuess=0;
+  while((_iterationStatus==CONTINUE) && (VaryInitGuess<std::pow(2,_dimSys))){
+    modify_y(VaryInitGuess);
+    if(BasicNLSsolve()==NOX::StatusTest::Converged){
+      _iterationStatus=DONE;
+    }else{
+      bool EvalAfterSolveFailed2=false;
+      _algLoop->setReal(_y);
+      try{
+        _algLoop->evaluate();
+			}catch(const std::exception & ex){
+        EvalAfterSolveFailed2=true;
+        std::cout << "EvalAfterSolveFailed2" << std::endl;
+      }
+      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
+      if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
+          _algLoop->setReal(_y);
+          _algLoop->evaluate();
+          _iterationStatus=DONE;
+      }
+    }
+    VaryInitGuess++;
+  }
+
 
 
 
