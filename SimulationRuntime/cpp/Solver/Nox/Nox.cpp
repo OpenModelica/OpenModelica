@@ -226,6 +226,36 @@ void Nox::solve()
 
   //try varying initial guess
 
+  //try setting initial guess to nominal values
+  if((_iterationStatus==CONTINUE) && (!_eventRetry)){
+    _algLoop->getNominalReal(_y);
+    std::cout << "Trying to solve with nominal values given by ";
+    for (int i=0;i<_dimSys;i++){
+      std::cout << _y[i] << " ";
+    }
+    std::cout << std::endl;
+
+    _algLoop->setReal(_y);
+    if(BasicNLSsolve()==NOX::StatusTest::Converged){
+      _iterationStatus=DONE;
+    }else{
+      bool EvalAfterSolveFailed2=false;
+      _algLoop->setReal(_y);
+      try{
+        _algLoop->evaluate();
+			}catch(const std::exception & ex){
+        EvalAfterSolveFailed2=true;
+        std::cout << "EvalAfterSolveFailed2" << std::endl;
+      }
+      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
+      if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
+          _algLoop->setReal(_y);
+          _algLoop->evaluate();
+          _iterationStatus=DONE;
+      }
+    }
+  }
+
   //Further initial guess variation approaches
   //extrapolation of y using ynew and yold (requires the corresponding simtime)
 
