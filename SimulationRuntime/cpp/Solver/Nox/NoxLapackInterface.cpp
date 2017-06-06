@@ -180,10 +180,12 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
       for (int j=0;j<_dimSys;j++){
         //J(j,i) = (f1(j)-f2(j))/(xplushei(i)-x(i));//=\partial_i f_j
         J(j,i) = (8*(f2(j)-f3(j))-(f1(j)-f4(j)))/(6.0*(x(i)-xplushei(i)));//=\partial_i f_j
-        //print error compared with central difference
-        if (std::abs(J(j,i)-(f2(j)-f3(j))/(2*h))>1.0e-10){
-          std::cout << "absolute error of J(" << j << "," << i << "): " << std::abs(J(j,i)-(f2(j)-f3(j))/(2*h)) << std::endl;
-          std::cout << "relative error of J(" << j << "," << i << "): " << (std::abs((J(j,i)-(f2(j)-f3(j))/(2*h))/(J(j,i)))-1.0)/100.0 << "%" << std::endl;
+        //print error compared to central difference
+        if(_generateoutput){
+          if (std::abs(J(j,i)-(f2(j)-f3(j))/(2*h))>1.0e-10){
+            std::cout << "absolute error of J(" << j << "," << i << "): " << std::abs(J(j,i)-(f2(j)-f3(j))/(2*h)) << std::endl;
+            std::cout << "relative error of J(" << j << "," << i << "): " << (std::abs((J(j,i)-(f2(j)-f3(j))/(2*h))/(J(j,i)))-1.0)/100.0 << "%" << std::endl;
+          }
         }
       }
       xplushei(i)=x(i);

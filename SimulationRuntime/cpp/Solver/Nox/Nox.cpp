@@ -29,7 +29,7 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _yScale             (NULL)
   , _helpArray          (NULL)
 	, _firstCall		  (true)
-	, _generateoutput     (false)
+	, _generateoutput     (true)
 	, _useDomainScaling         (false)
 	, _currentIterate             (NULL)
 	, _dimSys (_algLoop->getDimReal())
@@ -106,6 +106,7 @@ void Nox::initialize()
 
 void Nox::solve()
 {
+  if (_generateoutput) std::cout << "start solving" << std::endl;
 	int iter=-1; //Iterationcount of proper methods
 	NOX::StatusTest::StatusType status;
 	bool handleddivisionbyzeroerror=false;
@@ -124,7 +125,8 @@ void Nox::solve()
 	//_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
 	addPrintingList(_solverParametersPtr);
 
-	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop));//this also gets the nominal values
+  if (_generateoutput) std::cout << "Does NoxLapackInterface induce this error?" << std::endl;
+	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop));//this also gets the nominal values for the right hand side
 
 	_iterationStatus=CONTINUE;
 
@@ -142,6 +144,7 @@ void Nox::solve()
 			handleddivisionbyzeroerror=true;
 			divisionbyzerohandling(_y0);
 		}else{
+      if (_generateoutput) std::cout << "failed when evaluating algloop for the first time with error message: " << ex.what() << std::endl;
 			throw;
 		}
 	}
@@ -150,7 +153,7 @@ void Nox::solve()
 
   //try various methods, excluding homotopy
 
-  while((_iterationStatus==CONTINUE) && (!_OutOfProperMethods)){
+  while((_iterationStatus==CONTINUE) && (!_OutOfProperMethods) && !_eventRetry){
 		iter++;
 
 		// Reset initial guess
@@ -192,7 +195,7 @@ void Nox::solve()
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
         EvalAfterSolveFailed=true;
-        std::cout << "EvalAfterSolveFailed" << std::endl;
+        if (_generateoutput) std::cout << "EvalAfterSolveFailed" << std::endl;
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
       if((!EvalAfterSolveFailed) && (CheckWhetherSolutionIsNearby(_y))){
@@ -209,7 +212,8 @@ void Nox::solve()
 
   //try homotopy
   int numberofhomotopytries = 0;
-  while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries())){
+  while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries()) && !_eventRetry){
+    if (_generateoutput) std::cout << "Solving with Homotopy at numberofhomotopytries = " << numberofhomotopytries << std::endl;
     try{
       LocaHomotopySolve(numberofhomotopytries);
     }
@@ -221,22 +225,29 @@ void Nox::solve()
   }
 
   //try varying initial guess
+
+  //Further initial guess variation approaches
+  //extrapolation of y using ynew and yold (requires the corresponding simtime)
+
+
+  //try varying initial guess y0 by 10%.
+  //this can be accelerated to varying zero and equal start values only.
   int VaryInitGuess=0;
-  while((_iterationStatus==CONTINUE) && (VaryInitGuess<std::pow(2,_dimSys))){
+  while((_iterationStatus==CONTINUE) && (VaryInitGuess<std::pow(2,_dimSys)) && !_eventRetry){
     modify_y(VaryInitGuess);
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
     }else{
-      bool EvalAfterSolveFailed2=false;
+      bool EvalAfterSolveFailed3=false;
       _algLoop->setReal(_y);
       try{
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
-        EvalAfterSolveFailed2=true;
-        std::cout << "EvalAfterSolveFailed2" << std::endl;
+        EvalAfterSolveFailed3=true;
+        std::cout << "EvalAfterSolveFailed3" << std::endl;
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
+      if((!EvalAfterSolveFailed3) && (CheckWhetherSolutionIsNearby(_y))){
           _algLoop->setReal(_y);
           _algLoop->evaluate();
           _iterationStatus=DONE;
@@ -661,7 +672,8 @@ void Nox::divisionbyzerohandling(double const * const y0){
 
 		initialguessdividebyzerofailurecounter++;
 
-		std::cout << "Varying initial guess by 10%:" << std::endl;
+    if(_generateoutput)
+      std::cout << "Varying initial guess by 10%:" << std::endl;
 		for (int i=0;i<_dimSys;i++){
 			if(_y[i]!=0.0){
 				_y[i]+=0.1*_y[i]*startvaluemodifier[i];
@@ -681,6 +693,7 @@ void Nox::divisionbyzerohandling(double const * const y0){
 				if(isdivisionbyzeroerror(ex)){
 					std::cout << "still dividing by zero, trying new initial guess." << std::endl;
 				}else{
+          std::cout << "eval after solve failed when trying to fix division by zero error." << std::endl;
 					throw;
 				}
 			}
