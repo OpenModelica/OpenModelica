@@ -29,11 +29,14 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _yScale             (NULL)
   , _helpArray          (NULL)
 	, _firstCall		  (true)
-	, _generateoutput     (true)
+	, _generateoutput     (false)
 	, _useDomainScaling         (false)
 	, _currentIterate             (NULL)
 	, _dimSys (_algLoop->getDimReal())
   , _lc(LC_NLS)
+  , _SimTimeOld  (0.0)
+  , _SimTimeNew  (0.0)
+  , _ValidSimTime (false)
 {
 
 }
@@ -126,11 +129,18 @@ void Nox::solve()
 	addPrintingList(_solverParametersPtr);
 
   if (_generateoutput) std::cout << "Does NoxLapackInterface induce this error?" << std::endl;
-	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop));//this also gets the nominal values for the right hand side
+	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop));//this also gets the nominal values
 
 	_iterationStatus=CONTINUE;
 
   if (_generateoutput) std::cout << "solver init done" << std::endl;
+
+  //try extrapolating initial guess. Up to now, y0=y_new. Now we want that (y0,_algLoop->getSimTime()),(y_new,_SimTimeNew),(y_old,_SimTimeOld) form a line.
+  //This is equivalent to the formula y0=y_new+(y_new-y_old)*(_algLoop->getSimTime()-_SimTimeNew)/(_SimTimeNew-_SimTimeOld)
+  //Do this only iff _algLoop->getSimTime(),_SimTimeNew are not equal to _SimTimeOld and _ValidSimTime is true.
+  //Is _ValidSimTime really required?
+
+
 
   //handle division by zero
 	try{
@@ -249,9 +259,9 @@ void Nox::solve()
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
       if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
-          _algLoop->setReal(_y);
-          _algLoop->evaluate();
-          _iterationStatus=DONE;
+        _algLoop->setReal(_y);
+        _algLoop->evaluate();
+        _iterationStatus=DONE;
       }
     }
   }
@@ -315,8 +325,15 @@ IAlgLoopSolver::ITERATIONSTATUS Nox::getIterationStatus()
 void Nox::stepCompleted(double time)
 {
 	memcpy(_y0,_y,_dimSys*sizeof(double));
-    memcpy(_y_old,_y_new,_dimSys*sizeof(double));
-    memcpy(_y_new,_y,_dimSys*sizeof(double));
+  memcpy(_y_old,_y_new,_dimSys*sizeof(double));
+  memcpy(_y_new,_y,_dimSys*sizeof(double));
+  if (time == _algLoop->getSimTime()){
+    _SimTimeOld = _SimTimeNew;
+    _SimTimeNew = _algLoop->getSimTime();
+    _ValidSimTime = true;
+  }else{
+    if(_generateoutput) std::cout << "time=" << time << ", algLoop->getSimTime()=" << _algLoop->getSimTime() << std::endl;
+  }
 }
 
 /**

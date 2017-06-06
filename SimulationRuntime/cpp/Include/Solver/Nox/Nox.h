@@ -71,7 +71,11 @@ private:
       *_helpArray,
 	  _locTol,
 	  _currentIterateNorm,
-	  *_currentIterate;
+	  *_currentIterate,
+    _SimTimeOld,
+    _SimTimeNew;
+
+  bool _ValidSimTime;
 
   Teuchos::RCP<NoxLapackInterface> _noxLapackInterface;
 

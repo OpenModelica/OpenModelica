@@ -17,7 +17,7 @@ NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argum
 	,_lambda(1.0)//set to 1.0 in case we do not use homotopy.
 	,_computedinitialguess(false)
 	,_evaluatedJacobianAtInitialGuess(false)
-  ,_UseAccurateJacobian(true)
+  ,_UseAccurateJacobian(false)
   ,_numberofhomotopytries(-1)
 {
 	_dimSys = _algLoop->getDimReal();
