@@ -1,3 +1,8 @@
+/**
+ *  \file Nox.cpp
+ *  \brief Brief
+ */
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
@@ -17,7 +22,15 @@
 
 #include <iostream>
 
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] algLoop Parameter_Description
+ *  \param [in] settings Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	: _algLoop            (algLoop)
 	, _noxSettings        ((INonLinSolverSettings*)settings)
@@ -39,7 +52,13 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 {
 
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 Nox::~Nox()
 {
 	if(_y)                  delete []  _y;
@@ -50,7 +69,13 @@ Nox::~Nox()
 	if(_currentIterate) delete [] _currentIterate;
 	if(_helpArray) delete [] _helpArray;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::initialize()
 {
 	if (_generateoutput) std::cout << "starting init" << std::endl;
@@ -105,7 +130,13 @@ void Nox::initialize()
 
 	if (_generateoutput) std::cout << "ending init" << std::endl;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::solve()
 {
   if (_generateoutput) std::cout << "start solving" << std::endl;
@@ -344,7 +375,7 @@ void Nox::solve()
     VaryInitGuess++;
   }
 
-
+  //we could try and solve a linear system, since the corresponding ticket has not been fixed yet in OpenModelica (Ticket 4374)
 
 
   if (_iterationStatus==DONE){
@@ -364,7 +395,13 @@ void Nox::solve()
     }
   }
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 IAlgLoopSolver::ITERATIONSTATUS Nox::getIterationStatus()
 {
 	return _iterationStatus;
@@ -412,7 +449,14 @@ void Nox::check4EventRetry(double* y)
 		_eventRetry = true;
 	}
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] numberofhomotopytries Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 {
 	if((_generateoutput)) std::cout << "We are going to solve algloop " << _algLoop->getEquationIndex() << "using homotopy with numberofhomotopytries=" << numberofhomotopytries << std::endl;
@@ -568,12 +612,18 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 
   }
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 	NOX::StatusTest::StatusType status = NOX::StatusTest::Unevaluated;
 	try{
-		Teuchos::RCP<NoxLapackInterface> noxlapackinterface=Teuchos::rcp(new NoxLapackInterface(_algLoop));
-		Teuchos::RCP<NOX::LAPACK::Group> grp=Teuchos::rcp(new NOX::LAPACK::Group(*noxlapackinterface));
+		Teuchos::RCP<NoxLapackInterface> noxLapackInterface=Teuchos::rcp(new NoxLapackInterface(_algLoop));
+		Teuchos::RCP<NOX::LAPACK::Group> grp=Teuchos::rcp(new NOX::LAPACK::Group(*noxLapackInterface));
 		Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr = Teuchos::rcp(new Teuchos::ParameterList);
 		addPrintingList(solverParametersPtr);
 		solverParametersPtr->sublist("Line Search").set("Method","Backtrack");
@@ -594,7 +644,15 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 	}
   return status;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] solverParametersPtr Parameter_Description
+ *  \param [in] iter Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter){
 
 	switch (iter){
@@ -676,7 +734,14 @@ void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solv
     _OutOfProperMethods=true;
 	}
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] y Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 	double* rhs=new double [_dimSys];
 	double* rhs2=new double [_dimSys];
@@ -723,7 +788,14 @@ bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 	delete [] rhs;
 	return std::all_of(rhssignchange.begin(),rhssignchange.end(),[](bool a){return a;});
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] ex Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool Nox::isdivisionbyzeroerror(const std::exception &ex){
 	std::string divbyzero = "Division by zero";
 	std::string errorstring(ex.what());
@@ -732,6 +804,14 @@ bool Nox::isdivisionbyzeroerror(const std::exception &ex){
 }
 
 //additionally modifies _y and the algLoop
+/**
+ *  \brief Brief
+ *
+ *  \param [in] y0 Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::divisionbyzerohandling(double const * const y0){
 	NOX::StatusTest::StatusType stat = NOX::StatusTest::Unevaluated;
 	int initialguessdividebyzerofailurecounter = 0;
@@ -794,7 +874,15 @@ void Nox::divisionbyzerohandling(double const * const y0){
 		}
 	}
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] result Parameter_Description
+ *  \param [in] number Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::BinRep(std::vector<double> &result, const int number){
   if (number > std::pow(2.0,static_cast<double>(result.size()))-1.0) throw std::range_error("Binary representation out of range");
   for(unsigned int i=0;i<result.size();i++)
@@ -802,7 +890,14 @@ void Nox::BinRep(std::vector<double> &result, const int number){
 		result[i]=static_cast<int>(number/std::floor(std::pow(2.0,static_cast<double>(i))))%2;
 	}
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] counter Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool Nox::modify_y(const int counter){
 	std::vector<double> startvaluemodifier(_dimSys);
 
@@ -830,6 +925,13 @@ bool Nox::modify_y(const int counter){
 }
 
 //writes output
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::printLogger(){
 	if(!((dynamic_cast<const std::stringstream &>(*_output)).str().empty())){
 		LOGGER_WRITE_BEGIN("NOX: ",LC_NLS,LL_DEBUG);
@@ -841,6 +943,14 @@ void Nox::printLogger(){
 
 
 //sets printing list in solverParametersPtr
+/**
+ *  \brief Brief
+ *
+ *  \param [in] solverParametersPtr Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr){
   solverParametersPtr->sublist("Printing").set("Output Precision", 15);
   solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::InnerIteration);
@@ -849,7 +959,15 @@ void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParam
     solverParametersPtr->sublist("Printing").set("Error Stream", _output);
   }
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] solver Parameter_Description
+ *  \param [in] algLoopSolution Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::copySolution(const Teuchos::RCP<const NOX::Solver::Generic> solver,double* const algLoopSolution){
 	const NOX::LAPACK::Vector& NoxSolution = dynamic_cast<const NOX::LAPACK::Vector&>((dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup())).getX());
 	for (int i=0;i<_dimSys;i++){

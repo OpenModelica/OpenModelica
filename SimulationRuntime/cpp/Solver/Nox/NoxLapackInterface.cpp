@@ -4,7 +4,14 @@
 
 //! Constructor
 
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] algLoop Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argument unnecessary. Just initialize _lambda to 1.0
 	:_algLoop(algLoop)
 	,_generateoutput(false)
@@ -47,6 +54,13 @@ NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argum
 }
 
 //! Destructor
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 NoxLapackInterface::~NoxLapackInterface()
 {
     if(_yScale) delete [] _yScale;
@@ -56,6 +70,13 @@ NoxLapackInterface::~NoxLapackInterface()
 }
 
 //we could replace this by the x0 in Nox.cpp
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 {
 	if (!_computedinitialguess){
@@ -89,7 +110,15 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 	}
 	return *_initialGuess;
 };
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] f Parameter_Description
+ *  \param [in] x Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	for (int i=0;i<_dimSys;i++){
 		if (_useDomainScaling){
@@ -145,7 +174,15 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 	}
 	return true;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] J Parameter_Description
+ *  \param [in] x Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const NOX::LAPACK::Vector & x){
 	//setting the forward difference parameters. We divide by the denominator alpha*|x_i|+beta in the computation of the difference quotient. It is similar to the Finite Difference implementation by Nox, which can be found under https://trilinos.org/docs/dev/packages/nox/doc/html/classNOX_1_1Epetra_1_1FiniteDifference.html
 	double alpha=1.0e-11;
@@ -209,12 +246,27 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 	}
 	return true;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] p Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void NoxLapackInterface::setParams(const LOCA::ParameterVector& p) {
 	_lambda = p.getValue("lambda");
 }
 
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] x Parameter_Description
+ *  \param [in] conParam Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const double conParam)
 {
 	if(_generateoutput){
@@ -223,7 +275,15 @@ void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const doubl
 		std::cout << "Simtime: " << _algLoop->getSimTime() << std::endl;
 	}
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] A Parameter_Description
+ *  \param [in] x Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::Matrix<double> &A, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector result(A.numRows());
 	for(int i=0;i<A.numRows();i++){
@@ -233,11 +293,24 @@ NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::M
 	}
 	return result;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 int NoxLapackInterface::getMaxNumberOfHomotopyTries(){
   return 6;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] number Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void NoxLapackInterface::setNumberOfHomotopyTries(const int & number){
   if ((number>-1) && (number < getMaxNumberOfHomotopyTries())){
     _numberofhomotopytries=number;
@@ -247,6 +320,15 @@ void NoxLapackInterface::setNumberOfHomotopyTries(const int & number){
   }
 }
 
+/**
+ *  \brief Brief
+ *
+ *  \param [in] f Parameter_Description
+ *  \param [in] x Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector zeroandtempvec(_dimSys);
 	double templambda=_lambda;//storing _lambda temporarily.
@@ -295,7 +377,15 @@ bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::L
 	}
 	return true;
 }
-
+/**
+ *  \brief Brief
+ *
+ *  \param [in] f Parameter_Description
+ *  \param [in] x Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector g(_dimSys);
 	NOX::LAPACK::Vector h(_dimSys);
