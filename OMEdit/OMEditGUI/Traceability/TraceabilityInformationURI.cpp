@@ -25,7 +25,7 @@ void TraceabilityInformationURI::translateModelCreationURIToJsonMessageFormat(QS
   QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
                                        "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
                                        "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
-                                       "      \"messageFormatVersion\": \"1.4\",\n"
+                                       "      \"messageFormatVersion\": \"1.3\",\n"
                                        "      \"prov:Entity\": [\n"
                                        "            {\n"
                                        "            \"rdf:about\": \"%4\",\n"
@@ -67,14 +67,10 @@ void TraceabilityInformationURI::translateURIToJsonMessageFormat(QString modelin
   QString  email, userName;
   userName = OptionsDialog::instance()->getTraceabilityPage()->getUserName()->text();
   email = OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
-//  if (sourceModelFileNameURI.isEmpty()|| activityURI.isEmpty()|| agentURI.isEmpty()|| toolURI.isEmpty() || modelingActivity.isEmpty()|| fmuFileNameURI.isEmpty()) {
-//    QMessageBox::information(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-//                             QString("The traceability information is not complete. The dialog with incomplete information will pop up."), Helper::ok);
-//  }
   QString jsonMessageFormat = QString("{\"rdf:RDF\" : {\n"
                                        "      \"xmlns:rdf\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#\",\n"
                                        "      \"xmlns:prov\": \"http://www.w3.org/ns/prov#\",\n"
-                                       "      \"messageFormatVersion\": \"1.4\",\n"
+                                       "      \"messageFormatVersion\": \"1.3\",\n"
                                        "      \"prov:Entity\": [\n"
                                        "            {\n"
                                        "            \"rdf:about\": \"%2\",\n"
@@ -136,7 +132,7 @@ void TraceabilityInformationURI::sendTraceabilityInformation(QString jsonMessage
                                                                  "The traceability information has been sent to Daemon",
                                                                  Helper::scriptingKind, Helper::notificationLevel));
  }
-//      pNetworkReply->deleteLater();
+ pNetworkReply->deleteLater();
 }
 
 /*!
@@ -146,16 +142,16 @@ void TraceabilityInformationURI::sendTraceabilityInformation(QString jsonMessage
  * Shows an error message if the traceability information was not send correctly.\n
  * Deletes QNetworkReply object
  */
-void TraceabilityInformationURI::traceabilityInformationSent(QNetworkReply *pNetworkReply)
-{
-  if (pNetworkReply->error() != QNetworkReply::NoError) {
-     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            QString("Following error has occurred while sending the traceability information \n\n%1").arg(pNetworkReply->errorString()),
-                            Helper::ok);
-  }
-  else
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
-                                                                 "The traceability information has been sent to Daemon",
-                                                                 Helper::scriptingKind, Helper::notificationLevel));
-  pNetworkReply->deleteLater();
-}
+//void TraceabilityInformationURI::traceabilityInformationSent(QNetworkReply *pNetworkReply)
+//{
+//  if (pNetworkReply->error() != QNetworkReply::NoError) {
+//     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
+//                            QString("Following error has occurred while sending the traceability information \n\n%1").arg(pNetworkReply->errorString()),
+//                            Helper::ok);
+//  }
+//  else
+//    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
+//                                                                 "The traceability information has been sent to Daemon",
+//                                                                 Helper::scriptingKind, Helper::notificationLevel));
+//  pNetworkReply->deleteLater();
+//}

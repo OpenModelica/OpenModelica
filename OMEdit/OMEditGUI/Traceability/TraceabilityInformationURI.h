@@ -2,11 +2,10 @@
 #define TRACEABILITYINFORMATIONURI_H
 
 #include <QtGlobal>
-#include <QDialog>
+#include <QObject>
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include <QtWidgets>
 #include <QNetworkReply>
-#include <QHttpMultiPart>
 #else
 #include <QtCore>
 #include <QtGui>
@@ -21,15 +20,10 @@ public:
   TraceabilityInformationURI();
   void translateURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString sourceModelFileNameURI, QString fmuFileNameURI, QString entityType, QString path, QString gitHash);
   void translateModelCreationURIToJsonMessageFormat(QString modelingActivity, QString toolURI, QString activityURI, QString agentURI, QString fileNameURI, QString entityType, QString path, QString gitHash);
-  void sendTraceabilityInformation(QString jsonMessageFormat);
 private:
-  void translateURIToJsonMessageFormat();
-  void translateModelCreationURIToJsonMessageFormat(QStringList modelCreationURIList);
-  void translateFMUExportURIToJsonMessageFormat(QStringList fmuExportURIList);
+  void sendTraceabilityInformation(QString jsonMessageFormat);
 private slots:
   void traceabilityInformationSent(QNetworkReply *pNetworkReply);
-public slots:
-  void sendTraceabilityInformation();
 };
 
 #endif // TRACEABILITYINFORMATIONURI_H

@@ -227,6 +227,12 @@ void CommitChangesDialog::generateTraceabilityURI(QString activity, QString mode
     gitHash = GitCommands::instance()->commitAndGetFileHash(modelFileName, activity);
     fmuFileNameURI = "Entity.modelFile:" + path + "#" + gitHash ;
     sourceModelFileNameURI = "Entity.modelDescriptionFile:" + dir.relativeFilePath(fmuFileName) + "#" + GitCommands::instance()->getGitHash(fmuFileName);
+  }else if(activity.compare("fmuImport")== 0) {
+    entityType = "fmu";
+    path = dir.relativeFilePath(modelFileName);
+    gitHash = GitCommands::instance()->commitAndGetFileHash(modelFileName, activity);
+    fmuFileNameURI = "Entity.modelFile:" + path + "#" + gitHash ;
+    sourceModelFileNameURI = "Entity.fmu:" + dir.relativeFilePath(fmuFileName) + "#" + GitCommands::instance()->getGitHash(fmuFileName);
   }else {
     entityType = "fmu";
     path = dir.relativeFilePath(fmuFileName);
