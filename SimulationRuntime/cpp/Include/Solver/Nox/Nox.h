@@ -75,8 +75,6 @@ private:
     _SimTimeOld,
     _SimTimeNew;
 
-  bool _ValidSimTime;
-
   Teuchos::RCP<NoxLapackInterface> _noxLapackInterface;
 
   Teuchos::RCP<NOX::LAPACK::Group> _grp;

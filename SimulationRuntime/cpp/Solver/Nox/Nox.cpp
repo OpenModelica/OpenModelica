@@ -36,7 +36,6 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
   , _lc(LC_NLS)
   , _SimTimeOld  (0.0)
   , _SimTimeNew  (0.0)
-  , _ValidSimTime (false)
 {
 
 }
@@ -137,10 +136,32 @@ void Nox::solve()
 
   //try extrapolating initial guess. Up to now, y0=y_new. Now we want that (y0,_algLoop->getSimTime()),(y_new,_SimTimeNew),(y_old,_SimTimeOld) form a line.
   //This is equivalent to the formula y0=y_new+(y_new-y_old)*(_algLoop->getSimTime()-_SimTimeNew)/(_SimTimeNew-_SimTimeOld)
-  //Do this only iff _algLoop->getSimTime(),_SimTimeNew are not equal to _SimTimeOld and _ValidSimTime is true.
-  //Is _ValidSimTime really required?
+  //Do this only iff _algLoop->getSimTime(),_SimTimeNew are not equal to _SimTimeOld
 
+  //set y0. Maybe this should be rather done in the step completed function.
 
+  if((_SimTimeOld!=_SimTimeNew)){
+    //store times temporarily for lambda expression
+    double SimTimeCurrent = _algLoop->getSimTime();
+    double SimTimeNew = _SimTimeNew;
+    double SimTimeOld = _SimTimeOld;
+    std::transform(_y_old,_y_old+_dimSys,_y_new,_y0,[&SimTimeNew,&SimTimeOld,&SimTimeCurrent](const double &a,const double &b)->double{return b+(b-a)*(SimTimeCurrent-SimTimeNew)/(SimTimeNew-SimTimeOld);});
+    if(_generateoutput){
+      std::cout << "Using extrapolated values for y0:" << std::endl;
+      std::cout << "SimTime =" << _algLoop->getSimTime() << "=" << SimTimeCurrent << std::endl;
+      std::cout << "y0=";
+      std::for_each(_y0,_y0+_dimSys,[](const double a){std::cout << a << " ";});
+      std::cout << std::endl;
+      std::cout << "SimTimeNew =" << _SimTimeNew << "=" << SimTimeNew << std::endl;
+      std::cout << "yNew=";
+      std::for_each(_y_new,_y_new+_dimSys,[](const double a){std::cout << a << " ";});
+      std::cout << std::endl;
+      std::cout << "SimTimeOld =" << _SimTimeOld << "=" << SimTimeOld << std::endl;
+      std::cout << "yOld=";
+      std::for_each(_y_old,_y_old+_dimSys,[](const double a){std::cout << a << " ";});
+      std::cout << std::endl;
+    }
+  }
 
   //handle division by zero
 	try{
@@ -154,7 +175,7 @@ void Nox::solve()
 			handleddivisionbyzeroerror=true;
 			divisionbyzerohandling(_y0);
 		}else{
-      if (_generateoutput) std::cout << "failed when evaluating algloop for the first time with error message: " << ex.what() << std::endl;
+      std::cout << "failed when evaluating algloop for the first time with error message: " << ex.what() << std::endl;
 			throw;
 		}
 	}
@@ -266,9 +287,36 @@ void Nox::solve()
     }
   }
 
-  //Further initial guess variation approaches
-  //extrapolation of y using ynew and yold (requires the corresponding simtime)
+  //no extrapolation of the initial guess
 
+  if((_iterationStatus==CONTINUE) && (!_eventRetry)){
+    memcpy(_y,_y_new,_dimSys*sizeof(double));
+    std::cout << "Trying to solve without extrapolated values:";
+    for (int i=0;i<_dimSys;i++){
+      std::cout << _y[i] << " ";
+    }
+    std::cout << std::endl;
+
+    _algLoop->setReal(_y);
+    if(BasicNLSsolve()==NOX::StatusTest::Converged){
+      _iterationStatus=DONE;
+    }else{
+      bool EvalAfterSolveFailed2=false;
+      _algLoop->setReal(_y);
+      try{
+        _algLoop->evaluate();
+			}catch(const std::exception & ex){
+        EvalAfterSolveFailed2=true;
+        std::cout << "EvalAfterSolveFailed2" << std::endl;
+      }
+      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
+      if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
+        _algLoop->setReal(_y);
+        _algLoop->evaluate();
+        _iterationStatus=DONE;
+      }
+    }
+  }
 
   //try varying initial guess y0 by 10%.
   //this can be accelerated to varying zero and equal start values only.
@@ -330,7 +378,6 @@ void Nox::stepCompleted(double time)
   if (time == _algLoop->getSimTime()){
     _SimTimeOld = _SimTimeNew;
     _SimTimeNew = _algLoop->getSimTime();
-    _ValidSimTime = true;
   }else{
     if(_generateoutput) std::cout << "time=" << time << ", algLoop->getSimTime()=" << _algLoop->getSimTime() << std::endl;
   }
