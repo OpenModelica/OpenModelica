@@ -906,9 +906,9 @@ bool Nox::modify_y(const int counter){
   BinRep(startvaluemodifier,counter);
 
   //replace 0 by -1.
-  std::for_each(startvaluemodifier.begin(),startvaluemodifier.end(), [](double d){return (d==0.0) ? -1.0 : d;});
+  std::for_each(startvaluemodifier.begin(),startvaluemodifier.end(), [](double &d){d=(d==0.0) ? -1.0 : d;});
 
-  std::cout << "Varying initial guess by 10%:" << std::endl;
+  if(_generateoutput) std::cout << "Varying initial guess by 10%:" << std::endl;
 	for (int i=0;i<_dimSys;i++){
     _y[i] += (_y[i]!=0.0) ? 0.1*_y[i]*startvaluemodifier[i] : 0.1*startvaluemodifier[i];
 	}
