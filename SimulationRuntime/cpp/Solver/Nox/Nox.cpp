@@ -155,7 +155,7 @@ void Nox::solve()
 	// Create the list of solver parameters. For detailed calibration, check https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
   _solverParametersPtr = Teuchos::rcp(new Teuchos::ParameterList);
   _solverParametersPtr->set("Nonlinear Solver", "Line Search Based");
-	//_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
+	_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
 	addPrintingList(_solverParametersPtr);
 
   if (_generateoutput) std::cout << "Does NoxLapackInterface induce this error?" << std::endl;
@@ -276,6 +276,11 @@ void Nox::solve()
   int numberofhomotopytries = 0;
   while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries()) && !_eventRetry){
     if (_generateoutput) std::cout << "Solving with Homotopy at numberofhomotopytries = " << numberofhomotopytries << std::endl;
+
+    // Reset initial guess
+    memcpy(_y,_y0,_dimSys*sizeof(double));
+    _algLoop->setReal(_y);
+
     try{
       LocaHomotopySolve(numberofhomotopytries);
     }
@@ -291,7 +296,7 @@ void Nox::solve()
   //try setting initial guess to nominal values
   if((_iterationStatus==CONTINUE) && (!_eventRetry)){
     _algLoop->getNominalReal(_y);
-    std::cout << "Trying to solve with nominal values given by ";
+    if(_generateoutput) std::cout << "Trying to solve with nominal values given by ";
     for (int i=0;i<_dimSys;i++){
       std::cout << _y[i] << " ";
     }
@@ -318,11 +323,31 @@ void Nox::solve()
     }
   }
 
+  //try homotopy with nominal values as initial guess
+
+  numberofhomotopytries = 0;
+  while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries()) && !_eventRetry){
+    std::cout << "Solving with Homotopy at numberofhomotopytries = " << numberofhomotopytries << " with nominal values as start values." << std::endl;
+
+    // Reset initial guess
+    _algLoop->getNominalReal(_y);
+    _algLoop->setReal(_y);
+
+    try{
+      LocaHomotopySolve(numberofhomotopytries);
+    }
+    catch(const std::exception &e){
+      std::string errorstring(e.what());
+      if ((_generateoutput)) std::cout << "Solving with Homotopy failed with error message " + errorstring << " at numberofhomotopytries = " << numberofhomotopytries << std::endl;
+    }
+    numberofhomotopytries++;
+  }
+
   //no extrapolation of the initial guess
 
   if((_iterationStatus==CONTINUE) && (!_eventRetry)){
     memcpy(_y,_y_new,_dimSys*sizeof(double));
-    std::cout << "Trying to solve without extrapolated values:";
+    if (_generateoutput) std::cout << "Trying to solve without extrapolated values:";
     for (int i=0;i<_dimSys;i++){
       std::cout << _y[i] << " ";
     }
@@ -460,10 +485,6 @@ void Nox::check4EventRetry(double* y)
 void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 {
 	if((_generateoutput)) std::cout << "We are going to solve algloop " << _algLoop->getEquationIndex() << "using homotopy with numberofhomotopytries=" << numberofhomotopytries << std::endl;
-
-	// Reset initial guess
-	memcpy(_y,_y0,_dimSys*sizeof(double));
-	_algLoop->setReal(_y);
 
 	//We are setting up the problem to perform arc-length continuation in the parameter "lambda" from 0 to 1 with a maximum of 50 continuation steps and maxNewtonIters nonlinear iterations per step.
 	//Since we are doing an equilibrium continuation, we set the bifurcation method to "None".
