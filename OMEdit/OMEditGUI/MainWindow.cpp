@@ -888,31 +888,26 @@ void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString s
       return;
     }
   }
-  if (OptionsDialog::instance()->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
-    QString message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(Helper::toolsOptionsPath);
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), message, Helper::ok);
+  if (pLibraryTreeItem->isSaved()) {
+    fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
   } else {
-    if (pLibraryTreeItem->isSaved()) {
-      fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
-    } else {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-      pMessageBox->setIcon(QMessageBox::Question);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
-      pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-      pMessageBox->setDefaultButton(QMessageBox::Yes);
-      int answer = pMessageBox->exec();
-      switch (answer) {
-        case QMessageBox::Yes:
-          if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
-            fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
-          }
-          break;
-        case QMessageBox::No:
-        default:
-          break;
-      }
+    QMessageBox *pMessageBox = new QMessageBox(this);
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
+          fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
+        }
+        break;
+      case QMessageBox::No:
+      default:
+        break;
     }
   }
 }

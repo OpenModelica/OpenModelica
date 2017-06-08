@@ -857,6 +857,9 @@ class TLMPage : public QWidget
   Q_OBJECT
 public:
   TLMPage(OptionsDialog *pOptionsDialog);
+  QString getOMTLMSimulatorPath();
+  QString getOMTLMSimulatorManagerPath();
+  QString getOMTLMSimulatorMonitorPath();
   QLineEdit* getTLMPluginPathTextBox() {return mpTLMPluginPathTextBox;}
   QLineEdit* getTLMManagerProcessTextBox() {return mpTLMManagerProcessTextBox;}
   QLineEdit* getTLMMonitorProcessTextBox() {return mpTLMMonitorProcessTextBox;}

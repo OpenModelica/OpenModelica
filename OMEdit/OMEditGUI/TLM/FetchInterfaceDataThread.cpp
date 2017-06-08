@@ -68,16 +68,16 @@ void FetchInterfaceDataThread::run()
   QProcessEnvironment environment;
 #ifdef WIN32
   environment = StringHandler::simulationProcessEnvironment();
-  environment.insert("PATH", pTLMPage->getTLMPluginPathTextBox()->text() + ";" + environment.value("PATH"));
+  environment.insert("PATH", pTLMPage->getOMTLMSimulatorPath() + ";" + environment.value("PATH"));
 #else
   environment = QProcessEnvironment::systemEnvironment();
   environment.insert("PATH", pTLMPage->getTLMPluginPathTextBox()->text() + ":" + environment.value("PATH"));
 #endif
-  environment.insert("TLMPluginPath", pTLMPage->getTLMPluginPathTextBox()->text());
+  environment.insert("TLMPluginPath", pTLMPage->getOMTLMSimulatorPath());
   mpManagerProcess->setProcessEnvironment(environment);
-  mpManagerProcess->start(pTLMPage->getTLMManagerProcessTextBox()->text(), args);
+  mpManagerProcess->start(pTLMPage->getOMTLMSimulatorManagerPath(), args);
   mManagerProcessId = Utilities::getProcessId(mpManagerProcess);
-  emit sendManagerOutput(QString("%1 %2").arg(pTLMPage->getTLMManagerProcessTextBox()->text()).arg(args.join(" ")), StringHandler::OMEditInfo);
+  emit sendManagerOutput(QString("%1 %2").arg(pTLMPage->getOMTLMSimulatorManagerPath()).arg(args.join(" ")), StringHandler::OMEditInfo);
   exec();
 }
 

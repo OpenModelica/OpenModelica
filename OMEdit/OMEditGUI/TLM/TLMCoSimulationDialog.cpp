@@ -187,15 +187,15 @@ void TLMCoSimulationDialog::show(LibraryTreeItem *pLibraryTreeItem)
   mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeItem->getName()));
   // if user has nothing in TLM plugin path then read from OptionsDialog
   if (mpTLMPluginPathTextBox->text().isEmpty()) {
-    mpTLMPluginPathTextBox->setText(OptionsDialog::instance()->getTLMPage()->getTLMPluginPathTextBox()->text());
+    mpTLMPluginPathTextBox->setText(OptionsDialog::instance()->getTLMPage()->getOMTLMSimulatorPath());
   }
   // if user has nothing in manager process box then read from OptionsDialog
   if (mpManagerProcessTextBox->text().isEmpty()) {
-    mpManagerProcessTextBox->setText(OptionsDialog::instance()->getTLMPage()->getTLMManagerProcessTextBox()->text());
+    mpManagerProcessTextBox->setText(OptionsDialog::instance()->getTLMPage()->getOMTLMSimulatorManagerPath());
   }
   // if user has nothing in monitor process box then read from OptionsDialog
   if (mpMonitorProcessTextBox->text().isEmpty()) {
-    mpMonitorProcessTextBox->setText(OptionsDialog::instance()->getTLMPage()->getTLMMonitorProcessTextBox()->text());
+    mpMonitorProcessTextBox->setText(OptionsDialog::instance()->getTLMPage()->getOMTLMSimulatorMonitorPath());
   }
   setVisible(true);
 }

@@ -1343,7 +1343,7 @@ void OptionsDialog::addListItems()
   // TLM Item
   QListWidgetItem *pTLMItem = new QListWidgetItem(mpOptionsList);
   pTLMItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
-  pTLMItem->setText(tr("TLM"));
+  pTLMItem->setText(tr("OMTLMSimulator"));
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
@@ -4334,20 +4334,23 @@ TLMPage::TLMPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // TLM Plugin Path
-  mpTLMPluginPathLabel = new Label(tr("TLM Plugin Path:"));
+  mpTLMPluginPathLabel = new Label(tr("Path:"));
   mpTLMPluginPathTextBox = new QLineEdit;
+  mpTLMPluginPathTextBox->setPlaceholderText(QString("%1/OMTLMSimulator/bin").arg(Helper::OpenModelicaHome));
   mpBrowseTLMPluginPathButton = new QPushButton(Helper::browse);
   mpBrowseTLMPluginPathButton->setAutoDefault(false);
   connect(mpBrowseTLMPluginPathButton, SIGNAL(clicked()), SLOT(browseTLMPluginPath()));
   // TLM Manager Process
-  mpTLMManagerProcessLabel = new Label(tr("TLM Manager Process:"));
+  mpTLMManagerProcessLabel = new Label(tr("Manager Process:"));
   mpTLMManagerProcessTextBox = new QLineEdit;
+  mpTLMManagerProcessTextBox->setPlaceholderText(QString("%1/OMTLMSimulator/bin/tlmmanager").arg(Helper::OpenModelicaHome));
   mpBrowseTLMManagerProcessButton = new QPushButton(Helper::browse);
   mpBrowseTLMManagerProcessButton->setAutoDefault(false);
   connect(mpBrowseTLMManagerProcessButton, SIGNAL(clicked()), SLOT(browseTLMManagerProcess()));
   // TLM Monitor Process
-  mpTLMMonitorProcessLabel = new Label(tr("TLM Monitor Process:"));
+  mpTLMMonitorProcessLabel = new Label(tr("Monitor Process:"));
   mpTLMMonitorProcessTextBox = new QLineEdit;
+  mpTLMMonitorProcessTextBox->setPlaceholderText(QString("%1/OMTLMSimulator/bin/tlmmonitor").arg(Helper::OpenModelicaHome));
   mpBrowseTLMMonitorProcessButton = new QPushButton(Helper::browse);
   mpBrowseTLMMonitorProcessButton->setAutoDefault(false);
   connect(mpBrowseTLMMonitorProcessButton, SIGNAL(clicked()), SLOT(browseTLMMonitorProcess()));
@@ -4360,15 +4363,58 @@ TLMPage::TLMPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessLabel, 1, 0);
   pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessTextBox, 1, 1);
   pGeneralGroupBoxLayout->addWidget(mpBrowseTLMManagerProcessButton, 1, 2);
-  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessLabel, 2, 0);
-  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessTextBox, 2, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMMonitorProcessButton, 2, 2);
+  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessLabel, 3, 0);
+  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessTextBox, 3, 1);
+  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMMonitorProcessButton, 3, 2);
+  pGeneralGroupBoxLayout->addWidget(new Label(tr("* Default OMTLMSimulator paths are used if above field are empty.")), 4, 0, 1, 3);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpGeneralGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief TLMPage::getOMTLMSimulatorPath
+ * Returns the OMTLMSimulator path.
+ * \return
+ */
+QString TLMPage::getOMTLMSimulatorPath()
+{
+  if (mpTLMPluginPathTextBox->text().isEmpty()) {
+    return mpTLMPluginPathTextBox->placeholderText();
+  } else {
+    return mpTLMPluginPathTextBox->text();
+  }
+}
+
+/*!
+ * \brief TLMPage::getOMTLMSimulatorManagerPath
+ * Returns the OMTLMSimulator manager path.
+ * \return
+ */
+QString TLMPage::getOMTLMSimulatorManagerPath()
+{
+  if (mpTLMManagerProcessTextBox->text().isEmpty()) {
+    return mpTLMManagerProcessTextBox->placeholderText();
+  } else {
+    return mpTLMManagerProcessTextBox->text();
+  }
+}
+
+/*!
+ * \brief TLMPage::getOMTLMSimulatorMonitorPath
+ * Returns the OMTLMSimulator monitor path.
+ * \return
+ */
+QString TLMPage::getOMTLMSimulatorMonitorPath()
+{
+  if (mpTLMMonitorProcessTextBox->text().isEmpty()) {
+    return mpTLMMonitorProcessTextBox->placeholderText();
+  } else {
+    return mpTLMMonitorProcessTextBox->text();
+  }
 }
 
 /*!
