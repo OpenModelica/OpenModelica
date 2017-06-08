@@ -514,14 +514,16 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     initFileName = QString(text).append("_init.xml");
   }
   QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
-  if (initFile.open(QIODevice::ReadOnly)) {
-    QXmlStreamReader initXmlReader(&initFile);
-    parseInitXml(initXmlReader);
-    initFile.close();
-  } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                          .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+  if (initFile.exists()) {
+    if (initFile.open(QIODevice::ReadOnly)) {
+      QXmlStreamReader initXmlReader(&initFile);
+      parseInitXml(initXmlReader);
+      initFile.close();
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    }
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
