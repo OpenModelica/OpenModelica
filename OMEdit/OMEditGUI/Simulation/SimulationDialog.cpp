@@ -125,7 +125,13 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
 #else
   assert(false==launchAnimation);
 #endif
+  /* ticket:4440 OMEdit does not simulate
+   * Make sure we always simulate when directSimulate() is called.
+   */
+  bool simulateCheckBoxState = mpSimulateCheckBox->isChecked();
+  mpSimulateCheckBox->setChecked(true);
   simulate();
+  mpSimulateCheckBox->setChecked(simulateCheckBoxState);
 }
 
 /*!
