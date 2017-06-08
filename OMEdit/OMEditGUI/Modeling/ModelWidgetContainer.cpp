@@ -4071,8 +4071,10 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
 void ModelWidget::beginMacro(const QString &text)
 {
   mpUndoStack->beginMacro(text);
-  QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
-  textCursor.beginEditBlock();
+  if (mpEditor) {
+    QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
+    textCursor.beginEditBlock();
+  }
 }
 
 /*!
@@ -4082,10 +4084,12 @@ void ModelWidget::beginMacro(const QString &text)
 void ModelWidget::endMacro()
 {
   mpUndoStack->endMacro();
-  mpEditor->setForceSetPlainText(true);
-  QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
-  textCursor.endEditBlock();
-  mpEditor->setForceSetPlainText(false);
+  if (mpEditor) {
+    mpEditor->setForceSetPlainText(true);
+    QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
+    textCursor.endEditBlock();
+    mpEditor->setForceSetPlainText(false);
+  }
 }
 
 /*!
