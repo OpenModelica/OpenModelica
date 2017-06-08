@@ -847,8 +847,13 @@ algorithm
             else e;
           end match;
           v = BackendVariable.setBindExp(v, SOME(e));
-          (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
-          v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
+
+          // Add evaluated expression if constant to the replacements
+          // unless the user suggests not to evaluate the variable with annotation(Evaluate=false)
+          if not BackendVariable.hasVarEvaluateAnnotationFalse(v) then
+            (repl, replEvaluate) = addConstExpReplacement(e, cr, repl, replEvaluate);
+            v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
+          end if;
         end if;
       end if;
       // apply replacements in variable attributes
