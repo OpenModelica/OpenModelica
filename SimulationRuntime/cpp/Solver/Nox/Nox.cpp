@@ -557,8 +557,18 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = Teuchos::rcp(new LOCA::LAPACK::Group(globalData, *LocaLapackInterface));
 	grp->setParams(p);
 
+	// Set up the status tests
+  Teuchos::RCP<NOX::StatusTest::NormF> statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-7));
+  Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
+  Teuchos::RCP<NOX::StatusTest::Stagnation> statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
+  Teuchos::RCP<NOX::StatusTest::Divergence> statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
+  //statusTestSgnChange = Teuchos::rcp(new NOX::StatusTest::SgnChange(5.0e-7));
+	Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, statusTestNormF, statusTestMaxIters));
+	statusTestsCombo->addStatusTest(statusTestStagnation);
+	statusTestsCombo->addStatusTest(statusTestDivergence);
+
 	// Create the stepper
-	LOCA::Stepper stepper(globalData, grp, _statusTestsCombo, paramList);
+	LOCA::Stepper stepper(globalData, grp, statusTestsCombo, paramList);
 
 	try{
 		// Perform continuation run
