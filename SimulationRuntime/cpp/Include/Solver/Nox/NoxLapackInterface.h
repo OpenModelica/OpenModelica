@@ -1,3 +1,8 @@
+/** @addtogroup solverNox
+ *  @{
+ *
+ */
+
 #include <LOCA.H>
 #include <LOCA_LAPACK.H>
 
@@ -46,4 +51,8 @@ class NoxLapackInterface : public LOCA::LAPACK::Interface {
 	bool _evaluatedJacobianAtInitialGuess;
 	Teuchos::RCP<NOX::LAPACK::Matrix<double>> _J;//F'(x_0)
   bool _UseAccurateJacobian;
+  LogCategory _lc;
 };
+
+
+/** @} */ // end of solverNox

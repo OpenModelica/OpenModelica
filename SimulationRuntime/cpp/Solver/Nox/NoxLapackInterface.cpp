@@ -1,17 +1,14 @@
+/** @addtogroup solverNox
+ *  @{
+ *
+ */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Solver/Nox/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 #include <Solver/Nox/NoxLapackInterface.h>
 
 //! Constructor
-
-/**
- *  \brief Brief
- *
- *  \param [in] algLoop Parameter_Description
- *  \return Return_Description
- *
- *  \details Details
- */
 NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argument unnecessary. Just initialize _lambda to 1.0
 	:_algLoop(algLoop)
 	,_generateoutput(false)
@@ -26,6 +23,7 @@ NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argum
 	,_evaluatedJacobianAtInitialGuess(false)
   ,_UseAccurateJacobian(false)
   ,_numberofhomotopytries(-1)
+  , _lc(LC_NLS)
 {
 	_dimSys = _algLoop->getDimReal();
 	_initialGuess = Teuchos::rcp(new NOX::LAPACK::Vector(_dimSys));
@@ -54,13 +52,6 @@ NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argum
 }
 
 //! Destructor
-/**
- *  \brief Brief
- *
- *  \return Return_Description
- *
- *  \details Details
- */
 NoxLapackInterface::~NoxLapackInterface()
 {
     if(_yScale) delete [] _yScale;
@@ -71,9 +62,9 @@ NoxLapackInterface::~NoxLapackInterface()
 
 //we could replace this by the x0 in Nox.cpp
 /**
- *  \brief Brief
+ *  \brief stores initial guess from algebraic loop and scaling vectors for F.
  *
- *  \return Return_Description
+ *  \return Initial guess
  *
  *  \details Details
  */
@@ -96,13 +87,12 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 		if (_useFunctionValueScaling){
 			_algLoop->evaluate();
 			_algLoop->getRHS(_fScale);
-			if (_generateoutput) std::cout << "_fScale = (";
 			for(int i=0;i<_dimSys;i++){
 				if (std::abs(_fScale[i])<1.0)
 					_fScale[i]=1.0;
-				if (_generateoutput) std::cout << " " << _fScale[i];
 			}
-			if (_generateoutput) std::cout << ")" << std::endl;
+      LOGGER_WRITE_VECTOR("_fScale=", _fScale, _dimSys, _lc, LL_DEBUG);
+
 		}
 
 		delete [] x;
@@ -111,13 +101,13 @@ const NOX::LAPACK::Vector& NoxLapackInterface::getInitialGuess()
 	return *_initialGuess;
 };
 /**
- *  \brief Brief
+ *  \brief get F
  *
- *  \param [in] f Parameter_Description
- *  \param [in] x Parameter_Description
- *  \return Return_Description
+ *  \param [out] f right hand side
+ *  \param [in] x current position
+ *  \return true
  *
- *  \details Details
+ *  \details sets high values in F if evaluation yields errors.
  */
 bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	for (int i=0;i<_dimSys;i++){
@@ -128,13 +118,7 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		}
 	}
 
-	if (_generateoutput){
-		std::cout << "we are at position x=(";
-		for (int i=0;i<_dimSys;i++){
-			std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << _xtemp[i] << " ";
-		}
-		std::cout << ")" << std::endl;
-	}
+  LOGGER_WRITE_VECTOR("x",_xtemp, _dimSys, _lc, LL_DEBUG);
 
 	_algLoop->setReal(_xtemp);
 	_algLoop->getRHS(_rhs);
@@ -143,22 +127,15 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 		_algLoop->getRHS(_rhs);
 	}catch(const std::exception &ex)
 	{
-		if (_generateoutput) std::cout << "calculating right hand side failed with error message:" << std::endl << ex.what() << std::endl;
+    LOGGER_WRITE("calculating right hand side failed with error message: " + std::string(ex.what()),_lc, LL_DEBUG);
 		//the following should be done when some to be implemented flag like "continue if function evaluation fails" is activated.
-
 		for(int i=0;i<_dimSys;i++){
 			_rhs[i]= ((_rhs[i]<0.0) ? -1.0e12 : 1.0e12);
 		}
 	}
 
+  LOGGER_WRITE_VECTOR("_rhs",_rhs, _dimSys, _lc, LL_DEBUG);
 
-	if (_generateoutput){
-		std::cout << "the right hand side is given by (";
-		for (int i=0;i<_dimSys;i++){
-			std::cout << _rhs[i] << " ";
-		}
-		std::cout << ")" << std::endl;
-	}
 	for (int i=0;i<_dimSys;i++){
 
 		if (_useFunctionValueScaling){
@@ -175,13 +152,13 @@ bool NoxLapackInterface::computeActualF(NOX::LAPACK::Vector& f, const NOX::LAPAC
 	return true;
 }
 /**
- *  \brief Brief
+ *  \brief get jacobian
  *
- *  \param [in] J Parameter_Description
- *  \param [in] x Parameter_Description
- *  \return Return_Description
+ *  \param [out] J Jacobian
+ *  \param [in] x current position
+ *  \return true
  *
- *  \details Details
+ *  \details calls computeF repeatedly
  */
 bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const NOX::LAPACK::Vector & x){
 	//setting the forward difference parameters. We divide by the denominator alpha*|x_i|+beta in the computation of the difference quotient. It is similar to the Finite Difference implementation by Nox, which can be found under https://trilinos.org/docs/dev/packages/nox/doc/html/classNOX_1_1Epetra_1_1FiniteDifference.html
@@ -192,12 +169,6 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
 	NOX::LAPACK::Vector f3(_dimSys);//f(x)
 	NOX::LAPACK::Vector f4(_dimSys);//f(x)
 	NOX::LAPACK::Vector xplushei(x);//x+(alpha*|x_i|+beta)*e_i
-
-
-	if (_generateoutput){
-		std::cout << "we are at simtime " << _algLoop->getSimTime() << " and at position (seen by NOX) x=(";
-		x.print(std::cout);
-	}
 
   if(_UseAccurateJacobian){
     for (int i=0;i<_dimSys;i++){
@@ -217,13 +188,6 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
       for (int j=0;j<_dimSys;j++){
         //J(j,i) = (f1(j)-f2(j))/(xplushei(i)-x(i));//=\partial_i f_j
         J(j,i) = (8*(f2(j)-f3(j))-(f1(j)-f4(j)))/(6.0*(x(i)-xplushei(i)));//=\partial_i f_j
-        //print error compared to central difference
-        if(_generateoutput){
-          if (std::abs(J(j,i)-(f2(j)-f3(j))/(2*h))>1.0e-10){
-            std::cout << "absolute error of J(" << j << "," << i << "): " << std::abs(J(j,i)-(f2(j)-f3(j))/(2*h)) << std::endl;
-            std::cout << "relative error of J(" << j << "," << i << "): " << (std::abs((J(j,i)-(f2(j)-f3(j))/(2*h))/(J(j,i)))-1.0)/100.0 << "%" << std::endl;
-          }
-        }
       }
       xplushei(i)=x(i);
     }
@@ -240,49 +204,41 @@ bool NoxLapackInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, const N
     }
   }
 
-	if (_generateoutput){
-		std::cout << "the Jacobian is given by" << std::endl;
-		J.print(std::cout);
-	}
 	return true;
 }
 /**
- *  \brief Brief
+ *  \brief sets continuation parameters
  *
- *  \param [in] p Parameter_Description
- *  \return Return_Description
+ *  \param [in] p parameters
+ *  \return void
  *
- *  \details Details
+ *  \details Homotopy parameter
  */
 void NoxLapackInterface::setParams(const LOCA::ParameterVector& p) {
 	_lambda = p.getValue("lambda");
 }
 
 /**
- *  \brief Brief
+ *  \brief does nothing
  *
- *  \param [in] x Parameter_Description
- *  \param [in] conParam Parameter_Description
+ *  \param [in] x current position
+ *  \param [in] conParam does nothing
  *  \return Return_Description
  *
- *  \details Details
+ *  \details does nothing
  */
 void NoxLapackInterface::printSolution(const NOX::LAPACK::Vector &x, const double conParam)
 {
-	if(_generateoutput){
-		std::cout << "At parameter value: " << std::setprecision(8) << conParam << " the solution vector (norm=" << x.norm() << ") is" << std::endl;
-		x.print(std::cout);
-		std::cout << "Simtime: " << _algLoop->getSimTime() << std::endl;
-	}
+
 }
 /**
- *  \brief Brief
+ *  \brief computes matrix vector product
  *
- *  \param [in] A Parameter_Description
- *  \param [in] x Parameter_Description
- *  \return Return_Description
+ *  \param [in] A Matrix
+ *  \param [in] x Vector
+ *  \return A*x
  *
- *  \details Details
+ *  \details requires number of columns of A to be equal to dimension of x
  */
 NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::Matrix<double> &A, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector result(A.numRows());
@@ -296,9 +252,9 @@ NOX::LAPACK::Vector NoxLapackInterface::applyMatrixtoVector(const NOX::LAPACK::M
 /**
  *  \brief Brief
  *
- *  \return Return_Description
+ *  \return number of simple functions for homotopy
  *
- *  \details Details
+ *  \details see also NoxLapackInterface::computeSimplifiedF()
  */
 int NoxLapackInterface::getMaxNumberOfHomotopyTries(){
   return 6;
@@ -306,28 +262,36 @@ int NoxLapackInterface::getMaxNumberOfHomotopyTries(){
 /**
  *  \brief Brief
  *
- *  \param [in] number Parameter_Description
- *  \return Return_Description
+ *  \param [in] number number of simple function for homotopy
+ *  \return void
  *
- *  \details Details
+ *  \details see also NoxLapackInterface::computeSimplifiedF()
  */
 void NoxLapackInterface::setNumberOfHomotopyTries(const int & number){
   if ((number>-1) && (number < getMaxNumberOfHomotopyTries())){
     _numberofhomotopytries=number;
   }else{
-    std::cout << "set illegal value for number of homotopy tries. Abort" << std::endl;
+    LOGGER_WRITE("set illegal value for number of homotopy tries. Abort",_lc, LL_DEBUG);
     throw ModelicaSimulationError(ALGLOOP_SOLVER,"set illegal value for number of homotopy tries. Abort!");
   }
 }
 
 /**
- *  \brief Brief
+ *  \brief computes G(x), where G is the simple function in homotopy
  *
- *  \param [in] f Parameter_Description
- *  \param [in] x Parameter_Description
- *  \return Return_Description
+ *  \param [out] f rhs of simple function at position x
+ *  \param [in] x postion
+ *  \return void
  *
- *  \details Details
+ *  \details there are getMaxNumberOfHomotopyTries() many simple functions for homotopy + the zero function, which means no homotopy at all. These are:
+ *  Simple Function -1: G(x)=0
+ *  Simple Function 0: G(x)=x-x0
+ *  Simple Function 1: G(x)=x0-x
+ *  Simple Function 2: G(x)=F(x)-F(x0)
+ *  Simple Function 3: G(x)=F(x0)-F(x)
+ *  Simple Function 4: G(x)=F'(x0)(F(x)-F(x0))
+ *  Simple Function 5: G(x)=F'(x0)(F(x0)-F(x))
+ *  x0 denotes the initial guess
  */
 bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector zeroandtempvec(_dimSys);
@@ -359,7 +323,7 @@ bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::L
 		case 4:
 			//This is Affine Homotopy, so we take f(x)=F'(x_0)(x-x_0)=F'(x_0)x-F'(x_0)x_0
 			if(!_evaluatedJacobianAtInitialGuess){
-			_lambda=1.0;//setting _lambda such that computeJacobian returns F'(x_0) instead of _lambda*F(x)+(1-_lambda)*f(x)
+        _lambda=1.0;//setting _lambda such that computeJacobian returns F'(x_0) instead of _lambda*F(x)+(1-_lambda)*f(x)
 				_evaluatedJacobianAtInitialGuess=true;
 				computeJacobian(*_J,getInitialGuess());
 			_lambda=templambda;
@@ -368,23 +332,56 @@ bool NoxLapackInterface::computeSimplifiedF(NOX::LAPACK::Vector& f, const NOX::L
 			break;
 		case 5:
 			//This is Affine Homotopy, so we take f(x)=F'(x_0)(x-x_0)=F'(x_0)x_0-F'(x_0)x
+			if(!_evaluatedJacobianAtInitialGuess){
+        _lambda=1.0;//setting _lambda such that computeJacobian returns F'(x_0) instead of _lambda*F(x)+(1-_lambda)*f(x)
+				_evaluatedJacobianAtInitialGuess=true;
+				computeJacobian(*_J,getInitialGuess());
+			_lambda=templambda;
+			}
 			f.update(-1.0,applyMatrixtoVector(*_J,x),1.0,applyMatrixtoVector(*_J,getInitialGuess()));
 			break;
 		default:
-			if (_generateoutput) std::cout << "We are at AlgLoop " << _algLoop->getEquationIndex() << " and simtime " << _algLoop->getSimTime() << std::endl;
 			throw ModelicaSimulationError(ALGLOOP_SOLVER,"_numberofhomotopytries has illegal value!");
 			break;
 	}
 	return true;
 }
+
 /**
  *  \brief Brief
  *
  *  \param [in] f Parameter_Description
  *  \param [in] x Parameter_Description
  *  \return Return_Description
+ *  \brief Jacobian based scaling
  *
- *  \details Details
+ *  \return void
+ *
+ *  \details uses maximum entry in each row of the jacobian as scaling value for F.
+ */
+void NoxLapackInterface::setFunctionScalingValues(){
+  if(_useFunctionValueScaling){
+    NOX::LAPACK::Matrix<double> jac(_dimSys,_dimSys);
+    computeJacobian(jac,getInitialGuess());
+    double MaxEntry=0;
+    for (int i=0;i<_dimSys;i++){
+      for (int j=0;j<_dimSys;j++){
+        MaxEntry=std::max(MaxEntry,std::abs(jac(j,i)));
+      }
+      _fScale[i]=MaxEntry;
+    }
+    std::for_each(_fScale,_fScale+_dimSys,[](double &a){a=std::max(1.0,a);});
+    LOGGER_WRITE_VECTOR("_fScale", _fScale, _dimSys, _lc, LL_DEBUG);
+  }
+}
+/**
+ *  \brief computes F
+ *
+ *  \param [out] f right hand side F
+ *  \param [in] x position x
+ *  \return true
+ *
+ *  \details calculates F as convex combination of simplified function and actual right hand side.
  */
 bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x){
 	NOX::LAPACK::Vector g(_dimSys);
@@ -397,3 +394,5 @@ bool NoxLapackInterface::computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vec
 	f.update(_lambda, g, 1.0-_lambda, h);
 	return true;
 }
+
+/** @} */ // end of solverNoxLapackInterface

@@ -1,6 +1,6 @@
-/**
- *  \file Nox.cpp
- *  \brief Brief
+/** @addtogroup solverNox
+ *  @{
+ *  / brief Nox solver using Trilinos' NOX. Methods include line search, trust region and homotopy. Yields additional methods for varying the initial guess and convergence criteria
  */
 
 #include <Core/ModelicaDefine.h>
@@ -22,15 +22,8 @@
 
 #include <iostream>
 
-/**
- *  \brief Brief
- *
- *  \param [in] algLoop Parameter_Description
- *  \param [in] settings Parameter_Description
- *  \return Return_Description
- *
- *  \details Details
- */
+
+//!Constructor
 Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	: _algLoop            (algLoop)
 	, _noxSettings        ((INonLinSolverSettings*)settings)
@@ -52,13 +45,8 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 {
 
 }
-/**
- *  \brief Brief
- *
- *  \return Return_Description
- *
- *  \details Details
- */
+
+//!Destructor
 Nox::~Nox()
 {
 	if(_y)                  delete []  _y;
@@ -70,9 +58,9 @@ Nox::~Nox()
 	if(_helpArray) delete [] _helpArray;
 }
 /**
- *  \brief Brief
+ *  \brief initialize
  *
- *  \return Return_Description
+ *  \return allocates memory
  *
  *  \details Details
  */
@@ -106,15 +94,13 @@ void Nox::initialize()
 	_algLoop->getReal(_y0);
 	_algLoop->getReal(_y_new);
 	_algLoop->getReal(_y_old);
-	if (_useDomainScaling){
-		_algLoop->getNominalReal(_yScale);
-		for (int i=0; i<_dimSys; i++){
-			if(_yScale[i] != 0)
-				_yScale[i] = 1/_yScale[i];
-			else
-				_yScale[i] = 1;
-		}
-	}
+  _algLoop->getNominalReal(_yScale);
+  for (int i=0; i<_dimSys; i++){
+    if(_yScale[i] != 0)
+      _yScale[i] = 1/_yScale[i];
+    else
+      _yScale[i] = 1;
+  }
 
 
 	// Set up the status tests
@@ -127,26 +113,39 @@ void Nox::initialize()
 	_statusTestsCombo = Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, _statusTestNormF, _statusTestMaxIters));
 	_statusTestsCombo->addStatusTest(_statusTestStagnation);
 	_statusTestsCombo->addStatusTest(_statusTestDivergence);
+	//_statusTestsCombo->addStatusTest(_statusTestSgnChange);
 
 	if (_generateoutput) std::cout << "ending init" << std::endl;
 }
 /**
- *  \brief Brief
+ *  \brief main solving routine
  *
- *  \return Return_Description
+ *  \return void
  *
- *  \details Details
+ *  \details solves nonlinear algloop with linearly extrapolated start value.\n
+ *  Abort if NOX' status tests yield convergence, CheckWhetherSolutionIsNearby() yields true (both lead to _iterationStatus=DONE) or !_algLoop->isConsistent() (_iterationStatus=CONTINUE)\n
+ *  Methods are applied in the following order:\n
+ *  If division by zero occurs, vary initial guess by adding +-10% to each entry.\n
+ *  Try various methods set in modifySolverParameters() (is a private function, so EXTRACT_PRIVATE = YES has to be set in the doxygen configuration file, which can be found in OpenModelica/doc/SimulationRuntime/cpp/CppRuntimeDoc.in), starting with %Newton's method\n
+ *  Try homotopy\n
+ *  Try various initial guesses:\n
+ *  nominal values\n
+ *  without extrapolation (solution from previous timestep as initial guess)\n
+ *  vary initial guess by adding +-10% to each entry.\n
+ *  Abort if all methods fail (_iterationStatus=SOLVERERROR), throw error if this happens.\n\n
+ *  The parameters for the NOX solver can be found here:
+ *  For detailed calibration, check https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
+ *
  */
 void Nox::solve()
 {
-  if (_generateoutput) std::cout << "start solving" << std::endl;
 	int iter=-1; //Iterationcount of proper methods
 	NOX::StatusTest::StatusType status;
 	bool handleddivisionbyzeroerror=false;
   _OutOfProperMethods=false;
   _eventRetry=false;
 
-  LOGGER_WRITE_BEGIN("Nox: start solving " + to_string(_algLoop->getEquationIndex()) + " at Simulation time " + to_string(_algLoop->getSimTime()), _lc, LL_DEBUG);
+  LOGGER_WRITE_BEGIN("Nox: start solving algebraic loop no. " + to_string(_algLoop->getEquationIndex()) + " at Simulation time " + to_string(_algLoop->getSimTime()), _lc, LL_DEBUG);
 
   //setup solver
   if (_firstCall)
@@ -158,40 +157,26 @@ void Nox::solve()
 	_solverParametersPtr->sublist("Line Search").set("Method", "Full Step");
 	addPrintingList(_solverParametersPtr);
 
-  if (_generateoutput) std::cout << "Does NoxLapackInterface induce this error?" << std::endl;
 	_noxLapackInterface = Teuchos::rcp(new NoxLapackInterface (_algLoop));//this also gets the nominal values
 
 	_iterationStatus=CONTINUE;
 
-  if (_generateoutput) std::cout << "solver init done" << std::endl;
 
   //try extrapolating initial guess. Up to now, y0=y_new. Now we want that (y0,_algLoop->getSimTime()),(y_new,_SimTimeNew),(y_old,_SimTimeOld) form a line.
   //This is equivalent to the formula y0=y_new+(y_new-y_old)*(_algLoop->getSimTime()-_SimTimeNew)/(_SimTimeNew-_SimTimeOld)
-  //Do this only iff _algLoop->getSimTime(),_SimTimeNew are not equal to _SimTimeOld
-
-  //set y0. Maybe this should be rather done in the step completed function.
-
   if((_SimTimeOld!=_SimTimeNew)){
     //store times temporarily for lambda expression
     double SimTimeCurrent = _algLoop->getSimTime();
     double SimTimeNew = _SimTimeNew;
     double SimTimeOld = _SimTimeOld;
     std::transform(_y_old,_y_old+_dimSys,_y_new,_y0,[&SimTimeNew,&SimTimeOld,&SimTimeCurrent](const double &a,const double &b)->double{return b+(b-a)*(SimTimeCurrent-SimTimeNew)/(SimTimeNew-SimTimeOld);});
-    if(_generateoutput){
-      std::cout << "Using extrapolated values for y0:" << std::endl;
-      std::cout << "SimTime =" << _algLoop->getSimTime() << "=" << SimTimeCurrent << std::endl;
-      std::cout << "y0=";
-      std::for_each(_y0,_y0+_dimSys,[](const double a){std::cout << a << " ";});
-      std::cout << std::endl;
-      std::cout << "SimTimeNew =" << _SimTimeNew << "=" << SimTimeNew << std::endl;
-      std::cout << "yNew=";
-      std::for_each(_y_new,_y_new+_dimSys,[](const double a){std::cout << a << " ";});
-      std::cout << std::endl;
-      std::cout << "SimTimeOld =" << _SimTimeOld << "=" << SimTimeOld << std::endl;
-      std::cout << "yOld=";
-      std::for_each(_y_old,_y_old+_dimSys,[](const double a){std::cout << a << " ";});
-      std::cout << std::endl;
-    }
+    LOGGER_WRITE("Using extrapolated values for y0:",_lc, LL_DEBUG);
+    LOGGER_WRITE("SimTime =" + to_string(_algLoop->getSimTime()),_lc, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("y0",_y0,_dimSys,_lc, LL_DEBUG);
+    LOGGER_WRITE("SimTime =" + to_string(_algLoop->getSimTime()),_lc, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("yOld",_y_old,_dimSys,_lc, LL_DEBUG);
+    LOGGER_WRITE("SimTimeNew =" + to_string(_SimTimeNew),_lc, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("yNew",_y_new,_dimSys,_lc, LL_DEBUG);
   }
 
   //handle division by zero
@@ -206,12 +191,9 @@ void Nox::solve()
 			handleddivisionbyzeroerror=true;
 			divisionbyzerohandling(_y0);
 		}else{
-      std::cout << "failed when evaluating algloop for the first time with error message: " << ex.what() << std::endl;
-			throw;
+			throw ModelicaSimulationError(ALGLOOP_SOLVER,"failed when evaluating algloop for the first time with error message: " + std::string(ex.what()));//this could be extended to handle other forms of failure as well.
 		}
 	}
-
-  if (_generateoutput) std::cout << "handleddivisionbyzeroerror" << std::endl;
 
   //try various methods, excluding homotopy
 
@@ -228,7 +210,7 @@ void Nox::solve()
 
 		_solver = NOX::Solver::buildSolver(_grp, _statusTestsCombo, _solverParametersPtr);
 
-    if (_generateoutput) std::cout << "solving..." << std::endl;
+    LOGGER_WRITE("solving...",_lc, LL_DEBUG);
 
 		try{
 			status = _solver->solve();
@@ -242,7 +224,7 @@ void Nox::solve()
     // Get the answer
     copySolution(_solver,_y);
 
-    if (_generateoutput) std::cout << "solving done" << std::endl;
+    LOGGER_WRITE("solving done!",_lc, LL_DEBUG);
 
 		if (status==NOX::StatusTest::Converged){
       _algLoop->setReal(_y);
@@ -257,7 +239,7 @@ void Nox::solve()
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
         EvalAfterSolveFailed=true;
-        if (_generateoutput) std::cout << "EvalAfterSolveFailed" << std::endl;
+        LOGGER_WRITE("EvalAfterSolveFailed",_lc, LL_DEBUG);//this may be interesting in future.
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
       if((!EvalAfterSolveFailed) && (CheckWhetherSolutionIsNearby(_y))){
@@ -275,7 +257,7 @@ void Nox::solve()
   //try homotopy
   int numberofhomotopytries = 0;
   while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries()) && !_eventRetry){
-    if (_generateoutput) std::cout << "Solving with Homotopy at numberofhomotopytries = " << numberofhomotopytries << std::endl;
+    LOGGER_WRITE("Solving with Homotopy at numberofhomotopytries = " + to_string(numberofhomotopytries),_lc, LL_DEBUG);
 
     // Reset initial guess
     memcpy(_y,_y0,_dimSys*sizeof(double));
@@ -286,7 +268,7 @@ void Nox::solve()
     }
     catch(const std::exception &e){
       std::string errorstring(e.what());
-      if ((_generateoutput)) std::cout << "Solving with Homotopy failed with error message " + errorstring << " at numberofhomotopytries = " << numberofhomotopytries << std::endl;
+      LOGGER_WRITE("Solving with Homotopy failed with error message " + errorstring + " at numberofhomotopytries = " + to_string(numberofhomotopytries),_lc, LL_DEBUG);
     }
     numberofhomotopytries++;
   }
@@ -296,11 +278,8 @@ void Nox::solve()
   //try setting initial guess to nominal values
   if((_iterationStatus==CONTINUE) && (!_eventRetry)){
     _algLoop->getNominalReal(_y);
-    if(_generateoutput) std::cout << "Trying to solve with nominal values given by ";
-    for (int i=0;i<_dimSys;i++){
-      std::cout << _y[i] << " ";
-    }
-    std::cout << std::endl;
+    LOGGER_WRITE("Trying to solve with nominal values given by ",_lc, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("yNominal", _y, _dimSys, _lc, LL_DEBUG);
 
     _algLoop->setReal(_y);
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
@@ -312,7 +291,7 @@ void Nox::solve()
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
         EvalAfterSolveFailed2=true;
-        std::cout << "EvalAfterSolveFailed2" << std::endl;
+        LOGGER_WRITE("EvalAfterSolveFailed2",_lc, LL_DEBUG);//this may be interesting in future.
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
       if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
@@ -324,49 +303,47 @@ void Nox::solve()
   }
 
   //try homotopy with nominal values as initial guess
+  //this does not help in the test suite and could therefore be deleted.
 
-  numberofhomotopytries = 0;
-  while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries()) && !_eventRetry){
-    std::cout << "Solving with Homotopy at numberofhomotopytries = " << numberofhomotopytries << " with nominal values as start values." << std::endl;
+  // numberofhomotopytries = 0;
+  // while((_iterationStatus==CONTINUE) && (numberofhomotopytries<_noxLapackInterface->getMaxNumberOfHomotopyTries()) && !_eventRetry){
+    // LOGGER_WRITE("Solving with Homotopy at numberofhomotopytries = " + to_string(numberofhomotopytries) + " with nominal values as start values.",_lc, LL_DEBUG);
 
     // Reset initial guess
-    _algLoop->getNominalReal(_y);
-    _algLoop->setReal(_y);
+    // _algLoop->getNominalReal(_y);
+    // _algLoop->setReal(_y);
 
-    try{
-      LocaHomotopySolve(numberofhomotopytries);
-    }
-    catch(const std::exception &e){
-      std::string errorstring(e.what());
-      if ((_generateoutput)) std::cout << "Solving with Homotopy failed with error message " + errorstring << " at numberofhomotopytries = " << numberofhomotopytries << std::endl;
-    }
-    numberofhomotopytries++;
-  }
+    // try{
+      // LocaHomotopySolve(numberofhomotopytries);
+    // }
+    // catch(const std::exception &e){
+      // std::string errorstring(e.what());
+      // LOGGER_WRITE("Solving with Homotopy failed with error message " + errorstring + " at numberofhomotopytries = " + to_string(numberofhomotopytries),_lc, LL_DEBUG);
+    // }
+    // numberofhomotopytries++;
+  // }
 
   //no extrapolation of the initial guess
 
   if((_iterationStatus==CONTINUE) && (!_eventRetry)){
     memcpy(_y,_y_new,_dimSys*sizeof(double));
-    if (_generateoutput) std::cout << "Trying to solve without extrapolated values:";
-    for (int i=0;i<_dimSys;i++){
-      std::cout << _y[i] << " ";
-    }
-    std::cout << std::endl;
+    LOGGER_WRITE("Trying to solve without extrapolated values",_lc, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("y", _y, _dimSys, _lc, LL_DEBUG);
 
     _algLoop->setReal(_y);
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
     }else{
-      bool EvalAfterSolveFailed2=false;
+      bool EvalAfterSolveFailed3=false;
       _algLoop->setReal(_y);
       try{
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
-        EvalAfterSolveFailed2=true;
-        std::cout << "EvalAfterSolveFailed2" << std::endl;
+        EvalAfterSolveFailed3=true;
+        LOGGER_WRITE("EvalAfterSolveFailed3",_lc, LL_DEBUG);//this may be interesting in future.
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
+      if((!EvalAfterSolveFailed3) && (CheckWhetherSolutionIsNearby(_y))){
         _algLoop->setReal(_y);
         _algLoop->evaluate();
         _iterationStatus=DONE;
@@ -382,16 +359,16 @@ void Nox::solve()
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
     }else{
-      bool EvalAfterSolveFailed3=false;
+      bool EvalAfterSolveFailed4=false;
       _algLoop->setReal(_y);
       try{
         _algLoop->evaluate();
 			}catch(const std::exception & ex){
-        EvalAfterSolveFailed3=true;
-        std::cout << "EvalAfterSolveFailed3" << std::endl;
+        EvalAfterSolveFailed4=true;
+        LOGGER_WRITE("EvalAfterSolveFailed4",_lc, LL_DEBUG);//this may be interesting in future.
       }
       //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed3) && (CheckWhetherSolutionIsNearby(_y))){
+      if((!EvalAfterSolveFailed4) && (CheckWhetherSolutionIsNearby(_y))){
           _algLoop->setReal(_y);
           _algLoop->evaluate();
           _iterationStatus=DONE;
@@ -431,7 +408,14 @@ IAlgLoopSolver::ITERATIONSTATUS Nox::getIterationStatus()
 {
 	return _iterationStatus;
 }
-
+/**
+ *  \brief derived
+ *
+ *  \param [in] time Equal to _algLoop->getSimTime()
+ *  \return void
+ *
+ *  \details updates previous solutions and the time when they have been computed.
+ */
 void Nox::stepCompleted(double time)
 {
 	memcpy(_y0,_y,_dimSys*sizeof(double));
@@ -440,8 +424,6 @@ void Nox::stepCompleted(double time)
   if (time == _algLoop->getSimTime()){
     _SimTimeOld = _SimTimeNew;
     _SimTimeNew = _algLoop->getSimTime();
-  }else{
-    if(_generateoutput) std::cout << "time=" << time << ", algLoop->getSimTime()=" << _algLoop->getSimTime() << std::endl;
   }
 }
 
@@ -464,7 +446,14 @@ void Nox::restoreNewValues()
 {
     memcpy(_y,_y_new,_dimSys*sizeof(double));
 }
-
+/**
+ *  \brief See Kinsol's implementation
+ *
+ *  \param [in] y Parameter_Description
+ *  \return Return_Description
+ *
+ *  \details Details
+ */
 void Nox::check4EventRetry(double* y)
 {
 	_algLoop->setReal(y);
@@ -475,16 +464,19 @@ void Nox::check4EventRetry(double* y)
 	}
 }
 /**
- *  \brief Brief
+ *  \brief Solve with homotopy method
  *
- *  \param [in] numberofhomotopytries Parameter_Description
- *  \return Return_Description
+ *  \param [in] numberofhomotopytries number of simple function. See also NoxLapackInterface::computeSimplifiedF()
+ *  \return void
  *
- *  \details Details
+ *  \details Numerical continuation in lambda with the equation system\n
+ *  lambda*F(x)+(1-lambda)*G(x)\n
+ *  F(x) is the nonlinear system that we want to solve\n
+ *  see also NoxLapackInterface::computeSimplifiedF() for G(x)
  */
 void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 {
-	if((_generateoutput)) std::cout << "We are going to solve algloop " << _algLoop->getEquationIndex() << "using homotopy with numberofhomotopytries=" << numberofhomotopytries << std::endl;
+  LOGGER_WRITE("We are going to solve algloop " + to_string(_algLoop->getEquationIndex()) + "using homotopy with numberofhomotopytries=" + to_string(numberofhomotopytries),_lc, LL_DEBUG);
 
 	//We are setting up the problem to perform arc-length continuation in the parameter "lambda" from 0 to 1 with a maximum of 50 continuation steps and maxNewtonIters nonlinear iterations per step.
 	//Since we are doing an equilibrium continuation, we set the bifurcation method to "None".
@@ -576,33 +568,22 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 		printLogger();
 		// Check for convergence
 		if (status != LOCA::Abstract::Iterator::Finished){
-			if((_generateoutput)) std::cout << "Stepper failed to converge!" << std::endl;
+      LOGGER_WRITE("Stepper failed to converge!",_lc, LL_DEBUG);
 		}else{
-       if((_generateoutput)) std::cout << "Stepper was successful!" << std::endl;
+      LOGGER_WRITE("Stepper was successful!",_lc, LL_DEBUG);
 			_iterationStatus=DONE;
 		}
 	}
 	catch(const std::exception &ex)
 	{
-		if(_generateoutput) std::cout << std::endl << "sth went wrong during stepper running, with error message" << ex.what() << std::endl;
-		//std::cout << add_error_info("building solver with grp, status tests and solverparameters", ex.what(), ex.getErrorID(), time) << std::endl << std::endl;
+    LOGGER_WRITE("sth went wrong during stepper running, with error message" + std::string(ex.what()),_lc, LL_DEBUG);
 		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error");
 	}
-
-	if (_generateoutput) std::cout << "finishing solve!" << std::endl;
 
   if(_iterationStatus==DONE){
     // Get the final solution from the stepper
     Teuchos::RCP<const LOCA::LAPACK::Group> finalGroup = Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
-
-    if(_generateoutput){
-      // Print final solution
-      std::cout << std::endl << "Final solution is " << std::endl;
-      finalGroup->printSolution(finalSolution, finalGroup->getParam("lambda"));//does not work
-    }
-
-      LOCA::destroyGlobalData(globalData);
 
     for (int i=0;i<_dimSys;i++){
       if (_useDomainScaling){
@@ -617,38 +598,17 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
       _algLoop->evaluate();
     }catch(const std::exception &ex)
     {
-      if (_generateoutput) std::cout << "algloop evaluation after solve failed with error message:" << std::endl << ex.what() << std::endl << "Trying to continue without. This should hopefully lead to statusTest::Failed." << std::endl;
+      LOGGER_WRITE("algloop evaluation after solve failed with error message:" + std::string(ex.what()) + "\nThis should not be seen, since _iterationStatus=DONE",_lc, LL_DEBUG);
     }
-
-    if (_generateoutput) {
-      double * rhs = new double[_dimSys];
-      double sum;
-      sum=0.0;
-      _algLoop->getRHS(rhs);
-      for (int i=0;i<_dimSys;i++) sum+=rhs[i]*rhs[i];
-
-      std::cout << "solutionvector=(";
-      for (int i=0;i<_dimSys;i++) std::cout << std::setprecision (std::numeric_limits<double>::digits10 + 8) << _y[i] << " ";
-      std::cout << ")" << std::setprecision (6) << std::endl;
-      std::cout << "rhs =(";
-      for (int i=0;i<_dimSys;i++) std::cout << rhs[i] << " ";
-      std::cout << ")" << std::endl;
-      std::cout << "squared norm of f = " << sum << std::endl;
-
-      std::cout << "simtime=" << std::setprecision (std::numeric_limits<double>::digits10 + 1) << _algLoop->getSimTime() << std::endl;
-      if (rhs) delete rhs;
-
-      std::cout << "ending solve" << std::endl;
-    }
-
   }
+  LOCA::destroyGlobalData(globalData);
 }
 /**
- *  \brief Brief
+ *  \brief simple NLS solver based on Backtracking
  *
- *  \return Return_Description
+ *  \return void
  *
- *  \details Details
+ *  \details requires a previously set initial guess (in algebraic loop)
  */
 NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 	NOX::StatusTest::StatusType status = NOX::StatusTest::Unevaluated;
@@ -671,18 +631,25 @@ NOX::StatusTest::StatusType Nox::BasicNLSsolve(){
 	}
 	catch(const std::exception &ex)
 	{
-		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error in Algloop " + std::to_string(_algLoop->getEquationIndex()) + " at simtime " + std::to_string(_algLoop->getSimTime()) + ", with error message: " + ex.what());
+		throw ModelicaSimulationError(ALGLOOP_SOLVER,"solving error in Algloop " + std::to_string(_algLoop->getEquationIndex()) + " at simtime " + std::to_string(_algLoop->getSimTime()) + ", with error message: " + std::string(ex.what()));
 	}
   return status;
 }
 /**
- *  \brief Brief
+ *  \brief changes solving method
  *
- *  \param [in] solverParametersPtr Parameter_Description
- *  \param [in] iter Parameter_Description
- *  \return Return_Description
+ *  \param [in] solverParametersPtr pointer to solver parameters
+ *  \param [in] iter number
+ *  \return void
  *
- *  \details Details
+ *  \details Given iter the following method is used:\n
+ *  iter = 0 nothing changes\n
+ *  iter = 1 damped Newton with fixed damping factor 0.5\n
+ *  iter = 2 backtracking\n
+ *  iter = 3 polynomial\n
+ *  iter = 4 More'-Thuente\n
+ *  iter = 5 trust region\n
+ *  iter = 6 inexact trust region
  */
 void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter){
 
@@ -690,7 +657,7 @@ void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solv
 	case 0:
 		break;
 		//default Nox Line Search failed -> Try damped Newton instead
-	case 1://should delete this. It typically does not help (verify this))
+	case 1://should delete this. It typically does not help
 		solverParametersPtr->sublist("Line Search").sublist("Full Step").set("Full Step", 0.5);
 		break;
 
@@ -766,12 +733,12 @@ void Nox::modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solv
 	}
 }
 /**
- *  \brief Brief
+ *  \brief checks for sign changes nearby
  *
- *  \param [in] y Parameter_Description
- *  \return Return_Description
+ *  \param [in] y guess for solution
+ *  \return true if solution is nearby, false if not
  *
- *  \details Details
+ *  \details checks for sign changes in y+-eps*e_i, where eps is approximately 1.0e-16 and e_i is the i-th unit vector
  */
 bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 	double* rhs=new double [_dimSys];
@@ -820,9 +787,9 @@ bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 	return std::all_of(rhssignchange.begin(),rhssignchange.end(),[](bool a){return a;});
 }
 /**
- *  \brief Brief
+ *  \brief checks whether the exception contains a string "Division by zero."
  *
- *  \param [in] ex Parameter_Description
+ *  \param [in] ex exception
  *  \return Return_Description
  *
  *  \details Details
@@ -836,12 +803,12 @@ bool Nox::isdivisionbyzeroerror(const std::exception &ex){
 
 //additionally modifies _y and the algLoop
 /**
- *  \brief Brief
+ *  \brief handles division by zero errors.
  *
- *  \param [in] y0 Parameter_Description
- *  \return Return_Description
+ *  \param [in] y0 start value for modification
+ *  \return set _y as y0 with entries varied by +-10%.
  *
- *  \details Details
+ *  \details solves the nonlinear system with a basic nonlinear solver after the modification and tries other modifications if the current modification does not lead to a solution.
  */
 void Nox::divisionbyzerohandling(double const * const y0){
 	NOX::StatusTest::StatusType stat = NOX::StatusTest::Unevaluated;
@@ -855,7 +822,7 @@ void Nox::divisionbyzerohandling(double const * const y0){
 		memcpy(_y,y0,_dimSys*sizeof(double));
 
 		if (initialguessdividebyzerofailurecounter>std::pow(2.0,static_cast<double>(_dimSys-1))){
-			std::cout << "Could not find a good initial guess with a root nearby:(" << std::endl;
+      LOGGER_WRITE("Could not find a good initial guess with a root nearby:(",_lc, LL_DEBUG);
 			throw;
 		}
 
@@ -866,19 +833,13 @@ void Nox::divisionbyzerohandling(double const * const y0){
 			if (startvaluemodifier[i]==0) startvaluemodifier[i]=-1;
 		}
 
-		if(_generateoutput){
-			std::cout << "initialguessdividebyzerofailurecounter =" << initialguessdividebyzerofailurecounter << std::endl;
-			std::cout << "startvaluemodifier =" << std::endl;
-			for (int i=0;i<_dimSys;i++){
-				std::cout << " " << startvaluemodifier[i];
-			}
-			std::cout << std::endl;
-		}
+    LOGGER_WRITE("initialguessdividebyzerofailurecounter = " + to_string(initialguessdividebyzerofailurecounter),_lc, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("startvaluemodifier", startvaluemodifier.data(), _dimSys, _lc, LL_DEBUG);
 
 		initialguessdividebyzerofailurecounter++;
 
-    if(_generateoutput)
-      std::cout << "Varying initial guess by 10%:" << std::endl;
+    LOGGER_WRITE("Varying initial guess by 10%",_lc, LL_DEBUG);
+
 		for (int i=0;i<_dimSys;i++){
 			if(_y[i]!=0.0){
 				_y[i]+=0.1*_y[i]*startvaluemodifier[i];
@@ -896,9 +857,9 @@ void Nox::divisionbyzerohandling(double const * const y0){
 			}
 			catch(const std::exception &ex){
 				if(isdivisionbyzeroerror(ex)){
-					std::cout << "still dividing by zero, trying new initial guess." << std::endl;
+          LOGGER_WRITE("still dividing by zero, trying new initial guess.",_lc, LL_DEBUG);//this never happens
 				}else{
-          std::cout << "eval after solve failed when trying to fix division by zero error." << std::endl;
+          LOGGER_WRITE("eval after solve failed when trying to fix division by zero error with error message " + std::string(ex.what()),_lc, LL_DEBUG);//this does
 					throw;
 				}
 			}
@@ -906,10 +867,10 @@ void Nox::divisionbyzerohandling(double const * const y0){
 	}
 }
 /**
- *  \brief Brief
+ *  \brief converts number to its binary representation and stores it in result.
  *
- *  \param [in] result Parameter_Description
- *  \param [in] number Parameter_Description
+ *  \param [out] result binary representation
+ *  \param [in] number input number
  *  \return Return_Description
  *
  *  \details Details
@@ -922,12 +883,12 @@ void Nox::BinRep(std::vector<double> &result, const int number){
 	}
 }
 /**
- *  \brief Brief
+ *  \brief replaces 0 by -1 in binary representation of counter and perturbates _y according to this binary representation.
  *
- *  \param [in] counter Parameter_Description
- *  \return Return_Description
+ *  \param [in] counter counter
+ *  \return true if algloop can be evaluated in modified _y, false else.
  *
- *  \details Details
+ *  \details If the i-th entry of the binary representation of counter is 1, _y[i] is multiplied by 1.1, otherwise by 0.9. If _y[i] is zero, its value is set to 0.1 or -0.1 times the i-th entry of the nominal value.
  */
 bool Nox::modify_y(const int counter){
 	std::vector<double> startvaluemodifier(_dimSys);
@@ -939,9 +900,9 @@ bool Nox::modify_y(const int counter){
   //replace 0 by -1.
   std::for_each(startvaluemodifier.begin(),startvaluemodifier.end(), [](double &d){d=(d==0.0) ? -1.0 : d;});
 
-  if(_generateoutput) std::cout << "Varying initial guess by 10%:" << std::endl;
+  LOGGER_WRITE("Varying initial guess by 10%:",_lc, LL_DEBUG);
 	for (int i=0;i<_dimSys;i++){
-    _y[i] += (_y[i]!=0.0) ? 0.1*_y[i]*startvaluemodifier[i] : 0.1*startvaluemodifier[i];
+    _y[i] += (_y[i]!=0.0) ? 0.1*_y[i]*startvaluemodifier[i] : 0.1*startvaluemodifier[i]*_yScale[i];
 	}
 
 	_algLoop->setReal(_y);
@@ -950,14 +911,14 @@ bool Nox::modify_y(const int counter){
     return true;
 	}
 	catch(const std::exception &ex){
-		std::cout << ex.what() << " Error occured when varying initial guess." << std::endl;
+    LOGGER_WRITE("Error occured when varying initial guess with error message " + std::string(ex.what()),_lc, LL_DEBUG);
 	}
   return false;
 }
 
 //writes output
 /**
- *  \brief Brief
+ *  \brief prints output of NOX
  *
  *  \return Return_Description
  *
@@ -972,10 +933,8 @@ void Nox::printLogger(){
 	}
 }
 
-
-//sets printing list in solverParametersPtr
 /**
- *  \brief Brief
+ *  \brief sets printing list in solverParametersPtr
  *
  *  \param [in] solverParametersPtr Parameter_Description
  *  \return Return_Description
@@ -991,10 +950,10 @@ void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParam
   }
 }
 /**
- *  \brief Brief
+ *  \brief copy solution from solver to the algLoopSolution
  *
- *  \param [in] solver Parameter_Description
- *  \param [in] algLoopSolution Parameter_Description
+ *  \param [in] solver solver
+ *  \param [out] algLoopSolution writes solution of solver into algebraic loop
  *  \return Return_Description
  *
  *  \details Details
