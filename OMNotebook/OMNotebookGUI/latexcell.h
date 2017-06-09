@@ -54,8 +54,6 @@
 #include "cell.h"
 #include "document.h"
 
-class IndentationState;
-
 namespace IAEX
 {
   enum latexCellStates {Finished_l, Eval_l, Error_l, Modified_l};
@@ -113,7 +111,6 @@ namespace IAEX
     virtual void setFocus(const bool focus);
     virtual void setFocusOutput(const bool focus);
     void setExpr(QString);
-    //void showVariableButton(bool);
     void setState(int state);
 
   protected:
@@ -166,12 +163,9 @@ namespace IAEX
     int state;
 
   public slots:
-    void goToPos(const QUrl&);
     void updatePosition();
     void setModified();
-    void indentText();
-    bool lessIndented(QString);
-    void setAutoIndent(bool);
+    void setAutoIndent(bool) {};
 
   signals:
     void clickOnCell();
@@ -191,10 +185,6 @@ namespace IAEX
 
   private:
     bool inCommand;
-    int indentationLevel(QString, bool b=true);
-    bool autoIndent;
-    QMap<int, IndentationState*> indentationStates;
-
   };
 
   class MyAction1: public QAction

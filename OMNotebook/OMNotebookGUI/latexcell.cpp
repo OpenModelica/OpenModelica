@@ -81,7 +81,6 @@
 #include "treeview.h"
 #include "stylesheet.h"
 #include "omcinteractiveenvironment.h"
-#include "indent.h"
 
 namespace IAEX {
   /*!
@@ -90,18 +89,13 @@ namespace IAEX {
   */
   MyTextEdit3::MyTextEdit3(QWidget *parent)
     : QTextBrowser(parent),
-    inCommand(false),
-    autoIndent(true)
+    inCommand(false)
   {
 
   }
 
   MyTextEdit3::~MyTextEdit3()
   {
-    for(QMap<int, IndentationState*>::iterator i = indentationStates.begin(); i != indentationStates.end(); ++i)
-    {
-      delete i.value();
-    }
   }
 
   /*!
@@ -217,21 +211,6 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
-    else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_W)
-    {
-      inCommand = false;
-      indentText();
-      event->ignore();
-      //      QTextBrowser::keyPressEvent( event );
-      //      update();
-
-    }
-
-    else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
-    {
-      inCommand = false;
-      indentText();
-    }
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       inCommand = false;
@@ -252,57 +231,6 @@ namespace IAEX {
       inCommand = false;
       textCursor().insertText( "  " );
     }
-    else if( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return )
-    {
-      if(autoIndent)
-      {
-        QTextCursor t(textCursor());
-        QString tmp, tmp2;
-        int k2 = t.blockNumber();
-        QTextBlock b = t.block();
-        int k = b.userState();
-        int prevLevel = b.text().indexOf(QRegExp("\\S"));
-
-        while(k2 >= 0 && !indentationStates.contains(k))
-        {
-          tmp = b.text() + "\n" + tmp;
-          b = b.previous();
-          --k2;
-          k = b.userState();
-        }
-        Indent i(tmp);
-        if(indentationStates.contains(k))
-        {
-          IndentationState* s = indentationStates[k];
-          i.ism.level = s->level;
-          i.ism.equation = s->equation;
-          i.ism.equationSection = s->equationSection;
-          i.ism.lMod = s->lMod;
-          i.ism.loopBlock = s->loopBlock;
-          i.ism.nextMod = s->nextMod;
-          i.ism.skipNext = s->skipNext;
-          i.ism.state = s->state;
-          i.current = s->current;
-          i.next = s->next;
-        }
-
-        i.indentedText();
-
-        if(prevLevel > 2*i.level())
-        {
-          t.setPosition(t.block().position());
-          t.setPosition(t.block().position() + prevLevel-2*(i.level()),QTextCursor::KeepAnchor);
-          if(!t.selection().toPlainText().trimmed().size())
-            t.insertText("");
-          t.setPosition(t.block().position() + t.block().length() -1);
-        }
-
-        QTextBrowser::keyPressEvent(event);
-        t.insertText(QString(2*i.level(), ' '));
-      }
-      else
-        QTextBrowser::keyPressEvent(event);
-    }
     else
     {
       inCommand = false;
@@ -310,12 +238,6 @@ namespace IAEX {
     }
 
     updatePosition();
-
-  }
-
-  void MyTextEdit3::setAutoIndent(bool b)
-  {
-    autoIndent = b;
   }
 
   void MyTextEdit3::setModified()
@@ -352,35 +274,6 @@ namespace IAEX {
       emit setState(Modified_l);
   }
 
-  void MyTextEdit3::goToPos(const QUrl& u)
-  {
-    QRegExp e("\\-|:");
-    int r=u.toString().section(e, 0,0).toInt();
-    int c=u.toString().section(e, 1,1).toInt();
-    int r2=u.toString().section(e, 2,2).toInt();
-    int c2=u.toString().section(e, 3,3).toInt();
-
-    int p = 0;
-    for(int i = 1; i < r; ++i)
-      p = toPlainText().indexOf("\n", p)+1;
-    p += (c-1);
-
-    QTextCursor tc(textCursor());
-    tc.setPosition(p);
-
-    int p2 = 0;
-    if(r2 > 0)
-    {
-      for(int i = 1; i < r2; ++i)
-        p2 = toPlainText().indexOf("\n", p2)+1;
-      p2 += (c2-1);
-      tc.setPosition(p2, QTextCursor::KeepAnchor);
-    }
-    setTextCursor(tc);
-    updatePos(r, c);
-    setFocus(Qt::MouseFocusReason);
-  }
-
   void MyAction1::triggered2()
   {
     emit urlClicked(QUrl(text()));
@@ -409,10 +302,6 @@ namespace IAEX {
 
     createLatexCell();
     createOutputCell();
-
-    //connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
-
-    //connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
 
     imageFile=0;
   }
@@ -499,40 +388,6 @@ namespace IAEX {
       Qt::LinksAccessibleByMouse|
       Qt::LinksAccessibleByKeyboard);
     output_->hide();
-  }
-
-  bool MyTextEdit3::lessIndented(QString s)
-  {
-    QRegExp l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
-    return s.indexOf(l) >= 0;
-  }
-
-  int MyTextEdit3::indentationLevel(QString s, bool includeNegative)
-  {
-    QRegExp e1("\\b(model|class|type|connector|block|record|function|for|when|package|if)\\b");
-    QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|for|when|package|if)\\b");
-    QRegExp e2("\\b(end|then)\\b");
-
-    QRegExp newLineEnd("^end\\b");
-
-    //    return s.count(e1) - includeNegative?(s.count(e2) + s.count(e1b)):0;
-    if(includeNegative)
-      return s.count(e1) - s.count(e2) - s.count(e1b);// - s.count(lessIndented);
-    else
-      return s.count(e1) - s.count(e1b);//- s.count(lessIndented);
-  }
-
-  void MyTextEdit3::indentText()
-  {
-    Indent a(toPlainText());
-    setText(a.indentedText(&indentationStates));
-
-    int i = 1;
-    for(QTextBlock b =this->document()->begin(); b != this->document()->end(); b = b.next())
-    {
-      b.setUserState(++i);
-    }
-    emit textChanged();
   }
 
   /*!
