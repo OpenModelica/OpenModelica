@@ -658,7 +658,7 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
 fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer value[]) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetInteger", modelInstantiated|modelInitializationMode|modelEventMode))
+  if (invalidState(comp, "fmi2SetInteger", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2SetInteger", "vr[]", vr))
     return fmi2Error;
