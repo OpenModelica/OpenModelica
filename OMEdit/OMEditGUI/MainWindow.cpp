@@ -274,6 +274,7 @@ void MainWindow::setUpMainWindow()
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
   // create traceability graph view widget
   //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
+  mpTraceabilityInformationURI = new TraceabilityInformationURI(this);
 #if !defined(WITHOUT_OSG)
   /* Ticket #4252
    * Do not create an object of ThreeDViewer by default.
