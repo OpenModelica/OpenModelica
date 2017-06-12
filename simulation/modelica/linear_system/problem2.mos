@@ -124,7 +124,7 @@ val(i2, 1.0);
 // 0.0
 // 2.804903282692988
 // 0.0
-// 0.2804903282692989
+// 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
@@ -134,7 +134,7 @@ val(i2, 1.0);
 // 0.0
 // 2.804903282692988
 // 0.0
-// 0.2804903282692989
+// 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls umfpack'",
@@ -144,7 +144,7 @@ val(i2, 1.0);
 // 0.0
 // 2.804903282692988
 // 0.0
-// 0.2804903282692989
+// 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
@@ -154,7 +154,7 @@ val(i2, 1.0);
 // 0.0
 // 2.804903282692988
 // 0.0
-// 0.2804903282692989
+// 0.2804903282692988
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls klu'",
@@ -164,31 +164,31 @@ val(i2, 1.0);
 // 0.0
 // 2.804903282692988
 // 0.0
-// 0.2804903282692989
+// 0.2804903282692988
 // true
-// INeqn => u1 = u0 - u2[1]
-// INeqn => i3 = u2 / r3[2]
-// INeqn => i1 = u1 / r1[3]
-// INeqn => i2 = u2 / r2[4]
-// INres => i1 + (-i2) - i3 = 0.0[1]
-// OUTeqn => u1 = u0 - u2[0]
-// OUTeqn => i3 = u2 / r3[1]
-// OUTeqn => i1 = (u0 - u2) / r1[2]
-// OUTeqn => i2 = u2 / r2[3]
-// OUTres => (u0 - u2) / r1 - __OMC__1$RTEARINGF * u2 = 0.0[0]
+// INeqn => i3 = u2 / r3[1]
+// INeqn => i2 = u2 / r2[2]
+// INeqn => i1 = i3 + i2[3]
+// INeqn => u1 = r1 * i1[4]
+// INres => u1 + u2 = u0[1]
+// OUTeqn => i3 = u2 / r3[0]
+// OUTeqn => i2 = u2 / r2[1]
+// OUTeqn => i1 = __OMC__1$RTEARINGF * u2[2]
+// OUTeqn => u1 = __OMC__2$RTEARINGF * u2[3]
+// OUTres => __OMC__3$RTEARINGF * u2 = u0[0]
 // ****************
 // TearVar: u2[0]
 // ****************
-// INeqn => u1 = u0 - u2[1]
-// INeqn => i2 = u2 / r2[2]
-// INeqn => i1 = u1 / r1[3]
-// INeqn => i3 = u2 / r3[4]
-// INres => i1 + (-i2) - i3 = 0.0[1]
-// OUTeqn => u1 = u0 - u2[0]
-// OUTeqn => i2 = u2 / r2[1]
-// OUTeqn => i1 = (u0 - u2) / r1[2]
-// OUTeqn => i3 = u2 / r3[3]
-// OUTres => (u0 - u2) / r1 - __OMC__1$RTEARINGF * u2 = 0.0[0]
+// INeqn => i2 = u2 / r2[1]
+// INeqn => i3 = u2 / r3[2]
+// INeqn => i1 = i3 + i2[3]
+// INeqn => u1 = r1 * i1[4]
+// INres => u1 + u2 = u0[1]
+// OUTeqn => i2 = u2 / r2[0]
+// OUTeqn => i3 = u2 / r3[1]
+// OUTeqn => i1 = __OMC__1$RTEARINGF * u2[2]
+// OUTeqn => u1 = __OMC__2$RTEARINGF * u2[3]
+// OUTres => __OMC__3$RTEARINGF * u2 = u0[0]
 // ****************
 // TearVar: u2[0]
 // ****************

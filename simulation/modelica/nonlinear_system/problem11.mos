@@ -29,308 +29,13 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // ""
 // true
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "nonlinear_system.problem11_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: nonlinear_system.problem11
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// stdout            | warning | Non-Linear Solver try to handle a problem with a called assert.
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.01) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=0.99) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1.1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | division leads to inf or nan at time 0, (a=1) / (b=0), where divisor b is: a
-// assert            | debug   | Solving non-linear system 7 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | info    | simulation terminated by an assertion at initialization
-// "
+//     messages = ""
 // end SimulationResult;
 // ""
-//
-//
+// {0.0,1.980033630575271,3.843762461008664,5.502132988123644,14.04466540545848}
+// {0.0,0.0,0.0,0.0,0.0}
 // true
 // START: simplifyLoops
 // ------ Tearing ------
@@ -339,15 +44,15 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // x[1]
 // x[2]
 // ------------
-// update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
-// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a--new--
-// update eqn[5]
-// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
-// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b--new--
 // update eqn[6]
 // x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time))--old--
 // => b * (cos(time) + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
+// update eqn[5]
+// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
+// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b--new--
+// update eqn[4]
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
+// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a--new--
 // END: simplifyLoops
 // START: simplifyLoops
 // ------ Tearing ------
@@ -382,20 +87,20 @@ val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
 // x[1]
 // x[2]
 // ------------
-// update eqn[4]
-// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
-// __OMC__0$LOOPT = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a -- new eqn--
-// __OMC__2$LOOPF = (-a ^ 2.0) - b ^ 2.0 -- new eqn--
-// __OMC__3$LOOPF = a ^ 2.0 + b ^ 2.0 -- new eqn--
-// => __OMC__3$LOOPF * x[2] + __OMC__2$LOOPF * x[1] - x[3] = __OMC__0$LOOPT--new--
-// update eqn[5]
-// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
-// __OMC__2$LOOPT = ((-b) - a) * b -- new eqn--
-// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__2$LOOPT--new--
 // update eqn[6]
 // x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time))--old--
-// __OMC__9$LOOPT = cos(time) -- new eqn--
-// => b * (__OMC__9$LOOPT + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
+// __OMC__2$LOOPT = cos(time) -- new eqn--
+// => b * (__OMC__2$LOOPT + x[2] ^ 2.0 + x[3]) - x[1] = 0.0--new--
+// update eqn[5]
+// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0--old--
+// __OMC__5$LOOPT = ((-b) - a) * b -- new eqn--
+// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__5$LOOPT--new--
+// update eqn[4]
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b--old--
+// __OMC__10$LOOPT = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a -- new eqn--
+// __OMC__4$LOOPF = (-a ^ 2.0) - b ^ 2.0 -- new eqn--
+// __OMC__5$LOOPF = a ^ 2.0 + b ^ 2.0 -- new eqn--
+// => __OMC__5$LOOPF * x[2] + __OMC__4$LOOPF * x[1] - x[3] = __OMC__10$LOOPT--new--
 // END: simplifyLoops
 // START: simplifyLoops
 // ------ Tearing ------

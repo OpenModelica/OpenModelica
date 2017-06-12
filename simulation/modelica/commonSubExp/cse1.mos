@@ -240,8 +240,8 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res.1.$pDERNLSJac4.dummyVarNLSJac4 = 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6SeedNLSJac4 * $cse6   [dynamic]
-// 2/2 (1): v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6SeedNLSJac4 * $cse6 * source = 0.0   [dynamic]
+// 1/1 (1): $res.1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6SeedNLSJac4 * $cse6 * source   [dynamic]
+// 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6SeedNLSJac4 * $cse6 = 0.0   [dynamic]
 // 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6SeedNLSJac4   [unknown]
 // 4/4 (1): $cse8 = cos(v6)   [unknown]
 //
