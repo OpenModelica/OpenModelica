@@ -1695,7 +1695,7 @@ author: ptaeuber FHB 2013-2016"
   output Boolean outRunMatching;
 protected
   Integer size, tornsize;
-  array<Integer> ass1, ass2, mapIncRowEqn;
+  array<Integer> ass1, ass2, mapIncRowEqn, eqnNonlinPoints;
   array<list<Integer>> mapEqnIncRow;
   list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_prefer, tSel_avoid,tSel_never;
   BackendDAE.InnerEquations innerEquations;
@@ -1773,6 +1773,10 @@ algorithm
 
   // Determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(size,meT);
+
+  // Determine a weight for the nonlinearity of each equation
+  eqnNonlinPoints := arrayCreate(size, -1);
+  getEquationNonlinearityPoints(eqnNonlinPoints, me, size);
   if debug then execStat("Tearing.CellierTearing -> 2"); end if;
 
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1780,10 +1784,11 @@ algorithm
     BackendDump.dumpAdjacencyMatrixEnhanced(me);
     print("\nAdjacencyMatrixTransposedEnhanced:\n");
     BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
+    print("\neqLinPoints:\n" + stringDelimitList(List.map(arrayList(eqnNonlinPoints),intString),",") + "\n\n");
   end if;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
+    print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
     BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
@@ -1811,7 +1816,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
   end if;
-  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
+  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
   end if;
@@ -1879,10 +1884,11 @@ algorithm
       BackendDump.dumpAdjacencyMatrixEnhanced(me);
       print("\nAdjacencyMatrixTransposedEnhanced:\n");
       BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
+      print("\neqLinPoints:\n" + stringDelimitList(List.map(arrayList(eqnNonlinPoints),intString),",") + "\n\n");
     end if;
 
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
+      print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
       BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
       print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
       print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
@@ -1897,7 +1903,7 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
     end if;
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
     end if;
@@ -2053,6 +2059,48 @@ algorithm
 end findDiscrete;
 
 
+protected function getEquationNonlinearityPoints
+  "Function returns an array with an integer assessment of the nonlinearity
+   author: ptaeuber"
+  input output array<Integer> eqnNonlinPoints;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input Integer size;
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced row;
+  Integer sum;
+algorithm
+  for i in 1:size loop
+    row := me[i];
+    sum := 0;
+    for entry in row loop
+      sum := sum + nonlinearityWeight(entry);
+    end for;
+    eqnNonlinPoints[i] := sum;
+  end for;
+end getEquationNonlinearityPoints;
+
+
+protected function nonlinearityWeight
+  "Function returns a weight for specific solvability
+   author: ptaeuber"
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
+  output Integer weight;
+algorithm
+  weight := match(entry)
+    case(_, BackendDAE.SOLVABILITY_SOLVED(), _) then 0;
+    case(_, BackendDAE.SOLVABILITY_CONSTONE(), _) then 2;
+    case(_, BackendDAE.SOLVABILITY_CONST(), _) then 5;
+    case(_, BackendDAE.SOLVABILITY_PARAMETER(b=true), _) then 10;
+    case(_, BackendDAE.SOLVABILITY_PARAMETER(b=false), _) then 20;
+    case(_, BackendDAE.SOLVABILITY_LINEAR(b=true), _) then 20;
+    case(_, BackendDAE.SOLVABILITY_LINEAR(b=false), _) then 50;
+    case(_, BackendDAE.SOLVABILITY_NONLINEAR(), _) then 50;
+    case(_, BackendDAE.SOLVABILITY_UNSOLVABLE(), _) then 100;
+    else 0;
+  end match;
+end nonlinearityWeight;
+
+
 protected function CellierTearing2 " function to call tearing heuristic and matching algorithm
   author: ptaeuber FHB 2013-2015"
   input Boolean inCausal;
@@ -2064,6 +2112,7 @@ protected function CellierTearing2 " function to call tearing heuristic and matc
   input list<Integer> Unsolvables,tvarsIn,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
+  input array<Integer> eqnNonlinPoints;
   output list<Integer> OutTVars;
   output list<Integer> orderOut;
 protected
@@ -2117,7 +2166,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
-      (order,causal) = TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn);
+      (order,causal) = TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
       if debug then execStat("Tearing.CellierTearing2 - 1.2"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
@@ -2138,7 +2187,7 @@ algorithm
 
       if debug then execStat("Tearing.CellierTearing2 - 1 done"); end if;
       // repeat until system is causal
-      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
+      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
 
    then
      (tvars,order);
@@ -2179,7 +2228,7 @@ algorithm
       tvars = listAppend(tvars,tvarsIn);
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
-      (order,causal) = TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn);
+      (order,causal) = TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(arrayList(ass1In),intString),",")+"\n");
@@ -2198,7 +2247,7 @@ algorithm
 
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
       // repeat until system is causal
-      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
+      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
 
    then
      (tvars, order);
@@ -3231,6 +3280,7 @@ protected function TarjanMatching "Modified matching algorithm according to Tarj
   input list<Integer> eqQueueIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
+  input array<Integer> eqnNonlinPoints;
   output list<Integer> orderOut;
   output Boolean causal;
 protected
@@ -3243,7 +3293,7 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nTarjanAssignment:\n");
     end if;
-    (eqQueue,order,assignable) := TarjanAssignment(eqQueue,mIn,mtIn,meIn,metIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn);
+    (eqQueue,order,assignable) := TarjanAssignment(eqQueue,mIn,mtIn,meIn,metIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
   end while;
   if debug then execStat("Tearing.TarjanMatching iters done"); end if;
 
@@ -3276,6 +3326,7 @@ author: ptaeuber FHB 2013-2015"
   input list<Integer> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
+  input array<Integer> eqnNonlinPoints;
   output list<Integer> eqQueueOut;
   output list<Integer> orderOut = orderIn;
   output Boolean assignable = false;
@@ -3308,7 +3359,7 @@ algorithm
 
   // Get the next solvable equation from the equation queue
   try
-    (eqQueueOut,eq_coll,eqns,vars) := getNextSolvableEqn(eqQueueOut,mIn,meIn,ass1In,mapEqnIncRow);
+    (eqQueueOut,eq_coll,eqns,vars) := getNextSolvableEqn(eqQueueOut,mIn,meIn,ass1In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
     orderOut := eq_coll::orderOut;
     assignable := true;
   else
@@ -3450,6 +3501,8 @@ protected function getNextSolvableEqn " finds equation that can be matched with 
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1;
   input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  input array<Integer> eqnNonlinPoints;
   output list<Integer> eqQueueOut = eqQueueIn;
   output Integer eqOut;
   output list<Integer> eqnsOut;
@@ -3458,7 +3511,11 @@ protected
   Boolean solvable = false;
 algorithm
   while not listEmpty(eqQueueOut) loop
-    eqOut::eqQueueOut := eqQueueOut;
+    eqOut := getMostNonlinearEquation(eqnNonlinPoints, eqQueueOut, mapEqnIncRow, mapIncRowEqn);
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("Most nonlinear equation: " + intString(eqOut) + "\n");
+    end if;
+    eqQueueOut := List.deleteMember(eqQueueOut, eqOut);
     (solvable, eqnsOut, varsOut) := eqnSolvableCheck(eqOut, mapEqnIncRow, ass1, m, me);
     if solvable then break; end if;
   end while;
@@ -3586,6 +3643,29 @@ algorithm
     index := index+1;
   end for;
 end maxListInt;
+
+
+protected function getMostNonlinearEquation
+  "Function to find maximum Integers in a selection of inArray and outputs the first index.
+  author: ptaeuber"
+  input array<Integer> inArray;
+  input list<Integer> inList;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  output Integer index=1;
+protected
+  Integer maxi;
+algorithm
+  maxi := max(inArray[listHead(mapEqnIncRow[i])] for i in inList);
+
+  for i in inList loop
+    index := listHead(mapEqnIncRow[i]);
+    if inArray[index] == maxi then
+      index := mapIncRowEqn[index];
+      return;
+    end if;
+  end for;
+end getMostNonlinearEquation;
 
 
 protected function selectFromList_rev" selects Ints from inList by indexes given in selList
@@ -4677,7 +4757,7 @@ algorithm
   end if;
   while not listEmpty(causEq) loop
     try
-      (_,e,e_exp,vars) := getNextSolvableEqn(causEq,m,me,ass1,mapEqnIncRow);
+      (_,e,e_exp,vars) := getNextSolvableEqn(causEq,m,me,ass1,mapEqnIncRow,mapIncRowEqn,ass1);
     else
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nMatching failed, choose different tearing set!\n\n\n");
