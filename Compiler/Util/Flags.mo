@@ -513,6 +513,8 @@ constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(169, "disableColoring", false,
   Util.gettext("Disables coloring algorithm while spasity detection."));
 constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(170, "mergeAlgSections", false,
   Util.gettext("Disables coloring algorithm while spasity detection."));
+constant DebugFlag INTERACTIVE_ZMQ = DEBUG_FLAG(171, "interactiveZMQ", false,
+  Util.gettext("Starts omc as a ZeroMQ server listening on the socket interface."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -690,7 +692,8 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_PARAM_DUMP,
   NF_UNITCHECK,
   DISABLE_COLORING,
-  MERGE_ALGORITHM_SECTIONS
+  MERGE_ALGORITHM_SECTIONS,
+  INTERACTIVE_ZMQ
 };
 
 public

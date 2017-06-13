@@ -68,6 +68,7 @@ AC_SUBST(WITH_FMIL)
 AC_SUBST(NO_FMIL)
 AC_SUBST(FMILIB_SHARED)
 AC_SUBST(LIBCMINPACKLIB)
+AC_SUBST(LIBZMQLIB)
 AC_SUBST(CMINPACKLIB_SHARED)
 AC_SUBST(SHREXT)
 AC_SUBST(LINK)
@@ -620,6 +621,7 @@ if test "$DARWIN" = "1"; then
   LIBFMILIB=libfmilib_shared.dylib
   FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.dylib
+  LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lpthread -lm $LIBDL -lstdc++"
   RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
@@ -655,6 +657,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBFMILIB=libfmilib.a
   FMILIB_SHARED=OFF
   LIBCMINPACKLIB=libcminpack.a
+  LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lexpat -lm"
   RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack"
@@ -688,6 +691,7 @@ else
   LIBFMILIB=libfmilib_shared.so
   FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.so
+  LIBZMQLIB=libzmq.so
   CMINPACKLIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive

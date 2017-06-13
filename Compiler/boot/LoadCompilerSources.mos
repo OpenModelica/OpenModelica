@@ -226,7 +226,8 @@ if true then /* Suppress output */
     "../Util/Socket.mo",
     "../Util/System.mo",
     "../Util/Util.mo",
-    "../Util/VarTransform.mo"
+    "../Util/VarTransform.mo",
+    "../Util/ZeroMQ.mo"
   };
   backendfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")<>"" then
   {

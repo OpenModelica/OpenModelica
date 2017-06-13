@@ -52,6 +52,7 @@ LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-munmap=1 #--disable-pa
 MSL321_CONFIG_EXTRA_FLAGS=--enable-static --disable-shared
 LIBFMILIB=libfmilib.a
 LIBCMINPACKLIB=libcminpack.a
+LIBZMQLIB=libzmq.dll
 MODELICA_SPEC_PLATFORM=win32
 SHREXT=.dll
 IPOPT_TARGET=ipopt

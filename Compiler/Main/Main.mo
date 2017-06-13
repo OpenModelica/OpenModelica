@@ -79,6 +79,7 @@ import StackOverflow;
 import System;
 import TplMain;
 import Util;
+import ZeroMQ;
 
 protected function serverLoop
 "This function is the main loop of the server listening
@@ -114,6 +115,40 @@ algorithm
       then serverLoop(b, shandle, newsymb);
   end match;
 end serverLoop;
+
+protected function serverLoopZMQ
+"This function is the main loop of the ZeroMQ server listening
+  to a port which recieves modelica expressions."
+  input Boolean cont;
+  input Option<Integer> inZMQSocket;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+algorithm
+  outInteractiveSymbolTable := match (cont,inZMQSocket,inInteractiveSymbolTable)
+    local
+      Boolean b;
+      String str,replystr;
+      GlobalScript.SymbolTable newsymb,ressymb,isymb;
+      Option<Integer> zmqSocket;
+    case (false,_,isymb) then isymb;
+    case (_,SOME(0),_) then fail();
+    case (_,zmqSocket,isymb)
+      equation
+        str = ZeroMQ.handleRequest(zmqSocket);
+        if Flags.isSet(Flags.INTERACTIVE_DUMP) then
+          Debug.trace("------- Recieved Data from client -----\n");
+          Debug.trace(str);
+          Debug.trace("------- End recieved Data-----\n");
+        end if;
+        (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
+        replystr = if b then replystr else "quit requested, shutting server down\n";
+        ZeroMQ.sendReply(zmqSocket, replystr);
+        if not b then
+          ZeroMQ.close(zmqSocket);
+        end if;
+      then serverLoopZMQ(b, zmqSocket, newsymb);
+  end match;
+end serverLoopZMQ;
 
 protected function makeDebugResult
   input Flags.DebugFlag inFlag;
@@ -655,6 +690,14 @@ algorithm
   end try;
 end interactivemodeCorba;
 
+protected function interactivemodeZMQ
+"Initiate the interactive mode using ZMQ communication."
+  input GlobalScript.SymbolTable symbolTable;
+algorithm
+  print("Starting a ZeroMQ server on port " + intString(29500) + "\n");
+  serverLoopZMQ(true, ZeroMQ.initialize(29500), symbolTable);
+end interactivemodeZMQ;
+
 protected function serverLoopCorba
 "This function is the main loop of the server for a CORBA impl."
   input GlobalScript.SymbolTable inSettings;
@@ -866,6 +909,8 @@ algorithm
       interactivemode(readSettings(args));
     elseif Flags.isSet(Flags.INTERACTIVE_CORBA) then
       interactivemodeCorba(readSettings(args));
+    elseif Flags.isSet(Flags.INTERACTIVE_ZMQ) then
+      interactivemodeZMQ(readSettings(args));
     else // No interactive flag given, try to flatten the file.
       readSettings(args);
       FGraphStream.start();

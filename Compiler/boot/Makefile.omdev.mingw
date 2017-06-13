@@ -19,6 +19,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -Wl,--enable-stdcall-fixup -lstdc++ -static-libgcc \
 -L../../3rdParty/lpsolve/build/lib \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
+-lzmq \
 $(EXTRA_LD_FLAGS)
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib

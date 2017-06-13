@@ -21,7 +21,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  ConnectUtil.mo Dependency.mo)
 
 SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo System.mo Parser.mo
-		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo
+		TaskGraphExt.mo Corba.mo Socket.mo ZeroMQ.mo ErrorExt.mo Settings.mo
 		UnitParserExt.mo SimulationResults.mo Serializer.mo)
 
 # RML

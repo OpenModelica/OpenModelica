@@ -25,7 +25,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc $(MINGW_EXTRA_LIBS)
+.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS)
 
 mkbuilddirs:
 	echo Making build directories under $(OMBUILDDIR)
@@ -74,7 +74,7 @@ interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC $(
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs libzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 opc: .testvariables mkbuilddirs boehm-gc
@@ -252,6 +252,23 @@ CMinpack-clean:
 	#if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
 	#rm -f 3rdParty/CMinpack/build/Makefile
 	rm -rf 3rdParty/CMinpack/build
+
+libzmq:
+	test -d 3rdParty/libzmq
+	mkdir -p 3rdParty/libzmq/build
+	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
+	test -f 3rdParty/libzmq/build/lib/$(LIBZMQLIB) || $(MAKE) -C 3rdParty/libzmq/build
+	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBZMQLIB) 3rdParty/libzmq/build/lib/$(LIBZMQLIB)
+	# copy dll/so to $(LIB_OMC) and $(builddir_bin) folders
+	(rm -f $(builddir_lib_omc)/$(LIBZMQLIB)*)
+	(rm -f $(builddir_bin)/$(LIBZMQLIB)*)
+	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_lib_omc))
+	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_bin))
+	# Darwin has to be special always
+	(test ! `uname` = Darwin || cp -af 3rdParty/libzmq/build/lib/lib*.dylib $(builddir_lib_omc))
+
+libzmq-clean:
+	rm -rf 3rdParty/libzmq/build
 
 metis:
 	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)
