@@ -92,13 +92,24 @@ static struct sockaddr_in clientAddr;
 static int
 make_socket (unsigned short int port)
 {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // Winsock.DLL Initialization
+  WORD wVersionRequested;
+  WSADATA wsaData;
+  wVersionRequested = MAKEWORD(1, 1);
+  if (WSAStartup (wVersionRequested, &wsaData) != 0) {
+    printf("Failed to start the windows sockets!\n");
+    return 0;
+  }
+#endif
+
   int sock;
   struct sockaddr_in name;
   socklen_t optlen;
   int one=1;
 
   /* Create the socket. */
-  sock = socket (PF_INET, SOCK_STREAM, 0);
+  sock = socket (AF_INET, SOCK_STREAM, 0);
   if (sock < 0)
     {
       printf("Error creating socket\n");
@@ -106,7 +117,7 @@ make_socket (unsigned short int port)
     }
 
   /* Give the socket a name. */
-  name.sin_family = PF_INET;
+  name.sin_family = AF_INET;
   name.sin_port = htons (port);
   name.sin_addr.s_addr = htonl (INADDR_ANY);
   if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&one,sizeof(int))) {
@@ -139,7 +150,12 @@ extern int Socket_waitforconnect(int port)
     return -1;
   }
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int addr_length = sizeof(clientAddr);
+  ns = accept(serversocket,(struct sockaddr *)&clientAddr, (int*)&addr_length);
+#else
   ns = accept(serversocket,(struct sockaddr *)&clientAddr,&fromlen);
+#endif
 
   if (ns < 0) {
     const char *tokens[1] = {strerror(errno)};
