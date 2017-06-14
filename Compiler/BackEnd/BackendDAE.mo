@@ -88,6 +88,8 @@ public uniontype SubClock
     MMath.Rational shift;
     Option<String> solver;
   end SUBCLOCK;
+  record INFERED_SUBCLOCK
+  end INFERED_SUBCLOCK;
 end SubClock;
 
 public constant SubClock DEFAULT_SUBCLOCK = SUBCLOCK(MMath.RAT1, MMath.RAT0, NONE());

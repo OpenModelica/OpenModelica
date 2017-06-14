@@ -313,17 +313,24 @@ end printSubPartitions;
 public function subClockString
   input BackendDAE.SubClock subClock;
   output String subClockString;
-protected
-  String factorStr, shiftStr, solverStr;
 algorithm
-  factorStr := "factor(" + MMath.rationalString(subClock.factor) + ")";
-  shiftStr := "shift(" + MMath.rationalString(subClock.shift) + ")";
-  solverStr := "solver(" + optionString(subClock.solver) + ")";
-  if stringLength(solverStr) > 8 then
-    subClockString := factorStr + " " + shiftStr + " " + solverStr;
-  else
-    subClockString := factorStr + " " + shiftStr + " ";
-  end if;
+  subClockString := match(subClock)
+    local
+      String factorStr, shiftStr, solverStr;
+    case(BackendDAE.INFERED_SUBCLOCK())
+      then "INFERED_SUBCLOCK";
+    case(BackendDAE.SUBCLOCK(_))
+      algorithm
+        factorStr := "factor(" + MMath.rationalString(subClock.factor) + ")";
+        shiftStr := "shift(" + MMath.rationalString(subClock.shift) + ")";
+        solverStr := "solver(" + optionString(subClock.solver) + ")";
+        if stringLength(solverStr) > 8 then
+          subClockString := factorStr + " " + shiftStr + " " + solverStr;
+        else
+          subClockString := factorStr + " " + shiftStr + " ";
+        end if;
+      then subClockString;
+  end match;
 end subClockString;
 
 public function optionString

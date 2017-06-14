@@ -1626,7 +1626,7 @@ algorithm
   (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages,throwNoError)
     local
       BackendDAE.IncidenceMatrix m, mT, rm, rmT;
-      array<Integer> ixs, rixs;
+      array<Integer> eqPartMap, varPartMap, rixs;
       array<Boolean> vars, rvars;
       Boolean b;
       Integer i;
@@ -1638,20 +1638,22 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(ishared);
         (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
-        ixs = arrayCreate(arrayLength(m), 0);
+        eqPartMap = arrayCreate(arrayLength(m), 0);
+        varPartMap = arrayCreate(arrayLength(mT), 0);
         rixs = arrayCreate(arrayLength(rm), 0);
         vars = arrayCreate(arrayLength(mT), false);
         rvars = arrayCreate(arrayLength(rmT), false);
         // ixsT = arrayCreate(arrayLength(mT),0);
-        i = SynchronousFeatures.partitionIndependentBlocks0(m, mT, rm, rmT, ixs, rixs, vars, rvars);
+        i = SynchronousFeatures.partitionIndependentBlocks0(m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars);
         // i2 = SynchronousFeatures.partitionIndependentBlocks0(mT,m,ixsT);
         b = i > 1;
         // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
-        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, ixs, rixs, mT, rmT, throwNoError) else {syst};
+        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
-        GC.free(ixs);
+        GC.free(eqPartMap);
+        GC.free(varPartMap);
         GC.free(rixs);
       then (systs,shared);
     else

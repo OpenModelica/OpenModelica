@@ -48,6 +48,14 @@ end Rational;
 public constant Rational RAT0 = RATIONAL(0, 1);
 public constant Rational RAT1 = RATIONAL(1, 1);
 
+public function isGreaterThan "comparison if greater than"
+  input Rational r1;
+  input Rational r2;
+  output Boolean b;
+algorithm
+  b := realGt(r1.nom/r1.denom, r2.nom/r2.denom);
+end isGreaterThan;
+
 public function addRational "adds two rationals"
   input Rational r1;
   input Rational r2;
