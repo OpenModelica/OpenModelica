@@ -565,6 +565,7 @@ void NotebookWindow::createFileMenu()
 
   // PDF
   pdfAction = new QAction( tr("P&DF"), this );
+  pdfAction->setShortcut( QKeySequence("Alt+P") );
   pdfAction->setStatusTip( tr("Export the document to PDF") );
   connect(pdfAction, SIGNAL(triggered()), this, SLOT(pdf()));
   exportMenu->addAction(pdfAction);

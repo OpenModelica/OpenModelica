@@ -816,8 +816,8 @@ namespace IAEX {
     //2005-12-29 AF
     connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     // 2006-01-17 AF, new...
-    connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-      this, SLOT( charFormatChanged(const QTextCharFormat &) ));
+    //connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
+    //  this, SLOT( charFormatChanged(const QTextCharFormat &) ));
     // 2006-04-27 AF,
     connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
 
@@ -962,13 +962,16 @@ namespace IAEX {
   */
   QString GraphCell::textHtml()
   {
-    QString content;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-    content = input_->toPlainText().toHtmlEscaped();
-#else
-    content = Qt::escape(input_->toPlainText());
-#endif
-    return "<html><body><pre>"+content+"</pre></body></html>";
+    Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+    CellStyle style = sheet->getStyle( "Input" );
+
+    QTextEdit te;
+    te.setPlainText(input_->toPlainText());
+    te.selectAll();
+    te.mergeCurrentCharFormat( (*style_.textCharFormat()) );
+    te.document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+
+    return te.toHtml();
   }
 
   /*!

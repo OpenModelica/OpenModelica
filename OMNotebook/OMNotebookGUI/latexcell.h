@@ -165,7 +165,6 @@ namespace IAEX
   public slots:
     void updatePosition();
     void setModified();
-    void setAutoIndent(bool) {};
 
   signals:
     void clickOnCell();
