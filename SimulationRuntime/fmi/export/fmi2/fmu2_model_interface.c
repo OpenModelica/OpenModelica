@@ -636,8 +636,18 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
 fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Real value[]) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetReal", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
-    return fmi2Error;
+
+  if (fmi2ModelExchange == comp->type)
+  {
+    if (invalidState(comp, "fmi2SetReal", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
+      return fmi2Error;
+  }
+  else /* fmi2CoSimulation */
+  {
+    if (invalidState(comp, "fmi2SetReal", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
+      return fmi2Error;
+  }
+
   if (nvr > 0 && nullPointer(comp, "fmi2SetReal", "vr[]", vr))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2SetReal", "value[]", value))
@@ -658,8 +668,18 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
 fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer value[]) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetInteger", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
-    return fmi2Error;
+
+  if (fmi2ModelExchange == comp->type)
+  {
+    if (invalidState(comp, "fmi2SetInteger", modelInstantiated|modelInitializationMode|modelEventMode))
+      return fmi2Error;
+  }
+  else /* fmi2CoSimulation */
+  {
+    if (invalidState(comp, "fmi2SetInteger", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
+      return fmi2Error;
+  }
+
   if (nvr > 0 && nullPointer(comp, "fmi2SetInteger", "vr[]", vr))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2SetInteger", "value[]", value))
@@ -680,8 +700,18 @@ fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
 fmi2Status fmi2SetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Boolean value[]) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetBoolean", modelInstantiated|modelInitializationMode|modelEventMode))
-    return fmi2Error;
+
+  if (fmi2ModelExchange == comp->type)
+  {
+    if (invalidState(comp, "fmi2SetBoolean", modelInstantiated|modelInitializationMode|modelEventMode))
+      return fmi2Error;
+  }
+  else /* fmi2CoSimulation */
+  {
+    if (invalidState(comp, "fmi2SetBoolean", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
+      return fmi2Error;
+  }
+
   if (nvr>0 && nullPointer(comp, "fmi2SetBoolean", "vr[]", vr))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2SetBoolean", "value[]", value))
@@ -702,8 +732,18 @@ fmi2Status fmi2SetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
 fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2String value[]) {
   int i, n;
   ModelInstance *comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmi2SetString", modelInstantiated|modelInitializationMode|modelEventMode))
-    return fmi2Error;
+
+  if (fmi2ModelExchange == comp->type)
+  {
+    if (invalidState(comp, "fmi2SetString", modelInstantiated|modelInitializationMode|modelEventMode))
+      return fmi2Error;
+  }
+  else /* fmi2CoSimulation */
+  {
+    if (invalidState(comp, "fmi2SetString", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode))
+      return fmi2Error;
+  }
+
   if (nvr>0 && nullPointer(comp, "fmi2SetString", "vr[]", vr))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2SetString", "value[]", value))
