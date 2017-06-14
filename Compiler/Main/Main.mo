@@ -878,7 +878,7 @@ algorithm
   end if;
 
   // Don't allow running omc as root due to security risks.
-  if System.userIsRoot() and (Flags.isSet(Flags.INTERACTIVE) or Flags.isSet(Flags.INTERACTIVE_CORBA)) then
+  if System.userIsRoot() and (Flags.isSet(Flags.INTERACTIVE) or Flags.isSet(Flags.INTERACTIVE_CORBA) or Flags.isSet(Flags.INTERACTIVE_ZMQ)) then
     Error.addMessage(Error.ROOT_USER_INTERACTIVE, {});
     print(ErrorExt.printMessagesStr(false));
     fail();

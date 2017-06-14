@@ -80,7 +80,15 @@ void ZeroMQ_sendReply(void *mmcZmqSocket, const char* reply)
   intptr_t zmqSocket = (intptr_t)MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmcZmqSocket),1));
   // send the reply
   //fprintf(stdout, "Sending message %s\n", reply);fflush(NULL);
-  zmq_send((void*)zmqSocket, reply, strlen(reply) + 1, 0);
+  // Create an empty ZeroMQ message to hold the message part
+  zmq_msg_t replyMsg;
+  zmq_msg_init_size(&replyMsg, strlen(reply));
+  // copy the char* to zmq_msg_t
+  memcpy(zmq_msg_data(&replyMsg), reply, strlen(reply));
+  // send the message
+  zmq_msg_send(&replyMsg, (void*)zmqSocket, 0);
+  // release the zmq_msg_t
+  zmq_msg_close(&replyMsg);
 }
 
 void ZeroMQ_close(void *mmcZmqSocket)
