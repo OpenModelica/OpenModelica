@@ -43,7 +43,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // To disable tearing of this component use '--noTearingForComponent=1'.
 //
 // Tearing of NONLINEAR component
-// Use Flag '-d=tearingdumpV' for more details
+// Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details
 //
 //
 // Tearing type: heuristic
@@ -164,7 +164,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // * innerEquations ({eqn,vars}):
 // * {1:2}, {4:3}
 // *
-// *****************************************
+// ****************************************
 //
 // Note:
 // =====
@@ -185,7 +185,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // To disable tearing of this component use '--noTearingForComponent=2'.
 //
 // Tearing of NONLINEAR component
-// Use Flag '-d=tearingdumpV' for more details
+// Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details
 //
 //
 // Tearing type: heuristic
@@ -307,7 +307,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // * innerEquations ({eqn,vars}):
 // * {2:3}, {3:1}
 // *
-// *****************************************
+// ****************************************
 //
 //
 //
@@ -363,7 +363,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // * innerEquations ({eqn,vars}):
 // * {2:3}, {1:1}, {3:2}
 // *
-// *****************************************
+// ****************************************
 //
 //
 // Note:
