@@ -324,7 +324,7 @@ algorithm
         fail();
       end if;
       if debugFlag then
-        print("\nTearing of LINEAR component\nUse Flag '-d=tearingdumpV' for more details\n\n");
+        print("\nTearing of LINEAR component\nUse Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
       end if;
       // TODO: Remove when cpp runtime ready for doLinearTearing
       //false = stringEqual(Config.simCodeTarget(), "Cpp");
@@ -353,7 +353,7 @@ algorithm
         fail();
       end if;
       if debugFlag then
-        print("\nTearing of NONLINEAR component\nUse Flag '-d=tearingdumpV' for more details\n\n");
+        print("\nTearing of NONLINEAR component\nUse Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
@@ -1836,7 +1836,7 @@ algorithm
 
   // dump results with local indexes
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars," - STRICT SET");
+    dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars,eqns," - STRICT SET");
   end if;
 
   if debug then execStat("Tearing.CellierTearing -> 4"); end if;
@@ -1918,7 +1918,7 @@ algorithm
 
       // dump results with local indexes
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars," - CASUAL SET");
+        dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars,eqns," - CASUAL SET");
       end if;
 
       // Convert indexes
@@ -4129,6 +4129,7 @@ protected function dumpTearingSetLocalIndexes
   input Integer size;
   input array<list<Integer>> mapEqnIncRow;
   input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
   input String setString;
 protected
   list<String> s;
@@ -4141,8 +4142,12 @@ algorithm
     print(stringDelimitList(s, "\n") + "\n");
   end if;
   print("*\n* resEq: "+ stringDelimitList(List.map(residuals,intString),",") + "\n");
+  if Flags.isSet(Flags.ITERATION_VARS) and Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    s := list("* " + intString(eqn) + ": " + BackendDump.equationString(BackendEquation.get(eqns,eqn)) for eqn in residuals);
+    print(stringDelimitList(s, "\n") + "\n");
+  end if;
   s := list("{" + intString(e) + ":" + stringDelimitList(List.map(List.map1r(mapEqnIncRow[e],arrayGet,ass2),intString),",") + "}" for e in order);
-  print("*\n* innerEquations ({eqn,vars}):\n* " + stringDelimitList(s,", ") + "\n*\n*" + BORDER + "\n\n");
+  print("*\n* innerEquations ({eqn,vars}):\n* " + stringDelimitList(s,", ") + "\n*\n" + BORDER + "\n\n");
 end dumpTearingSetLocalIndexes;
 
 
@@ -4701,7 +4706,7 @@ algorithm
 
     // dump results with local indexes
     if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      dumpTearingSetLocalIndexes(userTVars,userResiduals,order,ass2,size,mapEqnIncRow,vars,"");
+      dumpTearingSetLocalIndexes(userTVars,userResiduals,order,ass2,size,mapEqnIncRow,vars,eqns,"");
     end if;
 
     // dump results with global indexes
