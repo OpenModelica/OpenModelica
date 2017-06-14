@@ -108,8 +108,6 @@ algorithm
         elseif key_comp == 1 then
           // Replace right branch.
           tree.right := add(tree.right, inKey);
-        else
-          tree.key := inKey;
         end if;
       then
         if key_comp == 0 then tree else balance(tree);
@@ -252,27 +250,9 @@ function intersection
   input Tree tree1, tree2;
   output Tree intersect=Tree.EMPTY(), rest1=Tree.EMPTY(), rest2=Tree.EMPTY();
 protected
-  function intersectionWork
-    input Tree tree1, tree2;
-    input Boolean buildTree;
-    input output Tree intersection=Tree.EMPTY(), rest=Tree.EMPTY();
-  protected
-    Boolean b;
-  algorithm
-    (intersection,rest) := match tree1
-      case EMPTY() then (intersection, rest);
-      case LEAF()
-        algorithm
-          b := hasKey(tree2, tree1.key);
-        then (if b then add(intersection, tree1.key) else intersection, if b or not buildTree then rest else add(rest, tree1.key));
-      case NODE()
-        algorithm
-          (intersection,rest) := intersectionWork(tree1.left, tree2, buildTree, intersection, rest);
-          (intersection,rest) := intersectionWork(tree1.right, tree2, buildTree, intersection, rest);
-          b := hasKey(tree2, tree1.key);
-        then (if b then add(intersection, tree1.key) else intersection, if b or not buildTree then rest else add(rest, tree1.key));
-    end match;
-  end intersectionWork;
+  list<Key> keylist1, keylist2;
+  Key k1, k2;
+  Integer key_comp;
 algorithm
   if isEmpty(tree1) then
     rest2 := tree2;
@@ -283,19 +263,35 @@ algorithm
     return;
   end if;
 
-  (intersect, rest1) := intersectionWork(tree1, tree2, isPresent(rest1));
-
-  if isPresent(rest2) then
-    if isEmpty(intersect) then
-      rest2 := tree2;
-    else
-      // TODO: Make a faster version of this?
-      for key in listKeys(tree2) loop
-        if not hasKey(intersect, key) then
-          rest2 := add(rest2, key);
-        end if;
-      end for;
+  // we operate on sorted lists from the trees!
+  k1::keylist1 := listKeys(tree1);
+  k2::keylist2 := listKeys(tree2);
+  while true loop
+    key_comp := keyCompare(k1, k2);
+    if key_comp > 0 then
+      if isPresent(rest2) then rest2 := add(rest2, k2); end if;
+      if listEmpty(keylist2) then break; end if;
+      k2::keylist2 := keylist2;
+    elseif key_comp < 0 then
+      if isPresent(rest1) then rest1 := add(rest1, k1); end if;
+      if listEmpty(keylist1) then break; end if;
+      k1::keylist1 := keylist1;
+    else // equal keys: advance both lists
+      intersect := add(intersect, k1);
+      if listEmpty(keylist1) or listEmpty(keylist2) then break; end if;
+      k1::keylist1 := keylist1;
+      k2::keylist2 := keylist2;
     end if;
+  end while;
+  if isPresent(rest1) and not listEmpty(keylist1) then
+    for key in keylist1 loop
+      rest1 := add(rest1, key);
+    end for;
+  end if;
+  if isPresent(rest2) and not listEmpty(keylist2) then
+    for key in keylist2 loop
+      rest2 := add(rest2, key);
+    end for;
   end if;
 end intersection;
 
@@ -330,7 +326,6 @@ algorithm
         diff := lh - rh;
 
         if diff < -1 then
-
           balanced_tree := if calculateBalance(outTree.right) > 0
             then rotateLeft(setTreeLeftRight(outTree, left=outTree.left, right=rotateRight(outTree.right)))
             else rotateLeft(outTree);
