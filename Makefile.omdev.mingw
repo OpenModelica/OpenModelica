@@ -27,6 +27,7 @@ CFLAGS =-g -O2 -falign-functions
 MSGPACK_CFLAGS = -march=i686
 
 CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE_CHECK_UNDEFINED_LOOKUP = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))

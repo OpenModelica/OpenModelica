@@ -605,7 +605,7 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
 ])
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
-AC_SUBST(CMAKE_LDFLAGS)
+AC_SUBST(CMAKE_LDFLAGS_UNDEFINED_LOOKUP)
 AC_SUBST(CMAKE_EXTRA_DEFINES)
 AC_SUBST(DLLEXT)
 AC_SUBST(UMFPACK_SHARED)
@@ -642,7 +642,7 @@ if test "$DARWIN" = "1"; then
   AR_SH="sh -x ar.sh"
   OMC_LIBS="$OMC_LIBS -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
-  CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
+  CMAKE_LDFLAGS_UNDEFINED_LOOKUP="-Wl,-undefined -Wl,dynamic_lookup"
   UMFPACK_SHARED=ON
   CONFIG_OS=OSX
 elif echo "$host" | grep -iq "mingw"; then

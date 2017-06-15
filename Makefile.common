@@ -256,7 +256,7 @@ CMinpack-clean:
 libzmq:
 	test -d 3rdParty/libzmq
 	mkdir -p 3rdParty/libzmq/build
-	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/libzmq/build/lib/$(LIBZMQLIB) || $(MAKE) -C 3rdParty/libzmq/build
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBZMQLIB) 3rdParty/libzmq/build/lib/$(LIBZMQLIB)
 	# copy dll/so to $(LIB_OMC) and $(builddir_bin) folders
