@@ -263,9 +263,9 @@ libzmq:
 	(rm -f $(builddir_lib_omc)/$(LIBZMQLIB)*)
 	(rm -f $(builddir_bin)/$(LIBZMQLIB)*)
 	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_lib_omc))
+ifeq ($(SHREXT),.dll)
 	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_bin))
-	# Darwin has to be special always
-	(test ! `uname` = Darwin || cp -af 3rdParty/libzmq/build/lib/lib*.dylib $(builddir_lib_omc))
+endif
 
 libzmq-clean:
 	rm -rf 3rdParty/libzmq/build
