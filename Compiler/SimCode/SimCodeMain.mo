@@ -408,6 +408,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   if Flags.isSet(Flags.GRAPHML) then
     HpcOmTaskGraph.dumpTaskGraph(inBackendDAE, filenamePrefix);
+    BackendDump.dumpBackendDAEBipartiteGraph(inBackendDAE, "BipartiteGraph_CompleteDAE_"+filenamePrefix);
   end if;
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
