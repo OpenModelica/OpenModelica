@@ -39,11 +39,16 @@ encapsulated package ZeroMQ
   Used in interactive mode if omc is started with +d=interactiveZMQ
   Implemented in ./runtime/zeromqimpl.c"
 
+public function setFileSuffix
+  input String fileSuffix;
+
+  external "C" ZeroMQ_setFileSuffix(fileSuffix) annotation(Library = "omcruntime");
+end setFileSuffix;
+
 public function initialize
-  input Integer port;
   output Option<Integer> zmqSocket;
 
-  external "C" zmqSocket = ZeroMQ_initialize(port) annotation(Library = "omcruntime");
+  external "C" zmqSocket = ZeroMQ_initialize() annotation(Library = "omcruntime");
 end initialize;
 
 public function handleRequest

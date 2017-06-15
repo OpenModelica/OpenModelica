@@ -57,6 +57,7 @@ encapsulated package Flags
 public import Util;
 
 protected import Corba;
+protected import ZeroMQ;
 protected import Error;
 protected import ErrorExt;
 protected import Global;
@@ -1355,6 +1356,9 @@ constant ConfigFlag TEARING_STRICTNESS = CONFIG_FLAG(113, "tearingStrictness",
     ("veryStrict", Util.gettext("Very strict tearing rules that do not allow to divide by any parameter. Use this if you aim at overriding parameters after compilation with values equal to or close to zero."))
     })),
   Util.gettext("Sets the strictness of the tearing method regarding the solvability restrictions."));
+constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(114, "zeroMQFileSuffix",
+  SOME("z"), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Util.gettext("Sets the file suffix for zeroMQ port file if -d=interactiveZMQ is used."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1473,7 +1477,8 @@ constant list<ConfigFlag> allConfigFlags = {
   CONDENSE_ARRAYS,
   WFC_ADVANCED,
   GRAPHICS_EXP_MODE,
-  TEARING_STRICTNESS
+  TEARING_STRICTNESS,
+  ZEROMQ_FILE_SUFFIX
 };
 
 public function new
@@ -2192,7 +2197,7 @@ algorithm
   _ := matchcontinue(inFlag, inValue)
     local
       Boolean value;
-      String corba_name, corba_objid_path;
+      String corba_name, corba_objid_path, zeroMQFileSuffix;
 
     // +showErrorMessages needs to be sent to the C runtime.
     case (_, _)
@@ -2218,6 +2223,15 @@ algorithm
         true = configFlagsIsEqualIndex(inFlag, CORBA_SESSION);
         STRING_FLAG(data = corba_name) = inValue;
         Corba.setSessionName(corba_name);
+      then
+        ();
+
+    // The zeroMQ file suffix needs to be sent to the C runtime.
+    case (_, _)
+      equation
+        true = configFlagsIsEqualIndex(inFlag, ZEROMQ_FILE_SUFFIX);
+        STRING_FLAG(data = zeroMQFileSuffix) = inValue;
+        ZeroMQ.setFileSuffix(zeroMQFileSuffix);
       then
         ();
 

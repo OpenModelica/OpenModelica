@@ -683,8 +683,7 @@ protected function interactivemodeZMQ
 "Initiate the interactive mode using ZMQ communication."
   input GlobalScript.SymbolTable symbolTable;
 algorithm
-  print("Starting a ZeroMQ server on port " + intString(29500) + "\n");
-  serverLoopZMQ(true, ZeroMQ.initialize(29500), symbolTable);
+  serverLoopZMQ(true, ZeroMQ.initialize(), symbolTable);
 end interactivemodeZMQ;
 
 protected function serverLoopCorba
