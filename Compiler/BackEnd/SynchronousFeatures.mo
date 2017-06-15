@@ -804,10 +804,12 @@ algorithm
     local
       MMath.Rational f1,f2;
       MMath.Rational s1,s2;
-      Option<String> solver;
-    case(BackendDAE.SUBCLOCK(f1,s1,solver),BackendDAE.SUBCLOCK(f2,s2,_))
-      then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(s1, s2), solver);
-    case(BackendDAE.SUBCLOCK(f1,s1,solver),BackendDAE.INFERED_SUBCLOCK())
+      Option<String> solver1,solver2;
+    case(BackendDAE.SUBCLOCK(f1,s1,solver1),BackendDAE.SUBCLOCK(f2,s2,solver2))
+      algorithm
+        solver1 := mergeSolver(solver1,solver2);
+      then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(s1, s2), solver1);
+    case(BackendDAE.SUBCLOCK(f1,s1,solver1),BackendDAE.INFERED_SUBCLOCK())
       then subSeqClock;
     else
       algorithm
@@ -815,6 +817,27 @@ algorithm
       then fail();
   end match;
 end computeAbsoluteSubClock;
+
+protected function mergeSolver
+  input Option<String> solver1;
+  input Option<String> solver2;
+  output Option<String> sOut;
+algorithm
+  sOut := match(solver1,solver2)
+  local
+    String s1,s2;
+  case(NONE(),SOME(s2))
+    then SOME(s2);
+  case(SOME(s1),NONE())
+    then SOME(s1);
+  case(SOME(s1),SOME(s2))
+    algorithm
+      if not stringEq(s1,s2) then Error.addCompilerNotification("Infered sub clock partitions have different solvers:"+s1+" <->"+s2+".\n"); end if;
+    then SOME(s1);
+  else
+    then NONE();
+  end match;
+end mergeSolver;
 
 protected function addPartAdjacencyEdge
   input Integer part1;
@@ -950,6 +973,7 @@ algorithm
     local
       Integer v1,v2,p1,p2;
       Integer factor,counter,resolution;
+      String solver;
       DAE.ComponentRef cref1,cref2;
   case(BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cref1), scalar=DAE.CALL(path=Absyn.IDENT("superSample"),expLst={DAE.CREF(componentRef=cref2),DAE.ICONST(factor)})))
     algorithm
@@ -999,6 +1023,16 @@ algorithm
       sub1 := setSubClockShift(sub1, MMath.RATIONAL(counter,resolution));
       sub2 := setSubClockShift(sub2, MMath.subRational(MMath.RAT0, MMath.RATIONAL(counter, resolution)));
     then (p1,v1,p2,v2);
+  case(BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cref1), scalar=DAE.CLKCONST(clk= DAE.SOLVER_CLOCK(c=DAE.CREF(componentRef=cref2), solverMethod= DAE.SCONST(solver)))))
+    algorithm
+      (_,{v1}) := BackendVariable.getVar(cref1,vars);
+      p1 := varPartMap[v1];
+      (_,{v2}) := BackendVariable.getVar(cref2,vars);
+      p2 := varPartMap[v2];
+      sub1 := setSubClockSolver(sub1, SOME(solver));
+      sub2 := setSubClockSolver(sub2, SOME(solver));
+    then (p1,v1,p2,v2);
+
   else
     then (-1,-1,-1,-1);
   end match;
@@ -1151,7 +1185,12 @@ algorithm
       algorithm
       then (eqIdx::clockEqsIn, subClockInterfaceEqIdxsIn,subClockInterfaceEqsIn);
 
-   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.SOLVER_CLOCK(_))))
+   //solver clocks can act as subpartitioninterfaces since they assign a solver to another clock
+   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.SOLVER_CLOCK(DAE.CREF(_),_))))
+      algorithm
+      then (clockEqsIn, eqIdx::subClockInterfaceEqIdxsIn, eq::subClockInterfaceEqsIn);
+
+   case(BackendDAE.EQUATION(scalar=DAE.CLKCONST(clk=DAE.SOLVER_CLOCK(DAE.CLKCONST(_),_))))
       algorithm
       then (eqIdx::clockEqsIn, subClockInterfaceEqIdxsIn,subClockInterfaceEqsIn);
 

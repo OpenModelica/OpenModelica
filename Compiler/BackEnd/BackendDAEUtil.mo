@@ -2760,6 +2760,11 @@ algorithm
         (_, outTpl) = Expression.traverseExpTopDown(e, traversingIncidenceRowExpFinderBaseClock, inTpl);
       then (inExp, false, outTpl);
 
+    case (DAE.CLKCONST(DAE.SOLVER_CLOCK(e)), _)
+      algorithm
+        (_, outTpl) := Expression.traverseExpTopDown(e, traversingIncidenceRowExpFinderBaseClock, inTpl);
+      then (inExp, true, outTpl);
+
     case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK()), _)
       then (inExp, false, inTpl);
 
@@ -7553,7 +7558,7 @@ protected function allInitOptimizationModules
     (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy"),
     (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
-	(CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
+  (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
     (Tearing.tearingSystem, "tearingSystem"),
     (BackendDAEOptimize.simplifyLoops, "simplifyLoops"),
