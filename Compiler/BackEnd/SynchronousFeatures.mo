@@ -605,6 +605,11 @@ algorithm
 end removeHoldExp;
 
 protected function getSubPartitionAdjacency
+"gets the adjacency matrix for the sub clock partitions and a dependency graph which is used to determine the execution order.
+The edge weights are the sub-clocks resulting from the sub clock interfaces.
+The sub clock interfaces are both original and inverted to get from one partition to another.
+The dependency graph is based on the causality of the sub partition interface functions.
+author: vwaurich 2017-06"
   input Integer numPartitions;
   input Integer baseClockEq;
   input list<Integer> subPartitionInterfaceEqs;
@@ -678,7 +683,9 @@ algorithm
   order := listArray(listReverse(orderLst));
 end getSubPartitionAdjacency;
 
-protected function getSubClockForClkConstructor"gets the corresponding subclock between 2 clock constructors"
+protected function getSubClockForClkConstructor
+"gets the corresponding subclock between 2 clock constructors
+author: vwaurich 2017-06"
   input DAE.ClockKind refClock;
   input DAE.ClockKind clk;
   output BackendDAE.SubClock subClk;
@@ -707,7 +714,9 @@ algorithm
   end match;
 end getSubClockForClkConstructor;
 
-protected function setSolverSubClock"if the base clock is a solver clock, put the solver ind th subclock and clean the base clock from the solver clock"
+protected function setSolverSubClock
+"if the base clock is a solver clock, put the solver in the subclock and clean the base clock from the solver clock
+author: vwaurich 2017-06"
   input DAE.ClockKind baseClkIn;
   input BackendDAE.SubClock inSubClock;
   output DAE.ClockKind baseClkOut;
@@ -727,6 +736,8 @@ algorithm
 end setSolverSubClock;
 
 protected function findSubClocks
+"gets the sub clocks for each partition by coloring the partition adjacency starting by the real and bool clocks.
+author: vwaurich 2017-06"
   input Integer numPartitions;
   input Integer baseClockEq;
   input DAE.ClockKind baseClk;
@@ -796,6 +807,8 @@ algorithm
 end findSubClocks;
 
 protected function computeAbsoluteSubClock
+"merges 2 subsequent sub clocks.
+author: vwaurich 2017-06"
   input BackendDAE.SubClock preClock;//the known subpartition clock
   input BackendDAE.SubClock subSeqClock; //the sub partitin clock which shall be determined
   output BackendDAE.SubClock subClk = BackendDAE.DEFAULT_SUBCLOCK;
@@ -819,6 +832,8 @@ algorithm
 end computeAbsoluteSubClock;
 
 protected function mergeSolver
+"merges the solver methods of 2 sub clocks.
+author: vwaurich 2017-06"
   input Option<String> solver1;
   input Option<String> solver2;
   output Option<String> sOut;
@@ -840,6 +855,8 @@ algorithm
 end mergeSolver;
 
 protected function addPartAdjacencyEdge
+"add an edge between 2 partitions in the partition adjacency matrix.
+author: vwaurich 2017-06"
   input Integer part1;
   input BackendDAE.SubClock sub1;
   input Integer part2;
@@ -865,6 +882,8 @@ algorithm
 end addPartAdjacencyEdge;
 
 protected function setSubClockFactor
+"sets the factor of a sub clock
+author: vwaurich 2017-06"
   input BackendDAE.SubClock subClk;
   input MMath.Rational factor;
   output BackendDAE.SubClock subClkOut;
@@ -881,6 +900,8 @@ algorithm
 end setSubClockFactor;
 
 protected function getSubClockFactor
+"gets the factor of a sub clock
+author: vwaurich 2017-06"
   input BackendDAE.SubClock subClk;
   output MMath.Rational factor;
 algorithm
@@ -896,6 +917,8 @@ algorithm
 end getSubClockFactor;
 
 protected function getSubClockShift
+"gets the shift value of a sub clock
+author: vwaurich 2017-06"
   input BackendDAE.SubClock subClk;
   output MMath.Rational shift;
 algorithm
@@ -911,6 +934,8 @@ algorithm
 end getSubClockShift;
 
 protected function getSubClockSolverOpt
+"gets the solver method option of a sub clock
+author: vwaurich 2017-06"
   input BackendDAE.SubClock subClk;
   output Option<String> solver;
 algorithm
@@ -925,6 +950,8 @@ algorithm
 end getSubClockSolverOpt;
 
 protected function setSubClockShift
+"sets the shift value of a sub clock
+author: vwaurich 2017-06"
   input BackendDAE.SubClock subClk;
   input MMath.Rational shift;
   output BackendDAE.SubClock subClkOut;
@@ -941,6 +968,8 @@ algorithm
 end setSubClockShift;
 
 protected function setSubClockSolver
+"sets the solver method option of a sub clock
+author: vwaurich 2017-06"
   input BackendDAE.SubClock subClk;
   input Option<String> solver;
   output BackendDAE.SubClock subClkOut;
@@ -956,6 +985,9 @@ algorithm
 end setSubClockSolver;
 
 protected function getConnectedSubPartitions
+"get the connected partitions and the transformating sub clock for a sub partition interface equation.
+used to build the sub clock partition adjacency
+author: vwaurich 2017-06"
   input BackendDAE.Equation eq;
   input array<Integer> varPartMap;
   input BackendDAE.Variables vars;
@@ -1038,7 +1070,9 @@ algorithm
   end match;
 end getConnectedSubPartitions;
 
-protected function findBaseClock
+protected function chooseBaseClock
+"among all clock constructors, choose one as a base clock. No particular strategy applied.
+author: vwaurich 2017-06"
   input list<Integer> clockEqs;
   input Integer numPartitions;
   input array<Integer> eqPartMap;
@@ -1058,7 +1092,7 @@ algorithm
       baseClockEqIdx := clockEq;
     end if;
   end for;
-end findBaseClock;
+end chooseBaseClock;
 
 protected function isBaseClockEq
   input BackendDAE.Equation eq;
@@ -1097,23 +1131,9 @@ algorithm
   end match;
 end getBaseClock;
 
-protected function separateSubPartitions"deletes edges in the incidence matrices for the subpartition interface operators"
-  input list<Integer> subClockInterfaceEqs;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-protected
-  list<Integer> vars;
-algorithm
-  for eq in subClockInterfaceEqs loop
-    vars := arrayGet(m,eq);
-    for var in vars loop
-      arrayUpdate(mT,var,List.deleteMember(arrayGet(mT,var),eq));//delete edges to eq from adjacent vars
-    end for;
-    arrayUpdate(m,eq,{});//delete all edges from eq
-  end for;
-end separateSubPartitions;
-
-protected function removeEdge"removes edges in incidence matrices betwenn equation and variable"
+protected function removeEdge
+"removes edges in incidence matrices betwenn equation and variable
+author: vwaurich 2017-06"
   input Integer eq;
   input Integer var;
   input BackendDAE.IncidenceMatrix m;
@@ -1130,7 +1150,8 @@ algorithm
 end removeEdge;
 
 protected function findBaseClockInterfaces
-"gets all equations which define a base clock and all equations which separate sub partitions"
+"gets all equations which define a base clock and all equations which separate sub partitions.
+author: vwaurich 2017-06"
   input BackendDAE.EquationArray eqs;
   input BackendDAE.Variables vars;
   input BackendDAE.IncidenceMatrix m;
@@ -1149,7 +1170,8 @@ algorithm
 end findBaseClockInterfaces;
 
 protected function findBaseClockInterfaces1
-"adds the equation to the lost of base clock defining eqs or to the equations which separate sub partitions"
+"adds the equation to the lost of base clock defining eqs or to the equations which separate sub partitions
+author: vwaurich 2017-06"
   input BackendDAE.Equation eq;
   input Integer eqIdx;
   input BackendDAE.EquationArray eqs;
@@ -1245,6 +1267,8 @@ algorithm
 end findBaseClockInterfaces1;
 
 protected function findHighestWhenPrefixIdx
+"since new $whenClk vars are introduced, determine the highest index to avopid duplicates.
+author: vwaurich 2017-06"
   input BackendDAE.Var inVar;
   input Integer idxIn;
   output BackendDAE.Var outVar = inVar;
@@ -1264,7 +1288,8 @@ algorithm
 end findHighestWhenPrefixIdx;
 
 protected function replaceSampledClocks
-"Clock contructors inside samples are added as an additional equation in order to separate clocks and dynamic equations if they are still marked as BackendDAE.DYNAMIC_EQUATION."
+"Clock contructors inside samples are added as an additional equation in order to separate clocks and dynamic equations if they are still marked as BackendDAE.DYNAMIC_EQUATION.
+author: vwaurich 2017-06"
   input BackendDAE.EquationArray eqsIn;
   input BackendDAE.Variables varsIn;
   output BackendDAE.EquationArray eqsOut;
@@ -1283,6 +1308,7 @@ algorithm
 end replaceSampledClocks;
 
 protected function replaceSampledClocks1
+"author: vwaurich 2017-06"
   input BackendDAE.Equation eqIn;
   input tuple<BackendDAE.Variables, Integer, list<BackendDAE.Equation>, list<BackendDAE.Var>> tplIn;
   output BackendDAE.Equation eqOut;
@@ -1315,6 +1341,7 @@ algorithm
 end replaceSampledClocks1;
 
 protected function replaceSampledClocks2
+"author: vwaurich 2017-06"
   input DAE.Exp inExp;
   input tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, Integer> tplIn;//<addEq, addVar, suffixIdx>
   output DAE.Exp outExp;
@@ -1343,8 +1370,9 @@ algorithm
 end replaceSampledClocks2;
 
 protected function subClockPartitioning
-"Do sub-partitioning for base partition and get base clock
- and vars, equations and sub-clocks of subpartitions."
+"Does sub-partitioning for base partition and get base clock
+ and vars, equations and sub-clocks of subpartitions.
+ author: vwaurich 2017-06"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Shared inShared;
   input Integer off;
@@ -1401,7 +1429,6 @@ algorithm
   (clockVars, clockedVarsMask)  := splitClockVars(vars);
   (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs));
 
-
   //partitioning of equations and variables
   remEqPartMap := arrayCreate(arrayLength(rm), 0);
   eqPartMap := arrayCreate(arrayLength(m), 0);
@@ -1427,7 +1454,7 @@ algorithm
     */
 
   //find the defining base clock
-  (outBaseClock,baseClockEqIdx) := findBaseClock(baseClockEquations, partitionsCnt, eqPartMap, eqs);
+  (outBaseClock,baseClockEqIdx) := chooseBaseClock(baseClockEquations, partitionsCnt, eqPartMap, eqs);
     //print("base clock equation "+intString(baseClockEqIdx)+"  "+DAEDump.clockKindString(outBaseClock)+"\n");
 
   // and get adjacency matrix for subpartitions, remove the sample()-vars first since they are not handled as connections (necessary to get the right order)
@@ -1441,10 +1468,11 @@ algorithm
 
   //propagate subclocks across the system, consider solver clocks
   (outBaseClock, subclocks) := findSubClocks(partitionsCnt, baseClockEqIdx, outBaseClock, baseClockEquations, subClockInterfaceEqIdxs, eqPartMap, varPartMap, eqs, partAdjacency);
-  /*for i in 1:arrayLength(subclocks) loop
+    /*
+    for i in 1:arrayLength(subclocks) loop
       print("partition "+intString(i)+" has subClock "+BackendDump.subClockString(arrayGet(subclocks,i))+"\n");
     end for;
-  */
+    */
 
   //dont consider the clock-contructor calls as equations for the system
   for eqIdx in 1:arrayLength(clockedEqsMask) loop
@@ -1462,6 +1490,8 @@ algorithm
 end subClockPartitioning;
 
 protected function orderSubPartitions
+"collects equations and vars for subpartitions, brings them in the execution order and merges subsequent partitions with the same sub clock.
+author: vwaurich 2017-06"
   input Integer numParts;
   input array<BackendDAE.SubClock> subclocks;
   input array<Integer> order;
@@ -1568,33 +1598,6 @@ algorithm
   subClksOut := listReverse(subClksOut);
 end orderSubPartitions;
 
-protected function intLstString
-  input list<Integer> lst;
-  output String s=stringDelimitList(List.map(lst,intString),"|");
-end intLstString;
-
-protected function maskMatrix
-  input array<list<Integer>> m;
-  input array<Boolean> mask;
-algorithm
-  for i in 1:arrayLength(m) loop
-    if not mask[i] then
-      arrayUpdate(m, i, {});
-    end if;
-  end for;
-end maskMatrix;
-
-protected function makeClockedSyst
-  input BackendDAE.EqSystem inSyst;
-  input array<Integer> order;
-  input Integer inOff;
-  input Integer inIdx;
-  output BackendDAE.EqSystem outSyst = inSyst;
-  output Integer outIdx = inIdx + 1;
-algorithm
-  outSyst.partitionKind := BackendDAE.CLOCKED_PARTITION(order[inIdx] + inOff);
-end makeClockedSyst;
-
 protected function isInferedSubClock
   input BackendDAE.SubClock subClk;
   output Boolean isInfered;
@@ -1619,56 +1622,8 @@ algorithm
   end match;
 end isInferedBaseClock;
 
-protected function setClockKind
-  input DAE.ClockKind inOldClockKind;
-  input DAE.ClockKind inClockKind;
-  input MMath.Rational inClockFactor;
-  output DAE.ClockKind outClockKind;
-  output MMath.Rational outClockFactor;
-algorithm
-  (outClockKind, outClockFactor) := match (inOldClockKind, inClockKind)
-    local
-      DAE.Exp e1, e2, ei1, ei2, er1, er2, es1, es2;
-      Integer i1, i2, ie1, ie2;
-      Real r1, r2;
-      String s1, s2;
-    case (DAE.INFERRED_CLOCK(), _) then (inClockKind, inClockFactor);
-    case (_, DAE.INFERRED_CLOCK()) then (inOldClockKind, inClockFactor);
-    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = ei1),
-          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = ei2))
-      guard
-        Expression.expEqual(e1, e2) and Expression.expEqual(ei1, ei2)
-      then (inClockKind, inClockFactor);
-    case (DAE.INTEGER_CLOCK(intervalCounter = e1, resolution = ei1),
-          DAE.INTEGER_CLOCK(intervalCounter = e2, resolution = ei2))
-      // stay with old clock and adapt clock factor to new clock
-      algorithm
-        DAE.ICONST(ie1) := e1;
-        DAE.ICONST(ie2) := e2;
-        DAE.ICONST(i1) := ei1;
-        DAE.ICONST(i2) := ei2;
-      then (inOldClockKind, MMath.divRational(MMath.multRational(inClockFactor, MMath.RATIONAL(ie2, i2)), MMath.RATIONAL(ie1, i1)));
-    case (DAE.REAL_CLOCK(interval = e1),
-          DAE.REAL_CLOCK(interval = e2))
-      guard
-        Expression.expEqual(e1, e2)
-      then (inClockKind, inClockFactor);
-    case (DAE.BOOLEAN_CLOCK(condition = e1, startInterval = er1),
-          DAE.BOOLEAN_CLOCK(condition = e2, startInterval = er2))
-      guard
-        Expression.expEqual(e1, e2) and Expression.expEqual(er1, er2)
-      then (inClockKind, inClockFactor);
-    case (DAE.SOLVER_CLOCK(c = e1, solverMethod = es1),
-          DAE.SOLVER_CLOCK(c = e2, solverMethod = es2))
-      guard
-        Expression.expEqual(e1, e2) and Expression.expEqual(es1, es2)
-      then (inClockKind, inClockFactor);
-    else
-      equation Error.addMessage(Error.CLOCK_CONFLICT, {});
-      then fail();
-  end match;
-end setClockKind;
-
+//unused function from old implementation
+/*
 protected function getSubClkFromVars
   input Integer partitionIdx;
   input Integer clkIdx;
@@ -1768,7 +1723,7 @@ protected
   array<list<Integer>> children = arrayCreate(partitionsCnt, {});
   array<Integer> colors = arrayCreate(partitionsCnt, 0);
 algorithm
-  /*Build subpartitions dependenct graph*/
+  //Build subpartitions dependenct graph
   for i in 1:partitionsCnt loop
     for parent in parents[i] loop
       partIdx := partitions[parent];
@@ -1777,7 +1732,7 @@ algorithm
       end if;
     end for;
   end for;
-  /*Toposort with loop detection*/
+  //Toposort with loop detection
   for i in 1:partitionsCnt loop
     order := dfs(children, i, colors, order);
   end for;
@@ -1846,6 +1801,7 @@ algorithm
       then BackendDAE.SUBCLOCK(newFactor, newShift, newSolverMethod);
   end match;
 end setSubClock;
+*/
 
 protected function setFactor
   input MMath.Rational oldVal;
@@ -3225,7 +3181,8 @@ algorithm
 end partitionEquations;
 
 protected function subClkEqual
-"outputs true if 2 subclocks are equal"
+"outputs true if 2 subclocks are equal
+vwaurich 2017-06"
   input BackendDAE.SubClock sc1;
   input BackendDAE.SubClock sc2;
   output Boolean isEqual;
