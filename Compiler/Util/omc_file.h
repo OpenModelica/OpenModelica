@@ -100,7 +100,16 @@ static inline void om_file_open(__OMC_FILE *file, const char *filename, int mode
 #endif
     fclose(file->file);
   }
+#if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
+  if (mode == 1) {
+    file->file = fopen(filename, "rb");
+  } else {
+    unlink(filename);
+    file->file = fopen(filename, "wb");
+  }
+#else
   file->file = fopen(filename, mode == 1 ? "rb" : "wb");
+#endif
   file->name = filename;
 #if defined(__OMC_FILE_DEBUG)
   fprintf(stderr,"File.open: f:%s,%p,%p\n",file->name,file->file,file); fflush(NULL);

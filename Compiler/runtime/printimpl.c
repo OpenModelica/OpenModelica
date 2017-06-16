@@ -332,6 +332,9 @@ static int PrintImpl__writeBuf(threadData_t *threadData,const char* filename)
   /* check if we have something to write */
   /* open the file */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
+#if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
+  unlink(filename);
+#endif
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
@@ -420,6 +423,9 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   /* check if we have something to write */
   /* open the file */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
+#if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
+  unlink(filename);
+#endif
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};

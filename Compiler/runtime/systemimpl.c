@@ -417,6 +417,9 @@ int SystemImpl__writeFile(const char* filename, const char* data)
 #endif
   FILE * file = NULL;
   int len = strlen(data); /* MMC_HDRSTRLEN(MMC_GETHDR(rmlA1)); */
+#if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
+  unlink(filename);
+#endif
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
@@ -2939,6 +2942,9 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
     goto done;
   }
   errno = 0;
+#if defined(__APPLE_CC__)||defined(__MINGW32__)||defined(__MINGW64__)
+  unlink(outFile);
+#endif
   fout = fopen(outFile, "w");
   if (!fout) {
     const char *c_token[1]={strerror(errno)};
