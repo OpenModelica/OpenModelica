@@ -1,7 +1,7 @@
 // name: const10.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 
 model A
@@ -19,6 +19,7 @@ end C;
 
 // Result:
 // class C
-//   Real b.x = 3.0;
+//   constant Integer b.j = A.i;
+//   Real b.x = b.j;
 // end C;
 // endResult

@@ -17,7 +17,7 @@ end f;
 
 model M
   Real x = f(1.0, 2.0, 3.0);
-  Real x = f(1.0, z=2.0);
+  Real y = f(1.0, z=2.0);
 end M;
 
 // Result:
@@ -30,6 +30,6 @@ end M;
 //
 // class M
 //   Real x = f(1.0, 2.0, 3.0);
-//   Real x = f(1.0, 1.0, 2.0);
+//   Real y = f(1.0, 1.0, 2.0);
 // end M;
 // endResult

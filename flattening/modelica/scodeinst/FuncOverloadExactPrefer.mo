@@ -21,7 +21,7 @@ model FuncOverloadExactPrefer
   function OV = $overload(F,G);
   
   Integer x = OV(1);
-  Integer x = OV(1.0);
+  Integer y = OV(1.0);
 end FuncOverloadExactPrefer;
 
 // Result:
@@ -38,6 +38,6 @@ end FuncOverloadExactPrefer;
 //
 // class FuncOverloadExactPrefer
 //   Integer x = F(1);
-//   Integer x = G(1.0, 1);
+//   Integer y = G(1.0, 1);
 // end FuncOverloadExactPrefer;
 // endResult

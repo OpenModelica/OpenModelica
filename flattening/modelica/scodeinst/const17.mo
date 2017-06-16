@@ -1,7 +1,7 @@
 // name: const17.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 //
 
@@ -23,6 +23,6 @@ end M;
 
 // Result:
 // class M
-//   Real x = 2.0;
+//   Real x = A.B.i;
 // end M;
 // endResult

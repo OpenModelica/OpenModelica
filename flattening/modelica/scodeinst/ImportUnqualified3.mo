@@ -1,4 +1,4 @@
-// name: Uimport.mo
+// name: ImportUnqualified3.mo
 // status: correct
 // cflags: -d=newInst
 
@@ -14,10 +14,11 @@ package A
   
 end A;
 
-model M
+model ImportUnqualified3
   import A.B.*;
   parameter Real x = f(100);
-end M;
+end ImportUnqualified3;
+
 
 // Result:
 // function f
@@ -27,8 +28,7 @@ end M;
 //   y := x;
 // end f;
 //
-// class M
+// class ImportUnqualified3
 //   parameter Real x = f(100.0);
-// end M;
+// end ImportUnqualified3;
 // endResult
-

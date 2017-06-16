@@ -16,6 +16,6 @@ end M;
 
 // Result:
 // class M
-//   enumeration(one, two, three) e = E2.one;
+//   enumeration(one, two, three) e = E.one;
 // end M;
 // endResult

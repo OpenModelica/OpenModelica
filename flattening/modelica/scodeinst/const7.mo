@@ -3,8 +3,6 @@
 // status: correct
 // cflags:   -d=newInst
 //
-// Correct, but old instantiation fails.
-//
 
 
 model M

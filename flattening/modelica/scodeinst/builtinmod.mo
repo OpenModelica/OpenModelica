@@ -44,6 +44,6 @@ end A;
 //   Integer i(quantity = "m", min = -100, max = 100, start = 10, fixed = true);
 //   Boolean b(quantity = "m", start = false, fixed = true);
 //   String s(quantity = "m", start = "hello");
-//   enumeration(never, avoid, default, prefer, always) m(start = MyStateSelect.avoid);
+//   enumeration(never, avoid, default, prefer, always) m(start = StateSelect.avoid);
 // end A;
 // endResult

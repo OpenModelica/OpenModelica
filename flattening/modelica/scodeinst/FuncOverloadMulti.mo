@@ -27,8 +27,8 @@ model FuncOverloadMulti
   function type_string = $overload(numeric_string,bool_string);
 
   String x = type_string(true);
-  String x = type_string(1);
-  String x = type_string(1.0);
+  String y = type_string(1);
+  String z = type_string(1.0);
 end FuncOverloadMulti;
 
 // Result:
@@ -49,7 +49,7 @@ end FuncOverloadMulti;
 //
 // class FuncOverloadMulti
 //   String x = bool_string(true);
-//   String x = int_string(1);
-//   String x = real_string(1.0);
+//   String y = int_string(1);
+//   String z = real_string(1.0);
 // end FuncOverloadMulti;
 // endResult

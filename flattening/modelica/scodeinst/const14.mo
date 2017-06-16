@@ -26,9 +26,8 @@ model M
   Integer x = A.B.A.B.i;
 end M;
 
-
 // Result:
 // class M
-//   Integer x = 2;
+//   Integer x = A.B.A.B.i;
 // end M;
 // endResult

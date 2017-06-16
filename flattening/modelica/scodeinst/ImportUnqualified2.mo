@@ -5,8 +5,6 @@
 //
 // Checks that unqualified imports work.
 //
-// FAILREASON: Imported package constants are not instantiated.
-//
 
 package P
   constant Real x = 2;
@@ -18,12 +16,7 @@ model ImportUnqualified2
 end ImportUnqualified2;
 
 // Result:
-// Failed to type cref x
-// Error processing file: ImportUnqualified2.mo
-// Error: Internal error Instantiation of ImportUnqualified2 failed with no error message.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class ImportUnqualified2
+//   Real y = x;
+// end ImportUnqualified2;
 // endResult

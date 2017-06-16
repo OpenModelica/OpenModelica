@@ -19,6 +19,7 @@ end FuncBuiltinReinit;
 //   Real x;
 // algorithm
 //   when time > 1.0 then
+//     reinit(x, time);
 //   end when;
 // end FuncBuiltinReinit;
 // endResult

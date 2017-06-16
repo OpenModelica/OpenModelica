@@ -1,7 +1,7 @@
 // name: const16.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 
 package P
@@ -24,6 +24,6 @@ end M;
 
 // Result:
 // class M
-//   Real x = 2.0;
+//   Real x = P.P.P.i;
 // end M;
 // endResult

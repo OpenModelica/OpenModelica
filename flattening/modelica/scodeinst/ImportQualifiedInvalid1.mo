@@ -13,7 +13,7 @@ end ImportQualifiedInvalid1;
 
 // Result:
 // Error processing file: ImportQualifiedInvalid1.mo
-// [flattening/modelica/scodeinst/ImportQualifiedInvalid1.mo:10:3-10:13:writable] Error: Import P.M not found in scope .
+// [flattening/modelica/scodeinst/ImportQualifiedInvalid1.mo:10:3-10:13:writable] Error: Import P.M not found in scope <unknown>.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

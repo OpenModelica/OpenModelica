@@ -3,7 +3,7 @@
 // status: correct
 // cflags:   -d=newInst
 //
-// FAILREASON: Wrong binding on x.
+// FAILREASON: Subscripted types not handled yet.
 //
 
 package A

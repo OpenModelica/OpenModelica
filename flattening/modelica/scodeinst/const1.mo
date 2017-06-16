@@ -1,7 +1,7 @@
 // name: const1.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 
 
@@ -28,6 +28,9 @@ end B;
 
 // Result:
 // class B
+//   constant Integer j = 5;
+//   constant Integer a.j = 4;
+//   constant Integer p.i = 9;
 //   Real x[1];
 //   Real x[2];
 //   Real y[1];
@@ -51,5 +54,6 @@ end B;
 //   Real v[7];
 //   Real v[8];
 //   Real v[9];
+//   constant Integer i = 0;
 // end B;
 // endResult

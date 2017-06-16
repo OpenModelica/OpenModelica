@@ -1,10 +1,7 @@
 // name: const11.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
-//
-// FAILREASON: Fails since package constants in classes which are not explicitly
-//             declared as packages are not instantiated.
+// cflags: -d=newInst
 //
 
 package P
@@ -37,27 +34,14 @@ model M
 end M;
 
 // Result:
-//
-// EXPANDED FORM:
-//
 // class M
-//   Integer v = 2;
-//   Integer w = 2;
-//   Integer z = 2;
-//   Integer y = 3;
-//   Integer x = 2;
-// end M;
-//
-//
-// Found 5 components and 0 parameters.
-// class M
-//   Integer x = 2;
+//   Integer x = P.A.B.i;
 //   constant Integer a.j = 3;
-//   Integer y = 2;
-//   constant Integer b.i = 2;
-//   Integer z = 2;
+//   Integer y = a.j;
+//   constant Integer b.i = P.A.j;
+//   Integer z = b.i;
 //   constant Integer j = 2;
-//   Integer w = 2;
-//   Integer v = 2;
+//   Integer w = j;
+//   Integer v = B.i;
 // end M;
 // endResult

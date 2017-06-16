@@ -1,7 +1,7 @@
 // name: const3.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 
 
@@ -16,7 +16,15 @@ package P
   end A;
 end P;
 
+model B
+  P.A a;
+end B;
+
 // Result:
-// class P
-// end P;
+// class B
+//   Real a.x[1];
+//   Real a.x[2];
+//   Real a.y[1];
+//   Real a.y[2];
+// end B;
 // endResult
