@@ -124,11 +124,11 @@ make_socket (unsigned short int port)
     return 0;
   }
 
-  if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0)
-    {
-      printf("Error binding socket\n");
-      return 0;
-    }
+  if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {
+    printf("Error binding socket\n");
+    return 0;
+  }
+  printf("Started a tcp server on port %d\n", port);fflush(NULL);
 
   return sock;
 }

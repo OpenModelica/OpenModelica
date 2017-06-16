@@ -239,7 +239,7 @@ constant DebugFlag TRANSFORMS_BEFORE_DUMP = DEBUG_FLAG(33, "transformsbeforedump
   Util.gettext("Applies transformations required for code generation before dumping flat code."));
 constant DebugFlag DAE_DUMP_GRAPHV = DEBUG_FLAG(34, "daedumpgraphv", false,
   Util.gettext("Dumps the DAE in graphviz format."));
-constant DebugFlag INTERACTIVE = DEBUG_FLAG(35, "interactive", false,
+constant DebugFlag INTERACTIVE_TCP = DEBUG_FLAG(35, "interactive", false,
   Util.gettext("Starts omc as a server listening on the socket interface."));
 constant DebugFlag INTERACTIVE_CORBA = DEBUG_FLAG(36, "interactiveCorba", false,
   Util.gettext("Starts omc as a server listening on the Corba interface."));
@@ -514,8 +514,6 @@ constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(169, "disableColoring", false,
   Util.gettext("Disables coloring algorithm while spasity detection."));
 constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(170, "mergeAlgSections", false,
   Util.gettext("Disables coloring algorithm while spasity detection."));
-constant DebugFlag INTERACTIVE_ZMQ = DEBUG_FLAG(171, "interactiveZMQ", false,
-  Util.gettext("Starts omc as a ZeroMQ server listening on the socket interface."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -558,7 +556,7 @@ constant list<DebugFlag> allDebugFlags = {
   EXEC_STAT,
   TRANSFORMS_BEFORE_DUMP,
   DAE_DUMP_GRAPHV,
-  INTERACTIVE,
+  INTERACTIVE_TCP,
   INTERACTIVE_CORBA,
   INTERACTIVE_DUMP,
   RELIDX,
@@ -693,8 +691,7 @@ constant list<DebugFlag> allDebugFlags = {
   EVAL_PARAM_DUMP,
   NF_UNITCHECK,
   DISABLE_COLORING,
-  MERGE_ALGORITHM_SECTIONS,
-  INTERACTIVE_ZMQ
+  MERGE_ALGORITHM_SECTIONS
 };
 
 public
@@ -931,7 +928,7 @@ constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
 
 constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the name of the corba session if -d=interactiveCorba is used."));
+  Util.gettext("Sets the name of the corba session if -d=interactiveCorba or --interactive=corba is used."));
 
 constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
@@ -1356,9 +1353,18 @@ constant ConfigFlag TEARING_STRICTNESS = CONFIG_FLAG(113, "tearingStrictness",
     ("veryStrict", Util.gettext("Very strict tearing rules that do not allow to divide by any parameter. Use this if you aim at overriding parameters after compilation with values equal to or close to zero."))
     })),
   Util.gettext("Sets the strictness of the tearing method regarding the solvability restrictions."));
-constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(114, "zeroMQFileSuffix",
+constant ConfigFlag INTERACTIVE = CONFIG_FLAG(114, "interactive",
+  NONE(), EXTERNAL(), STRING_FLAG("none"),SOME(
+    STRING_DESC_OPTION({
+    ("none", Util.gettext("do nothing")),
+    ("corba", Util.gettext("Starts omc as a server listening on the socket interface.")),
+    ("tcp", Util.gettext("Starts omc as a server listening on the Corba interface.")),
+    ("zmq", Util.gettext("Starts omc as a ZeroMQ server listening on the socket interface."))
+    })),
+  Util.gettext("Sets the interactive mode for omc."));
+constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(115, "zeroMQFileSuffix",
   SOME("z"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the file suffix for zeroMQ port file if -d=interactiveZMQ is used."));
+  Util.gettext("Sets the file suffix for zeroMQ port file if --interactive=zmq is used."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1478,6 +1484,7 @@ constant list<ConfigFlag> allConfigFlags = {
   WFC_ADVANCED,
   GRAPHICS_EXP_MODE,
   TEARING_STRICTNESS,
+  INTERACTIVE,
   ZEROMQ_FILE_SUFFIX
 };
 

@@ -662,7 +662,6 @@ protected function interactivemode
 "Initiate the interactive mode using socket communication."
   input GlobalScript.SymbolTable symbolTable;
 algorithm
-  print("Opening a socket on port " + intString(29500) + "\n");
   serverLoop(true, Socket.waitforconnect(29500), symbolTable);
 end interactivemode;
 
@@ -869,6 +868,8 @@ protected function main2
   "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
    start the translation."
   input list<String> args;
+protected
+  String interactiveMode;
 algorithm
   // Version requested using --version.
   if Config.versionRequest() then
@@ -877,7 +878,9 @@ algorithm
   end if;
 
   // Don't allow running omc as root due to security risks.
-  if System.userIsRoot() and (Flags.isSet(Flags.INTERACTIVE) or Flags.isSet(Flags.INTERACTIVE_CORBA) or Flags.isSet(Flags.INTERACTIVE_ZMQ)) then
+  interactiveMode := Flags.getConfigString(Flags.INTERACTIVE);
+  if System.userIsRoot() and (Flags.isSet(Flags.INTERACTIVE_TCP) or Flags.isSet(Flags.INTERACTIVE_CORBA)
+     or interactiveMode == "corba" or interactiveMode == "tcp" or interactiveMode == "zmq") then
     Error.addMessage(Error.ROOT_USER_INTERACTIVE, {});
     print(ErrorExt.printMessagesStr(false));
     fail();
@@ -893,11 +896,17 @@ algorithm
   try
     Settings.getInstallationDirectoryPath();
 
-    if Flags.isSet(Flags.INTERACTIVE) then
+    if Flags.isSet(Flags.INTERACTIVE_TCP) then
+      print("The flag -d=interactive is depreciated. Please use --interactive=tcp\n");
+      interactivemode(readSettings(args));
+    elseif interactiveMode == "tcp" then
       interactivemode(readSettings(args));
     elseif Flags.isSet(Flags.INTERACTIVE_CORBA) then
+      print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba\n");
       interactivemodeCorba(readSettings(args));
-    elseif Flags.isSet(Flags.INTERACTIVE_ZMQ) then
+    elseif interactiveMode == "corba" then
+      interactivemodeCorba(readSettings(args));
+    elseif interactiveMode == "zmq" then
       interactivemodeZMQ(readSettings(args));
     else // No interactive flag given, try to flatten the file.
       readSettings(args);
