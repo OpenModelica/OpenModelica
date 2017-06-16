@@ -24,16 +24,17 @@ So domain experts (people writing the models) and computational
 engineers (people writing the solver code) can work on one unified tool
 that is industrially viable for optimization of Modelica models, while
 offering a flexible platform for algorithm development and research.
-OMPython v2.0 is not a standalone package, it depends upon the
+OMPython is not a standalone package, it depends upon the
 OpenModelica installation.
 
-OMPython v2.0 is implemented in Python using the OmniORB and OmniORBpy -
-high performance CORBA ORBs for Python and it supports the Modelica
+OMPython is implemented in Python and depends either on
+the OmniORB and OmniORBpy - high performance CORBA ORBs for Python
+or ZeroMQ - high performance asynchronous
+messaging library and it supports the Modelica
 Standard Library version 3.2 that is included in starting with
 OpenModelica 1.9.2.
-It is now primarily available using the command :command:`pip install ompython`,
-but it is also possible to run :command:`python setup.py install` manually
-or use the version provided in the Windows installer.
+
+To install OMPython follow the instructions at https://github.com/OpenModelica/OMPython
 
 Features of OMPython
 ~~~~~~~~~~~~~~~~~~~~
@@ -56,6 +57,12 @@ OMPython provides user friendly features like:
 
 Test Commands 
 ~~~~~~~~~~~~~
+
+OMPython provides two classes for communicating with OpenModelica i.e.,
+OMCSession and OMCSessionZMQ. Both classes have the same interface,
+the only difference is that OMCSession uses omniORB and OMCSessionZMQ
+uses ZeroMQ. All the examples listed down uses OMCSession but if you
+want to test OMCSessionZMQ simply replace OMCSession with OMCSessionZMQ.
 
 To test the command outputs, simply create an OMCSession object by
 importing from the OMPython library within Python interepreter. The
@@ -173,13 +180,16 @@ To get started, create a ModelicaSystem object:
 
 The object constructor requires a minimum of 2 input arguments which are strings, and may need a third string input argument.
 
-- The first input argument must be a string with the file name of the Modelica code, with Modelica file extension ".mo"
-  If the  Modelica file is not in the current directory of Python, then the file path must also be included
+- The first input argument must be a string with the file name of the Modelica code, with Modelica file extension ".mo".
+  If the Modelica file is not in the current directory of Python, then the file path must also be included.
 
 -  The second input argument must be a string with the name of the Modelica model
-   including the namespace if the model is wrapped within a Modelica package
+   including the namespace if the model is wrapped within a Modelica package.
 
 -  A third input argument is used if the Modelica model builds on other Modelica code, e.g. the Modelica Standard Library.
+
+-  By default ModelicaSystem uses OMCSessionZMQ but if you want to use OMCSession
+   then pass the argument `useCorba=True` to the constructor.
 
 Standard get methods
 ~~~~~~~~~~~~~~~~~~~~
