@@ -79,7 +79,7 @@ algorithm
 
     case Expression.CREF(cref=ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
       algorithm
-        Typing.typeComponentBinding(c, InstNode.parent(c));
+        Typing.typeComponentBinding(c);
         binding := Component.getBinding(InstNode.component(c));
       then
         evalBinding(binding, exp, target);

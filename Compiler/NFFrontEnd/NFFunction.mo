@@ -54,6 +54,7 @@ import Util;
 import ComponentRef = NFComponentRef;
 import NFInstNode.CachedData;
 import Lookup = NFLookup;
+import ClassTree = NFClassTree.ClassTree;
 
 import MatchKind = NFTypeCheck.MatchKind;
 
@@ -721,20 +722,17 @@ protected
     cls := InstNode.getClass(node);
 
     () := match cls
-      case Class.INSTANCED_CLASS(components = comps)
+      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
         algorithm
           for i in arrayLength(comps):-1:1 loop
             n := comps[i];
-            if InstNode.isComponent(n) then
-              // Sort the components based on their direction.
-              () := match paramDirection(n)
-                case DAE.VarDirection.INPUT() algorithm inputs := n :: inputs; then ();
-                case DAE.VarDirection.OUTPUT() algorithm outputs := n :: outputs; then ();
-                case DAE.VarDirection.BIDIR() algorithm locals := n :: locals; then ();
-              end match;
-            else
-              (inputs, outputs, locals) := collectParams(n, inputs, outputs, locals);
-            end if;
+
+            // Sort the components based on their direction.
+            () := match paramDirection(n)
+              case DAE.VarDirection.INPUT() algorithm inputs := n :: inputs; then ();
+              case DAE.VarDirection.OUTPUT() algorithm outputs := n :: outputs; then ();
+              case DAE.VarDirection.BIDIR() algorithm locals := n :: locals; then ();
+            end match;
           end for;
         then
           ();

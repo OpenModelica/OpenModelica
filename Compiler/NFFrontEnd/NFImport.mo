@@ -69,69 +69,69 @@ import SCodeUtil;
 import System;
 
 public
-function addImportsToScope
-  // adrpo: hm, i don't know if this is correct as imports are not inherited
-  input list<SCode.Element> imports;
-  input InstNode currentScope;
-  input output ClassTree.Tree scope;
-protected
-  Absyn.Import i;
-  InstNode node, top_scope;
-  SourceInfo info;
-  Class cls;
-  ClassTree.Tree els;
-algorithm
-  if listEmpty(imports) then
-    return;
-  end if;
-
-  // All imports are looked up from the top scope, so we might as well look it
-  // up now to avoid having to do that for each import.
-  top_scope := InstNode.topScope(currentScope);
-
-  for imp in imports loop
-    SCode.IMPORT(imp = i, info = info) := imp;
-
-    () := match i
-      case Absyn.NAMED_IMPORT()
-        algorithm
-          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
-          // TODO! FIXME! check if there is a local definition with the same name and if prefix of path is a package
-          // how about importing constants not just classes?!
-          scope := NFInst.addClassToScope(i.name, ClassTree.Entry.CLASS(node), info, scope);
-        then
-          ();
-
-      case Absyn.QUAL_IMPORT()
-        algorithm
-          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
-          // TODO! FIXME! check if there is a local definition with the same name and if prefix of path is a package
-          // how about importing constants not just classes?!
-          scope := NFInst.addClassToScope(Absyn.pathLastIdent(i.path), ClassTree.Entry.CLASS(node), info, scope);
-        then
-          ();
-
-      case Absyn.UNQUAL_IMPORT()
-        algorithm
-          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
-          node := NFInst.expand(node);
-          // TODO! FIXME! check that the path is a package!
-          // how about importing constants not just classes?!
-          // add all the definitions from node to current scope
-          // using addInheritedElements here as is basically similar
-          scope := NFInst.addInheritedElements({node}, scope);
-        then
-          ();
-
-      else
-        algorithm
-          print("NFInst.addImportsToScope: IMPLEMENT ME\n");
-        then
-          ();
-
-    end match;
-  end for;
-end addImportsToScope;
+//function addImportsToScope
+//  // adrpo: hm, i don't know if this is correct as imports are not inherited
+//  input list<SCode.Element> imports;
+//  input InstNode currentScope;
+//  input output ClassTree.Tree scope;
+//protected
+//  Absyn.Import i;
+//  InstNode node, top_scope;
+//  SourceInfo info;
+//  Class cls;
+//  ClassTree.Tree els;
+//algorithm
+//  if listEmpty(imports) then
+//    return;
+//  end if;
+//
+//  // All imports are looked up from the top scope, so we might as well look it
+//  // up now to avoid having to do that for each import.
+//  top_scope := InstNode.topScope(currentScope);
+//
+//  for imp in imports loop
+//    SCode.IMPORT(imp = i, info = info) := imp;
+//
+//    () := match i
+//      case Absyn.NAMED_IMPORT()
+//        algorithm
+//          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
+//          // TODO! FIXME! check if there is a local definition with the same name and if prefix of path is a package
+//          // how about importing constants not just classes?!
+//          scope := NFInst.addClassToScope(i.name, ClassTree.Entry.CLASS(node), info, scope);
+//        then
+//          ();
+//
+//      case Absyn.QUAL_IMPORT()
+//        algorithm
+//          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
+//          // TODO! FIXME! check if there is a local definition with the same name and if prefix of path is a package
+//          // how about importing constants not just classes?!
+//          scope := NFInst.addClassToScope(Absyn.pathLastIdent(i.path), ClassTree.Entry.CLASS(node), info, scope);
+//        then
+//          ();
+//
+//      case Absyn.UNQUAL_IMPORT()
+//        algorithm
+//          node := Lookup.lookupClassName(Absyn.FULLYQUALIFIED(i.path), top_scope, info);
+//          node := NFInst.expand(node);
+//          // TODO! FIXME! check that the path is a package!
+//          // how about importing constants not just classes?!
+//          // add all the definitions from node to current scope
+//          // using addInheritedElements here as is basically similar
+//          scope := NFInst.addInheritedElements({node}, scope);
+//        then
+//          ();
+//
+//      else
+//        algorithm
+//          print("NFInst.addImportsToScope: IMPLEMENT ME\n");
+//        then
+//          ();
+//
+//    end match;
+//  end for;
+//end addImportsToScope;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFImport;

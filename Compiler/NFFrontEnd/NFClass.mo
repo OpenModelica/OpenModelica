@@ -31,190 +31,108 @@
 
 encapsulated package NFClass
 
-import BaseAvlTree;
 import NFEquation.Equation;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFStatement.Statement;
 import SCode.Element;
 import Type = NFType;
-import Array;
-
-encapsulated package ClassTree
-  uniontype Entry
-    record CLASS
-      InstNode node;
-    end CLASS;
-
-    record COMPONENT
-      Integer node;
-      Integer index;
-    end COMPONENT;
-  end Entry;
-
-  import BaseAvlTree;
-  import NFInstNode.InstNode;
-
-  extends BaseAvlTree(redeclare type Key = String,
-                      redeclare type Value = Entry);
-
-  redeclare function extends keyStr
-  algorithm
-    outString := inKey;
-  end keyStr;
-
-  redeclare function extends valueStr
-  algorithm
-    outString := match inValue
-      case Entry.CLASS() then "class " + InstNode.name(inValue.node);
-      case Entry.COMPONENT() then "comp " + String(inValue.index);
-    end match;
-  end valueStr;
-
-  redeclare function extends keyCompare
-  algorithm
-    outResult := stringCompare(inKey1, inKey2);
-  end keyCompare;
-
-  annotation(__OpenModelica_Interface="util");
-end ClassTree;
+import NFComponent.Component;
+import Dimension = NFDimension;
+import NFClassTree.ClassTree;
+import NFSections.Sections;
 
 uniontype Class
+  uniontype Prefixes
+    record PREFIXES
+      SCode.Encapsulated encapsulatedPrefix;
+      SCode.Partial partialPrefix;
+      SCode.Visibility visibility;
+      SCode.Final finalPrefix;
+      Absyn.InnerOuter innerOuter;
+      SCode.Replaceable replaceablePrefix;
+    end PREFIXES;
+
+    record DEFAULT end DEFAULT;
+  end Prefixes;
+
   record NOT_INSTANTIATED end NOT_INSTANTIATED;
 
   record PARTIAL_CLASS
-    ClassTree.Tree classes;
-    list<SCode.Element> elements;
+    ClassTree elements;
     Modifier modifier;
   end PARTIAL_CLASS;
 
   record EXPANDED_CLASS
-    ClassTree.Tree elements;
-    array<InstNode> extendsNodes;
-    array<InstNode> components;
+    ClassTree elements;
     Modifier modifier;
+    Class.Prefixes prefixes;
   end EXPANDED_CLASS;
 
-  record INSTANCED_CLASS
-    ClassTree.Tree elements;
-    array<InstNode> extendsNodes;
-    array<InstNode> components;
-    list<Equation> equations;
-    list<Equation> initialEquations;
-    list<list<Statement>> algorithms;
-    list<list<Statement>> initialAlgorithms;
-  end INSTANCED_CLASS;
+  record DERIVED_CLASS
+    InstNode baseClass;
+    Modifier modifier;
+    list<Dimension> dims;
+    Class.Prefixes prefixes;
+    Absyn.Direction direction;
+  end DERIVED_CLASS;
 
   record PARTIAL_BUILTIN
     Type ty;
-    ClassTree.Tree elements;
-    array<InstNode> components;
+    ClassTree elements;
     Modifier modifier;
   end PARTIAL_BUILTIN;
 
+  record INSTANCED_CLASS
+    ClassTree elements;
+    Sections sections;
+  end INSTANCED_CLASS;
+
   record INSTANCED_BUILTIN
     Type ty;
-    ClassTree.Tree elements;
-    array<InstNode> components;
+    ClassTree elements;
     list<Modifier> attributes;
   end INSTANCED_BUILTIN;
 
-  /*
-  record OVERLOADED_CLASS
-    list<InstNode> overloads;
-  end OVERLOADED_CLASS;
-  */
+  function fromSCode
+    input list<SCode.Element> elements;
+    input InstNode scope;
+    output Class cls;
+  protected
+    ClassTree tree;
+  algorithm
+    tree := ClassTree.fromSCode(elements, scope);
+    cls := PARTIAL_CLASS(tree, Modifier.NOMOD());
+  end fromSCode;
 
-  type Element = ClassTree.Entry;
+  function fromEnumeration
+    input list<SCode.Enum> literals;
+    input Type enumType;
+    input InstNode enumClass;
+    output Class cls;
+  protected
+    ClassTree tree;
+  algorithm
+    tree := ClassTree.fromEnumeration(literals, enumType, enumClass);
+    cls := PARTIAL_BUILTIN(enumType, tree, Modifier.NOMOD());
+  end fromEnumeration;
 
   function initExpandedClass
-    input ClassTree.Tree classes;
-    output Class cls;
-  algorithm
-    cls := EXPANDED_CLASS(classes, listArray({}), listArray({}), Modifier.NOMOD());
-  end initExpandedClass;
-
-  function components
-    input Class cls;
-    output array<InstNode> components;
-  algorithm
-    components := match cls
-      case EXPANDED_CLASS() then cls.components;
-      case INSTANCED_CLASS() then cls.components;
-      case PARTIAL_BUILTIN() then cls.components;
-      case INSTANCED_BUILTIN() then cls.components;
-    end match;
-  end components;
-
-  function setComponents
-    input array<InstNode> components;
-    input output Class cls;
-  algorithm
-    _ := match cls
-      case EXPANDED_CLASS()
-        algorithm
-          cls.components := components;
-        then
-          ();
-
-      case INSTANCED_CLASS()
-        algorithm
-          cls.components := components;
-        then
-          ();
-    end match;
-  end setComponents;
-
-  function elements
-    input Class cls;
-    output ClassTree.Tree els;
-  algorithm
-    els := match cls
-      case EXPANDED_CLASS() then cls.elements;
-      case INSTANCED_CLASS() then cls.elements;
-    end match;
-  end elements;
-
-  function setElements
-    input ClassTree.Tree elements;
-    input output Class cls;
-  algorithm
-    _ := match cls
-      case EXPANDED_CLASS()
-        algorithm
-          cls.elements := elements;
-        then
-          ();
-
-      case INSTANCED_CLASS()
-        algorithm
-          cls.elements := elements;
-        then
-          ();
-    end match;
-  end setElements;
-
-  function extendsNodes
-    input Class cls;
-    output array<InstNode> extendsNodes;
-  algorithm
-    extendsNodes := match cls
-      case EXPANDED_CLASS() then cls.extendsNodes;
-      case INSTANCED_CLASS() then cls.extendsNodes;
-    end match;
-  end extendsNodes;
-
-  function setSections
-    input list<Equation> equations;
-    input list<Equation> initialEquations;
-    input list<list<Statement>> algorithms;
-    input list<list<Statement>> initialAlgorithms;
     input output Class cls;
   algorithm
     cls := match cls
-      case INSTANCED_CLASS()
-        then INSTANCED_CLASS(cls.elements, cls.extendsNodes, cls.components,
-          equations, initialEquations, algorithms, initialAlgorithms);
+      case PARTIAL_CLASS()
+        then EXPANDED_CLASS(cls.elements, cls.modifier, Prefixes.DEFAULT());
+    end match;
+  end initExpandedClass;
+
+  function setSections
+    input Sections sections;
+    input output Class cls;
+  algorithm
+    cls := match cls
+      case EXPANDED_CLASS() then INSTANCED_CLASS(cls.elements, sections);
+      case INSTANCED_CLASS() then INSTANCED_CLASS(cls.elements, sections);
     end match;
   end setSections;
 
@@ -222,35 +140,9 @@ uniontype Class
     input String name;
     input Class cls;
     output InstNode node;
-  protected
-    ClassTree.Tree scope;
-    Class.Element element;
   algorithm
-    scope := match cls
-      case EXPANDED_CLASS() then cls.elements;
-      case INSTANCED_CLASS() then cls.elements;
-      case PARTIAL_BUILTIN() then cls.elements;
-      case INSTANCED_BUILTIN() then cls.elements;
-    end match;
-
-    element := ClassTree.get(scope, name);
-    node := resolveElement(element, cls);
+    node := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
-
-  function resolveElement
-    input Class.Element element;
-    input Class cls;
-    output InstNode node;
-  algorithm
-    node := match element
-      case Element.CLASS() then element.node;
-      case Element.COMPONENT(node = 0)
-        then arrayGet(components(cls), element.index);
-      case Element.COMPONENT()
-        then arrayGet(components(InstNode.getClass(
-          arrayGet(extendsNodes(cls), element.node))), element.index);
-    end match;
-  end resolveElement;
 
   function isBuiltin
     input Class cls;
@@ -263,109 +155,6 @@ uniontype Class
     end match;
   end isBuiltin;
 
-  function setModifier
-    input Modifier modifier;
-    input output Class cls;
-  algorithm
-    _ := match cls
-      case PARTIAL_CLASS()
-        algorithm
-          cls.modifier := modifier;
-        then
-          ();
-
-      case EXPANDED_CLASS()
-        algorithm
-          cls.modifier := modifier;
-        then
-          ();
-
-      case PARTIAL_BUILTIN()
-        algorithm
-          cls.modifier := modifier;
-        then
-          ();
-
-      else
-        algorithm
-          assert(false, getInstanceName() + " got unmodifiable instance");
-        then
-          fail();
-
-    end match;
-  end setModifier;
-
-  function getModifier
-    input Class cls;
-    output Modifier modifier;
-  algorithm
-    modifier := match cls
-      case PARTIAL_CLASS() then cls.modifier;
-      case EXPANDED_CLASS() then cls.modifier;
-      case PARTIAL_BUILTIN() then cls.modifier;
-      else Modifier.NOMOD();
-    end match;
-  end getModifier;
-
-  function clone
-    input output Class cls;
-  algorithm
-    () := match cls
-      local
-        ClassTree.Tree tree;
-
-      case EXPANDED_CLASS()
-        algorithm
-          cls.components := Array.map(cls.components, InstNode.clone);
-        then
-          ();
-
-      case INSTANCED_CLASS()
-        algorithm
-          cls.components := Array.map(cls.components, InstNode.clone);
-        then
-          ();
-
-      else ();
-    end match;
-  end clone;
-
-  function cloneEntry
-    input String name;
-    input ClassTree.Entry entry;
-    output ClassTree.Entry clone;
-  algorithm
-    clone := match entry
-      case ClassTree.Entry.CLASS() then ClassTree.Entry.CLASS(InstNode.clone(entry.node));
-      else entry;
-    end match;
-  end cloneEntry;
-
-  function resolveExtendsRef
-    input InstNode ref;
-    input Class scope;
-    output InstNode ext;
-  algorithm
-    ext := match (ref, scope)
-      case (InstNode.REF_NODE(), EXPANDED_CLASS())
-        then arrayGet(scope.extendsNodes, ref.index);
-    end match;
-  end resolveExtendsRef;
-
-  function updateExtends
-    input InstNode ref;
-    input InstNode ext;
-    input output Class scope;
-  algorithm
-    () := match (ref, scope)
-      case (InstNode.REF_NODE(), EXPANDED_CLASS())
-        algorithm
-          arrayUpdate(scope.extendsNodes, ref.index, ext);
-        then
-          ();
-    end match;
-  end updateExtends;
-
   function getType
     input Class cls;
     output Type ty;
@@ -377,6 +166,78 @@ uniontype Class
     end match;
   end getType;
 
+  function classTree
+    input Class cls;
+    output ClassTree tree;
+  algorithm
+    tree := match cls
+      case Class.PARTIAL_CLASS() then cls.elements;
+      case Class.EXPANDED_CLASS() then cls.elements;
+      case Class.DERIVED_CLASS() then classTree(InstNode.getClass(cls.baseClass));
+      case Class.PARTIAL_BUILTIN() then cls.elements;
+      case Class.INSTANCED_CLASS() then cls.elements;
+      case Class.INSTANCED_BUILTIN() then cls.elements;
+    end match;
+  end classTree;
+
+  function setClassTree
+    input ClassTree tree;
+    input output Class cls;
+  algorithm
+    () := match cls
+      case Class.PARTIAL_CLASS() algorithm cls.elements := tree; then ();
+      case Class.EXPANDED_CLASS() algorithm cls.elements := tree; then ();
+      case Class.PARTIAL_BUILTIN() algorithm cls.elements := tree; then ();
+      case Class.INSTANCED_CLASS() algorithm cls.elements := tree; then ();
+      case Class.INSTANCED_BUILTIN() algorithm cls.elements := tree; then ();
+    end match;
+  end setClassTree;
+
+  function getModifier
+    input Class cls;
+    output Modifier modifier;
+  algorithm
+    modifier := match cls
+      case PARTIAL_CLASS() then cls.modifier;
+      case EXPANDED_CLASS() then cls.modifier;
+      case DERIVED_CLASS() then cls.modifier;
+      case PARTIAL_BUILTIN() then cls.modifier;
+      else Modifier.NOMOD();
+    end match;
+  end getModifier;
+
+  function mergeModifier
+    input Modifier modifier;
+    input output Class cls;
+  algorithm
+    () := match cls
+      case PARTIAL_CLASS()
+        algorithm
+          cls.modifier := Modifier.merge(modifier, cls.modifier);
+        then
+          ();
+      case EXPANDED_CLASS()
+        algorithm
+          cls.modifier := Modifier.merge(modifier, cls.modifier);
+        then
+          ();
+      case DERIVED_CLASS()
+        algorithm
+          cls.modifier := Modifier.merge(modifier, cls.modifier);
+        then
+          ();
+      case PARTIAL_BUILTIN()
+        algorithm
+          cls.modifier := Modifier.merge(modifier, cls.modifier);
+        then
+          ();
+      else
+        algorithm
+          assert(false, getInstanceName() + " got non-modifiable class");
+        then
+          fail();
+    end match;
+  end mergeModifier;
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

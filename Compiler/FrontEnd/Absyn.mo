@@ -6841,5 +6841,18 @@ algorithm
   end match;
 end isInvariantExpNoTraverse;
 
+function pathPartCount
+  "Returns the number of parts a path consists of, e.g. A.B.C gives 3."
+  input Path path;
+  input Integer partsAccum = 0;
+  output Integer parts;
+algorithm
+  parts := match path
+    case Path.IDENT() then partsAccum + 1;
+    case Path.QUALIFIED() then pathPartCount(path.path, partsAccum + 1);
+    case Path.FULLYQUALIFIED() then pathPartCount(path.path, partsAccum);
+  end match;
+end pathPartCount;
+
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;

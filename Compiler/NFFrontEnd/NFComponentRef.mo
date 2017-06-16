@@ -42,7 +42,8 @@ protected
 public
   type Origin = enumeration(
     CREF "From an Absyn cref.",
-    SCOPE "From prefixing the cref with its scope."
+    SCOPE "From prefixing the cref with its scope.",
+    ITERATOR "From an iterator."
   );
 
   record CREF
@@ -56,6 +57,14 @@ public
   record EMPTY end EMPTY;
 
   record WILD end WILD;
+
+  function fromNode
+    input InstNode node;
+    input Type ty;
+    input list<Subscript> subs = {};
+    input Origin origin = Origin.CREF;
+    output ComponentRef cref = CREF(node, subs, ty, origin, EMPTY());
+  end fromNode;
 
   function getType
     input ComponentRef cref;
@@ -143,6 +152,7 @@ public
   algorithm
     cref := match (srcCref, dstCref)
       case (EMPTY(), _) then dstCref;
+      case (_, CREF(origin = Origin.ITERATOR)) then dstCref;
 
       case (CREF(), CREF(origin = Origin.CREF))
         algorithm

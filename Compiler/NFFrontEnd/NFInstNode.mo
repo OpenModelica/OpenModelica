@@ -38,6 +38,7 @@ import SCode;
 import Absyn;
 import Type = NFType;
 import NFFunction.Function;
+import Pointer;
 
 public
 uniontype InstNodeType
@@ -48,6 +49,7 @@ uniontype InstNodeType
   record BASE_CLASS
     "A base class extended by another class."
     InstNode parent;
+    SCode.Element definition;
   end BASE_CLASS;
 
   record TOP_SCOPE
@@ -62,13 +64,21 @@ end InstNodeType;
 uniontype CachedData
   record NO_CACHE end NO_CACHE;
 
+  record CLASS
+    InstNode instance;
+  end CLASS;
+
+  record PACKAGE
+    InstNode instance;
+  end PACKAGE;
+
   record FUNCTION
     list<Function> funcs;
     Boolean typed;
   end FUNCTION;
 
   function empty
-    output array<CachedData> cache = arrayCreate(1, NO_CACHE());
+    output Pointer<CachedData> cache = Pointer.create(NO_CACHE());
   end empty;
 
   function addFunc
@@ -92,16 +102,15 @@ uniontype InstNode
   record CLASS_NODE
     String name;
     SCode.Element definition;
-    array<Class> cls;
-    array<CachedData> cached;
+    Pointer<Class> cls;
+    Pointer<CachedData> cached;
     InstNode parentScope;
     InstNodeType nodeType;
   end CLASS_NODE;
 
   record COMPONENT_NODE
     String name;
-    SCode.Element definition;
-    array<Component> component;
+    Pointer<Component> component;
     InstNode parent;
   end COMPONENT_NODE;
 
@@ -122,12 +131,8 @@ uniontype InstNode
     output InstNode node;
   algorithm
     node := match definition
-      case SCode.CLASS()
-        then CLASS_NODE(definition.name, definition, arrayCreate(1, Class.NOT_INSTANTIATED()),
-          CachedData.empty(), parent, NORMAL_CLASS());
-      case SCode.COMPONENT()
-        then COMPONENT_NODE(definition.name, definition,
-          arrayCreate(1, Component.COMPONENT_DEF(Modifier.NOMOD())), parent);
+      case SCode.CLASS() then newClass(definition, parent);
+      case SCode.COMPONENT() then newComponent(definition, parent);
     end match;
   end new;
 
@@ -137,12 +142,11 @@ uniontype InstNode
     input InstNodeType nodeType = NORMAL_CLASS();
     output InstNode node;
   protected
-    array<Class> i;
     String name;
   algorithm
     SCode.CLASS(name = name) := definition;
-    i := arrayCreate(1, Class.NOT_INSTANTIATED());
-    node := CLASS_NODE(name, definition, i, CachedData.empty(), parent, nodeType);
+    node := CLASS_NODE(name, definition, Pointer.create(Class.NOT_INSTANTIATED()),
+      CachedData.empty(), parent, nodeType);
   end newClass;
 
   function newComponent
@@ -150,49 +154,33 @@ uniontype InstNode
     input InstNode parent = EMPTY_NODE();
     output InstNode node;
   protected
-    array<Component> c;
     String name;
   algorithm
     SCode.COMPONENT(name = name) := definition;
-    c := arrayCreate(1, Component.COMPONENT_DEF(Modifier.NOMOD()));
-    node := COMPONENT_NODE(name, definition, c, parent);
+    node := COMPONENT_NODE(name, Pointer.create(Component.new(definition)), parent);
   end newComponent;
 
   function newExtends
-    input InstNode node;
-    input InstNode scope;
-    output InstNode extendsNode;
+    input SCode.Element definition;
+    input InstNode parent;
+    output InstNode node;
+  protected
+    Absyn.Path base_path;
+    String name;
   algorithm
-    extendsNode := match node
-      local
-        array<Class> cls;
-
-      case CLASS_NODE()
-        algorithm
-          cls := arrayCreate(1, Class.NOT_INSTANTIATED());
-        then
-          CLASS_NODE("$extends." + node.name, node.definition, cls,
-            node.cached, node.parentScope, InstNodeType.BASE_CLASS(scope));
-
-      else
-        algorithm
-          assert(false, getInstanceName() + " got non-class");
-        then
-          fail();
-    end match;
+    SCode.Element.EXTENDS(baseClassPath = base_path) := definition;
+    name := Absyn.pathLastIdent(base_path);
+    node := CLASS_NODE(name, definition, Pointer.create(Class.NOT_INSTANTIATED()),
+      CachedData.empty(), parent, InstNodeType.BASE_CLASS(parent, definition));
   end newExtends;
 
   function fromComponent
     input String name;
     input Component component;
-    input SCode.Element definition;
     input InstNode parent;
     output InstNode node;
-  protected
-    array<Component> c;
   algorithm
-    c := arrayCreate(1, component);
-    node := COMPONENT_NODE(name, definition, c, parent);
+    node := COMPONENT_NODE(name, Pointer.create(component), parent);
   end fromComponent;
 
   function isClass
@@ -270,8 +258,8 @@ uniontype InstNode
   end name;
 
   function rename
-    input output InstNode node;
     input String name;
+    input output InstNode node;
   algorithm
     () := match node
       case CLASS_NODE()
@@ -299,13 +287,29 @@ uniontype InstNode
     end match;
   end parent;
 
+  function parentScope
+    "Returns the parent scope of a node. In the case of a class this is simply
+     the enclosing class. In the case of a component it is the enclosing class of
+     the component's type."
+    input InstNode node;
+    output InstNode scope;
+  algorithm
+    scope := match node
+      case CLASS_NODE() then node.parentScope;
+      case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
+      case IMPLICIT_SCOPE() then node.parentScope;
+    end match;
+  end parentScope;
+
   function classScope
     input InstNode node;
     output InstNode scope;
   algorithm
     scope := match node
-      case CLASS_NODE() then node;
-      case COMPONENT_NODE() then Component.classInstance(node.component[1]);
+      case CLASS_NODE()
+        then node;
+      case COMPONENT_NODE()
+        then Component.classInstance(Pointer.access(node.component));
     end match;
   end classScope;
 
@@ -315,7 +319,7 @@ uniontype InstNode
   algorithm
     topScope := match node
       case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
-      case CLASS_NODE() then topScope(node.parentScope);
+      else topScope(parentScope(node));
     end match;
   end topScope;
 
@@ -381,9 +385,9 @@ uniontype InstNode
     output Class cls;
   algorithm
     cls := match node
-      case CLASS_NODE() then node.cls[1];
+      case CLASS_NODE() then Pointer.access(node.cls);
       case COMPONENT_NODE()
-        then getClass(Component.classInstance(node.component[1]));
+        then getClass(Component.classInstance(Pointer.access(node.component)));
     end match;
   end getClass;
 
@@ -394,7 +398,7 @@ uniontype InstNode
     node := match node
       case CLASS_NODE()
         algorithm
-          arrayUpdate(node.cls, 1, cls);
+          Pointer.update(node.cls, cls);
         then
           node;
     end match;
@@ -405,7 +409,7 @@ uniontype InstNode
     output Component component;
   algorithm
     component := match node
-      case COMPONENT_NODE() then node.component[1];
+      case COMPONENT_NODE() then Pointer.access(node.component);
     end match;
   end component;
 
@@ -416,7 +420,7 @@ uniontype InstNode
     node := match node
       case COMPONENT_NODE()
         algorithm
-          arrayUpdate(node.component, 1, component);
+          Pointer.update(node.component, component);
         then
           node;
     end match;
@@ -429,7 +433,7 @@ uniontype InstNode
     () := match node
       case COMPONENT_NODE()
         algorithm
-          node.component := arrayCreate(1, component);
+          node.component := Pointer.create(component);
         then
           ();
     end match;
@@ -442,7 +446,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          node.cls := arrayCreate(1, cls);
+          node.cls := Pointer.create(cls);
         then
           ();
     end match;
@@ -474,7 +478,7 @@ uniontype InstNode
   algorithm
     definition := match node
       case CLASS_NODE() then node.definition;
-      case COMPONENT_NODE() then node.definition;
+      case COMPONENT_NODE() then Component.definition(Pointer.access(node.component));
     end match;
   end definition;
 
@@ -489,11 +493,6 @@ uniontype InstNode
         then
           ();
 
-      case COMPONENT_NODE()
-        algorithm
-          node.definition := definition;
-        then
-          ();
     end match;
   end setDefinition;
 
@@ -501,11 +500,12 @@ uniontype InstNode
     input InstNode node;
     output SourceInfo info;
   algorithm
-    info := match node
+    info := matchcontinue node
       case CLASS_NODE() then SCode.elementInfo(node.definition);
-      case COMPONENT_NODE() then SCode.elementInfo(node.definition);
+      case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
+      case COMPONENT_NODE() then info(node.parent);
       else Absyn.dummyInfo;
-    end match;
+    end matchcontinue;
   end info;
 
   function getType
@@ -514,34 +514,14 @@ uniontype InstNode
   algorithm
     ty := match node
       case CLASS_NODE() then
-        if Class.isBuiltin(node.cls[1]) then
-          Class.getType(node.cls[1])
+        if Class.isBuiltin(Pointer.access(node.cls)) then
+          Class.getType(Pointer.access(node.cls))
         else
           Type.COMPLEX(node);
 
-      case COMPONENT_NODE() then Component.getType(node.component[1]);
+      case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
     end match;
   end getType;
-
-  function clone
-    input output InstNode node;
-  algorithm
-    () := match node
-      case CLASS_NODE()
-        algorithm
-          node.cls := arrayCreate(1, Class.clone(node.cls[1]));
-        then
-          ();
-
-      case COMPONENT_NODE()
-        algorithm
-          node.component := arrayCopy(node.component);
-        then
-          ();
-
-      else ();
-    end match;
-  end clone;
 
   function classApply<ArgT>
     input output InstNode node;
@@ -556,7 +536,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          node.cls[1] := func(arg, node.cls[1]);
+          Pointer.update(node.cls, func(arg, Pointer.access(node.cls)));
         then
           ();
     end match;
@@ -575,7 +555,7 @@ uniontype InstNode
     () := match node
       case COMPONENT_NODE()
         algorithm
-          node.component[1] := func(arg, node.component[1]);
+          Pointer.update(node.component, func(arg, Pointer.access(node.component)));
         then
           ();
     end match;
@@ -590,9 +570,7 @@ uniontype InstNode
       local
         InstNodeType it;
 
-      case CLASS_NODE()
-        algorithm
-          it := node.nodeType;
+      case CLASS_NODE(nodeType = it)
         then
           match it
             case InstNodeType.NORMAL_CLASS()
@@ -608,29 +586,62 @@ uniontype InstNode
     end match;
   end scopeList;
 
-  function path
+  function scopePath
     input InstNode node;
-    output Absyn.Path p;
-  protected
-    String n;
-    InstNode parent;
+    output Absyn.Path path;
   algorithm
-    n := InstNode.name(node);
-    parent := InstNode.parent(node);
-    p := Absyn.IDENT(n);
-    p := match(InstNode.nodeType(parent))
-      case InstNodeType.ROOT_CLASS() then p;
-      case InstNodeType.TOP_SCOPE() then p;
-      else Absyn.joinPaths(path(parent), p);
+    path := match node
+      local
+        InstNodeType it;
+
+      case CLASS_NODE(nodeType = it)
+        then
+          match it
+            case InstNodeType.BASE_CLASS() then scopePath(it.parent);
+            else scopePath2(node.parentScope, Absyn.IDENT(node.name));
+          end match;
+
+      case COMPONENT_NODE() then scopePath2(node.parent, Absyn.IDENT(node.name));
+      case IMPLICIT_SCOPE() then scopePath(node.parentScope);
+
+      // For debugging.
+      case REF_NODE() then Absyn.IDENT("$REF" + String(node.index));
+      case EMPTY_NODE() then Absyn.IDENT("$EMPTY");
     end match;
-  end path;
+  end scopePath;
+
+  function scopePath2
+    input InstNode node;
+    input Absyn.Path accumPath;
+    output Absyn.Path path;
+  algorithm
+    path := match node
+      local
+        InstNodeType it;
+
+      case CLASS_NODE(nodeType = it)
+        then
+          match it
+            case InstNodeType.NORMAL_CLASS()
+              then scopePath2(node.parentScope, Absyn.QUALIFIED(node.name, accumPath));
+            case InstNodeType.BASE_CLASS()
+              then scopePath2(it.parent, accumPath);
+            else accumPath;
+          end match;
+
+      case COMPONENT_NODE()
+        then scopePath2(node.parent, Absyn.QUALIFIED(node.name, accumPath));
+
+      else accumPath;
+    end match;
+  end scopePath2;
 
   function isInput
     input InstNode node;
     output Boolean isInput;
   algorithm
     isInput := match node
-      case COMPONENT_NODE() then Component.isInput(node.component[1]);
+      case COMPONENT_NODE() then Component.isInput(Pointer.access(node.component));
       else false;
     end match;
   end isInput;
@@ -640,7 +651,7 @@ uniontype InstNode
     output Boolean isOutput;
   algorithm
     isOutput := match node
-      case COMPONENT_NODE() then Component.isOutput(node.component[1]);
+      case COMPONENT_NODE() then Component.isOutput(Pointer.access(node.component));
       else false;
     end match;
   end isOutput;
@@ -650,7 +661,7 @@ uniontype InstNode
     output CachedData cached;
   algorithm
     cached := match node
-      case CLASS_NODE() then node.cached[1];
+      case CLASS_NODE() then Pointer.access(node.cached);
       else CachedData.NO_CACHE();
     end match;
   end cachedData;
@@ -662,7 +673,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          arrayUpdate(node.cached, 1, cached);
+          Pointer.update(node.cached, cached);
         then
           ();
     end match;
@@ -675,7 +686,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          arrayUpdate(node.cached, 1, CachedData.addFunc(fn, node.cached[1]));
+          Pointer.update(node.cached, CachedData.addFunc(fn, Pointer.access(node.cached)));
         then
           ();
 

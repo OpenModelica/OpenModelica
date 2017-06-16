@@ -34,14 +34,17 @@ protected
   import Dimension = NFDimension;
 
 public
-  import Absyn.Exp;
-  import Absyn.Path;
+  import Absyn.{Exp, Path, Subscript};
   import Dump;
   import NFClass.Class;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Type = NFType;
   import ComponentRef = NFComponentRef;
+
+  record RAW_DIM
+    Absyn.Subscript dim;
+  end RAW_DIM;
 
   record UNTYPED
     Expression dimension;

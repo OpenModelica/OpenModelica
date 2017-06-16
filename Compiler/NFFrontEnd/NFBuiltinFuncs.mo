@@ -31,10 +31,12 @@
 
 encapsulated package NFBuiltinFuncs
 
+import NFClass.Class;
 import NFFunction.Function;
 import NFFunction.Slot;
 import NFFunction.SlotType;
 import NFFunction.FuncType;
+import NFInstNode.CachedData;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import NFComponent.Component;
@@ -57,38 +59,38 @@ constant SCode.Element DUMMY_ELEMENT = SCode.COMPONENT("dummy",
 
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.INTEGER(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR);
+  Type.INTEGER(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
-  DUMMY_ELEMENT, listArray({INT_COMPONENT}), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.REAL(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR);
+  Type.REAL(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
-  DUMMY_ELEMENT, listArray({REAL_COMPONENT}), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.BOOLEAN(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR);
+  Type.BOOLEAN(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
-  DUMMY_ELEMENT, listArray({BOOL_COMPONENT}), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.STRING(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR);
+  Type.STRING(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
-  DUMMY_ELEMENT, listArray({STRING_COMPONENT}), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR);
+  Type.ENUMERATION_ANY(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
-  DUMMY_ELEMENT, listArray({ENUM_COMPONENT}), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(ENUM_COMPONENT), InstNode.EMPTY_NODE());
 
 // Integer(e)
 constant Function INTEGER = Function.FUNCTION(Path.IDENT("Integer"),
@@ -98,7 +100,9 @@ constant Function INTEGER = Function.FUNCTION(Path.IDENT("Integer"),
 
 // String(r, significantDigits=d, minimumLength=0, leftJustified=true)
 constant InstNode STRING_NODE = NFInstNode.CLASS_NODE("String", DUMMY_ELEMENT,
-  listArray({}), listArray({}), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+  Pointer.createImmutable(Class.NOT_INSTANTIATED()),
+  Pointer.createImmutable(CachedData.NO_CACHE()),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant Function STRING_REAL = Function.FUNCTION(Path.IDENT("String"),
   STRING_NODE, {REAL_PARAM, INT_PARAM, INT_PARAM, BOOL_PARAM}, {STRING_PARAM}, {}, {

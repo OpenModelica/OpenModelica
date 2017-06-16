@@ -34,6 +34,7 @@ encapsulated package NFLookupState
 import Absyn;
 import SCode;
 import NFInstNode.InstNode;
+import NFComponent.Component;
 
 protected
 import Dump;
@@ -308,9 +309,7 @@ uniontype LookupState
   algorithm
     () := match currentState
       local
-        String name;
-        SourceInfo info;
-        SCode.Element element;
+        Boolean is_protected;
 
       // The first part of a name is allowed to be protected, it's only
       // accessing a protected element via dot-notation that's illegal.
@@ -318,12 +317,17 @@ uniontype LookupState
 
       else
         algorithm
-          element := InstNode.definition(node);
+          is_protected := match node
+            // TODO: Implement attributes for classes and return the actual
+            // visibility here.
+            case InstNode.CLASS_NODE() then false;
+            case InstNode.COMPONENT_NODE() then not Component.isPublic(InstNode.component(node));
+          end match;
 
           // A protected element generates an error.
-          if SCode.isElementProtected(element) then
-            (name, info) := SCode.elementNameInfo(element);
-            Error.addSourceMessage(Error.PROTECTED_ACCESS, {name}, info);
+          if is_protected then
+            Error.addSourceMessage(Error.PROTECTED_ACCESS,
+              {InstNode.name(node)}, InstNode.info(node));
             fail();
           end if;
         then

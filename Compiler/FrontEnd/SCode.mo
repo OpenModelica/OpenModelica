@@ -5759,5 +5759,15 @@ algorithm
   end match;
 end isArrayComponent;
 
+public function isEmptyMod
+  input Mod mod;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := match mod
+    case Mod.NOMOD() then true;
+    else false;
+  end match;
+end isEmptyMod;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCode;

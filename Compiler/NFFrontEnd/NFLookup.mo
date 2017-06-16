@@ -124,6 +124,15 @@ algorithm
   LookupState.assertFunction(state, func, cref, info);
 end lookupFunctionName;
 
+function lookupImport
+  input Absyn.Path name;
+  input InstNode scope;
+  input SourceInfo info;
+  output InstNode element;
+algorithm
+  element := lookupNameWithError(name, InstNode.topScope(scope), info, Error.LOOKUP_IMPORT_ERROR);
+end lookupImport;
+
 function lookupCref
   "This function will look up a component reference in the given scope, and
    return a list of nodes that correspond to the parts of the cref in reverse
@@ -148,7 +157,6 @@ algorithm
 
     (node, restNodes, foundScope, state) := matchcontinue cref
       local
-        Class.Element element;
         InstNode found_scope;
 
       case Absyn.ComponentRef.CREF_IDENT()
@@ -167,7 +175,7 @@ algorithm
           (node, n :: restNodes, foundScope, state);
 
       case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
-        then lookupCref(cref.componentRef, InstNode.topComponent(scope), info);
+        then lookupCref(cref.componentRef, InstNode.topScope(scope), info);
 
       else
         algorithm
@@ -364,20 +372,15 @@ function lookupLocalName
   input output InstNode node;
   input output LookupState state;
 algorithm
-  // We're looking for a class, which is not legal to look up inside of a
-  // component.
-  () := match node
-    case InstNode.CLASS_NODE() then ();
-    else
-      algorithm
-        state := LookupState.STATE_COMP_CLASS();
-        return;
-      then
-        ();
-  end match;
+  // Looking something up in a component is only legal when the name begins with
+  // a component reference, and for that we use lookupCref. So if the given node
+  // is a component we can immediately quit and give an error.
+  if not InstNode.isClass(node) then
+    state := LookupState.STATE_COMP_CLASS();
+    return;
+  end if;
 
-  // Make sure the scope is expanded so that we can do lookup in it.
-  node := Inst.expand(node);
+  node := Inst.instPackage(node);
 
   // Look up the path in the scope.
   () := match name
@@ -424,7 +427,6 @@ function lookupSimpleCref
   output InstNode foundScope = scope;
 protected
   Class cls;
-  Class.Element e;
 algorithm
   // Look for the name in the given scope, and if not found there continue
   // through the enclosing scopes of that scope until we either run out of
@@ -440,15 +442,13 @@ algorithm
           then Class.lookupElement(name, InstNode.getClass(foundScope));
       end match;
 
-      // Check if the cref can be found in the current scope.
-      //cls := InstNode.getClass(foundScope);
-      //node := Class.lookupElement(name, cls);
-
       // We found a node, return it.
       return;
     else
       // Look in the next enclosing scope.
-      foundScope := InstNode.parent(foundScope);
+      // TODO: The enclosing scope here will be a package, so the lookup should
+      //       be restricted to constants only.
+      foundScope := InstNode.parentScope(foundScope);
     end try;
   end for;
 
@@ -490,12 +490,17 @@ algorithm
   // up something like P.a.b where P is a package and a is a package constant,
   // since a will not be instantiated and thus we will fail when looking for b.
   scope := match node
-    case InstNode.CLASS_NODE()
-      then InstNode.getClass(Inst.expand(node));
-
-    case InstNode.COMPONENT_NODE()
-      then InstNode.getClass(node);
+    case InstNode.CLASS_NODE() then InstNode.getClass(Inst.instPackage(node));
+    case InstNode.COMPONENT_NODE() then InstNode.getClass(node);
   end match;
+
+  //scope := match node
+  //  case InstNode.CLASS_NODE()
+  //    then InstNode.getClass(Inst.expand(node));
+
+  //  case InstNode.COMPONENT_NODE()
+  //    then InstNode.getClass(node);
+  //end match;
 
   (node, nodes, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()

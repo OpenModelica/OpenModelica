@@ -65,6 +65,7 @@ import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Types;
+import NFSections.Sections;
 
 public
 function typeClass
@@ -89,23 +90,16 @@ end typeFunction;
 
 function typeComponents
   input InstNode cls;
-  input InstNode scope = cls;
   output Type ty;
 protected
   Class c = InstNode.getClass(cls);
-  array<InstNode> components;
+  ClassTree cls_tree;
 algorithm
   ty := match c
-    case Class.INSTANCED_CLASS(components = components)
+    case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
-        for i in 1:arrayLength(components) loop
-          if InstNode.isComponent(components[i]) then
-            // A normal component.
-            typeComponent(components[i], scope);
-          else
-            // An extends node.
-            typeComponents(components[i]);
-          end if;
+        for c in cls_tree.components loop
+          typeComponent(c);
         end for;
       then
         Type.COMPLEX(cls);
@@ -124,7 +118,6 @@ end typeComponents;
 
 function typeComponent
   input InstNode component;
-  input InstNode scope;
 protected
   Component c = InstNode.component(component);
   SourceInfo info;
@@ -137,9 +130,10 @@ algorithm
         info := InstNode.info(component);
 
         // Type the component's dimensions.
-        typeDimensions(c.dimensions, scope, InstNode.name(component), info);
+        typeDimensions(c.dimensions, InstNode.name(component), info);
+
         // Type the component's children.
-        ty := typeComponents(c.classInst, component);
+        ty := typeComponents(c.classInst);
 
         // Add the dimensions from the component to it's type.
         ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
@@ -151,6 +145,8 @@ algorithm
 
     // A component that has already been typed, skip it.
     case Component.TYPED_COMPONENT() then ();
+    case Component.ITERATOR() then ();
+    case Component.ENUM_LITERAL() then ();
 
     // Any other type of component shouldn't show up here.
     else
@@ -165,24 +161,21 @@ end typeComponent;
 
 function typeIterator
   input InstNode iterator;
-  input InstNode scope;
+  input SourceInfo info;
   input Boolean structural = false "If the iteration range must be a parameter expression or not.";
 protected
   Component c = InstNode.component(iterator);
   Binding binding;
   Type ty;
   Expression exp;
-  SourceInfo info;
 algorithm
   () := match c
     case Component.ITERATOR(binding = Binding.UNTYPED_BINDING())
       algorithm
-        binding := typeBinding(c.binding, scope);
+        binding := typeBinding(c.binding);
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural then
-          info := InstNode.info(iterator);
-
           if not Types.isParameterOrConstant(Binding.variability(binding)) then
             Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
               {Binding.toString(binding)}, info);
@@ -199,7 +192,7 @@ algorithm
         // The iteration range must be a vector expression.
         if not Type.isVector(ty) then
           Error.addSourceMessageAndFail(Error.FOR_EXPRESSION_TYPE_ERROR,
-            {Binding.toString(binding), Type.toString(ty)}, InstNode.info(iterator));
+            {Binding.toString(binding), Type.toString(ty)}, info);
         end if;
 
         // The type of the iterator is the element type of the range expression.
@@ -226,18 +219,16 @@ end typeIterator;
 
 function typeDimensions
   input output array<Dimension> dimensions;
-  input InstNode scope;
   input String elementName;
   input SourceInfo info;
 algorithm
   for i in 1:arrayLength(dimensions) loop
-    dimensions[i] := typeDimension(dimensions[i], scope, elementName, i, info);
+    dimensions[i] := typeDimension(dimensions[i], elementName, i, info);
   end for;
 end typeDimensions;
 
 function typeDimension
   input output Dimension dimension;
-  input InstNode scope;
   input String elementName;
   input Integer index;
   input SourceInfo info;
@@ -250,7 +241,7 @@ algorithm
     // If the dimension is not typed, type it.
     case Dimension.UNTYPED()
       algorithm
-        (exp, _, var) := typeExp(dimension.dimension, scope, info);
+        (exp, _, var) := typeExp(dimension.dimension, info);
 
         // TODO: Improve this error message:
         // "Dimension %s of %s is not a parameter expression."
@@ -270,29 +261,24 @@ end typeDimension;
 
 function typeBindings
   input output InstNode cls;
-  input InstNode scope = cls;
 protected
   Class c;
-  array<InstNode> components;
+  ClassTree cls_tree;
 algorithm
   c := InstNode.getClass(cls);
 
   () := match c
-    case Class.INSTANCED_CLASS(components = components)
+    case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
-        for i in 1:arrayLength(components) loop
-          if InstNode.isComponent(components[i]) then
-            typeComponentBinding(components[i], scope);
-          else
-            typeBindings(components[i]);
-          end if;
+        for c in cls_tree.components loop
+          typeComponentBinding(c);
         end for;
       then
         ();
 
     case Class.INSTANCED_BUILTIN()
       algorithm
-        c.attributes := typeTypeAttributes(c.attributes, c.ty, scope);
+        c.attributes := typeTypeAttributes(c.attributes, c.ty);
         InstNode.updateClass(c, cls);
       then
         ();
@@ -309,7 +295,6 @@ end typeBindings;
 
 function typeComponentBinding
   input InstNode component;
-  input InstNode scope;
 protected
   Component c = InstNode.component(component);
 algorithm
@@ -320,7 +305,7 @@ algorithm
 
     case Component.TYPED_COMPONENT()
       algorithm
-        binding := typeBinding(c.binding, scope);
+        binding := typeBinding(c.binding);
         if not referenceEq(binding, c.binding) then
           c.binding := binding;
           InstNode.updateComponent(c, component);
@@ -334,7 +319,7 @@ algorithm
           end if;
         end if;
 
-        typeBindings(c.classInst, component);
+        typeBindings(c.classInst);
       then
         ();
 
@@ -349,7 +334,6 @@ end typeComponentBinding;
 
 function typeBinding
   input output Binding binding;
-  input InstNode scope;
 algorithm
   binding := match binding
     local
@@ -359,7 +343,7 @@ algorithm
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
-        (exp, ty, var) := typeExp(exp, binding.scope, binding.info);
+        (exp, ty, var) := typeExp(exp, binding.info);
       then
         Binding.TYPED_BINDING(exp, ty, var, binding.propagatedDims, binding.info);
 
@@ -378,9 +362,8 @@ end typeBinding;
 function typeTypeAttributes
   input output list<Modifier> attributes;
   input Type ty;
-  input InstNode scope;
 algorithm
-  attributes := list(typeTypeAttribute(a, scope) for a in attributes);
+  attributes := list(typeTypeAttribute(a) for a in attributes);
 
   _ := match ty
     case Type.REAL() then checkRealAttributes(attributes);
@@ -398,7 +381,6 @@ end typeTypeAttributes;
 
 function typeTypeAttribute
   input output Modifier attribute;
-  input InstNode scope;
 protected
   String name;
   Binding binding;
@@ -406,7 +388,7 @@ algorithm
   name := Modifier.name(attribute);
   binding := Modifier.binding(attribute);
 
-  binding := typeBinding(binding, scope);
+  binding := typeBinding(binding);
 
   binding := match name
     case "fixed" then evalBinding(binding);
@@ -475,7 +457,6 @@ end checkEnumAttributes;
 
 function typeExp
   input output Expression exp;
-  input InstNode scope;
   input SourceInfo info;
         output Type ty;
         output DAE.Const variability;
@@ -494,59 +475,59 @@ algorithm
     case Expression.STRING() then (exp, Type.STRING(), Const.C_CONST());
     case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), Const.C_CONST());
     case Expression.ENUM_LITERAL() then (exp, exp.ty, Const.C_CONST());
-    case Expression.CREF() then typeCref(exp.cref, scope, info);
+    case Expression.CREF() then typeCref(exp.cref, info);
     case Expression.TYPENAME() then (exp, exp.ty, Const.C_CONST());
-    case Expression.ARRAY() then typeArray(exp.elements, scope, info);
-    case Expression.RANGE() then typeRange(exp, scope, info);
+    case Expression.ARRAY() then typeArray(exp.elements, info);
+    case Expression.RANGE() then typeRange(exp, info);
 
     case Expression.BINARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp1, scope, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, scope, info);
+        (e1, ty1, var1) := typeExp(exp.exp1, info);
+        (e2, ty2, var2) := typeExp(exp.exp2, info);
         (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, exp.operator, e2, ty2);
       then
         (exp, ty, Types.constAnd(var1, var2));
 
     case Expression.UNARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp, scope, info);
+        (e1, ty1, var1) := typeExp(exp.exp, info);
         (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, exp.operator);
       then
         (exp, ty, var1);
 
     case Expression.LBINARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp1, scope, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, scope, info);
+        (e1, ty1, var1) := typeExp(exp.exp1, info);
+        (e2, ty2, var2) := typeExp(exp.exp2, info);
         (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, exp.operator, e2, ty2);
       then
         (exp, ty, Types.constAnd(var1, var2));
 
     case Expression.LUNARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp, scope, info);
+        (e1, ty1, var1) := typeExp(exp.exp, info);
         (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, exp.operator);
       then
         (exp, ty, var1);
 
     case Expression.RELATION()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp1, scope, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, scope, info);
+        (e1, ty1, var1) := typeExp(exp.exp1, info);
+        (e2, ty2, var2) := typeExp(exp.exp2, info);
         (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, exp.operator, e2, ty2);
       then
         (exp, ty, Types.constAnd(var1, var2));
 
     case Expression.IF()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.condition, scope, info);
-        (e2, ty2, var2) := typeExp(exp.trueBranch, scope, info);
-        (e3, ty3, var3) := typeExp(exp.falseBranch, scope, info);
+        (e1, ty1, var1) := typeExp(exp.condition, info);
+        (e2, ty2, var2) := typeExp(exp.trueBranch, info);
+        (e3, ty3, var3) := typeExp(exp.falseBranch, info);
       then
         TypeCheck.checkIfExpression(e1, ty1, var1, e2, ty2, var2, e3, ty3, var3, info);
 
     case Expression.CALL()
-      then Call.typeCall(exp, scope, info);
+      then Call.typeCall(exp, info);
 
     else
       algorithm
@@ -559,7 +540,6 @@ end typeExp;
 
 function typeExpl
   input list<Expression> expl;
-  input InstNode scope;
   input SourceInfo info;
   output list<Expression> explTyped = {};
   output list<Type> tyl = {};
@@ -570,7 +550,7 @@ protected
   Type ty;
 algorithm
   for e in listReverse(expl) loop
-    (exp, ty, var) := typeExp(e, scope, info);
+    (exp, ty, var) := typeExp(e, info);
     explTyped := exp :: explTyped;
     tyl := ty :: tyl;
     varl := var :: varl;
@@ -579,7 +559,6 @@ end typeExpl;
 
 function typeCref
   input ComponentRef cref;
-  input InstNode scope;
   input SourceInfo info;
   output Expression exp;
   output Type ty;
@@ -593,12 +572,12 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
+        typeComponent(cref.node);
         comp := InstNode.component(cref.node);
-        assert(Component.isTyped(comp), getInstanceName() + " got untyped component ");
         ty := Component.getType(comp);
         variability := ComponentRef.getVariability(cref);
         cref.ty := ty;
-        cref.subscripts := typeSubscripts(cref.subscripts, scope, info);
+        cref.subscripts := typeSubscripts(cref.subscripts, info);
       then
         (Expression.CREF(cref), ty, variability);
 
@@ -616,16 +595,14 @@ end typeCref;
 
 function typeSubscripts
   input list<Subscript> subscripts;
-  input InstNode scope;
   input SourceInfo info;
   output list<Subscript> typedSubs;
 algorithm
-  typedSubs := list(typeSubscript(s, scope, info) for s in subscripts);
+  typedSubs := list(typeSubscript(s, info) for s in subscripts);
 end typeSubscripts;
 
 function typeSubscript
   input output Subscript subscript;
-  input InstNode scope;
   input SourceInfo info;
 algorithm
   subscript := match subscript
@@ -635,7 +612,7 @@ algorithm
 
     case Subscript.UNTYPED()
       algorithm
-        (e, ty, _) := typeExp(subscript.exp, scope, info);
+        (e, ty, _) := typeExp(subscript.exp, info);
       then
         if Type.isArray(ty) then Subscript.SLICE(e) else Subscript.INDEX(e);
 
@@ -645,7 +622,6 @@ end typeSubscript;
 
 function typeArray
   input list<Expression> elements;
-  input InstNode scope;
   input SourceInfo info;
   output Expression arrayExp;
   output Type arrayType = Type.UNKNOWN();
@@ -657,7 +633,7 @@ protected
   Type ty;
 algorithm
   for e in elements loop
-    (exp, ty, var) := typeExp(e, scope, info);
+    (exp, ty, var) := typeExp(e, info);
     variability := Types.constAnd(var, variability);
     expl := exp :: expl;
   end for;
@@ -668,7 +644,6 @@ end typeArray;
 
 function typeRange
   input output Expression rangeExp;
-  input InstNode scope;
   input SourceInfo info;
         output Type rangeType;
         output DAE.Const variability;
@@ -683,8 +658,8 @@ algorithm
   Expression.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := rangeExp;
 
   // Type start and stop.
-  (start_exp, start_ty, start_var) := typeExp(start_exp, scope, info);
-  (stop_exp, stop_ty, stop_var) := typeExp(stop_exp, scope, info);
+  (start_exp, start_ty, start_var) := typeExp(start_exp, info);
+  (stop_exp, stop_ty, stop_var) := typeExp(stop_exp, info);
   variability := Types.constAnd(start_var, stop_var);
 
   // Type check start and stop.
@@ -698,7 +673,7 @@ algorithm
   if isSome(ostep_exp) then
     // Type step.
     SOME(step_exp) := ostep_exp;
-    (step_exp, step_ty, step_var) := typeExp(step_exp, scope, info);
+    (step_exp, step_ty, step_var) := typeExp(step_exp, info);
     variability := Types.constAnd(step_var, variability);
 
     // Type check start and step.
@@ -739,30 +714,22 @@ end printRangeTypeError;
 
 function typeSections
   input InstNode classNode;
-  input InstNode scope = classNode;
 protected
   Class cls, typed_cls;
   array<InstNode> components;
-  list<Equation> eq, ieq;
-  list<list<Statement>> alg, ialg;
+  Sections sections;
 algorithm
   cls := InstNode.getClass(classNode);
 
   _ := match cls
-    case Class.INSTANCED_CLASS(components = components)
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components),
+        sections = sections)
       algorithm
-        eq := typeEquations(cls.equations, scope);
-        ieq := typeEquations(cls.initialEquations, scope);
-        alg := typeAlgorithms(cls.algorithms, scope);
-        ialg := typeAlgorithms(cls.initialAlgorithms, scope);
-        typed_cls := Class.setSections(eq, ieq, alg, ialg, cls);
+        sections := Sections.map(sections, typeEquation, typeAlgorithm);
+        typed_cls := Class.setSections(sections, cls);
 
         for i in 1:arrayLength(components) loop
-          if InstNode.isComponent(components[i]) then
-            typeSections(InstNode.classScope(components[i]), components[i]);
-          else
-            typeSections(components[i]);
-          end if;
+          typeSections(InstNode.classScope(components[i]));
         end for;
 
         InstNode.updateClass(typed_cls, classNode);
@@ -780,16 +747,8 @@ algorithm
   end match;
 end typeSections;
 
-function typeEquations
-  input output list<Equation> equations;
-  input InstNode scope;
-algorithm
-  equations := list(typeEquation(eq, scope) for eq in equations);
-end typeEquations;
-
 function typeEquation
   input output Equation eq;
-  input InstNode scope;
 algorithm
   eq := match eq
     local
@@ -801,22 +760,22 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        (e1, ty1) := typeExp(eq.lhs, scope, eq.info);
-        (e2, _) := typeExp(eq.rhs, scope, eq.info);
+        (e1, ty1) := typeExp(eq.lhs, eq.info);
+        (e2, _) := typeExp(eq.rhs, eq.info);
       then
         Equation.EQUALITY(e1, e2, ty1, eq.info);
 
     case Equation.CONNECT()
       algorithm
-        (e1, ty1) := typeExp(eq.lhs, scope, eq.info);
-        (e2, ty2) := typeExp(eq.rhs, scope, eq.info);
+        (e1, ty1) := typeExp(eq.lhs, eq.info);
+        (e2, ty2) := typeExp(eq.rhs, eq.info);
       then
         Equation.CONNECT(e1, ty1, e2, ty2, eq.info);
 
     case Equation.FOR()
       algorithm
-        typeIterator(eq.iterator, scope, true);
-        body := typeEquations(eq.body, scope);
+        typeIterator(eq.iterator, eq.info, structural = true);
+        body := list(typeEquation(e) for e in eq.body);
       then
         Equation.FOR(eq.iterator, body, eq.info);
 
@@ -825,8 +784,8 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, scope, eq.info);
-              eqs1 := list(typeEquation(beq, scope) for beq in body);
+              e1 := typeExp(cond, eq.info);
+              eqs1 := list(typeEquation(beq) for beq in body);
             then (e1, eqs1);
           end match
         for br in eq.branches);
@@ -838,8 +797,8 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, scope, eq.info);
-              eqs1 := list(typeEquation(beq, scope) for beq in body);
+              e1 := typeExp(cond, eq.info);
+              eqs1 := list(typeEquation(beq) for beq in body);
             then (e1, eqs1);
           end match
         for br in eq.branches);
@@ -848,28 +807,28 @@ algorithm
 
     case Equation.ASSERT()
       algorithm
-        e1 := typeExp(eq.condition, scope, eq.info);
-        e2 := typeExp(eq.message, scope, eq.info);
-        e3 := typeExp(eq.level, scope, eq.info);
+        e1 := typeExp(eq.condition, eq.info);
+        e2 := typeExp(eq.message, eq.info);
+        e3 := typeExp(eq.level, eq.info);
       then
         Equation.ASSERT(e1, e2, e3, eq.info);
 
     case Equation.TERMINATE()
       algorithm
-        e1 := typeExp(eq.message, scope, eq.info);
+        e1 := typeExp(eq.message, eq.info);
       then
         Equation.TERMINATE(e1, eq.info);
 
     case Equation.REINIT()
       algorithm
-        e1 := typeExp(eq.cref, scope, eq.info);
-        e2 := typeExp(eq.reinitExp, scope, eq.info);
+        e1 := typeExp(eq.cref, eq.info);
+        e2 := typeExp(eq.reinitExp, eq.info);
       then
         Equation.REINIT(e1, e2, eq.info);
 
     case Equation.NORETCALL()
       algorithm
-        e1 := typeExp(eq.exp, scope, eq.info);
+        e1 := typeExp(eq.exp, eq.info);
       then
         Equation.NORETCALL(e1, eq.info);
 
@@ -877,23 +836,14 @@ algorithm
   end match;
 end typeEquation;
 
-function typeAlgorithms
-  input output list<list<Statement>> algorithms;
-  input InstNode scope;
-algorithm
-  algorithms := list(typeAlgorithm(alg, scope) for alg in algorithms);
-end typeAlgorithms;
-
 function typeAlgorithm
   input output list<Statement> alg;
-  input InstNode scope;
 algorithm
-  alg := list(typeStatement(stmt, scope) for stmt in alg);
+  alg := list(typeStatement(stmt) for stmt in alg);
 end typeAlgorithm;
 
 function typeStatement
   input output Statement st;
-  input InstNode scope;
 algorithm
   st := match st
     local
@@ -905,15 +855,15 @@ algorithm
 
     case Statement.ASSIGNMENT()
       algorithm
-        (e1, _) := typeExp(st.lhs, scope, st.info);
-        (e2, _) := typeExp(st.rhs, scope, st.info);
+        (e1, _) := typeExp(st.lhs, st.info);
+        (e2, _) := typeExp(st.rhs, st.info);
       then
         Statement.ASSIGNMENT(e1, e2, st.info);
 
     case Statement.FOR()
       algorithm
-        typeIterator(st.iterator, scope);
-        body := typeAlgorithm(st.body, scope);
+        typeIterator(st.iterator, st.info);
+        body := typeAlgorithm(st.body);
       then
         Statement.FOR(st.iterator, body, st.info);
 
@@ -922,8 +872,8 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, scope, st.info);
-              sts1 := list(typeStatement(bst, scope) for bst in body);
+              e1 := typeExp(cond, st.info);
+              sts1 := list(typeStatement(bst) for bst in body);
             then (e1, sts1);
           end match
         for br in st.branches);
@@ -935,8 +885,8 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, scope, st.info);
-              sts1 := list(typeStatement(bst, scope) for bst in body);
+              e1 := typeExp(cond, st.info);
+              sts1 := list(typeStatement(bst) for bst in body);
             then (e1, sts1);
           end match
         for br in st.branches);
@@ -945,41 +895,41 @@ algorithm
 
     case Statement.ASSERT()
       algorithm
-        e1 := typeExp(st.condition, scope, st.info);
-        e2 := typeExp(st.message, scope, st.info);
-        e3 := typeExp(st.level, scope, st.info);
+        e1 := typeExp(st.condition, st.info);
+        e2 := typeExp(st.message, st.info);
+        e3 := typeExp(st.level, st.info);
       then
         Statement.ASSERT(e1, e2, e3, st.info);
 
     case Statement.TERMINATE()
       algorithm
-        e1 := typeExp(st.message, scope, st.info);
+        e1 := typeExp(st.message, st.info);
       then
         Statement.TERMINATE(e1, st.info);
 
     case Statement.REINIT()
       algorithm
-        e1 := typeExp(st.cref, scope, st.info);
-        e2 := typeExp(st.reinitExp, scope, st.info);
+        e1 := typeExp(st.cref, st.info);
+        e2 := typeExp(st.reinitExp, st.info);
       then
         Statement.REINIT(e1, e2, st.info);
 
     case Statement.NORETCALL()
       algorithm
-        e1 := typeExp(st.exp, scope, st.info);
+        e1 := typeExp(st.exp, st.info);
       then
         Statement.NORETCALL(e1, st.info);
 
     case Statement.WHILE()
       algorithm
-        e1 := typeExp(st.condition, scope, st.info);
-        sts1 := list(typeStatement(bst, scope) for bst in st.body);
+        e1 := typeExp(st.condition, st.info);
+        sts1 := list(typeStatement(bst) for bst in st.body);
       then
         Statement.WHILE(e1, sts1, st.info);
 
     case Statement.FAILURE()
       algorithm
-        sts1 := list(typeStatement(bst, scope) for bst in st.body);
+        sts1 := list(typeStatement(bst) for bst in st.body);
       then
         Statement.FAILURE(sts1, st.info);
 

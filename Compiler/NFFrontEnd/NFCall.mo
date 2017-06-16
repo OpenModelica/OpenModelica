@@ -163,7 +163,6 @@ uniontype Call
 
   function typeCall
     input output Expression callExp;
-    input InstNode scope;
     input SourceInfo info;
           output Type ty;
           output DAE.Const variability;
@@ -192,7 +191,7 @@ uniontype Call
           end if;
 
           // Type the arguments.
-          argtycall := typeArgs(call,scope,info);
+          argtycall := typeArgs(call,info);
           // Match the arguments with the expeted ones.
           (fn,tyArgs) := matchFunctions(argtycall,info);
 
@@ -230,7 +229,6 @@ uniontype Call
 
   function typeArgs
     input output Call call;
-    input InstNode scope;
     input SourceInfo info;
   algorithm
 
@@ -246,7 +244,7 @@ uniontype Call
       case UNTYPED_CALL() algorithm
         typedArgs := {};
         for arg in call.arguments loop
-          (arg, arg_ty, arg_const) := Typing.typeExp(arg,scope,info);
+          (arg, arg_ty, arg_const) := Typing.typeExp(arg,info);
           typedArgs := (arg, arg_ty, arg_const)::typedArgs;
         end for;
 
@@ -255,7 +253,7 @@ uniontype Call
         typedNamedArgs := {};
         for narg in call.named_args loop
           (name,arg) := narg;
-          (arg, arg_ty, arg_const) := Typing.typeExp(arg,scope,info);
+          (arg, arg_ty, arg_const) := Typing.typeExp(arg,info);
           typedNamedArgs := (name, arg, arg_ty, arg_const)::typedNamedArgs;
         end for;
         listReverse(typedNamedArgs);

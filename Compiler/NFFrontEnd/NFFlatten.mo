@@ -67,6 +67,9 @@ import NFCall.Call;
 import NFFunction.Function;
 import RangeIterator = NFRangeIterator;
 import ExecStat.execStat;
+import NFClassTree.ClassTree;
+import Mutable;
+import NFSections.Sections;
 
 public
 partial function ExpandScalarFunc<ElementT>
@@ -109,22 +112,18 @@ function flattenClass
   input ComponentRef prefix;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
+protected
+  ClassTree cls_tree;
+  Sections sections;
 algorithm
   _ := match instance
-    case Class.INSTANCED_CLASS()
+    case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
-        for c in instance.components loop
-          if InstNode.isComponent(c) then
-            (elements, funcs) := flattenComponent(c, prefix, elements, funcs);
-          else
-            (elements, funcs) := flattenNode(c, prefix, elements, funcs);
-          end if;
+        for c in cls_tree.components loop
+          (elements, funcs) := flattenComponent(c, prefix, elements, funcs);
         end for;
 
-        (elements, funcs) := flattenEquations(instance.equations, prefix, elements, funcs);
-        (elements, funcs) := flattenInitialEquations(instance.initialEquations, prefix, elements, funcs);
-        (elements, funcs) := flattenAlgorithms(instance.algorithms, elements, funcs);
-        (elements, funcs) := flattenInitialAlgorithms(instance.initialAlgorithms, elements, funcs);
+        (elements, funcs) := flattenSections(instance.sections, prefix, elements, funcs);
       then
         ();
 
@@ -136,6 +135,26 @@ algorithm
 
   end match;
 end flattenClass;
+
+function flattenSections
+  input Sections sections;
+  input ComponentRef prefix;
+  input output list<DAE.Element> elements;
+  input output DAE.FunctionTree funcs;
+algorithm
+  () := match sections
+    case Sections.SECTIONS()
+      algorithm
+        (elements, funcs) := flattenEquations(sections.equations, prefix, elements, funcs);
+        (elements, funcs) := flattenInitialEquations(sections.initialEquations, prefix, elements, funcs);
+        (elements, funcs) := flattenAlgorithms(sections.algorithms, elements, funcs);
+        (elements, funcs) := flattenInitialAlgorithms(sections.initialAlgorithms, elements, funcs);
+      then
+        ();
+
+    else ();
+  end match;
+end flattenSections;
 
 function flattenComponent
   input InstNode component;
@@ -258,6 +277,7 @@ protected
   list<DAE.Element> elems;
   DAE.FunctionDefinition def;
   DAE.Function dfn;
+  array<InstNode> comps;
 algorithm
   if Function.isCollected(fn) then
     return;
@@ -267,10 +287,10 @@ algorithm
   cls := InstNode.getClass(Function.instance(fn));
 
   () := match cls
-    case Class.INSTANCED_CLASS()
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
       algorithm
-        (elems, funcs) := flattenAlgorithms(cls.algorithms, {}, funcs);
-        (elems, funcs) := flattenFunctionParams(cls.components, elems, funcs);
+        (elems, funcs) := flattenSections(cls.sections, ComponentRef.EMPTY(), {}, funcs);
+        (elems, funcs) := flattenFunctionParams(comps, elems, funcs);
 
         def := DAE.FunctionDefinition.FUNCTION_DEF(elems);
         dfn := Function.toDAE(fn, {def});
@@ -297,15 +317,10 @@ protected
 algorithm
   for i in arrayLength(components):-1:1 loop
     node := components[i];
+    comp := InstNode.component(node);
 
-    if InstNode.isComponent(node) then
-      comp := InstNode.component(node);
-      (elements, funcs) :=
-        flattenFunctionParam(comp, InstNode.name(node), elements, funcs);
-    else
-      (elements, funcs) :=
-        flattenFunctionParams(Class.components(InstNode.getClass(node)), elements, funcs);
-    end if;
+    (elements, funcs) :=
+      flattenFunctionParam(comp, InstNode.name(node), elements, funcs);
   end for;
 end flattenFunctionParams;
 
@@ -365,10 +380,25 @@ function makeDAEVar
   input Option<DAE.VariableAttributes> vattr;
   input SourceInfo info;
   output DAE.Element var;
+protected
+  DAE.ElementSource source;
 algorithm
-  var := DAE.VAR(cref, attr.variability, attr.direction, DAE.NON_PARALLEL(),
-    attr.visibility, ty, binding, {}, attr.connectorType,
-    ElementSource.createElementSource(info), vattr, NONE(), Absyn.NOT_INNER_OUTER());
+  source := ElementSource.createElementSource(info);
+
+  var := match attr
+    case Component.Attributes.ATTRIBUTES()
+      then
+        DAE.VAR(cref, attr.variability, attr.direction, attr.parallelism,
+          attr.visibility, ty, binding, {}, attr.connectorType,
+          source, vattr, NONE(), Absyn.NOT_INNER_OUTER());
+
+    else
+      DAE.VAR(cref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
+        DAE.VarParallelism.NON_PARALLEL(), DAE.VarVisibility.PUBLIC(), ty,
+        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, NONE(),
+        Absyn.NOT_INNER_OUTER());
+
+  end match;
 end makeDAEVar;
 
 function flattenBinding

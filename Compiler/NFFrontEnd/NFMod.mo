@@ -81,26 +81,26 @@ public
 uniontype ModifierScope
   "Structure that represents where a modifier comes from."
 
-  record COMPONENT_SCOPE
+  record COMPONENT
     String name;
-  end COMPONENT_SCOPE;
+  end COMPONENT;
 
-  record CLASS_SCOPE
+  record CLASS
     String name;
-  end CLASS_SCOPE;
+  end CLASS;
 
-  record EXTENDS_SCOPE
+  record EXTENDS
     Absyn.Path path;
-  end EXTENDS_SCOPE;
+  end EXTENDS;
 
   function name
     input ModifierScope scope;
     output String name;
   algorithm
     name := match scope
-      case COMPONENT_SCOPE() then scope.name;
-      case CLASS_SCOPE() then scope.name;
-      case EXTENDS_SCOPE() then Absyn.pathString(scope.path);
+      case COMPONENT() then scope.name;
+      case CLASS() then scope.name;
+      case EXTENDS() then Absyn.pathString(scope.path);
     end match;
   end name;
 
@@ -109,9 +109,9 @@ uniontype ModifierScope
     output String string;
   algorithm
     string := match scope
-      case COMPONENT_SCOPE() then "component " + scope.name;
-      case CLASS_SCOPE() then "class " + scope.name;
-      case EXTENDS_SCOPE() then "extends " + Absyn.pathString(scope.path);
+      case COMPONENT() then "component " + scope.name;
+      case CLASS() then "class " + scope.name;
+      case EXTENDS() then "extends " + Absyn.pathString(scope.path);
     end match;
   end toString;
 end ModifierScope;
@@ -164,6 +164,31 @@ public
 
     end match;
   end create;
+
+  function fromElement
+    input SCode.Element element;
+    input InstNode scope;
+    output Modifier mod;
+  algorithm
+    mod := match element
+      local
+        SCode.ClassDef def;
+
+      case SCode.EXTENDS()
+        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope);
+
+      case SCode.COMPONENT()
+        then create(element.modifications, element.name, ModifierScope.COMPONENT(element.name), scope);
+
+      case SCode.CLASS(classDef = def as SCode.DERIVED())
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+
+      case SCode.CLASS(classDef = def as SCode.CLASS_EXTENDS())
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+
+      else NOMOD();
+    end match;
+  end fromElement;
 
   function lookupModifier
     input String modName;
@@ -408,8 +433,8 @@ protected
       case SCode.FINAL()
         algorithm
           Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
-          {name, Binding.toString(outerBinding)},
-          {outerInfo, innerInfo});
+            {name, Binding.toString(outerBinding)},
+            {outerInfo, innerInfo});
         then
           fail();
 
