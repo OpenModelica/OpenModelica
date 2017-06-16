@@ -81,11 +81,11 @@ void* ZeroMQ_initialize()
 #else
   char *tmp_user = getenv("USER");
   if (zeroMQFileSuffix != NULL) {
-    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.") + tmp_user ? strlen(tmp_user) : strlen("nobody") + strlen(zeroMQFileSuffix) + 1);
-    sprintf(zeroMQFilePath, "%s/openmodelica.%s.port.%s", tempPath, tmp_user, zeroMQFileSuffix);
+    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.") + (tmp_user ? strlen(tmp_user) : strlen("nobody")) + strlen(zeroMQFileSuffix) + 1);
+    sprintf(zeroMQFilePath, "%s/openmodelica.%s.port.%s", tempPath, tmp_user ? tmp_user : "nobody", zeroMQFileSuffix);
   } else {
-    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.") + tmp_user ? strlen(tmp_user) : strlen("nobody") + 1);
-    sprintf(zeroMQFilePath, "%s/openmodelica.%s.port", tempPath, tmp_user);
+    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.") + (tmp_user ? strlen(tmp_user) : strlen("nobody")) + 1);
+    sprintf(zeroMQFilePath, "%s/openmodelica.%s.port", tempPath, tmp_user ? tmp_user : "nobody");
   }
 #endif
   // Create the file with port number
