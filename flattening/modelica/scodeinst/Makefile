@@ -61,6 +61,9 @@ Extends3.mo \
 extends3.mo \
 ExtendImport1.mo \
 ExtendSections.mo \
+ExtendSelf1.mo \
+ExtendSelf2.mo \
+ExtendSelf3.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
