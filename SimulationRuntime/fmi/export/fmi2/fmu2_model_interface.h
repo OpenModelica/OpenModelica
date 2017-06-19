@@ -58,10 +58,10 @@ typedef enum {
   modelInstantiated       = 1<<0, /* ME and CS */
   modelInitializationMode = 1<<1, /* ME and CS */
   modelContinuousTimeMode = 1<<2, /* ME only */
-  modelEventMode          = 1<<3, /* ME */
+  modelEventMode          = 1<<3, /* ME only */
   modelSlaveInitialized   = 1<<4, /* CS only */
   modelTerminated         = 1<<5, /* ME and CS */
-  modelError              = 1<<6  /* ME and CS*/
+  modelError              = 1<<6  /* ME and CS */
 } ModelState;
 
 typedef struct {
