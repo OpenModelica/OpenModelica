@@ -166,6 +166,7 @@ redeclare12.mo \
 redeclare13.mo \
 redeclare2.mo \
 redeclare6.mo \
+Subscript1.mo \
 type2.mo \
 usertype1.mo \
 usertype2.mo \
