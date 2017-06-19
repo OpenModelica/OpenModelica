@@ -98,5 +98,15 @@ public
     string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
 
+  function isIndex
+    input Subscript subscript;
+    output Boolean isIndex;
+  algorithm
+    isIndex := match subscript
+      case INDEX() then true;
+      else false;
+    end match;
+  end isIndex;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

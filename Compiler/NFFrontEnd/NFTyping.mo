@@ -576,10 +576,10 @@ algorithm
         comp := InstNode.component(cref.node);
         ty := Component.getType(comp);
         variability := ComponentRef.getVariability(cref);
-        cref.ty := ty;
         cref.subscripts := typeSubscripts(cref.subscripts, info);
+        cref.ty := Type.subscript(ty, cref.subscripts);
       then
-        (Expression.CREF(cref), ty, variability);
+        (Expression.CREF(cref), cref.ty, variability);
 
     case ComponentRef.WILD()
       then (Expression.CREF(ComponentRef.WILD()), Type.UNKNOWN(), DAE.Const.C_VAR());

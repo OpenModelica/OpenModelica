@@ -37,6 +37,7 @@ protected
 public
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
+  import Subscript = NFSubscript;
 
   record INTEGER
   end INTEGER;
@@ -120,6 +121,21 @@ public
       else ARRAY(ty, dims);
     end match;
   end liftArrayLeftList;
+
+  function unliftArray
+    input output Type ty;
+  protected
+    Type el_ty;
+    list<Dimension> dims;
+  algorithm
+    ARRAY(el_ty, _ :: dims) := ty;
+
+    if listEmpty(dims) then
+      ty := el_ty;
+    else
+      ty := ARRAY(el_ty, dims);
+    end if;
+  end unliftArray;
 
   function isInteger
     input Type ty;
@@ -399,6 +415,17 @@ public
           fail();
     end match;
   end toDAE;
+
+  function subscript
+    input output Type ty;
+    input list<Subscript> subs;
+  algorithm
+    for sub in subs loop
+      if Subscript.isIndex(sub) then
+        ty := unliftArray(ty);
+      end if;
+    end for;
+  end subscript;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFType;
