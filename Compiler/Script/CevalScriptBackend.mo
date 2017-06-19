@@ -1515,7 +1515,9 @@ algorithm
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
         (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
+        ExecStat.execStatReset();
         str = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
+        ExecStat.execStat("DAEDump.dumpStr(" + Absyn.pathString(className) + ")");
       then
         (cache,Values.STRING(str),st);
 
