@@ -959,6 +959,8 @@ public
             tree := addInheritedComponent(name, componentIndex + entry.index, tree, duplicates);
           then
             ();
+
+        else ();
       end match;
     end expandExtends2;
   end ClassTree;
