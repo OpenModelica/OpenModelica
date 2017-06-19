@@ -105,6 +105,9 @@ public
     Option<Expression> dimIndex;
   end SIZE;
 
+  record END
+  end END;
+
   record BINARY "Binary operations, e.g. a+4"
     Expression exp1;
     Operator operator;
@@ -272,6 +275,8 @@ public
         then
           if comp == 0 then compare(exp1.exp, e1) else comp;
 
+      case END() then 0;
+
       case BINARY()
         algorithm
           BINARY(exp1 = e1, operator = op, exp2 = e2) := exp2;
@@ -421,6 +426,8 @@ public
         algorithm
           ty := if listMember(ty, {Type.INTEGER(), Type.REAL(), Type.STRING(), Type.BOOLEAN()}) then ty else Type.UNKNOWN();
         then ty;
+      case SIZE(dimIndex = SOME(_)) then Type.INTEGER();
+      case END() then Type.INTEGER();
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -609,6 +616,7 @@ public
                         then ", " + toString(Util.getOption(exp.dimIndex))
                         else ""
                         ) + ")";
+      case END() then "end";
       case BINARY() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
       case UNARY() then "(" + Operator.symbol(exp.operator) + " " + toString(exp.exp) + ")";
       case LBINARY() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
@@ -621,8 +629,7 @@ public
 
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
 
-
-      else "NFExpression.toString: IMPLEMENT ME";
+      else anyString(exp);
     end match;
   end toString;
 
@@ -671,6 +678,8 @@ public
                then SOME(toDAE(Util.getOption(exp.dimIndex)))
                else NONE());
 
+      // END() doesn't have a DAE representation.
+
       case BINARY()
         then DAE.BINARY(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2));
 
@@ -696,7 +705,7 @@ public
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown expression");
+          assert(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'");
         then
           fail();
 

@@ -206,6 +206,7 @@ public
       i := 1;
       for e in imported_elems loop
         ltree := addImport(e, i, ltree);
+        i := i + 1;
       end for;
 
       tree := PARTIAL_TREE(ltree, clss, comps, exts, listArray(imported_elems));

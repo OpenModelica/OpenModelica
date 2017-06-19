@@ -480,6 +480,8 @@ algorithm
     case Expression.ARRAY() then typeArray(exp.elements, info);
     case Expression.RANGE() then typeRange(exp, info);
 
+    case Expression.END() then (exp, Type.INTEGER(), Const.C_CONST());
+
     case Expression.BINARY()
       algorithm
         (e1, ty1, var1) := typeExp(exp.exp1, info);

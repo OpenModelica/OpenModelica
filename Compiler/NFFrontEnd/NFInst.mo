@@ -1033,6 +1033,8 @@ algorithm
     case Absyn.Exp.CALL()
       then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
 
+    case Absyn.Exp.END() then Expression.END();
+
     else
       algorithm
         assert(false, getInstanceName() + " got unknown expression");
