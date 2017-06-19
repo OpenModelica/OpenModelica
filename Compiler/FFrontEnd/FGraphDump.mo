@@ -161,7 +161,7 @@ algorithm
 
         (gi, _) = GraphML.addNode(
               "n" + intString(FNode.id(node)),
-              color, {label}, shape, NONE(), {}, i, gi);
+              color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
         nrefs = RefTree.listValues(kids);
         ((gi,i)) = addNodes((gi,i), nrefs);
@@ -179,7 +179,7 @@ algorithm
 
         (gi, _) = GraphML.addNode(
               "n" + intString(FNode.id(node)),
-              color, {label}, shape, NONE(), {}, i, gi);
+              color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
         (gi, _) = GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
@@ -224,7 +224,7 @@ algorithm
 
         (gi, _) = GraphML.addNode(
               "n" + intString(FNode.id(node)),
-              color, {label}, shape, NONE(), {}, i, gi);
+              color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
         (gi, _) = GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
@@ -273,7 +273,7 @@ algorithm
 
         (gi, _) = GraphML.addNode(
               "n" + intString(FNode.id(node)),
-              color, {label}, shape, NONE(), {}, i, gi);
+              color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
         (gi, _) = GraphML.addEdge(
                    "e" + intString(FNode.id(node)),

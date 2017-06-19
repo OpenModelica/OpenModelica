@@ -2885,6 +2885,7 @@ algorithm
     nodeLabels := if visualizeTaskStartAndFinishTime then listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}) else nodeLabels;
     (tmpGraph,(_,_)) := GraphML.addNode("Node" + intString(nodeIdx),
                                       GraphML.COLOR_ORANGE,
+                                      GraphML.BORDERWIDTH_STANDARD,
                                       nodeLabels,
                                       GraphML.RECTANGLE(),
                                       SOME(nodeDesc),

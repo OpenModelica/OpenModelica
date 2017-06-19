@@ -4070,6 +4070,7 @@ algorithm
   nodeLabel := GraphML.NODELABEL_INTERNAL(nodeString,NONE(),GraphML.FONTPLAIN());
   (tmpGraph,(_,_)) := GraphML.addNode("Node"+intString(nodeIdx),
                                               GraphML.COLOR_ORANGE,
+                                              GraphML.BORDERWIDTH_STANDARD,
                                               {nodeLabel},
                                               GraphML.RECTANGLE(),
                                               SOME(nodeDesc),
@@ -4128,7 +4129,7 @@ algorithm
   varNodeId := getVarNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
-  (graphInfo,_) := GraphML.addNode(varNodeId, GraphML.COLOR_ORANGE2, {nodeLabel},GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString),(typeAttIdx,typeStr),(idxAttrIdx,daeIdxStr)},graphIdx,graphInfo);
+  (graphInfo,_) := GraphML.addNode(varNodeId, GraphML.COLOR_ORANGE2,GraphML.BORDERWIDTH_STANDARD, {nodeLabel},GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString),(typeAttIdx,typeStr),(idxAttrIdx,daeIdxStr)},graphIdx,graphInfo);
   graphInfoOut := (graphInfo,graphIdx);
 end addVarNodeToGraph;
 
@@ -4161,7 +4162,7 @@ algorithm
   eqNodeId := getEqNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
-  (graphInfo,_) := GraphML.addNode(eqNodeId,GraphML.COLOR_GREEN2,{nodeLabel},GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString),(typeAttrIdx,typeStr),(idxAttrIdx,daeIdxStr)},graphIdx,graphInfo);
+  (graphInfo,_) := GraphML.addNode(eqNodeId,GraphML.COLOR_GREEN2,GraphML.BORDERWIDTH_STANDARD,{nodeLabel},GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString),(typeAttrIdx,typeStr),(idxAttrIdx,daeIdxStr)},graphIdx,graphInfo);
   graphInfoOut := (graphInfo,graphIdx);
 end addEqNodeToGraph;
 
@@ -4222,7 +4223,7 @@ protected
   GraphML.GraphInfo graphInfo;
   GraphML.ShapeType shapeType;
   GraphML.LineType lineType;
-  Real lineWidth;
+  Real lineWidth, borderWidth;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   list<BackendDAE.Equation> eqLst;
@@ -4260,16 +4261,17 @@ algorithm
 
       //dump variable nodes
       for varIdx in varIdxs loop
-        nodeColor := if isAlgLoop(comp) then GraphML.COLOR_ORANGE else GraphML.COLOR_YELLOW;
+        nodeColor := if isAlgLoop(comp) then GraphML.COLOR_RED2 else GraphML.COLOR_GREEN2;
+        borderWidth :=  if BackendVariable.isStateVar(BackendVariable.getVarAt(vars,varIdx)) then GraphML.BORDERWIDTH_BOLD else GraphML.BORDERWIDTH_STANDARD;
         if isTearingVar(varIdx,comp) then
           shapeType := GraphML.ELLIPSE();
           tearInfo := "TearingVar";
-          nodeColor := GraphML.COLOR_ORANGE2;
+          nodeColor := GraphML.COLOR_RED;
         else
           shapeType := GraphML.ELLIPSE();
           tearInfo := "AlgebraicVar";
         end if;
-        (graphInfo,(_,_)) := GraphML.addNode("V_"+intString(sysIdx)+"_"+intString(varIdx), nodeColor,
+        (graphInfo,(_,_)) := GraphML.addNode("V_"+intString(sysIdx)+"_"+intString(varIdx), nodeColor, borderWidth,
                                       {GraphML.NODELABEL_INTERNAL(intString(varIdx), NONE(), GraphML.FONTPLAIN())},
                                       shapeType, SOME(BackendDump.varString(BackendVariable.getVarAt(vars,varIdx))),
                                       {((nameAttIdx,"V_"+intString(sysIdx)+"_"+intString(varIdx))), ((varAttIdx, intString(varIdx))), ((eqAttIdx, "-")), ((compAttIdx, BackendDump.printComponent(comp))), ((sysAttIdx, intString(sysIdx))), ((tearAttIdx,tearInfo)), ((orderAttIdx,intString(order)))},
@@ -4278,46 +4280,46 @@ algorithm
 
       //dump equation nodes
       for eqIdx in eqIdxs loop
-        nodeColor := if isAlgLoop(comp) then GraphML.COLOR_GREEN else GraphML.COLOR_GREEN2;
+        nodeColor := if isAlgLoop(comp) then GraphML.COLOR_RED2 else GraphML.COLOR_GREEN2;
         if isResidualEq(eqIdx,comp) then
           shapeType := GraphML.RECTANGLE();
           tearInfo := "ResidualEq";
-          nodeColor := GraphML.COLOR_GREEN3;
+          nodeColor := GraphML.COLOR_RED;
         else
           shapeType := GraphML.RECTANGLE();
           tearInfo := "AlgebraicEq";
         end if;
-        (graphInfo,(_,_)) := GraphML.addNode("E_"+intString(sysIdx)+"_"+intString(eqIdx), nodeColor,
+        (graphInfo,(_,_)) := GraphML.addNode("E_"+intString(sysIdx)+"_"+intString(eqIdx), nodeColor, GraphML.BORDERWIDTH_STANDARD,
                                       {GraphML.NODELABEL_INTERNAL(intString(eqIdx), NONE(), GraphML.FONTPLAIN())},
                                       shapeType, SOME(BackendDump.equationString(BackendEquation.get(eqs,eqIdx))),
                                       {((nameAttIdx,"E_"+intString(sysIdx)+"_"+intString(eqIdx))), ((varAttIdx, "-")), ((compAttIdx, BackendDump.printComponent(comp))), ((eqAttIdx, intString(eqIdx))), ((sysAttIdx, intString(sysIdx))), ((tearAttIdx,tearInfo)),((orderAttIdx,intString(order)))},
                                       graphIdx,graphInfo);
       end for;
-
-      //dump edges
-      for eqIdx in List.intRange(arrayLength(m)) loop
-        for varIdx in arrayGet(m, eqIdx) loop
-          if intLe(varIdx, 0) then
-            lineType := GraphML.DASHED();
-          else
-            lineType := GraphML.LINE();
-          end if;
-          varIdx := intAbs(varIdx);
-          lineWidth := if intEq(varIdx,ass2[eqIdx]) then GraphML.LINEWIDTH_BOLD else GraphML.LINEWIDTH_STANDARD;
-          (graphInfo,(_,_)) := GraphML.addEdge("Edge_"+intString(sysIdx)+"_" + intString(eqIdx)+"_" + intString(varIdx),
-                                       "V_"+intString(sysIdx)+"_"+intString(varIdx), "E_"+intString(sysIdx)+"_"+intString(eqIdx),
-                                        GraphML.COLOR_BLACK,
-                                        lineType,
-                                        lineWidth,
-                                        false,
-                                        {},
-                                        (GraphML.ARROWNONE(),GraphML.ARROWNONE()),
-                                        {},
-                                        graphInfo);
-        end for;
-      end for;//end edges
       order := order+1;
     end for;//end comps
+
+    //dump edges
+    for eqIdx in List.intRange(arrayLength(m)) loop
+      for varIdx in arrayGet(m, eqIdx) loop
+        if intLe(varIdx, 0) then
+          lineType := GraphML.DASHED();
+        else
+          lineType := GraphML.LINE();
+        end if;
+        varIdx := intAbs(varIdx);
+        lineWidth := if intEq(varIdx,ass2[eqIdx]) then GraphML.LINEWIDTH_BOLD else GraphML.LINEWIDTH_STANDARD;
+        (graphInfo,(_,_)) := GraphML.addEdge("Edge_"+intString(sysIdx)+"_" + intString(eqIdx)+"_" + intString(varIdx),
+                                     "V_"+intString(sysIdx)+"_"+intString(varIdx), "E_"+intString(sysIdx)+"_"+intString(eqIdx),
+                                      GraphML.COLOR_BLACK,
+                                      lineType,
+                                      lineWidth,
+                                      false,
+                                      {},
+                                      (GraphML.ARROWNONE(),GraphML.ARROWNONE()),
+                                      {},
+                                      graphInfo);
+      end for;
+    end for;//end edges
     sysIdx := sysIdx+1;
   end for;//end sys
 

@@ -73,6 +73,8 @@ public constant Integer FONTSIZE_STANDARD   = 12;
 public constant Integer FONTSIZE_BIG   = 20;
 public constant Integer FONTSIZE_SMALL   = 8;
 
+public constant Real BORDERWIDTH_STANDARD   = 1.0;
+public constant Real BORDERWIDTH_BOLD   = 4.0;
 
 // -------------------------
 // Data structures
@@ -113,6 +115,7 @@ public uniontype Node
   record NODE
     String id;
     String color;
+    Real border;
     list<NodeLabel> nodeLabels;
     ShapeType shapeType;
     Option<String> optDesc;
@@ -260,6 +263,7 @@ public function addNode "author: marcusw
   Adds a new node to the given graph which is part of the given graphInfo."
   input String id; //node id -> must be unique in the graphinfo!
   input String backgroundColor;
+  input Real borderWidth;
   input list<NodeLabel> nodeLabels; //a list of labels that should be displayed in or along the node
   input ShapeType shapeType;
   input Option<String> optDesc;
@@ -293,7 +297,7 @@ algorithm
   iGraph := listGet(graphs,graphCount-iGraphIdx+1);
   GRAPH(gid,directed,nodeIdc,gAttValues) := iGraph;
   nodeCount := nodeCount + 1;
-  tmpNode := NODE(id, backgroundColor, nodeLabels, shapeType, optDesc, attValues);
+  tmpNode := NODE(id, backgroundColor,borderWidth, nodeLabels, shapeType, optDesc, attValues);
   nodes := tmpNode :: nodes;
   nodeIdc := nodeCount :: nodeIdc;
   iGraph := GRAPH(gid,directed,nodeIdc,gAttValues);

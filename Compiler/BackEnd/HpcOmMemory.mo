@@ -2923,7 +2923,7 @@ import Util;
       //print("appendVariablesToGraph: Appending variable " + description + " to graph with index " + intString(iGraphIdx) + "\n");
       if(isValidVar) then
         nodeLabel := GraphML.NODELABEL_INTERNAL(intString(varIdx), NONE(), GraphML.FONTPLAIN());
-        tmpGraphInfo := GraphML.addNode("var" + intString(varIdx), GraphML.COLOR_GREEN2, {nodeLabel}, GraphML.ELLIPSE(), SOME(description), {(iThreadIdAttributeIdx,threadText)}, iGraphIdx, tmpGraphInfo);
+        tmpGraphInfo := GraphML.addNode("var" + intString(varIdx), GraphML.COLOR_GREEN2,GraphML.BORDERWIDTH_STANDARD, {nodeLabel}, GraphML.ELLIPSE(), SOME(description), {(iThreadIdAttributeIdx,threadText)}, iGraphIdx, tmpGraphInfo);
       end if;
     end for;
     tmpGraphInfo := appendTaskVarEdgesToGraph(iTaskSolvedVarsMapping, iTaskUnsolvedVarsMapping, tmpGraphInfo);
@@ -3056,7 +3056,7 @@ import Util;
         threadText := "Th " + intString(threadOwner);
         nodeLabelText := intString(realScVarIdx);
         nodeLabel := GraphML.NODELABEL_INTERNAL(nodeLabelText, NONE(), GraphML.FONTPLAIN());
-        (oGraphInfo,_) := GraphML.addNode(nodeId, GraphML.COLOR_GREEN2, {nodeLabel}, GraphML.ELLIPSE(), SOME(varString), {(iAttThreadIdIdx,threadText)}, iTopGraphIdx, iGraphInfo);
+        (oGraphInfo,_) := GraphML.addNode(nodeId, GraphML.COLOR_GREEN2,GraphML.BORDERWIDTH_STANDARD, {nodeLabel}, GraphML.ELLIPSE(), SOME(varString), {(iAttThreadIdIdx,threadText)}, iTopGraphIdx, iGraphInfo);
         //print("--handled with realScVarIdx '" + intString(realScVarIdx) + "'\n");
        else
          oGraphInfo := iGraphInfo;

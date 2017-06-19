@@ -66,7 +66,7 @@ template dumpNode(GraphML.Node node, array<GraphML.Graph> allGraphs, array<Graph
                 <data key="<%graphNodeKey%>">
                     <y:ShapeNode>
                       <y:Fill color="#<%color%>" transparent="false"/>
-                      <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                      <y:BorderStyle color="#000000" type="line" width="<%border%>"/>
                       <%nodeLabelDump%>
                       <y:Shape type="<%dumpShapeType(shapeType)%>"/>
                     </y:ShapeNode>

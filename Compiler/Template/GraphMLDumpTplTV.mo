@@ -162,6 +162,7 @@ interface package GraphMLDumpTplTV
       record NODE
         String id;
         String color;
+        Real border;
         list<NodeLabel> nodeLabels;
         ShapeType shapeType;
         Option<String> optDesc;
