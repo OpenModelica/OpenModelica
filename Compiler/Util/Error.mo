@@ -164,8 +164,8 @@ public constant Message REM_ARG_ZERO = MESSAGE(17, TRANSLATION(), ERROR(),
   Util.gettext("Second argument in rem is zero in rem(%s,%s)."));
 public constant Message SCRIPT_READ_SIM_RES_ERROR = MESSAGE(18, SCRIPTING(), ERROR(),
   Util.gettext("Error reading simulation result."));
-public constant Message RECURSIVE_EXTENDS = MESSAGE(19, TRANSLATION(), ERROR(),
-  Util.gettext("Extending %s is not allowed, since it is an enclosing class."));
+public constant Message EXTENDS_LOOP = MESSAGE(19, TRANSLATION(), ERROR(),
+  Util.gettext("extends %s causes an instantiation loop."));
 public constant Message LOAD_MODEL_ERROR = MESSAGE(20, TRANSLATION(), ERROR(),
   Util.gettext("Class %s not found."));
 public constant Message WRITING_FILE_ERROR = MESSAGE(21, SCRIPTING(), ERROR(),

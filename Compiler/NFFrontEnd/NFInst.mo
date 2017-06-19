@@ -356,6 +356,7 @@ algorithm
   // Look up the base class and expand it.
   scope := InstNode.parent(ext);
   base_node := Lookup.lookupBaseClassName(base_path, scope, info);
+  checkExtendsLoop(base_node, base_path, info);
   checkReplaceableBaseClass(base_node, base_path, info);
   base_node := expand(base_node);
 
@@ -369,6 +370,28 @@ algorithm
     builtinExt := SOME(ext);
   end if;
 end expandExtends;
+
+function checkExtendsLoop
+  "Gives an error if a base node is in the process of being expanded itself,
+   since that means we have an extends loop in the model."
+  input InstNode node;
+  input Absyn.Path path;
+  input SourceInfo info;
+algorithm
+  () := match InstNode.getClass(node)
+    // expand begins by changing the class to an EXPANDED_CLASS, but keeps the
+    // class tree. So finding a PARTIAL_TREE here means the class is in the
+    // process of being expanded.
+    case Class.EXPANDED_CLASS(elements = ClassTree.PARTIAL_TREE())
+      algorithm
+        Error.addSourceMessage(Error.EXTENDS_LOOP,
+          {Absyn.pathString(path)}, info);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkExtendsLoop;
 
 function checkReplaceableBaseClass
   "Checks that all parts of a name used as a base class are transitively

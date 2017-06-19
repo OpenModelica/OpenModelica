@@ -338,7 +338,7 @@ algorithm
       algorithm
         (node, state) := lookupFirstIdent(name.name, scope);
       then
-        lookupLocalName(name.path, node, state);
+        lookupLocalName(name.path, node, state, InstNode.refEqual(node, scope));
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -371,6 +371,7 @@ function lookupLocalName
   input Absyn.Path name;
   input output InstNode node;
   input output LookupState state;
+  input Boolean selfReference = false;
 algorithm
   // Looking something up in a component is only legal when the name begins with
   // a component reference, and for that we use lookupCref. So if the given node
@@ -380,7 +381,11 @@ algorithm
     return;
   end if;
 
-  node := Inst.instPackage(node);
+  // If the given node extends from itself, like 'extends Modelica.Icons.***' in
+  // the MSL, then it's already being instantiated here.
+  if not selfReference then
+    node := Inst.instPackage(node);
+  end if;
 
   // Look up the path in the scope.
   () := match name

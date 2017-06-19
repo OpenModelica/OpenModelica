@@ -715,6 +715,24 @@ uniontype InstNode
       case IMPLICIT_SCOPE() then IMPLICIT_SCOPE(scope, iterator :: scope.locals);
     end match;
   end addIterator;
+
+  function refEqual
+    "Returns true if two nodes references the same class or component,
+     otherwise false."
+    input InstNode node1;
+    input InstNode node2;
+    output Boolean refEqual;
+  algorithm
+    refEqual := match (node1, node2)
+      case (CLASS_NODE(), CLASS_NODE())
+        then referenceEq(Pointer.access(node1.cls), Pointer.access(node2.cls));
+      case (COMPONENT_NODE(), COMPONENT_NODE())
+        then referenceEq(Pointer.access(node1.component), Pointer.access(node2.component));
+      // Other nodes like ref nodes might be equal, but we neither know nor care.
+      else false;
+    end match;
+  end refEqual;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
