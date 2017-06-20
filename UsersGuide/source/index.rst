@@ -14,11 +14,10 @@ OpenModelica User's Guide
 
   introduction
   omedit
-  tlmcosimulation
   plotting
   debugger
   omnotebook
-  fmi
+  omsimulator
   optimization
   parametersensitivity
   mdt
