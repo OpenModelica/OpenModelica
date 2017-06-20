@@ -136,7 +136,7 @@ standard is accessible from tlmModelDescription.xsd. Currently composite models
 can only be used for TLM based co-simulation of external models.
 
 Loading a Composite Model for Co-Simulation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To load the composite model, select **File > Open Composite Model(s)** from the
 menu and select compositemodel.xml.
@@ -152,7 +152,7 @@ the composite model as shown below in
   Composite Model with 3D View.
 
 Co-Simulating the Composite Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are two ways to start co-simulation:
 
@@ -190,7 +190,7 @@ When the simulation ends, click **Open Manager Log File** or **Open Monitor Log 
 to check the log files.
 
 Plotting the Simulation Results
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the co-simulation of the composite model is completed successful, simulation results are collected and visualized
 in the OMEdit plotting perspective as shown in :numref:`tlm-plotting-cosimulation-results` and :numref:`tlm-cosimulation-visualization`.
@@ -207,7 +207,7 @@ The **Variables Browser** display variables that can be plotted. Each variable h
   TLM Co-Simulation Visualization.
 
 Preparing External Models
-^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First step in co-simulation Modeling is to prepare the different external simulation
 models with TLM interfaces. Each external model belongs to a specific simulation
@@ -225,7 +225,7 @@ as shown below in :numref:`tlm-loaded-external-models-library-browser`.
   External Models in OMEdit.
 
 Creating a New Composite Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We will use the "Double pendulum" composite model which is a multibody system that
 consists of three sub-models: Two OpenModelica **Shaft** sub-models (**Shaft1**
@@ -251,7 +251,7 @@ includes the composite model XML elements and the default simulation parameters.
   New composite model text view.
 
 Adding Submodels
-^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~
 
 It is possible to build the double pendulum by drag-and-drop of each simulation
 model component (sub-model) from the **Libraries Browser** to the Diagram View.
@@ -265,7 +265,7 @@ View**.
   Adding sub-models to the double pendulum composite model.
 
 Fetching Submodels Interface Data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To retrieve list of TLM interface data for sub-models, do any of the following methods:
 
@@ -299,7 +299,7 @@ in the diagram view as shown below in :numref:`tlm-fetched-interface-points`.
   Fetching Interface Data.
 
 Connecting Submodels
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 When the sub-models and interface points have all been placed in the Diagram
 View, similar to :numref:`tlm-fetched-interface-points`, the next step is to
@@ -328,7 +328,7 @@ Continue to connect all sub-models until the composite model **Diagram View** lo
   Connecting sub-models of the Double Pendulum Composite Model.
 
 Changing Parameter Values of Submodels
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To change a parameter value of a sub-model, do any of the following methods:
 
@@ -344,7 +344,7 @@ in which you will be able to specify the sub-models attributes.
   Changing Parameter Values of Sub-models Dialog.
 
 Changing Parameter Values of Connections
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To change a parameter value of a connection, do any of the following methods:
 
@@ -355,7 +355,7 @@ The parameter dialog of that connection appears (see :numref:`tlm-submodels-conn
 in which you will be able to specify the connections attributes.
 
 Changing Co-Simulation Parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To change the co-simulation parameters, do any of the following methods:
 
