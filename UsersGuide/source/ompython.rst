@@ -115,14 +115,9 @@ Import As Library
 ^^^^^^^^^^^^^^^^^
 
 To use the module from within another python program, simply import
-OMCSessionZMQ from within the using program. Make use of the execute()
-function of the OMPython library to send commands to the OMC server.
+OMCSessionZMQ from within the using program.
 
 For example:
-
-answer = OMPython.execute(cmd)
-
-Full example:
 
 .. code-block:: python
 
