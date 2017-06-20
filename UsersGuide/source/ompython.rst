@@ -6,8 +6,7 @@ This chapter describes the OpenModelica Python integration facilities.
 -  OMPython – the OpenModelica Python scripting interface, see :ref:`ompython`.
 -  EnhancedOMPython - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
 -  PySimulator – a Python package that provides simulation and post
-       processing/analysis tools integrated with OpenModelica, see
-       :ref:`pysimulator`.
+   processing/analysis tools integrated with OpenModelica, see :ref:`pysimulator`.
 
 .. _ompython:
 
