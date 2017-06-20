@@ -329,8 +329,11 @@ protected function traverseIncidenceMatrix "author: Frenkel TUD 2010-12"
   output BackendDAE.IncidenceMatrix outM;
   output Type_a outTypeA;
   partial function FuncType
-    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
-    output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+    input BackendDAE.IncidenceMatrixElement elem;
+    input Integer pos;
+    input Type_a inTpl;
+    output list<Integer> outList;
+    output Type_a outTpl;
   end FuncType;
 algorithm
   (outM,outTypeA) := traverseIncidenceMatrix1(inM,func,1,arrayLength(inM),inTypeA);
@@ -346,8 +349,11 @@ protected function traverseIncidenceMatrix1 "author: Frenkel TUD 2010-12"
   output BackendDAE.IncidenceMatrix outM;
   output Type_a outTypeA;
   partial function FuncType
-    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
-    output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+    input BackendDAE.IncidenceMatrixElement elem;
+    input Integer pos;
+    input Type_a inTpl;
+    output list<Integer> outList;
+    output Type_a outTpl;
   end FuncType;
 algorithm
   (outM,outTypeA) := traverseIncidenceMatrix2(inM,func,pos,len,intGt(pos,len),inTypeA);
@@ -366,8 +372,11 @@ protected function traverseIncidenceMatrix2
   output BackendDAE.IncidenceMatrix outM;
   output Type_a outTypeA;
   partial function FuncType
-    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
-    output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+    input BackendDAE.IncidenceMatrixElement elem;
+    input Integer pos;
+    input Type_a inTpl;
+    output list<Integer> outList;
+    output Type_a outTpl;
   end FuncType;
 algorithm
   (outM,outTypeA) := match (inM,func,pos,len,stop,inTypeA)
@@ -381,9 +390,9 @@ algorithm
 
     case(_,_,_,_,false,_)
       equation
-        ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
+        (eqns,extArg) = func(inM[pos],pos,inTypeA);
         eqns1 = List.removeOnTrue(pos,intLt,eqns);
-        (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
+        (m1,extArg1) = traverseIncidenceMatrixList(eqns1,inM,func,arrayLength(inM),pos,extArg);
         (m2,extArg2) = traverseIncidenceMatrix2(m1,func,pos+1,len,intGt(pos+1,len),extArg1);
       then (m2,extArg2);
 
@@ -402,8 +411,11 @@ protected function traverseIncidenceMatrixList
   output BackendDAE.IncidenceMatrix outM;
   output Type_a outTypeA;
   partial function FuncType
-    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
-    output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+    input BackendDAE.IncidenceMatrixElement elem;
+    input Integer pos;
+    input Type_a inTpl;
+    output list<Integer> outList;
+    output Type_a outTpl;
   end FuncType;
 algorithm
   (outM,outTypeA) := matchcontinue(inLst,inM,func,len,maxpos,inTypeA)
@@ -420,10 +432,10 @@ algorithm
       true = intLt(pos,len+1);
       // do not more than necesary
       true = intLt(pos,maxpos);
-      ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
+      (eqns,extArg) = func(inM[pos],pos,inTypeA);
       eqns1 = List.removeOnTrue(maxpos,intLt,eqns);
       alleqns = List.unionOnTrueList({rest, eqns1},intEq);
-      (m1,extArg1) = traverseIncidenceMatrixList(alleqns,m,func,len,maxpos,extArg);
+      (m1,extArg1) = traverseIncidenceMatrixList(alleqns,inM,func,len,maxpos,extArg);
     then (m1,extArg1);
 
     case(pos::rest,_,_,_,_,_) equation
@@ -491,7 +503,7 @@ algorithm
       equation
         (_::_,_::_)= BackendVariable.getVar(cr, vars);
       then (e,false,(true,vars,globalKnownVars,b1,true));
-    case (e,(b,vars,globalKnownVars,b1,b2)) then (e,not b,(b,vars,globalKnownVars,b1,b2));
+    case (e,(b,vars,globalKnownVars,b1,b2)) then (e,not b,inTpl);
 
   end matchcontinue;
 end traversingTimeEqnsFinder;
@@ -521,20 +533,21 @@ end countSimpleEquations;
 
 protected function countSimpleEquationsFinder
 "author: Frenkel TUD 2011-05"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,Integer>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.BackendDAE,Integer>> outTpl;
+ input BackendDAE.IncidenceMatrixElement elem;
+ input Integer pos;
+ input tuple<BackendDAE.BackendDAE,Integer> inTpl;
+ output list<Integer> outList;
+ output tuple<BackendDAE.BackendDAE,Integer> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outList,outTpl) :=
+  matchcontinue (elem,pos,inTpl)
     local
-      BackendDAE.IncidenceMatrixElement elem;
-      Integer pos,l,i,n,n_1;
-      BackendDAE.IncidenceMatrix m;
+      Integer l,i,n,n_1;
       BackendDAE.BackendDAE dae;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case ((elem,pos,m,(dae as BackendDAE.DAE({syst},shared),n)))
+    case (_,_,(dae as BackendDAE.DAE({syst},shared),n))
       equation
         // check number of vars in eqns
         l = listLength(elem);
@@ -542,9 +555,8 @@ algorithm
         true = intGt(l,0);
         countsimpleEquation(elem,l,pos,syst,shared);
         n_1 = n+1;
-      then (({},m,(dae,n_1)));
-    case ((_,_,m,(dae,n)))
-      then (({},m,(dae,n)));
+      then ({},(dae,n_1));
+    else ({},inTpl);
   end matchcontinue;
 end countSimpleEquationsFinder;
 
@@ -941,15 +953,16 @@ algorithm
 end removeEqualFunctionCallsWork;
 
 protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>>> outTpl;
+  input BackendDAE.IncidenceMatrixElement elem;
+  input Integer pos;
+  input tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>> inTpl;
+  output list<Integer> outList;
+  output tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  (outList,outTpl):=
+  matchcontinue (elem,pos,inTpl)
     local
-      BackendDAE.IncidenceMatrixElement elem;
-      Integer pos;
-      BackendDAE.IncidenceMatrix m,mT;
+      BackendDAE.IncidenceMatrix mT;
       list<Integer> changed;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
@@ -958,7 +971,7 @@ algorithm
       list<Integer> controleqns,expvars1;
       list<list<Integer>> expvarseqns;
 
-    case ((elem,pos,m,(mT,vars,eqns,changed)))
+    case (_,_,(mT,vars,eqns,changed))
       equation
         // check number of vars in eqns
         _::_ = elem;
@@ -979,9 +992,9 @@ algorithm
         //print("changed1 "); BackendDump.debuglst((changed1,intString," ","\n"));
         //print("changed2 "); BackendDump.debuglst((changed2,intString," ","\n"));
         // print("Next\n");
-      then (({},m,(mT,vars,eqns1,changed)));
-    case ((_,_,m,(mT,vars,eqns,changed)))
-      then (({},m,(mT,vars,eqns,changed)));
+      then ({},(mT,vars,eqns1,changed));
+    case (_,_,_)
+      then ({},inTpl);
   end matchcontinue;
 end removeEqualFunctionCallFinder;
 
