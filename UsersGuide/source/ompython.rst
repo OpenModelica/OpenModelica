@@ -42,37 +42,35 @@ Features of OMPython
 OMPython provides user friendly features like:
 
 -  Interactive session handling, parsing, interpretation of commands and
-       Modelica expressions for evaluation, simulation, plotting, etc.
+   Modelica expressions for evaluation, simulation, plotting, etc.
 
 -  Interface to the latest OpenModelica API calls.
 
--  Optimized parser results that give control over every element of the
-       output.
+-  Optimized parser results that give control over every element of the output.
 
 -  Helper functions to allow manipulation on Nested dictionaries.
 
 -  Easy access to the library and testing of OpenModelica commands.
 
-
-
-Test Commands 
+Test Commands
 ~~~~~~~~~~~~~
 
 OMPython provides two classes for communicating with OpenModelica i.e.,
 OMCSession and OMCSessionZMQ. Both classes have the same interface,
 the only difference is that OMCSession uses omniORB and OMCSessionZMQ
-uses ZeroMQ. All the examples listed down uses OMCSession but if you
-want to test OMCSessionZMQ simply replace OMCSession with OMCSessionZMQ.
+uses ZeroMQ. All the examples listed down uses OMCSessionZMQ but if you
+want to test OMCSession simply replace OMCSessionZMQ with OMCSession. We
+recommend to use OMCSessionZMQ.
 
-To test the command outputs, simply create an OMCSession object by
+To test the command outputs, simply create an OMCSessionZMQ object by
 importing from the OMPython library within Python interepreter. The
 module allows you to interactively send commands to the OMC server and
 display their output.
 
-To get started, create an OMCSession object:
+To get started, create an OMCSessionZMQ object:
 
->>> from OMPython import OMCSession
->>> omc = OMCSession()
+>>> from OMPython import OMCSessionZMQ
+>>> omc = OMCSessionZMQ()
 
 .. omc-mos ::
   :ompython-output:
@@ -117,7 +115,7 @@ Import As Library
 ^^^^^^^^^^^^^^^^^
 
 To use the module from within another python program, simply import
-OMCSession from within the using program. Make use of the execute()
+OMCSessionZMQ from within the using program. Make use of the execute()
 function of the OMPython library to send commands to the OMC server.
 
 For example:
@@ -129,8 +127,8 @@ Full example:
 .. code-block:: python
 
   # test.py
-  from OMPython import OMCSession
-  omc = OMCSession()
+  from OMPython import OMCSessionZMQ
+  omc = OMCSessionZMQ()
   cmds = [
     "loadModel(Modelica)",
     "model test end test;",
@@ -155,9 +153,9 @@ OMShell's style of operations.
 
 OMPython is designed to,
 
--  Initialize the CORBA communication.
+-  Initialize the CORBA/ZeroMQ communication.
 
--  Send commands to the Omc server via the CORBA interface.
+-  Send commands to the OMC server via the CORBA/ZeroMQ interface.
 
 -  Receive the string results.
 
@@ -232,7 +230,7 @@ Usage of getMethods
 >>>  mod.getOutputs()
 {}
 
->>> mod.getParameters()  // method-1 
+>>> mod.getParameters()  // method-1
 {'c': 0.9, 'radius': 0.1}
 
 >>> mod.getParameters("c","radius") // method-2
@@ -247,7 +245,7 @@ Usage of getMethods
 >>> mod.getSolutions() // method-1 returns list of simulation variables for which results are available
 ['time', 'height', 'velocity', 'der(height)', 'der(velocity)', 'c', 'radius']
 
->>> mod.getSolutions("time","height")  // method-2, return list of numpy arrays 
+>>> mod.getSolutions("time","height")  // method-2, return list of numpy arrays
 
 Standard set methods
 ~~~~~~~~~~~~~~~~~~~~
@@ -265,14 +263,14 @@ Usage of setMethods
 
 >>> mod.setInputs(cAi=1,Ti=2)
 
->>> mod.setParameters(radius=14,c=0.5) // method-1 setting parameter value 
+>>> mod.setParameters(radius=14,c=0.5) // method-1 setting parameter value
 
 >>> mod.setParameters(**{"radius":14,"c":0.5}) // method-2 setting parameter value using second option
 
->>> mod.setSimulationOptions(stopTime=2.0,tolerance=1e-08) 
+>>> mod.setSimulationOptions(stopTime=2.0,tolerance=1e-08)
 
 
-Simulation 
+Simulation
 ~~~~~~~~~~
 An example of how to get parameter names and change the value of parameters using set methods and finally simulate the  "BouncingBall.mo" model is given below.
 
@@ -297,9 +295,9 @@ The following methods are proposed for linearization.
 - linearize()
 - getLinearizationOptions()
 - setLinearizationOptions()
-- getLinearInputs()  
-- getLinearOutputs()  
-- getLinearStates()  
+- getLinearInputs()
+- getLinearOutputs()
+- getLinearStates()
 
 Usage of Linearization methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -316,7 +314,7 @@ Usage of Linearization methods
 
 >>> mod.getLinearInputs()  //returns a list of strings of names of inputs used when forming matrices.
 
->>> mod.getLinearOutputs() //returns a list of strings of names of outputs used when forming matrices 
+>>> mod.getLinearOutputs() //returns a list of strings of names of outputs used when forming matrices
 
 >>> mod.getLinearStates() // returns a list of strings of names of states used when forming matrices.
 
