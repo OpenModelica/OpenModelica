@@ -33,7 +33,6 @@
  */
 
 #include "OMDumpXML.h"
-#include "diff_match_patch.h"
 
 #include <QDebug>
 #include <QXmlStreamReader>
@@ -44,8 +43,9 @@ QString OMOperation::toString()
   return "unknown operation";
 }
 
-QString OMOperation::toHtml()
+QString OMOperation::toHtml(HtmlDiff htmlDiff)
 {
+  Q_UNUSED(htmlDiff);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   return QString(toString()).toHtmlEscaped();
 #else /* Qt4 */
@@ -53,13 +53,13 @@ QString OMOperation::toHtml()
 #endif
 }
 
-QString OMOperation::diffHtml(QString &before, QString &after)
+QString OMOperation::diffHtml(QString &before, QString &after, HtmlDiff htmlDiff)
 {
   diff_match_patch dmp;
   dmp.Diff_EditCost = 6;
   QList<Diff> diffs = dmp.diff_main(before,after);
   dmp.diff_cleanupSemanticLossless(diffs);
-  return dmp.diff_prettyHtml(diffs);
+  return dmp.diff_prettyHtml(diffs, htmlDiff);
 }
 
 OMOperationInfo::OMOperationInfo(QString name, QString info) : name(name), info(info)
@@ -71,8 +71,9 @@ QString OMOperationInfo::toString()
   return name + ": " + info;
 }
 
-QString OMOperationInfo::toHtml()
+QString OMOperationInfo::toHtml(HtmlDiff htmlDiff = HtmlDiff::Both)
 {
+  Q_UNUSED(htmlDiff);
   return toString();
 }
 
@@ -87,9 +88,9 @@ QString OMOperationBeforeAfter::toString()
   return name + ": " + before + " => " + after;
 }
 
-QString OMOperationBeforeAfter::toHtml()
+QString OMOperationBeforeAfter::toHtml(HtmlDiff htmlDiff = HtmlDiff::Both)
 {
-  return name + ": " + diffHtml(before,after);
+  return name + ": " + diffHtml(before, after, htmlDiff);
 }
 
 OMOperationScalarize::OMOperationScalarize(int _index, QStringList ops)

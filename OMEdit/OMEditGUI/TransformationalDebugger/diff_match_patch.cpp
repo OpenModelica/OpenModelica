@@ -1276,7 +1276,7 @@ int diff_match_patch::diff_xIndex(const QList<Diff> &diffs, int loc) {
 }
 
 
-QString diff_match_patch::diff_prettyHtml(const QList<Diff> &diffs) {
+QString diff_match_patch::diff_prettyHtml(const QList<Diff> &diffs, HtmlDiff htmlDiff) {
   QString html;
   QString text;
   foreach(Diff aDiff, diffs) {
@@ -1285,12 +1285,16 @@ QString diff_match_patch::diff_prettyHtml(const QList<Diff> &diffs) {
         .replace(">", "&gt;").replace("\n", "&para;<br>");
     switch (aDiff.operation) {
       case OMC_OP_INSERT:
-        html += QString("<ins style=\"background:#e6ffe6;\">") + text
-            + QString("</ins>");
+        if (htmlDiff == HtmlDiff::Insertion || htmlDiff == HtmlDiff::Both) {
+          html += QString("<ins style=\"background:#e6ffe6;\">") + text
+              + QString("</ins>");
+        }
         break;
       case OMC_OP_DELETE:
-        html += QString("<del style=\"background:#ffe6e6;\">") + text
-            + QString("</del>");
+        if (htmlDiff == HtmlDiff::Deletion || htmlDiff == HtmlDiff::Both) {
+          html += QString("<del style=\"background:#ffe6e6;\">") + text
+              + QString("</del>");
+        }
         break;
       case OMC_OP_EQUAL:
         html += QString("<span>") + text + QString("</span>");

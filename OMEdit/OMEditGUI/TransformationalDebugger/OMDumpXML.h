@@ -39,12 +39,14 @@
 #include <QXmlDefaultHandler>
 #include <QHash>
 
+#include "diff_match_patch.h"
+
 class OMOperation {
 public:
   virtual ~OMOperation() {}
   virtual QString toString();
-  virtual QString toHtml();
-  QString diffHtml(QString &before, QString &after);
+  virtual QString toHtml(HtmlDiff htmlDiff = HtmlDiff::Both);
+  QString diffHtml(QString &before, QString &after, HtmlDiff htmlDiff);
 };
 
 class OMOperationInfo : public OMOperation
@@ -53,7 +55,7 @@ public:
   QString name,info;
   OMOperationInfo(QString name, QString info);
   QString toString();
-  QString toHtml();
+  QString toHtml(HtmlDiff htmlDiff);
 };
 
 class OMOperationBeforeAfter : public OMOperation
@@ -62,7 +64,7 @@ public:
   QString name,before,after;
   OMOperationBeforeAfter(QString name, QStringList ops);
   QString toString();
-  QString toHtml();
+  QString toHtml(HtmlDiff htmlDiff);
 };
 
 class OMOperationSimplify : public OMOperationBeforeAfter
