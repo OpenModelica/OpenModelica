@@ -113,7 +113,7 @@ The TLM Based co-simulation provides the following general functionalities:
 
 -  Import and add External non-Modelica models such as **Matlab/SimuLink**, **Adams**, and **BEAST** models
 
--  External Modelica models such as **Dymola** and **Wolfram SystemModeler** models
+-  Import and add External Modelica models e.g. from tools such as **Dymola** or **Wolfram SystemModeler**, etc.
 
 -  Specify startup methods and interfaces of the external model
 
