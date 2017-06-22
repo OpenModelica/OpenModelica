@@ -1118,6 +1118,14 @@ void TransformationsWidget::fetchDefines(OMEquation *equation)
       pDefineTreeItem->setToolTip(0, toolTip);
       mpDefinesVariableTreeWidget->addTopLevelItem(pDefineTreeItem);
     }
+    if ((equation->tag.compare("residual") == 0) && (equation->defines.isEmpty())) {
+      QStringList values;
+      values << QString("Part of an implicit system of equations");
+      QString toolTip = values.at(0);
+      QTreeWidgetItem *pDefineTreeItem = new QTreeWidgetItem(values);
+      pDefineTreeItem->setToolTip(0, toolTip);
+      mpDefinesVariableTreeWidget->addTopLevelItem(pDefineTreeItem);
+    }
     mpDefinesVariableTreeWidget->resizeColumnToContents(0);
   }
 }

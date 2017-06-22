@@ -264,7 +264,7 @@ QString OMEquation::toString()
   } else if (tag == "linear") {
     return QString("linear, size %1").arg(defines.size());
   } else if (tag == "residual") {
-    return text[0] + " (residual)";
+    return "(residual) " + text[0] + " = 0";
   } else {
     return "(" + display + "): " + text.join(",");
   }
