@@ -808,6 +808,40 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
   return 0;
 }
 
+int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **vars, int N, double time){
+    double w1,w2,y1,y2;
+    int i1,i2;
+    if(time > omc_matlab4_stopTime(reader)) return 1;
+    if(time < omc_matlab4_startTime(reader)) return 1;
+    if(!omc_matlab4_read_vals(reader,1)) return 1;
+    find_closest_points(time, reader->vars[0], reader->nrows, &i1, &w1, &i2, &w2);
+    for (int i = 0; i< N; i++){
+      if(vars[i]->isParam) {
+        if(vars[i]->index < 0)
+          res[i] = -reader->params[abs(vars[i]->index)-1];
+        else
+          res[i] = reader->params[vars[i]->index-1];
+      } else {
+        if(i2 == -1) {
+
+          if (omc_matlab4_read_single_val(&res[i],reader,vars[i]->index,i1)) return 1;
+
+        } else if(i1 == -1) {
+
+          if (omc_matlab4_read_single_val(&res[i],reader,vars[i]->index,i2)) return 1;
+
+        } else {
+
+          if(omc_matlab4_read_single_val(&y1,reader,vars[i]->index,i1)) return 1;
+          if(omc_matlab4_read_single_val(&y2,reader,vars[i]->index,i2)) return 1;
+          res[i] = w1*y1 + w2*y2;
+
+        }
+      }
+    }
+    return 0;
+}
+
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader)
 {
   unsigned int i;

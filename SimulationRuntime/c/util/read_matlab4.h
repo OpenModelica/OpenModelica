@@ -80,6 +80,10 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex);
 /* Returns 0 on success */
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);
 
+/* Reads multiple variables values in single time
+ * Returns 0 on success */
+int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **var, int N, double time);
+
 /* For debugging */
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 
