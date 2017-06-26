@@ -810,12 +810,12 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
 
 int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **vars, int N, double time){
     double w1,w2,y1,y2;
-    int i1,i2;
+    int i,i1,i2;
     if(time > omc_matlab4_stopTime(reader)) return 1;
     if(time < omc_matlab4_startTime(reader)) return 1;
     if(!omc_matlab4_read_vals(reader,1)) return 1;
     find_closest_points(time, reader->vars[0], reader->nrows, &i1, &w1, &i2, &w2);
-    for (int i = 0; i< N; i++){
+    for (i = 0; i< N; i++){
       if(vars[i]->isParam) {
         if(vars[i]->index < 0)
           res[i] = -reader->params[abs(vars[i]->index)-1];
