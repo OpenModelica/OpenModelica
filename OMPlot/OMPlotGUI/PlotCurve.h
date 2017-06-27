@@ -35,6 +35,7 @@
 #define PLOTCURVE_H
 
 #include "OMPlot.h"
+#include <qwt_plot_directpainter.h>
 
 namespace OMPlot
 {
@@ -53,6 +54,7 @@ private:
   int mStyle;
 
   Plot *mpParentPlot;
+  QwtPlotDirectPainter *mpPlotDirectPainter;
 public:
   PlotCurve(QString fileName, QString name, QString xVariableName, QString yVariableName, QString unit, QString displayUnit, Plot *pParent);
   ~PlotCurve();
@@ -75,6 +77,7 @@ public:
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
   const double* getXAxisVector() const;
+  QPair<QVector<double>*, QVector<double>*> getAxisVectors();
   void clearXAxisVector() {mXAxisVector.clear();}
   void setYAxisVector(QVector<double> vector);
   void addYAxisValue(double value);
@@ -95,6 +98,7 @@ public:
   bool hasCustomColor();
   void toggleVisibility();
   void setData(const double* xData, const double* yData, int size);
+  QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
 #if QWT_VERSION < 0x060000
   virtual void updateLegend(QwtLegend *legend) const;
 #endif

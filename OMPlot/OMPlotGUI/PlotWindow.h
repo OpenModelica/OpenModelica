@@ -60,7 +60,7 @@ class PlotWindow : public QMainWindow
 {
   Q_OBJECT
 public:
-  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC, PLOTARRAY, PLOTARRAYPARAMETRIC};
+  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC, PLOTINTERACTIVE, PLOTARRAY, PLOTARRAYPARAMETRIC};
 private:
   Plot *mpPlot;
   QCheckBox *mpLogXCheckBox;
@@ -70,6 +70,10 @@ private:
   QToolButton *mpNoGridButton;
   QToolButton *mpAutoScaleButton;
   QToolButton *mpSetupButton;
+  QToolButton *mpStartSimulationToolButton;
+  QToolButton *mpPauseSimulationToolButton;
+  QLabel *mpSimulationSpeedLabel;
+  QComboBox *mpSimulationSpeedComboBox;
   QTextStream *mpTextStream;
   QFile mFile;
   QStringList mVariablesList;
@@ -85,8 +89,15 @@ private:
   double mCurveWidth;
   int mCurveStyle;
   double mTime;
+  bool mIsInteractiveSimulation;
+  QString mInteractiveTreeItemOwner;
+  int mInteractivePort;
+  QwtSeriesData<QPointF>* mpInteractiveData;
+  QString mInteractiveModelName;
+  QMdiSubWindow *mpSubWindow;
 public:
-  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
+  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false,
+             QToolButton *pStartSimulation = 0, QToolButton *pPauseSimulation = 0, QComboBox *pSimulationSpeed = 0);
   ~PlotWindow();
 
   void setUpWidget();
@@ -101,6 +112,15 @@ public:
   void plotParametric(PlotCurve *pPlotCurve = 0);
   void plotArray(double timePercent, PlotCurve *pPlotCurve = 0);
   void plotArrayParametric(double timePercent, PlotCurve *pPlotCurve = 0);
+  QPair<QVector<double>*, QVector<double>*> plotInteractive(PlotCurve *pPlotCurve = 0);
+  void setInteractiveOwner(const QString &interactiveTreeItemOwner);
+  void setInteractivePort(const int port);
+  void setInteractivePlotData(QwtSeriesData<QPointF>* pInteractiveData);
+  void setSubWindow(QMdiSubWindow *pSubWindow) {mpSubWindow = pSubWindow;}
+  QMdiSubWindow* getSubWindow() {return mpSubWindow;}
+  void setInteractiveModelName(const QString &modelName);
+  QString getInteractiveOwner() {return mInteractiveTreeItemOwner;}
+  int getInteractivePort() {return mInteractivePort;}
   void setTitle(QString title);
   void setGrid(QString grid);
   QString getGrid();
@@ -136,6 +156,8 @@ public:
   void setTime(double time){mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText(QString unit);
+  void updateCurves();
+  void updateYAxis(QPair<double, double> minMaxValues);
 signals:
   void closingDown();
 public slots:
