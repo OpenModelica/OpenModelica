@@ -1,18 +1,30 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.mos \
 ThermoSysPro.Examples.SimpleExamples.TestBend.mos \
+ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump.mos \
+ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.mos \
+ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump5.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCheckValve.mos \
+ThermoSysPro.Examples.SimpleExamples.TestCompressor.mos \
 ThermoSysPro.Examples.SimpleExamples.TestControlValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicTwoPhaseFlowPipe.mos \
+ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mos \
+ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mos \
 ThermoSysPro.Examples.SimpleExamples.TestIdealCheckValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestIdealSwitchValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestInvSingularPressureLoss.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions2.mos \
+ThermoSysPro.Examples.SimpleExamples.TestJunctions4.mos \
 ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.mos \
 ThermoSysPro.Examples.SimpleExamples.TestPipePressureLoss.mos \
 ThermoSysPro.Examples.SimpleExamples.TestRefP.mos \
@@ -20,9 +32,12 @@ ThermoSysPro.Examples.SimpleExamples.TestSensors.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSimpleEvaporatorWaterSteamFlueGases.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticDrum2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticExchangerWaterSteamFlueGases.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.mos \
@@ -31,41 +46,35 @@ ThermoSysPro.Examples.SimpleExamples.TestSteamDryer.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSteamDryer2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSteamEngine.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine2.mos \
+ThermoSysPro.Examples.SimpleExamples.TestTank.mos \
+ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestSwitchValve.mos \
+ThermoSysPro.Examples.SimpleExamples.TestVolumes2.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES=  \
 ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.mos \
 ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.mos \
-ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.mos \
-ThermoSysPro.Examples.SimpleExamples.TestCompressor.mos \
+ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump7.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.mos \
-ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.mos \
-ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos \
-ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve.mos \
-ThermoSysPro.Examples.SimpleExamples.TestDynamicTwoPhaseFlowPipe.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFan.mos \
-ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mos \
 ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions3.mos \
-ThermoSysPro.Examples.SimpleExamples.TestJunctions4.mos \
 ThermoSysPro.Examples.SimpleExamples.TestJunctions5.mos \
 ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.mos \
-ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.mos \
-ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.mos \
-ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1.mos \
-ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.mos \
-ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine1.mos \
-ThermoSysPro.Examples.SimpleExamples.TestTank.mos \
-ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.mos \
+ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.mos \
+ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating1.mos \
+ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating2.mos \
+ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.mos \
 ThermoSysPro.Examples.SimpleExamples.TestVolumes.mos \
 ThermoSysPro.Examples.SimpleExamples.TestVolumes1.mos \
-ThermoSysPro.Examples.SimpleExamples.TestVolumes2.mos \
 ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.mos \
 
 # Dependency files that are not .mo .mos or Makefile

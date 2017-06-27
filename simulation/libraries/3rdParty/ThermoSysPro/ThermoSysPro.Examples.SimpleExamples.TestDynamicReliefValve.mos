@@ -25,14 +25,19 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // true
 // ""
 // true
-// "[ThermoSysPro 3.1/package.mo:132:31-134:169:writable] Notification: ThermoSysPro is not yet fully operational with OpenModelica.
-// The authors suggest using Dymola for full benefit of the library, in particular if you are experiencing difficulties.
-// The current operational status with OpenModelica of the included examples can be found at https://test.openmodelica.org/libraries/ThermoSysPro/BuildModelRecursive.html
-// "
+// ""
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | warning | While solving non-linear system an assertion failed at time 194.113.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 194.113.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 194.113.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS
@@ -79,42 +84,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with several free start values
-//  * candidate: Pipe2.Q(start = 100.0)
-//  * candidate: Pipe2.C1.Q(start = 500.0)
-//  * candidate: VolumeD1.Cs3.Q(start = 500.0)
-//  * candidate: Pipe2.C2.Q(start = 500.0)
-//  * candidate: Sink2.C.Q(start = 500.0)
-// => select value from Pipe2.Q(start = 100.0) for variable: Pipe2.Q
-// Warning: Alias set with several free start values
-//  * candidate: Pipe1.Q(start = 100.0)
-//  * candidate: Pipe1.C1.Q(start = 500.0)
-//  * candidate: Tank.Cs2.Q(start = 500.0)
-//  * candidate: Pipe1.C2.Q(start = 500.0)
-//  * candidate: VolumeD1.Ce.Q(start = 500.0)
-// => select value from Pipe1.Q(start = 100.0) for variable: Pipe1.Q
-// Warning: Alias set with different nominal values
-//  * candidate: VolumeD1.pro.T(nominal = 320.0)
-//  * candidate: VolumeD1.T(nominal = 300.0)
-// => select value from VolumeD1.T(nominal = 300.0) for variable: VolumeD1.T
-// Warning: Alias set with different nominal values
-//  * candidate: Pipe1.pro.T(nominal = 320.0)
-//  * candidate: Pipe1.T(nominal = 300.0)
-// => select value from Pipe1.T(nominal = 300.0) for variable: Pipe1.T
-// Warning: Alias set with different nominal values
-//  * candidate: Tank.Cth.T(nominal = 300.0)
-//  * candidate: Tank.pro.T(nominal = 320.0)
-//  * candidate: Tank.T(nominal = 300.0)
-// => select value from Tank.T(nominal = 300.0) for variable: Tank.T
-// Warning: Alias set with different nominal values
-//  * candidate: Pipe2.pro.T(nominal = 320.0)
-//  * candidate: Pipe2.T(nominal = 300.0)
-// => select value from Pipe2.T(nominal = 300.0) for variable: Pipe2.T
-// Warning: Alias set with different nominal values
-//  * candidate: ReliefValve.pro.T(nominal = 320.0)
-//  * candidate: ReliefValve.T(nominal = 300.0)
-// => select value from ReliefValve.T(nominal = 300.0) for variable: ReliefValve.T
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
 // "
 // {"Files Equal!"}
 // endResult

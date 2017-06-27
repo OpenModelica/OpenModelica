@@ -1,7 +1,7 @@
-// name:     ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos [simulation checking]
+// name:     ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.mos [simulation checking]
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
-// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.* ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_* ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.log ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.c ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.o output.log
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4_* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.exe ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.cpp ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.makefile ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.libs ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.log ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.c ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.o output.log
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -10,17 +10,17 @@
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadModel(ThermoSysPro); getErrorString();
 
-simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe, stopTime=1000); getErrorString();
+simulate(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4, stopTime=1000);  getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults(
-"ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_res.mat",
-getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mat",
-"ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_diff.csv",
+"ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4_diff.csv",
 0.01, 0.0001,
-{"dynamicOnePhaseFlowPipe.T1[1]", "dynamicOnePhaseFlowPipe.T1[2]", "dynamicOnePhaseFlowPipe.T1[3]", "dynamicOnePhaseFlowPipe.T1[4]", "dynamicOnePhaseFlowPipe.T1[5]",
- "dynamicOnePhaseFlowPipe.T1[6]", "dynamicOnePhaseFlowPipe.T1[7]", "dynamicOnePhaseFlowPipe.T1[8]", "dynamicOnePhaseFlowPipe.T1[9]", "dynamicOnePhaseFlowPipe.T1[10]",
- "dynamicOnePhaseFlowPipe.P[1]", "dynamicOnePhaseFlowPipe.P[2]", "dynamicOnePhaseFlowPipe.P[3]", "dynamicOnePhaseFlowPipe.P[4]", "dynamicOnePhaseFlowPipe.P[5]",
- "dynamicOnePhaseFlowPipe.P[6]", "dynamicOnePhaseFlowPipe.P[7]", "dynamicOnePhaseFlowPipe.P[8]", "dynamicOnePhaseFlowPipe.P[9]", "dynamicOnePhaseFlowPipe.P[10]"});
+{"centrifugalPump1.w",
+ "Tank.z",
+ "Tank.h",
+ "lumpedStraightPipe.Q"});
 
 // Result:
 // true
@@ -28,12 +28,13 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // true
 // ""
 // record SimulationResult
-//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/ElectroMechanics/Connectors.mo:3:3-38:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
@@ -53,12 +54,22 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/ElectroMechanics/Connectors.mo:3:3-38:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}

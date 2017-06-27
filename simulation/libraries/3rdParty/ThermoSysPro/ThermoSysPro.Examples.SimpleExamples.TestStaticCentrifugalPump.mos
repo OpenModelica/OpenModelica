@@ -25,16 +25,13 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // true
 // ""
 // true
-// "[ThermoSysPro 3.1/package.mo:132:31-134:169:writable] Notification: ThermoSysPro is not yet fully operational with OpenModelica.
-// The authors suggest using Dymola for full benefit of the library, in particular if you are experiencing difficulties.
-// The current operational status with OpenModelica of the included examples can be found at https://test.openmodelica.org/libraries/ThermoSysPro/BuildModelRecursive.html
-// "
+// ""
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "assert            | warning | The following assertion has been violated at time 201.059570
+//     messages = "assert            | warning | The following assertion has been violated at time 200.000000
 // |                 | |       | StaticCentrifugalPump1.hn >= 0.0
-// assert            | warning | Variable StaticCentrifugalPump1.hn out of [min, max] interval: StaticCentrifugalPump1.hn >= 0.0 has value: -5.93012e-24
+// assert            | warning | Variable violating min constraint: 0.0 <= StaticCentrifugalPump1.hn, has value: -1.7295e-29
 // "
 // end SimulationResult;
 // "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -70,16 +67,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: Alias set with different nominal values
-//  * candidate: VanneReglante1.pro.T(nominal = 320.0)
-//  * candidate: VanneReglante1.T(nominal = 300.0)
-// => select value from VanneReglante1.T(nominal = 300.0) for variable: VanneReglante1.T
-// Warning: Alias set with different nominal values
-//  * candidate: Bache1.Cth.T(nominal = 300.0)
-//  * candidate: Bache1.pro.T(nominal = 320.0)
-//  * candidate: Bache1.T(nominal = 300.0)
-// => select value from Bache1.T(nominal = 300.0) for variable: Bache1.T
-// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {"Files Equal!"}
 // endResult
