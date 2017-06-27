@@ -2242,7 +2242,7 @@ algorithm
       list<DAE.Exp> expl, crexplst;
       list<DAE.Var> varLst;
       list<DAE.Exp> e1lst, e2lst;
-      SimCode.SimEqSystem simeqn;
+      SimCode.SimEqSystem simeqn_complex;
       list<SimCode.SimEqSystem> eqSystlst;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       Integer uniqueEqIndex;
@@ -2303,9 +2303,9 @@ algorithm
       tempvars = createTempVars(varLst, crtmp, itempvars);
       etmp = Expression.crefToExp(crtmp);
       stms = DAE.STMT_ASSIGN(tp, etmp, callExp, source);
-      simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
       uniqueEqIndex = iuniqueEqIndex + 1;
-      eqSystlst = {simeqn};
+      eqSystlst = {simeqn_complex};
 
       // 0 = tmp - Record()
       // Expand the record for any arrays
@@ -2729,7 +2729,7 @@ algorithm
 end solveAlgorithmInverse;
 
 // =============================================================================
-// section for ???
+// Section for handling complex equations
 //
 // =============================================================================
 
@@ -2751,12 +2751,11 @@ algorithm
       DAE.Exp e1, e2, e1_1, e2_1, etmp;
       DAE.Statement stms;
       DAE.Type tp;
-      list<DAE.Type> tplst;
-      list<DAE.Exp> expl, crexplst;
+      list<DAE.Exp> expl, crexplst, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss;
       list<DAE.Var> varLst;
       list<DAE.Exp> e1lst, e2lst;
-      SimCode.SimEqSystem simeqn;
-      list<SimCode.SimEqSystem> eqSystlst;
+      SimCode.SimEqSystem simeqn_complex;
+      list<SimCode.SimEqSystem> eqSystlst, eqSystlst_simpAss;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       Integer uniqueEqIndex;
       Absyn.Path path, rpath;
@@ -2825,7 +2824,7 @@ algorithm
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       e1_1 = Expression.crefToExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
-      simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
       uniqueEqIndex = iuniqueEqIndex + 1;
 
       // Record()-tmp = 0
@@ -2837,7 +2836,7 @@ algorithm
       exptl = List.threadTuple(e1lst, e2lst);
       /* Create residual equations for each pair*/
       (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
-      eqSystlst = simeqn::eqSystlst;
+      eqSystlst = simeqn_complex::eqSystlst;
 
       tempvars = createTempVars(varLst, cr, itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
@@ -2852,13 +2851,13 @@ algorithm
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       e2_1 = Expression.crefExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
-      simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
       uniqueEqIndex = iuniqueEqIndex + 1;
       // Record()-tmp = 0
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
       exptl = List.threadTuple(e1lst, e2lst);
       (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
-      eqSystlst = simeqn::eqSystlst;
+      eqSystlst = simeqn_complex::eqSystlst;
       tempvars = createTempVars(varLst, cr, itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
 
@@ -2871,7 +2870,7 @@ algorithm
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       crexplst = List.map1(expl, Expression.generateCrefsExpFromExp, cr);
       stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, inExp1, source);
-      simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
       uniqueEqIndex = iuniqueEqIndex + 1;
 
       // for creating makeSES_RESIDUAL1 all crefs needs to expanded
@@ -2892,7 +2891,7 @@ algorithm
       // Tuple() - tmp = 0
       exptl = List.threadTuple(expl, crexplst);
       (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
-      eqSystlst = simeqn::eqSystlst;
+      eqSystlst = simeqn_complex::eqSystlst;
 
       tempvars = createTempVarsforCrefs(listReverse(crexplst), itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
@@ -2906,6 +2905,207 @@ algorithm
     then fail();
   end matchcontinue;
 end createNonlinearResidualEquationsComplex;
+
+protected function createNonlinearResidualEquationsSingleComplex
+  input DAE.Exp inExp;
+  input DAE.Exp inExp1;
+  input DAE.ElementSource source;
+  input Integer iuniqueEqIndex;
+  input list<SimCodeVar.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCodeVar.SimVar> otempvars;
+  input output list<DAE.ComponentRef> eqCrefs = {};
+algorithm
+  (equations_, ouniqueEqIndex, otempvars) := match (inExp, inExp1)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> callCrefs;
+      DAE.Statement stms;
+      DAE.Type tp;
+      list<DAE.Exp> expl, callExps, crexplst, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss;
+      SimCode.SimEqSystem simeqn_complex;
+      list<SimCode.SimEqSystem> eqSystlst, eqSystlst_simpAss;
+      list<tuple<DAE.Exp, DAE.Exp>> exptl;
+      Integer uniqueEqIndex;
+      Absyn.Path path;
+      String ident;
+      list<SimCodeVar.SimVar> tempvars;
+
+    /* Tuple() = f()  */
+    case (DAE.TUPLE(PR=expl), DAE.CALL(path=path, expLst=callExps)) equation
+      // Get all crefs in the call arguments
+      (_, callCrefs) = Expression.traverseExpList(callExps, Expression.traversingComponentRefFinder, {});
+
+      // Prepare cref prefix for temporary variables
+      tp = Expression.typeof(inExp);
+      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+
+      // Create temporary variables and residual equations for variables not solved in this equation
+      (eqCrefs, crexplst, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss) = createTmpCrefExpsForComplexEqnSys(expl, cr, eqCrefs, callCrefs);
+
+      // Create algorithm equation from complex equation with temporary variables
+      stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, inExp1, source);
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      uniqueEqIndex = iuniqueEqIndex + 1;
+
+      // Make simple assignments
+      // var := tmp_var
+      exptl = List.threadTuple(lhsExpLstAss, rhsExpLstAss);
+      (eqSystlst_simpAss, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
+
+      // Make residual equations
+      // tmp_var - var = 0
+      exptl = List.threadTuple(rhsExpLstRes, lhsExpLstRes);
+      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
+
+      // Add simEqns to eqSystlst and temporary variables to tempvars
+      eqSystlst = simeqn_complex :: listAppend(eqSystlst_simpAss, eqSystlst);
+      tempvars = createTempVarsforCrefs(listReverse(rhsExpLstAss), itempvars);
+      tempvars = createTempVarsforCrefs(listReverse(lhsExpLstRes), tempvars);
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
+    /* To-Do: Add other cases
+       - a = f()
+       - f() = a
+       - Record() = f()
+       - f() = Record()
+    */
+  end match;
+end createNonlinearResidualEquationsSingleComplex;
+
+protected function createTmpCrefExpsForComplexEqnSys
+  "This function creates tmp cref expressions for crefs that are not solved in the current complex equation or occur on rhs and lhs.
+   It also returns lists of expressions to create inner equations and residual equations from.
+   author: ptaeuber 06-2017"
+  input list<DAE.Exp> inExpLst;
+  input DAE.ComponentRef crPrefix;
+  input output list<DAE.ComponentRef> eqCrefs;
+  input list<DAE.ComponentRef> callCrefs;
+  output list<DAE.Exp> outExpList = {};
+  input output list<DAE.Exp> lhsExpLstRes = {};
+  input output list<DAE.Exp> rhsExpLstRes = {};
+  input output list<DAE.Exp> lhsExpLstAss = {};
+  input output list<DAE.Exp> rhsExpLstAss = {};
+protected
+  DAE.Exp newExp;
+algorithm
+  for e in inExpLst loop
+    (eqCrefs, newExp, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss) := createTmpCrefExpsForComplexEqnSys_work(e, crPrefix, eqCrefs, callCrefs, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss);
+    outExpList := newExp::outExpList;
+  end for;
+  outExpList := List.listReverseInPlace(outExpList);
+end createTmpCrefExpsForComplexEqnSys;
+
+protected function createTmpCrefExpsForComplexEqnSys_work
+  "This function gets a crefExp and decides if a tmp_crefExp is needed. If yes, tmp_crefExp is created and returned.
+   It also returns lists of expressions to create inner equations and residual equations from.
+   author: ptaeuber 06-2017"
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCrefPrefix;
+  input output list<DAE.ComponentRef> eqCrefs;
+  input list<DAE.ComponentRef> callCrefs;
+  output DAE.Exp outCrefExp;
+  input output list<DAE.Exp> lhsExpLstRes;
+  input output list<DAE.Exp> rhsExpLstRes;
+  input output list<DAE.Exp> lhsExpLstAss;
+  input output list<DAE.Exp> rhsExpLstAss;
+algorithm
+  outCrefExp := match inExp
+    local
+      String name;
+      DAE.Type ty;
+      DAE.ComponentRef cr, c1;
+      list<DAE.ComponentRef> crlist;
+      DAE.Exp e, exp, tmp_exp;
+      list<DAE.Exp> tmp_lhsExpLstRes = {}, tmp_rhsExpLstRes = {}, tmp_lhsExpLstAss = {}, tmp_rhsExpLstAss = {};
+      Boolean isEqCref, createTmpVar = false;
+
+    // Wild cref
+    case DAE.CREF(componentRef=DAE.WILD()) then inExp;
+
+    // Array cref
+    case DAE.CREF(componentRef=cr) guard Expression.isArrayType(ComponentReference.crefTypeFull(cr))
+      algorithm
+        crlist := ComponentReference.expandCref(cr, true);
+
+        // Loop array crefs to find out if at least one cref is not in cref list
+        // (means not a variable solved in the current equation)
+        for c in crlist loop
+          // Prepare temporary crefExp
+          name := ComponentReference.crefModelicaStr(c);
+          ty := ComponentReference.crefTypeFull(c);
+          c1 := ComponentReference.crefPrependIdent(inCrefPrefix,name,ComponentReference.crefSubs(c),ty);
+          tmp_exp := Expression.makeCrefExp(c1, ty);
+          exp := Expression.makeCrefExp(c, ty);
+
+          isEqCref := List.isMemberOnTrue(c, eqCrefs, ComponentReference.crefEqual);
+          if isEqCref then
+            // Add cref to temporary assignment lists
+            tmp_lhsExpLstAss := exp :: tmp_lhsExpLstAss;
+            tmp_rhsExpLstAss := tmp_exp :: tmp_rhsExpLstAss;
+
+            // Delete that cref because it is not an iteration variable!
+            eqCrefs := List.deleteMemberOnTrue(c, eqCrefs, ComponentReference.crefEqual);
+          else
+            // Add cref to temporary residual lists
+            tmp_lhsExpLstRes := tmp_exp :: tmp_lhsExpLstRes;
+            tmp_rhsExpLstRes := exp :: tmp_rhsExpLstRes;
+          end if;
+
+          createTmpVar := createTmpVar or not isEqCref;
+        end for;
+
+        // If at least one cref is not in cref list create new tmp crefExp (variable) to add to the system
+        if createTmpVar then
+          // Prepare temporary crefExp
+          name := ComponentReference.crefModelicaStr(cr);
+          ty := ComponentReference.crefTypeFull(cr);
+          cr := ComponentReference.crefPrependIdent(inCrefPrefix,name,ComponentReference.crefSubs(cr),ty);
+          e := Expression.makeCrefExp(cr, ty);
+
+          // Add temporary residual and assignment list to global lists
+          lhsExpLstAss := listAppend(tmp_lhsExpLstAss, lhsExpLstAss);
+          rhsExpLstAss := listAppend(tmp_rhsExpLstAss, rhsExpLstAss);
+          lhsExpLstRes := listAppend(tmp_lhsExpLstRes, lhsExpLstRes);
+          rhsExpLstRes := listAppend(tmp_rhsExpLstRes, rhsExpLstRes);
+        else
+          // All the crefs are to be solved in the current equation, so no tmp var is needed
+          e := inExp;
+        end if;
+      then e;
+
+    // Normal cref
+    case DAE.CREF(componentRef=cr)
+      algorithm
+        // If cref is not in cref list (means not a variable solved in the current equation)
+        // create new tmp crefExp (variable) to add to the system
+        // Also do this if cref occurs in lhs and rhs
+        if not List.isMemberOnTrue(cr, eqCrefs, ComponentReference.crefEqual) or List.isMemberOnTrue(cr, callCrefs, ComponentReference.crefEqual) then
+          // Prepare temporary crefExp
+          name := ComponentReference.crefModelicaStr(cr);
+          ty := ComponentReference.crefTypeFull(cr);
+          cr := ComponentReference.crefPrependIdent(inCrefPrefix,name,ComponentReference.crefSubs(cr),ty);
+          e := Expression.makeCrefExp(cr, ty);
+
+          // Add expressions to residual lists
+          lhsExpLstRes := e :: lhsExpLstRes;
+          rhsExpLstRes := inExp :: rhsExpLstRes;
+        else
+          // Cref is to be solved in the current equation on the lhs, so no tmp var is needed
+          e := inExp;
+          // Delete that cref because it is not an iteration variable!
+          eqCrefs := List.deleteMemberOnTrue(cr, eqCrefs, ComponentReference.crefEqual);
+        end if;
+      then e;
+
+    else
+      equation
+        print("SimCodeUtil.createTmpCrefExpsForComplexEqnSys_work: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
+      then fail();
+  end match;
+end createTmpCrefExpsForComplexEqnSys_work;
 
 protected function createArrayTempVar
   input DAE.ComponentRef name;
@@ -3082,7 +3282,7 @@ algorithm
       eqSystemsRest = listAppend(eqSystlst, eqSystemsRest);
     then (eqSystemsRest, uniqueEqIndex, tempvars);
 
-    // An complex equation
+    // A complex equation
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source)::rest) equation
       (e1, _) = ExpressionSimplify.simplify(e1);
       e1 = Expression.replaceDerOpInExp(e1);
@@ -5639,13 +5839,30 @@ algorithm
       Boolean homotopySupport;
       BackendDAE.EquationAttributes attr;
 
-
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
       (equations_, uniqueEqIndex, tempvars) = createSingleComplexEqnCode2(crefs, e1, e2, iuniqueEqIndex, itempvars, source, attr, iextra, genDiscrete, inVars);
     then (equations_, uniqueEqIndex, tempvars);
+
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source), _, _, _) equation
+      crefs = List.map(inVars, BackendVariable.varCref);
+
+      // Check that all crefs are of Type Real
+      // otherwise we can't solve that with one Non-linear equation
+      true = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
+
+      // Simplify
+      (e1, _) = ExpressionSimplify.simplify(e1);
+      e1 = Expression.replaceDerOpInExp(e1);
+      (e2, _) = ExpressionSimplify.simplify(e2);
+      e2 = Expression.replaceDerOpInExp(e2);
+
+      // Create nonlinear equation system from complex function
+      (resEqs, uniqueEqIndex, tempvars, crefs) = createNonlinearResidualEquationsSingleComplex(e1, e2, source, iuniqueEqIndex, itempvars, crefs);
+      (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(inEquation, containsHomotopyCall, false);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, NONE(), homotopySupport, false), NONE())}, uniqueEqIndex+1, tempvars);
 
     case (BackendDAE.COMPLEX_EQUATION(), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
@@ -5722,7 +5939,7 @@ algorithm
       list<DAE.Exp> expLst, crexplst ,e1lst, e2lst;
       DAE.Ident ident;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
-      SimCode.SimEqSystem simeqn;
+      SimCode.SimEqSystem simeqn_complex;
       list<SimCode.SimEqSystem> eqSystlst;
       list<SimCodeVar.SimVar> tempvars;
       Integer uniqueEqIndex;
@@ -5784,7 +6001,7 @@ algorithm
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefToExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
-        simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
         uniqueEqIndex = iuniqueEqIndex + 1;
 
         /* Expand the varLst. Each var might be an array or record. */
@@ -5793,7 +6010,7 @@ algorithm
         exptl = List.threadTuple(expLst, crexplst);
         /* Create residual equations for each pair*/
         (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
-        eqSystlst = simeqn::eqSystlst;
+        eqSystlst = simeqn_complex::eqSystlst;
 
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
@@ -5814,13 +6031,13 @@ algorithm
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
-        simeqn = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()=tmp
         crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
         exptl = List.threadTuple(expLst, crexplst);
         (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
-        eqSystlst = simeqn::eqSystlst;
+        eqSystlst = simeqn_complex::eqSystlst;
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
         (eqSystlst, uniqueEqIndex, tempvars);
