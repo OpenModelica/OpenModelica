@@ -162,7 +162,7 @@ protected function callTearingMethod
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
-  protected constant Boolean debug = false;
+  constant Boolean debug = false;
   list<Integer> userTVars, userResiduals;
   TearingMethod tearingMethod = inTearingMethod;
 algorithm
@@ -2342,7 +2342,7 @@ algorithm
   // Cellier heuristic [MC1]
 
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
-  ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
+  selectedcolsLst := findMostEntries(mIn);
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
@@ -2357,7 +2357,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols1);
 
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols2) := findMostEntries2(mtsel);
   selectedcols2 := List.unique(selectedcols2);
 
   // 4. convert indexes from mtsel to indexes from mtIn
@@ -2402,7 +2402,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols1) := findMostEntries2(mtsel);
   selectedcols1 := List.unique(selectedcols1);
 
   // convert indexes from mtsel to indexes from mtIn
@@ -2443,7 +2443,7 @@ algorithm
   // modified Cellier heuristic [MC11]
 
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
-  ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
+  selectedcolsLst := findMostEntries(mIn);
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
@@ -2459,7 +2459,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols1);
 
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols2) := findMostEntries2(mtsel);
   selectedcols2 := List.unique(selectedcols2);
 
   // 4. convert indexes from mtsel to indexes from mtIn
@@ -2510,7 +2510,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols1) := findMostEntries2(mtsel);
   selectedcols1 := List.unique(selectedcols1);
 
   // convert indexes from mtsel to indexes from mtIn
@@ -2557,7 +2557,7 @@ algorithm
   // modified Cellier heuristic [MC12]
 
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
-  ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
+  selectedcolsLst := findMostEntries(mIn);
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
@@ -2573,7 +2573,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols1);
 
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols2) := findMostEntries2(mtsel);
   selectedcols2 := List.unique(selectedcols2);
 
   // 4. convert indexes from mtsel to indexes from mtIn
@@ -2624,7 +2624,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols1) := findMostEntries2(mtsel);
   selectedcols1 := List.unique(selectedcols1);
 
   // convert indexes from mtsel to indexes from mtIn
@@ -2671,7 +2671,7 @@ algorithm
   // Cellier heuristic [MC13]
 
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
-  ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
+  selectedcolsLst := findMostEntries(mIn);
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
@@ -2687,7 +2687,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols1);
 
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols2) := findMostEntries2(mtsel);
   selectedcols2 := List.unique(selectedcols2);
 
   // 4. convert indexes from mtsel to indexes from mtIn
@@ -2744,7 +2744,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols1) := findMostEntries2(mtsel);
   selectedcols1 := List.unique(selectedcols1);
 
   // 2. convert indexes from mtsel to indexes from mtIn
@@ -2806,7 +2806,7 @@ algorithm
   mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,selectedcols1) := findMostEntries2(mtsel);
   selectedcols1 := List.unique(selectedcols1);
 
   // 2. convert indexes from mtsel to indexes from mtIn
@@ -2911,8 +2911,14 @@ algorithm
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 2"); end if;
 
   // 2. Determine the variables in causEq
-  msel := Array.select(mIn,causEq);
-  potentialTVars := List.unique(List.flatten(arrayList(msel)));
+  //msel := Array.select(mIn,causEq);
+  //potentialTVars := List.unique(List.flatten(arrayList(msel)));
+  potentialTVars := {};
+  for e in causEq loop
+    potentialTVars := List.append_reverse(arrayGet(mIn, e), potentialTVars);
+  end for;
+  potentialTVars := List.unique(listReverse(potentialTVars));
+
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(Variables in the equations from (1st))\n\n");
   end if;
@@ -2994,7 +3000,7 @@ algorithm
 
   // 6. Choose vars with most occurrence in equations as potentials
   mtsel := Array.select(mtIn,bestPotentialTVars);
-  ((edges,_,potentials)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,potentials) := findMostEntries2(mtsel);
   potentials := List.unique(potentials);
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 7"); end if;
 
@@ -3089,7 +3095,7 @@ algorithm
 
   // 4. Choose vars with most occurrence in equations as potentials
   mtsel := Array.select(mtIn,selectedvars);
-  ((edges,_,potentials)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
+  (edges,potentials) := findMostEntries2(mtsel);
   potentials := List.unique(potentials);
 
   // 5. convert indexes from mtsel to indexes from mtIn
@@ -3735,53 +3741,44 @@ protected function findMostEntries "find rows with most nonzero
 elements and put the indexes of the columns with nonzeros in a list.
 the first integer gives the max number of nonzero elements found.
 author: Waurich TUD 2012-10"
-  input list<Integer> row;
-  input tuple<Integer,list<list<Integer>>> inValue;
-  output tuple<Integer,list<list<Integer>>> outValue;
+  input BackendDAE.IncidenceMatrix mIn;
+  output list<list<Integer>> olst = {};
 protected
+  Integer length = 0;
   Integer length1;
 algorithm
-  length1 := listLength(row);
-  outValue:=
-  match(row,inValue)
-    local
-      Integer length;
-      list<list<Integer>> ilst;
-    case(_,(length,_)) guard length1 > length
-      then
-        ((length1,{row}));
-    case(_,(length,ilst)) guard intEq(length1,length)
-      then
-        ((length1,row::ilst));
-    else inValue;
-  end match;
+  for row in mIn loop
+    length1 := listLength(row);
+    if length1 > length then
+      length := length1;
+      olst := {row};
+    elseif intEq(length1,length) then
+      olst := row::olst;
+    end if;
+  end for;
 end findMostEntries;
 
 
 protected function findMostEntries2 "find rows with most nonzero
 elements and put the indexes of these rows in a list.
 author: Waurich TUD 2012-10"
- input list<Integer> row;
- input tuple<Integer,Integer,list<Integer>> inValue;
- output tuple<Integer,Integer,list<Integer>> outValue;
+  input BackendDAE.IncidenceMatrix mIn;
+  output Integer length = 0;
+  output list<Integer> ilst = {};
 protected
   Integer length1;
+  Integer indx = 1;
 algorithm
-  length1 := listLength(row);
-  outValue :=
-  match(row,inValue)
-    local
-      Integer length,indx;
-      list<Integer> ilst;
-    case(_,(length,indx,ilst))
-      then
-        if length1 > length then
-          ((length1,indx+1,{indx}))
-        else if intEq(length1,length) then
-          ((length,indx+1,indx::ilst))
-        else
-          ((length,indx+1,ilst));
-  end match;
+  for row in mIn loop
+    length1 := listLength(row);
+    if length1 > length then
+      length := length1;
+      ilst := {indx};
+    elseif intEq(length1,length) then
+      ilst := indx::ilst;
+    end if;
+    indx := indx+1;
+  end for;
 end findMostEntries2;
 
 
