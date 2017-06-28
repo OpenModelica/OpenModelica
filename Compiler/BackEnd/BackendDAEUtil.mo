@@ -3789,7 +3789,7 @@ public function getAdjacencyMatrixEnhancedScalar
   output array<list<Integer>> outMapEqnIncRow;
   output array<Integer> outMapIncRowEqn;
 protected
-  list<list<tuple<Integer,list<Integer>>>> varsSolvedInWhenEqnsTupleList;
+  list<tuple<Integer,list<Integer>>> varsSolvedInWhenEqnsTupleList;
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,outMapEqnIncRow,outMapIncRowEqn) :=
   matchcontinue (syst, shared)
@@ -3823,7 +3823,7 @@ algorithm
         fail();
   end matchcontinue;
 
-  makeWhenEqnVarsUnsolvable(outIncidenceMatrix,outIncidenceMatrixT,List.flatten(varsSolvedInWhenEqnsTupleList));
+  makeWhenEqnVarsUnsolvable(outIncidenceMatrix,outIncidenceMatrixT,varsSolvedInWhenEqnsTupleList);
 end getAdjacencyMatrixEnhancedScalar;
 
 
@@ -3895,7 +3895,7 @@ protected function adjacencyMatrixDispatchEnhancedScalar
   input Boolean trytosolve;
   output array<list<Integer>> omapEqnIncRow;
   output array<Integer> omapIncRowEqn;
-  output list<list<tuple<Integer,list<Integer>>>> varsSolvedInWhenEqnsTupleListOut = {};
+  output list<tuple<Integer,list<Integer>>> varsSolvedInWhenEqnsTupleListOut = {};
 protected
   list<BackendDAE.AdjacencyMatrixElementEnhanced> inIncidenceArray = {};
   list<list<Integer>> mapEqnIncRow = {};
@@ -3917,7 +3917,7 @@ algorithm
     // put it in the arrays
     inIncidenceArray := List.consN(size,row,inIncidenceArray);
     incidenceArrayT := fillincAdjacencyMatrixTEnhanced(row,rowindxs,incidenceArrayT);
-    varsSolvedInWhenEqnsTupleListOut := varsSolvedInWhenEqnsTuple :: varsSolvedInWhenEqnsTupleListOut;
+    varsSolvedInWhenEqnsTupleListOut := listAppend(varsSolvedInWhenEqnsTuple, varsSolvedInWhenEqnsTupleListOut);
     mapEqnIncRow := rowindxs::mapEqnIncRow;
   end for;
   outIncidenceArray := List.listArrayReverse(inIncidenceArray);
@@ -4041,9 +4041,9 @@ algorithm
       equation
         row = inIncidenceArrayT[v];
         newrow = List.map2(eqnsindxs,Util.make3Tuple,solva,cons);
-        newrow = listAppend(newrow,row);
+        row = listAppend(newrow,row);
         // put it in the array
-        mT = arrayUpdate(inIncidenceArrayT, v, newrow);
+        mT = arrayUpdate(inIncidenceArrayT, v, row);
       then
         fillincAdjacencyMatrixTEnhanced(rest, eqnsindxs, mT);
 
@@ -4054,8 +4054,8 @@ algorithm
         eqnsindxs1 = List.map(eqnsindxs,intNeg);
         newrow = List.map2(eqnsindxs1,Util.make3Tuple,solva,cons);
         // put it in the array
-        newrow = listAppend(newrow,row);
-        mT = arrayUpdate(inIncidenceArrayT, vabs, newrow);
+        row = listAppend(newrow,row);
+        mT = arrayUpdate(inIncidenceArrayT, vabs, row);
       then
         fillincAdjacencyMatrixTEnhanced(rest, eqnsindxs, mT);
 
@@ -4339,7 +4339,7 @@ protected function adjacencyRowAlgorithmInputs1
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
 algorithm
-  outRow := matchcontinue(vindx,mark,rowmark,iRow)
+  outRow := match(vindx,mark,rowmark,iRow)
     local
       Integer i;
       list<Integer> rest;
@@ -4353,12 +4353,9 @@ algorithm
       then
         adjacencyRowAlgorithmInputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_UNSOLVABLE(),{})::iRow);
     case (i::rest,_,_,_)
-      guard
-        // already handled
-        intEq(intAbs(rowmark[i]),mark)
       then
         adjacencyRowAlgorithmInputs1(rest,mark,rowmark,iRow);
-  end matchcontinue;
+  end match;
 end adjacencyRowAlgorithmInputs1;
 
 protected function adjacencyRowWhenEnhanced

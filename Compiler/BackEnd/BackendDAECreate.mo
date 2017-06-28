@@ -595,9 +595,9 @@ algorithm
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _)) equation
       i = BaseHashTable.get(inExp, ht);
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), inTuple);
 
     // delay [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, timeEvents)) equation
@@ -605,10 +605,10 @@ algorithm
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, timeEvents));
 
     // sample [already in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, iDelay, iSample, timeEvents))
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) equation
       i = BaseHashTable.get(inExp, ht);
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample, timeEvents));
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), inTuple);
 
     // sample [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))

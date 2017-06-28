@@ -2671,6 +2671,7 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> addEqs;
       list<DAE.Statement> stmts,stmtsIn;
+      tuple<DAE.Exp, DAE.FunctionTree,Integer,list<DAE.Statement>> tpl;
   case (DAE.CALL(),(lhs,funcs,idx,stmtsIn))
     equation
       ((rhs,lhs,addEqs,funcs,idx,_,_)) = evaluateConstantFunction(inExp,lhs,funcs,idx,{});
@@ -2680,11 +2681,10 @@ algorithm
 
   case (DAE.UNBOX(exp=rhs),_)
     equation
-      (rhs,_,(lhs,funcs,idx,stmts)) = evaluateConstantFunctionWrapper(rhs,inTpl);
-    then (rhs,true,(lhs,funcs,idx,stmts));
+      (rhs,_,tpl) = evaluateConstantFunctionWrapper(rhs,inTpl);
+    then (rhs,true,tpl);
 
-  case (rhs,(_,_,_,_))
-    then (rhs,false,inTpl);
+  else (inExp,false,inTpl);
   end matchcontinue;
 end evaluateConstantFunctionWrapper;
 
