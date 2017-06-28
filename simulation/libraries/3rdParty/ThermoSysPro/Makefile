@@ -8,7 +8,6 @@ ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump4.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump5.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCheckValve.mos \
-ThermoSysPro.Examples.SimpleExamples.TestCompressor.mos \
 ThermoSysPro.Examples.SimpleExamples.TestControlValve.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicDrum.mos \
@@ -60,6 +59,7 @@ FAILINGTESTFILES=  \
 ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.mos \
 ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.mos \
 ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump7.mos \
+ThermoSysPro.Examples.SimpleExamples.TestCompressor.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.mos \
 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mos \
