@@ -4167,7 +4167,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: v0:VARIABLE()  = 0.0  type: Real 
+// 1: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
@@ -4303,7 +4303,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: v0:VARIABLE()  = 0.0  type: Real 
+// 1: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
@@ -4439,7 +4439,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: v0:VARIABLE()  = 0.0  type: Real 
+// 1: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
@@ -4575,7 +4575,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: v0:VARIABLE()  = 0.0  type: Real 
+// 1: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
@@ -4711,7 +4711,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: v0:VARIABLE()  = 0.0  type: Real 
+// 1: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 // 2: R1:PARAM()  = 1.0  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
@@ -4851,7 +4851,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -4987,7 +4987,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5123,7 +5123,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5260,7 +5260,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5397,7 +5397,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -6749,7 +6749,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -6886,7 +6886,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -7023,7 +7023,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -7160,7 +7160,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -7297,7 +7297,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -7434,7 +7434,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -7571,7 +7571,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-// 5: v0:VARIABLE()  = 0.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)

@@ -1554,7 +1554,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable> 
 //
 //     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"118\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.57\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
+//       <Real start=\"1.570796326794897\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"driveAngle\"/>
 //       </QualifiedName>
@@ -2279,7 +2279,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         <exp:QualifiedNamePart name=\"driveAngle\"/>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>1.57</exp:RealLiteral>
+//         <exp:RealLiteral>1.570796326794897</exp:RealLiteral>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
@@ -3701,42 +3701,6 @@ readFile("Bug3857.xml"); getErrorString();
 //       <exp:Sub>
 //         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"aux2\">
-//             <exp:ArraySubscripts>
-//               <exp:IndexExpression>
-//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//               </exp:IndexExpression>
-//             </exp:ArraySubscripts>
-//           </exp:QualifiedNamePart>
-//         </exp:Identifier>
-//         <exp:Div>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"p_deltaq\">
-//               <exp:ArraySubscripts>
-//                 <exp:IndexExpression>
-//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//                 </exp:IndexExpression>
-//               </exp:ArraySubscripts>
-//             </exp:QualifiedNamePart>
-//           </exp:Identifier>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"p_qdd_max\">
-//               <exp:ArraySubscripts>
-//                 <exp:IndexExpression>
-//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
-//                 </exp:IndexExpression>
-//               </exp:ArraySubscripts>
-//             </exp:QualifiedNamePart>
-//           </exp:Identifier>
-//         </exp:Div>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"aux1\">
 //             <exp:ArraySubscripts>
 //               <exp:IndexExpression>
@@ -3796,6 +3760,42 @@ readFile("Bug3857.xml"); getErrorString();
 //       <exp:Sub>
 //         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"aux2\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//         </exp:Identifier>
+//         <exp:Div>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_deltaq\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"p_qdd_max\">
+//               <exp:ArraySubscripts>
+//                 <exp:IndexExpression>
+//                   <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//                 </exp:IndexExpression>
+//               </exp:ArraySubscripts>
+//             </exp:QualifiedNamePart>
+//           </exp:Identifier>
+//         </exp:Div>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"sdd_max\"/>
 //         </exp:Identifier>
 //         <exp:Div>
@@ -3812,24 +3812,6 @@ readFile("Bug3857.xml"); getErrorString();
 //               </exp:QualifiedNamePart>
 //             </exp:Identifier>
 //           </exp:Abs>
-//         </exp:Div>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Ta2\"/>
-//         </exp:Identifier>
-//         <exp:Div>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"sd_max\"/>
-//           </exp:Identifier>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"sdd_max\"/>
-//           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
@@ -3856,6 +3838,24 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:StringLiteral>\"Model error: Argument of sqrt should be &gt;= 0\"</exp:StringLiteral>
 //           </fun:Message>
 //         </fun:Assertion>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Ta2\"/>
+//         </exp:Identifier>
+//         <exp:Div>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sd_max\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sdd_max\"/>
+//           </exp:Identifier>
+//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>

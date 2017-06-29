@@ -94,8 +94,8 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // ########### Updated globalKnownVars (simulation) (3)
 // ========================================
 // 1: p1:PARAM()  = 5  type: Integer 
-// 2: dat.d2 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
-// 3: dat.d1 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 2: dat.d2 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 3: dat.d1 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
 //
 //
 // ########### CSE Replacements (4/46)
@@ -193,8 +193,8 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // Known variables only depending on parameters and constants - globalKnownVars (3)
 // ========================================
 // 1: p1:PARAM()  = 5  type: Integer 
-// 2: dat.d1 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
-// 3: dat.d2 in dat:DISCRETE()  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 2: dat.d1 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
+// 3: dat.d2 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)

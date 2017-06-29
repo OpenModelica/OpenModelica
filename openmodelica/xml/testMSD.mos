@@ -296,7 +296,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"12\" name=\"force1.s_support\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of support flange\">
+// <variable id=\"12\" name=\"force1.s_support\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of support flange\">
 // <bindExpression string=\"0.0\">
 // </bindExpression>
 // <attributesValues>
@@ -304,6 +304,8 @@ readFile("stateSpace-MSD.xml");
 // </quantity>
 // <unit string=\"&quot;m&quot;\">
 // </unit>
+// <fixed string=\"true\">
+// </fixed>
 // </attributesValues>
 // </variable>
 // </variablesList>

@@ -55,9 +55,9 @@ simulate(CSE.wrapFunctionCalls6); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (3)
 // ========================================
-// 1: x:VARIABLE()  = 2.0 * p1  type: Real 
+// 1: x:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
 // 2: p1:PARAM()  = 5.0  type: Real 
-// 3: c in (_, c, _):VARIABLE()  = CSE.wrapFunctionCalls6.f1(x)  type: Real 
+// 3: c in (_, c, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls6.f1(x)  type: Real 
 //
 //
 // ########### CSE Replacements (2/44)

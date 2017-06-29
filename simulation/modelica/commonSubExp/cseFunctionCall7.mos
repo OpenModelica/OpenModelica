@@ -104,7 +104,7 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (1)
 // ========================================
-// 1: r.r2:DISCRETE()  = 65  type: Integer 
+// 1: r.r2:DISCRETE(fixed = true )  = 65  type: Integer 
 //
 //
 // ########### CSE Replacements (5/50)

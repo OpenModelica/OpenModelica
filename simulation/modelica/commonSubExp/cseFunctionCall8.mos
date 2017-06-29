@@ -137,7 +137,7 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (2)
 // ========================================
-// 1: u:VARIABLE()  = 10.0  type: Real 
+// 1: u:VARIABLE(fixed = true )  = 10.0  type: Real 
 // 2: C:PARAM()  = 1.0  type: Real 
 //
 //

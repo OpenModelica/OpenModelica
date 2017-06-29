@@ -61,7 +61,7 @@ simulate(CSE.TestCall1); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (1)
 // ========================================
-// 1: B:VARIABLE()  = 4.0  type: Real 
+// 1: B:VARIABLE(fixed = true )  = 4.0  type: Real 
 //
 //
 // ########### CSE Replacements (1/46)
@@ -96,7 +96,7 @@ simulate(CSE.TestCall1); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (1)
 // ========================================
-// 1: B:VARIABLE()  = 4.0  type: Real 
+// 1: B:VARIABLE(fixed = true )  = 4.0  type: Real 
 //
 //
 // ########### CSE Replacements (3/46)

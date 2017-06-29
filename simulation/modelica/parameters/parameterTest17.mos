@@ -64,9 +64,9 @@ val(p9,0.0);
 //
 // ########### Updated globalKnownVars (simulation) (17)
 // ========================================
-// 1: a:DISCRETE()  = sin(/*Real*/(p2)) + /*Real*/(p1)  type: Integer 
-// 2: c:DISCRETE()  = 7 + p1 + p2 + p3 + p7 + p8 + pr1 + pr2 + c2  type: Integer 
-// 3: input x:VARIABLE()  type: Integer 
+// 1: a:DISCRETE(fixed = true )  = sin(/*Real*/(p2)) + /*Real*/(p1)  type: Integer 
+// 2: c:DISCRETE(fixed = false )  = 7 + p1 + p2 + p3 + p7 + p8 + pr1 + pr2 + c2  type: Integer 
+// 3: input x:VARIABLE(fixed = true )  type: Integer 
 // 4: p1:PARAM()  = 1  type: Integer 
 // 5: p2:PARAM()  = p1  type: Integer 
 // 6: p3:PARAM()  = 5  type: Integer 
@@ -80,7 +80,7 @@ val(p9,0.0);
 // 14: p9:PARAM(fixed = false )  = 2 * p4  type: Integer 
 // 15: pr1:PARAM(protected = true )  = 5  type: Integer 
 // 16: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 17: $cse1:VARIABLE()  = sin(/*Real*/(p2))  type: Real  unreplaceable
+// 17: $cse1:VARIABLE(fixed = true )  = sin(/*Real*/(p2))  type: Real  unreplaceable
 //
 //
 // ########### CSE Replacements (1/43)

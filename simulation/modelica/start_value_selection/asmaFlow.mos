@@ -1311,11 +1311,11 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (259)
 // ========================================
-// 1: aimc.friction.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -0.0  "Cut torque in the flange" type: Real 
-// 2: aimc.friction.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 3: aimc.statorCore.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 4: aimc.strayLoad.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 5: aimc.strayLoad.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -0.0  "Cut torque in the flange" type: Real 
+// 1: aimc.friction.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = -0.0  "Cut torque in the flange" type: Real 
+// 2: aimc.friction.heatPort.Q_flow:VARIABLE(flow=true unit = "W" fixed = true )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 3: aimc.statorCore.heatPort.Q_flow:VARIABLE(flow=true unit = "W" fixed = true )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 4: aimc.strayLoad.heatPort.Q_flow:VARIABLE(flow=true unit = "W" fixed = true )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 5: aimc.strayLoad.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = -0.0  "Cut torque in the flange" type: Real 
 // 6: sinevoltage1.freqHz[3]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
 // 7: sinevoltage1.sineVoltage[3].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[3]  "Frequency of sine wave" type: Real  [3]
 // 8: sinevoltage1.phase[3]:PARAM(unit = "rad" )  = -4.188790204786391  "Phases of sine waves" type: Real  [3]
@@ -1531,45 +1531,45 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 218: terminalBox.terminalConnection:PARAM(start = "Y" final = true )  "Choose Y=star/D=delta" type: String 
 // 219: terminalBox.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
 // 220: DeltaOmEl:PARAM(unit = "rad/s" )  = 25.0  "Controller Delta Omega" type: Real 
-// 221: ground.p.v:VARIABLE(flow=false unit = "V" )  = 0.0  "Potential at the pin" type: Real 
-// 222: aimc.spacePhasorS.ground.v:VARIABLE(flow=false unit = "V" )  = 0.0  "Potential at the pin" type: Real 
-// 223: aimc.inertiaStator.flange_b.tau:VARIABLE(flow=true unit = "N.m" )  = 0.0  "Cut torque in the flange" type: Real 
-// 224: aimc.internalThermalPort.heatPortRotorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 225: aimc.internalThermalPort.heatPortStatorWinding[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
-// 226: aimc.internalThermalPort.heatPortStatorWinding[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
-// 227: aimc.internalThermalPort.heatPortStatorWinding[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
-// 228: aimc.internalThermalPort.heatPortRotorWinding.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 229: aimc.internalThermalPort.heatPortFriction.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 230: aimc.internalThermalPort.heatPortStrayLoad.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 231: aimc.internalThermalPort.heatPortStatorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
-// 232: aimc.internalSupport.tau:VARIABLE(flow=true unit = "N.m" protected = true )  = 0.0  "Reaction torque in the support/housing" type: Real 
-// 233: terminalBox.starpoint.i:VARIABLE(flow=true unit = "A" )  = 0.0  "Current flowing into the pin" type: Real 
-// 234: speedSensor.flange.tau:VARIABLE(flow=true unit = "N.m" )  = 0.0  "Cut torque in the flange" type: Real 
-// 235: aimc.strayLoad.tau:VARIABLE(unit = "N.m" )  = 0.0  "Torque" type: Real 
-// 236: aimc.strayLoad.v[3]:VARIABLE(unit = "V" )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
-// 237: aimc.strayLoad.v[2]:VARIABLE(unit = "V" )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
-// 238: aimc.strayLoad.v[1]:VARIABLE(unit = "V" )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
-// 239: aimc.statorCore.spacePhasor.i_[2]:VARIABLE(flow=true unit = "A" )  = 0.0  "1=real, 2=imaginary part" type: Real  [2]
-// 240: aimc.statorCore.spacePhasor.i_[1]:VARIABLE(flow=true unit = "A" )  = 0.0  "1=real, 2=imaginary part" type: Real  [2]
-// 241: aimc.powerBalance.lossPowerRotorCore:VARIABLE(unit = "W" final = true )  = 0.0  "Rotor core losses" type: Real 
-// 242: aimc.friction.tau:VARIABLE(unit = "N.m" )  = 0.0  "Torque" type: Real 
-// 243: aimc.inertiaStator.w:DUMMY_STATE(unit = "rad/s" )  = 0.0  "Absolute angular velocity of component (= der(phi))" type: Real 
-// 244: aimc.powerBalance.lossPowerFriction:VARIABLE(unit = "W" final = true )  = 0.0  "Friction losses" type: Real 
-// 245: aimc.rs.resistor[1].R_actual:VARIABLE(unit = "Ohm" )  = aimc.rs.resistor[1].R * (1.0 + aimc.rs.resistor[1].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[1].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
-// 246: aimc.rs.resistor[2].R_actual:VARIABLE(unit = "Ohm" )  = aimc.rs.resistor[2].R * (1.0 + aimc.rs.resistor[2].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[2].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
-// 247: aimc.rs.resistor[3].R_actual:VARIABLE(unit = "Ohm" )  = aimc.rs.resistor[3].R * (1.0 + aimc.rs.resistor[3].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[3].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
-// 248: aimc.statorCore.lossPower:VARIABLE(unit = "W" )  = 0.0  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
-// 249: aimc.strayLoad.lossPower:VARIABLE(unit = "W" )  = 0.0  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
-// 250: aimc.squirrelCageR.Rr_actual:VARIABLE(unit = "Ohm" )  = aimc.squirrelCageR.Rr * (1.0 + aimc.squirrelCageR.alpha * (aimc.thermalAmbient.constTr.k - aimc.squirrelCageR.T_ref))  "Actual resistance = Rr*(1 + alpha*(T_heatPort - T_ref))" type: Real 
-// 251: aimc.powerBalance.powerInertiaStator:VARIABLE(unit = "W" final = true )  = 0.0  "Stator inertia power" type: Real 
-// 252: aimc.inertiaStator.a:VARIABLE(unit = "rad/s2" )  = 0.0  "Absolute angular acceleration of component (= der(w))" type: Real 
-// 253: aimc.thermalAmbient.temperatureStrayLoad.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
-// 254: aimc.thermalAmbient.temperatureStatorCore.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
-// 255: aimc.thermalAmbient.temperatureRotorCore.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
-// 256: aimc.thermalAmbient.temperatureFriction.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
-// 257: torque.phi_support:VARIABLE(unit = "rad" protected = true )  = 0.0  "Absolute angle of support flange" type: Real 
-// 258: aimc.statorCore.Gc:VARIABLE(unit = "S" )  = 0.0  "Variable core loss conductance" type: Real 
-// 259: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" protected = true )  = max(abs(aimc.statorCoreParameters.wRef), aimc.statorCore.coreParameters.wMin)  "Limited angular velocity" type: Real 
+// 221: ground.p.v:VARIABLE(flow=false unit = "V" fixed = true )  = 0.0  "Potential at the pin" type: Real 
+// 222: aimc.spacePhasorS.ground.v:VARIABLE(flow=false unit = "V" fixed = true )  = 0.0  "Potential at the pin" type: Real 
+// 223: aimc.inertiaStator.flange_b.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = 0.0  "Cut torque in the flange" type: Real 
+// 224: aimc.internalThermalPort.heatPortRotorCore.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 225: aimc.internalThermalPort.heatPortStatorWinding[1].Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 226: aimc.internalThermalPort.heatPortStatorWinding[2].Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 227: aimc.internalThermalPort.heatPortStatorWinding[3].Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 228: aimc.internalThermalPort.heatPortRotorWinding.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 229: aimc.internalThermalPort.heatPortFriction.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 230: aimc.internalThermalPort.heatPortStrayLoad.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 231: aimc.internalThermalPort.heatPortStatorCore.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 232: aimc.internalSupport.tau:VARIABLE(flow=true unit = "N.m" fixed = true protected = true )  = 0.0  "Reaction torque in the support/housing" type: Real 
+// 233: terminalBox.starpoint.i:VARIABLE(flow=true unit = "A" fixed = true )  = 0.0  "Current flowing into the pin" type: Real 
+// 234: speedSensor.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = 0.0  "Cut torque in the flange" type: Real 
+// 235: aimc.strayLoad.tau:VARIABLE(unit = "N.m" fixed = true )  = 0.0  "Torque" type: Real 
+// 236: aimc.strayLoad.v[3]:VARIABLE(unit = "V" fixed = true )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
+// 237: aimc.strayLoad.v[2]:VARIABLE(unit = "V" fixed = true )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
+// 238: aimc.strayLoad.v[1]:VARIABLE(unit = "V" fixed = true )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
+// 239: aimc.statorCore.spacePhasor.i_[2]:VARIABLE(flow=true unit = "A" fixed = true )  = 0.0  "1=real, 2=imaginary part" type: Real  [2]
+// 240: aimc.statorCore.spacePhasor.i_[1]:VARIABLE(flow=true unit = "A" fixed = true )  = 0.0  "1=real, 2=imaginary part" type: Real  [2]
+// 241: aimc.powerBalance.lossPowerRotorCore:VARIABLE(unit = "W" fixed = true final = true )  = 0.0  "Rotor core losses" type: Real 
+// 242: aimc.friction.tau:VARIABLE(unit = "N.m" fixed = true )  = 0.0  "Torque" type: Real 
+// 243: aimc.inertiaStator.w:DUMMY_STATE(unit = "rad/s" fixed = true )  = 0.0  "Absolute angular velocity of component (= der(phi))" type: Real 
+// 244: aimc.powerBalance.lossPowerFriction:VARIABLE(unit = "W" fixed = true final = true )  = 0.0  "Friction losses" type: Real 
+// 245: aimc.rs.resistor[1].R_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.rs.resistor[1].R * (1.0 + aimc.rs.resistor[1].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[1].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 246: aimc.rs.resistor[2].R_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.rs.resistor[2].R * (1.0 + aimc.rs.resistor[2].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[2].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 247: aimc.rs.resistor[3].R_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.rs.resistor[3].R * (1.0 + aimc.rs.resistor[3].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[3].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 248: aimc.statorCore.lossPower:VARIABLE(unit = "W" fixed = true )  = 0.0  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
+// 249: aimc.strayLoad.lossPower:VARIABLE(unit = "W" fixed = true )  = 0.0  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
+// 250: aimc.squirrelCageR.Rr_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.squirrelCageR.Rr * (1.0 + aimc.squirrelCageR.alpha * (aimc.thermalAmbient.constTr.k - aimc.squirrelCageR.T_ref))  "Actual resistance = Rr*(1 + alpha*(T_heatPort - T_ref))" type: Real 
+// 251: aimc.powerBalance.powerInertiaStator:VARIABLE(unit = "W" fixed = true final = true )  = 0.0  "Stator inertia power" type: Real 
+// 252: aimc.inertiaStator.a:VARIABLE(unit = "rad/s2" fixed = true )  = 0.0  "Absolute angular acceleration of component (= der(w))" type: Real 
+// 253: aimc.thermalAmbient.temperatureStrayLoad.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 254: aimc.thermalAmbient.temperatureStatorCore.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 255: aimc.thermalAmbient.temperatureRotorCore.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 256: aimc.thermalAmbient.temperatureFriction.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 257: torque.phi_support:VARIABLE(unit = "rad" fixed = true protected = true )  = 0.0  "Absolute angle of support flange" type: Real 
+// 258: aimc.statorCore.Gc:VARIABLE(unit = "S" fixed = true )  = 0.0  "Variable core loss conductance" type: Real 
+// 259: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" fixed = true protected = true )  = max(abs(aimc.statorCoreParameters.wRef), aimc.statorCore.coreParameters.wMin)  "Limited angular velocity" type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)

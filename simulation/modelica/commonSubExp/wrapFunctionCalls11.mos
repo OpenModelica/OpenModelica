@@ -46,12 +46,12 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (6)
 // ========================================
-// 1: z:VARIABLE()  = 2.0 * p1  type: Real 
-// 2: c:VARIABLE()  = 2.0 * p1  type: Real 
+// 1: z:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
+// 2: c:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
 // 3: p1:PARAM()  = 5.0  type: Real 
-// 4: b:VARIABLE()  = cos(c)  type: Real 
-// 5: a:VARIABLE()  = sin(b)  type: Real 
-// 6: x:VARIABLE()  = cos(z)  type: Real 
+// 4: b:VARIABLE(fixed = true )  = cos(c)  type: Real 
+// 5: a:VARIABLE(fixed = true )  = sin(b)  type: Real 
+// 6: x:VARIABLE(fixed = true )  = cos(z)  type: Real 
 //
 //
 // ########### CSE Replacements (4/46)
@@ -82,7 +82,7 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
 // 1: input ySeedNLSJac0:STATE_DER()  type: Real 
-// 2: input x:VARIABLE()  = cos(z)  type: Real 
+// 2: input x:VARIABLE(fixed = true )  = cos(z)  type: Real 
 // 3: input $res[1]:VARIABLE()  type: Real 
 //
 //

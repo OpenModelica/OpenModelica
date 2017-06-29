@@ -107,7 +107,7 @@ simulate(foo,stopTime=0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -225,7 +225,7 @@ simulate(foo,stopTime=0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -347,7 +347,7 @@ simulate(foo,stopTime=0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: input u:VARIABLE(nominal = 20.0 )  type: Real 
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)

@@ -41,9 +41,9 @@ simulate(CSE.wrapFunctionCalls12); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (3)
 // ========================================
-// 1: x:VARIABLE(unit = "s" )  = sin(p1)  type: Real 
+// 1: x:VARIABLE(unit = "s" fixed = true )  = sin(p1)  type: Real 
 // 2: p1:PARAM()  = 5.0  type: Real 
-// 3: y:VARIABLE(unit = "m" )  = cos(x)  type: Real 
+// 3: y:VARIABLE(unit = "m" fixed = true )  = cos(x)  type: Real 
 //
 //
 // ########### CSE Replacements (1/43)
