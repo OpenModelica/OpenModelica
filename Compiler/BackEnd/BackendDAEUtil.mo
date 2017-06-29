@@ -7289,7 +7289,7 @@ protected
 algorithm
   globalKnownVars := backendDAE.shared.globalKnownVars;
   parameterEqns := BackendEquation.emptyEqnsSized(BackendVariable.varsSize(globalKnownVars));
-  parameterEqns := BackendVariable.traverseBackendDAEVars(globalKnownVars, createParameterEquations, parameterEqns);
+  parameterEqns := BackendVariable.traverseBackendDAEVars(globalKnownVars, createGlobalKnownVarsEquations, parameterEqns);
 
   paramSystem := BackendDAEUtil.createEqSystem(globalKnownVars, parameterEqns);
   (m, _) := BackendDAEUtil.incidenceMatrix(paramSystem, BackendDAE.NORMAL(), NONE());
@@ -7306,7 +7306,7 @@ algorithm
   backendDAE := setDAEGlobalKnownVars(backendDAE, globalKnownVars_sorted);
 end sortGlobalKnownVarsInDAE;
 
-protected function createParameterEquations
+protected function createGlobalKnownVarsEquations
   input output BackendDAE.Var var;
   input output BackendDAE.EquationArray parameterEqns;
 protected
@@ -7321,7 +7321,7 @@ algorithm
   end try;
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
-end createParameterEquations;
+end createGlobalKnownVarsEquations;
 
 
 /*************************************************

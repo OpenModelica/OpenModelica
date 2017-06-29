@@ -536,8 +536,9 @@ algorithm
               var := listGet(delVars, 1);
             end if;
 
-            // Save the rhs (call) as bind expression
+            // Save the rhs (call) as bind expression and set fixed=true
             var := BackendVariable.setBindExp(var, SOME(call));
+            var := BackendVariable.setVarFixed(var, true);
 
             // If it is a tuple or a record (or record within tuple)
             if intGt(listLength(varList), 1) or Expression.isTuple(cse) then
