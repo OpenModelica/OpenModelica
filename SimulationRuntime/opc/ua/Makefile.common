@@ -5,6 +5,7 @@ all: default
 
 default: libomopcua$(DLLEXT)
 	@test ! -z "$(OMBUILDDIR)" || (echo OMBUILDDIR not set; false)
+	cp open62541.h "$(OMBUILDDIR)/include/omc/c"
 	cp libomopcua$(DLLEXT) "$(builddir_lib)"
 	test ! "$(DLLEXT)" = ".dll" || cp libomopcua$(DLLEXT) "$(builddir_bin)"
 
