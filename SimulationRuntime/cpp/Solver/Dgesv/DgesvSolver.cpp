@@ -138,6 +138,7 @@ void DgesvSolver::solve()
 
   memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
 
+  std::fill(_fNominal, _fNominal + _dimSys, 1e-6);
   for (int j = 0, idx = 0; j < _dimSys; j++)
     for (int i = 0; i < _dimSys; i++, idx++)
       _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
