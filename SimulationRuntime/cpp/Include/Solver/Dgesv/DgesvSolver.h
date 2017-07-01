@@ -6,7 +6,7 @@
 
 class DgesvSolver : public IAlgLoopSolver
 {
-public:
+ public:
   DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings);
   virtual ~DgesvSolver();
 
@@ -24,7 +24,7 @@ public:
 
 
 
-private:
+ private:
   // Member variables
   //---------------------------------------------------------------
 
@@ -40,16 +40,16 @@ private:
   bool
     _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
 
-  long int *_ihelpArray;	//pivot indices for lapackroutine
+  long int *_ihelpArray;  //pivot indices for lapackroutine
 
   double
-	  *_y,                  ///< Temp   - Unknowns
-	  *_y0,                 ///< Temp   - Auxillary variables
-      *_y_old,				//stores old solution
-      *_y_new,				//stores new solution
-	  *_b,                  ///< right hand side
-	  *_A,				///coefficients of linear system
-	  *_zeroVec,			///zero vector
-	  *_fNominal;
+    *_y,                  ///< Temp   - Unknowns
+    *_y0,                 ///< Temp   - Auxillary variables
+    *_y_old,              //stores old solution
+    *_y_new,              //stores new solution
+    *_b,                  ///< right hand side
+    *_A,                  ///coefficients of linear system
+    *_zeroVec,            ///zero vector
+    *_fNominal;
 };
 /** @} */ // end of solverLinearSolver
