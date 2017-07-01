@@ -142,7 +142,7 @@ class FMU2Wrapper
                                 const fmi2String  value[]);
   virtual fmi2Status setClock  (const fmi2Integer clockIndex[],
                                 size_t nClockIndex, const fmi2Boolean tick[],
-                                const fmi2Boolean subactive[]);
+                                const fmi2Boolean *subactive);
   virtual fmi2Status setInterval(const fmi2Integer clockIndex[],
                                  size_t nClockIndex, const fmi2Real interval[]);
 

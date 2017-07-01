@@ -323,7 +323,7 @@ fmi2Status FMU2Wrapper::setString(const fmi2ValueReference vr[], size_t nvr,
 
 fmi2Status FMU2Wrapper::setClock(const fmi2Integer clockIndex[],
                                  size_t nClockIndex, const fmi2Boolean tick[],
-                                 const fmi2Boolean subactive[])
+                                 const fmi2Boolean *subactive)
 {
   for (int i = 0; i < nClockIndex; i++) {
     _clockTick[clockIndex[i] - 1] = tick[i];
