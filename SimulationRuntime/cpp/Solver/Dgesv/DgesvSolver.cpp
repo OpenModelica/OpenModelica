@@ -19,6 +19,8 @@ DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
   : _algLoop            (algLoop)
   , _dimSys             (0)
 
+  , _yNames             (NULL)
+  , _yNominal           (NULL)
   , _y                  (NULL)
   , _y0                 (NULL)
   , _y_old              (NULL)
@@ -35,6 +37,8 @@ DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
 
 DgesvSolver::~DgesvSolver()
 {
+  if (_yNames)          delete [] _yNames;
+  if (_yNominal)        delete [] _yNominal;
   if (_y)               delete [] _y;
   if (_y0)              delete [] _y0;
   if (_y_old)           delete [] _y_old;
@@ -60,6 +64,8 @@ void DgesvSolver::initialize()
 
     if (_dimSys > 0) {
       // Initialization of vector of unknowns
+      if (_yNames)         delete [] _yNames;
+      if (_yNominal)       delete [] _yNominal;
       if (_y)              delete [] _y;
       if (_y0)             delete [] _y0;
       if (_y_old)          delete [] _y_old;
@@ -70,6 +76,8 @@ void DgesvSolver::initialize()
       if (_zeroVec)        delete [] _zeroVec;
       if (_fNominal)       delete [] _fNominal;
 
+      _yNames           = new const char* [_dimSys];
+      _yNominal         = new double[_dimSys];
       _y                = new double[_dimSys];
       _y0               = new double[_dimSys];
       _y_old            = new double[_dimSys];
@@ -80,6 +88,8 @@ void DgesvSolver::initialize()
       _zeroVec          = new double[_dimSys];
       _fNominal         = new double[_dimSys];
 
+      _algLoop->getNamesReal(_yNames);
+      _algLoop->getNominalReal(_yNominal);
       _algLoop->getReal(_y);
       _algLoop->getReal(_y0);
       _algLoop->getReal(_y_new);
@@ -93,7 +103,12 @@ void DgesvSolver::initialize()
       _iterationStatus = SOLVERERROR;
     }
   }
-  LOGGER_WRITE("DgesvSolver: initialized",LC_NLS,LL_DEBUG);
+
+  LOGGER_WRITE_BEGIN("DgesvSolver: eq" + to_string(_algLoop->getEquationIndex()) +
+                     " initialized", LC_LS, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("yNames", _yNames, _dimSys, LC_LS, LL_DEBUG);
+  LOGGER_WRITE_VECTOR("yNominal", _yNominal, _dimSys, LC_LS, LL_DEBUG);
+  LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
 void DgesvSolver::solve()
@@ -103,6 +118,10 @@ void DgesvSolver::solve()
   }
 
   _iterationStatus = CONTINUE;
+
+  LOGGER_WRITE_BEGIN("DgesvSolver: eq" + to_string(_algLoop->getEquationIndex()) +
+                     " at time " + to_string(_algLoop->getSimTime()) + ":",
+                     LC_LS, LL_DEBUG);
 
   //use lapack
   long int dimRHS = 1; // Dimension of right hand side of linear system (=_b)
@@ -122,6 +141,8 @@ void DgesvSolver::solve()
   for (int j = 0, idx = 0; j < _dimSys; j++)
     for (int i = 0; i < _dimSys; i++, idx++)
       _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
+
+  LOGGER_WRITE_VECTOR("fNominal", _fNominal, _dimSys, LC_LS, LL_DEBUG);
 
   for (int j = 0, idx = 0; j < _dimSys; j++)
     for (int i = 0; i < _dimSys; i++, idx++)
@@ -154,6 +175,9 @@ void DgesvSolver::solve()
   _algLoop->setReal(_y);
   if (_algLoop->isLinearTearing())
     _algLoop->evaluate();//resets the right hand side to zero in the case of linear tearing. Otherwise, the b vector on the right hand side needs no update.
+
+  LOGGER_WRITE_VECTOR("y*", _y, _dimSys, LC_LS, LL_DEBUG);
+  LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
 IAlgLoopSolver::ITERATIONSTATUS DgesvSolver::getIterationStatus()

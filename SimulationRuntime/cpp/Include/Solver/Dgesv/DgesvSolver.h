@@ -42,7 +42,10 @@ class DgesvSolver : public IAlgLoopSolver
 
   long int *_ihelpArray;  //pivot indices for lapackroutine
 
+  const char*
+    *_yNames;             ///< Names of variables
   double
+    *_yNominal,           ///< Nominal values of variables
     *_y,                  ///< Temp   - Unknowns
     *_y0,                 ///< Temp   - Auxillary variables
     *_y_old,              //stores old solution
