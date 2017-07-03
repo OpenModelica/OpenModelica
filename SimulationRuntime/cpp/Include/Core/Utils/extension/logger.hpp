@@ -10,7 +10,7 @@
 
 #ifdef USE_LOGGER
   // check for log settings to avoid construction of unused log strings
-  #define LOGGER_IS_SET(cat, lvl) Logger::getInstance()->isSet(cat, lvl)
+  #define LOGGER_IS_SET(cat, lvl) Logger::isSetGlobal(cat, lvl)
   #define LOGGER_WRITE(msg, cat, lvl) \
     if (LOGGER_IS_SET(cat, lvl)) Logger::write(msg, cat, lvl)
   #define LOGGER_WRITE_TUPLE(msg, mode) \
@@ -81,7 +81,7 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     template <typename S, typename T>
     static inline void writeVector(S name, T vec[], size_t dim, LogCategory lc, LogLevel ll)
     {
-      if (Logger::getInstance()->isSet(lc, ll)) {
+      if (isSetGlobal(lc, ll)) {
         std::stringstream ss;
         ss << name << " = {";
         for (size_t i = 0; i < dim; i++)
@@ -139,6 +139,11 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
     bool isSet(std::pair<LogCategory,LogLevel> mode) const
     {
       return isSet(mode.first, mode.second);
+    }
+
+    inline static bool isSetGlobal(LogCategory cat, LogLevel lvl)
+    {
+      return _instance != NULL && _instance->isSet(cat, lvl);
     }
 
   protected:
