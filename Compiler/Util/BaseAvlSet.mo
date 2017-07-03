@@ -123,7 +123,6 @@ algorithm
           // Replace right branch.
           outTree := NODE(tree.key, 2, EMPTY(), LEAF(inKey));
         else
-          tree.key := inKey;
           outTree := tree;
         end if;
       then outTree; // No need to balance addition in a leaf
