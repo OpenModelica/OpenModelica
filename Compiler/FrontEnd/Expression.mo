@@ -2472,8 +2472,36 @@ algorithm
   end if;
 end getAllCrefs2;
 
+public function getAllCrefsExpanded "author: ptaeuber
+  This function extracts all crefs from the input expression (except 'time') and expands arrays and records."
+  input DAE.Exp inExp;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  (_, outCrefs) := traverseExpBottomUp(inExp, getAllCrefsExpanded2, {});
+end getAllCrefsExpanded;
+
+protected function getAllCrefsExpanded2
+   input DAE.Exp inExp;
+   input list<DAE.ComponentRef> inCrefList;
+   output DAE.Exp outExp = inExp;
+   output list<DAE.ComponentRef> outCrefList = inCrefList;
+protected
+  DAE.ComponentRef cr;
+  list<DAE.ComponentRef> crlst;
+algorithm
+  if isCref(inExp) then
+    DAE.CREF(componentRef=cr) := inExp;
+    crlst := ComponentReference.expandCref(cr, true);
+    for c in crlst loop
+      if not ComponentReference.crefEqual(c, DAE.crefTime) and not listMember(c, inCrefList) then
+        outCrefList := c::outCrefList;
+      end if;
+    end for;
+  end if;
+end getAllCrefsExpanded2;
+
 public function allTerms
-"simliar to terms, but also perform expansion of
+"similar to terms, but also performs expansion of
  multiplications to reveal more terms, like for instance:
  allTerms((a+b)*(b+c)) => {a*b,a*c,b*b,b*c}"
   input DAE.Exp inExp;

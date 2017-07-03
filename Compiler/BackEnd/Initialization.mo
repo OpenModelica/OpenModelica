@@ -836,7 +836,7 @@ algorithm
     for i in flatComps loop
       v := BackendVariable.getVarAt(globalKnownVars, i);
       bindExp := BackendVariable.varBindExpStartValueNoFail(v);
-      crefs := Expression.getAllCrefs(bindExp);
+      crefs := Expression.getAllCrefsExpanded(bindExp);
 
       _ := match(v)
         // primary parameter
