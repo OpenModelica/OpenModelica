@@ -2337,7 +2337,6 @@ protected
   Integer edges;
   list<list<Integer>> selectedcolsLst;
   list<Integer> selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // Cellier heuristic [MC1]
 
@@ -2354,11 +2353,8 @@ algorithm
   end if;
 
   // 2. gather these columns in a new array (reduced mtIn)
-  mtsel := Array.select(mtIn,selectedcols1);
-
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols2) := findMostEntries2(mtsel);
-  selectedcols2 := List.unique(selectedcols2);
+  (edges,selectedcols2) := findMostEntries2(mtIn, selectedcols1);
 
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
@@ -2373,10 +2369,7 @@ algorithm
   end if;
 
   // 6. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-       me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-     ), ({},0,1,{}));
+  (potentials,_) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
 
   // 7. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
@@ -2392,18 +2385,15 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges;
   list<Integer> varlst,selectedcols0,selectedcols1,selectedrows,assEq,assEq_multi,assEq_single;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC2]
 
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-  mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols1) := findMostEntries2(mtsel);
-  selectedcols1 := List.unique(selectedcols1);
+  (edges,selectedcols1) := findMostEntries2(mtIn, selectedcols0);
 
   // convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
@@ -2418,10 +2408,7 @@ algorithm
   end if;
 
   // 3. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (potentials,_) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
 
   // 4. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
@@ -2438,7 +2425,6 @@ protected
   Integer edges;
   list<list<Integer>> selectedcolsLst;
   list<Integer> selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC11]
 
@@ -2456,11 +2442,8 @@ algorithm
   end if;
 
   // 2. gather these columns in a new array (reduced mtIn)
-  mtsel := Array.select(mtIn,selectedcols1);
-
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols2) := findMostEntries2(mtsel);
-  selectedcols2 := List.unique(selectedcols2);
+  (edges,selectedcols2) := findMostEntries2(mtIn, selectedcols1);
 
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
@@ -2475,10 +2458,7 @@ algorithm
   end if;
 
   // 6. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (potentials,_) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
 
   // 7. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
@@ -2500,18 +2480,15 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges;
   list<Integer> varlst,selectedcols0,selectedcols1,selectedrows,assEq,assEq_multi,assEq_single;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC21]
 
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-  mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols1) := findMostEntries2(mtsel);
-  selectedcols1 := List.unique(selectedcols1);
+  (edges,selectedcols1) := findMostEntries2(mtIn, selectedcols0);
 
   // convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
@@ -2526,10 +2503,7 @@ algorithm
   end if;
 
   // 3. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (potentials,_) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
 
   // 4. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
@@ -2552,7 +2526,6 @@ protected
   Integer edges;
   list<list<Integer>> selectedcolsLst;
   list<Integer> selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC12]
 
@@ -2570,11 +2543,8 @@ algorithm
   end if;
 
   // 2. gather these columns in a new array (reduced mtIn)
-  mtsel := Array.select(mtIn,selectedcols1);
-
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols2) := findMostEntries2(mtsel);
-  selectedcols2 := List.unique(selectedcols2);
+  (edges,selectedcols2) := findMostEntries2(mtIn, selectedcols1);
 
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
@@ -2595,10 +2565,7 @@ algorithm
   end if;
 
   // 7. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (potentials,_) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
 
   // 8. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
@@ -2614,18 +2581,15 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges;
   list<Integer> varlst,selectedcols0,selectedcols1,selectedrows,assEq,assEq_multi,assEq_single;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC22]
 
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-  mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols1) := findMostEntries2(mtsel);
-  selectedcols1 := List.unique(selectedcols1);
+  (edges,selectedcols1) := findMostEntries2(mtIn, selectedcols0);
 
   // convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
@@ -2646,10 +2610,7 @@ algorithm
   end if;
 
   // 4. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((potentials,_,_,_)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (potentials,_) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
 
   // 5. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
@@ -2666,7 +2627,6 @@ protected
   Integer edges;
   list<list<Integer>> selectedcolsLst;
   list<Integer> selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,points,counts1,counts2;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // Cellier heuristic [MC13]
 
@@ -2684,11 +2644,8 @@ algorithm
   end if;
 
   // 2. gather these columns in a new array (reduced mtIn)
-  mtsel := Array.select(mtIn,selectedcols1);
-
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols2) := findMostEntries2(mtsel);
-  selectedcols2 := List.unique(selectedcols2);
+  (edges,selectedcols2) := findMostEntries2(mtIn, selectedcols1);
 
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
@@ -2703,10 +2660,7 @@ algorithm
   end if;
 
   // 6. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (_,counts1) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
   counts1 := listReverse(counts1);
 
   // 8. determine for each variable the number of impossible assignments and save them in counts2
@@ -2734,18 +2688,15 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges;
   list<Integer> varlst,selectedcols0,selectedcols1,selectedrows,assEq,assEq_multi,assEq_single,points,counts1,counts2;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // Cellier heuristic [MC23]
 
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-  mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols1) := findMostEntries2(mtsel);
-  selectedcols1 := List.unique(selectedcols1);
+  (edges,selectedcols1) := findMostEntries2(mtIn, selectedcols0);
 
   // 2. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
@@ -2760,10 +2711,7 @@ algorithm
   end if;
 
   // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (_,counts1) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
   counts1 := listReverse(counts1);
 
   // 5. determine for each variable the number of impossible assignments and save them in counts2
@@ -2791,7 +2739,6 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges,potpoints1,potpoints2;
   list<Integer> varlst,selectedcols0,selectedcols1,selectedrows,potentials1,potentials2,assEq,assEq_multi,assEq_single,counts1,counts2,points1,points2;
-  BackendDAE.IncidenceMatrix mtsel,msel2t;
   Boolean b;
 algorithm
   // modified Cellier heuristic [MC231]
@@ -2803,11 +2750,9 @@ algorithm
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-  mtsel := Array.select(mtIn,selectedcols0);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
-  (edges,selectedcols1) := findMostEntries2(mtsel);
-  selectedcols1 := List.unique(selectedcols1);
+  (edges,selectedcols1) := findMostEntries2(mtIn, selectedcols0);
 
   // 2. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
@@ -2822,10 +2767,7 @@ algorithm
   end if;
 
   // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (_,counts1) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
   counts1 := listReverse(counts1);
 
   // 5. determine for each variable the number of impossible assignments and save them in counts2
@@ -2847,8 +2789,7 @@ algorithm
   end if;
 
   // 8. choose non-discrete vars with edges-1 edges and write the indexes in a list
-  ((_,_,selectedcols1)) := Array.fold(mtsel,findNEntries,(edges-1,1,{}));
-  selectedcols1 := List.unique(selectedcols1);
+  selectedcols1 := findNEntries(mtIn,selectedcols0, edges-1);
 
   // 9. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
@@ -2857,10 +2798,7 @@ algorithm
   end if;
 
   // 10. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
-  msel2t := Array.select(mtIn,selectedcols1);
-  ((_,_,_,counts1)) := Array.fold(msel2t,function selectCausalVars(
-      me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)),selVars=Mutable.create(selectedcols1)
-    ),({},0,1,{}));
+  (_,counts1) := selectCausalVars(mtIn,selectedcols1, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(selectedrows, arrayLength(ass1In)));
   counts1 := listReverse(counts1);
 
   // 11. determine for each variable the number of impossible assignments and save them in counts2
@@ -2897,7 +2835,6 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges,maxpoints,tVar;
   list<Integer> potentialTVars,bestPotentialTVars,assEq,assEq_multi,assEq_single,causEq,points,counts1,counts2;
-  BackendDAE.IncidenceMatrix mtsel,msel;
   constant Boolean debug = false;
 algorithm
   // Cellier heuristic [MC3]
@@ -2911,8 +2848,6 @@ algorithm
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 2"); end if;
 
   // 2. Determine the variables in causEq
-  //msel := Array.select(mIn,causEq);
-  //potentialTVars := List.unique(List.flatten(arrayList(msel)));
   potentialTVars := {};
   for e in causEq loop
     potentialTVars := List.append_reverse(arrayGet(mIn, e), potentialTVars);
@@ -2957,8 +2892,7 @@ algorithm
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 4.1"); end if;
 
   // 4.1 Determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
-  mtsel := Array.select(mtIn,potentialTVars);
-  ((_,_,_,counts1)) := Array.fold(mtsel,function selectCausalVars(me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(causEq, arrayLength(ass1In)),selVars=Mutable.create(potentialTVars)),({},0,1,{}));
+  (_,counts1) := selectCausalVars(mtIn,potentialTVars, me=meIn,ass1In=ass1In,selEqsSetArray=selectCausalVarsPrepareSelectionSet(causEq, arrayLength(ass1In)));
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 5.1"); end if;
 
   // 4.2 Determine for each variable the number of impossible assignments and save them in counts2
@@ -2999,9 +2933,7 @@ algorithm
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 6"); end if;
 
   // 6. Choose vars with most occurrence in equations as potentials
-  mtsel := Array.select(mtIn,bestPotentialTVars);
-  (edges,potentials) := findMostEntries2(mtsel);
-  potentials := List.unique(potentials);
+  (edges,potentials) := findMostEntries2(mtIn,bestPotentialTVars);
   if debug then execStat("Tearing.ModifiedCellierHeuristic_3 - 7"); end if;
 
   // Convert indexes from mtsel to indexes from mtIn
@@ -3023,7 +2955,6 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges;
   list<Integer> potentials1,potentials2,potentials3,potentials4,potentials5,potentials6,potentials7,potentials8,potentials9,potentials10,selectedvars,count;
-  BackendDAE.IncidenceMatrix mtsel;
 algorithm
   // Cellier heuristic [MC4]
 
@@ -3094,9 +3025,7 @@ algorithm
   end if;
 
   // 4. Choose vars with most occurrence in equations as potentials
-  mtsel := Array.select(mtIn,selectedvars);
-  (edges,potentials) := findMostEntries2(mtsel);
-  potentials := List.unique(potentials);
+  (edges,potentials) := findMostEntries2(mtIn, selectedvars);
 
   // 5. convert indexes from mtsel to indexes from mtIn
   potentials := selectFromList(selectedvars,potentials);
@@ -3144,37 +3073,49 @@ end selectCausalVarsPrepareSelectionSet;
 protected function selectCausalVars
 " matches causalizable equations with selected variables.
   author: ptaeuber FHB 2013-2015"
-  input list<Integer> row;
-  input tuple<list<Integer>,Integer,Integer,list<Integer>> inValue;
+  input BackendDAE.IncidenceMatrix inMt;
+  input list<Integer> selVars;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1In;
   input array<Boolean> selEqsSetArray;
-  input Mutable<list<Integer>> selVars;
-  output tuple<list<Integer>,Integer,Integer,list<Integer>> OutValue;
+  output list<Integer> cVars = {};
+  output list<Integer> counts = {};
 protected
-  list<Integer> cVars,interEqs,counts,selVarsNext;
-  Integer size,num,indx,Var;
-  constant Boolean debug = false;
+  list<Integer> row;
+  list<Integer> interEqs;
+  Integer size,num = 0,indx = 1,Var;
 algorithm
-  (cVars,num,indx,counts) := inValue;
-  // interEqs := List.intersectionOnTrue(row,selEqs,intEq);
-  interEqs := list(i for i guard arrayGet(selEqsSetArray,i) in row);
-  Var::selVarsNext := Mutable.access(selVars);
-  Mutable.update(selVars, selVarsNext);
-  arrayUpdate(ass1In,Var,1);
-  size := List.fold2(interEqs,sizeOfAssignable,me,ass1In,0);
-  arrayUpdate(ass1In,Var,-1);
+  for Var in selVars loop
+    row := arrayGet(inMt, Var);
 
-  OutValue := if size < num then
-                (cVars,num,indx+1,size::counts)
-              else if size == num then
-                (indx::cVars,num,indx+1,size::counts)
-              else
-                ({indx},size,indx+1,size::counts);
+    // interEqs := List.intersectionOnTrue(row,selEqs,intEq);
+    //interEqs := list(i for i guard arrayGet(selEqsSetArray,i) in row);
+    arrayUpdate(ass1In,Var,1);
+    //size := List.fold2(interEqs,sizeOfAssignable,me,ass1In,0);
+    size := 0;
+    for i in row loop
+      if arrayGet(selEqsSetArray,i) then
+        size := sizeOfAssignable(i,me,ass1In,size);
+      end if;
+    end for;
+    arrayUpdate(ass1In,Var,-1);
 
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("Var " + intString(Var) + " would causalize " + intString(size) + " Eqns\n");
-  end if;
+    if size < num then
+      counts := size::counts;
+    elseif size == num then
+      cVars := indx::cVars;
+      counts := size::counts;
+    else
+      cVars := {indx};
+      num := size;
+      counts := size::counts;
+    end if;
+    indx := indx+1;
+
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("Var " + intString(Var) + " would causalize " + intString(size) + " Eqns\n");
+    end if;
+  end for;
 end selectCausalVars;
 
 
@@ -3763,13 +3704,16 @@ protected function findMostEntries2 "find rows with most nonzero
 elements and put the indexes of these rows in a list.
 author: Waurich TUD 2012-10"
   input BackendDAE.IncidenceMatrix mIn;
+  input list<Integer> inSelect;
   output Integer length = 0;
   output list<Integer> ilst = {};
 protected
   Integer length1;
   Integer indx = 1;
+  list<Integer> row;
 algorithm
-  for row in mIn loop
+  for sel in inSelect loop
+    row := arrayGet(mIn, sel);
     length1 := listLength(row);
     if length1 > length then
       length := length1;
@@ -3785,23 +3729,22 @@ end findMostEntries2;
 protected function findNEntries " find rows with n nonzero elements and
 put the indexes of these rows in a list.
 author: Waurich TUD 2012-10"
-  input list<Integer> row;
-  input tuple<Integer,Integer,list<Integer>> inValue;
-  output tuple<Integer,Integer,list<Integer>> outValue;
+  input BackendDAE.IncidenceMatrix mtIn;
+  input list<Integer> inSelect;
+  input Integer num;
+  output list<Integer> outList = {};
 protected
-  Integer length;
+  Integer length, indx=1;
+  list<Integer> row;
 algorithm
-  length := listLength(row);
-  outValue :=
-  match(row,inValue)
-    local
-      Integer num,indx;
-      list<Integer> ilst;
-    case(_,(num,indx,ilst)) guard intEq(num,length)
-      then ((num,indx+1,indx::ilst));
-    case(_,(num,indx,ilst)) //guard num <> length
-      then ((num,indx+1,ilst));
-  end match;
+  for sel in inSelect loop
+    row := arrayGet(mtIn, sel);
+    length := listLength(row);
+    if intEq(num,length) then
+      outList := indx::outList;
+    end if;
+    indx := indx+1;
+  end for;
 end findNEntries;
 
 // =============================================================================
