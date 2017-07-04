@@ -696,16 +696,19 @@ algorithm
 
     // no dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = NONE()) equation
-      eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
-      serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
-      min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in List.rest(eqs));
       jeqs = match nlSystem.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then SimCodeUtil.sortEqSystems(jeqs);
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then jeqs;
         else {};
       end match;
-      min(serializeEquation(file,e,section,withOperations) for e in jeqs);
+      eqs = SimCodeUtil.sortEqSystems(listAppend(nlSystem.eqs,jeqs));
+      if listEmpty(eqs) then
+        File.write(file, "\n{\"eqIndex\":");
+      else
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in listRest(eqs));
+        File.write(file, ",\n{\"eqIndex\":");
+      end if;
 
-      File.write(file, ",\n{\"eqIndex\":");
       File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
@@ -726,16 +729,19 @@ algorithm
     // dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = SOME(atNL as SimCode.NONLINEARSYSTEM())) equation
       // for strict tearing set
-      eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
-      serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
-      min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in List.rest(eqs));
       jeqs = match nlSystem.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then SimCodeUtil.sortEqSystems(jeqs);
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then jeqs;
         else {};
       end match;
-      min(serializeEquation(file,e,section,withOperations) for e in jeqs);
+      eqs = SimCodeUtil.sortEqSystems(listAppend(nlSystem.eqs,jeqs));
+      if listEmpty(eqs) then
+        File.write(file, "\n{\"eqIndex\":");
+      else
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in listRest(eqs));
+        File.write(file, ",\n{\"eqIndex\":");
+      end if;
 
-      File.write(file, ",\n{\"eqIndex\":");
       File.writeInt(file, nlSystem.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
@@ -753,16 +759,19 @@ algorithm
       File.write(file, "]]},");
 
       // for casual tearing set
-      eqs = SimCodeUtil.sortEqSystems(atNL.eqs);
-      serializeEquation(file,listHead(eqs),section,withOperations,parent=atNL.index,first=true);
-      min(serializeEquation(file,e,section,withOperations,parent=atNL.index) for e in List.rest(eqs));
       jeqs = match atNL.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then SimCodeUtil.sortEqSystems(jeqs);
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs)})) then jeqs;
         else {};
       end match;
-      min(serializeEquation(file,e,section,withOperations) for e in jeqs);
+      eqs = SimCodeUtil.sortEqSystems(listAppend(atNL.eqs,jeqs));
+      if listEmpty(eqs) then
+        File.write(file, "\n{\"eqIndex\":");
+      else
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=atNL.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=atNL.index) for e in listRest(eqs));
+        File.write(file, ",\n{\"eqIndex\":");
+      end if;
 
-      File.write(file, ",\n{\"eqIndex\":");
       File.writeInt(file, atNL.index);
       if parent <> 0 then
         File.write(file, ",\"parent\":");
