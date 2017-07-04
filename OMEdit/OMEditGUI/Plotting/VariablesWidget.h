@@ -65,6 +65,8 @@ public:
   bool isEditable() const {return mEditable;}
   void setEditable(bool set) {mEditable = set;}
   bool isMainArray() const {return mIsMainArray;}
+  bool isEnabled() const {return mEnabled;}
+  void setEnabled(bool set) {mEnabled = set;}
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
   QIcon getVariableTreeItemIcon(QString name) const;
@@ -99,6 +101,7 @@ private:
   bool mChecked;
   bool mEditable;
   bool mIsMainArray;
+  bool mEnabled;
   SimulationOptions mSimulationOptions;
 };
 
@@ -136,6 +139,7 @@ private:
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
   void unitChanged(const QModelIndex &index);
+  void valueEntered(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
 public slots:
   void removeVariableTreeItem();
@@ -174,12 +178,14 @@ public:
   VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}
   VariablesTreeView* getVariablesTreeView() {return mpVariablesTreeView;}
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  void addSelectedInteractiveVariables(const QString &modelName, const QList<QString> &selectedVariables);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
   void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
                                  QHash<QString, QHash<QString, QString> > *variables);
   void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
   void reSimulate(bool showSetup);
+  void interactiveReSimulation(QString modelName);
   void updateInitXmlFile(SimulationOptions simulationOptions);
 private:
   TreeSearchFilters *mpTreeSearchFilters;
@@ -190,13 +196,16 @@ private:
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
   QList<QStringList> mPlotParametricVariables;
+  QHash<QString, QList<QString>> mSelectedInteractiveVariables;
   QString mFileName;
   QMdiSubWindow *mpLastActiveSubWindow;
+  void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
 public slots:
-  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0,
-                     OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle,
+                     OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
   void simulationTimeChanged(int timePercent);
+  void valueEntered(const QModelIndex &index);
   void timeUnitChanged(QString unit);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);

@@ -350,6 +350,8 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)),
           SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationStarted()), SLOT(simulationProcessStarted()));
+  connect(mpSimulationProcessThread, SIGNAL(sendEmbeddedServerReady()), SLOT(embeddedServerReady()));
+  connect(mpSimulationProcessThread, SIGNAL(sendEmbeddedServerError()), SLOT(embeddedServerError()));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationOutput(QString,StringHandler::SimulationMessageType,bool)),
           SLOT(writeSimulationOutput(QString,StringHandler::SimulationMessageType,bool)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)),
@@ -548,7 +550,11 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
  */
 void SimulationOutputWidget::simulationProcessStarted()
 {
-  mpProgressLabel->setText(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
+  if (mSimulationOptions.isInteractiveSimulation()) {
+    mpProgressLabel->setText(tr("Running interactive simulation of <b>%1</b>.").arg(mSimulationOptions.getClassName()));
+  } else {
+    mpProgressLabel->setText(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
+  }
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
   mpCancelButton->setText(Helper::cancelSimulation);
@@ -559,6 +565,26 @@ void SimulationOutputWidget::simulationProcessStarted()
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
   }
   mpArchivedSimulationItem->setStatus(Helper::running);
+}
+
+/*!
+ * \brief SimulationOutputWidget::embeddedServerReady
+ * Slot activated when SimulationProcessThread sendembeddedServerReady signal is raised.\n
+ * The provided port is unbound and can be used for communication between the client and remote.
+ */
+void SimulationOutputWidget::embeddedServerReady()
+{
+  MainWindow::instance()->getSimulationDialog()->simulationProcessRunning(mSimulationOptions);
+}
+
+/*!
+ * \brief SimulationOutputWidget::embeddedServerReady
+ * Slot activated when SimulationProcessThread sendembeddedServerReady signal is raised.\n
+ * The provided port is unbound and can be used for communication between the client and remote.
+ */
+void SimulationOutputWidget::embeddedServerError()
+{
+  MainWindow::instance()->getSimulationDialog()->embeddedServerError(mSimulationOptions);
 }
 
 /*!

@@ -43,6 +43,7 @@
 #include "OMPlot.h"
 
 class AnimationWindow;
+class VariablesTreeItem;
 
 class PlotWindowContainer : public QMdiArea
 {
@@ -51,6 +52,7 @@ public:
   PlotWindowContainer(QWidget *pParent = 0);
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
+  OMPlot::PlotWindow* getInteractiveWindow(QString targetWindow);
   OMPlot::PlotWindow* getTopPlotWindow();
   void setTopPlotWindowActive();
 #if !defined(WITHOUT_OSG)
@@ -62,8 +64,11 @@ public slots:
   void addParametricPlotWindow();
   void addArrayPlotWindow(bool maximized = false);
   void addArrayParametricPlotWindow();
+  OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QToolButton *pStartSimulation = 0, QToolButton *pPauseSimulation = 0,
+                                               QComboBox *pSimulationSpeed = 0, QString owner = QString(), int port = 0);
   void addAnimationWindow(bool maximized = false);
   void clearPlotWindow();
+  void removeInteractivePlotWindow();
   void exportVariables();
   void updatePlotWindows(QString variable);
 };

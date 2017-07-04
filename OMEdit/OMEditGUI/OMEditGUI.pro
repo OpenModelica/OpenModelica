@@ -185,7 +185,8 @@ SOURCES += main.cpp \
   Git/CleanDialog.cpp \
   OMEditApplication.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
-    Traceability/TraceabilityInformationURI.cpp
+  Traceability/TraceabilityInformationURI.cpp \
+  Simulation/OpcUaClient.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -260,7 +261,8 @@ HEADERS  += Util/Helper.h \
   Git/CleanDialog.h \
   OMEditApplication.h \
   Traceability/TraceabilityGraphViewWidget.h \
-    Traceability/TraceabilityInformationURI.h
+    Traceability/TraceabilityInformationURI.h \
+    Simulation/OpcUaClient.h
 
 CONFIG(osg) {
 

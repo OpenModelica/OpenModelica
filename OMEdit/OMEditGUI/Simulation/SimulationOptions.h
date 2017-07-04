@@ -89,6 +89,8 @@ public:
     setWorkingDirectory("");
     setFileName("");
     setTargetLanguage("C");
+    setInteractiveSimulation(false);
+    setInteractiveSimulationWithSteps(false);
   }
 
   void setClassName(QString className) {mClassName = className;}
@@ -174,6 +176,8 @@ public:
   QStringList getLogStreams() {return mLogStreams;}
   void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
   QString getAdditionalSimulationFlags() {return mAdditionalSimulationFlags;}
+  void setInteractiveSimulationPortNumber(int port) { mInteractiveSimulationPortNumber = port;}
+  int getInteractiveSimulationPortNumber() {return mInteractiveSimulationPortNumber;}
 
   void setSimulationFlags(QStringList simulationFlags) {mSimulationFlags = simulationFlags;}
   QStringList getSimulationFlags() {return mSimulationFlags;}
@@ -181,12 +185,17 @@ public:
   bool isValid() {return mValid;}
   void setReSimulate(bool reSimulate) {mReSimulate = reSimulate;}
   bool isReSimulate() {return mReSimulate;}
+  void setInteractiveSimulation(bool interactiveSim) {mInteractiveSimulation = interactiveSim;}
+  bool isInteractiveSimulation() {return mInteractiveSimulation;}
+  void setInteractiveSimulationWithSteps(bool withSteps) {mInteractiveSimulationWithSteps = withSteps;}
+  bool isInteractiveSimulationWithSteps() {return mInteractiveSimulationWithSteps;}
   void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
   QString getWorkingDirectory() const {return mWorkingDirectory;}
   void setFileName(QString fileName) {mFileName = fileName;}
   QString getFileName() const {return mFileName;}
   void setTargetLanguage(QString targetLanguage) {mTargetLanguage = targetLanguage;}
   QString getTargetLanguage() const {return mTargetLanguage;}
+
 private:
   QString mClassName;
   QString mStartTime;
@@ -229,10 +238,13 @@ private:
   bool mEnableAllWarnings;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
+  int mInteractiveSimulationPortNumber;
+  bool mInteractiveSimulationWithSteps;
 
   QStringList mSimulationFlags;
   bool mValid;
   bool mReSimulate;
+  bool mInteractiveSimulation;
   QString mWorkingDirectory;
   QString mFileName;
   QString mTargetLanguage;

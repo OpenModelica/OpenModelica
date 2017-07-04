@@ -178,6 +178,7 @@
         <file>Resources/icons/changeColor.svg</file>
         <file>Resources/bitmaps/check.png</file>
         <file>Resources/icons/traceability.svg</file>
+        <file>Resources/icons/interaction.svg</file>
         <file>Resources/icons/completerkeyword.svg</file>
         <file>Resources/icons/completerType.svg</file>
         <file>Resources/icons/completerCodeSnippets.svg</file>

@@ -35,6 +35,7 @@
 #include "Options/OptionsDialog.h"
 
 #include <QDir>
+#include <QTcpSocket>
 
 SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget)
   : QThread(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
@@ -232,6 +233,54 @@ void SimulationProcessThread::simulationProcessStarted()
 {
   mIsSimulationProcessRunning = true;
   emit sendSimulationStarted();
+
+  if (mpSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
+    // make sure that the embedded server is ready to be connected to
+    int port = mpSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
+    SimulationServerCheckThread *pEmbeddedServerCheckThread = new SimulationServerCheckThread(port);
+    connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerReady()), this, SLOT(embeddedServerReady()));
+    connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerError()), this, SLOT(embeddedServerError()));
+    connect(pEmbeddedServerCheckThread, SIGNAL(finished()), pEmbeddedServerCheckThread, SLOT(deleteLater()));
+    pEmbeddedServerCheckThread->start();
+  }
+}
+
+/*!
+ * \brief SimulationServerCheckThread::run
+ * Raises the sendEmbeddedServerReady signal when the OPC UA server is ready to be connectd to.\n
+ */
+void SimulationServerCheckThread::run()
+{
+  QTcpSocket *pTcpSocket = new QTcpSocket;
+  if (!pTcpSocket->bind(mPort, QAbstractSocket::DontShareAddress)) {
+    emit sendEmbeddedServerError();
+  } else {
+    pTcpSocket->abort();
+    pTcpSocket->connectToHost(QHostAddress::LocalHost, mPort);
+
+    while (pTcpSocket->state() != QAbstractSocket::ConnectedState) {
+      msleep(100);
+      if (pTcpSocket->waitForConnected()) {
+        pTcpSocket->disconnectFromHost();
+        if (pTcpSocket->state() == QAbstractSocket::UnconnectedState || pTcpSocket->waitForDisconnected()) {
+          emit sendEmbeddedServerReady();
+        }
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+void SimulationProcessThread::embeddedServerReady()
+{
+  emit sendEmbeddedServerReady();
+}
+
+void SimulationProcessThread::embeddedServerError()
+{
+  // if, somehow, the client is unable to bind to the server over the specified port
+  emit sendEmbeddedServerError();
 }
 
 /*!
@@ -241,7 +290,14 @@ void SimulationProcessThread::simulationProcessStarted()
  */
 void SimulationProcessThread::readSimulationStandardOutput()
 {
-  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown, true);
+  /* The remote embedded server does not currently disconnect connected clients when a simulation finishes.
+   * This check hides the mazy network message of an open connection at shutdown.
+   */
+  QRegExp rx("info/network");
+  QString stdOutput = mpSimulationProcess->readAllStandardOutput();
+  if (!stdOutput.contains(rx)) {
+    emit sendSimulationOutput(stdOutput, StringHandler::Unknown, true);
+  }
 }
 
 /*!

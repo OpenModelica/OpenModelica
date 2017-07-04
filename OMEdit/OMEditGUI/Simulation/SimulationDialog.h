@@ -37,6 +37,7 @@
 
 #include "Util/Helper.h"
 #include "SimulationOptions.h"
+#include "OpcUaClient.h"
 
 #include <QDialog>
 #include <QTreeWidget>
@@ -91,6 +92,9 @@ public:
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
   void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger,
                       bool launchAnimation);
+  QList<SimulationOutputWidget*> getSimulationOutputWidgetsList() {return mSimulationOutputWidgetsList;}
+  OpcUaClient* getOpcUaClient(int port);
+  void removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget);
 private:
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
@@ -184,6 +188,10 @@ private:
   Label *mpAdditionalSimulationFlagsLabel;
   QLineEdit *mpAdditionalSimulationFlagsTextBox;
   QToolButton *mpSimulationFlagsHelpButton;
+  QGroupBox *mpInteractiveSimulationGroupBox;
+  Label *mpInteractiveSimulationPortLabel;
+  QLineEdit *mpInteractiveSimulationPortNumberTextBox;
+  QCheckBox *mpInteractiveSimulationStepCheckBox;
   // Archived Simulation Flags Tab
   QWidget *mpArchivedSimulationsTab;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
@@ -200,6 +208,8 @@ private:
   QString mClassName;
   QString mFileName;
   bool mIsReSimulate;
+  // interactive simulation
+  QMap<int, OpcUaClient*> mOpcUaClientsMap;
 
   void setUpForm();
   bool validate();
@@ -212,10 +222,16 @@ private:
   void saveSimulationFlagsAnnotation();
   void performSimulation();
   void saveDialogGeometry();
+  void killSimulationProcess(int port);
+  void removeVariablesFromTree(QString className);
+  void terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget);
+  void setInteractiveControls(bool enabled);
 public:
   void reSimulate(SimulationOptions simulationOptions);
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
   void simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime);
+  void simulationProcessRunning(SimulationOptions simulationOptions);
+  void embeddedServerError(SimulationOptions simulationOptions);
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
@@ -224,13 +240,18 @@ public slots:
   void showIntegrationHelp();
   void updateJacobianToolTip(int index);
   void buildOnly(bool checked);
+  void interactiveSimulation(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
   void showSimulationFlagsHelp();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
+  void updateInteractiveSimulationCurves();
+  void updateYAxis(double min, double max);
 private slots:
   void resultFileNameChanged(QString text);
+  void simulationStarted();
+  void simulationPaused();
 };
 
 #endif // SIMULATIONDIALOG_H

@@ -106,6 +106,23 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
   }
 }
 
+PlotWindow* PlotWindowContainer::getInteractiveWindow(QString targetWindow)
+{
+  if (subWindowList().size() == 0) {
+    return 0;
+  } else {
+    foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
+      PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
+      if (pPlotWindow) {
+        if (pPlotWindow->getInteractiveOwner() == targetWindow) {
+          return pPlotWindow;
+        }
+      }
+    }
+    return 0;
+  }
+}
+
 /*!
  * \brief PlotWindowContainer::getTopPlotWindow
  * Finds the top PlotWindow and returns it. If there is no PlotWindow then return 0.
@@ -224,6 +241,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
@@ -268,6 +286,37 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
+/*!
+ * \brief PlotWindowContainer::addInteractivePlotWindow
+ * Adds a new Interactive Plot Window
+ */
+PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QToolButton *pStartSimulation, QToolButton *pPauseSimulation, QComboBox *pSimulationSpeed, QString owner, int port)
+{
+  try {
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true, pStartSimulation, pPauseSimulation, pSimulationSpeed);
+    pPlotWindow->setPlotType(PlotWindow::PLOTINTERACTIVE);
+    pPlotWindow->setInteractiveOwner(owner);
+    pPlotWindow->setInteractivePort(port);
+    connect(pPlotWindow, SIGNAL(closingDown()), SLOT(removeInteractivePlotWindow()));
+    pPlotWindow->setWindowTitle(tr("Interactive Plot : %1").arg(owner));
+    pPlotWindow->setTitle("");
+    pPlotWindow->setLegendPosition("top");
+    pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
+    pPlotWindow->installEventFilter(this);
+    QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    pPlotWindow->setSubWindow(pSubWindow);
+    addCloseActionsToSubWindowSystemMenu(pSubWindow);
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/interaction.svg"));
+    pPlotWindow->show();
+    if (maximized) {
+      pPlotWindow->setWindowState(Qt::WindowMaximized);
+    }
+  }
+  catch (PlotException &e) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+  }
+}
 
 /*!
  * \brief PlotWindowContainer::addParametricArrayPlotWindow
@@ -295,6 +344,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/array-parametric-plot-window.svg"));
     pPlotWindow->show();
+    return pPlotWindow;
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
@@ -321,6 +371,17 @@ void PlotWindowContainer::addAnimationWindow(bool maximized)
 #else
   assert(0);
 #endif
+}
+
+/*!
+ * \brief PlotWindowContainer::removeInteractivePlotWindow
+ * If an interactive plot window is closed, also remove the tree item
+ */
+void PlotWindowContainer::removeInteractivePlotWindow()
+{
+  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(sender());
+  QString owner = pPlotWindow->getInteractiveOwner();
+  MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->removeVariableTreeItem(owner);
 }
 
 /*!

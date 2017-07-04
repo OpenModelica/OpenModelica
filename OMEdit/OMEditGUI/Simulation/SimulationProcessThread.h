@@ -77,13 +77,33 @@ private slots:
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void embeddedServerReady();
+  void embeddedServerError();
 signals:
   void sendCompilationStarted();
   void sendCompilationOutput(QString, QColor);
   void sendCompilationFinished(int, QProcess::ExitStatus);
   void sendSimulationStarted();
+  void sendEmbeddedServerReady();
+  void sendEmbeddedServerError();
+  void sendEstablishConnectionRunning();
   void sendSimulationOutput(QString, StringHandler::SimulationMessageType type, bool);
   void sendSimulationFinished(int, QProcess::ExitStatus);
+};
+
+class SimulationServerCheckThread : public QThread
+{
+  Q_OBJECT
+public:
+  SimulationServerCheckThread(int port)
+    : mPort(port) {}
+  ~SimulationServerCheckThread(){}
+  virtual void run();
+private:
+  int mPort;
+signals:
+  void sendEmbeddedServerReady();
+  void sendEmbeddedServerError();
 };
 
 #endif // SIMULATIONPROCESSTHREAD_H

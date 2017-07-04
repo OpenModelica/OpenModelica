@@ -117,6 +117,8 @@ public slots:
   void writeCompilationOutput(QString output, QColor color);
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessStarted();
+  void embeddedServerReady();
+  void embeddedServerError();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelCompilationOrSimulation();

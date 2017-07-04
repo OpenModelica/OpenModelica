@@ -83,7 +83,12 @@ SimulationDialog::~SimulationDialog()
       delete pSimulationOutputWidget;
     }
   }
+  // kill the clients
+  foreach (OpcUaClient *pOpcUaClient, mOpcUaClientsMap) {
+    delete pOpcUaClient;
+  }
   mSimulationOutputWidgetsList.clear();
+  mOpcUaClientsMap.clear();
 }
 
 /*!
@@ -132,6 +137,36 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   mpSimulateCheckBox->setChecked(true);
   simulate();
   mpSimulateCheckBox->setChecked(simulateCheckBoxState);
+}
+
+/*!
+ * \brief SimulationDialog::removeSimulationOutputWidget
+ * Remove the simulation output widget.
+ * \param pSimulationOutputWidget
+ */
+void SimulationDialog::removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget)
+{
+  // close the window
+  if (mOpcUaClientsMap.contains(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())) {
+    OMPlot::PlotWindow *pPlotWindow = mOpcUaClientsMap.value(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())->getTargetPlotWindow();
+    if (pPlotWindow) {
+      pPlotWindow->parentWidget()->close();
+    }
+  }
+  // remove the old opc ua instance
+  int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
+  if (mOpcUaClientsMap.contains(port)) {
+    delete mOpcUaClientsMap.value(port);
+    mOpcUaClientsMap.remove(port);
+  }
+  // removes the output widget of the removed interactive simulation item
+  if (mSimulationOutputWidgetsList.contains(pSimulationOutputWidget)) {
+    terminateSimulationProcess(pSimulationOutputWidget);
+    mSimulationOutputWidgetsList.removeOne(pSimulationOutputWidget);
+    if (pSimulationOutputWidget) {
+      delete pSimulationOutputWidget;
+    }
+  }
 }
 
 /*!
@@ -187,6 +222,25 @@ void SimulationDialog::setUpForm()
   pSimulationIntervalGridLayout->addWidget(mpIntervalTextBox, 3, 1);
   pSimulationIntervalGridLayout->addWidget(new Label(Helper::secs), 3, 2);
   mpSimulationIntervalGroupBox->setLayout(pSimulationIntervalGridLayout);
+  // interactive simulation
+  mpInteractiveSimulationGroupBox = new QGroupBox(tr("Interactive Simulation"));
+  mpInteractiveSimulationGroupBox->setCheckable(true);
+  mpInteractiveSimulationGroupBox->setChecked(false);
+  mpInteractiveSimulationStepCheckBox = new QCheckBox(tr("Simulate with steps"));
+  mpInteractiveSimulationStepCheckBox->setToolTip(tr("Activates communication with the simulation remote every time step.\n"
+                                                     "Can cause high overhead but values will not be missed."));
+  mpInteractiveSimulationPortLabel = new Label(tr("Simulation server port: "));
+  mpInteractiveSimulationPortLabel->setToolTip(tr("Specifies the embedded server port."));
+  mpInteractiveSimulationPortNumberTextBox = new QLineEdit;
+  mpInteractiveSimulationPortNumberTextBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+  connect(mpInteractiveSimulationGroupBox, SIGNAL(toggled(bool)), SLOT(interactiveSimulation(bool)));
+  // interactive simulation layout
+  QGridLayout *pInteractiveSimulationLayout = new QGridLayout;
+  pInteractiveSimulationLayout->setColumnStretch(1, 1);
+  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationStepCheckBox, 0, 0);
+  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationPortLabel, 1, 0);
+  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationPortNumberTextBox, 1, 1);
+  mpInteractiveSimulationGroupBox->setLayout(pInteractiveSimulationLayout);
   // Integration
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));
   mpMethodLabel = new Label(tr("Method:"));
@@ -294,15 +348,16 @@ void SimulationDialog::setUpForm()
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
   pGeneralTabLayout->addWidget(mpSimulationIntervalGroupBox, 0, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 1, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpCflagsLabel, 2, 0);
-  pGeneralTabLayout->addWidget(mpCflagsTextBox, 2, 1, 1, 2);
-  pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
-  pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
-  pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 3, 2);
-  pGeneralTabLayout->addWidget(mpBuildOnlyCheckBox, 4, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 5, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 6, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpInteractiveSimulationGroupBox, 1, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 2, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpCflagsLabel, 3, 0);
+  pGeneralTabLayout->addWidget(mpCflagsTextBox, 3, 1, 1, 2);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 4, 0);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 4, 1);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 4, 2);
+  pGeneralTabLayout->addWidget(mpBuildOnlyCheckBox, 5, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 6, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 7, 0, 1, 3);
 #if !defined(WITHOUT_OSG)
   pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 7, 0, 1, 3);
 #endif
@@ -540,6 +595,9 @@ void SimulationDialog::setUpForm()
   mpStopTimeTextBox->setValidator(pDoubleValidator);
   mpIntervalTextBox->setValidator(pDoubleValidator);
   mpToleranceTextBox->setValidator(pDoubleValidator);
+  QIntValidator *pIntValidator = new QIntValidator(this);
+  pIntValidator->setRange(0, 65535);
+  mpInteractiveSimulationPortNumberTextBox->setValidator(pIntValidator);
   // create checkboxes
   mpSaveExperimentAnnotationCheckBox = new QCheckBox(Helper::saveExperimentAnnotation);
   mpSaveSimulationFlagsAnnotationCheckBox = new QCheckBox(Helper::saveOpenModelicaSimulationFlagsAnnotation);
@@ -697,6 +755,9 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSaveExperimentAnnotationCheckBox->setVisible(true);
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(true);
     mpSimulateCheckBox->setVisible(true);
+    // interactive simulation, allow free port specification
+    mpInteractiveSimulationPortNumberTextBox->clear();
+    mpInteractiveSimulationPortNumberTextBox->setEnabled(true);
   } else {
     mIsReSimulate = true;
     mClassName = simulationOptions.getClassName();
@@ -818,6 +879,9 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSaveExperimentAnnotationCheckBox->setVisible(false);
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(false);
     mpSimulateCheckBox->setVisible(false);
+    // interactive simulation, use the same port for a re-simulation
+    mpInteractiveSimulationPortNumberTextBox->setText(QString::number(simulationOptions.getInteractiveSimulationPortNumber()));
+    mpInteractiveSimulationPortNumberTextBox->setEnabled(false);
   }
 }
 
@@ -905,7 +969,13 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   } else if (mClassName.contains('\'')) {
     simulationOptions.setFileNamePrefix("_omcQuot_" + QByteArray(mClassName.toStdString().c_str()).toHex());
   }
-  simulationOptions.setResultFileName(mpResultFileName->text());
+  // result file should not be generated if an interactive simulation is selected
+  if (!mpInteractiveSimulationGroupBox->isChecked()) {
+    simulationOptions.setResultFileName(mpResultFileName->text());
+  } else {
+    // set an invalid result file name to avoid interactive simulations to destroy previous results
+    simulationOptions.setResultFileName(QString(mClassName + "_res.int"));
+  }
   simulationOptions.setVariableFilter(mpVariableFilterTextBox->text());
   simulationOptions.setProtectedVariables(mpProtectedVariablesCheckBox->isChecked());
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
@@ -1037,9 +1107,39 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
     simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
   }
+  // setup interactive simulation server
+  if (mpInteractiveSimulationGroupBox->isChecked()) {
+    simulationFlags.append("-embeddedServer=opc-ua");
+    // embedded server port
+    if (mpInteractiveSimulationPortNumberTextBox->text().isEmpty()) {
+      // look for an available port
+      QTcpSocket *pSocket = new QTcpSocket();
+      qint16 port = 4841;
+      // bind exclusively
+      while(!pSocket->bind(port, QAbstractSocket::DontShareAddress)) {
+        port++;
+      }
+      simulationOptions.setInteractiveSimulationPortNumber(port);
+      simulationFlags.append(QString("-embeddedServerPort=").append(QString::number(port)));
+    } else {
+      bool isInt;
+      int portNumber = mpInteractiveSimulationPortNumberTextBox->text().toInt(&isInt);
+      if (isInt) {
+        simulationOptions.setInteractiveSimulationPortNumber(portNumber);
+        simulationFlags.append(QString("-embeddedServerPort=").append(QString::number(portNumber)));
+        // if the user enters a used port
+        if (mOpcUaClientsMap.contains(portNumber)) {
+          killSimulationProcess(portNumber);
+        }
+      }
+    }
+  }
+  simulationOptions.setInteractiveSimulation(mpInteractiveSimulationGroupBox->isChecked());
+  simulationOptions.setInteractiveSimulationWithSteps(mpInteractiveSimulationStepCheckBox->isChecked());
   simulationOptions.setSimulationFlags(simulationFlags);
   simulationOptions.setIsValid(true);
   simulationOptions.setReSimulate(mIsReSimulate);
+
   simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   simulationOptions.setFileName(mFileName);
   simulationOptions.setTargetLanguage(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText());
@@ -1059,6 +1159,9 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
     showAlgorithmicDebugger(simulationOptions);
   } else {
+    if (simulationOptions.isReSimulate() && simulationOptions.isInteractiveSimulation()) {
+      removeVariablesFromTree(simulationOptions.getClassName());
+    }
     /* ticket:4406 Option to automatically close Simulation Completed Window
      * Close all completed SimulationOutputWidget windows
      */
@@ -1384,6 +1487,177 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
 }
 
 /*!
+ * \brief SimulationDialog::simulationStarted
+ * This slot makes a call for diabling parameter changes during a simulation \n
+ * and update the control buttons. \n
+ */
+void SimulationDialog::simulationStarted()
+{
+  setInteractiveControls(false);
+}
+
+/*!
+ * \brief SimulationDialog::simulationStarted
+ * This slot makes a call for diabling parameter changes during a simulation \n
+ * and update the control buttons. \n
+ */
+void SimulationDialog::simulationPaused()
+{
+  setInteractiveControls(true);
+}
+
+void SimulationDialog::updateInteractiveSimulationCurves()
+{
+  MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->updateCurves();
+}
+
+void SimulationDialog::updateYAxis(double min, double max)
+{
+  MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->updateYAxis(qMakePair(min, max));
+}
+
+void SimulationDialog::removeVariablesFromTree(QString className)
+{
+  MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->removeVariableTreeItem(className);
+}
+
+/*!
+ * \brief SimulationDialog::setInteractiveControls
+ * \param enabled
+ * Sets the graphical response depending on the parameter enabled. \n
+ * true = started, false = paused \n
+ */
+void SimulationDialog::setInteractiveControls(bool enabled)
+{
+  int port = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->getInteractivePort();
+  OpcUaClient *pClient = getOpcUaClient(port);
+
+  // control buttons
+  pClient->getOpcUaWorker()->getStartSimulationButton()->setEnabled(enabled);
+  pClient->getOpcUaWorker()->getPauseSimulationButton()->setEnabled(!enabled);
+
+  //plotpicker
+  pClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
+}
+
+void SimulationDialog::terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget)
+{
+  SimulationProcessThread *pSimulationProcessThread = pSimulationOutputWidget->getSimulationProcessThread();
+  // If the SimulationProcessThread is running then we need to stop it i.e exit its event loop.
+  // Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
+  if (pSimulationProcessThread->isRunning()) {
+    if (pSimulationProcessThread->isCompilationProcessRunning() && pSimulationProcessThread->getCompilationProcess()) {
+      pSimulationProcessThread->getCompilationProcess()->kill();
+    }
+    if (pSimulationProcessThread->isSimulationProcessRunning() && pSimulationProcessThread->getSimulationProcess()) {
+      pSimulationProcessThread->getSimulationProcess()->kill();
+    }
+    pSimulationProcessThread->exit();
+    pSimulationProcessThread->wait();
+  }
+}
+
+/*!
+ * \brief SimulationDialog::killSimulationProcess
+ * \param port
+ * If another executable is running over the port, kill it. \n
+ */
+void SimulationDialog::killSimulationProcess(int port)
+{
+  std::string endPoint = "opc.tcp://localhost:" + std::to_string(port);
+  UA_Client *pClient = UA_Client_new(UA_ClientConfig_standard, Logger_Stdout);
+  UA_StatusCode returnValue = UA_Client_connect(pClient, UA_ClientConnectionTCP, endPoint.c_str());
+
+  if (returnValue == UA_STATUSCODE_GOOD) {
+    removeVariablesFromTree(mOpcUaClientsMap.value(port)->getSimulationOptions().getClassName());
+
+    foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
+      if (pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber() == port) {
+        removeSimulationOutputWidget(pSimulationOutputWidget);
+        break;
+      }
+    }
+  }
+  UA_Client_disconnect(pClient);
+  UA_Client_delete(pClient);
+}
+
+/*!
+ * \brief SimulationDialog::simulationProcessRunning
+ * \param simulationOptions
+ * Handles what should be done when the simulation server is running. \n
+ */
+void SimulationDialog::simulationProcessRunning(SimulationOptions simulationOptions)
+{
+  OpcUaClient *pOpcUaClient = new OpcUaClient(simulationOptions);
+  if (pOpcUaClient->connectToServer()) {
+    // create the sample thread
+    OpcUaWorker *pOpcUaWorker = new OpcUaWorker(pOpcUaClient, simulationOptions.isInteractiveSimulationWithSteps());
+    pOpcUaClient->setOpcUaWorker(pOpcUaWorker);
+    pOpcUaWorker->moveToThread(pOpcUaClient->getSampleThread());
+    pOpcUaClient->getSampleThread()->start();
+
+    connect(pOpcUaWorker, SIGNAL(sendUpdateCurves()), SLOT(updateInteractiveSimulationCurves()));
+    connect(pOpcUaWorker, SIGNAL(sendUpdateYAxis(double, double)), SLOT(updateYAxis(double, double)));
+    connect(pOpcUaWorker, SIGNAL(sendAddMonitoredItem(int,QString)), pOpcUaWorker, SLOT(addMonitoredItem(int,QString)));
+    connect(pOpcUaWorker, SIGNAL(sendRemoveMonitoredItem(QString)), pOpcUaWorker, SLOT(removeMonitoredItem(QString)));
+
+    // insert the newly created OpcUaClient to the data structure
+    mOpcUaClientsMap.insert(simulationOptions.getInteractiveSimulationPortNumber(), pOpcUaClient);
+
+    // inject controls into the interactive plot window
+    QToolButton* pStartSimulationButton = pOpcUaClient->getOpcUaWorker()->getStartSimulationButton();
+    QToolButton* pPauseSimulationButton = pOpcUaClient->getOpcUaWorker()->getPauseSimulationButton();
+    QComboBox* pSimulationSpeedComboBox = pOpcUaClient->getOpcUaWorker()->getSimulationSpeedComboBox();
+
+    // make graphical responses from the main thread
+    connect(pStartSimulationButton, SIGNAL(clicked(bool)), SLOT(simulationStarted()));
+    connect(pPauseSimulationButton, SIGNAL(clicked(bool)), SLOT(simulationPaused()));
+
+    // determine the model owner of the interactive plot window
+    QString owner = simulationOptions.getClassName();
+    PlotWindowContainer* pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
+    pOpcUaClient->setTargetPlotWindow(pPlotWindowContainer->addInteractivePlotWindow(true, pStartSimulationButton, pPauseSimulationButton, pSimulationSpeedComboBox,
+                                                                                     owner, simulationOptions.getInteractiveSimulationPortNumber()));
+    // fetch variables
+    QStringList list = pOpcUaClient->fetchVariableNamesFromServer();
+    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+    // insert them into the tree structure
+    pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getClassName(), simulationOptions.getWorkingDirectory(), list, simulationOptions);
+    // remember the variablestreeitem root pointer
+    foreach (VariablesTreeItem *pVariablesTreeItem, pVariablesWidget->getVariablesTreeModel()->getRootVariablesTreeItem()->getChildren()) {
+      if (pVariablesTreeItem->getFileName() == simulationOptions.getClassName()) {
+        pOpcUaWorker->setVariablesTreeItemRoot(pVariablesTreeItem);
+      }
+    }
+
+    MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, "Could not connect to the embedded server.",
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief SimulationDialog::embeddedServerError
+ * \param simulationOptions
+ * Handles what should be done if the OPC UA client is unable to bind to the server \n
+ * over the selected port. \n
+ */
+void SimulationDialog::embeddedServerError(SimulationOptions simulationOptions)
+{
+  // make the user aware of the problem
+  QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                           tr("Client unable to bind to the embedded simlation server over the port: ")
+                              + QString::number(simulationOptions.getInteractiveSimulationPortNumber()) + ".", Helper::ok);
+}
+
+OpcUaClient* SimulationDialog::getOpcUaClient(int port)
+{
+  return mOpcUaClientsMap.value(port);
+}
+
+/*!
  * \brief SimulationDialog::simulationProcessFinished
  * \param simulationOptions
  * \param resultFileLastModifiedDateTime
@@ -1392,6 +1666,12 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
  */
 void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
 {
+  // Simulation is over, the sampling thread should stop sampling...
+  if (simulationOptions.isInteractiveSimulation()) {
+    getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber())->getSampleThread()->exit();
+    getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber())->getOpcUaWorker()->pauseInteractiveSimulation();
+    return;
+  }
   QString workingDirectory = simulationOptions.getWorkingDirectory();
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getResultFileName()));
@@ -1544,11 +1824,28 @@ void SimulationDialog::updateJacobianToolTip(int index)
  */
 void SimulationDialog::buildOnly(bool checked)
 {
-  mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
+  if (!mpInteractiveSimulationGroupBox->isChecked()) {
+    mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
+  }
 #if !defined(WITHOUT_OSG)
   mpLaunchAnimationCheckBox->setEnabled(!checked);
 #endif
   mpSimulationFlagsTab->setEnabled(!checked);
+}
+
+/*!
+ * \brief SimulationDialog::interactiveSimulation
+ * Slot activated when mpInteractiveSimulationGroupBox is checked.\n
+ * Makes sure that interactive simulation can not be started with bad options. \n
+ * \param checked
+ */
+void SimulationDialog::interactiveSimulation(bool checked)
+{
+  mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
+  mpLaunchTransformationalDebuggerCheckBox->setEnabled(!checked);
+#if !defined(WITHOUT_OSG)
+  mpLaunchAnimationCheckBox->setEnabled(!checked);
+#endif
 }
 
 /*!
@@ -1612,7 +1909,11 @@ void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
 void SimulationDialog::simulate()
 {
   if (validate()) {
-    if (mIsReSimulate) {
+    // interactive simulation
+    if (mpInteractiveSimulationGroupBox->isChecked()) {
+      performSimulation();
+    }
+    else if (mIsReSimulate) {
       performSimulation();
     } else {
       // if no option is selected then show error message to user
