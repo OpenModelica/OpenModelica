@@ -273,7 +273,8 @@ if true then /* Suppress output */
     prefixPath + "Util/System.mo",
     prefixPath + "Util/Util.mo",
     prefixPath + "Util/VarTransform.mo",
-    prefixPath + "Util/VisualXML.mo"
+    prefixPath + "Util/VisualXML.mo",
+    prefixPath + "Util/ZeroMQ.mo"
   };
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then

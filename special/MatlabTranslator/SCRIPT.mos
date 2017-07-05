@@ -4,7 +4,7 @@
 
 // setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();
 
-OpenModelica.Scripting.setCFlags("-g " + getCFlags());
+OpenModelica.Scripting.setCFlags("-g -lzmq " + getCFlags());
 getErrorString();
 
 files := {
@@ -30,6 +30,7 @@ files := {
   "../../../OMCompiler/Compiler/Template/AbsynDumpTpl.mo",
   "../../../OMCompiler/Compiler/FrontEnd/Dump.mo",
   "../../../OMCompiler/Compiler/Template/Tpl.mo",
+  "../../../OMCompiler/Compiler/Util/ZeroMQ.mo",
   "TokenModelica.mo",
   "LexTableModelica.mo",
   "LexerCodeModelica.mo",
