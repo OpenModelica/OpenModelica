@@ -86,7 +86,7 @@ win32 {
     LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-    -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
+    -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -llibfmilib -lshlwapi\
     -lws2_32
 
@@ -261,8 +261,8 @@ HEADERS  += Util/Helper.h \
   Git/CleanDialog.h \
   OMEditApplication.h \
   Traceability/TraceabilityGraphViewWidget.h \
-    Traceability/TraceabilityInformationURI.h \
-    Simulation/OpcUaClient.h
+  Traceability/TraceabilityInformationURI.h \
+  Simulation/OpcUaClient.h
 
 CONFIG(osg) {
 

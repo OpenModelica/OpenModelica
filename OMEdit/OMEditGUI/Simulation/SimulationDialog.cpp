@@ -359,7 +359,7 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 6, 0, 1, 3);
   pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 7, 0, 1, 3);
 #if !defined(WITHOUT_OSG)
-  pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 7, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 8, 0, 1, 3);
 #endif
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
@@ -1647,9 +1647,9 @@ void SimulationDialog::simulationProcessRunning(SimulationOptions simulationOpti
 void SimulationDialog::embeddedServerError(SimulationOptions simulationOptions)
 {
   // make the user aware of the problem
-  QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                           tr("Client unable to bind to the embedded simlation server over the port: ")
-                              + QString::number(simulationOptions.getInteractiveSimulationPortNumber()) + ".", Helper::ok);
+  QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                           tr("Client unable to bind to the embedded simulation server over the port: %1.")
+                           .arg(simulationOptions.getInteractiveSimulationPortNumber()), Helper::ok);
 }
 
 OpcUaClient* SimulationDialog::getOpcUaClient(int port)
