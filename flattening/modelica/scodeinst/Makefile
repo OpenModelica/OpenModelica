@@ -58,7 +58,7 @@ eq10.mo \
 Extends1.mo \
 Extends2.mo \
 Extends3.mo \
-extends3.mo \
+Extends4.mo \
 ExtendImport1.mo \
 ExtendSections.mo \
 ExtendSelf1.mo \
@@ -192,6 +192,7 @@ ModClass5.mo \
 DuplicateElements1.mo \
 DuplicateElements2.mo \
 DuplicateElements5.mo \
+DuplicateElementsCond1.mo \
 ExtendImport2.mo \
 bindings2.mo \
 bindings3.mo \

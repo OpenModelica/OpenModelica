@@ -1,23 +1,23 @@
-// name: extends1.mo
+// name: DuplicateElementsCond1.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
-// FAILREASON: Duplicate elements from extends not checked.
 //
 
 
 model A
-  Real x;
+  Real x if true;
 end A;
 
 model B
-  Integer x;
+  Real x;
 end B;
 
 model C
   extends A;
   extends B;
+  Real x if true;
 end C;
 
 // Result:
@@ -25,14 +25,14 @@ end C;
 // EXPANDED FORM:
 //
 // class C
-//   Integer x;
+//   Real x;
 // end C;
 //
 //
 // Found 1 components and 0 parameters.
-// Error processing file: extends1.mo
-// [extends1.mo:12:3-12:12:writable] Error: Duplicate elements (due to inherited elements) not identical:
-//   first element is:  .Integer x
+// Error processing file: extends2.mo
+// [extends2.mo:18:3-18:17:writable] Error: Duplicate elements (due to inherited elements) not identical:
+//   first element is:  Real x if true
 //   second element is: .Real x
 //
 // # Error encountered! Exiting...
