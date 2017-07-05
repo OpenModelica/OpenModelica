@@ -488,6 +488,7 @@ package SimCode
     record LINEARSYSTEM
       Integer index;
       Boolean partOfMixed;
+      Boolean tornSystem;
       list<SimCodeVar.SimVar> vars;
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
@@ -496,6 +497,7 @@ package SimCode
       Option<JacobianMatrix> jacobianMatrix;
       list<DAE.ElementSource> sources;
       Integer indexLinearSystem;
+      Integer nUnknowns;
     end LINEARSYSTEM;
   end LinearSystem;
 
@@ -505,9 +507,11 @@ package SimCode
       list<SimEqSystem> eqs;
       list<DAE.ComponentRef> crefs;
       Integer indexNonLinearSystem;
+      Integer nUnknowns;
       Option<JacobianMatrix> jacobianMatrix;
       Boolean homotopySupport;
       Boolean mixedSystem;
+      Boolean tornSystem;
     end NONLINEARSYSTEM;
   end NonlinearSystem;
 
