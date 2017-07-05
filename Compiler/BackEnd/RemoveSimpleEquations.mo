@@ -51,6 +51,7 @@ public import DAE;
 public import FCore;
 
 protected
+import AvlSetInt;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
@@ -1605,13 +1606,16 @@ algorithm
       BackendDAE.Variables vars, globalKnownVars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
+      AvlSetInt.Tree tree;
 
     case (_, _, _, _, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
         (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
         (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, ilst));
-        ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
+        tree = AvlSetInt.new();
+        tree = AvlSetInt.addList(tree, ilst);
+        ilst = AvlSetInt.listKeys(tree);
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
       then
         solveTimeIndependentAcausal(vlst, ilst, lhs, rhs, eqnAttributes, inTpl);
@@ -1639,12 +1643,15 @@ algorithm
       BackendDAE.Variables vars, globalKnownVars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
+      AvlSetInt.Tree tree;
 
     case (_, _, _, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
         (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
-        ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
+        tree = AvlSetInt.new();
+        tree = AvlSetInt.addList(tree, ilst);
+        ilst = AvlSetInt.listKeys(tree);
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
         ty = Expression.typeof(exp);
         e2 = Expression.makeConstZero(ty);
