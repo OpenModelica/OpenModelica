@@ -60,7 +60,7 @@ class PlotWindow : public QMainWindow
 {
   Q_OBJECT
 public:
-  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC};
+  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC, PLOTARRAY, PLOTARRAYPARAMETRIC};
 private:
   Plot *mpPlot;
   QCheckBox *mpLogXCheckBox;
@@ -84,6 +84,7 @@ private:
   QString mYRangeMax;
   double mCurveWidth;
   int mCurveStyle;
+  double mTime;
 public:
   PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
   ~PlotWindow();
@@ -94,9 +95,12 @@ public:
   void setPlotType(PlotType type);
   PlotType getPlotType();
   void initializeFile(QString file);
+  void getStartStopTime(double &start, double &stop);
   void setupToolbar();
   void plot(PlotCurve *pPlotCurve = 0);
   void plotParametric(PlotCurve *pPlotCurve = 0);
+  void plotArray(double timePercent, PlotCurve *pPlotCurve = 0);
+  void plotArrayParametric(double timePercent, PlotCurve *pPlotCurve = 0);
   void setTitle(QString title);
   void setGrid(QString grid);
   QString getGrid();
@@ -129,6 +133,9 @@ public:
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
   void closeEvent(QCloseEvent *event);
+  void setTime(double time){mTime = time;}
+  double getTime() {return mTime;}
+  void updateTimeText(QString unit);
 signals:
   void closingDown();
 public slots:

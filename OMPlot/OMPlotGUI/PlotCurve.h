@@ -54,7 +54,7 @@ private:
 
   Plot *mpParentPlot;
 public:
-  PlotCurve(QString fileName, QString variableName, QString unit, QString displayUnit, Plot *pParent);
+  PlotCurve(QString fileName, QString name, QString xVariableName, QString yVariableName, QString unit, QString displayUnit, Plot *pParent);
   ~PlotCurve();
 
   QwtArray<double> mXAxisVector;

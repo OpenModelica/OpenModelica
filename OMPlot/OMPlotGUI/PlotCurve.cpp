@@ -41,11 +41,13 @@
 
 using namespace OMPlot;
 
-PlotCurve::PlotCurve(QString fileName, QString variableName, QString unit, QString displayUnit, Plot *pParent)
+PlotCurve::PlotCurve(QString fileName, QString name, QString xVariableName, QString yVariableName, QString unit, QString displayUnit, Plot *pParent)
   : mCustomColor(false)
 {
-  mName = variableName;
-  mNameStructure = fileName + "." + variableName;
+  mName = name;
+  mXVariable = xVariableName;
+  mYVariable = yVariableName;
+  mNameStructure = fileName + "." + name;
   mFileName = fileName;
   mCustomColor = false;
   setUnit(unit);
