@@ -97,7 +97,6 @@ private:
   Teuchos::RCP<std::ostream> _output;
 
   bool _firstCall;
-  bool _generateoutput;
   bool _useDomainScaling;
 
   bool _OutOfProperMethods;

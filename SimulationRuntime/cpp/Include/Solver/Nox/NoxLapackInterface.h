@@ -42,7 +42,6 @@ class NoxLapackInterface : public LOCA::LAPACK::Interface {
 	INonLinearAlgLoop *_algLoop;///< Algebraic loop to be solved, required to obtain value of f
 	double *_yScale, *_fScale, *_hugeabsolutevalues, *_xtemp, *_rhs;
 	int _dimSys;
-	bool _generateoutput;
 	bool _useDomainScaling;
 	bool _useFunctionValueScaling;
 	double _lambda;//homotopy parameter

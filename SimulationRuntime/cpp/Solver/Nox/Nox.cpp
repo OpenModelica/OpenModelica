@@ -35,7 +35,6 @@ Nox::Nox(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
 	, _yScale             (NULL)
   , _helpArray          (NULL)
 	, _firstCall		  (true)
-	, _generateoutput     (false)
 	, _useDomainScaling         (false)
 	, _currentIterate             (NULL)
 	, _dimSys (_algLoop->getDimReal())
@@ -66,7 +65,6 @@ Nox::~Nox()
  */
 void Nox::initialize()
 {
-	if (_generateoutput) std::cout << "starting init" << std::endl;
 	_firstCall = false;
 	_algLoop->initialize();//this sets values in the real variable
 
@@ -114,8 +112,6 @@ void Nox::initialize()
 	_statusTestsCombo->addStatusTest(_statusTestStagnation);
 	_statusTestsCombo->addStatusTest(_statusTestDivergence);
 	//_statusTestsCombo->addStatusTest(_statusTestSgnChange);
-
-	if (_generateoutput) std::cout << "ending init" << std::endl;
 }
 /**
  *  \brief main solving routine
@@ -148,8 +144,11 @@ void Nox::solve()
   LOGGER_WRITE_BEGIN("Nox: start solving algebraic loop no. " + to_string(_algLoop->getEquationIndex()) + " at Simulation time " + to_string(_algLoop->getSimTime()), _lc, LL_DEBUG);
 
   //setup solver
-  if (_firstCall)
+  if (_firstCall){
+    LOGGER_WRITE("initialize...",_lc, LL_DEBUG);
     initialize();
+    LOGGER_WRITE("init done!",_lc, LL_DEBUG);
+  }
 
 	// Create the list of solver parameters. For detailed calibration, check https://trilinos.org/docs/dev/packages/nox/doc/html/parameters.html
   _solverParametersPtr = Teuchos::rcp(new Teuchos::ParameterList);
@@ -526,11 +525,7 @@ void Nox::LocaHomotopySolve(const int numberofhomotopytries)
 	nlPrintParams.set("Output Stream", _output);
 	nlPrintParams.set("Error Stream", _output);
 	//Set the level of output
-  if (_generateoutput){
-		nlPrintParams.set("Output Information", NOX::Utils::Details + NOX::Utils::OuterIteration + NOX::Utils::Warning + NOX::Utils::StepperIteration + NOX::Utils::StepperDetails + NOX::Utils::StepperParameters);  // Should set
-	}else{
-		nlPrintParams.set("Output Information", NOX::Utils::Error); // Should set
-	}
+  nlPrintParams.set("Output Information", NOX::Utils::Details + NOX::Utils::OuterIteration + NOX::Utils::Warning + NOX::Utils::StepperIteration + NOX::Utils::StepperDetails + NOX::Utils::StepperParameters);  // Should set
 
 	// Create LAPACK Factory
 	Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = Teuchos::rcp(new LOCA::LAPACK::Factory);
@@ -944,10 +939,8 @@ void Nox::printLogger(){
 void Nox::addPrintingList(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr){
   solverParametersPtr->sublist("Printing").set("Output Precision", 15);
   solverParametersPtr->sublist("Printing").set("Output Information", NOX::Utils::Error + NOX::Utils::Warning + NOX::Utils::OuterIteration + NOX::Utils::InnerIteration);
-  if(!_generateoutput){
-    solverParametersPtr->sublist("Printing").set("Output Stream", _output);
-    solverParametersPtr->sublist("Printing").set("Error Stream", _output);
-  }
+  solverParametersPtr->sublist("Printing").set("Output Stream", _output);
+  solverParametersPtr->sublist("Printing").set("Error Stream", _output);
 }
 /**
  *  \brief copy solution from solver to the algLoopSolution

@@ -11,7 +11,6 @@
 //! Constructor
 NoxLapackInterface::NoxLapackInterface(INonLinearAlgLoop *algLoop)//second argument unnecessary. Just initialize _lambda to 1.0
 	:_algLoop(algLoop)
-	,_generateoutput(false)
 	,_useDomainScaling(false)
 	,_useFunctionValueScaling(true)
 	,_yScale(NULL)
