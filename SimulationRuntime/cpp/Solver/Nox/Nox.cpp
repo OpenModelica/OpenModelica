@@ -230,22 +230,8 @@ void Nox::solve()
       _algLoop->evaluate();
 			_iterationStatus=DONE;
 		}else{
-
-      bool EvalAfterSolveFailed=false;
-
-      _algLoop->setReal(_y);
-      try{
-        _algLoop->evaluate();
-			}catch(const std::exception & ex){
-        EvalAfterSolveFailed=true;
-        LOGGER_WRITE("EvalAfterSolveFailed",_lc, LL_DEBUG);//this may be interesting in future.
-      }
-      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed) && (CheckWhetherSolutionIsNearby(_y))){
-          _algLoop->setReal(_y);
-          _algLoop->evaluate();
-          _iterationStatus=DONE;
-      }else{
+      CheckWhetherSolutionIsNearbyWrapper();
+      if(_iterationStatus!=DONE){
         check4EventRetry(_y);
         if ((iter==0) || (iter==1)) iter = 2;
         modifySolverParameters(_solverParametersPtr,iter);
@@ -284,20 +270,7 @@ void Nox::solve()
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
     }else{
-      bool EvalAfterSolveFailed2=false;
-      _algLoop->setReal(_y);
-      try{
-        _algLoop->evaluate();
-			}catch(const std::exception & ex){
-        EvalAfterSolveFailed2=true;
-        LOGGER_WRITE("EvalAfterSolveFailed2",_lc, LL_DEBUG);//this may be interesting in future.
-      }
-      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed2) && (CheckWhetherSolutionIsNearby(_y))){
-        _algLoop->setReal(_y);
-        _algLoop->evaluate();
-        _iterationStatus=DONE;
-      }
+      CheckWhetherSolutionIsNearbyWrapper();
     }
   }
 
@@ -333,20 +306,7 @@ void Nox::solve()
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
     }else{
-      bool EvalAfterSolveFailed3=false;
-      _algLoop->setReal(_y);
-      try{
-        _algLoop->evaluate();
-			}catch(const std::exception & ex){
-        EvalAfterSolveFailed3=true;
-        LOGGER_WRITE("EvalAfterSolveFailed3",_lc, LL_DEBUG);//this may be interesting in future.
-      }
-      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed3) && (CheckWhetherSolutionIsNearby(_y))){
-        _algLoop->setReal(_y);
-        _algLoop->evaluate();
-        _iterationStatus=DONE;
-      }
+      CheckWhetherSolutionIsNearbyWrapper();
     }
   }
 
@@ -358,20 +318,7 @@ void Nox::solve()
     if(BasicNLSsolve()==NOX::StatusTest::Converged){
       _iterationStatus=DONE;
     }else{
-      bool EvalAfterSolveFailed4=false;
-      _algLoop->setReal(_y);
-      try{
-        _algLoop->evaluate();
-			}catch(const std::exception & ex){
-        EvalAfterSolveFailed4=true;
-        LOGGER_WRITE("EvalAfterSolveFailed4",_lc, LL_DEBUG);//this may be interesting in future.
-      }
-      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
-      if((!EvalAfterSolveFailed4) && (CheckWhetherSolutionIsNearby(_y))){
-          _algLoop->setReal(_y);
-          _algLoop->evaluate();
-          _iterationStatus=DONE;
-      }
+      CheckWhetherSolutionIsNearbyWrapper();
     }
     VaryInitGuess++;
   }
@@ -781,6 +728,24 @@ bool Nox::CheckWhetherSolutionIsNearby(double const * const y){
 	delete [] rhs;
 	return std::all_of(rhssignchange.begin(),rhssignchange.end(),[](bool a){return a;});
 }
+
+void Nox::CheckWhetherSolutionIsNearbyWrapper(){
+      bool EvalAfterSolveFailed=false;
+      _algLoop->setReal(_y);
+      try{
+        _algLoop->evaluate();
+			}catch(const std::exception & ex){
+        EvalAfterSolveFailed=true;
+        LOGGER_WRITE("EvalAfterSolveFailed",_lc, LL_DEBUG);//this may be interesting in future.
+      }
+      //&& is important here, since CheckWhetherSolutionIsNearby(_y) throws an error if EvalAfterSolveFailed=true.
+      if((!EvalAfterSolveFailed) && (CheckWhetherSolutionIsNearby(_y))){
+          _algLoop->setReal(_y);
+          _algLoop->evaluate();
+          _iterationStatus=DONE;
+      }
+}
+
 /**
  *  \brief checks whether the exception contains a string "Division by zero."
  *
