@@ -64,6 +64,7 @@ public:
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
   void setEditable(bool set) {mEditable = set;}
+  bool isMainArray() const {return mIsMainArray;}
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
   QIcon getVariableTreeItemIcon(QString name) const;
@@ -97,6 +98,7 @@ private:
   QString mToolTip;
   bool mChecked;
   bool mEditable;
+  bool mIsMainArray;
   SimulationOptions mSimulationOptions;
 };
 
@@ -183,6 +185,7 @@ private:
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
   QComboBox *mpSimulationTimeComboBox;
+  QSlider *mpSimulationTimeSlider;
   VariableTreeProxyModel *mpVariableTreeProxyModel;
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
@@ -193,6 +196,7 @@ public slots:
   void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0,
                      OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
+  void simulationTimeChanged(int timePercent);
   void timeUnitChanged(QString unit);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);

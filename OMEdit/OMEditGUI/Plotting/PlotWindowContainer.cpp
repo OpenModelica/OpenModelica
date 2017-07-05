@@ -234,6 +234,66 @@ void PlotWindowContainer::addParametricPlotWindow()
 }
 
 /*!
+ * \brief PlotWindowContainer::addArrayPlotWindow
+ * Adds a new ArrayPlot Window.
+ * \param maximized - sets the window state maximized
+ */
+void PlotWindowContainer::addArrayPlotWindow(bool maximized)
+{
+  try {
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
+    pPlotWindow->setPlotType(PlotWindow::PLOTARRAY);
+    pPlotWindow->setWindowTitle(getUniqueName("Array Plot : "));
+    pPlotWindow->setTitle("");
+    pPlotWindow->setLegendPosition("top");
+    pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
+    if (unitComboBox->currentText() == "")
+        unitComboBox->setCurrentText("s");
+    pPlotWindow->setTimeUnit(unitComboBox->currentText());
+    pPlotWindow->setXLabel(QString("index"));
+    pPlotWindow->installEventFilter(this);
+    QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/array-plot-window.svg"));
+    pPlotWindow->show();
+    if (maximized) {
+      pPlotWindow->setWindowState(Qt::WindowMaximized);
+    }
+  }
+  catch (PlotException &e) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief PlotWindowContainer::addParametricArrayPlotWindow
+ * Adds a new Array Parametric Plot  Window.
+ */
+void PlotWindowContainer::addArrayParametricPlotWindow()
+{
+  try {
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this);
+    pPlotWindow->setPlotType(PlotWindow::PLOTARRAYPARAMETRIC);
+    pPlotWindow->setWindowTitle(getUniqueName("Array Parametric Plot : "));
+    pPlotWindow->setTitle("");
+    pPlotWindow->setLegendPosition("top");
+    pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
+    if (unitComboBox->currentText() == "")
+        unitComboBox->setCurrentText("s");
+    pPlotWindow->setTimeUnit(unitComboBox->currentText());
+    pPlotWindow->installEventFilter(this);
+    QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
+    addCloseActionsToSubWindowSystemMenu(pSubWindow);
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/array-parametric-plot-window.svg"));
+    pPlotWindow->show();
+  }
+  catch (PlotException &e) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
  * \brief PlotWindowContainer::addAnimationWindow
  * Adds an animation widget as subwindow
  * \param maximized - sets the window state maximized

@@ -60,6 +60,8 @@ public:
 public slots:
   void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
+  void addArrayPlotWindow(bool maximized = false);
+  void addArrayParametricPlotWindow();
   void addAnimationWindow(bool maximized = false);
   void clearPlotWindow();
   void exportVariables();

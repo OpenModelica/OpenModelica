@@ -1485,6 +1485,28 @@ QStringList StringHandler::makeVariableParts(QString variable)
   return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
 }
 
+#include <iostream>
+using namespace std;
+
+QStringList StringHandler::makeVariablePartsWithInd(QString variable)
+{
+  QStringList varParts = makeVariableParts(variable);
+  //if the last part is array with index, split it into the name and index parts:
+
+  if (!varParts.isEmpty()) {
+	  QString* lastStr = &(varParts.last());
+	  int i = lastStr->lastIndexOf(QRegExp("\\[\\d+\\]"));
+	  if(i>=0){
+		  QString indexPart = *lastStr;
+		  indexPart.remove(0,i);
+		  lastStr->truncate(i);
+		  varParts.append(indexPart);
+	  }
+  }
+  return varParts;
+}
+
+
 bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
   int i1 = 0; // index in string
   int i2 = 0;

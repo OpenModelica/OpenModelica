@@ -81,6 +81,7 @@
         <file>Resources/icons/fill-vertical-cylinder.svg</file>
         <file>Resources/icons/omplot.png</file>
         <file>Resources/icons/parametric-plot-window.svg</file>
+        <file>Resources/icons/array-plot-window.svg</file>
         <file>Resources/icons/plot-window.svg</file>
         <file>Resources/icons/re-simulate.svg</file>
         <file>Resources/icons/re-simulation-center.svg</file>
@@ -178,5 +179,6 @@
         <file>Resources/icons/completerkeyword.svg</file>
         <file>Resources/icons/completerType.svg</file>
         <file>Resources/icons/completerCodeSnippets.svg</file>
+        <file>Resources/icons/array-parametric-plot-window.svg</file>
     </qresource>
 </RCC>

@@ -144,6 +144,7 @@ public:
   static QStringList splitStringWithSpaces(QString value);
   static void fillEncodingComboBox(QComboBox *pEncodingComboBox);
   static QStringList makeVariableParts(QString variable);
+  static QStringList makeVariablePartsWithInd(QString variable);
   static bool naturalSort(const QString &s1, const QString &s2);
 #ifdef WIN32
   static QProcessEnvironment simulationProcessEnvironment();

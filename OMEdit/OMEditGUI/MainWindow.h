@@ -364,6 +364,8 @@ private:
   QAction *mpReSimulateSetupAction;
   QAction *mpNewPlotWindowAction;
   QAction *mpNewParametricPlotWindowAction;
+  QAction *mpNewArrayPlotWindowAction;
+  QAction *mpNewArrayParametricPlotWindowAction;
 #if !defined(WITHOUT_OSG)
   QAction *mpNewAnimationWindowAction;
 #endif
