@@ -3669,7 +3669,7 @@ algorithm
       // create symbolic jacobian for simulation
       (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars, jacobianMatrix, homotopySupport, mixedSystem, false), NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, false), NONE())}, uniqueEqIndex+1, tempvars);
 
     // No analytic jacobian available. Generate non-linear system.
     case (_, _) equation
@@ -3680,7 +3680,7 @@ algorithm
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars, NONE(), homotopySupport, mixedSystem, false), NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, mixedSystem, false), NONE())}, uniqueEqIndex+1, tempvars);
 
     // failure
     else equation
@@ -3799,7 +3799,7 @@ algorithm
        list<BackendDAE.Equation> reqns, otherEqnsLst;
        BackendDAE.Variables vars, globalKnownVars, diffVars, ovars;
        BackendDAE.EquationArray eqns, oeqns;
-       list<SimCodeVar.SimVar> tempvars, simVars;
+       list<SimCodeVar.SimVar> tempvars, tempvars2, simVars;
        list<SimCode.SimEqSystem> simequations, resEqs;
        Integer uniqueEqIndex, nInnerVars;
        list<DAE.ComponentRef> tcrs;
@@ -3891,7 +3891,8 @@ algorithm
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-       lSystem = SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, simequations, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars);
+       lSystem = SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, simequations, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars));
+       tempvars2 = tempvars;
 
        // Do if dynamic tearing is activated
        if Util.isSome(casualTearingSet) then
@@ -3906,17 +3907,17 @@ algorithm
          reqns = BackendEquation.getList(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
-         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+         (simequations, uniqueEqIndex, tempvars2, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2);
          simequations = listAppend(simequations, resEqs);
 
-         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-         alternativeTearingL = SOME(SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, simequations, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars));
+         (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
+         alternativeTearingL = SOME(SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, simequations, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars)));
 
        else
          alternativeTearingL = NONE();
        end if;
-     then ({SimCode.SES_LINEAR(lSystem, alternativeTearingL)}, uniqueEqIndex+1, tempvars);
+     then ({SimCode.SES_LINEAR(lSystem, alternativeTearingL)}, uniqueEqIndex+1, tempvars2);
 
      // CASE: nonlinear
      case(false, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
@@ -3938,7 +3939,8 @@ algorithm
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
        (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
 
-       nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars, jacobianMatrix, homotopySupport, mixedSystem, true);
+       nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true);
+       tempvars2 = tempvars;
 
        // Do if dynamic tearing is activated
        if Util.isSome(casualTearingSet) then
@@ -3953,18 +3955,18 @@ algorithm
          // generate residual replacements
          tcrs = List.map(tvars, BackendVariable.varCref);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
-         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+         (simequations, uniqueEqIndex, tempvars2, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2);
          simequations = listAppend(simequations, resEqs);
 
-         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
+         (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
          (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
 
-         alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars, jacobianMatrix, homotopySupport, mixedSystem, true));
+         alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true));
        else
          alternativeTearingNl = NONE();
        end if;
-     then ({SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl)}, uniqueEqIndex+1, tempvars);
+     then ({SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl)}, uniqueEqIndex+1, tempvars2);
    end match;
 end createTornSystem;
 
