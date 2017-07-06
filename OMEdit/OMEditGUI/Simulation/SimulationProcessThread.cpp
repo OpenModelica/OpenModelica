@@ -239,7 +239,7 @@ void SimulationProcessThread::simulationProcessStarted()
     int port = mpSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
     SimulationServerCheckThread *pEmbeddedServerCheckThread = new SimulationServerCheckThread(port);
     connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerReady()), this, SLOT(embeddedServerReady()));
-    connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerError()), this, SLOT(embeddedServerError()));
+    connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerError(QString)), this, SLOT(embeddedServerError(QString)));
     connect(pEmbeddedServerCheckThread, SIGNAL(finished()), pEmbeddedServerCheckThread, SLOT(deleteLater()));
     pEmbeddedServerCheckThread->start();
   }
@@ -247,28 +247,21 @@ void SimulationProcessThread::simulationProcessStarted()
 
 /*!
  * \brief SimulationServerCheckThread::run
- * Raises the sendEmbeddedServerReady signal when the OPC UA server is ready to be connectd to.\n
+ * Raises the sendEmbeddedServerReady signal when the OPC UA server is ready to be connectd to. \n
  */
 void SimulationServerCheckThread::run()
 {
   QTcpSocket *pTcpSocket = new QTcpSocket;
-  if (!pTcpSocket->bind(mPort, QAbstractSocket::DontShareAddress)) {
-    emit sendEmbeddedServerError();
-  } else {
-    pTcpSocket->abort();
+  while (pTcpSocket->state() != QAbstractSocket::ConnectedState) {
     pTcpSocket->connectToHost(QHostAddress::LocalHost, mPort);
-
-    while (pTcpSocket->state() != QAbstractSocket::ConnectedState) {
-      msleep(100);
-      if (pTcpSocket->waitForConnected()) {
-        pTcpSocket->disconnectFromHost();
-        if (pTcpSocket->state() == QAbstractSocket::UnconnectedState || pTcpSocket->waitForDisconnected()) {
-          emit sendEmbeddedServerReady();
-        }
-      } else {
-        break;
-      }
+    msleep(10);
+    if (pTcpSocket->waitForConnected()) {
+      emit sendEmbeddedServerReady();
     }
+  }
+  // make the user aware of known socket errors
+  if (pTcpSocket->error() && pTcpSocket->error() != QAbstractSocket::UnknownSocketError) {
+    emit sendEmbeddedServerError(pTcpSocket->errorString());
   }
 }
 
@@ -277,10 +270,10 @@ void SimulationProcessThread::embeddedServerReady()
   emit sendEmbeddedServerReady();
 }
 
-void SimulationProcessThread::embeddedServerError()
+void SimulationProcessThread::embeddedServerError(QString error)
 {
   // if, somehow, the client is unable to bind to the server over the specified port
-  emit sendEmbeddedServerError();
+  emit sendEmbeddedServerError(error);
 }
 
 /*!

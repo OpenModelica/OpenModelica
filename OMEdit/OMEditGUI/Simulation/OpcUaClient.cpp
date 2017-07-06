@@ -69,7 +69,7 @@ QStringList OpcUaClient::fetchVariableNamesFromServer()
       UA_ReferenceDescription *ref = &(browseResponse.results[i].references[j]);
       if (ref->nodeId.nodeId.identifierType == UA_NODEIDTYPE_NUMERIC) {
         int nodeId = ref->nodeId.nodeId.identifier.numeric;
-        QString variableName = (char *)ref->browseName.name.data;
+        QString variableName = QString::fromUtf8((char *)ref->browseName.name.data, ref->browseName.name.length);
         if (!variableName.startsWith("$")) {
           Variable *pVariable = new Variable(nodeId, variableIsWritable(nodeId));
           if (variableIsReal(nodeId)) {

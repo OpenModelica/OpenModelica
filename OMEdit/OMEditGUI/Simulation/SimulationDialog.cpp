@@ -1115,9 +1115,12 @@ SimulationOptions SimulationDialog::createSimulationOptions()
       // look for an available port
       QTcpSocket *pSocket = new QTcpSocket();
       qint16 port = 4841;
-      // bind exclusively
-      while(!pSocket->bind(port, QAbstractSocket::DontShareAddress)) {
+      // find a port not previously used by another opc ua server
+      pSocket->connectToHost(QHostAddress::LocalHost, port);
+      while (pSocket->waitForConnected(10)) {
         port++;
+        pSocket->abort();
+        pSocket->connectToHost(QHostAddress::LocalHost, port);
       }
       simulationOptions.setInteractiveSimulationPortNumber(port);
       simulationFlags.append(QString("-embeddedServerPort=").append(QString::number(port)));
@@ -1644,12 +1647,11 @@ void SimulationDialog::simulationProcessRunning(SimulationOptions simulationOpti
  * Handles what should be done if the OPC UA client is unable to bind to the server \n
  * over the selected port. \n
  */
-void SimulationDialog::embeddedServerError(SimulationOptions simulationOptions)
+void SimulationDialog::embeddedServerError(QString error)
 {
   // make the user aware of the problem
-  QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                           tr("Client unable to bind to the embedded simulation server over the port: %1.")
-                           .arg(simulationOptions.getInteractiveSimulationPortNumber()), Helper::ok);
+  QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                           "Embedded simulation server: " + error, Helper::ok);
 }
 
 OpcUaClient* SimulationDialog::getOpcUaClient(int port)
