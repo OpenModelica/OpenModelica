@@ -231,7 +231,6 @@ public:
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
   void simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime);
   void simulationProcessRunning(SimulationOptions simulationOptions);
-  void embeddedServerError(QString error);
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);

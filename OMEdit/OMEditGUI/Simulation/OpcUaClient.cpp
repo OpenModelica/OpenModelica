@@ -30,6 +30,7 @@ bool OpcUaClient::connectToServer()
   mpClient = UA_Client_new(UA_ClientConfig_standard, Logger_Stdout);
   UA_StatusCode returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
 
+  qDebug() << returnValue;
   if (returnValue != UA_STATUSCODE_GOOD) {
     UA_Client_disconnect(mpClient);
     UA_Client_delete(mpClient);

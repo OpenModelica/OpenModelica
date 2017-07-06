@@ -35,7 +35,6 @@
 #include "Options/OptionsDialog.h"
 
 #include <QDir>
-#include <QTcpSocket>
 
 SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget)
   : QThread(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
@@ -235,45 +234,8 @@ void SimulationProcessThread::simulationProcessStarted()
   emit sendSimulationStarted();
 
   if (mpSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
-    // make sure that the embedded server is ready to be connected to
-    int port = mpSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
-    SimulationServerCheckThread *pEmbeddedServerCheckThread = new SimulationServerCheckThread(port);
-    connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerReady()), this, SLOT(embeddedServerReady()));
-    connect(pEmbeddedServerCheckThread, SIGNAL(sendEmbeddedServerError(QString)), this, SLOT(embeddedServerError(QString)));
-    connect(pEmbeddedServerCheckThread, SIGNAL(finished()), pEmbeddedServerCheckThread, SLOT(deleteLater()));
-    pEmbeddedServerCheckThread->start();
+    emit sendEmbeddedServerReady();
   }
-}
-
-/*!
- * \brief SimulationServerCheckThread::run
- * Raises the sendEmbeddedServerReady signal when the OPC UA server is ready to be connectd to. \n
- */
-void SimulationServerCheckThread::run()
-{
-  QTcpSocket *pTcpSocket = new QTcpSocket;
-  while (pTcpSocket->state() != QAbstractSocket::ConnectedState) {
-    pTcpSocket->connectToHost(QHostAddress::LocalHost, mPort);
-    msleep(10);
-    if (pTcpSocket->waitForConnected()) {
-      emit sendEmbeddedServerReady();
-    }
-  }
-  // make the user aware of known socket errors
-  if (pTcpSocket->error() && pTcpSocket->error() != QAbstractSocket::UnknownSocketError) {
-    emit sendEmbeddedServerError(pTcpSocket->errorString());
-  }
-}
-
-void SimulationProcessThread::embeddedServerReady()
-{
-  emit sendEmbeddedServerReady();
-}
-
-void SimulationProcessThread::embeddedServerError(QString error)
-{
-  // if, somehow, the client is unable to bind to the server over the specified port
-  emit sendEmbeddedServerError(error);
 }
 
 /*!

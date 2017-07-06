@@ -351,7 +351,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
           SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationStarted()), SLOT(simulationProcessStarted()));
   connect(mpSimulationProcessThread, SIGNAL(sendEmbeddedServerReady()), SLOT(embeddedServerReady()));
-  connect(mpSimulationProcessThread, SIGNAL(sendEmbeddedServerError(QString)), SLOT(embeddedServerError(QString)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationOutput(QString,StringHandler::SimulationMessageType,bool)),
           SLOT(writeSimulationOutput(QString,StringHandler::SimulationMessageType,bool)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)),
@@ -575,16 +574,6 @@ void SimulationOutputWidget::simulationProcessStarted()
 void SimulationOutputWidget::embeddedServerReady()
 {
   MainWindow::instance()->getSimulationDialog()->simulationProcessRunning(mSimulationOptions);
-}
-
-/*!
- * \brief SimulationOutputWidget::embeddedServerReady
- * Slot activated when SimulationProcessThread sendembeddedServerError signal is raised.\n
- * The provided port is unbound and can be used for communication between the client and remote.
- */
-void SimulationOutputWidget::embeddedServerError(QString error)
-{
-  MainWindow::instance()->getSimulationDialog()->embeddedServerError(error);
 }
 
 /*!
