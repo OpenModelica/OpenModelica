@@ -440,7 +440,8 @@ algorithm
       equation
         //print("there are both varCrossNodes and eqNodes\n");
         //at least get paths of length 2 between eqCrossNodes
-        paths = getShortPathsBetweenEqCrossNodes(eqCrossLstIn, mIn, mTIn, {});
+        paths = getShortPathsBetweenEqCrossNodes(List.sort(eqCrossLstIn,intGt), mIn, mTIn, {});
+        //
          //print("GOT SOME NEW LOOPS: \n"+stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
         paths;
@@ -452,6 +453,16 @@ algorithm
   end match;
 end resolveLoops_findLoops2;
 
+protected function maxInt
+  input list<Integer> l;
+  output Integer m = 0;
+algorithm
+  for e in l loop
+    if e > m then
+      m := e;
+    end if;
+  end for;
+end maxInt;
 protected function getShortPathsBetweenEqCrossNodes"find closedLoops between 2 eqCrossNode, no matter whether there are var cross nodes between them.
 author: vwaurich TUD 12-2016"
   input list<Integer> eqCrossLstIn;
@@ -468,15 +479,15 @@ algorithm
   case(crossEq::rest,_,_,_)
     algorithm
       //print("check crossEq "+intString(crossEq)+"\n");
-      adjVars := arrayGet(mIn, crossEq);
+      adjVars := List.sort(arrayGet(mIn, crossEq),intGt);
       for adjVar in adjVars loop
-        adjEqs := List.removeOnTrue(crossEq, intEq, arrayGet(mTIn, adjVar));
+        adjEqs := List.sort(List.removeOnTrue(crossEq, intEq, arrayGet(mTIn, adjVar)),intGt);
           //print("all adj eqs "+stringDelimitList(List.map(adjEqs, intString),",")+"\n");
         //all adjEqs which are crossnodes as well
-        adjEqs := List.intersectionOnTrue(adjEqs, rest, intEq);
+        adjEqs := List.intersectionIntSorted(adjEqs, rest);
         for adjEq in adjEqs loop
-          adjVars2 := List.removeOnTrue(adjVar, intEq, arrayGet(mIn, adjEq));
-          sharedVars := List.intersectionOnTrue(adjVars, adjVars2, intEq);
+          adjVars2 := List.sort(List.removeOnTrue(adjVar, intEq, arrayGet(mIn, adjEq)),intGt);
+          sharedVars := List.intersectionIntSorted(adjVars, adjVars2);
             //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
           if (intGe(listLength(sharedVars),1)) then
             newPath := listAppend({adjEq},{crossEq});
