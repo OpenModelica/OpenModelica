@@ -61,9 +61,6 @@ public:
   void checkMinMaxValues(const double& value);
   void setSampleInterval(double interval);
   double getSampleInterval() {return mSampleInterval;}
-  QToolButton* getStartSimulationButton() {return mpStartSimulationToolButton;}
-  QToolButton* getPauseSimulationButton() {return mpPauseSimulationToolButton;}
-  QComboBox* getSimulationSpeedComboBox() {return mpSimulationSpeedComboBox;}
   void setVariablesTreeItemRoot(VariablesTreeItem * pVariablesTreeItemRoot);
   VariablesTreeItem* getVariablesTreeItemRoot() {return mpVariablesTreeItemRoot;}
   QThreadStorage<QMap<UA_UInt32, Variable*>>* getMonitorIds() {return &mMonitorIds;}
@@ -73,7 +70,7 @@ public slots:
   void startInteractiveSimulation();
   void pauseInteractiveSimulation();
 private slots:
-  void setSpeed();
+  void setSpeed(QString value);
 protected:
   void sample();
 private:
@@ -81,9 +78,6 @@ private:
   void setInterval(double interval);
   QPair<double, double> mMinMaxValues;
   OpcUaClient *mpParentClient;
-  QToolButton *mpStartSimulationToolButton;
-  QToolButton *mpPauseSimulationToolButton;
-  QComboBox *mpSimulationSpeedComboBox;
   VariablesTreeItem *mpVariablesTreeItemRoot;
   QTime mClock;
   double mInterval;

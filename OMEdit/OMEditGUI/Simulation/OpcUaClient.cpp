@@ -324,14 +324,7 @@ double OpcUaClient::getCurrentSimulationTime()
 OpcUaWorker::OpcUaWorker(OpcUaClient *pClient, bool simulateWithSteps)
  : mpParentClient(pClient), mSimulateWithSteps(simulateWithSteps), mSampleInterval(100)
 {
-  mpStartSimulationToolButton = new QToolButton;
-  mpPauseSimulationToolButton = new QToolButton;
-  mpSimulationSpeedComboBox = new QComboBox;
-  connect(mpPauseSimulationToolButton, SIGNAL(clicked()), this, SLOT(pauseInteractiveSimulation()));
-  connect(mpStartSimulationToolButton, SIGNAL(clicked()), this, SLOT(startInteractiveSimulation()));
-  connect(mpSimulationSpeedComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setSpeed()));
-  connect(mpSimulationSpeedComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(setSpeed()));
-
+  setInterval(mSampleInterval);
   if (!mSimulateWithSteps) {
     createSubscription();
   }
@@ -398,12 +391,12 @@ void OpcUaWorker::setVariablesTreeItemRoot(VariablesTreeItem * pVariablesTreeIte
 /*!
  * Adjust the sample interval according to the value entered by the user.
  */
-void OpcUaWorker::setSpeed()
+void OpcUaWorker::setSpeed(QString value)
 {
   bool isFloat = true;
-  double value = mpSimulationSpeedComboBox->lineEdit()->text().toFloat(&isFloat);
-  if (isFloat && value > 0.0) {
-    setInterval(mSampleInterval / value);
+  double speedValue = value.toFloat(&isFloat);
+  if (isFloat && speedValue > 0.0) {
+    setInterval(mSampleInterval / speedValue);
   }
 }
 

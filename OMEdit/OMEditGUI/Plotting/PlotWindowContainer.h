@@ -66,6 +66,7 @@ public slots:
   void addArrayParametricPlotWindow();
   OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QToolButton *pStartSimulation = 0, QToolButton *pPauseSimulation = 0,
                                                QComboBox *pSimulationSpeed = 0, QString owner = QString(), int port = 0);
+  OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QString owner = QString(), int port = 0);
   void addAnimationWindow(bool maximized = false);
   void clearPlotWindow();
   void removeInteractivePlotWindow();

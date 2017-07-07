@@ -1527,8 +1527,8 @@ void SimulationDialog::setInteractiveControls(bool enabled)
   OpcUaClient *pClient = getOpcUaClient(port);
 
   // control buttons
-  pClient->getOpcUaWorker()->getStartSimulationButton()->setEnabled(enabled);
-  pClient->getOpcUaWorker()->getPauseSimulationButton()->setEnabled(!enabled);
+  pClient->getTargetPlotWindow()->getStartSimulationButton()->setEnabled(enabled);
+  pClient->getTargetPlotWindow()->getPauseSimulationButton()->setEnabled(!enabled);
 
   //plotpicker
   pClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
@@ -1599,20 +1599,20 @@ void SimulationDialog::simulationProcessRunning(SimulationOptions simulationOpti
     // insert the newly created OpcUaClient to the data structure
     mOpcUaClientsMap.insert(simulationOptions.getInteractiveSimulationPortNumber(), pOpcUaClient);
 
-    // inject controls into the interactive plot window
-    QToolButton* pStartSimulationButton = pOpcUaClient->getOpcUaWorker()->getStartSimulationButton();
-    QToolButton* pPauseSimulationButton = pOpcUaClient->getOpcUaWorker()->getPauseSimulationButton();
-    QComboBox* pSimulationSpeedComboBox = pOpcUaClient->getOpcUaWorker()->getSimulationSpeedComboBox();
-
-    // make graphical responses from the main thread
-    connect(pStartSimulationButton, SIGNAL(clicked(bool)), SLOT(simulationStarted()));
-    connect(pPauseSimulationButton, SIGNAL(clicked(bool)), SLOT(simulationPaused()));
-
     // determine the model owner of the interactive plot window
     QString owner = simulationOptions.getClassName();
     PlotWindowContainer* pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-    pOpcUaClient->setTargetPlotWindow(pPlotWindowContainer->addInteractivePlotWindow(true, pStartSimulationButton, pPauseSimulationButton, pSimulationSpeedComboBox,
-                                                                                     owner, simulationOptions.getInteractiveSimulationPortNumber()));
+    OMPlot::PlotWindow* pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
+    connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(startInteractiveSimulation()));
+    connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(pauseInteractiveSimulation()));
+    connect(pInteractivePlotWindow->getSimulationSpeedBox(), SIGNAL(editTextChanged(QString)), pOpcUaWorker, SLOT(setSpeed(QString)));
+
+    // make graphical responses from the main thread
+    connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked(bool)), SLOT(simulationStarted()));
+    connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked(bool)), SLOT(simulationPaused()));
+
+    pOpcUaClient->setTargetPlotWindow(pInteractivePlotWindow);
+
     // fetch variables
     QStringList list = pOpcUaClient->fetchVariableNamesFromServer();
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();

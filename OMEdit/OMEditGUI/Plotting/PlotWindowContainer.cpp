@@ -290,10 +290,10 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
  * \brief PlotWindowContainer::addInteractivePlotWindow
  * Adds a new Interactive Plot Window
  */
-PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QToolButton *pStartSimulation, QToolButton *pPauseSimulation, QComboBox *pSimulationSpeed, QString owner, int port)
+PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QString owner, int port)
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true, pStartSimulation, pPauseSimulation, pSimulationSpeed);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true);
     pPlotWindow->setPlotType(PlotWindow::PLOTINTERACTIVE);
     pPlotWindow->setInteractiveOwner(owner);
     pPlotWindow->setInteractivePort(port);
@@ -348,6 +348,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    return 0;
   }
 }
 
