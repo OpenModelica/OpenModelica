@@ -1578,6 +1578,50 @@ algorithm
                 intEq(lst_size, listLength(inList2));
 end setEqualOnTrue;
 
+public function intersectionIntSorted
+  "Provides same functionality as listIntersection, but for integer values
+   in sorted lists. The complexity in this case is O(n)."
+  input list<Integer> inList1;
+  input list<Integer> inList2;
+  output list<Integer> outResult = {};
+protected
+  Integer i1, i2;
+  Integer o1, o2;
+  list<Integer> l1 = inList1, l2 = inList2;
+algorithm
+  if listEmpty(inList1) or listEmpty(inList2) then
+    return;
+  end if;
+  i1::l1 := l1;
+  i2::l2 := l2;
+  o1:=i1;o2:=i2;
+  while true loop
+    if i1 > i2 then
+      if listEmpty(l2) then
+        break;
+      end if;
+      i2::l2 := l2;
+      if o2 >= i2 then fail();end if; o2:=i2;
+    elseif i1 < i2 then
+      if listEmpty(l1) then
+        break;
+      end if;
+      i1::l1 := l1;
+      if o1 >= i1 then fail();end if; o1:=i1;
+    else
+      outResult := i1::outResult;
+      if listEmpty(l1) or listEmpty(l2) then
+        break;
+      end if;
+      i1::l1 := l1;
+      i2::l2 := l2;
+      if o1 >= i1 then fail();end if; o1:=i1;
+      if o2 >= i2 then fail();end if; o2:=i2;
+    end if;
+  end while;
+  outResult := listReverseInPlace(outResult);
+end intersectionIntSorted;
+
 public function intersectionIntN
   "Provides same functionality as listIntersection, but for integer values
    between 1 and N. The complexity in this case is O(n)."
