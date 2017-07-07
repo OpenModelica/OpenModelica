@@ -42,15 +42,9 @@
 
 using namespace OMPlot;
 
-PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, QToolButton *pStartSimulation,
-                       QToolButton *pPauseSimulation, QComboBox *pSimulationSpeed)
+PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
 {
-  if (isInteractiveSimulation) {
-    mpStartSimulationToolButton = pStartSimulation;
-    mpPauseSimulationToolButton = pPauseSimulation;
-    mpSimulationSpeedComboBox = pSimulationSpeed;
-  }
   /* set the widget background white. so that the plot is more useable in books and publications. */
   QPalette p(palette());
   p.setColor(QPalette::Background, Qt::white);
@@ -269,21 +263,24 @@ void PlotWindow::setupToolbar()
   // Interactive Simulation
   if (mIsInteractiveSimulation) {
     //start tool button
+    mpStartSimulationToolButton = new QToolButton;
     mpStartSimulationToolButton->setText(tr("Start"));
     mpStartSimulationToolButton->setIcon(QIcon(":/Resources/icons/play_animation.svg"));
     mpStartSimulationToolButton->setToolTip(tr("Start"));
     mpStartSimulationToolButton->setAutoRaise(true);
-    // start tool button
+    // pause tool button
+    mpPauseSimulationToolButton = new QToolButton;
     mpPauseSimulationToolButton->setEnabled(false);
     mpPauseSimulationToolButton->setText(tr("Pause"));
     mpPauseSimulationToolButton->setIcon(QIcon(":/Resources/icons/pause.svg"));
     mpPauseSimulationToolButton->setToolTip(tr("Pause"));
     mpPauseSimulationToolButton->setAutoRaise(true);
-    /* Speed label and combo box */
+    // speed label and combo box
     mpSimulationSpeedLabel = new QLabel(tr("Speed:"));
     QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
     pDoubleValidator->setBottom(0.01);
     pDoubleValidator->setTop(100);
+    mpSimulationSpeedComboBox = new QComboBox;
     mpSimulationSpeedComboBox->setEditable(true);
     mpSimulationSpeedComboBox->addItems(QStringList() << "10" << "5" << "2" << "1" << "0.5" << "0.2" << "0.1");
     mpSimulationSpeedComboBox->setCurrentIndex(3);

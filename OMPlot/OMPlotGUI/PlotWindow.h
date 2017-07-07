@@ -96,8 +96,8 @@ private:
   QString mInteractiveModelName;
   QMdiSubWindow *mpSubWindow;
 public:
-  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false,
-             QToolButton *pStartSimulation = 0, QToolButton *pPauseSimulation = 0, QComboBox *pSimulationSpeed = 0);
+  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
+
   ~PlotWindow();
 
   void setUpWidget();
@@ -127,6 +127,9 @@ public:
   QCheckBox* getLogXCheckBox();
   QCheckBox* getLogYCheckBox();
   QToolButton* getAutoScaleButton() {return mpAutoScaleButton;}
+  QToolButton* getStartSimulationButton() {return mpStartSimulationToolButton;}
+  QToolButton* getPauseSimulationButton() {return mpPauseSimulationToolButton;}
+  QComboBox* getSimulationSpeedBox() {return mpSimulationSpeedComboBox;}
   void setXLabel(QString label);
   void setYLabel(QString label);
   void setUnit(QString unit) {mUnit = unit;}
