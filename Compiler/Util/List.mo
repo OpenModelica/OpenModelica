@@ -1006,7 +1006,7 @@ algorithm
   a1 := arrayCreate(inN, false);
   a1 := fold1r(inList,arrayUpdate,true,a1);
 
-  for i in inN:1 loop
+  for i in inN:-1:1 loop
     if a1[i] then
       outSorted := i :: outSorted;
     end if;
@@ -1601,13 +1601,13 @@ algorithm
         break;
       end if;
       i2::l2 := l2;
-      if o2 >= i2 then fail();end if; o2:=i2;
+      if o2 > i2 then fail();end if; o2:=i2;
     elseif i1 < i2 then
       if listEmpty(l1) then
         break;
       end if;
       i1::l1 := l1;
-      if o1 >= i1 then fail();end if; o1:=i1;
+      if o1 > i1 then fail();end if; o1:=i1;
     else
       outResult := i1::outResult;
       if listEmpty(l1) or listEmpty(l2) then
@@ -1615,8 +1615,8 @@ algorithm
       end if;
       i1::l1 := l1;
       i2::l2 := l2;
-      if o1 >= i1 then fail();end if; o1:=i1;
-      if o2 >= i2 then fail();end if; o2:=i2;
+      if o1 > i1 then fail();end if; o1:=i1;
+      if o2 > i2 then fail();end if; o2:=i2;
     end if;
   end while;
   outResult := listReverseInPlace(outResult);
