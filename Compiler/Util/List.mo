@@ -1752,7 +1752,7 @@ algorithm
     a := addPos(inList1, a, 1);
     a := addPos(inList2, a, 1);
 
-    for i in inN:1 loop
+    for i in inN:-1:1 loop
       if arrayGet(a, i) == 1 then
         outDifference := i :: outDifference;
       end if;
@@ -1820,7 +1820,7 @@ algorithm
     a := addPos(inList1, a, 1);
     a := addPos(inList2, a, 1);
 
-    for i in inN:1 loop
+    for i in inN:-1:1 loop
       if arrayGet(a, i) > 0 then
         outUnion := i :: outUnion;
       end if;
