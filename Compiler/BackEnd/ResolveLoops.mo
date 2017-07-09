@@ -437,10 +437,16 @@ algorithm
        then
          {subLoop};
     case(_,_,_::_,_::_,_,_)
-      equation
+      algorithm
         //print("there are both varCrossNodes and eqNodes\n");
         //at least get paths of length 2 between eqCrossNodes
-        paths = getShortPathsBetweenEqCrossNodes(List.sort(eqCrossLstIn,intGt), mIn, mTIn, {});
+        for i in 1:arrayLength(mIn) loop
+          arrayUpdate(mIn, i, List.sort(mIn[i], intGt));
+        end for;
+        for i in 1:arrayLength(mTIn) loop
+          arrayUpdate(mTIn, i, List.sort(mTIn[i], intGt));
+        end for;
+        paths := getShortPathsBetweenEqCrossNodes(List.sort(eqCrossLstIn,intGt), mIn, mTIn, {});
         //
          //print("GOT SOME NEW LOOPS: \n"+stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
@@ -479,14 +485,14 @@ algorithm
   case(crossEq::rest,_,_,_)
     algorithm
       //print("check crossEq "+intString(crossEq)+"\n");
-      adjVars := List.sort(arrayGet(mIn, crossEq),intGt);
+      adjVars := arrayGet(mIn, crossEq);
       for adjVar in adjVars loop
-        adjEqs := List.sort(List.removeOnTrue(crossEq, intEq, arrayGet(mTIn, adjVar)),intGt);
+        adjEqs := List.removeOnTrue(crossEq, intEq, arrayGet(mTIn, adjVar));
           //print("all adj eqs "+stringDelimitList(List.map(adjEqs, intString),",")+"\n");
         //all adjEqs which are crossnodes as well
         adjEqs := List.intersectionIntSorted(adjEqs, rest);
         for adjEq in adjEqs loop
-          adjVars2 := List.sort(List.removeOnTrue(adjVar, intEq, arrayGet(mIn, adjEq)),intGt);
+          adjVars2 := List.removeOnTrue(adjVar, intEq, arrayGet(mIn, adjEq));
           sharedVars := List.intersectionIntSorted(adjVars, adjVars2);
             //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
           if (intGe(listLength(sharedVars),1)) then
