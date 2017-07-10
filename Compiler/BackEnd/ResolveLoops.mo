@@ -428,12 +428,16 @@ algorithm
        then
         closedPaths;
     case(_,_,{},{},_,_)
-      equation
-         // no crossNodes
-           //print("no crossNodes\n");
-         varEqsLst = List.map1(eqsIn,Array.getIndexFirst,mIn);
-         isNoSingleLoop = List.exist(varEqsLst,listEmpty);
-         subLoop = if isNoSingleLoop then {} else eqsIn;
+      algorithm
+        // no crossNodes
+          //print("no crossNodes\n");
+        subLoop := eqsIn;
+        for e in eqsIn loop
+          if listEmpty(mIn[e]) then
+            subLoop := {};
+            break;
+          end if;
+        end for;
        then
          {subLoop};
     case(_,_,_::_,_::_,_,_)
@@ -487,18 +491,19 @@ algorithm
       //print("check crossEq "+intString(crossEq)+"\n");
       adjVars := arrayGet(mIn, crossEq);
       for adjVar in adjVars loop
-        adjEqs := List.removeOnTrue(crossEq, intEq, arrayGet(mTIn, adjVar));
           //print("all adj eqs "+stringDelimitList(List.map(adjEqs, intString),",")+"\n");
         //all adjEqs which are crossnodes as well
-        adjEqs := List.intersectionIntSorted(adjEqs, rest);
+        adjEqs := List.intersectionIntSorted(arrayGet(mTIn, adjVar), rest);
         for adjEq in adjEqs loop
-          adjVars2 := List.removeOnTrue(adjVar, intEq, arrayGet(mIn, adjEq));
-          sharedVars := List.intersectionIntSorted(adjVars, adjVars2);
-            //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
-          if (intGe(listLength(sharedVars),1)) then
-            newPath := listAppend({adjEq},{crossEq});
-            paths := newPath :: paths;
-              //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
+          if adjEq <> crossEq then
+            sharedVars := List.intersectionIntSorted(adjVars, arrayGet(mIn, adjEq));
+            sharedVars := List.removeOnTrue(adjVar, intEq, sharedVars);
+              //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
+            if (intGe(listLength(sharedVars),1)) then
+              newPath := listAppend({adjEq},{crossEq});
+              paths := newPath :: paths;
+                //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
+            end if;
           end if;
         end for;
       end for;
@@ -1121,20 +1126,20 @@ protected function doubleEntriesInLst "author:Waurich TUD 2014-01
   output list<ElementType> lstOut;
 replaceable type ElementType subtypeof Any;
 algorithm
-  lstOut := matchcontinue(lstIn,checkLst,doubleLst)
+  lstOut := match(lstIn,checkLst,doubleLst)
     local
       Boolean isDouble;
       ElementType elem;
       list<ElementType> lst;
     case(elem::lst,_,_)
+      guard
+        listMember(elem,checkLst)
       equation
-        true = listMember(elem,checkLst);
         lst = doubleEntriesInLst(lst,checkLst,elem::doubleLst);
       then
         lst;
     case(elem::lst,_,_)
       equation
-        false = listMember(elem,checkLst);
         lst = doubleEntriesInLst(lst,elem::checkLst,doubleLst);
       then
         lst;
@@ -1142,7 +1147,7 @@ algorithm
       equation
       then
         doubleLst;
-  end matchcontinue;
+  end match;
 end doubleEntriesInLst;
 
 protected function getPathTillNextCrossEq "author:Waurich TUD 2013-12
@@ -1167,7 +1172,7 @@ algorithm
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
         adjEqs = List.map1(adjEqs,List.deleteMember,crossEq);// REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
-      nextEqs = List.flatten(adjEqs);
+        nextEqs = List.flatten(adjEqs);
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
         paths = List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
         paths = listAppend(paths,eqPathsIn);
