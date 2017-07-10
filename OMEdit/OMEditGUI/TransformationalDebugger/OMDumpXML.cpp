@@ -249,16 +249,18 @@ QString OMEquation::toString()
 {
   if (tag == "dummy") {
     return "";
-  } else if (tag == "assign") {
+  } else if (tag == "assign" || tag == "torn" || tag == "jacobian") {
     if (text.size()==1) {
-     return QString("%1 := %2").arg(defines[0]).arg(text[0]);
+     return QString("(%1) %2 := %3").arg(tag).arg(defines[0]).arg(text[0]);
     } else {
-     return QString("%1 := %2").arg(text[0]).arg(text[1]);
+     return QString("(%1) %2 := %3").arg(tag).arg(text[0]).arg(text[1]);
     }
   } else if (tag == "statement" || tag == "algorithm") {
     return text.join("\n");
-  } else if (tag == "container") {
+  } else if (tag == "system") {
     return QString("%1, size %2").arg(display).arg(eqs.size());
+  } else if (tag == "tornsystem") {
+    return QString("%1 (torn), unknowns: %2, iteration variables: %3").arg(display).arg(unknowns).arg(defines.size());
   } else if (tag == "nonlinear") {
     return QString("nonlinear, size %1").arg(eqs.size());
   } else if (tag == "linear") {
@@ -266,7 +268,7 @@ QString OMEquation::toString()
   } else if (tag == "residual") {
     return "(residual) " + text[0] + " = 0";
   } else {
-    return "(" + display + "): " + text.join(",");
+    return "(" + display + ") " + text.join(",");
   }
 }
 

@@ -183,6 +183,7 @@ struct OMEquation {
   QStringList depends;
   QList<OMOperation*> ops;
   QList<int> eqs;
+  int unknowns;
   OMEquation();
   ~OMEquation();
   QString toString();

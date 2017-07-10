@@ -750,8 +750,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
 static QStringList variantListToStringList(const QVariantList lst)
 {
   QStringList strs;
-  foreach(QVariant v, lst){
-    QString s = v.toString();
+  foreach(QVariant v, lst) {
     strs << v.toString().trimmed();
   }
   return strs;
@@ -876,6 +875,7 @@ void TransformationsWidget::loadTransformations()
       } else {
         eq->display = eq->tag;
       }
+      eq->unknowns = veq["unknowns"].toInt();
       QVariantMap sourceMap = veq["source"].toMap();
       variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
       if (!hasOperationsEnabled && sourceMap.contains("operations")) {
