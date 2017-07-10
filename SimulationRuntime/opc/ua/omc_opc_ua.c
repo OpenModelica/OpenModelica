@@ -102,6 +102,11 @@ static void waitForStep(omc_opc_ua_state *state)
   }
 }
 
+void omc_wait_for_step(void *state_vp)
+{
+  waitForStep((omc_opc_ua_state*) state_vp);
+}
+
 static UA_StatusCode
 readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const UA_NumericRange *range, UA_DataValue *dataValue)
 {
@@ -584,11 +589,6 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
   }
 
   pthread_rwlock_unlock(&state->rwlock);
-
-  if (state) {
-    fprintf(stderr, "omc_embedded_server_init done, state=%p, server=%p. Pause run=%d step=%d\n", state, state->server, state->run, state->step);
-    waitForStep(state);
-  }
 
   return state;
 }

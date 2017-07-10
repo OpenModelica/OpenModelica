@@ -706,6 +706,8 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     }
   }
   data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update, port);
+  infoStreamPrint(LOG_STDOUT, 0, "The embedded server is initialized.");
+  wait_for_step(data->embeddedServerState);
 #endif
   if(0 == retVal) {
     retVal = -1;

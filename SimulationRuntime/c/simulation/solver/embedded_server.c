@@ -47,6 +47,10 @@ void* no_embedded_server_init(DATA *data, double tout, double step, const char *
   return NULL;
 }
 
+void no_wait_for_step(void *handle)
+{
+}
+
 void no_embedded_server_deinit(void *handle)
 {
 }
@@ -57,6 +61,7 @@ int no_embedded_server_update(void *handle, double tout)
 }
 
 void* (*embedded_server_init)(DATA *data, double tout, double step, const char *argv_0, void (*omc_real_time_sync_update)(DATA *data, double scaling), int port) = no_embedded_server_init;
+void (*wait_for_step)(void*) = no_wait_for_step;
 void (*embedded_server_deinit)(void*) = no_embedded_server_deinit;
 // Tells the embedded server that a simulation step has passed; the server
 // can read/write values from/to the simulator
@@ -64,7 +69,7 @@ int (*embedded_server_update)(void*, double tout) = no_embedded_server_update;
 
 void* embedded_server_load_functions(const char *server_name)
 {
-  void *dll, *funcInit, *funcDeinit, *funcUpdate;
+  void *dll, *funcInit, *funcWaitForStep, *funcDeinit, *funcUpdate;
   if (NULL==server_name || 0==strcmp("none", server_name)) {
     return NULL;
   }
@@ -88,20 +93,26 @@ void* embedded_server_load_functions(const char *server_name)
 
   funcInit = dlsym(dll, "omc_embedded_server_init");
   if (!funcInit) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_init: %s\n", dlerror());
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_embedded_server_init: %s\n", dlerror());
+    MMC_THROW();
+  }
+  funcWaitForStep = dlsym(dll, "omc_wait_for_step");
+  if (!funcWaitForStep) {
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_wait_for_step: %s\n", dlerror());
     MMC_THROW();
   }
   funcDeinit = dlsym(dll, "omc_embedded_server_deinit");
   if (!funcDeinit) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_deinit: %s\n", dlerror());
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_embedded_server_deinit: %s\n", dlerror());
     MMC_THROW();
   }
   funcUpdate = dlsym(dll, "omc_embedded_server_update");
   if (!funcUpdate) {
-    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function opc_da_new_iteration: %s\n", dlerror());
+    errorStreamPrint(LOG_DEBUG, 0, "Failed to load function omc_embedded_server_update: %s\n", dlerror());
     MMC_THROW();
   }
   embedded_server_init = funcInit;
+  wait_for_step = funcWaitForStep;
   embedded_server_deinit = funcDeinit;
   embedded_server_update = funcUpdate;
   infoStreamPrint(LOG_DEBUG, 0, "Loaded embedded server");
