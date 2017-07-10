@@ -208,6 +208,7 @@ algorithm
 
     // solve system
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+    execStat("matching and sorting (n="+String(BackendDAEUtil.daeSize(initdae))+") (initialization)");
 
     // simplify system
     initOptModules := BackendDAEUtil.getInitOptModules(NONE());
