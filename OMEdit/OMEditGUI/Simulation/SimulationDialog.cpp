@@ -1524,14 +1524,14 @@ void SimulationDialog::removeVariablesFromTree(QString className)
 void SimulationDialog::setInteractiveControls(bool enabled)
 {
   int port = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->getInteractivePort();
-  OpcUaClient *pClient = getOpcUaClient(port);
-
-  // control buttons
-  pClient->getTargetPlotWindow()->getStartSimulationButton()->setEnabled(enabled);
-  pClient->getTargetPlotWindow()->getPauseSimulationButton()->setEnabled(!enabled);
-
-  //plotpicker
-  pClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
+  OpcUaClient *pOpcUaClient = getOpcUaClient(port);
+  if (pOpcUaClient) {
+    // control buttons
+    pOpcUaClient->getTargetPlotWindow()->getStartSimulationButton()->setEnabled(enabled);
+    pOpcUaClient->getTargetPlotWindow()->getPauseSimulationButton()->setEnabled(!enabled);
+    //plotpicker
+    pOpcUaClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
+  }
 }
 
 void SimulationDialog::terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget)
@@ -1577,11 +1577,11 @@ void SimulationDialog::killSimulationProcess(int port)
 }
 
 /*!
- * \brief SimulationDialog::simulationProcessRunning
+ * \brief SimulationDialog::createOpcUaClient
  * \param simulationOptions
- * Handles what should be done when the simulation server is running. \n
+ * Creates a OpcUaClient object when embedded server is up and running. \n
  */
-void SimulationDialog::simulationProcessRunning(SimulationOptions simulationOptions)
+void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
 {
   OpcUaClient *pOpcUaClient = new OpcUaClient(simulationOptions);
   if (pOpcUaClient->connectToServer()) {
@@ -1648,8 +1648,13 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
 {
   // Simulation is over, the sampling thread should stop sampling...
   if (simulationOptions.isInteractiveSimulation()) {
-    getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber())->getSampleThread()->exit();
-    getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber())->getOpcUaWorker()->pauseInteractiveSimulation();
+    OpcUaClient *pOpcUaClient = getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber());
+    if (pOpcUaClient && pOpcUaClient->getSampleThread()) {
+      pOpcUaClient->getSampleThread()->exit();
+    }
+    if (pOpcUaClient && pOpcUaClient->getOpcUaWorker()) {
+      pOpcUaClient->getOpcUaWorker()->pauseInteractiveSimulation();
+    }
     return;
   }
   QString workingDirectory = simulationOptions.getWorkingDirectory();

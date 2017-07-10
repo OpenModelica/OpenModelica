@@ -232,10 +232,6 @@ void SimulationProcessThread::simulationProcessStarted()
 {
   mIsSimulationProcessRunning = true;
   emit sendSimulationStarted();
-
-  if (mpSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
-    emit sendEmbeddedServerReady();
-  }
 }
 
 /*!

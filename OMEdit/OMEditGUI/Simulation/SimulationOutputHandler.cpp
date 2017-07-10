@@ -332,6 +332,10 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
     }
     mpSimulationMessage->mStream = atts.value("stream");
     mpSimulationMessage->mType = StringHandler::getSimulationMessageType(atts.value("type"));
+    // check if we get the message about embedded opc-ua server initialized.
+    if (atts.value("text").compare("The embedded server is initialized.") == 0) {
+      mpSimulationOutputWidget->embeddedServerInitialized();
+    }
     mpSimulationMessage->mText = Qt::convertFromPlainText(atts.value("text"));
     mpSimulationMessage->mLevel = mLevel;
     mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);

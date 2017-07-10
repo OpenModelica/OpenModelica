@@ -82,7 +82,6 @@ signals:
   void sendCompilationOutput(QString, QColor);
   void sendCompilationFinished(int, QProcess::ExitStatus);
   void sendSimulationStarted();
-  void sendEmbeddedServerReady();
   void sendEstablishConnectionRunning();
   void sendSimulationOutput(QString, StringHandler::SimulationMessageType type, bool);
   void sendSimulationFinished(int, QProcess::ExitStatus);

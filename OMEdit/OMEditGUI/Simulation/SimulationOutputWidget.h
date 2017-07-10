@@ -92,6 +92,7 @@ public:
   SimulationProcessThread* getSimulationProcessThread() {return mpSimulationProcessThread;}
   void addGeneratedFileTab(QString fileName);
   void writeSimulationMessage(SimulationMessage *pSimulationMessage);
+  void embeddedServerInitialized();
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;
@@ -117,7 +118,6 @@ public slots:
   void writeCompilationOutput(QString output, QColor color);
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessStarted();
-  void embeddedServerReady();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelCompilationOrSimulation();

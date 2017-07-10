@@ -31,20 +31,10 @@ bool OpcUaClient::connectToServer()
   UA_StatusCode returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
 
   if (returnValue != UA_STATUSCODE_GOOD) {
-    UA_Client_disconnect(mpClient);
     UA_Client_delete(mpClient);
     return false;
   }
   return true;
-}
-
-/*!
-  Disconnect from the OPC UA server.
-  */
-void OpcUaClient::disconnectFromServer()
-{
-  UA_Client_disconnect(mpClient);
-  UA_Client_delete(mpClient);
 }
 
 /*!

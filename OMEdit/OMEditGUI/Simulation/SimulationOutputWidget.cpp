@@ -350,7 +350,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)),
           SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationStarted()), SLOT(simulationProcessStarted()));
-  connect(mpSimulationProcessThread, SIGNAL(sendEmbeddedServerReady()), SLOT(embeddedServerReady()));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationOutput(QString,StringHandler::SimulationMessageType,bool)),
           SLOT(writeSimulationOutput(QString,StringHandler::SimulationMessageType,bool)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)),
@@ -428,6 +427,15 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   foreach (SimulationMessage* pSimulationMessage, pSimulationMessage->mChildren) {
     writeSimulationMessage(pSimulationMessage);
   }
+}
+
+/*!
+ * \brief SimulationOutputWidget::embeddedServerInitialized
+ * Calls a function for creating an OpcUaClient object.
+ */
+void SimulationOutputWidget::embeddedServerInitialized()
+{
+  MainWindow::instance()->getSimulationDialog()->createOpcUaClient(mSimulationOptions);
 }
 
 /*!
@@ -564,16 +572,6 @@ void SimulationOutputWidget::simulationProcessStarted()
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
   }
   mpArchivedSimulationItem->setStatus(Helper::running);
-}
-
-/*!
- * \brief SimulationOutputWidget::embeddedServerReady
- * Slot activated when SimulationProcessThread sendembeddedServerReady signal is raised.\n
- * The provided port is unbound and can be used for communication between the client and remote.
- */
-void SimulationOutputWidget::embeddedServerReady()
-{
-  MainWindow::instance()->getSimulationDialog()->simulationProcessRunning(mSimulationOptions);
 }
 
 /*!

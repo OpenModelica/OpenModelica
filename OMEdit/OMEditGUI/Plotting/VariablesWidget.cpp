@@ -1647,20 +1647,26 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setUnit(pVariablesTreeItem->getUnit());
             pPlotWindow->setDisplayUnit(pVariablesTreeItem->getDisplayUnit());
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
-            Variable *pCurveData = *MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port)->getVariables()->find(plotVariable);
-            QwtSeriesData<QPointF>* pData = dynamic_cast<QwtSeriesData<QPointF>*>(pCurveData);
-            pPlotWindow->setInteractivePlotData(pData);
-            QPair<QVector<double>*, QVector<double>*> memory = pPlotWindow->plotInteractive(pPlotCurve);
-            // use the same vectors as a normal plot
-            pCurveData->setAxisVectors(memory);
-            MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port)->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
+            OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
+            if (pOpcUaClient) {
+              Variable *pCurveData = *pOpcUaClient->getVariables()->find(plotVariable);
+              QwtSeriesData<QPointF>* pData = dynamic_cast<QwtSeriesData<QPointF>*>(pCurveData);
+              pPlotWindow->setInteractivePlotData(pData);
+              QPair<QVector<double>*, QVector<double>*> memory = pPlotWindow->plotInteractive(pPlotCurve);
+              // use the same vectors as a normal plot
+              pCurveData->setAxisVectors(memory);
+              pOpcUaClient->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
+            }
           }
         }
       }
       else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
         // remove the variable from the data fetch list
-        Variable *pCurveData = *MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port)->getVariables()->find(pVariablesTreeItem->getPlotVariable());
-        MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port)->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
+        OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
+        if (pOpcUaClient) {
+          Variable *pCurveData = *pOpcUaClient->getVariables()->find(pVariablesTreeItem->getPlotVariable());
+          pOpcUaClient->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
+        }
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           /* FIX: Make sure to remove the right curve when implementing several interactive simulations at the same time */
           if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getName())) {
@@ -1801,7 +1807,10 @@ void VariablesWidget::valueEntered(const QModelIndex &index)
       pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
     }
     int port = pVariablesTreeRootItem->getSimulationOptions().getInteractiveSimulationPortNumber();
-    MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port)->writeValue(variableValue, variableName);
+    OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
+    if (pOpcUaClient) {
+      pOpcUaClient->writeValue(variableValue, variableName);
+    }
 
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);

@@ -230,7 +230,7 @@ public:
   void reSimulate(SimulationOptions simulationOptions);
   void showAlgorithmicDebugger(SimulationOptions simulationOptions);
   void simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime);
-  void simulationProcessRunning(SimulationOptions simulationOptions);
+  void createOpcUaClient(SimulationOptions simulationOptions);
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);

@@ -17,7 +17,6 @@ public:
   ~OpcUaClient();
 
   bool connectToServer();
-  void disconnectFromServer();
   QStringList fetchVariableNamesFromServer();
   QMap<QString, Variable*> *getVariables() {return &mVariables;}
   UA_Client* getClient() {return mpClient;}
