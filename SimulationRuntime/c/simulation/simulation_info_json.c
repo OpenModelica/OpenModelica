@@ -221,14 +221,18 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
   xml->id = i;
   str = skipFieldIfExist(str, "parent");
   str = skipFieldIfExist(str, "section");
-  if ((measure_time_flag & 1) && 0==strncmp(",\"tag\":\"container\"", str, 18)) {
+  if ((measure_time_flag & 1) && 0==strncmp(",\"tag\":\"system\"", str, 15)) {
     xml->profileBlockIndex = -1;
-    str += 18;
+    str += 15;
+  } else if ((measure_time_flag & 1) && 0==strncmp(",\"tag\":\"tornsystem\"", str, 19)) {
+    xml->profileBlockIndex = -1;
+    str += 19;
   } else {
     xml->profileBlockIndex = 0;
   }
   str = skipFieldIfExist(str, "tag");
   str = skipFieldIfExist(str, "display");
+  str = skipFieldIfExist(str, "unknowns");
   if (strncmp(",\"defines\":[", str, 12)) {
     xml->numVar = 0;
     xml->vars = 0;
