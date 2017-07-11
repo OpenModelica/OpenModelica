@@ -258,7 +258,7 @@ QString OMEquation::toString()
   } else if (tag == "statement" || tag == "algorithm") {
     return text.join("\n");
   } else if (tag == "system") {
-    return QString("%1, size %2").arg(display).arg(eqs.size());
+    return QString("%1, unknowns: %2, iteration variables: %3").arg(display).arg(unknowns).arg(defines.size());
   } else if (tag == "tornsystem") {
     return QString("%1 (torn), unknowns: %2, iteration variables: %3").arg(display).arg(unknowns).arg(defines.size());
   } else if (tag == "nonlinear") {
