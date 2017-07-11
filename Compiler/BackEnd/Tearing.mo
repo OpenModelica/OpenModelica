@@ -3306,7 +3306,7 @@ algorithm
 
   // Get the next solvable equation from the equation queue
   try
-    (eqQueueOut,eq_coll,eqns,vars) := getNextSolvableEqn(eqQueueOut,mIn,meIn,ass1In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+    (eqQueueOut,eq_coll,eqns,vars) := getNextSolvableEqn(eqQueueOut,mIn,meIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
     orderOut := eq_coll::orderOut;
     assignable := true;
   else
@@ -3447,6 +3447,7 @@ protected function getNextSolvableEqn " finds equation that can be matched with 
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1;
+  input array<Integer> ass2;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
@@ -3459,12 +3460,18 @@ protected
 algorithm
   while not listEmpty(eqQueueOut) loop
     eqOut := getMostNonlinearEquation(eqnNonlinPoints, eqQueueOut, mapEqnIncRow, mapIncRowEqn);
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("Most nonlinear equation: " + intString(eqOut) + "\n");
-    end if;
     eqQueueOut := List.deleteMember(eqQueueOut, eqOut);
     (solvable, eqnsOut, varsOut) := eqnSolvableCheck(eqOut, mapEqnIncRow, ass1, m, me);
-    if solvable then break; end if;
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("Most nonlinear equation: " + intString(eqOut) + " - solvable?: " + boolString(solvable) + "\n");
+    end if;
+    if solvable then
+      break;
+    else
+      for eq in mapEqnIncRow[eqOut] loop
+        arrayUpdate(ass2,eq,-2);
+      end for;
+    end if;
   end while;
   if not solvable then fail(); end if;
 end getNextSolvableEqn;
@@ -4056,7 +4063,7 @@ protected function getUnassigned
   output list<Integer> unassigned={};
 algorithm
   for i in 1:arrayLength(ass) loop
-    if Dangerous.arrayGetNoBoundsChecking(ass, i)==-1 then
+    if Dangerous.arrayGetNoBoundsChecking(ass, i) < 0 then
       unassigned := i::unassigned;
     end if;
   end for;
@@ -4702,7 +4709,7 @@ algorithm
   end if;
   while not listEmpty(causEq) loop
     try
-      (_,e,e_exp,vars) := getNextSolvableEqn(causEq,m,me,ass1,mapEqnIncRow,mapIncRowEqn,ass1);
+      (_,e,e_exp,vars) := getNextSolvableEqn(causEq,m,me,ass1,ass2,mapEqnIncRow,mapIncRowEqn,ass1);
     else
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nMatching failed, choose different tearing set!\n\n\n");
