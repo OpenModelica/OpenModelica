@@ -6,7 +6,16 @@
 #include "TextfileWriter.h"
 
 #include <boost/circular_buffer.hpp>
+typedef boost::container::vector<double> real_values_t;
+typedef boost::container::vector<int> int_values_t;
+typedef boost::container::vector<bool> bool_values_t;
 
+struct CopyVar {
+  template<class T>
+   T operator()(T* var) const {
+    return *var;
+  }
+};
 class BufferReaderWriter : public ContainerManager
 {
     //typedef TextFileWriter<dim_1,dim_2> TextwriterType;
@@ -107,7 +116,7 @@ public:
             for(i=0;i<n;i++)
             {
                 for(j=0;j<m;++j)
-                    R(i2,j)= *(_real_variables_buffer[j][i]);
+                    R(i2,j)= (_real_variables_buffer[j][i]);
                     /*ToDo: add int and bool variables*/
                 i2++;
             }
@@ -174,6 +183,13 @@ public:
      */
     virtual void write(const all_names_t& s_list,const all_description_t& s_desc_list,const all_names_t& s_parameter_list,const all_description_t& s_desc_parameter_list)
     {
+        _dim_real = get<0>(s_list).size();
+        _dim_int = get<0>(s_list).size();
+        _dim_bool = get<0>(s_list).size();
+        _real_values = real_values_t(_dim_real);
+        _int_values =  int_values_t(_dim_real);
+        _bool_values =  bool_values_t(_dim_int);
+
         //_var_outputs = s_list;
 		_var_outputs.clear();
         for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
@@ -207,10 +223,12 @@ public:
                 _buffer_pos++;
             }
 
-
-            _real_variables_buffer.push_back(get<0>(v_list));
-            _int_variables_buffer.push_back(get<1>(v_list));
-            _bool_variables_buffer.push_back(get<2>(v_list));
+             std::transform(get<0>(v_list).begin(),get<0>(v_list).end(),_real_values.begin(),CopyVar());
+             std::transform(get<1>(v_list).begin(),get<1>(v_list).end(),_int_values.begin(),CopyVar());
+             std::transform(get<2>(v_list).begin(),get<2>(v_list).end(),_bool_values.begin(),CopyVar());
+            _real_variables_buffer.push_back(_real_values);
+            _int_variables_buffer.push_back(_int_values);
+            _bool_variables_buffer.push_back(_bool_values);
         }
         catch(std::exception& ex)
         {
@@ -267,9 +285,9 @@ public:
 
 
 protected:
-    typedef boost::circular_buffer<  real_vars_t   > real_buffer_type;
-     typedef boost::circular_buffer<  int_vars_t   > int_buffer_type;
-    typedef boost::circular_buffer<  bool_vars_t   > bool_buffer_type;
+    typedef boost::circular_buffer<  real_values_t   > real_buffer_type;
+     typedef boost::circular_buffer<  int_values_t   > int_buffer_type;
+    typedef boost::circular_buffer<  bool_values_t   > bool_buffer_type;
 
     typedef std::map<double,unsigned long> _time_entries_type;
     real_buffer_type _real_variables_buffer;
@@ -279,5 +297,15 @@ protected:
     _time_entries_type _time_entries;
     unsigned long _buffer_pos;
     vector<string> _var_outputs;
+
+    size_t _dim_real;
+    size_t _dim_int;
+    size_t _dim_bool;
+
+    real_values_t  _real_values;
+    int_values_t   _int_values;
+    bool_values_t  _bool_values;
+
+
 };
 /** @} */ // end of dataexchangePolicies
