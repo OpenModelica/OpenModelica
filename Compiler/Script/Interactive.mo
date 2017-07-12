@@ -9352,6 +9352,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("getInheritedClassesHelper");
         lst = getBaseClasses(cdef, env);
+        failure({} = lst);
         ErrorExt.rollBack("getInheritedClassesHelper");
       then
         lst;
