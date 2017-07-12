@@ -138,7 +138,7 @@ algorithm
                                          + BackendVariable.varsSize(dae.shared.globalKnownVars)
                                          + BackendVariable.varsSize(dae.shared.localKnownVars)
                                          + BackendEquation.getNumberOfEquations(dae.shared.initialEqs)
-                                         + BackendDAEUtil.daeSize(dae));
+                                         + 2*BackendDAEUtil.daeSize(dae));
     reeqns := BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(dae.shared.removedEqs));
 
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
