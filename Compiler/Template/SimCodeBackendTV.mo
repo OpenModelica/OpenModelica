@@ -288,6 +288,13 @@ package FMI
     input String inBaseType;
     output String outEnumerationType;
   end getEnumerationTypeFromTypes;
+
+	function filterModelVariables
+	  input list<ModelVariables> inModelVariables;
+	  input String tipe;
+	  input String variableCausality;
+	  output list<ModelVariables> outModelVariables;
+	end filterModelVariables;
 end FMI;
 
 end SimCodeBackendTV;

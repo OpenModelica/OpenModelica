@@ -34,6 +34,8 @@ encapsulated package FMI
   package:     FMI
   description: This file contains FMI's import specific function, which are implemented in C."
 
+protected import List;
+
 public uniontype Info
   record INFO
     String fmiVersion;
@@ -326,6 +328,40 @@ algorithm
     case ({}, _) then "";
   end match;
 end getEnumerationTypeFromTypes;
+
+public function filterModelVariables
+  input list<ModelVariables> inModelVariables;
+  input String tipe;
+  input String variableCausality;
+  output list<ModelVariables> outModelVariables;
+algorithm
+  outModelVariables := List.filter2OnTrue(inModelVariables, filterModelVariable, tipe, variableCausality);
+end filterModelVariables;
+
+protected function filterModelVariable
+  input ModelVariables modelVar;
+  input String tipe;
+  input String variableCausality;
+  output Boolean result;
+algorithm
+  result := match modelVar
+    local
+      String causality;
+    case REALVARIABLE(causality=causality)
+      guard tipe == "real" and causality == variableCausality
+        then true;
+    case INTEGERVARIABLE(causality=causality)
+      guard tipe == "integer" and causality == variableCausality
+        then true;
+    case BOOLEANVARIABLE(causality=causality)
+      guard tipe == "boolean" and causality == variableCausality
+        then true;
+    case STRINGVARIABLE(causality=causality)
+      guard tipe == "string" and causality == variableCausality
+        then true;
+    else then false;
+  end match;
+end filterModelVariable;
 
 annotation(__OpenModelica_Interface="util");
 end FMI;
