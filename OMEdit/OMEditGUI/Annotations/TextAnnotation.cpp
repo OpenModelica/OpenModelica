@@ -323,10 +323,12 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
     }
   }
   // draw the font
-  if (mpComponent) {
+  if (mpComponent || boundingRect().width() > 0 || boundingRect().height() > 0) {
     painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
-  } else if (boundingRect().width() > 0 && boundingRect().height() > 0) {
-    painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
+    mExportBoundingRect = painter->boundingRect(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
+    if (mpComponent) {
+      mExportBoundingRect = sceneTransform().mapRect(mExportBoundingRect);
+    }
   }
 }
 

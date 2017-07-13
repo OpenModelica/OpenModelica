@@ -58,6 +58,8 @@ public:
   QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
   void updateShape(ShapeAnnotation *pShapeAnnotation);
+
+  QRectF mExportBoundingRect;
 private:
   Component *mpComponent;
 

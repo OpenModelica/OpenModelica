@@ -779,7 +779,11 @@ QRectF Component::itemsBoundingRect()
     rect |= pComponent->sceneBoundingRect();
   }
   foreach (QGraphicsItem *item, mShapesList) {
-    rect |= item->sceneBoundingRect();
+    if (TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(item)) {
+      rect |= pTextAnnotation->mExportBoundingRect;
+    } else {
+      rect |= item->sceneBoundingRect();
+    }
   }
   if (mpNonExistingComponentLine->isVisible()) {
     rect |= mpNonExistingComponentLine->sceneBoundingRect();

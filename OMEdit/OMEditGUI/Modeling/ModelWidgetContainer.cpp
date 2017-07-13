@@ -928,7 +928,11 @@ QRectF GraphicsView::itemsBoundingRect()
     rect |= pComponent->itemsBoundingRect();
   }
   foreach (QGraphicsItem *item, mShapesList) {
-    rect |= item->sceneBoundingRect();
+    if (TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(item)) {
+      rect |= pTextAnnotation->mExportBoundingRect;
+    } else {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mConnectionsList) {
     rect |= item->sceneBoundingRect();
