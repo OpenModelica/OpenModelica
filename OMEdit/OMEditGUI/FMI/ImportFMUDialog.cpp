@@ -81,7 +81,7 @@ ImportFMUDialog::ImportFMUDialog(QWidget *pParent)
   mpLogLevelComboBox->addItem(tr("Fatal"), QVariant(1));
   mpLogLevelComboBox->addItem(tr("Error"), QVariant(2));
   mpLogLevelComboBox->addItem(tr("Warning"), QVariant(3));
-  mpLogLevelComboBox->addItem(tr("Information"), QVariant(4));
+  mpLogLevelComboBox->addItem(Helper::information, QVariant(4));
   mpLogLevelComboBox->addItem(tr("Verbose"), QVariant(5));
   mpLogLevelComboBox->addItem(tr("Debug"), QVariant(6));
   mpLogLevelComboBox->setCurrentIndex(3);

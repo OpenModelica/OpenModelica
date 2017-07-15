@@ -303,6 +303,7 @@ private:
   LibraryWidget *mpLibraryWidget;
   QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
+  QAction *mpInformationAction;
   QAction *mpNewModelicaClassAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -344,6 +345,7 @@ public slots:
   void showContextMenu(QPoint point);
   void openClass();
   void viewDocumentation();
+  void openInformationDialog();
   void createNewModelicaClass();
   void saveClass();
   void saveAsClass();

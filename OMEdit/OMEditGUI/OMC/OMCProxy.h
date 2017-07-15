@@ -210,6 +210,8 @@ public:
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   QList<QString> getDerivedUnits(QString baseUnit);
+  QString getVersionDateAnnotation(QString className);
+  QString getVersionBuildAnnotation(QString className);
   bool getDocumentationClassAnnotation(QString className);
   QString getCommandLineOptionsAnnotation(QString className);
   QList<QString> getAnnotationNamedModifiers(QString className, QString annotation);

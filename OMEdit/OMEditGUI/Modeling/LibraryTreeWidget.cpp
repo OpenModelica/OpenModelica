@@ -2555,6 +2555,10 @@ void LibraryTreeView::createActions()
   mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, this);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
   connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
+  // information Action
+  mpInformationAction = new QAction(Helper::information, this);
+  mpInformationAction->setStatusTip(tr("Opens the class information dialog"));
+  connect(mpInformationAction, SIGNAL(triggered()), SLOT(openInformationDialog()));
   // new Modelica Class Action
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
@@ -2776,6 +2780,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
       default:
         menu.addAction(mpOpenClassAction);
         menu.addAction(mpViewDocumentationAction);
+        menu.addAction(mpInformationAction);
         if (!pLibraryTreeItem->isSystemLibrary()) {
           menu.addSeparator();
           menu.addAction(mpNewModelicaClassAction);
@@ -2885,6 +2890,31 @@ void LibraryTreeView::viewDocumentation()
     bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
     MainWindow::instance()->getDocumentationDockWidget()->show();
     MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::openInformationDialog
+ * Opens the dialog to display the class information like version, version date etc.
+ */
+void LibraryTreeView::openInformationDialog()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    QDialog *pInformationDialog = new QDialog(MainWindow::instance());
+    pInformationDialog->setAttribute(Qt::WA_DeleteOnClose);
+    pInformationDialog->setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, pLibraryTreeItem->getNameStructure(), Helper::information));
+    pInformationDialog->setMinimumWidth(300);
+    Label *pHeadingLabel = Utilities::getHeadingLabel(pLibraryTreeItem->getNameStructure());
+    pHeadingLabel->setElideMode(Qt::ElideMiddle);
+    QVBoxLayout *pLayout = new QVBoxLayout;
+    pLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    pLayout->addWidget(pHeadingLabel);
+    pLayout->addWidget(new Label(tr("Version : %1").arg(MainWindow::instance()->getOMCProxy()->getVersion(pLibraryTreeItem->getNameStructure()))));
+    pLayout->addWidget(new Label(tr("Version Date : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionDateAnnotation(pLibraryTreeItem->getNameStructure()))));
+    pLayout->addWidget(new Label(tr("Version Build : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionBuildAnnotation(pLibraryTreeItem->getNameStructure()))));
+    pInformationDialog->setLayout(pLayout);
+    pInformationDialog->exec();
   }
 }
 

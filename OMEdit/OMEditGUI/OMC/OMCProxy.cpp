@@ -2400,6 +2400,18 @@ QList<QString> OMCProxy::getDerivedUnits(QString baseUnit)
   return result;
 }
 
+QString OMCProxy::getVersionDateAnnotation(QString className)
+{
+  sendCommand("getNamedAnnotation(" + className + ", versionDate)");
+  return StringHandler::unparse(StringHandler::removeFirstLastCurlBrackets(getResult()));
+}
+
+QString OMCProxy::getVersionBuildAnnotation(QString className)
+{
+  sendCommand("getNamedAnnotation(" + className + ", versionBuild)");
+  return StringHandler::removeFirstLastCurlBrackets(getResult());
+}
+
 /*!
   Gets the DocumentationClass annotation.
   \param className - the name of the class.
