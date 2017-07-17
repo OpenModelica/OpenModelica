@@ -3967,6 +3967,17 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end updateTransition;
 
+function getInitialStates
+  input TypeName cl;
+  output String[:,:] initialStates;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns list of initial states for the given class.</p>
+<p>Each initial state item contains 2 values i.e, state name and annotation.</p>
+</html>"), preferredView="text");
+end getInitialStates;
+
 function generateScriptingAPI
   input TypeName cl;
   input String name;
