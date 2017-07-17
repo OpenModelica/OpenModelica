@@ -211,6 +211,9 @@ algorithm
     execStat("matching and sorting (n="+String(BackendDAEUtil.daeSize(initdae))+") (initialization)");
 
     // simplify system
+    if not stringEq(Config.simCodeTarget(), "Cpp") then
+      initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, outGlobalKnownVars);
+    end if;
     initOptModules := BackendDAEUtil.getInitOptModules(NONE());
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(SOME("none"));
