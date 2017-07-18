@@ -102,8 +102,8 @@ void Nox::initialize()
 
 
 	// Set up the status tests
-  _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(_noxsettings->getRtol()));
-  _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(_noxsettings->getNewtMax()));
+  _statusTestNormF = Teuchos::rcp(new NOX::StatusTest::NormF(_noxSettings->getRtol()));
+  _statusTestMaxIters = Teuchos::rcp(new NOX::StatusTest::MaxIters(_noxSettings->getNewtMax()));
   _statusTestStagnation = Teuchos::rcp(new NOX::StatusTest::Stagnation(15,0.99));
   _statusTestDivergence = Teuchos::rcp(new NOX::StatusTest::Divergence(1.0e13));
   //_statusTestSgnChange = Teuchos::rcp(new NOX::StatusTest::SgnChange(5.0e-7));

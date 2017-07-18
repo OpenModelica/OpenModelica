@@ -39,6 +39,7 @@ private:
   void printLogger();
   void divisionbyzerohandling(double const * const y0);
   bool CheckWhetherSolutionIsNearby(double const * const y);
+  void CheckWhetherSolutionIsNearbyWrapper();
   bool isdivisionbyzeroerror(const std::exception &ex);
   void modifySolverParameters(const Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr,const int iter);
   Teuchos::RCP<Teuchos::ParameterList> setLocaParams();
