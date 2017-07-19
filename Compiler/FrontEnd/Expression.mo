@@ -11946,6 +11946,18 @@ algorithm
 end makeVectorCall;
 
 
+public function expandCrefs
+  input output DAE.Exp exp;
+  input output Integer dummy=0 "For traversal";
+algorithm
+  exp := match exp
+    local
+      DAE.Type ty;
+    case DAE.CREF(ty=DAE.T_ARRAY(ty=ty)) then makeArray(list(makeCrefExp(cr, ty) for cr in ComponentReference.expandCref(exp.componentRef, true)), exp.ty, not Types.isArray(ty));
+    else exp;
+  end match;
+end expandCrefs;
+
 public function expandExpression
  " mahge:
    Expands a given expression to a list of expression. this means flattening any records in the

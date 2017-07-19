@@ -5997,6 +5997,7 @@ algorithm
         // check all crefs are on the lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
+        expLst = Expression.traverseExpList(expLst, Expression.expandCrefs, 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
         (e2_1, _) = Expression.extendArrExp(e2, false);
 
@@ -6027,6 +6028,7 @@ algorithm
         // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
+        expLst = Expression.traverseExpList(expLst, Expression.expandCrefs, 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
         (e1_1, _) = Expression.extendArrExp(e1, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
