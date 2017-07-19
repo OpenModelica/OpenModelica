@@ -50,7 +50,7 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(53,78.7%) 855}
+//  * Linear torn systems: 1 {(53,79.6%) 855}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -69,7 +69,7 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(53,72.4%) 852}
+//  * Linear torn systems: 1 {(50,80.0%) 855}
 //  * Non-linear torn systems: 0
 // "
 // endResult

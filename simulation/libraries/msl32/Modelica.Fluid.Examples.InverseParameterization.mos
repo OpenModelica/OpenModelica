@@ -40,6 +40,13 @@ runScript(modelTesting);getErrorString();
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | pump.delta_head_init >= 0.0
 // assert            | warning | Variable violating min constraint: 0.0 <= pump.delta_head_init, has value: -2.45172
+// assert            | error   | IF97 medium function visc_dTp for viscosity called with too low density
+// |                 | |       | d = -698.246 <= 0.00485458 (triple point density)
+// stdout            | warning | Non-Linear Solver try to handle a problem with a called assert.
+// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
 //
 // Files Equal!
 // [Modelica 3.2.1/Fluid/Interfaces.mo:734:9-739:39:writable] Notification: From here:
