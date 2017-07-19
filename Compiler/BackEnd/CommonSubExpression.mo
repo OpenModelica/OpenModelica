@@ -55,6 +55,7 @@ import Expression;
 import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;
+import GC;
 import Global;
 import HashSet;
 import HashTableExpToExp;
@@ -2038,7 +2039,7 @@ protected
   BackendDAE.EqSystem eqSys;
   BackendDAE.Variables vars, pathVars;
   list<BackendDAE.Var> varLst;
-  list<BackendDAE.Equation> eqLst;
+  list<BackendDAE.Equation> eqLst, eqLst_all;
   BackendDAE.EquationArray eqs;
   list<tuple<Boolean, String>> varAtts, eqAtts;
   Integer numVars, varIdx;
@@ -2052,6 +2053,7 @@ algorithm
   pathVars := BackendVariable.listVar1(List.map1(pathVarIdcs, BackendVariable.getVarAtIndexFirst, allVars));
   pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
   cses := cseIn;
+  eqLst_all := BackendEquation.equationList(allEqs);
 
   if BackendVariable.varsSize(pathVars) > 0 then
     for partition in allPartitions loop
@@ -2059,8 +2061,7 @@ algorithm
       //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
 
       //get only the partition equations
-      eqLst := BackendEquation.equationList(allEqs);
-      eqLst := List.map1(partition,List.getIndexFirst,eqLst);
+      eqLst := List.map1(partition,List.getIndexFirst,eqLst_all);
       eqs := BackendEquation.listEquation(eqLst);
 
       eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
@@ -2078,12 +2079,13 @@ algorithm
        if listLength(adjEqs)==2 then
          //print("varIdx1 "+intString(varIdx)+"\n");
          //print("adjEqs "+stringDelimitList(List.map(adjEqs,intString),",")+"\n");
-         adjEqs := List.map1(adjEqs,List.getIndexFirst,partition);
-         adjEqs := List.map1(adjEqs, Array.getIndexFirst, eqMap);
+         adjEqs := list(arrayGet(eqMap,listGet(partition,eq)) for eq in adjEqs);
          varIdx := arrayGet(pathVarIdxMap,idx);
          cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
        end if;
      end for; //end the variables
+     GC.free(m);
+     GC.free(mT);
    end for;  //end all partitions
     //print("the SHORTPATH cses : \n"+stringDelimitList(List.map(cses, printCSE), "\n")+"\n");
   end if;
