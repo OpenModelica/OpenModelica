@@ -359,7 +359,7 @@ protected function unelabDimensionToFillExp
   input DAE.Dimension inDim;
   output Absyn.Exp outExp;
 algorithm
-  outExp := matchcontinue (inDim)
+  outExp := match (inDim)
     local
       Integer i;
       DAE.Exp e;
@@ -370,7 +370,7 @@ algorithm
 
     else Absyn.INTEGER(1); /* Probably bad, but only used with zero-length arrays */
 
-  end matchcontinue;
+  end match;
 end unelabDimensionToFillExp;
 
 protected function unelabReductionIterator
@@ -1430,7 +1430,7 @@ public function arrayAppend
   input DAE.Exp rest;
   output DAE.Exp array;
 algorithm
-  array := matchcontinue(head, rest)
+  array := match(head, rest)
     local
       DAE.Type ty;
       Boolean scalar;
@@ -1454,7 +1454,7 @@ algorithm
         Debug.traceln("- Expression.arrayAppend failed.");
       then
         fail();
-  end matchcontinue;
+  end match;
 end arrayAppend;
 
 
@@ -3325,13 +3325,13 @@ end makeSign;
 
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and
-guared expressions and a default value (the else branch)"
+guarded expressions and a default value (the else branch)"
   input list<DAE.Exp> inConds "conditions";
   input list<DAE.Exp> inTbExps " guarded expressions, for each condition";
   input DAE.Exp fExp "default value, else branch";
   output DAE.Exp ifExp;
 algorithm
-  ifExp := matchcontinue(inConds,inTbExps,fExp)
+  ifExp := match(inConds,inTbExps,fExp)
     local DAE.Exp c,tbExp; list<DAE.Exp> conds, tbExps;
     case({c},{tbExp},_)
     then DAE.IFEXP(c,tbExp,fExp);
@@ -3339,7 +3339,7 @@ algorithm
       equation
         ifExp = makeNestedIf(conds,tbExps,fExp);
       then DAE.IFEXP(c,tbExp,ifExp);
-  end matchcontinue;
+  end match;
 end makeNestedIf;
 
 public function makeCrefExp
@@ -4756,7 +4756,7 @@ public function arrayFill
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm
-  oExp := matchcontinue(dims,inExp)
+  oExp := match(dims,inExp)
 
     case({},_) then inExp;
 
@@ -4766,7 +4766,7 @@ algorithm
       then
         oExp;
 
-  end matchcontinue;
+  end match;
 end arrayFill;
 
 protected function arrayFill2
@@ -10647,17 +10647,17 @@ end isNotWild;
 
 public function dimensionsToExps "Takes a list of dimensions and select the expressions dimensions, returning a list of expressions"
   input list<DAE.Dimension> dims;
-  input list<DAE.Exp> acc;
-  output list<DAE.Exp> exps;
+  output list<DAE.Exp> exps = {};
 algorithm
-  exps := match (dims,acc)
-    local
-      list<DAE.Dimension> rest;
-      DAE.Exp exp;
-    case ({},_) then listReverse(acc);
-    case (DAE.DIM_EXP(exp)::rest,_) then dimensionsToExps(rest,exp::acc);
-    case (_::rest,_) then dimensionsToExps(rest,acc);
-  end match;
+  for d in dims loop
+    exps := match (d)
+      local
+        DAE.Exp exp;
+      case DAE.DIM_EXP(exp) then exp::exps;
+      else exps;
+    end match;
+  end for;
+  exps := listReverse(exps);
 end dimensionsToExps;
 
 public function splitRecord
@@ -12124,11 +12124,8 @@ algorithm
     case(DAE.WHOLEDIM()::rest,_,_)
       equation
         // found a wholedim, replace with value, insert in lst
-        lsts = List.map(value,listReverse);
-        lsts = List.map1(lsts,listAppend,lstIn);
-        rest = listReverse(rest);
-        lsts = List.map1(lsts,List.appendr,rest);
-        lsts = List.map(lsts,listReverse);
+        lsts = List.map1(value,listAppend,lstIn);
+        lsts = List.map1(lsts,List.append_reverser,rest);
       then
         lsts;
     case(DAE.INDEX()::rest,_,_)
@@ -12137,9 +12134,7 @@ algorithm
         lsts = insertSubScripts(rest,value,sub::lstIn);
       then
         lsts;
-    else
-      then
-        value;
+    else value;
   end matchcontinue;
 end insertSubScripts;
 

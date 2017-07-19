@@ -241,7 +241,7 @@ algorithm
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT()),
           FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps))
       equation
-        unqual_imps = List.unique(imp :: unqual_imps);
+        unqual_imps = List.unionElt(imp, unqual_imps);
       then
         FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps);
 
@@ -251,7 +251,7 @@ algorithm
       equation
         imp = translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
-        qual_imps = List.unique(imp :: qual_imps);
+        qual_imps = List.unionElt(imp, qual_imps);
       then
         FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps);
   end match;

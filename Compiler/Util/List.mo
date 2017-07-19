@@ -394,6 +394,20 @@ algorithm
   end for;
 end append_reverse;
 
+public function append_reverser<T>
+  "Appends the elements from list2 in reverse order to list1."
+  input list<T> inList1;
+  input list<T> inList2;
+  output list<T> outList=inList1;
+algorithm
+  // Do not optimize the case listEmpty(inList2) and listLength(inList1)==1
+  // since we use listReverseInPlace together with this function.
+  // An alternative would be to keep both (and rename this append_reverse_always_copy)
+  for e in inList2 loop
+    outList := e::outList;
+  end for;
+end append_reverser;
+
 public function appendr<T>
   "Appends two lists in reverse order compared to listAppend."
   input list<T> inList1;
@@ -569,19 +583,13 @@ public function last<T>
   "Returns the last element of a list. Fails if the list is empty."
   input list<T> inList;
   output T outLast;
+protected
+  list<T> rest;
 algorithm
-  outLast := match(inList)
-    local
-      T e;
-      list<T> rest;
-
-    case (e :: rest)
-      algorithm
-        while not listEmpty(rest) loop
-          e::rest := rest;
-        end while;
-      then e;
-  end match;
+  outLast::rest := inList;
+  for e in rest loop
+    outLast := e;
+  end for;
 end last;
 
 public function lastElement<T>
@@ -604,12 +612,10 @@ public function lastListOrEmpty<T>
   if the outer list is empty."
   input list<list<T>> inListList;
   output list<T> outLastList = {};
-protected
-  list<list<T>> rest = inListList;
 algorithm
-  while not listEmpty(rest) loop
-    outLastList :: rest := rest;
-  end while;
+  for e in inListList loop
+    outLastList := e;
+  end for;
 end lastListOrEmpty;
 
 public function secondLast<T>
@@ -757,7 +763,7 @@ algorithm
     else
       e2 :: rest := rest;
       if listEmpty(rest) then
-        outList := if inCompFunc(e2, e1) then inList else e2::{e1};
+        outList := if inCompFunc(e2, e1) then inList else {e2,e1};
       else
         middle := intDiv(listLength(inList), 2);
         (left, right) := split(inList, middle);
@@ -1187,18 +1193,14 @@ public function splitOnTrue<T>
     input T inElement;
     output Boolean outResult;
   end PredicateFunc;
-protected
-  T e;
-  list<T> rest = inList;
 algorithm
-  while not listEmpty(rest) loop
-    e :: rest := rest;
+  for e in inList loop
     if inFunc(e) then
       outTrueList := e :: outTrueList;
     else
       outFalseList := e :: outFalseList;
     end if;
-  end while;
+  end for;
 
   outTrueList := listReverseInPlace(outTrueList);
   outFalseList := listReverseInPlace(outFalseList);
@@ -1217,18 +1219,14 @@ public function split1OnTrue<T, ArgT1>
     input ArgT1 inArg1;
     output Boolean outResult;
   end PredicateFunc;
-protected
-  T e;
-  list<T> rest = inList;
 algorithm
-  while not listEmpty(rest) loop
-    e :: rest := rest;
+  for e in inList loop
     if inFunc(e, inArg1) then
       outTrueList := e :: outTrueList;
     else
       outFalseList := e :: outFalseList;
     end if;
-  end while;
+  end for;
 
   outTrueList := listReverseInPlace(outTrueList);
   outFalseList := listReverseInPlace(outFalseList);
@@ -1249,18 +1247,14 @@ public function split2OnTrue<T, ArgT1, ArgT2>
     input ArgT2 inArg2;
     output Boolean outResult;
   end PredicateFunc;
-protected
-  T e;
-  list<T> rest = inList;
 algorithm
-  while not listEmpty(rest) loop
-    e :: rest := rest;
+  for e in inList loop
     if inFunc(e, inArg1, inArg2) then
       outTrueList := e :: outTrueList;
     else
       outFalseList := e :: outFalseList;
     end if;
-  end while;
+  end for;
 
   outTrueList := listReverseInPlace(outTrueList);
   outFalseList := listReverseInPlace(outFalseList);

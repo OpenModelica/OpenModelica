@@ -6497,7 +6497,7 @@ algorithm
   case (_,_,_,_,{}) then inMod;
   case (cache,env,pre,mod,inst_dims)
     equation
-      exps = List.map1(inst_dims,Expression.dimensionsToExps,{});
+      exps = List.map(inst_dims,Expression.dimensionsToExps);
       aexps = List.mapList(exps, Expression.unelabExp);
       mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, true);
 

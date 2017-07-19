@@ -2048,7 +2048,12 @@ protected
   array<Option<BackendDAE.Var>> varOptArr;
 algorithm
   BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := inArray;
-  outVars := list(Util.getOption(varOptArr[i]) for i guard isSome(varOptArr[i]) in 1:arrayLength(varOptArr));
+  outVars := {};
+  for i in arrayLength(varOptArr):-1:1 loop
+    if isSome(varOptArr[i]) then
+      outVars := Util.getOption(varOptArr[i])::outVars;
+    end if;
+  end for;
 end vararrayList;
 
 /* =======================================================

@@ -350,7 +350,7 @@ algorithm
       varCrossLst := List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
 
       // search the partitions for loops
-      loops := resolveLoops_findLoops2(partition,partitionVars,eqCrossLst,varCrossLst,mIn,mTIn);
+      loops := resolveLoops_findLoops2(partition,eqCrossLst,varCrossLst,mIn,mTIn);
       loopsOut := listAppend(loops,loopsOut);
       crossEqsOut := listAppend(eqCrossLst,crossEqsOut);
       crossVarsOut := listAppend(varCrossLst,crossVarsOut);
@@ -363,14 +363,13 @@ end resolveLoops_findLoops;
 protected function resolveLoops_findLoops2 "author: Waurich TUD 2014-01
   handles the given partition of eqs and vars depending whether there are only varCrossNodes, only EqCrossNodes, both of them or none of them."
   input list<Integer> eqsIn;
-  input list<Integer> varsIn;
   input list<Integer> eqCrossLstIn;
   input list<Integer> varCrossLstIn;
   input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
   input BackendDAE.IncidenceMatrixT mTIn;
   output list<list<Integer>> loopsOut;
 algorithm
-  loopsOut := match(eqsIn,varsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn)
+  loopsOut := match(eqsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn)
     local
       Boolean isNoSingleLoop;
       Integer replaceIdx,eqIdx,varIdx,parEqIdx,daeEqIdx;
@@ -378,7 +377,7 @@ algorithm
       list<list<Integer>> paths, allPaths, simpleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
       BackendDAE.Equation resolvedEq, startEq;
       list<BackendDAE.Equation> eqLst;
-    case(_,_,_::_,{},_,_)
+    case(_,_::_,{},_,_)
       equation
           //print("partition has only eqCrossNodes\n");
         // get the paths between the crossEqNodes and order them according to their length
@@ -407,7 +406,7 @@ algorithm
         //print("all paths to be resolved: \n"+stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
         paths0;
-    case(_,_,{},_::_,_,_)
+    case(_,{},_::_,_,_)
       equation
           //print("partition has only varCrossNodes\n");
         // get the paths between the crossVarNodes and order them according to their length
@@ -427,7 +426,7 @@ algorithm
           //print("solve the smallest loops: \n"+stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString)," / ")+"\n");
        then
         closedPaths;
-    case(_,_,{},{},_,_)
+    case(_,{},{},_,_)
       algorithm
         // no crossNodes
           //print("no crossNodes\n");
@@ -440,7 +439,7 @@ algorithm
         end for;
        then
          {subLoop};
-    case(_,_,_::_,_::_,_,_)
+    case(_,_::_,_::_,_,_)
       algorithm
         //print("there are both varCrossNodes and eqNodes\n");
         //at least get paths of length 2 between eqCrossNodes
@@ -500,7 +499,7 @@ algorithm
             sharedVars := List.removeOnTrue(adjVar, intEq, sharedVars);
               //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
             if (intGe(listLength(sharedVars),1)) then
-              newPath := listAppend({adjEq},{crossEq});
+              newPath := adjEq::{crossEq};
               paths := newPath :: paths;
                 //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
             end if;
@@ -894,7 +893,7 @@ protected function getDoubles "author: Waurich TUD 2014-01
   output list<list<Integer>> lstOut;
 replaceable type ElementType subtypeof Any;
 algorithm
-  lstOut := matchcontinue(elemLstIn,lstIn)
+  lstOut := match(elemLstIn,lstIn)
     local
       list<Integer> elem;
       list<list<Integer>> lst, elemLst;
@@ -904,17 +903,14 @@ algorithm
         lstIn;
     case(elem::elemLst,_)
       equation
-        elem = List.getMember(elem,elemLst);
-        lst = getDoubles(elemLst,elem::lstIn);
+        if listMember(elem,elemLst) then
+          lst = getDoubles(elemLst,elem::lstIn);
+        else
+          lst = getDoubles(elemLst,lstIn);
+        end if;
       then
         lst;
-    else
-      equation
-        (_::elemLst) = elemLstIn;
-        lst = getDoubles(elemLst,lstIn);
-      then
-        lst;
-  end matchcontinue;
+  end match;
 end getDoubles;
 
 protected function getEqNodesForVarLoop "author: Waurich TUD 2013-01
@@ -2087,7 +2083,7 @@ algorithm
           //print("eqs: \n"+stringDelimitList(List.map(eqs,intString)," / ")+"\n");
   eqs := getDoublicates(eqs);
           //print("eqs: \n"+stringDelimitList(List.map(eqs,intString)," / ")+"\n");
-  lstOut := List.unique(eq::eqs);
+  lstOut := List.consOnTrue(not listMember(eq, eqs), eq, eqs);
 end getEqPairs;
 
 protected function chooseEquation

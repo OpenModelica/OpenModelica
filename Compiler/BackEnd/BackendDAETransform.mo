@@ -60,11 +60,11 @@ protected
   import Flags;
   import GC;
   import List;
+  import MetaModelica.Dangerous;
   import Sorting;
   import SymbolicJacobian;
   import System;
   import Util;
-  import MetaModelica.Dangerous;
 
 // =============================================================================
 // strongComponents and stuff
@@ -130,11 +130,11 @@ public function varAssignmentNonScalar
   input array<Integer> ass1;
   input array<Integer> mapIncRowEqn;
   output array<Integer> outAcc;
-protected
-  list<Integer> acc;
 algorithm
-  acc := list(if ass1[i] > 0 then mapIncRowEqn[ass1[i]] else -1 for i in 1:arrayLength(ass1));
-  outAcc := listArray(acc);
+  outAcc := Dangerous.arrayCreateNoInit(arrayLength(ass1),-1);
+  for i in 1:arrayLength(ass1) loop
+    Dangerous.arrayUpdateNoBoundsChecking(outAcc, i, if Dangerous.arrayGetNoBoundsChecking(ass1,i) > 0 then mapIncRowEqn[Dangerous.arrayGetNoBoundsChecking(ass1,i)] else -1);
+  end for;
 end varAssignmentNonScalar;
 
 protected function analyseStrongComponentsScalar "author: Frenkel TUD 2011-05
