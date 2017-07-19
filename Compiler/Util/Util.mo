@@ -912,6 +912,21 @@ public function intCompare
   output Integer outResult = if inN == inM then 0 elseif inN > inM then 1 else -1;
 end intCompare;
 
+public function intPow
+  "Performs integer exponentiation."
+  input Integer base;
+  input Integer exponent;
+  output Integer result = 1;
+algorithm
+  if exponent >= 0 then
+    for i in 1:exponent loop
+      result := result * base;
+    end for;
+  else
+    fail();
+  end if;
+end intPow;
+
 public function realCompare
   "Compares two reals and return -1 if the first is smallest, 1 if the second
    is smallest, or 0 if they are equal."
@@ -1788,20 +1803,6 @@ algorithm
     else false;
   end match;
 end sourceInfoIsEqual;
-
-public function intPow
-  input Integer base;
-  input Integer exponent;
-  output Integer result = 1;
-algorithm
-  if exponent >= 0 then
-    for i in 1:exponent loop
-      result := result * base;
-    end for;
-  else
-    fail();
-  end if;
-end intPow;
 
 annotation(__OpenModelica_Interface="util");
 end Util;
