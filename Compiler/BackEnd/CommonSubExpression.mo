@@ -1936,6 +1936,8 @@ algorithm
       cseLst := commonSubExpressionFind(m, mT, vars, eqs);
           //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "\n")+"\n");end if;
       syst := commonSubExpressionUpdate(cseLst, m, mT, sysIn);
+      GC.free(m);
+      GC.free(mT);
       syst.orderedEqs := eqs;
           //print("done this eqSystem\n");
           //BackendDump.dumpEqSystem(syst, "eqSystem");

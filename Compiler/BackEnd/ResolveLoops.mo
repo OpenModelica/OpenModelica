@@ -352,8 +352,12 @@ algorithm
       // search the partitions for loops
       loops := resolveLoops_findLoops2(partition,eqCrossLst,varCrossLst,mIn,mTIn);
       loopsOut := listAppend(loops,loopsOut);
-      crossEqsOut := listAppend(eqCrossLst,crossEqsOut);
-      crossVarsOut := listAppend(varCrossLst,crossVarsOut);
+      if isPresent(crossEqsOut) then
+        crossEqsOut := listAppend(eqCrossLst,crossEqsOut);
+      end if;
+      if isPresent(crossVarsOut) then
+        crossVarsOut := listAppend(varCrossLst,crossVarsOut);
+      end if;
     else
       return;
     end try;
@@ -387,7 +391,6 @@ algorithm
         paths1 = List.fold1(allPaths,getReverseDoubles,allPaths,{});   // all paths with just one direction
         paths0 = List.unique(paths1);  // only the paths between the eqs without concerning the vars in between
         simpleLoops = getDoubles(paths1,{});  // get 2 adjacent equations which form a simple loop i.e. they share 2 variables
-        simpleLoops = List.unique(simpleLoops);
           //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
         (_,paths,_) = List.intersection1OnTrue(paths1,simpleLoops,intLstIsEqual);
 
@@ -462,16 +465,45 @@ algorithm
   end match;
 end resolveLoops_findLoops2;
 
-protected function maxInt
-  input list<Integer> l;
-  output Integer m = 0;
+protected function hasSameIntSortedExcept
+  input list<Integer> inList1;
+  input list<Integer> inList2;
+  input Integer excl;
+  output Boolean rv = false;
+protected
+  Integer i1, i2;
+  list<Integer> l1 = inList1, l2 = inList2;
 algorithm
-  for e in l loop
-    if e > m then
-      m := e;
+  if listEmpty(inList1) or listEmpty(inList2) then
+    return;
+  end if;
+  i1::l1 := l1;
+  i2::l2 := l2;
+  while true loop
+    if i1 > i2 then
+      if listEmpty(l2) then
+        return;
+      end if;
+      i2::l2 := l2;
+    elseif i1 < i2 then
+      if listEmpty(l1) then
+        return;
+      end if;
+      i1::l1 := l1;
+    else
+      if i1 <> excl then
+        rv := true;
+        return;
+      end if;
+      if listEmpty(l1) or listEmpty(l2) then
+        return;
+      end if;
+      i1::l1 := l1;
+      i2::l2 := l2;
     end if;
-  end for;
-end maxInt;
+  end while;
+end hasSameIntSortedExcept;
+
 protected function getShortPathsBetweenEqCrossNodes"find closedLoops between 2 eqCrossNode, no matter whether there are var cross nodes between them.
 author: vwaurich TUD 12-2016"
   input list<Integer> eqCrossLstIn;
@@ -495,18 +527,15 @@ algorithm
         adjEqs := List.intersectionIntSorted(arrayGet(mTIn, adjVar), rest);
         for adjEq in adjEqs loop
           if adjEq <> crossEq then
-            sharedVars := List.intersectionIntSorted(adjVars, arrayGet(mIn, adjEq));
-            sharedVars := List.removeOnTrue(adjVar, intEq, sharedVars);
               //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
-            if (intGe(listLength(sharedVars),1)) then
+            if hasSameIntSortedExcept(adjVars, arrayGet(mIn, adjEq), adjVar) then
               newPath := adjEq::{crossEq};
-              paths := newPath :: paths;
+              paths := List.unionElt(newPath, paths);
                 //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
             end if;
           end if;
         end for;
       end for;
-      paths := List.unique(paths);
       paths := getShortPathsBetweenEqCrossNodes(rest, mIn, mTIn, listAppend(paths, pathsIn));
     then paths;
   case({},_,_,_)
