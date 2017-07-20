@@ -2525,6 +2525,7 @@ end createGlobalConstraints;
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &eqs, String modelNamePrefixStr)
  "Generates an equation."
 ::=
+  let () = tmpTickReset(0)
   match eq
   case e as SES_RESIDUAL(__)
    then ""
@@ -2567,7 +2568,9 @@ end createLocalConstraints;
 template functionNonLinearResiduals(list<SimEqSystem> allEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
-  (allEquations |> eqn => (match eqn
+  (allEquations |> eqn => (
+    let () = tmpTickReset(0)
+    match eqn
     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
@@ -2666,6 +2669,7 @@ template generateNonLinearResidualFunction(NonlinearSystem system, String modelN
    whichSet = 0: Strict Set
    whichSet = 1: Casual Set"
 ::=
+let () = tmpTickReset(0)
 match system
   case nls as NONLINEARSYSTEM(__) then
     let &varDecls = buffer ""
