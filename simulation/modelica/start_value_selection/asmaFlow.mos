@@ -1105,7 +1105,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 77/77 (1): aimc.vs[1] = (-sinevoltage1.v[1]) - aimc.plug_sn.pin[3].v   [dynamic]
 // 78/78 (1): aimc.vs[2] = (-sinevoltage1.v[2]) - aimc.plug_sn.pin[3].v   [dynamic]
 // 79/79 (1): aimc.vs[3] = (-sinevoltage1.v[3]) - aimc.plug_sn.pin[3].v   [dynamic]
-// 80/80 (1): aimc.powerBalance.powerStator = Modelica.Electrical.Machines.SpacePhasors.Functions.activePower({aimc.vs[1], aimc.vs[2], aimc.vs[3]}, {sinevoltage1.i[1], sinevoltage1.i[2], sinevoltage1.i[3]})   [unknown]
+// 80/80 (1): aimc.powerBalance.powerStator = Modelica.Electrical.Machines.SpacePhasors.Functions.activePower(aimc.vs, sinevoltage1.i)   [unknown]
 // 81/81 (1): $DER.aimc.lssigma.i_[2] = $cse1 * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic]
 // 82/82 (1): $DER.aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] + (-$cse1) * der(aimc.idq_sr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[2]   [dynamic]
 // 83/83 (1): aimc.airGapS.RotationMatrix[2,1] = $cse1   [binding]

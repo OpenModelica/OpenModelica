@@ -2052,6 +2052,104 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization done.
 //
 // ########################################
@@ -3684,6 +3782,108 @@ buildModel(testOptdaedump); getErrorString();
 //
 // ########################################
 // post-optimization module findZeroCrossings (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
+// 2/2 (1): y = $cse1 + x   [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (simulation)
 // ########################################
 //
 //

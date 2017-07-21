@@ -926,6 +926,108 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+// 2: y:VARIABLE()  type: Real 
+// 3: x:VARIABLE()  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic]
+// 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic]
+// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (0)
+// ========================================
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization done.
 //
 // ########################################

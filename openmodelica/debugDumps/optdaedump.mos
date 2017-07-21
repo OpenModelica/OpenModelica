@@ -4098,6 +4098,171 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: v0:VARIABLE()  = 0.0  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): v0 = 0.0   [initial]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (10)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: $DER.iL:VARIABLE()  type: Real 
+// 3: iL:VARIABLE()  type: Real 
+// 4: i2:VARIABLE()  type: Real 
+// 5: i1:VARIABLE()  type: Real 
+// 6: i0:VARIABLE()  type: Real 
+// 7: uC:DUMMY_STATE()  type: Real 
+// 8: uL:VARIABLE()  type: Real 
+// 9: u1:VARIABLE()  type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+//
+//
+// Equations (10, 10)
+// ========================================
+// 1/1 (1): uC = cos(time)   [dynamic]
+// 2/2 (1): i1 = i2 + iL   [dynamic]
+// 3/3 (1): i0 = i1 + iC   [dynamic]
+// 4/4 (1): iC = C * $DER.uC   [dynamic]
+// 5/5 (1): $DER.iL = uL / L   [dynamic]
+// 6/6 (1): uL = R2 * i2   [dynamic]
+// 7/7 (1): u1 = uC - uL   [dynamic]
+// 8/8 (1): u1 = R1 * i1   [dynamic]
+// 9/9 (1): $DER.uC = -sin(time)   [dynamic]
+// 10/10 (1): iL = $START.iL   [initial]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 10 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 10
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 3
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 7
+// var 9 is solved in eqn 8
+// var 10 is solved in eqn 9
+//
+//
+// StrongComponents
+// ========================================
+// {10:3}
+// {9:10}
+// {4:1}
+// {1:7}
+// {{{6:4}, {7:9}, {8:5}}
+// ,{2:8}} Size: 1 linear
+// {5:2}
+// {3:6}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
+// 2: R1:PARAM()  = 1.0  type: Real 
+// 3: R2:PARAM()  = 2.0  type: Real 
+// 4: L:PARAM()  = 0.5  type: Real 
+// 5: C:PARAM()  = 3.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // post-optimization done.
 //
 // ########################################
@@ -7497,6 +7662,143 @@ buildModel(testOptdaedump); getErrorString();
 //
 // ########################################
 // post-optimization module findZeroCrossings (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (10)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:STATE(1)()  type: Real 
+// 3: i2:VARIABLE()  type: Real 
+// 4: i1:VARIABLE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:DUMMY_STATE()  type: Real 
+// 7: uL:VARIABLE()  type: Real 
+// 8: u1:VARIABLE()  type: Real 
+// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+//
+//
+// Equations (10, 10)
+// ========================================
+// 1/1 (1): $cse1 = sin(time)   [unknown]
+// 2/2 (1): uC = cos(time)   [unknown]
+// 3/3 (1): u1 = R1 * i1   [dynamic]
+// 4/4 (1): i1 = i2 + iL   [dynamic]
+// 5/5 (1): uL = R2 * i2   [dynamic]
+// 6/6 (1): u1 = uC - uL   [dynamic]
+// 7/7 (1): der(iL) = uL / L   [dynamic]
+// 8/8 (1): iC = (-C) * $cse1   [dynamic]
+// 9/9 (1): i0 = i1 + iC   [dynamic]
+// 10/10 (1): $DER.uC = -$cse1   [binding]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 10 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 7
+// var 3 is solved in eqn 5
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 9
+// var 6 is solved in eqn 2
+// var 7 is solved in eqn 6
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+// var 10 is solved in eqn 10
+//
+//
+// StrongComponents
+// ========================================
+// {2:6}
+// {{{5:3}, {6:8}, {3:4}}
+// ,{4:7}} Size: 1 linear
+// {7:2}
+// {1:9}
+// {8:1}
+// {9:5}
+// {10:10}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: C:PARAM()  = 3.0  type: Real 
+// 2: L:PARAM()  = 0.5  type: Real 
+// 3: R2:PARAM()  = 2.0  type: Real 
+// 4: R1:PARAM()  = 1.0  type: Real 
+// 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC  type: Real 
+// 2: u2:VARIABLE()  = uL  type: Real 
+// 3: v1:VARIABLE()  = uC  type: Real 
+// 4: v2:VARIABLE()  = uL  type: Real 
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (simulation)
 // ########################################
 //
 //
