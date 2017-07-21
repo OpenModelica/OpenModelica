@@ -679,12 +679,12 @@ algorithm
   end match;
 end traverseBackendDAEExpsLstEqnWithSymbolicOperation;
 
-protected function traverseBackendDAEExpsEqnLstWithSymbolicOperation
+public function traverseBackendDAEExpsEqnLstWithSymbolicOperation
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEqns;
   input FuncExpType func;
   input Type_a inTypeA;
-  input list<BackendDAE.Equation> iAcc;
+  input list<BackendDAE.Equation> iAcc = {};
   output list<BackendDAE.Equation> outEqns;
   output Type_a outTypeA;
   partial function FuncExpType
@@ -793,6 +793,92 @@ algorithm
 
   outStmtLst := listReverse(outStmtLst);
 end traverseBackendDAEExpsWhenOperatorWithSymbolicOperation;
+
+public function collapseArrayExpressions
+  input output BackendDAE.BackendDAE dae;
+algorithm
+  for syst in dae.eqs loop
+    BackendEquation.traverseEquationArray_WithUpdate(syst.orderedEqs, function traverseBackendDAEExpsEqnWithSymbolicOperation(func=collapseArrayCrefExp), 0);
+    BackendEquation.traverseEquationArray_WithUpdate(syst.removedEqs, function traverseBackendDAEExpsEqnWithSymbolicOperation(func=collapseArrayCrefExp), 0);
+  end for;
+end collapseArrayExpressions;
+
+public function collapseArrayCrefExp<T>
+  input DAE.Exp inExp;
+  input tuple<list<DAE.SymbolicOperation>, T> inTpl;
+  output DAE.Exp outExp;
+  output tuple<list<DAE.SymbolicOperation>, T> outTpl;
+protected
+  list<DAE.SymbolicOperation> ops;
+  T t;
+algorithm
+  (ops,t) := inTpl;
+  (outExp,t) := Expression.traverseExpTopDown(inExp, collapseArrayCrefExpWork, t);
+  if not Expression.expEqual(inExp,outExp) then
+    // print("collapseArrayCrefExp: " + ExpressionDump.printExpStr(inExp) + " -> " + ExpressionDump.printExpStr(outExp) + "\n");
+    outTpl := (DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(inExp),DAE.PARTIAL_EQUATION(outExp))::ops,t);
+  else
+    outTpl := inTpl;
+  end if;
+end collapseArrayCrefExp;
+
+protected function collapseArrayCrefExpWork<T>
+  input output DAE.Exp e;
+  output Boolean cont;
+  input output T t;
+algorithm
+  (e,cont) := matchcontinue e
+    case DAE.MATRIX() then (collapseArrayCrefExpWork2(e),false);
+    case DAE.ARRAY() then (collapseArrayCrefExpWork2(e),false);
+    else (e,true);
+  end matchcontinue;
+end collapseArrayCrefExpWork;
+
+protected function collapseArrayCrefExpWork2
+  input output DAE.Exp e;
+protected
+  DAE.Type ty;
+  list<DAE.Dimension> dims;
+  list<Integer> ds;
+  Integer len;
+  list<DAE.Exp> exps;
+  DAE.ComponentRef cr1,cr2;
+  list<DAE.Subscript> subs;
+  Integer ndim;
+algorithm
+  (dims,ty) := match e
+    case DAE.MATRIX(ty=ty as DAE.T_ARRAY(dims=dims)) then (dims,ty);
+    case DAE.ARRAY(ty=ty as DAE.T_ARRAY(dims=dims)) then (dims,ty);
+  end match;
+  _ := match Types.arrayElementType(ty)
+    // TODO: Figure out why the SimCode fails if we collapse arrays of records...
+    case DAE.T_COMPLEX() then fail();
+    else ();
+  end match;
+  ds := Expression.dimensionsSizes(dims);
+  ndim := listLength(ds);
+  len := product(i for i in ds);
+  true := len > 0;
+  (DAE.CREF(componentRef=cr1)::exps) := Expression.flattenArrayExpToList(e); // TODO: Use a better routine? We now get all expressions even if no expression is a cref...
+  // Check that the first element starts at index [1,...,1]
+  subs := ComponentReference.crefLastSubs(cr1);
+  true := ndim==listLength(subs);
+  true := listLength(subs) == listLength(ComponentReference.crefSubs(cr1)) "Code generation fails for things like x[7].y when x[7] contains more things than y, and y is an array...";
+  for sub in subs loop
+    DAE.INDEX(DAE.ICONST(1)) := sub;
+  end for;
+  // Same number of expressions as expected...
+  true := (1+listLength(exps))==len;
+  for exp in exps loop
+    DAE.CREF(componentRef=cr2) := exp;
+    true := ndim==listLength(ComponentReference.crefLastSubs(cr2));
+    true := ComponentReference.crefEqualWithoutSubs(cr1,cr2);
+    true := 1==ComponentReference.crefCompareIntSubscript(cr2,cr1); // cr2 > cr1
+    cr1 := cr2;
+  end for;
+  // All of the crefs are in ascending order; the first one starts at 1,1; the length is the full array... So it is the complete cref!
+  e := Expression.makeCrefExp(ComponentReference.crefStripLastSubs(cr1), ty);
+end collapseArrayCrefExpWork2;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAETransform;

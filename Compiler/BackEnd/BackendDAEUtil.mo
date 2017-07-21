@@ -7498,7 +7498,9 @@ protected function allPreOptimizationModules
     (BackendDAEOptimize.residualForm, "residualForm"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (BackendDump.dumpDAE, "dumpDAE"),
-      (XMLDump.dumpDAEXML, "dumpDAEXML")
+    (XMLDump.dumpDAEXML, "dumpDAEXML"),
+    // This should indeed be at the end
+    (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions")
   };
 end allPreOptimizationModules;
 
@@ -7544,7 +7546,9 @@ protected function allPostOptimizationModules
     // TODO: move the following modules to the correct position
     (BackendDump.dumpComponentsGraphStr, "dumpComponentsGraphStr"),
     (BackendDump.dumpDAE, "dumpDAE"),
-    (XMLDump.dumpDAEXML, "dumpDAEXML")
+    (XMLDump.dumpDAEXML, "dumpDAEXML"),
+    // This should indeed be at the end
+    (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions")
   };
 end allPostOptimizationModules;
 
@@ -7564,7 +7568,9 @@ protected function allInitOptimizationModules
     (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
     (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed"),
-    (DynamicOptimization.removeLoops, "extendDynamicOptimization")
+    (DynamicOptimization.removeLoops, "extendDynamicOptimization"),
+    // This should indeed be at the end
+    (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions")
   };
 end allInitOptimizationModules;
 

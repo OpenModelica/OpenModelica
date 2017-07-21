@@ -44,6 +44,7 @@ public import HashTable2;
 public import HashTable3;
 
 protected import Absyn;
+protected import BackendDAETransform;
 protected import BaseHashTable;
 protected import BaseHashSet;
 protected import BackendEquation;
@@ -1620,20 +1621,15 @@ public function replaceEquations
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
-    local
-      list<BackendDAE.Equation> eqns;
-    case(_,_,_)
-      equation
-        // Do not do empty replacements; it just takes time ;)
-        false = isReplacementEmpty(repl);
-        (eqns,replacementPerformed) = replaceEquations2(inEqns,repl,inFuncTypeExpExpToBooleanOption,{},false);
-      then
-        (eqns,replacementPerformed);
-    else
-      then
-        (inEqns,false);
-  end matchcontinue;
+  if isReplacementEmpty(repl) then
+    outEqns := inEqns;
+    replacementPerformed := false;
+  else
+    (outEqns,replacementPerformed) := replaceEquations2(inEqns,repl,inFuncTypeExpExpToBooleanOption,{},false);
+    if replacementPerformed and false /* Seems to break some modules */ then
+      (outEqns,_) := BackendDAETransform.traverseBackendDAEExpsEqnLstWithSymbolicOperation(outEqns,BackendDAETransform.collapseArrayCrefExp,0/*dummy*/);
+    end if;
+  end if;
 end replaceEquations;
 
 protected function replaceEquations2

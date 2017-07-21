@@ -944,18 +944,40 @@ alternative names: subsriptExp (but already taken), subscriptToAsub"
 protected
   DAE.Exp s;
 algorithm
+  exp := applyExpSubscriptsFoldCheckSimplify(exp, inSubs);
+end applyExpSubscripts;
+
+
+public function applyExpSubscriptsFoldCheckSimplify "
+author: PA
+Takes an arbitrary expression and applies subscripts to it. This is done by creating asub
+expressions given the original expression and then simplify them.
+Note: The subscripts must be INDEX
+
+alternative names: subsriptExp (but already taken), subscriptToAsub
+
+This version of the function also returns a boolean stating if simplify
+improved anything (can be used as a heuristic if you want to apply
+the subscript when scalarizing)"
+  input output DAE.Exp exp;
+  input list<DAE.Subscript> inSubs;
+  input output Boolean checkSimplify = false;
+protected
+  Boolean b;
+  DAE.Exp s;
+algorithm
   for sub in inSubs loop
     // Apply one subscript at a time, so simplify works fine on it.
     //s := subscriptIndexExp(sub);
     try
       s := getSubscriptExp(sub);
-      (exp,_) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
+      (exp,b) := ExpressionSimplify.simplify(makeASUB(exp,{s}));
+      checkSimplify := b or checkSimplify;
     else
       // skipped DAE.WHOLEDIM
     end try;
   end for;
-end applyExpSubscripts;
-
+end applyExpSubscriptsFoldCheckSimplify;
 
 public function subscriptExp
 "@mahge

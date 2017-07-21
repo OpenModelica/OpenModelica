@@ -764,6 +764,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     }),
   SOME(STRING_DESC_OPTION({
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
+    ("collapseArrayExpressions", collapseArrayExpressionsText),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
@@ -854,7 +855,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
-    "findZeroCrossings"
+    "findZeroCrossings",
+    "collapseArrayExpressions"
     }),
   SOME(STRING_DESC_OPTION({
     ("addScaledVars_states", Util.notrans("added var_norm = var/nominal, where var is state")),
@@ -862,6 +864,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default non-linear components with user-defined function calls are skipped. See also debug flags: NLSanalyticJacobian and forceNLSanalyticJacobian")),
+    ("collapseArrayExpressions", collapseArrayExpressionsText),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
     ("cseBinary", Util.gettext("Common Sub-expression Elimination")),
@@ -1201,16 +1204,20 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(76, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the limit for partitionin of linear torn systems."));
 
+constant Util.TranslatableContent collapseArrayExpressionsText = Util.gettext("Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation).");
+
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "simplifyComplexFunction",
     "tearingSystem",
     "calculateStrongComponentJacobians",
     "solveSimpleEquations",
-    "simplifyAllExpressions"
+    "simplifyAllExpressions",
+    "collapseArrayExpressions"
     }),
   SOME(STRING_DESC_OPTION({
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default non-linear components with user-defined function calls are skipped. See also debug flags: NLSanalyticJacobian and forceNLSanalyticJacobian")),
+    ("collapseArrayExpressions", collapseArrayExpressionsText),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
     ("inlineHomotopy", Util.gettext("Experimental: Inlines the homotopy expression to allow symbolic simplifications.")),
@@ -1223,7 +1230,7 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
     ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")),
     ("solveSimpleEquations", Util.notrans("Solves simple equations")),
     ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")),
-	("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
+    ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
 

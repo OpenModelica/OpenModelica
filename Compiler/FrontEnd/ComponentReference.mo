@@ -801,6 +801,14 @@ algorithm
   comp := CompareWithGenericSubscript.compare(cr1,cr2);
 end crefCompareGeneric;
 
+public function crefCompareIntSubscript "A sorting function for crefs"
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Integer comp;
+algorithm
+  comp := CompareWithIntSubscript.compare(cr1,cr2);
+end crefCompareIntSubscript;
+
 public function crefCompareGenericNotAlphabetic "A sorting function for crefs"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
