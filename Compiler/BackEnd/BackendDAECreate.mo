@@ -1013,14 +1013,14 @@ algorithm
         s1 = listHead(inNames);
         namee1 = Absyn.joinPaths(inPath, Absyn.IDENT(s1));
       then
-        DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), SOME(e));
+        DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), inMax);
     case (SOME(e), NONE(), _, _, _)
       equation
         i = listLength(inNames);
         sn = listGet(inNames, i);
         nameen = Absyn.joinPaths(inPath, Absyn.IDENT(sn));
       then
-        DAEUtil.setMinMax(inVarAttr, SOME(e), SOME(DAE.ENUM_LITERAL(nameen, i)));
+        DAEUtil.setMinMax(inVarAttr, inMin, SOME(DAE.ENUM_LITERAL(nameen, i)));
     else inVarAttr;
   end matchcontinue;
 end setMinMaxFromEnumeration1;

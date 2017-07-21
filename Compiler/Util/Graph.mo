@@ -718,7 +718,7 @@ algorithm
         indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
         indexes = List.select1(indexes, arrayElemetGtZero, inColored);
         indexesColor = List.map1(indexes, getArrayElem, inColored);
-        List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
+        List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, SOME({inNode}));
         forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
       then forbiddenColor1;
       else
@@ -740,17 +740,17 @@ end getArrayElem;
 protected function arrayUpdateListAppend
   input Integer inIndex;
   input array<Option<list<NodeType>>> inArray;
-  input NodeType inNode;
+  input Option<list<NodeType>> inNode;
   replaceable type NodeType subtypeof Any;
 protected
   list<NodeType> arrayElem;
 algorithm
-  _ := matchcontinue(inIndex, inArray, inNode)
+  _ := matchcontinue(inIndex, inArray)
     local
       list<NodeType> arrElem;
-    case (_, _, _)
+    case (_, _)
       equation
-        arrayUpdate(inArray, inIndex, SOME({inNode}));
+        arrayUpdate(inArray, inIndex, inNode);
       then ();
     else
       equation
@@ -999,11 +999,12 @@ protected function updateForbiddenColorArrayInt
   input Integer inNode;
 protected
   Integer colorIndex;
+  Option<list<Integer>> opt = SOME({inNode});
 algorithm
   for index in inIndexes loop
     colorIndex := arrayGet(inColored, index);
     if colorIndex > 0 then
-      arrayUpdate(inForbiddenColor, colorIndex, SOME({inNode}));
+      arrayUpdate(inForbiddenColor, colorIndex, opt);
     end if;
   end for;
 end updateForbiddenColorArrayInt;
