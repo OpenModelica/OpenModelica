@@ -980,11 +980,12 @@ protected function addForbiddenColorsInt
   input array<tuple<Integer, list<Integer>>> inGraph;
 protected
   list<Integer> indexes;
+  Option<list<Integer>> nodeopt = SOME({inNode});
 algorithm
   try
     for node in nodes loop
       ((_,indexes)) := arrayGet(inGraph,node);
-      updateForbiddenColorArrayInt(indexes, inColored, forbiddenColor, inNode);
+      updateForbiddenColorArrayInt(indexes, inColored, forbiddenColor, nodeopt);
     end for;
   else
     Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
@@ -996,15 +997,14 @@ protected function updateForbiddenColorArrayInt
   input list<Integer> inIndexes;
   input array<Integer> inColored;
   input array<Option<list<Integer>>> inForbiddenColor;
-  input Integer inNode;
+  input Option<list<Integer>> inNode;
 protected
   Integer colorIndex;
-  Option<list<Integer>> opt = SOME({inNode});
 algorithm
   for index in inIndexes loop
     colorIndex := arrayGet(inColored, index);
     if colorIndex > 0 then
-      arrayUpdate(inForbiddenColor, colorIndex, opt);
+      arrayUpdate(inForbiddenColor, colorIndex, inNode);
     end if;
   end for;
 end updateForbiddenColorArrayInt;
