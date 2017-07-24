@@ -4303,7 +4303,7 @@ end getTempDeclMatchOutputName;
  "Generates code for an expression.
   used in Compiler/Template/CodegenQSS.tpl"
 ::=
-  match exp
+  match codegenExpSanityCheck(exp, context)
   case e as ICONST(__)          then '((modelica_integer) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as SCONST(__)          then daeExpSconst(string, &preExp, &varDecls)

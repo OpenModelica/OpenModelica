@@ -1,6 +1,7 @@
 encapsulated package SimCodeUtil
 
 import SimCode;
+import SimCodeFunction;
 import SimCodeVar;
 
 function sortEqSystems<T>
@@ -30,6 +31,14 @@ function cref2simvar<A,B>
 algorithm
   assert(false, getInstanceName());
 end cref2simvar;
+
+function codegenExpSanityCheck
+  input output DAE.Exp e;
+  input SimCodeFunction.Context context;
+algorithm
+  /* Do nothing */
+end codegenExpSanityCheck;
+
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

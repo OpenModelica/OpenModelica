@@ -985,6 +985,12 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output Boolean outIsTooBig;
   end isModelTooBigForCSharpInOneFile;
+
+  function codegenExpSanityCheck
+    input DAE.Exp inExp;
+    input SimCodeFunction.Context context;
+    output DAE.Exp outExp;
+  end codegenExpSanityCheck;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil

@@ -13380,6 +13380,45 @@ algorithm
   end matchcontinue;
 end cref2simvar;
 
+public function codegenExpSanityCheck "Handle some things that Susan cannot handle:
+* Expand simulation context arrays that contain variables stored in different locations...
+* We could move collapsing arrays here since it should be safer to do so when we can lookup which index a variable corresponds to...
+"
+  input output DAE.Exp e;
+  input SimCodeFunction.Context context;
+protected
+  list<SimCodeVar.SimVar> vars;
+  SimCode.SimCode simCode;
+  Integer index;
+algorithm
+  if match context
+    case SimCodeFunction.FUNCTION_CONTEXT() then true;
+    case SimCodeFunction.PARALLEL_FUNCTION_CONTEXT() then true;
+    else false; end match
+  then
+    return;
+  end if;
+  e := match e
+    case DAE.CREF(ty=DAE.T_ARRAY())
+      algorithm
+        simCode := getSimCode();
+        vars := list(cref2simvar(cr, simCode) for cr in ComponentReference.expandCref(e.componentRef, true));
+        if not listEmpty(vars) then
+          SimCodeVar.SIMVAR(index=index)::vars := vars;
+          for v in vars loop
+            // The array needs to be expanded because it's not stored in contiguous memory
+            if v.index <> index+1 then
+              e := Expression.expandCrefs(e);
+              break;
+            end if;
+            index := v.index;
+          end for;
+        end if;
+      then e;
+    else e;
+  end match;
+end codegenExpSanityCheck;
+
 public function isModelTooBigForCSharpInOneFile
 "Used by C# template to determine if the generated code should be split into several files
  to make Visual Studio responsive when the file is opened (C# compiler is OK,
