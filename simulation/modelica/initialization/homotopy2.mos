@@ -102,6 +102,9 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 //
 //
+// initialEquations_lambda0: (0)
+// ========================================
+//
 // removedInitialEquations: 
 // ========================================
 //
