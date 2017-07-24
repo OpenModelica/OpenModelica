@@ -86,6 +86,7 @@ protected
   BackendDAE.BackendDAE dae,strippedDae;
   SimCode.SimulationSettings simSettings;
   BackendDAE.BackendDAE initDAE;
+  Option<BackendDAE.BackendDAE> initDAE_lambda0;
   list<BackendDAE.Equation> removedInitialEquationLst;
 algorithm
   cname_str := Absyn.pathString(inPath);
@@ -107,13 +108,13 @@ algorithm
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(inDaelow);
 
-  (strippedDae, initDAE, _, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(strippedDae,"");
+  (strippedDae, initDAE, initDAE_lambda0, _, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(strippedDae,"");
 
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);
   _ := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
 
-  (libs, fileDir, _, _) := SimCodeMain.generateModelCode(strippedDae, initDAE, NONE(), removedInitialEquationLst,inProgram, inPath, cname_str, SOME(simSettings), Absyn.FUNCTIONARGS({}, {}));
+  (libs, fileDir, _, _) := SimCodeMain.generateModelCode(strippedDae, initDAE, initDAE_lambda0, NONE(), removedInitialEquationLst,inProgram, inPath, cname_str, SOME(simSettings), Absyn.FUNCTIONARGS({}, {}));
 
   //print("..compiling, fileNamePrefix = "+fileNamePrefix+"\n");
   CevalScript.compileModel(fileNamePrefix , libs);

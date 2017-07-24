@@ -813,7 +813,8 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
 
-  if(data->simulationInfo->initial && nonlinsys->homotopySupport && init_lambda_steps > 1)
+  if(data->simulationInfo->initial && nonlinsys->homotopySupport &&
+     (data->callback->useHomotopy == 0) && init_lambda_steps > 1)
     lambda_steps = init_lambda_steps;
 
 #if !defined(OMC_NO_FILESYSTEM)

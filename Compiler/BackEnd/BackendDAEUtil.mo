@@ -6822,6 +6822,7 @@ public function getSolvedSystem "Run the equation system pipeline."
   input Option<list<String>> strPostOptModules = NONE();
   output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
+  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0;
   output Option<BackendDAE.InlineData > outInlineData;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
 protected
@@ -6878,7 +6879,7 @@ algorithm
   end if;
 
   // generate system for initialization
-  (outInitDAE, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outInitDAE_lambda0, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
 
   // use function tree from initDAE further for simDAE
   simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));

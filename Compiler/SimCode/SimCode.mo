@@ -109,6 +109,7 @@ uniontype SimCode
     list<list<SimEqSystem>> algebraicEquations;
     list<ClockedPartition> clockedPartitions;
     list<SimEqSystem> initialEquations;
+    list<SimEqSystem> initialEquations_lambda0;
     list<SimEqSystem> removedInitialEquations;
     list<SimEqSystem> startValueEquations;
     list<SimEqSystem> nominalValueEquations;

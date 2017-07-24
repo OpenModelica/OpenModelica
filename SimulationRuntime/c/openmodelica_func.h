@@ -143,6 +143,21 @@ int (*updateBoundVariableAttributes)(DATA *data, threadData_t*);
  */
 int (*functionInitialEquations)(DATA *data, threadData_t*);
 
+/*! \var useHomotopy
+ *
+ * 0: local homotopy approach
+ * 1: global homotopy approach
+ */
+const int useHomotopy;
+
+/*! \fn functionInitialEquations_lambda0
+ *
+ * function for calculate initial values from the initial equations and initial algorithms
+ *
+ *  \param [ref] [data]
+ */
+int (*functionInitialEquations_lambda0)(DATA *data, threadData_t*);
+
 /*! \fn functionRemovedInitialEquations
  *
  * This function contains removed equations from the initialization problem,

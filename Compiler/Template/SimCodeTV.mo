@@ -3398,6 +3398,7 @@ package Flags
   constant ConfigFlag DAE_MODE;
   constant ConfigFlag EQUATIONS_PER_FILE;
   constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN;
+  constant ConfigFlag HOMOTOPY_APPROACH;
 
   function set
     input DebugFlag inFlag;

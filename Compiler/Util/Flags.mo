@@ -1372,6 +1372,13 @@ constant ConfigFlag INTERACTIVE = CONFIG_FLAG(114, "interactive",
 constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(115, "zeroMQFileSuffix",
   SOME("z"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the file suffix for zeroMQ port file if --interactive=zmq is used."));
+constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(116, "homotopyApproach",
+  NONE(), EXTERNAL(), STRING_FLAG("local"),
+  SOME(STRING_DESC_OPTION({
+    ("local", Util.gettext("Default, local homotopy approach. The homotopy parameter only effects the local strongly connected component.")),
+    ("global", Util.gettext("Global homotopy approach. The homotopy parameter effects the entire initialization system."))
+    })),
+    Util.gettext("Sets the homotopy approach."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1492,7 +1499,8 @@ constant list<ConfigFlag> allConfigFlags = {
   GRAPHICS_EXP_MODE,
   TEARING_STRICTNESS,
   INTERACTIVE,
-  ZEROMQ_FILE_SUFFIX
+  ZEROMQ_FILE_SUFFIX,
+  HOMOTOPY_APPROACH
 };
 
 public function new

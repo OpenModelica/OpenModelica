@@ -67,6 +67,7 @@ public function createSimCode "
   Entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Path inClassName;
   input String filenamePrefix;
@@ -130,7 +131,7 @@ algorithm
       //Setup
       //-----
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
-          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, NONE(), inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions,
+          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions,
                                      externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings
@@ -185,7 +186,7 @@ algorithm
       //-----
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
-          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, NONE(), inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions,
+          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions,
                                      externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args );
 
       //get simCode-backendDAE mappings

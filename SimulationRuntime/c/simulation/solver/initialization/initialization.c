@@ -61,6 +61,7 @@
 #if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
 #define check_nonlinear_solutions(X,Y) 0
 #define updateStaticDataOfNonlinearSystems(X,Y)
+extern int init_lambda_steps;
 #else
 #include "simulation/solver/nonlinearSystem.h"
 #endif
@@ -179,6 +180,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
   int retVal;
+  FILE *pFile = NULL;
+  long i;
+  MODEL_DATA *mData = data->modelData;
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -188,8 +192,74 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   storePreValues(data);
   overwriteOldSimulationData(data);
 
+  if (data->callback->useHomotopy == 1 && init_lambda_steps > 1)
+  {
+    long step;
+    char buffer[4096];
+
+#if !defined(OMC_NO_FILESYSTEM)
+    if(ACTIVE_STREAM(LOG_INIT))
+    {
+      sprintf(buffer, "%s_global_homotopy.csv", mData->modelFilePrefix);
+      pFile = fopen(buffer, "wt");
+      fprintf(pFile, "%s", "lambda");
+      for(i=0; i<mData->nVariablesReal; ++i)
+        fprintf(pFile, ",%s", mData->realVarsData[i].info.name);
+      fprintf(pFile, "\n");
+    }
+#endif
+
+    infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
+    for(step=0; step<init_lambda_steps-1; ++step)
+    {
+      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
+
+      if(data->simulationInfo->lambda > 1.0) {
+        data->simulationInfo->lambda = 1.0;
+      }
+
+      if(0 == step)
+        data->callback->functionInitialEquations_lambda0(data, threadData);
+      else
+        data->callback->functionInitialEquations(data, threadData);
+
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
+
+#if !defined(OMC_NO_FILESYSTEM)
+      if(ACTIVE_STREAM(LOG_INIT))
+      {
+        fprintf(pFile, "%.16g", data->simulationInfo->lambda);
+        for(i=0; i<mData->nVariablesReal; ++i)
+          fprintf(pFile, ",%.16g", data->localData[0]->realVars[i]);
+        fprintf(pFile, "\n");
+      }
+#endif
+
+      if (check_nonlinear_solutions(data, 0) ||
+          check_linear_solutions(data, 0) ||
+          check_mixed_solutions(data, 0))
+        break;
+    }
+    messageClose(LOG_INIT);
+    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = 1");
+  }
+
+  data->simulationInfo->lambda = 1.0;
   data->callback->functionInitialEquations(data, threadData);
   storeRelations(data);
+
+#if !defined(OMC_NO_FILESYSTEM)
+  if(data->callback->useHomotopy == 1 && init_lambda_steps > 1 && ACTIVE_STREAM(LOG_INIT))
+  {
+    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
+    fprintf(pFile, "%.16g", data->simulationInfo->lambda);
+    for(i=0; i<mData->nVariablesReal; ++i)
+      fprintf(pFile, ",%.16g", data->localData[0]->realVars[i]);
+    fprintf(pFile, "\n");
+    fclose(pFile);
+  }
+#endif
 
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
