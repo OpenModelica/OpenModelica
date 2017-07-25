@@ -34,14 +34,14 @@ simulate(Tearing12); getErrorString();
 //  * Number of equations: 9901
 //  * Number of variables: 9901
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2031
+//  * Number of independent subsystems: 1992
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 288 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3896):
-//  * Single equations (assignments): 3895
-//  * Array equations: 0
+// Notification: Strong component statistics for initialization (3885):
+//  * Single equations (assignments): 3881
+//  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
@@ -53,14 +53,14 @@ simulate(Tearing12); getErrorString();
 //  * Linear torn systems: 1 {(53,79.6%) 855}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 4
 //  * Number of states: 62 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1864):
-//  * Single equations (assignments): 1863
-//  * Array equations: 0
+// Notification: Strong component statistics for simulation (1894):
+//  * Single equations (assignments): 1890
+//  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0

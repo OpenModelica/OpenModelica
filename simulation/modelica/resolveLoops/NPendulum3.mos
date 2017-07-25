@@ -34,14 +34,14 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.m
 //  * Number of equations: 1495
 //  * Number of variables: 1495
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 607
+//  * Number of independent subsystems: 568
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 36 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (761):
-//  * Single equations (assignments): 760
-//  * Array equations: 0
+// Notification: Strong component statistics for initialization (750):
+//  * Single equations (assignments): 746
+//  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
@@ -53,14 +53,14 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.m
 //  * Linear torn systems: 1 {(8,73.4%) 60}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 4
 //  * Number of states: 6 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (155):
-//  * Single equations (assignments): 154
-//  * Array equations: 0
+// Notification: Strong component statistics for simulation (185):
+//  * Single equations (assignments): 181
+//  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
