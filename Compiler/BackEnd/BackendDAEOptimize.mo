@@ -5668,6 +5668,7 @@ protected
 
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
+  Integer systemNumber=0, numberOfSystems;
 algorithm
   daeOut := daeIn;
 
@@ -5675,7 +5676,9 @@ algorithm
   BackendDAE.SHARED(functionTree = funcTree) := shared;
   systsNew := {};
   //traverse the simulation-DAE systems
+  numberOfSystems := listLength(systs);
   for syst in systs loop
+    systemNumber := systemNumber+1;
     BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs=eqs, matching=matching) := syst;
     BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps) := matching;
 
@@ -5773,7 +5776,7 @@ algorithm
       syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
       syst.removedEqs := BackendEquation.emptyEqns();
     else
-      print("No output variables in this system\n");
+      Error.addCompilerNotification("No output variables in this system ("+String(systemNumber)+"/"+String(numberOfSystems)+")");
     end if;
 
     systsNew := syst::systsNew;

@@ -6292,26 +6292,34 @@ protected function getNodeForVarIdx"traverse the whole varCompMapping from eqSys
   input Integer varIdx;
   input Integer eqSysIdx;
   input array<tuple<Integer,Integer,Integer>> varCompMapping;
-  input Integer tryThisIndex;
-  output Integer nodeIdxOut;
+  input Integer inTryThisIndex;
+  output Integer node;
+protected
+  Integer offset,eqSys,tryThisIndex=inTryThisIndex,n=0,arrayLengthVarCompMapping;
+  Boolean eqSysNeq;
 algorithm
-  nodeIdxOut := matchcontinue(varIdx,eqSysIdx,varCompMapping,tryThisIndex)
-    local
-      Integer offset,eqSys,node;
-      Boolean eqSysNeq;
-    case(_,_,_,_)
-      equation
-        ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
-        eqSysNeq = intNe(eqSys,eqSysIdx);
-        node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,offset+2) else node+varIdx-1;
-      then node;
-    case(-1,-1,_,_)
-      then -1;
+  arrayLengthVarCompMapping := arrayLength(varCompMapping);
+  while true loop
+    if tryThisIndex >= 1 and tryThisIndex <= arrayLengthVarCompMapping then
+      ((node,eqSys,offset)) := arrayGet(varCompMapping,tryThisIndex);
+      if eqSys == eqSysIdx then
+        node := node+varIdx-1;
+      return;
+      else
+        tryThisIndex := offset+2;
+      end if;
+    elseif varIdx==-1 and eqSysIdx==-1 then
+      node := -1;
+      return;
     else
-      equation
-        print("HpcOmTaskGraph.getNodeForVarIdx failed\n");
-      then -1;
-  end matchcontinue;
+      print("HpcOmTaskGraph.getNodeForVarIdx failed\n");
+    end if;
+    n := n+1;
+    if n>arrayLengthVarCompMapping then
+      Error.addInternalError(getInstanceName() + " failed (there is a loop somewhere)", sourceInfo());
+      fail();
+    end if;
+  end while;
 end getNodeForVarIdx;
 
 
