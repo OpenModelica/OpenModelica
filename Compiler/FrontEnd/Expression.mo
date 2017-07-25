@@ -13117,5 +13117,19 @@ algorithm
   end match;
 end isInvariantExpNoTraverse;
 
+public function findCallIsInlineAfterIndexReduction
+  input output DAE.Exp e;
+  output Boolean cont;
+  input output Boolean res;
+algorithm
+  if not res then
+    res := match e
+      case DAE.CALL(attr=DAE.CALL_ATTR(inlineType=DAE.AFTER_INDEX_RED_INLINE())) then true;
+      else false;
+    end match;
+  end if;
+  cont := not res;
+end findCallIsInlineAfterIndexReduction;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
