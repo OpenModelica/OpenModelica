@@ -85,7 +85,7 @@ algorithm
   (outEqSys, outSysIdx) := matchcontinue(inEqSys)
     local
       Integer numSimpEqs, numVars, numSimpVars;
-      array<Integer> eqMapArr,varMapArr,nonLoopEqMark;
+      array<Integer> eqMapArr,varMapArr,nonLoopEqMark,markLinEqVars;
       list<Integer> eqMapping, varMapping, eqCrossLst, varCrossLst;
       list<list<Integer>> partitions, loops;
       list<tuple<Boolean,String>> varAtts,eqAtts;
@@ -101,18 +101,19 @@ algorithm
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
       equation
+      (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         BackendDump.dumpBipartiteGraphEqSystem(syst,inShared, "whole System_"+intString(inSysIdx));
       end if;
         //BackendDump.dumpEqSystem(syst,"the complete DAE");
 
       // get the linear equations and their vars
-      (simpEqLst,eqMapping,_,_) = BackendEquation.traverseEquationArray(eqs, getSimpleEquations, ({},{},1,vars));
+      markLinEqVars = arrayCreate(BackendVariable.varsSize(vars),-1);
+      (simpEqLst,eqMapping,_,_,markLinEqVars,_) = BackendEquation.traverseEquationArray(eqs, getSimpleEquations, ({},{},1,vars,markLinEqVars,m));
       eqMapArr = listArray(eqMapping);
+      (simpVarLst,varMapArr) = getSimpleEquationVariables(markLinEqVars,vars);
+
       simpEqs = BackendEquation.listEquation(simpEqLst);
-      crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
-      (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars);
-      varMapArr = listArray(varMapping);
       simpVars = BackendVariable.listVar1(simpVarLst);
 
       // build the incidence matrix for the linear equations
@@ -306,27 +307,53 @@ end arrayEntryLengthIs;
 protected function getSimpleEquations
 "if the linear equation contains only variables with factor 1 or -1 except for the states."
   input BackendDAE.Equation inEq;
-  input tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables> inTpl;
+  input tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables, array<Integer>, BackendDAE.IncidenceMatrix> inTpl;
   output BackendDAE.Equation outEq = inEq;
-  output tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables> outTpl;
+  output tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables, array<Integer>, BackendDAE.IncidenceMatrix> outTpl;
 protected
   Boolean isSimple;
   Integer idx;
   BackendDAE.Equation eq;
+  BackendDAE.IncidenceMatrix m;
   BackendDAE.Variables vars;
+  array<Integer> markLinEqVars;
   list<BackendDAE.Equation> eqLst;
   list<Integer> idxMap;
 algorithm
-  (eqLst, idxMap, idx, vars) := inTpl;
+  (eqLst, idxMap, idx, vars, markLinEqVars, m) := inTpl;
   if BackendEquation.isEquation(inEq) and not eqIsConst(inEq)/*simple assignments should not occur here, they cannot be improved any further*/ then
     (eq,(isSimple,_)) := BackendEquation.traverseExpsOfEquation(inEq,isAddOrSubExp,(true,vars));
     if isSimple then
       eqLst := eq::eqLst;
       idxMap := idx::idxMap;
+      for varIdx in m[idx] loop
+        arrayUpdate(markLinEqVars,intAbs(varIdx),1);
+      end for;
     end if;
   end if;
-  outTpl := (eqLst,idxMap,idx+1,vars);
+  outTpl := (eqLst,idxMap,idx+1,vars,markLinEqVars,m);
 end getSimpleEquations;
+
+protected function getSimpleEquationVariables"
+Get the variables which occur in the linear equations and have been marked in the markLinEqVars array.
+author:Waurich 2017-07"
+  input array<Integer> markLinEqVars;
+  input BackendDAE.Variables vars;
+  output list<BackendDAE.Var> simpVars={};
+  output array<Integer> varMapArr;
+protected
+  Integer varIdx;
+  list<Integer> varMap;
+algorithm
+  varMap := {};
+  for varIdx in List.intRange(arrayLength(markLinEqVars)) loop
+  if markLinEqVars[varIdx] > 0 then
+    varMap := varIdx::varMap;
+    simpVars := BackendVariable.getVarAt(vars, varIdx)::simpVars;
+  end if;
+  end for;
+  varMapArr := listArray(varMap);
+end getSimpleEquationVariables;
 
 public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   gets the crossNodes for the partitions and searches for loops"
