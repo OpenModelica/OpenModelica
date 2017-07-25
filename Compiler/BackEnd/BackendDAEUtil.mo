@@ -7819,43 +7819,28 @@ protected
 algorithm
   if forceOrdering then
     for name in inStrOptModules loop
-      index := getModuleIndex(name, inOptModules);
+      for index in getModuleIndexes(name, inOptModules) loop
+        if index < maxIndex then
+          Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false to override module ordering.");
+          maxIndex := numModules;
+        else
+          maxIndex := intMax(maxIndex, index);
+        end if;
 
-      if index < maxIndex then
-        Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false to override module ordering.");
-        maxIndex := numModules;
-      else
-        maxIndex := intMax(maxIndex, index);
-      end if;
-
-      if index <> -1 then
         activeModules[index] := true;
-      else
-        Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
-        fail();
-      end if;
+      end for;
     end for;
 
     for name in inEnabledModules loop
-      index := getModuleIndex(name, inOptModules);
-
-      if index <> -1 then
+      for index in getModuleIndexes(name, inOptModules) loop
         activeModules[index] := true;
-      else
-        Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
-        fail();
-      end if;
+      end for;
     end for;
 
     for name in inDisabledModules loop
-      index := getModuleIndex(name, inOptModules);
-
-      if index <> -1 then
+      for index in getModuleIndexes(name, inOptModules) loop
         activeModules[index] := false;
-      else
-        Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
-        fail();
-      end if;
+      end for;
     end for;
 
     for i in 1:numModules loop
@@ -7871,22 +7856,26 @@ algorithm
   outOptModules := listReverse(outOptModules);
 end selectOptModules;
 
-protected function getModuleIndex
+protected function getModuleIndexes
   input String inModuleName;
   input list<tuple<BackendDAEFunc.optimizationModule, String>> inModuleList;
-  output Integer outIndex = 1;
+  output list<Integer> outIndexes = {};
 protected
   String name;
+  Integer index=1;
 algorithm
   for module in inModuleList loop
     (_, name) := module;
     if stringEqual(inModuleName, name) then
-      return;
+      outIndexes := index::outIndexes;
     end if;
-    outIndex := outIndex+1;
+    index := index+1;
   end for;
-  outIndex := -1;
-end getModuleIndex;
+  if listEmpty(outIndexes) then
+    Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
+    fail();
+  end if;
+end getModuleIndexes;
 
 protected function selectOptModules1
   input String strOptModule;
