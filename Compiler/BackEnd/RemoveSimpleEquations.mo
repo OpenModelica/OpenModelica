@@ -1150,11 +1150,33 @@ protected
   list<list<DAE.Subscript>> subslst;
   list<DAE.Exp> elst1, elst2;
   Boolean hasInlineAfterIndexReduction, expandLhs, expandRhs;
+  DAE.ElementSource source;
+  BackendDAE.EquationAttributes attr;
+  BackendDAE.Equation eq;
 algorithm
   dims := Expression.arrayDimension(ty);
   ds := Expression.dimensionsSizes(dims);
   subslst := List.map(ds, Expression.dimensionSizeSubscripts);
   subslst := Expression.rangesToSubscripts(subslst);
+  if listEmpty(subslst) then
+    (source,attr) := eqnAttributes;
+    outTpl := inTpl;
+    return;
+    /* TODO: Shouldn't we generate some sort of assertion for the lhs/rhs actually being of zero dimension or not throwing errors at run-time? */
+    for e in {lhs,rhs} loop
+      if Expression.isEvaluatedConst(e) then
+        continue;
+      end if;
+      eq := BackendDAE.WHEN_EQUATION(0, BackendDAE.WHEN_STMTS(
+        DAE.BCONST(false),
+        {BackendDAE.ASSERT(DAE.BCONST(false), DAE.SCONST("Failed assertion exp is 0"), DAE.ASSERTIONLEVEL_ERROR, source)},
+        NONE()
+      ), source, attr);
+      outTpl := simpleEquationsFinder(eq, outTpl);
+    end for;
+    return;
+    /* End TODO. Note: The above code does not execute */
+  end if;
   (,hasInlineAfterIndexReduction) := Expression.traverseExpTopDown(lhs, Expression.findCallIsInlineAfterIndexReduction, false);
   (,hasInlineAfterIndexReduction) := Expression.traverseExpTopDown(rhs, Expression.findCallIsInlineAfterIndexReduction, hasInlineAfterIndexReduction);
   (elst1,expandLhs) := List.mapFold(subslst, function Expression.applyExpSubscriptsFoldCheckSimplify(exp=lhs), false);
@@ -1163,6 +1185,9 @@ algorithm
     // If inlining after index reduction or i, we need to expand equations to pass sorting+matching
     // Note: We *should* be looking for the derivative annotation here, but it's not available directly
     //       and better would be if sorting+matching could expand/split equations when necessary
+    if false and not (expandLhs and expandRhs) then
+      print(getInstanceName() + " not expanding " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
+    end if;
     true := expandLhs and expandRhs "Do not expand equation if it doesn't help with anything... Like x=f(...); => x[1]=f()[1], ..., x[n]=f()[n]";
   else
   end if;
