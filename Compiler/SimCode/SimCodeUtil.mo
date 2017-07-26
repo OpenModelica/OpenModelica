@@ -6228,7 +6228,9 @@ algorithm
     // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}
     // => tmp = rhsexp;
     // z1 = tmp[1]; z2 = tmp[2] ....
-    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=e2, source=source))::{}, _, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source))::{}, _, _, _, _)
+    guard Expression.isMatrix(e1) or Expression.isArray(e1)
+    equation
       // Flattne multi-dimensional ARRAY{ARRAY} expressions
       expLst = Expression.flattenArrayExpToList(e1);
       // Replace the der() operators
