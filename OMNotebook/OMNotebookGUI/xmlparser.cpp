@@ -627,7 +627,7 @@ namespace IAEX
             QDomElement curveElement = n.toElement();
             if (curveElement.tagName() == XML_GRAPHCELL_CURVE)
             {
-              PlotCurve *pPlotCurve = new PlotCurve("", curveElement.attribute(XML_GRAPHCELL_TITLE), "", "", gCell->mpPlotWindow->getPlot());
+              PlotCurve *pPlotCurve = new PlotCurve("", curveElement.attribute(XML_GRAPHCELL_TITLE), "", curveElement.attribute(XML_GRAPHCELL_TITLE), "", "", gCell->mpPlotWindow->getPlot());
               // read the curve data
               if (curveElement.hasAttribute(XML_GRAPHCELL_XDATA) && curveElement.hasAttribute(XML_GRAPHCELL_YDATA))
               {
