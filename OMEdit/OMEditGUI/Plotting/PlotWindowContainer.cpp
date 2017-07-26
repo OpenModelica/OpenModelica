@@ -248,8 +248,12 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
-    if (unitComboBox->currentText() == "")
-        unitComboBox->setCurrentText("s");
+    if (unitComboBox->currentText() == ""){
+        int currentIndex = unitComboBox->findText("s", Qt::MatchExactly);
+        if (currentIndex > -1) {
+          unitComboBox->setCurrentIndex(currentIndex);
+        }
+    }
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
     pPlotWindow->setXLabel(QString("index"));
     pPlotWindow->installEventFilter(this);
@@ -279,8 +283,12 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
-    if (unitComboBox->currentText() == "")
-        unitComboBox->setCurrentText("s");
+    if (unitComboBox->currentText() == ""){
+        int currentIndex = unitComboBox->findText("s", Qt::MatchExactly);
+        if (currentIndex > -1) {
+          unitComboBox->setCurrentIndex(currentIndex);
+        }
+    }
     pPlotWindow->setTimeUnit(unitComboBox->currentText());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
