@@ -848,7 +848,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 #endif
   }
 
-  data->simulationInfo->lambda = 1.0;
+  if(data->callback->useHomotopy == 0)
+    data->simulationInfo->lambda = 1.0;
+
   /* SOLVE! */
   nonlinsys->solved = solveNLS(data, threadData, sysNumber);
 
