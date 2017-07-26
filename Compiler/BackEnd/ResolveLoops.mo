@@ -346,7 +346,7 @@ protected
   list<Integer> varMap;
 algorithm
   varMap := {};
-  for varIdx in List.intRange(arrayLength(markLinEqVars)) loop
+  for varIdx in 1:arrayLength(markLinEqVars) loop
   if markLinEqVars[varIdx] > 0 then
     varMap := varIdx::varMap;
     simpVars := BackendVariable.getVarAt(vars, varIdx)::simpVars;
