@@ -1246,7 +1246,7 @@ protected
   constant Boolean debug = false;
   list<Integer> nodesList;
   array<Integer> colored;
-  array<Option<list<Integer>>> forbiddenColor;
+  array<Integer> forbiddenColor;
   list<tuple<Integer, list<Integer>>> sparseGraph, sparseGraphT;
   array<tuple<Integer, list<Integer>>> arraysparseGraph;
   Integer maxColor;
@@ -1270,7 +1270,7 @@ algorithm
     end if;
 
     // color sparse bipartite graph
-    forbiddenColor := arrayCreate(sizeVars,NONE());
+    forbiddenColor := arrayCreate(sizeVars,0);
     colored := arrayCreate(sizeVars,0);
     arraysparseGraph := listArray(sparseGraph);
     if debug then execStat("generateSparsePattern -> coloring start "); end if;
@@ -1278,12 +1278,15 @@ algorithm
       Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
     end if;
     if debug then execStat("generateSparsePattern -> coloring end "); end if;
+    GC.free(forbiddenColor);
+    GC.free(arraysparseGraph);
     // get max color used
     maxColor := Array.fold(colored, intMax, 0);
 
     // map index of that array into colors
     coloredArray := arrayCreate(maxColor, {});
     mapIndexColors(colored, sizeVars, coloredArray);
+    GC.free(colored);
 
     if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
       print("Print Coloring Cols: \n");
