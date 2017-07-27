@@ -1006,6 +1006,114 @@ algorithm
     case (cache,_,"getInitialStates",_,st,_)
       then (cache, Values.ARRAY({},{}), st);
 
+    case (cache,_,"addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
+                                     Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = addInitialState(classpath, str1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1),
+                                     Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = addInitialStateWithAnnotation(classpath, str1, Absyn.ANNOTATION(eltargs), p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"addInitialState",{_,_,_},st as GlobalScript.SYMBOLTABLE(),_)
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"deleteInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_)},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"deleteInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1)},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = deleteInitialState(classpath, str1, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"deleteInitialState",{_,_},st as GlobalScript.SYMBOLTABLE(),_)
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
+                                        Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=_,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        false = Interactive.existClass(cr_1, p);
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,_,"updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.CODE(Absyn.C_EXPRESSION(aexp))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = deleteInitialState(classpath, str1, p);
+        (bval, p) = addInitialState(classpath, str1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1),
+                                        Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},
+          st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (bval, p) = deleteInitialState(classpath, str1, p);
+        (bval, p) = addInitialStateWithAnnotation(classpath, str1, Absyn.ANNOTATION(eltargs), p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(bval),st);
+
+    case (cache,_,"updateInitialState",{_,_,_},st as GlobalScript.SYMBOLTABLE(),_)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE()),_)
       algorithm
         ExecStat.execStatReset();
@@ -7259,6 +7367,189 @@ algorithm
 
   end match;
 end getInitialStateInEquation;
+
+protected function addInitialState
+"Adds an initial state to the model, i.e., initialState(state1)"
+  input Absyn.Path inPath;
+  input String state;
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input Absyn.Program inProgram;
+  output Boolean b;
+  output Absyn.Program outProgram;
+algorithm
+  (b, outProgram) := addInitialStateWithAnnotation(inPath, state, Interactive.annotationListToAbsyn(inAbsynNamedArgLst), inProgram);
+end addInitialState;
+
+protected function addInitialStateWithAnnotation
+"Adds an initial state to the model, i.e., initialState(state1)"
+  input Absyn.Path inPath;
+  input String state;
+  input Absyn.Annotation inAnnotation;
+  input Absyn.Program inProgram;
+  output Boolean b;
+  output Absyn.Program outProgram;
+algorithm
+  (b, outProgram) := match (inPath, state, inAnnotation, inProgram)
+    local
+      Absyn.Path modelpath, package_;
+      Absyn.Class cdef, newcdef;
+      Absyn.Program newp, p;
+      String state_;
+      Absyn.Annotation ann;
+      Option<Absyn.Comment> cmt;
+
+    case (modelpath, state_, ann,(p as Absyn.PROGRAM()))
+      equation
+        cdef = Interactive.getPathedClassInProgram(modelpath, p);
+        cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
+        newcdef = Interactive.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
+                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, Absyn.dummyInfo));
+        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+      then
+        (true, newp);
+
+    case (modelpath, state_, ann,(p as Absyn.PROGRAM()))
+      equation
+        cdef = Interactive.getPathedClassInProgram(modelpath, p);
+        package_ = Absyn.stripLast(modelpath);
+        cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
+        newcdef = Interactive.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
+                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, Absyn.dummyInfo));
+        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+      then
+        (true, newp);
+  end match;
+end addInitialStateWithAnnotation;
+
+protected function deleteInitialState
+"Delete the initial state initialState(c1) from a model."
+  input Absyn.Path inPath;
+  input String state;
+  input Absyn.Program inProgram;
+  output Boolean b;
+  output Absyn.Program outProgram;
+algorithm
+  (b,outProgram) := matchcontinue (inPath, state, inProgram)
+    local
+      Absyn.Path modelpath, modelwithin;
+      Absyn.Class cdef, newcdef;
+      Absyn.Program newp, p;
+      Absyn.ComponentRef model_;
+      String state_;
+
+    case (modelpath, state_, (p as Absyn.PROGRAM()))
+      equation
+        modelwithin = Absyn.stripLast(modelpath);
+        cdef = Interactive.getPathedClassInProgram(modelpath, p);
+        newcdef = deleteInitialStateInClass(cdef, state_);
+        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
+      then
+        (true, newp);
+    case (modelpath, state_, (p as Absyn.PROGRAM()))
+      equation
+        cdef = Interactive.getPathedClassInProgram(modelpath, p);
+        newcdef = deleteInitialStateInClass(cdef, state_);
+        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
+      then
+        (true, newp);
+    case (_,_,(p as Absyn.PROGRAM())) then (false, p);
+  end matchcontinue;
+end deleteInitialState;
+
+protected function deleteInitialStateInClass
+"Helper function to deleteInitialState."
+  input Absyn.Class inClass;
+  input String state;
+  output Absyn.Class outClass;
+algorithm
+  outClass := match (inClass, state)
+    local
+      list<Absyn.EquationItem> eqlst,eqlst_1;
+      list<Absyn.ClassPart> parts2,parts;
+      String i, bcname;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Option<String> cmt;
+      SourceInfo file_info;
+      String state_;
+      list<Absyn.ElementArg> modif;
+      list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
+    /* a class with parts */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
+                      info = file_info), state_)
+      equation
+        eqlst = Interactive.getEquationList(parts);
+        eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
+        parts2 = Interactive.replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+    /* an extended class with parts: model extends M end M;  */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
+                      ,info = file_info), state_)
+      equation
+        eqlst = Interactive.getEquationList(parts);
+        eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
+        parts2 = Interactive.replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+  end match;
+end deleteInitialStateInClass;
+
+protected function deleteInitialStateInEqlist
+"Helper function to deleteInitialState."
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  input String state;
+  output list<Absyn.EquationItem> outAbsynEquationItemLst;
+algorithm
+  outAbsynEquationItemLst := matchcontinue (inAbsynEquationItemLst, state)
+    local
+      list<Absyn.EquationItem> res,xs;
+      String state_;
+      Absyn.ComponentRef name;
+      list<Absyn.Exp> expArgs;
+      list<Absyn.NamedArg> namedArgs;
+      list<String> args;
+      Absyn.EquationItem x;
+
+    case ({},_) then {};
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(name, Absyn.FUNCTIONARGS(expArgs, namedArgs))) :: xs), state_)
+      guard Absyn.crefEqual(name, Absyn.CREF_IDENT("initialState", {}))
+      equation
+        args = List.map(expArgs, Dump.printExpStr);
+        true = compareInitialStateFuncArgs(args, state_);
+      then
+        deleteInitialStateInEqlist(xs, state_);
+    case ((x :: xs), state_)
+      equation
+        res = deleteInitialStateInEqlist(xs, state_);
+      then
+        (x :: res);
+  end matchcontinue;
+end deleteInitialStateInEqlist;
+
+protected function compareInitialStateFuncArgs
+"Helper function to deleteInitialState."
+  input list<String> args;
+  input String state;
+  output Boolean b;
+algorithm
+  b := matchcontinue (args, state)
+    local
+      String state1, state2;
+
+    case ({state1}, state2)
+      guard
+        stringEq(state1, state2)
+      then
+        true;
+
+    else false;
+  end matchcontinue;
+end compareInitialStateFuncArgs;
 
 function getComponentInfo
   input Absyn.Element comp;

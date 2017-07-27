@@ -3978,6 +3978,38 @@ annotation(
 </html>"), preferredView="text");
 end getInitialStates;
 
+function addInitialState
+  input TypeName cl;
+  input String state;
+  input ExpressionOrModification annotate;
+  output Boolean bool;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Adds the initial state to the class.</p>
+</html>"));
+end addInitialState;
+
+function deleteInitialState
+  input TypeName cl;
+  input String state;
+  output Boolean bool;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Deletes the initial state from the class.</p>
+</html>"));
+end deleteInitialState;
+
+function updateInitialState
+  input TypeName cl;
+  input String state;
+  input ExpressionOrModification annotate;
+  output Boolean bool;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the initial state in the class.</p>
+</html>"));
+end updateInitialState;
+
 function generateScriptingAPI
   input TypeName cl;
   input String name;

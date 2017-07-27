@@ -14767,7 +14767,7 @@ algorithm
   end matchcontinue;
 end addToProtected;
 
-protected function addToEquation
+public function addToEquation
 " This function takes a Class definition and adds an
    EquationItem to the first equation list in the class.
    If no public list is available in the class one is created."
@@ -15386,7 +15386,7 @@ algorithm
   end match;
 end replaceProtectedList;
 
-protected function replaceEquationList "
+public function replaceEquationList "
    This function replaces the `EquationItem\' list in the `ClassPart\' list,
    and returns the updated list.
 "
@@ -15587,7 +15587,7 @@ algorithm
   end match;
 end getProtectedList;
 
-protected function getEquationList "This function takes a ClassPart List and returns the first EquationItem
+public function getEquationList "This function takes a ClassPart List and returns the first EquationItem
   list of the class."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.EquationItem> outAbsynEquationItemLst;
@@ -16200,7 +16200,7 @@ algorithm
   end match;
 end commentToAbsyn;
 
-protected function annotationListToAbsyn
+public function annotationListToAbsyn
 "This function takes a list of NamedArg and returns an Absyn.Annotation.
   for instance {annotation = Placement( ...) } is converted to ANNOTATION(Placement(...))"
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
