@@ -61,7 +61,6 @@
 #if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
 #define check_nonlinear_solutions(X,Y) 0
 #define updateStaticDataOfNonlinearSystems(X,Y)
-extern int init_lambda_steps;
 #else
 #include "simulation/solver/nonlinearSystem.h"
 #endif
@@ -73,6 +72,8 @@ extern int init_lambda_steps;
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+
+int init_lambda_steps = 1;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *

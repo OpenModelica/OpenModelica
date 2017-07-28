@@ -46,8 +46,6 @@ extern "C" {
 #undef VOID
 #endif
 
-extern int init_lambda_steps;
-
 typedef void* NLS_SOLVER_DATA;
 
 void cleanUpOldValueListAfterEvent(DATA *data, double time);
