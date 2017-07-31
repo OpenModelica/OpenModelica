@@ -261,13 +261,22 @@ algorithm
     end if;
 
     // initialization stuff
-    (initialEquations, removedInitialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, inRemovedInitialEquationLst, uniqueEqIndex, {});
+    // ********************
+
+    // generate equations for initDAE
+    (initialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, uniqueEqIndex, {});
+
+    // generate equations for initDAE_lambda0
     if isSome(inInitDAE_lambda0) then
       SOME(initDAE_lambda0) := inInitDAE_lambda0;
       (initialEquations_lambda0, uniqueEqIndex, tempvars) := createInitialEquations_lambda0(initDAE_lambda0, uniqueEqIndex, tempvars);
     else
       initialEquations_lambda0 := {};
     end if;
+
+    // generate equations for removed initial equations
+    (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempvars);
+
     execStat("simCode: created initialization part");
 
     shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars,
@@ -6358,18 +6367,16 @@ end createSingleAlgorithmCode;
 
 protected function createInitialEquations "author: lochel"
   input BackendDAE.BackendDAE inInitDAE;
-  input List<BackendDAE.Equation> inRemovedEqnLst;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
   output list<SimCode.SimEqSystem> outInitialEqns = {};
-  output list<SimCode.SimEqSystem> outRemovedInitialEqns = {};
   output Integer ouniqueEqIndex = iuniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars = itempvars;
 protected
   BackendDAE.EquationArray  removedEqs;
   list<SimCodeVar.SimVar> tempvars;
   Integer uniqueEqIndex;
-  list<SimCode.SimEqSystem> allEquations, knownVarEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
+  list<SimCode.SimEqSystem> allEquations, knownVarEquations, solvedEquations, removedEquations, aliasEquations;
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   BackendDAE.Variables globalKnownVars, aliasVars;
@@ -6391,12 +6398,8 @@ algorithm
   allEquations := List.append_reverse(solvedEquations, allEquations);
   allEquations := listAppend(knownVarEquations, allEquations);
 
-  // generate equations from removed initial equations
-  (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
-
   // output
   outInitialEqns := allEquations;
-  outRemovedInitialEqns := removedInitialEquations;
   ouniqueEqIndex := uniqueEqIndex;
   otempvars := tempvars;
 end createInitialEquations;

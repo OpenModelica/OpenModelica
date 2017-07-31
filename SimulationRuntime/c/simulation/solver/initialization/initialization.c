@@ -37,6 +37,7 @@
 #include "util/omc_error.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
+#include "simulation/options.h"
 #include "simulation/solver/model_help.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "util/read_matlab4.h"
@@ -73,7 +74,7 @@
 #include <math.h>
 #include <string.h>
 
-int init_lambda_steps = 1;
+int init_lambda_steps = 4;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *
@@ -193,6 +194,39 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   storePreValues(data);
   overwriteOldSimulationData(data);
 
+  /* If there is no homotopy in the model or local homotopy is activated
+     or homotopy is disabled by runtime flag '-ils=<lambda_steps>',
+     solve WITHOUT HOMOTOPY. */
+  if (data->callback->useHomotopy == 0 || init_lambda_steps < 2){
+    data->simulationInfo->lambda = 1.0;
+    data->callback->functionInitialEquations(data, threadData);
+
+  /* If there is homotopy in the model and global homotopy is activated
+     and homotopy on first try is deactivated,
+     TRY TO SOLVE WITHOUT HOMOTOPY FIRST. */
+  } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
+    /* try */
+#ifndef OMC_EMCC
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
+    data->simulationInfo->lambda = 1.0;
+    infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
+    data->callback->functionInitialEquations(data, threadData);
+    init_lambda_steps = 0;
+    infoStreamPrint(LOG_INIT, 0, "Initialization finished without homotopy.");
+
+    /* catch */
+#ifndef OMC_EMCC
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+    if(init_lambda_steps > 0)
+      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system without homotopy. If homotopy is available the homotopy method is now used.");
+  }
+
+  /* If there is homotopy in the model and global homotopy is activated
+     and solving without homotopy failed or is not wanted,
+     use GLOBAL HOMOTOPY METHOD. */
   if (data->callback->useHomotopy == 1 && init_lambda_steps > 1)
   {
     long step;
@@ -203,7 +237,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     {
       sprintf(buffer, "%s_global_homotopy.csv", mData->modelFilePrefix);
       pFile = fopen(buffer, "wt");
-      fprintf(pFile, "%s", "lambda");
+      fprintf(pFile, "\"sep=,\"\n%s", "lambda");
       for(i=0; i<mData->nVariablesReal; ++i)
         fprintf(pFile, ",%s", mData->realVarsData[i].info.name);
       fprintf(pFile, "\n");
@@ -211,7 +245,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #endif
 
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
-    for(step=0; step<init_lambda_steps-1; ++step)
+    for(step=0; step<init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
       infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
@@ -243,23 +277,13 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
         break;
     }
     messageClose(LOG_INIT);
-    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = 1");
   }
 
-  data->simulationInfo->lambda = 1.0;
-  data->callback->functionInitialEquations(data, threadData);
   storeRelations(data);
 
 #if !defined(OMC_NO_FILESYSTEM)
   if(data->callback->useHomotopy == 1 && init_lambda_steps > 1 && ACTIVE_STREAM(LOG_INIT))
-  {
-    infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
-    fprintf(pFile, "%.16g", data->simulationInfo->lambda);
-    for(i=0; i<mData->nVariablesReal; ++i)
-      fprintf(pFile, ",%.16g", data->localData[0]->realVars[i]);
-    fprintf(pFile, "\n");
     fclose(pFile);
-  }
 #endif
 
   /* check for over-determined systems */

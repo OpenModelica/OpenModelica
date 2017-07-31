@@ -46,6 +46,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
+  /* FLAG_HOMOTOPY_ON_FIRST_TRY */ "homotopyOnFirstTry",
   /* FLAG_IDA_MAXERRORTESTFAIL */  "idaMaxErrorTestFails",
   /* FLAG_IDA_MAXNONLINITERS */    "idaMaxNonLinIters",
   /* FLAG_IDA_MAXCONVFAILS */      "idaMaxConvFails",
@@ -134,6 +135,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
+  /* FLAG_HOMOTOPY_ON_FIRST_TRY */ "Directly use the homotopy method to solve the initialization problem.",
   /* FLAG_IDA_MAXERRORTESTFAIL */  "value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
   /* FLAG_IDA_MAXNONLINITERS */    "value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
   /* FLAG_IDA_MAXCONVFAILS */      "value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
@@ -144,7 +146,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                   "value specifies the initialization method",
   /* FLAG_IIT */                   "[double] value specifies a time for the initialization of the model",
-  /* FLAG_ILS */                   "[int] default: 1",
+  /* FLAG_ILS */                   "[int] default: 4",
   /* FLAG_IMPRK_ORDER */           "[int (default 5)] value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1-6",
   /* FLAG_IMPRK_LS */              "selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta",
   /* FLAG_INITIAL_STEP_SIZE */     "value specifies an initial step size for supported solver",
@@ -242,6 +244,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HELP */
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
+  /* FLAG_HOMOTOPY_ON_FIRST_TRY */
+  "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
+  "  If disabled, first try to solve without homotopy and only use homotopy as fallback option.",
   /* FLAG_IDA_MAXERRORTESTFAIL */
   "  value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
   /* FLAG_IDA_MAXNONLINITERS */
@@ -269,7 +274,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value [Real] specifies a time for the initialization of the model.",
   /* FLAG_ILS */
   "  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\n"
-  "  The value is an Integer with default value 1.",
+  "  The value is an Integer with default value 4.",
   /* FLAG_IMPRK_ORDER */
   "  Value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1 to 6. Default order is 5.",
   /* FLAG_IMPRK_LS */
@@ -452,6 +457,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_EMIT_PROTECTED */        FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
+  /* FLAG_HOMOTOPY_ON_FIRST_TRY */ FLAG_TYPE_FLAG,
   /* FLAG_IDA_MAXERRORTESTFAIL */  FLAG_TYPE_OPTION,
   /* FLAG_IDA_MAXNONLINITERS */    FLAG_TYPE_OPTION,
   /* FLAG_IDA_MAXCONVFAILS */      FLAG_TYPE_OPTION,
