@@ -6467,18 +6467,37 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let loopHeadIter = (iterators |> iter as REDUCTIONITER(__) =>
     let identType = expTypeFromExpModelica(iter.exp)
     let arrayType = expTypeFromExpArray(iter.exp)
-    let loopVar = '<%iter.id%>_loopVar'
+    let iteratorName = contextIteratorName(iter.id, context)
+    let loopVar = match iter.exp case RANGE(__) then iteratorName else '<%iter.id%>_loopVar'
+    let stepVar = match iter.exp case RANGE(__) then tempDecl(identType,&tmpVarDecls)
+    let stopVar = match iter.exp case RANGE(__) then tempDecl(identType,&tmpVarDecls)
     let &guardExpPre = buffer ""
     let &tmpVarDecls += (match identType
       case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
-      else '<%arrayType%> <%loopVar%>;<%\n%>')
-    let firstIndex = match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls)
-    let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
+      else (match iter.exp case RANGE(__) then "" else '<%arrayType%> <%loopVar%>;<%\n%>'))
+    let firstIndex = match iter.exp case RANGE(__) then tempDecl(identType,&tmpVarDecls) else (match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls))
+    let rangeExpStep = (match iter.exp case RANGE(step=NONE()) then "1 /* Range step-value */" case RANGE(step=SOME(step)) then '<%daeExp(step,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range step-value */' else "")
+    let rangeExpStop = (match iter.exp case RANGE(__) then '<%daeExp(stop,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range stop-value */' else "")
+    let rangeExp = (match iter.exp case RANGE(__) then '<%daeExp(start,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range start-value */' else daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction))
+    let &rangeExpPre += if rangeExpStep then '<%stepVar%> = <%rangeExpStep%>;<%\n%>'
+    let &rangeExpPre += if rangeExpStop then '<%stopVar%> = <%rangeExpStop%>;<%\n%>'
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
-    let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
+    let &rangeExpPre += if rangeExpStop then
+      <<
+      if (<%stepVar%> == 0) {
+        FILE_INFO info = omc_dummyFileInfo;
+        omc_assert(threadData, info, "Range with a step of zero.");
+      }<%\n%>
+      >>
+    let &tmpVarDecls += match iter.exp case RANGE(__) then 'modelica_integer <%iter.id%>_length;<%\n%>'
+    let &rangeExpPre += match iter.exp case RANGE(__) then '<%firstIndex%> = <%iteratorName%> /* Remember the range start-value */;<%\n%>' else (if firstIndex then '<%firstIndex%> = 1;<%\n%>')
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "")
-    let iteratorName = contextIteratorName(iter.id, context)
+    let &rangeExpPre += match iter.exp case RANGE(__) then '<%iteratorName%> = (<%rangeExp%>)-<%stepVar%>;<%\n%>' /* We pre-increment the counter, so subtract the step for the first variable for ranges */
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
+    let &rangeExpPre += if rangeExpStop then
+      <<
+      <%iter.id%>_length = ((<%stopVar%>-<%firstIndex%>)/<%stepVar%>)+1;
+      >>
     let guardExp =
       <<
       <%&guardExpPre%>
@@ -6525,26 +6544,38 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         )
       )
       else
-      let addr = match iter.ty
-        case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '*((<%rec_name%>*)generic_array_element_addr1(&<%loopVar%>, sizeof(<%rec_name%>), <%firstIndex%>++))'
-        else
-          '*(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++))'
-      (if stringEq(guardCond,"") then
-      <<
-      if(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
-        <%iteratorName%> = <%addr%>;
-        <%endLoop%>--;
-      }
-      >>
-      else
-      <<
-      while(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
-        <%iteratorName%> = <%addr%>;
-        <%guardExp%>
-      }
-      >>)))
+      ( /* Not metatype */
+        match iter.exp
+        case RANGE(__) then
+          <<
+          <%if stringEq(guardCond,"") then "if" else "while"%> (<%stepVar%> > 0 ? <%iteratorName%>+<%stepVar%> <= <%stopVar%> : <%iteratorName%>+<%stepVar%> >= <%stopVar%>) {
+            <%iteratorName%> += <%stepVar%>;
+            <%if stringEq(guardCond,"") then '<%endLoop%>--;' else guardExp%>
+          }
+          >>
+        else /* Not a range; allocate a big array... */
+          let addr = match iter.ty
+            case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
+              let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+              '*((<%rec_name%>*)generic_array_element_addr1(&<%loopVar%>, sizeof(<%rec_name%>), <%firstIndex%>++))'
+            else
+              '*(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++))'
+          (if stringEq(guardCond,"") then
+          <<
+          if(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
+            <%iteratorName%> = <%addr%>;
+            <%endLoop%>--;
+          }
+          >>
+          else
+          <<
+          while(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
+            <%iteratorName%> = <%addr%>;
+            <%guardExp%>
+          }
+          >>
+        )))
+      )
   let firstValue = (match ri.path
      case IDENT(name="array") then
        let length = tempDecl("int",&tmpVarDecls)
@@ -6552,7 +6583,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else match iter.exp case RANGE(__) then '<%iter.id%>_length' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
          "")
        <<
        <%arrIndex%> = 1;
