@@ -6822,11 +6822,11 @@ public function getSolvedSystem "Run the equation system pipeline."
   input Option<list<String>> strPostOptModules = NONE();
   output BackendDAE.BackendDAE outSimDAE;
   output BackendDAE.BackendDAE outInitDAE;
-  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0;
+  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0_option;
   output Option<BackendDAE.InlineData > outInlineData;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
 protected
-  BackendDAE.BackendDAE dae, simDAE;
+  BackendDAE.BackendDAE dae, simDAE, outInitDAE_lambda0;
   list<tuple<BackendDAEFunc.optimizationModule, String>> preOptModules;
   list<tuple<BackendDAEFunc.optimizationModule, String>> postOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
@@ -6879,7 +6879,7 @@ algorithm
   end if;
 
   // generate system for initialization
-  (outInitDAE, outInitDAE_lambda0, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
 
   // use function tree from initDAE further for simDAE
   simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
@@ -6903,6 +6903,10 @@ algorithm
   // remove unused functions
   funcTree := BackendDAEOptimize.copyRecordConstructorAndExternalObjConstructorDestructor(BackendDAEUtil.getFunctions(simDAE.shared));
   funcTree := BackendDAEOptimize.removeUnusedFunctions(outInitDAE.eqs, outInitDAE.shared, outRemovedInitialEquationLst, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
+  if isSome(outInitDAE_lambda0_option) then
+    SOME(outInitDAE_lambda0) := outInitDAE_lambda0_option;
+    funcTree := BackendDAEOptimize.removeUnusedFunctions(outInitDAE_lambda0.eqs, simDAE.shared, {}, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
+  end if;
   funcTree := BackendDAEOptimize.removeUnusedFunctions(simDAE.eqs, simDAE.shared, {}, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
   outSimDAE := BackendDAEUtil.setFunctionTree(simDAE, funcTree);
   execStat("remove unused functions");
