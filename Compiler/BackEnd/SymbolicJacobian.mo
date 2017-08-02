@@ -1874,6 +1874,9 @@ algorithm
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
 
+        // Add the function tree to the jacobian backendDAE
+        backendDAE = BackendDAEUtil.setFunctionTree(backendDAE, funcs);
+
         backendDAE = optimizeJacobianMatrix(backendDAE,comref_differentiatedVars,comref_vars);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated Jacobian DAE time: " + realString(clock()) + "\n");
