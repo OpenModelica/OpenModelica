@@ -566,6 +566,7 @@ algorithm
     case (BLOCK(),SCode.R_BLOCK()) then ();
     case (MODEL(),SCode.R_MODEL()) then ();
 
+    case (CONNECTOR(),SCode.R_TYPE()) then ();
     case (CONNECTOR(isExpandable=false),SCode.R_CONNECTOR(false)) then ();
     case (CONNECTOR(isExpandable=true),SCode.R_CONNECTOR(true)) then ();
     case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_CONNECTOR(_)) then ();
@@ -577,6 +578,7 @@ algorithm
     case (TYPE_CLOCK(),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_ENUM(),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
     case (ENUMERATION(),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
+    case (TYPE(),SCode.R_CONNECTOR()) then (); // Note: Only allowed in some cases (outputs, etc). Happens when the base class is type T extends Real; end T;
 
     case (TYPE(),SCode.R_TYPE()) then ();
     case (TYPE_INTEGER(),SCode.R_TYPE()) then ();
