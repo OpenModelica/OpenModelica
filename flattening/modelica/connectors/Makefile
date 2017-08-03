@@ -60,6 +60,7 @@ TankPI.mo \
 TankPID.mo \
 TanksConnectedPI.mo \
 Ticket4062.mo \
+TypeConnector.mo \
 Units2.mo \
 ZeroDimUnconnectedFlow1.mo \
 ZeroDimUnconnectedFlow2.mo \
