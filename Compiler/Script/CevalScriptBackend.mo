@@ -7404,20 +7404,15 @@ algorithm
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         newcdef = Interactive.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, Absyn.dummyInfo));
-        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+        if Absyn.pathIsIdent(Absyn.makeNotFullyQualified(modelpath)) then
+          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+        else
+          package_ = Absyn.stripLast(modelpath);
+          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+        end if;
       then
         (true, newp);
-
-    case (modelpath, state_, ann,(p as Absyn.PROGRAM()))
-      equation
-        cdef = Interactive.getPathedClassInProgram(modelpath, p);
-        package_ = Absyn.stripLast(modelpath);
-        cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
-        newcdef = Interactive.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
-                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, Absyn.dummyInfo));
-        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
-      then
-        (true, newp);
+    case (_,_,_,(p as Absyn.PROGRAM())) then (false, p);
   end match;
 end addInitialStateWithAnnotation;
 
@@ -7439,17 +7434,14 @@ algorithm
 
     case (modelpath, state_, (p as Absyn.PROGRAM()))
       equation
-        modelwithin = Absyn.stripLast(modelpath);
         cdef = Interactive.getPathedClassInProgram(modelpath, p);
         newcdef = deleteInitialStateInClass(cdef, state_);
-        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
-      then
-        (true, newp);
-    case (modelpath, state_, (p as Absyn.PROGRAM()))
-      equation
-        cdef = Interactive.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteInitialStateInClass(cdef, state_);
-        newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
+        if Absyn.pathIsIdent(Absyn.makeNotFullyQualified(modelpath)) then
+          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
+        else
+          modelwithin = Absyn.stripLast(modelpath);
+          newp = Interactive.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
+        end if;
       then
         (true, newp);
     case (_,_,(p as Absyn.PROGRAM())) then (false, p);
