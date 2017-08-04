@@ -1298,18 +1298,22 @@ algorithm
       list<DAE.Exp> expLst, constExps;
       list<DAE.ComponentRef> constCrefs;
     case(_,{},_,_)
-      equation
-        lhsCref = Expression.expCref(lhsExpIn);
-        constCrefs = List.map(constScalarCrefs,ComponentReference.crefStripFirstIdent);
-        constCrefs = List.map1(constCrefs,ComponentReference.joinCrefsR,lhsCref);
+      algorithm
+        lhsCref := Expression.expCref(lhsExpIn);
+        constCrefs := List.map(constScalarCrefs,ComponentReference.crefStripFirstIdent);
+        constCrefs := List.map1(constCrefs,ComponentReference.joinCrefsR,lhsCref);
      then
        (constCrefs,{});
     case({},_,_,DAE.TUPLE(PR=expLst))
-      equation
-        // tuple equation with only 1d or completely complex outputs
-       pos = List.map1(constComplCrefs,List.position,allOutputCrefs);
-       constExps = List.map1(pos,List.getIndexFirst,expLst);
-       constCrefs = List.map(constExps,Expression.expCref);
+      algorithm
+       // tuple equation with only 1d or completely complex outputs
+       pos := {};
+       for lhsCref in constComplCrefs loop
+         pos := List.position1OnTrue(allOutputCrefs, ComponentReference.crefEqual,lhsCref)::pos;
+       end for;
+       pos := listReverse(pos);
+       constExps := List.map1(pos,List.getIndexFirst,expLst);
+       constCrefs := List.map(constExps,Expression.expCref);
        then
          ({},constCrefs);
     else
