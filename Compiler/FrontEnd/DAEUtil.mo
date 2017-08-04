@@ -742,12 +742,8 @@ end removeInnerAttribute;
 public function varCref " returns the component reference of a variable"
   input DAE.Element elt;
   output DAE.ComponentRef cr;
-protected
-  DAE.ComponentRef c;
-  DAE.Type ty;
 algorithm
-  DAE.VAR(componentRef = c, ty = ty) := elt;
-  cr := ComponentReference.crefSetLastType(c,ty);
+  DAE.VAR(componentRef = cr) := elt;
 end varCref;
 
 public function getVariableAttributes " gets the attributes of a DAE.Element that is VAR"
