@@ -3029,6 +3029,36 @@ algorithm
   mapTplOut := (algsOut, repl);
 end evaluateFunctions_updateStatementEmptyRepl;
 
+protected function evaluateFunctions_updateAllStatements "replace and update all statements and use an initial replacement for each branch
+author: ptaeuber"
+  input list<DAE.Statement> stmtsIn;
+  input list<list<DAE.Statement>> elseStmtsLstIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output list<list<DAE.Statement>> stmtsLstOut;
+  input output DAE.FunctionTree funcTree;
+  input output Integer idx;
+protected
+  BackendVarTransform.VariableReplacements repl;
+  list<DAE.Statement> stmts;
+algorithm
+  // get constant replacements as copy of replIn
+  repl := getOnlyConstantReplacements(replIn);
+
+  // update if-branch
+  (stmts, funcTree, _, idx) := evaluateFunctions_updateStatement(stmtsIn, funcTree, repl, idx, {});
+
+  // update else(if)-branches
+  stmtsLstOut := {stmts};
+  for elseStmts in elseStmtsLstIn loop
+    // get constant replacements as copy of replIn
+    repl := getOnlyConstantReplacements(replIn);
+    // update else(if)-branch
+    (stmts, funcTree, _, idx) := evaluateFunctions_updateStatement(elseStmts, funcTree, repl, idx, {});
+    stmtsLstOut := stmts::stmtsLstOut;
+  end for;
+  stmtsLstOut := listReverse(stmtsLstOut);
+end evaluateFunctions_updateAllStatements;
+
 protected function predictIfOutput "evaluate outputs for all if/elseif/else and check if its constant at any time
 author: Waurich TUD 2014-04"
   input DAE.Statement stmtIn;
@@ -3041,7 +3071,7 @@ algorithm
       Boolean predicted;
       Integer idx;
       list<Integer> constantOutputs,idxLst;
-      BackendVarTransform.VariableReplacements repl,replIn;
+      BackendVarTransform.VariableReplacements replIn;
       list<BackendVarTransform.VariableReplacements> replLst;
       DAE.Else else_;
       DAE.Exp exp1;
@@ -3053,43 +3083,51 @@ algorithm
       list<DAE.Exp> expLst,outExps,constOutExps,varOutExps, allLHS;
       list<list<DAE.Exp>> expLstLst;
       list<DAE.Statement> stmts1,addStmts;
-      list<list<DAE.Statement>> stmtsLst;
+      list<list<DAE.Statement>> stmtsLst, elseStmtsLst;
       list<tuple<list<DAE.Statement>,BackendVarTransform.VariableReplacements>> tplLst;
     case(DAE.STMT_IF(statementLst=stmts1, else_=else_),FUNCINFO(replIn,funcTree,idx))
        equation
          // get a list of all statements for each case
-         stmtsLst = getDAEelseStatemntLsts(else_,{});
-         stmtsLst = listReverse(stmtsLst);
-         stmtsLst = stmts1::stmtsLst;
-         //print("all stmts to predict: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
+         elseStmtsLst = getDAEelseStatemntLsts(else_,{});
+         elseStmtsLst = listReverse(elseStmtsLst);
+         // print("all stmts to predict: \n"+stringDelimitList(List.map(List.flatten(stmts1::elseStmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
 
          // replace with the already known stuff and build the new replacements
-         repl = getOnlyConstantReplacements(replIn);
-         (stmtsLst,_) = List.map4_2(stmtsLst,BackendVarTransform.replaceStatementLstRHS,repl,NONE(),{},false);
-         //print("al stmts replaced: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
-         (tplLst, funcTree, idx) = List.mapFold2(stmtsLst, evaluateFunctions_updateStatementEmptyRepl, funcTree, idx);
-         stmtsLst = List.map(tplLst,Util.tuple21);
-         //print("all evaled stmts1: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"---------\n")+"\n");
+         // repl = getOnlyConstantReplacements(replIn);
+         // (stmtsLst,_) = List.map4_2(stmtsLst,BackendVarTransform.replaceStatementLstRHS,repl,NONE(),{},false);
+         // print("al stmts replaced: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
+         // (tplLst, funcTree, idx) = List.mapFold2(stmtsLst, evaluateFunctions_updateStatementEmptyRepl, funcTree, idx);
+         // stmtsLst = List.map(tplLst,Util.tuple21);
+         //
+         // ptaeuber: Do not do the above, it could lead to wrong results
+         // a := 0;               a := 0;
+         // if (...) then         if (...) then
+         //   a := a + 1;  ---->    a := 0 + 1;
+         //   b := a;               b := 0;
+         // end if;               end if;
+
+         (stmtsLst, funcTree, idx) = evaluateFunctions_updateAllStatements(stmts1, elseStmtsLst, replIn, funcTree, idx);
+         // print("all evaluated stmts: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"---------\n")+"\n");
          replLst = List.map(stmtsLst,collectReplacements);
          //replLst = List.map(replLst,getOnlyConstantReplacements);
-         //List.map_0(replLst,BackendVarTransform.dumpReplacements);
+         // List.map_0(replLst,BackendVarTransform.dumpReplacements);
 
          // get the outputs of every case
          expLst = List.fold(List.flatten(stmtsLst),getStatementLHS,{});
          expLst = List.unique(expLst);
          allLHS = listReverse(expLst);
-         //print("the outputs: "+stringDelimitList(List.map(allLHS,ExpressionDump.printExpStr),"\n")+"\n");
+         // print("the outputs: "+stringDelimitList(List.map(allLHS,ExpressionDump.printExpStr),"\n")+"\n");
          expLstLst = List.map1(replLst,replaceExps,allLHS);
-         //print("the outputs replaced: \n"+stringDelimitList(List.map(expLstLst,ExpressionDump.printExpListStr),"\n")+"\n\n");
+         // print("the outputs replaced: \n"+stringDelimitList(List.map(expLstLst,ExpressionDump.printExpListStr),"\n")+"\n\n");
 
          // compare the constant outputs
          constantOutputs = compareConstantExps(expLstLst);
          outExps = List.map1(constantOutputs,List.getIndexFirst,allLHS);
          _ = List.map(outExps,Expression.expCref);
-         //print("constantOutputs: "+stringDelimitList(List.map(constantOutputs,intString),",")+"\n");
+         // print("constantOutputs: "+stringDelimitList(List.map(constantOutputs,intString),",")+"\n");
          expLst = List.map1(constantOutputs,List.getIndexFirst,listHead(expLstLst));
-         //print("the constant shared outputs: "+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
-         //print("the constant shared output crefs: "+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n")+"\n");
+         // print("the constant shared outputs: "+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
+         // print("the constant shared output crefs: "+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n")+"\n");
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
            print("--> the predicted const outputs:\n"+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
          end if;
@@ -3098,16 +3136,15 @@ algorithm
          //_ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
          //bcall(not predicted,print,"remove the replacement for: "+stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+"\n");
-         repl = replIn;
          // build the additional statements and update the old one
          addStmts = List.map2(List.intRange(listLength(outExps)),makeAssignmentMap,outExps,expLst);
          stmtNew = updateStatementsInIfStmt(stmtsLst,stmtIn);
 
-         //print("the new predicted stmts: \n"+stringDelimitList(List.map({stmtNew},DAEDump.ppStatementStr),"\n")+"\nAnd the additional "+stringDelimitList(List.map(addStmts,DAEDump.ppStatementStr),"\n")+"\n");
+         // print("the new predicted stmts: \n"+stringDelimitList(List.map({stmtNew},DAEDump.ppStatementStr),"\n")+"\nAnd the additional "+stringDelimitList(List.map(addStmts,DAEDump.ppStatementStr),"\n")+"\n");
 
          //repl = BackendVarTransform.addReplacements(replIn,crefs,expLst,NONE());
        then
-         (({stmtNew},addStmts),FUNCINFO(repl,funcTree,idx));
+         (({stmtNew},addStmts),FUNCINFO(replIn,funcTree,idx));
    else
        (({stmtIn},{}),infoIn);
   end matchcontinue;
