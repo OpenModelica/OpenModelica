@@ -2172,6 +2172,20 @@ algorithm
       then
         (cache,v,st);
 
+    case (cache,_,"deltaSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars)},st,_)
+      equation
+        filename = Util.absoluteOrRelative(filename);
+        filename_1 = Util.testsuiteFriendlyPath(filename_1);
+        filename_1 = Util.absoluteOrRelative(filename_1);
+        vars_1 = List.map(cvars, ValuesUtil.extractValueString);
+        val = SimulationResults.deltaSimulationResults(filename,filename_1,vars_1);
+      then
+        (cache,Values.REAL(val),st);
+
+    case (cache,_,"deltaSimulationResults",_,st,_)
+      then (cache,Values.STRING("Error in deltaSimulationResults"),st);
+
+
     case (cache,_,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
 

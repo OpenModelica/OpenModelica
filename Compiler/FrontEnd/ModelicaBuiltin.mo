@@ -2889,6 +2889,17 @@ external "builtin";
 annotation(preferredView="text");
 end compareSimulationResults;
 
+public function deltaSimulationResults "calculates the sum of absolute errors."
+  input String filename;
+  input String reffilename;
+  input String[:] vars = fill("",0);
+  output Real result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>For each data point in the reference file, the sum of all absolute error sums of all given variables is calculated.</p>
+</html>"),preferredView="text");
+end deltaSimulationResults;
+
 public function diffSimulationResults "compares simulation results."
   input String actualFile;
   input String expectedFile;

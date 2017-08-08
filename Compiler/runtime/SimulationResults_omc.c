@@ -72,6 +72,12 @@ void* SimulationResults_cmpSimulationResults(int runningTestsuite, const char *f
   return SimulationResultsCmp_compareResults(1,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,0,0,vars,0,NULL,0,NULL);
 }
 
+double SimulationResults_deltaSimulationResults(const char *filename,const char *reffilename, void *vars)
+{
+  double res = SimulationResultsCmp_deltaResults(filename,reffilename,vars);
+  return res;
+}
+
 void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *filename,const char *reffilename,const char *logfilename, double refTol, double reltolDiffMaxMin, double rangeDelta, void *vars, int keepEqualResults, int *success)
 {
   return SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,logfilename,refTol,0,reltolDiffMaxMin,rangeDelta,vars,keepEqualResults,success,0,NULL);

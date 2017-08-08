@@ -159,6 +159,39 @@ static char almostEqualWithDefaultTolerance(double a, double b)
   return almostEqualRelativeAndAbs(a,b,DOUBLEEQUAL_REL,DOUBLEEQUAL_TOTAL);
 }
 
+static double deltaData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata)
+{
+  unsigned int i, iRef, i2;
+  double res, val, valRef, t;
+  res = 0;
+  i = 0;
+  for (iRef=0;iRef < reftime->n;iRef++){
+    valRef = refdata->data[iRef];
+    t = reftime->data[iRef];
+    //get left and right reference point to interpolate
+    while((time->data[i] < t))
+    {
+      i++;
+    }
+    i2 = i+1;
+    //there is a result value at time t
+    if (fabs(time->data[i]-t) <= max((0.0001*time->data[time->n]),1e-12))
+    {
+      val = data->data[i];
+    }
+    //interpolate result value at time t
+    else
+    {
+      //printf("xl %f   xr %f    tl %f    tr %f  \n", data->data[i], data->data[i2], time->data[i], time->data[i2]);
+      val = (data->data[i2] - data->data[i])/(time->data[i2] - time->data[i])*(t - time->data[i])+data->data[i];
+    }
+    res += fabs(valRef-val);
+    //fprintf(stderr, "at time %f, val: %f and valRef: %f  and res %f\n",t,val,valRef, res);
+  }
+  return res;
+}
+
+
 static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix)
 {
   unsigned int i,j,k,j_event;
@@ -734,6 +767,167 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   SimulationResultsImpl__close(&simresglob_c);
   SimulationResultsImpl__close(&simresglob_ref);
 
+  return res;
+}
+
+/* Common, huge function, for both result comparison and result diff */
+double SimulationResultsCmp_deltaResults(const char *filename, const char *reffilename, void *vars)
+{
+  double res = 0;
+  unsigned int i,size,size_ref, len, k, j;
+  unsigned int ncmpvars = 0;
+  void *allvars,*allvarsref;
+  char *var,*var1;
+  char **cmpvars=NULL;
+  int suggestReadAll=0;
+  DataField time,timeref,data,dataref;
+  const char *timeVarName, *timeVarNameRef;
+  int offset, offsetRef;
+  const char *msg[2] = {"",""};
+
+  /* open files */
+  /*  fprintf(stderr, "Open File %s\n", filename); */
+
+  SimulationResultsImpl__close(&simresglob_c);
+  SimulationResultsImpl__close(&simresglob_ref);
+
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
+    msg[0] = filename;
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error opening file: %s."), msg, 1);
+    return -1;
+  }
+  /* fprintf(stderr, "Open File %s\n", reffilename); */
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
+    msg[0] = filename;
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error opening reference file: %s."), msg, 1);
+    return -1;
+  }
+
+  size = SimulationResultsImpl__readSimulationResultSize(filename,&simresglob_c);
+   /*fprintf(stderr, "Read size of File %s size= %d\n", filename,size);*/
+  size_ref = SimulationResultsImpl__readSimulationResultSize(reffilename,&simresglob_ref);
+   /*fprintf(stderr, "Read size of File %s size= %d\n", reffilename,size_ref);*/
+
+  /* get vars to compare */
+  cmpvars = getVars(vars,&ncmpvars);
+  /* if no var compare all vars */
+  allvars = SimulationResultsImpl__readVarsFilterAliases(filename,&simresglob_c);
+  allvarsref = SimulationResultsImpl__readVarsFilterAliases(reffilename,&simresglob_ref);
+  if (ncmpvars==0) {
+      suggestReadAll = 1;
+      cmpvars = getVars(allvarsref,&ncmpvars);
+      if (ncmpvars==0){
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error Getting Vars."), msg, 1);
+        return -1;
+      }
+    }
+  #ifdef DEBUGOUTPUT
+    fprintf(stderr, "Compare Vars:\n");
+    for(i=0;i<ncmpvars;i++)
+      fprintf(stderr, "Var: %s\n", cmpvars[i]);
+  #endif
+
+  /*  get time */
+ /*fprintf(stderr, "get time\n");*/
+  timeVarName = getTimeVarName(allvars);
+  timeVarNameRef = getTimeVarName(allvarsref);
+  time = getData(timeVarName,filename,size,suggestReadAll,&simresglob_c,0);
+  if (time.n==0) {
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error get time!"), msg, 0);
+    return -1;
+  }
+   /*fprintf(stderr, "get reftime\n");*/
+  timeref = getData(timeVarNameRef,reffilename,size_ref,suggestReadAll,&simresglob_ref,0);
+  if (timeref.n==0) {
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error get reference time!"), msg, 0);
+    return -1;
+  }
+
+  /* check if time is larger or less reftime */
+  if (time.data[0] > timeref.data[0]) {
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("The result file starts before the reference file."), msg, 0);
+    return -1;
+  }
+  if(time.data[time.n-1] < timeref.data[timeref.n-1]){
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("The result file ends before the reference file."), msg, 0);
+    return -1;
+  }
+
+  /* calculate offsets */
+  for(offset=0; offset<time.n-1 && time.data[offset] == time.data[offset+1]; ++offset);
+  for(offsetRef=0; offsetRef<timeref.n-1 && timeref.data[offsetRef] == timeref.data[offsetRef+1]; ++offsetRef);
+  var1=NULL;
+  /* compare vars */
+  /* fprintf(stderr, "compare vars\n"); */
+  for (i=0;i<ncmpvars;i++) {
+    var = cmpvars[i];
+    len = strlen(var);
+    if (var1) {
+      free(var1);
+      var1 = NULL;
+    }
+    var1 = (char*) omc_alloc_interface.malloc(len+10);
+    k = 0;
+    for (j=0;j<len;j++) {
+      if (var[j] !='\"' ) {
+        var1[k] = var[j];
+        k +=1;
+      }
+    }
+    var1[k] = 0;
+    /* fprintf(stderr, "compare var: %s\n",var); */
+    /* check if in ref_file */
+    dataref = getData(var1,reffilename,size_ref,suggestReadAll,&simresglob_ref,0);
+    if (dataref.n==0) {
+      if (dataref.data) {
+        free(dataref.data);
+      }
+      if (var1) {
+        GC_free(var1);
+        var1 = NULL;
+      }
+      continue;
+    }
+    /*  check if in file */
+    data = getData(var1,filename,size,suggestReadAll,&simresglob_c,0);
+    if (data.n==0)  {
+      if (data.data) {
+        free(data.data);
+      }
+      if (var1) {
+        GC_free(var1);
+        var1 = NULL;
+      }
+      continue;
+    }
+    /* adjust initial data points */
+    for(j=offset; j>0; j--)
+      data.data[j-1] = data.data[j];
+    for(j=offsetRef; j>0; j--)
+      dataref.data[j-1] = dataref.data[j];
+
+    /* calulate delta */
+    res += deltaData(var,&time,&timeref,&data,&dataref);
+
+    /* free */
+    if (dataref.data) {
+      free(dataref.data);
+    }
+    if (data.data) {
+      free(data.data);
+    }
+    if (var1) {
+      GC_free(var1);
+      var1 = NULL;
+    }
+  }
+  if (cmpvars) GC_free(cmpvars);
+  if (time.data) free(time.data);
+  if (timeref.data) free(timeref.data);
+
+  /* close files */
+  SimulationResultsImpl__close(&simresglob_c);
+  SimulationResultsImpl__close(&simresglob_ref);
   return res;
 }
 
