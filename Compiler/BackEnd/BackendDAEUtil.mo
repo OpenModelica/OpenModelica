@@ -7876,7 +7876,7 @@ algorithm
     index := index+1;
   end for;
   if listEmpty(outIndexes) then
-    Error.addCompilerError("'" + name + "' is not a valid optimization module. Please check the flags carefully.");
+    Error.addCompilerError("'" + inModuleName + "' is not a valid optimization module. Please check the flags carefully.");
     fail();
   end if;
 end getModuleIndexes;
