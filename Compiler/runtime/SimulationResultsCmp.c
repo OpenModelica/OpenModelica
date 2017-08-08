@@ -175,7 +175,7 @@ static double deltaData(char* varname, DataField *time, DataField *reftime, Data
     }
     i2 = i+1;
     //there is a result value at time t
-    if (fabs(time->data[i]-t) <= max((0.0001*time->data[time->n]),1e-12))
+    if (fabs(time->data[i]-t) <= fmax((0.0001*time->data[time->n]),1e-12))
     {
       val = data->data[i];
     }
