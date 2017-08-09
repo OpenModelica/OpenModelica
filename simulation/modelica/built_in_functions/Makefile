@@ -4,6 +4,7 @@ TESTFILES = \
 BuiltinMath.mos \
 Compare.mos \
 Delay.mos \
+Delta.mos \
 dertest.mos  \
 DummyDerMatching.mos  \
 Epidemics1.mos \
