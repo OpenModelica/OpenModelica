@@ -72,9 +72,9 @@ void* SimulationResults_cmpSimulationResults(int runningTestsuite, const char *f
   return SimulationResultsCmp_compareResults(1,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,0,0,vars,0,NULL,0,NULL);
 }
 
-double SimulationResults_deltaSimulationResults(const char *filename,const char *reffilename, void *vars)
+double SimulationResults_deltaSimulationResults(const char *filename,const char *reffilename, const char *methodname, void *vars)
 {
-  double res = SimulationResultsCmp_deltaResults(filename,reffilename,vars);
+  double res = SimulationResultsCmp_deltaResults(filename,reffilename,methodname,vars);
   return res;
 }
 

@@ -2892,6 +2892,7 @@ end compareSimulationResults;
 public function deltaSimulationResults "calculates the sum of absolute errors."
   input String filename;
   input String reffilename;
+  input String method "method to compute then error. choose 1norm, 2norm, maxerr";
   input String[:] vars = fill("",0);
   output Real result;
 external "builtin";

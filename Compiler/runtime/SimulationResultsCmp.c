@@ -60,6 +60,12 @@ typedef struct {
   unsigned int n_max;
 } DiffDataField;
 
+typedef enum {
+  NORM1,
+  NORM2,
+  MAX_ERR
+} ErrorMethod;
+
 #define DOUBLEEQUAL_TOTAL 0.0000000001
 #define DOUBLEEQUAL_REL 0.00001
 
@@ -159,11 +165,12 @@ static char almostEqualWithDefaultTolerance(double a, double b)
   return almostEqualRelativeAndAbs(a,b,DOUBLEEQUAL_REL,DOUBLEEQUAL_TOTAL);
 }
 
-static double deltaData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata)
+static double deltaData(ErrorMethod errMethod, DataField *time, DataField *reftime, DataField *data, DataField *refdata)
 {
   unsigned int i, iRef, i2;
-  double res, val, valRef, t;
+  double res,res0, val, valRef, t;
   res = 0;
+  res0 = 0;
   i = 0;
   for (iRef=0;iRef < reftime->n;iRef++){
     valRef = refdata->data[iRef];
@@ -185,8 +192,23 @@ static double deltaData(char* varname, DataField *time, DataField *reftime, Data
       //printf("xl %f   xr %f    tl %f    tr %f  \n", data->data[i], data->data[i2], time->data[i], time->data[i2]);
       val = (data->data[i2] - data->data[i])/(time->data[i2] - time->data[i])*(t - time->data[i])+data->data[i];
     }
-    res += fabs(valRef-val);
-    //fprintf(stderr, "at time %f, val: %f and valRef: %f  and res %f\n",t,val,valRef, res);
+    switch(errMethod){
+      case NORM1:
+        res0 += fabs(valRef-val);  break;
+      case NORM2:
+        res0 += pow((valRef-val),2); break;
+      case MAX_ERR:
+        res0 = fmax(fabs(valRef-val),res0); break;
+      default:
+        res0 += fabs(valRef-val); break;
+    }
+    //fprintf(stderr, "at time %f, val: %f and valRef: %f  and res %f\n",t,val,valRef, res0);
+  }
+  switch(errMethod){
+  case NORM2:
+    res = sqrt(res0); break;
+  default:
+    res = res0; break;
   }
   return res;
 }
@@ -770,8 +792,9 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   return res;
 }
 
+
 /* Common, huge function, for both result comparison and result diff */
-double SimulationResultsCmp_deltaResults(const char *filename, const char *reffilename, void *vars)
+double SimulationResultsCmp_deltaResults(const char *filename, const char *reffilename, const char *methodname, void *vars)
 {
   double res = 0;
   unsigned int i,size,size_ref, len, k, j;
@@ -784,6 +807,24 @@ double SimulationResultsCmp_deltaResults(const char *filename, const char *reffi
   const char *timeVarName, *timeVarNameRef;
   int offset, offsetRef;
   const char *msg[2] = {"",""};
+
+  /* choose error method */
+  ErrorMethod errMethod;
+
+  if (0 == strcmp(methodname, "1norm")){
+    errMethod = NORM1;
+  }
+  else if (0 == strcmp(methodname, "2norm")){
+    errMethod = NORM2;
+  }
+  else if (0 == strcmp(methodname, "maxerr")){
+    errMethod = MAX_ERR;
+  }
+  else {
+    msg[0] = methodname;
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Unknown method string: %s. 1-Norm is chosen."), msg, 1);
+    errMethod = NORM1;
+  }
 
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
@@ -907,7 +948,7 @@ double SimulationResultsCmp_deltaResults(const char *filename, const char *reffi
       dataref.data[j-1] = dataref.data[j];
 
     /* calulate delta */
-    res += deltaData(var,&time,&timeref,&data,&dataref);
+    res += deltaData(errMethod,&time,&timeref,&data,&dataref);
 
     /* free */
     if (dataref.data) {

@@ -111,9 +111,10 @@ end cmpSimulationResults;
 public function deltaSimulationResults
   input String filename;
   input String reffilename;
+  input String method;
   input list<String> vars;
   output Real res;
-  external "C" res=SimulationResults_deltaSimulationResults(filename,reffilename,vars) annotation(Library = "omcruntime");
+  external "C" res=SimulationResults_deltaSimulationResults(filename,reffilename,method,vars) annotation(Library = "omcruntime");
 end deltaSimulationResults;
 
 public function diffSimulationResults
