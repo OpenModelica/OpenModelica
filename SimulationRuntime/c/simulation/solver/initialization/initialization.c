@@ -200,6 +200,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   if (data->callback->useHomotopy == 0 || init_lambda_steps < 2){
     data->simulationInfo->lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
+    infoStreamPrint(LOG_STDOUT, 0, "The initialization finished successfully without homotopy method.");
 
   /* If there is homotopy in the model and global homotopy is activated
      and homotopy on first try is deactivated,
@@ -214,14 +215,14 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
     data->callback->functionInitialEquations(data, threadData);
     init_lambda_steps = 0;
-    infoStreamPrint(LOG_INIT, 0, "Initialization finished without homotopy.");
+    infoStreamPrint(LOG_STDOUT, 0, "The initialization finished successfully without homotopy method.");
 
     /* catch */
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if(init_lambda_steps > 0)
-      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system without homotopy. If homotopy is available the homotopy method is now used.");
+      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system without homotopy method. If homotopy is available the homotopy method is used now.");
   }
 
   /* If there is homotopy in the model and global homotopy is activated
@@ -276,6 +277,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
           check_mixed_solutions(data, 0))
         break;
     }
+    infoStreamPrint(LOG_STDOUT, 0, "The initialization finished successfully with homotopy method.");
     messageClose(LOG_INIT);
   }
 
