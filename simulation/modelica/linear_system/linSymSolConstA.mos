@@ -32,6 +32,8 @@ val(max_res,1);
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 1 linear systems
 // LOG_LS            | info    | Start solving Linear System 42 (size 19) at time 0 with Lapack Solver
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
@@ -44,9 +46,11 @@ val(max_res,1);
 // record SimulationResult
 //     resultFile = "linear_system.problem4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s euler'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 1.0
-// 1.00000000000027
+// 1.000000000000248
 // endResult

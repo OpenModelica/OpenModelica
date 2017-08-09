@@ -22,10 +22,12 @@ val(inertia2.w,0.6),val(inertia2.w,0.8),val(inertia2.w,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.SystemTests.First_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SystemTests.First', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SystemTests.First', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
-// {0.0,-0.1556041656762904,-0.5374778112947035,-0.693696144811758,-0.9015842098866873,-1.122492939757727}
-// {0.0,-0.015560416567629042,-0.053747781129470346,-0.06936961448117579,-0.09015842098866873,-0.1122492939757727}
+// {0.0,-0.1556041881885503,-0.5374777795443372,-0.6936961637901916,-0.9015842369449714,-1.122492851615603}
+// {0.0,-0.01556041881885503,-0.05374777795443372,-0.06936961637901916,-0.09015842369449714,-0.1122492851615603}
 // endResult

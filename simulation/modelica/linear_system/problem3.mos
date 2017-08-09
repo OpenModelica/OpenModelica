@@ -48,7 +48,9 @@ val(x[2], 1.0);
 // record SimulationResult
 //     resultFile = "linear_system.problem3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 10.0
@@ -58,7 +60,9 @@ val(x[2], 1.0);
 // record SimulationResult
 //     resultFile = "linear_system.problem3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 10.0
@@ -68,7 +72,9 @@ val(x[2], 1.0);
 // record SimulationResult
 //     resultFile = "linear_system.problem3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 10.0
@@ -78,7 +84,9 @@ val(x[2], 1.0);
 // record SimulationResult
 //     resultFile = "linear_system.problem3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls umfpack'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 9.999999999999998

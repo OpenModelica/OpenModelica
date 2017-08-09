@@ -17,7 +17,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "nmpcVDP_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcVDP', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR'",
-//     messages = "
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:cost(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
@@ -60,6 +61,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 2.65482e-08 for the approximation of the state cost(time = 1.45798)
 // LOG_IPOPT_ERROR   | info    | max error is 4.16174e-09 for the approximation of the state cost(time = 1.45798)
 // LOG_IPOPT_ERROR   | info    | max error is 1.8794e-10 for the approximation of the state cost(time = 1.45798)
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

@@ -49,39 +49,49 @@ system("rm -rf *PulseTest.* output.log");
 // true
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SourceTests.ConstantTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ConstantTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ConstantTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // {1.0,1.0}
 // {99999.99999999999,0.0}
 // 0
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SourceTests.ExpSineTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 0.0000001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ExpSineTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ExpSineTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.481237862257548,-0.637512247785462,0.521950882725828,-0.26410893853595657,-0.00000000000000018020895204108955}
-// {0.0,0.11786162280582717,0.03685797605485495,0.03017720686980547,0.06468360251156467,-0.00000020800548704893977}
+// {0.0,0.4812378622575482,-0.6375122477854621,0.5219508827258282,-0.2641089385359565,-1.802089520410896e-16}
+// {0.0,0.1178616228058271,0.03685797605485362,0.03017720686980623,0.06468360251156398,-2.080054874013951e-07}
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SourceTests.ExponentialsTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 400, tolerance = 0.00000001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ExponentialsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 400, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ExponentialsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.8646647167633872,0.9816843611112658,0.3654006889947761,0.049451605739961456,0.006692547069322982}
-// {0.0,1.503726300805232,0.20350722775178745,-4.059502750936544,-0.5494623608556218,-0.07436183798914973}
+// {0.0,0.8646647167633873,0.9816843611112658,0.365400688994776,0.04945160573996141,0.006692547069322982}
+// {0.0,1.503726300805242,0.2035072277517869,-4.059502750936461,-0.5494623608556209,-0.07436183798941289}
 // 0
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SourceTests.SineTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.SineTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.SineTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.19866933079506122,0.3894183423086505,0.5646424733950354,0.7173560908995228,0.8414709848078965}
-// {0.0,0.018656637154352288,0.06933492747737265,0.144058271489322,0.23499174248340443,0.3345288741571049}
+// {0.0,0.1986693307950612,0.3894183423086504,0.5646424733950351,0.7173560908995227,0.8414709848078963}
+// {0.0,0.01865663715435228,0.06933492747737127,0.1440582714892951,0.2349917424833482,0.3345288741570214}
 // 0
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SourceTests.PulseTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.PulseTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.PulseTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // {1.0,1.0,0.0,1.0,0.0}
 // 0

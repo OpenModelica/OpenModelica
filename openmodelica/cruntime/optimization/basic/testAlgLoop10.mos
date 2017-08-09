@@ -48,7 +48,8 @@ getErrorString();
 // ========================================================
 // stdout            | info    | Using values from file as initial guess.
 //
-// max_iter = -1"
+// max_iter = -1stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}

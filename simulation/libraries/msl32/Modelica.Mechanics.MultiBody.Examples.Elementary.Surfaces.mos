@@ -30,6 +30,8 @@ runScript(modelTesting);getErrorString();
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | wheel.ri >= 0.0
 // assert            | warning | Variable violating min constraint: 0.0 <= wheel.ri, has value: -0.05
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 //
 // Files Equal!
 // "true

@@ -59,7 +59,9 @@ val(power,10);
 // record SimulationResult
 //     resultFile = "Test3Phase.Test3PhaseStart_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Test3Phase.Test3PhaseStart', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "i_abc[:] at 0.0"
 // 0.0
@@ -70,13 +72,13 @@ val(power,10);
 // 0.0
 // 0.0
 // "i_abc[:] at 10.0"
-// 0.2969026172356413
-// -0.222242906023698
-// -0.07465971121167352
+// 0.2969026172354062
+// -0.2222429060236789
+// -0.07465971121167191
 // "i_dq0[:] at 10.0:"
-// -0.1043570778407591
-// 0.3636299577619813
-// 1.557599775970687e-13
+// -0.1043570778407467
+// 0.3636299577617808
+// 3.202534107281294e-14
 // "u_abc[:] at 0.0"
 // 0.0
 // 0.8660254037844389
@@ -91,9 +93,9 @@ val(power,10);
 // -0.8660254037844349
 // "u_dq0[:] at 10.0:"
 // 1.224744871391588
-// 2.940652610886151e-15
-// 2.175430029616111e-15
+// 2.942091015256665e-15
+// 2.179357711234706e-15
 // "power :"
 // 0.0
-// -0.1278107958788813
+// -0.1278107958788661
 // endResult

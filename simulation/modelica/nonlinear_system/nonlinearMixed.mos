@@ -15,11 +15,13 @@ val(z, {0.0,0.5});
 // record SimulationResult
 //     resultFile = "nonlinear_system.nonlinearMixed_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinearMixed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// {0.0,-0.3535533905932721}
-// {0.0,0.3535533905932715}
-// {0.0,0.3535533905932761}
+// {0.0,-0.3535533905932232}
+// {0.0,0.3535533905932692}
+// {0.0,0.3535533905932784}
 // endResult

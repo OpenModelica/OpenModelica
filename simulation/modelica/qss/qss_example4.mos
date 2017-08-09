@@ -33,8 +33,10 @@ val(x3, {0.0, 500.0}); getErrorString();
 // record SimulationResult
 //     resultFile = "qssTests.example4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 500.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | This QSS method is under development and should not be used yet.
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | This QSS method is under development and should not be used yet.
 // stdout            | warning | All derivatives are zero at time 420.433938!.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

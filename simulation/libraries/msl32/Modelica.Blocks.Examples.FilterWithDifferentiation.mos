@@ -28,6 +28,9 @@ runScript(modelTesting);getErrorString();
 // {"Bessel.x[1]","Bessel.x[2]","Bessel.x[3]"}
 // Simulation options: startTime = 0.0, stopTime = 0.9, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.FilterWithDifferentiation', options = '', outputFormat = 'mat', variableFilter = 'time|Bessel.x.1.|Bessel.x.2.|Bessel.x.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Blocks.Examples.FilterWithDifferentiation_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

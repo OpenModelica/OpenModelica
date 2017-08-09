@@ -28,7 +28,9 @@ val(x[1], 0.0);
 // record SimulationResult
 //     resultFile = "initializationTests.array_algorithm_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.array_algorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=symbolic'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 1.0

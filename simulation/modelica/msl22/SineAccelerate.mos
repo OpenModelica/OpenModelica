@@ -21,9 +21,11 @@ val(inertia1.phi,0.6),val(inertia1.phi,0.8),val(inertia1.phi,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.SpringInertia.SineAccelerate_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.SineAccelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.SineAccelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.4261485910318657,0.7755421983680616,0.9722959528708138,0.9776849598981299,0.7906475400020281}
-// {0.0,0.04263831620012086,0.16485438179999798,0.34261814596015383,0.540940581396472,0.7207843421178467}
+// {0.0,0.4261485910318659,0.7755421983680615,0.9722959528708135,0.9776849598981299,0.7906475400020276}
+// {0.0,0.04263831620012065,0.1648543817999985,0.3426181459601544,0.5409405813964732,0.7207843421178488}
 // endResult

@@ -27,6 +27,9 @@ runScript(modelTesting);getErrorString();
 // {"inductor.inductor[2].i","inductor.inductor[3].i"}
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.TestSensors', options = '', outputFormat = 'mat', variableFilter = 'time|inductor.inductor.2..i|inductor.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.MultiPhase.Examples.TestSensors_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

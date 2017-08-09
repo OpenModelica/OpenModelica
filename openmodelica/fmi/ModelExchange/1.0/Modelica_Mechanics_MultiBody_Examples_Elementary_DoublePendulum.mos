@@ -41,7 +41,10 @@ val(revolute2_phi, 3);
 // record SimulationResult
 //     resultFile = "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0.0
 // -2.915113487866567

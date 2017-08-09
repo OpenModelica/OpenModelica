@@ -100,7 +100,9 @@ val(derrabbits,420);
 // record SimulationResult
 //     resultFile = "LotkaVolterra_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
 // 312.6463881685007
@@ -111,13 +113,17 @@ val(derrabbits,420);
 // record SimulationResult
 //     resultFile = "LotkaVolterra_res.csv",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
 // 312.1431109344455
@@ -128,7 +134,9 @@ val(derrabbits,420);
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'euler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
 // 151.2664618264293
@@ -139,7 +147,9 @@ val(derrabbits,420);
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'rungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
 // 312.1340719997071
@@ -150,34 +160,40 @@ val(derrabbits,420);
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'impeuler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
-// 708.6928679431032
+// 708.6928679495327
 // 1154.916262002063
-// 572.136694468436
+// 572.1366944401556
 // 118.7562132961125
-// 63.26222998739447
+// 63.26222998849814
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'imprungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=5'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
-// 312.1425595751107
+// 312.1425595557779
 // 1154.916262002063
-// 43.72963386571539
-// 120.0665739251048
-// 76.41260675962764
+// 43.72963386374561
+// 120.0665739251407
+// 76.4126067599769
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'imprungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 4310.037646344885
-// 312.1425514260991
+// 312.1425514441204
 // 1154.916262002063
-// 43.72962959203593
-// 120.0665739033309
-// 76.41260698075324
+// 43.72962960061532
+// 120.0665739034563
+// 76.41260698034162
 // endResult

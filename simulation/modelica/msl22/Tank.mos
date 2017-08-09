@@ -21,9 +21,11 @@ val(gain3.y,0.6),val(gain3.y,0.8),val(gain3.y,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SystemTests.Tank_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.Tank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.Tank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,3.872435698507796,7.702453853926054,9.546046227186183,9.42519261274789,9.3051088871096}
-// {0.0,0.019678505274811388,0.02775329503667277,0.030896676564294394,0.03070047656429439,0.030504276564294393}
+// {0.0,3.872435698507969,7.702453853926595,9.546046227187098,9.4251926127488,9.305108887110503}
+// {0.0,0.01967850527481182,0.02775329503667375,0.03089667656429587,0.03070047656429587,0.03050427656429587}
 // endResult

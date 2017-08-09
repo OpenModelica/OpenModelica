@@ -21,8 +21,10 @@ val(ivalsB[1], 0); val(ivalsB[2], 0); val(ivalsB[3], 0);
 // ""
 // record SimulationResult
 //     resultFile = "TestLapack_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'TestLapack', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestLapack', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // "rvalsA"
@@ -31,14 +33,14 @@ val(ivalsB[1], 0); val(ivalsB[2], 0); val(ivalsB[3], 0);
 // 2.0
 // 1.0
 // "ivalsA"
-// 1.4999999999999998
-// -1.4999999999999998
+// 1.5
+// -1.5
 // 0.0
 // 0.0
 // "rvalsB"
-// 8.000000000000004
-// -0.6180339887498957
-// 1.6180339887498945
+// 7.999999999999998
+// -0.6180339887498953
+// 1.618033988749896
 // "ivalsB"
 // 0.0
 // 0.0

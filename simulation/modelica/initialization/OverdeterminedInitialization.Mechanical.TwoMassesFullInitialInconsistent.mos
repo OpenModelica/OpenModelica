@@ -16,9 +16,11 @@ simulate(OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsisten
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsistent', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: OverdeterminedInitialization.Mechanical.TwoMassesFullInitialInconsistent
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != -1 = $START.mass1.s - mass1.s
 // stdout            | warning | Error in initialization. Storing results and exiting.
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass2.v = $START.mass2.v ($START.mass1.v = $START.mass2.v)

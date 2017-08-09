@@ -1743,7 +1743,9 @@ simulate(TestMedia.TestModels.TestWater); getErrorString();
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.TestWater_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.TestWater', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // endResult

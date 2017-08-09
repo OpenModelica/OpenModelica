@@ -51,12 +51,14 @@ val(y2, 1);
 // record SimulationResult
 //     resultFile = "DIC_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DIC_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 0.0
 // 1.0
 // 0.0
-// -1.0
-// -1.397697929617081e-11
+// -0.9999999999999998
+// -1.397676419045979e-11
 // endResult

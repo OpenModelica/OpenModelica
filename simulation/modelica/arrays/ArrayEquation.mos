@@ -42,14 +42,16 @@ val(y,1.0);
 // true
 // record SimulationResult
 //     resultFile = "ArrayEqn_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'ArrayEqn', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ArrayEqn', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 2.0
-// 0.8986712618675595
+// 0.8986712618675596
 // 0.403803492405326
-// 0.18145206831873217
-// 0.08152949533872372
+// 0.1814520683187321
+// 0.08152949533872374
 // 0.03663319221705208
 // 4.0
 // 4.0
@@ -64,9 +66,9 @@ val(y,1.0);
 // 2.0
 // 2.0
 // 1.0
-// 0.44933563093377976
+// 0.4493356309337798
 // 0.201901746202663
-// 0.09072603415936609
-// 0.04076474766936186
+// 0.09072603415936607
+// 0.04076474766936187
 // 0.01831659610852604
 // endResult

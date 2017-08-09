@@ -17,13 +17,15 @@ val(delta,1.0);
 // true
 // record SimulationResult
 //     resultFile = "SumSeries_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'SumSeries', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'SumSeries', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 99.50073328129245
 // 99.50073328129245
 // 99.50073328129245
-// 0.0000009955206204452296
-// 0.0000009955206204452296
-// 0.0000009955206204452296
+// 9.955206204452296e-07
+// 9.955206204452296e-07
+// 9.955206204452296e-07
 // endResult

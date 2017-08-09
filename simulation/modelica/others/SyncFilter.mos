@@ -25,7 +25,7 @@ val(syncFilter.y, 6.2*10e-6);
 // end Modelica.Math.asin;
 //
 // class SyncFilterTest
-//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 1e-013, start = 0.1) = 1.0 / (syncFilter.UpdateRate * /*Real*/(syncFilter.n)) \"Sample period of component\";
+//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 1e-13, start = 0.1) = 1.0 / (syncFilter.UpdateRate * /*Real*/(syncFilter.n)) \"Sample period of component\";
 //   parameter Real syncFilter.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"First sample time instant\";
 //   protected Boolean syncFilter.sampleTrigger \"True, if sample time instant\";
 //   protected Boolean syncFilter.firstTrigger \"Rising edge signals first sample instant\";
@@ -77,9 +77,11 @@ val(syncFilter.y, 6.2*10e-6);
 // ""
 // record SimulationResult
 //     resultFile = "SyncFilterTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0005, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'SyncFilterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0005, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SyncFilterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// 4e-005
-// 5.6e-005
+// 4e-05
+// 5.6e-05
 // endResult

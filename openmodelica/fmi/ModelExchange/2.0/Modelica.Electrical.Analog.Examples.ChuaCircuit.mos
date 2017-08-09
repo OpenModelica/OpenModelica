@@ -42,18 +42,21 @@ val(C2_v, 3);
 // record SimulationResult
 //     resultFile = "Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0.0
-// 0.0006245340117134548
-// 0.002487686548373747
-// 0.005573487284195184
+// 0.0006245340117113856
+// 0.002487686548357086
+// 0.005573487284199661
 // 4.0
 // 3.973329565350411
-// 3.948322066476235
-// 3.924937636301451
+// 3.94832206647624
+// 3.924937636301487
 // 0.0
-// 0.02245816176097826
-// 0.04463179078992778
-// 0.06651953357058504
+// 0.0224581617610272
+// 0.04463179079046596
+// 0.06651953357135959
 // endResult

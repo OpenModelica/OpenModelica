@@ -34,6 +34,8 @@ simulate(initializationTests.bug_4387, stopTime=0.0); getErrorString();
 // In initial algorithm
 // In when initial() equation
 // In when initial() algorithm
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

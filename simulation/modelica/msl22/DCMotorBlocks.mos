@@ -21,9 +21,11 @@ val(firstOrder1.y,0.6),val(firstOrder1.y,0.8),val(firstOrder1.y,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SystemTests.DCmotor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.DCmotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.DCmotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.0012719578137377033,0.009615148429739045,0.030667188283215765,0.06859587422490322,0.1261964500177123}
-// {0.0,0.18006532151561502,0.32098198013815504,0.4247586025096863,0.49437578742590144,0.5335118647569943}
+// {0.0,0.001271957813737703,0.009615148429739043,0.03066718828321567,0.0685958742249031,0.1261964500177127}
+// {0.0,0.180065321515615,0.3209819801381534,0.4247586025096863,0.4943757874259148,0.5335118647569782}
 // endResult

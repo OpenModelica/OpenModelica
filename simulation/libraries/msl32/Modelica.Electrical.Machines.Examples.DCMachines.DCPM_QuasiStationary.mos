@@ -30,6 +30,9 @@ runScript(modelTesting);getErrorString();
 // {"dcpm1.la.i","loadInertia1.phi","loadInertia1.w","loadInertia2.phi","loadInertia2.w"}
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm1.la.i|loadInertia1.phi|loadInertia1.w|loadInertia2.phi|loadInertia2.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

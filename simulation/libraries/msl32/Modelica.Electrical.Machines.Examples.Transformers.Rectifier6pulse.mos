@@ -29,6 +29,9 @@ runScript(modelTesting);getErrorString();
 // {"cDC1.v","cDC2.v","transformer1.l2sigma.inductor[1].i","transformer1.l2sigma.inductor[3].i"}
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse', options = '', outputFormat = 'mat', variableFilter = 'time|cDC1.v|cDC2.v|transformer1.l2sigma.inductor.1..i|transformer1.l2sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

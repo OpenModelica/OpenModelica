@@ -21,15 +21,17 @@ val(y1,1);
 // true
 // record SimulationResult
 //     resultFile = "M_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0.0
 // 1.0
-// 1.8124213944129033
-// 3.3236741098860496
+// 1.812421394412903
+// 3.32367410988605
 // 0.0
 // 1.0
-// 1.8124213944129033
-// 3.3236741098860496
+// 1.812421394412903
+// 3.32367410988605
 // endResult

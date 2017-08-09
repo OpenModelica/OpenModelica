@@ -32,6 +32,7 @@ getErrorString();
 //     resultFile = "ExternalRHSFlagFunc_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ExternalRHSFlagFunc', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
 //     messages = "RHSFinlaFlag NOT set!
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // RHSFinlaFlag NOT set!
 // RHSFinlaFlag NOT set!
 // RHSFinlaFlag NOT set!
@@ -140,6 +141,7 @@ getErrorString();
 // RHSFinlaFlag NOT set!
 // RHSFinlaFlag set!
 // RHSFinlaFlag set!
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

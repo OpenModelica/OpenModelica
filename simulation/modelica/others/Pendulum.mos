@@ -22,12 +22,14 @@ val(y,3.0);
 // record SimulationResult
 //     resultFile = "Pendulum_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// -0.986442419514578
-// 0.7957014346591361
-// -0.183257778899123
-// -0.1641077480871185
-// -0.6056890513137847
-// -0.9830648943345297
+// -0.9864424195145796
+// 0.795701434659157
+// -0.1832577788991176
+// -0.1641077480871099
+// -0.6056890513137574
+// -0.9830648943345307
 // endResult

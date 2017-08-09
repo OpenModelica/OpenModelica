@@ -84,12 +84,20 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
 // "
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
 // true
@@ -97,12 +105,20 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // "
 // {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
 // ""
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
 // endResult

@@ -49,7 +49,9 @@ res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent4_res.mat",
 // record SimulationResult
 //     resultFile = "SmoothEvent1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
@@ -58,7 +60,9 @@ res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent4_res.mat",
 // record SimulationResult
 //     resultFile = "SmoothEvent2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
@@ -67,7 +71,9 @@ res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent4_res.mat",
 // record SimulationResult
 //     resultFile = "SmoothEvent3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
@@ -76,7 +82,9 @@ res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent4_res.mat",
 // record SimulationResult
 //     resultFile = "SmoothEvent4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}

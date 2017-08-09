@@ -23,10 +23,12 @@ val(inertia3.w,120.0),val(inertia3.w,180.0),val(inertia3.w,200.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.Professional.WeakAxis_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'TestModels.Professional.WeakAxis', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'TestModels.Professional.WeakAxis', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,1.5535101878682587,0.9639949267821457,1.4956005375165216,0.17906280244203304,-0.21727835836703868}
-// {0.0,0.7956869177045428,0.7878596240496889,0.8135256700287199,0.5960005180148126,0.5337018110616497}
-// {0.0,-0.34919710556999006,0.24814544917099107,-0.3091262075424245,1.224936679545978,1.6835765473082118}
+// {0.0,1.553510187867988,0.9639949267559551,1.495600516222467,0.1790629093471097,-0.2172782961543157}
+// {0.0,0.7956869177049433,0.7878596218900163,0.8135257105455889,0.596000300475317,0.5337017568181696}
+// {0.0,-0.3491971055700989,0.2481454513569206,-0.3091262267652157,1.224936790180286,1.683576539338861}
 // endResult

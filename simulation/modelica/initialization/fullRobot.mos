@@ -52,7 +52,9 @@ val(mechanics.r6.w, 0);
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "[Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.

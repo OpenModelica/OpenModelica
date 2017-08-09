@@ -32,6 +32,7 @@ val(z,1.0);
 // assert            | debug   | Solving non-linear system 5 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | info    | simulation terminated by an assertion at initialization
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve "(-exp(if y > 0.0 then time else 2.0 * time)) * y = -1.0 - time" w.r.t. "y"

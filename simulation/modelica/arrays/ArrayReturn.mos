@@ -36,7 +36,9 @@ stop := res[:,size];
 // record SimulationResult
 //     resultFile = "ArrayReturn.RAITest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayReturn.RAITest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // true
 // {0.0,0.0,0.0,0.0}
@@ -44,7 +46,9 @@ stop := res[:,size];
 // record SimulationResult
 //     resultFile = "ArrayReturn.RAIArrayTest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayReturn.RAIArrayTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // true
 // {0.0,0.0,0.0,0.0}
@@ -52,7 +56,9 @@ stop := res[:,size];
 // record SimulationResult
 //     resultFile = "ArrayReturn.AIAITest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayReturn.AIAITest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // true
 // {0.0,0.0,0.0,0.0}

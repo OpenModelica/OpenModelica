@@ -32,7 +32,9 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "EnumArray2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'EnumArray2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "[<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.one] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.two] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.

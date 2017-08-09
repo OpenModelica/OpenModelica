@@ -18,6 +18,7 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 9, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: Test4
 // Value of x(=1)
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // Value of x(=1)
 // Value of x(=0.888889)
 // Value of x(=0.777778)
@@ -41,6 +42,7 @@ getErrorString();
 // |                 | |       | assertTest.x >= 0.5
 // assert            | error   | Variable x(=0.416667) out of limit
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.583333
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

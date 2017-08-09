@@ -22,14 +22,16 @@ val(StateMachine_0.Region_0.Falling.active,20);
 // ""
 // record SimulationResult
 //     resultFile = "BouncingBallExample.Ball_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 2000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'BouncingBallExample.Ball', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBallExample.Ball', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
-// 0.00273783877491951
-// 5.108748949347676
-// 2.6034730761167073
-// 0.000557285705016405
+// 0.0
+// 5.096837999997607
+// 2.611216309764083
+// 0.001955588312375433
 // 0.0
 // 0.0
 // 0.0

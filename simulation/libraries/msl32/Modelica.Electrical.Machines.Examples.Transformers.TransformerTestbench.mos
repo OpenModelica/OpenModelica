@@ -27,6 +27,9 @@ runScript(modelTesting);getErrorString();
 // {"transformer.l2sigma.inductor[1].i","transformer.l2sigma.inductor[3].i"}
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = 'time|transformer.l2sigma.inductor.1..i|transformer.l2sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.Transformers.TransformerTestbench_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

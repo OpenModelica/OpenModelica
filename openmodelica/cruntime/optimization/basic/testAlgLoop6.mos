@@ -413,6 +413,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 5.31349e-11 for the constraint $EqCon$x2(time = 3.14286)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.06026e-12 for the constraint $EqCon$x2(time = 1.71429)
 // LOG_IPOPT_ERROR   | info    | max violation is 2.22045e-16 for the constraint $EqCon$x2(time = 0.642857)
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):

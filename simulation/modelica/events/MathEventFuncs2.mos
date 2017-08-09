@@ -88,11 +88,13 @@ val(y6,1);
 // ""
 // record SimulationResult
 //     resultFile = "mathFunctionEvents_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'mathFunctionEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mathFunctionEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
-// 
+//
 // -y1-
 // 6.0
 // 1.0
@@ -100,23 +102,23 @@ val(y6,1);
 // 6.0
 // 1.0
 // 1.0
-// 
+//
 // -y2-
 // 0.0
-// -0.1745557366271762
-// -1.6031588744443162
-// -0.04043721810112199
-// -0.36514171956800495
+// -0.1745557366271757
+// -1.603158874444317
+// -0.04043721810112189
+// -0.3651417195680047
 // -1.204949581812917
-// 
+//
 // -y3-
 // 0.0
-// -0.1745557366271762
-// -1.6031588744443162
-// -0.04043721810112199
-// -0.36514171956800495
+// -0.1745557366271757
+// -1.603158874444317
+// -0.04043721810112189
+// -0.3651417195680047
 // -1.204949581812917
-// 
+//
 // -y4-
 // 1.0
 // 3.0
@@ -124,15 +126,15 @@ val(y6,1);
 // 1.0
 // 3.0
 // 4.0
-// 
+//
 // -y5-
 // 5.0
 // 9.0
-// 5.999999999999999
+// 6.0
 // 3.0
 // 0.0
 // 0.0
-// 
+//
 // -y6-
 // -1.0
 // -3.0

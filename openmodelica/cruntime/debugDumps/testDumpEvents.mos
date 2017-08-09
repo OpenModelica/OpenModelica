@@ -38,7 +38,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // record SimulationResult
 //     resultFile = "bbTestDump_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bbTestDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS'",
-//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
 // LOG_EVENTS        | info    | status of zero crossings at time=0
@@ -301,12 +302,14 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [3] v <= 0.0
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "bbTestDump_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bbTestDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_EVENTS_V'",
 //     messages = "LOG_EVENTS_V      | info    | Set tolerance for zero-crossing hysteresis to: 1.000000e-10
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0
 // LOG_EVENTS_V      | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = h <= 0.0
@@ -1767,6 +1770,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860557137
 // LOG_EVENTS_V      | info    | terminal event at stop time 3
 // LOG_EVENTS_V      | info    | check for discrete changes at time=3
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // endResult

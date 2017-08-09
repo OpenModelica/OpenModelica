@@ -17,11 +17,13 @@ val(x,1.0);
 // true
 // record SimulationResult
 //     resultFile = "DAEexample_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 3, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'DAEexample', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 3, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DAEexample', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0.9
-// 0.9364731643589569
-// 1.039515876569973
-// 1.2016675084738886
+// 0.9364731633761999
+// 1.039515875580045
+// 1.201667507446918
 // endResult

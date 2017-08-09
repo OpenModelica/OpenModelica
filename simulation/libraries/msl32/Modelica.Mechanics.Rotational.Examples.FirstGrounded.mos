@@ -33,6 +33,9 @@ runScript(modelTesting);getErrorString();
 // {"inertia3.phi","inertia3.w","damper.phi_rel","damper.w_rel","der(inertia3.phi)","der(inertia3.w)","der(damper.phi_rel)","der(damper.w_rel)"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.FirstGrounded', options = '', outputFormat = 'mat', variableFilter = 'time|inertia3.phi|inertia3.w|damper.phi_rel|damper.w_rel|der[(]inertia3.phi[)]|der[(]inertia3.w[)]|der[(]damper.phi_rel[)]|der[(]damper.w_rel[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.FirstGrounded_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

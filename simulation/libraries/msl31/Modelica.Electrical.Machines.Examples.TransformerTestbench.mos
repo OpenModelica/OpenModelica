@@ -33,6 +33,9 @@ runScript(modelTesting);getErrorString();
 // {"transformer.l2sigma.inductor[1].i","transformer.l2sigma.inductor[3].i"}
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = 'time|transformer.l2sigma.inductor.1..i|transformer.l2sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.TransformerTestbench_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // [Modelica 3.1/Electrical/Machines.mo:7939:5-7939:73:writable] Warning: Parameter transformerData.f has no value, and is fixed during initialization (fixed=true), using available start value (start=50.0) as default value.
 // [Modelica 3.1/Electrical/Machines.mo:7940:5-7941:53:writable] Warning: Parameter transformerData.V1 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.

@@ -24,18 +24,20 @@ val(x[100],{0.0});
 // ""
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem6_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {0.0}
-// {-0.06532729491620431}
-// {-0.09089404927173966}
-// {-0.10931856111377483}
-// {-0.1196136958219096}
-// {-0.12061873521418479}
-// {-0.11096121637159155}
-// {-0.08900861786246166}
-// {-0.052806685187254496}
+// {-0.06532729491621082}
+// {-0.09089404927174487}
+// {-0.1093185611137788}
+// {-0.1196136958219124}
+// {-0.1206187352141866}
+// {-0.1109612163715921}
+// {-0.08900861786246121}
+// {-0.05280668518725377}
 // {0.0}
 // endResult

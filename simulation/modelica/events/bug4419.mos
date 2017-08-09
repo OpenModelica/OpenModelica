@@ -25,11 +25,13 @@ val(y2, {0.01, 0.09, 0.91, 0.99}); getErrorString();
 // record SimulationResult
 //     resultFile = "bug4419.test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug4419.test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
-// {0.1,0.9,1.1,1.9}
+// {0.1,0.9000000000000001,1.1,1.899999999999999}
 // ""
-// {1.1,1.9,0.1,0.9}
+// {1.1,1.9,0.09999999999999964,0.8999999999999986}
 // ""
 // endResult

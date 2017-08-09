@@ -61,7 +61,8 @@ getErrorString();
 // ========================================================
 // stdout            | info    | Using values from file as initial guess.
 //
-// max_iter = -1"
+// max_iter = -1stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

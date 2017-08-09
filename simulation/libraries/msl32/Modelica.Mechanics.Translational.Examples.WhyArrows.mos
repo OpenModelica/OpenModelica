@@ -31,6 +31,9 @@ runScript(modelTesting);getErrorString();
 // {"mass1.s","mass1.v","mass1.a","inertia2.s","inertia2.v","inertia2.a"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.WhyArrows', options = '', outputFormat = 'mat', variableFilter = 'time|mass1.s|mass1.v|mass1.a|inertia2.s|inertia2.v|inertia2.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.WhyArrows_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

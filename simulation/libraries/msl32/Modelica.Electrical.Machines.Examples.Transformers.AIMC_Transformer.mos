@@ -36,6 +36,9 @@ runScript(modelTesting);getErrorString();
 // {"aimc.idq_rr[1]","aimc.idq_rr[2]","aimc.lssigma.i_[1]","aimc.lssigma.i_[2]","aimc.lszero.i","loadInertia.phi","loadInertia.w","transformer.l1sigma.inductor[2].i","transformer.l1sigma.inductor[3].i"}
 // Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 2500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.lssigma.i_.1.|aimc.lssigma.i_.2.|aimc.lszero.i|loadInertia.phi|loadInertia.w|transformer.l1sigma.inductor.2..i|transformer.l1sigma.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // "true
 // "
 // ""

@@ -15,7 +15,9 @@ simulate(OverdeterminedInitialization.Fluid.DynamicPipeInitialValues); getErrorS
 // record SimulationResult
 //     resultFile = "OverdeterminedInitialization.Fluid.DynamicPipeInitialValues_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'OverdeterminedInitialization.Fluid.DynamicPipeInitialValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Notification: The following equation is consistent and got removed from the initialization problem: pipe.mediums[1].p = 10000000.0
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

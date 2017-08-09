@@ -32,14 +32,16 @@ val(x3, {0.0, 5.0}); getErrorString();
 // record SimulationResult
 //     resultFile = "qssTests.example5_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | warning | This QSS method is under development and should not be used yet.
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | This QSS method is under development and should not be used yet.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// {1.0,7.438837369532695}
+// {1.0,7.438837369532564}
 // ""
-// {1.0,118.3274783548923}
+// {1.0,118.3274783548891}
 // ""
-// {1.0,1.288486633956759}
+// {1.0,1.288486633956799}
 // ""
 // endResult

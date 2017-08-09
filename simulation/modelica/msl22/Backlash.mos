@@ -21,9 +21,11 @@ val(inertia1.phi,0.6),val(inertia1.phi,0.8),val(inertia1.phi,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.SpringInertia.BacklashTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.BacklashTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.BacklashTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.1099603913540543,0.28791819611632685,0.2879115814704901,0.10996581888637622,0.00000963053425443222}
-// {0.0,0.007746071849397871,0.048778575045228915,0.1103878320560297,0.15141854065688934,0.15915308394930777}
+// {0.0,0.1099603913540544,0.2879181961163269,0.2879115814704904,0.1099658188863765,9.630534254722433e-06}
+// {0.0,0.007746071849397882,0.04877857504522894,0.1103878320560297,0.1514185406568894,0.1591530839493078}
 // endResult

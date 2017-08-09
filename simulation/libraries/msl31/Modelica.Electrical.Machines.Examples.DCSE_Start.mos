@@ -36,6 +36,9 @@ runScript(modelTesting);getErrorString();
 // {"dcse.inertiaRotor.phi","dcse.inertiaRotor.w","dcse.la.i","der(dcse.inertiaRotor.w)","der(dcse.la.i)"}
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.inertiaRotor.phi|dcse.inertiaRotor.w|dcse.la.i|der[(]dcse.inertiaRotor.w[)]|der[(]dcse.la.i[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCSE_Start_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // [Modelica 3.1/Electrical/Machines.mo:7268:7-7268:72:writable] Warning: Parameter dcse.Jr has no value, and is fixed during initialization (fixed=true), using available start value (start=0.15) as default value.
 // [Modelica 3.1/Electrical/Machines.mo:7272:7-7274:46:writable] Warning: Parameter dcse.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=dcse.Jr) as default value.

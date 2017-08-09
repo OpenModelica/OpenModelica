@@ -27,7 +27,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "init_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'init', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "assert            | warning | The following assertion has been violated at time 7.200000
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 7.200000
 // |                 | |       | der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -3.42937
 // assert            | warning | The following assertion has been violated at time 849.600000
@@ -36,6 +37,7 @@ getErrorString();
 // assert            | warning | The following assertion has been violated at time 1252.800000
 // |                 | |       | der_V_v >= -0.02 and der_V_v <= 0.025
 // assert            | warning | Variable violating min/max constraint: -0.02 <= der_V_v <= 0.025, has value: 0.0252797
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // true
@@ -44,7 +46,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'optimization', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE -ipopt_max_iter=100'",
-//     messages = "
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:controller.x(start = 0, nominal = 10, min = -Inf, max = +Inf, init = 0)
@@ -96,6 +99,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 0.000924962 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.000214146 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 4.53237e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

@@ -32,6 +32,8 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testAssertFMI_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: testAssertFMI_me_FMU
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // assert            | warning | The following assertion has been violated at time 0.204000
 // |                 | |       | x < 1.5
 // assert            | error   | x is too big at time = 0.204
@@ -54,6 +56,7 @@ getErrorString();
 // [ERROR][testAssertFMI] [error][FMU status:Error] fmiCompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmiCompletedIntegratorStep failed with status : Error
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.202853
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

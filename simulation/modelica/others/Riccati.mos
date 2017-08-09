@@ -14,11 +14,13 @@ val(X[2,2],0.0);
 // true
 // record SimulationResult
 //     resultFile = "Riccati_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'Riccati', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Riccati', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// 0.5825317547305484
-// -0.7165063509461099
+// 0.5825317547305483
+// -0.7165063509461097
 // 0.649519052838329
-// 0.21650635094610982
+// 0.2165063509461097
 // endResult

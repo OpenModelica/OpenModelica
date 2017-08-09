@@ -14,8 +14,10 @@ val(y,0.0);
 // true
 // record SimulationResult
 //     resultFile = "tplTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 50, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'tplTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'tplTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 1.0
 // -1.0

@@ -27,9 +27,11 @@ simulate(initializationTests.bug_2566, startTime=0.0, stopTime=0.0); getErrorStr
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2566', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: initializationTests.bug_2566
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != 2 = 4.0 - p
 // stdout            | warning | Error in initialization. Storing results and exiting.
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[<interactive>:5:5-5:40:writable] Warning: The parameter p has fixed = false and a binding equation p = 2.0, which is probably redundant.

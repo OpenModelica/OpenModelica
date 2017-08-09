@@ -21,9 +21,11 @@ val(inertia2.w,0.6),val(inertia2.w,0.8),val(inertia2.w,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.SystemTests.DCMotor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SystemTests.DCMotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SystemTests.DCMotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,0.01727005034164092,0.05801300977588481,0.10582673487325084,0.14578397405091748,0.1657404968669572}
-// {0.0,-0.1986027421568276,-0.3885235890922469,-0.5606223313017767,-0.7061764514807147,-0.8178317809507099}
+// {0.0,0.01727005034164092,0.05801300977588543,0.1058267348732494,0.1457839740509188,0.1657404968669571}
+// {0.0,-0.1986027421568276,-0.3885235890922444,-0.5606223313017825,-0.7061764514807091,-0.81783178095071}
 // endResult

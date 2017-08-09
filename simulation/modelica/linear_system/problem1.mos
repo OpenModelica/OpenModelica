@@ -22,18 +22,20 @@ val(x_res[10,1], 0.0);
 // ""
 // record SimulationResult
 //     resultFile = "linear_system.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'linear_system.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
-// -0.00000000000000011102230246251565
+// 5.551115123125783e-16
+// 6.38378239159465e-16
 // 0.0
-// -0.00000000000000011102230246251565
+// 1.110223024625157e-16
+// -3.33066907387547e-16
+// 4.996003610813204e-16
+// -2.220446049250313e-16
 // 0.0
-// -0.0000000000000007494005416219807
-// -0.00000000000000033306690738754696
-// -0.0000000000000002220446049250313
-// -0.00000000000000008326672684688674
-// -0.0000000000000013877787807814457
-// -0.00000000000000027755575615628914
+// 0.0
+// -5.551115123125783e-16
 // endResult

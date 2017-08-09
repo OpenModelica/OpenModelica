@@ -68,7 +68,9 @@ val(SlidingMass1.a,1.0);
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.Translational.Examples.Accelerate_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Accelerate1.v:"
 // 0.0
@@ -78,34 +80,34 @@ val(SlidingMass1.a,1.0);
 // 1.0
 // "Accelerate1.s:"
 // 0.0
-// 0.03125000007831456
-// 0.12500000008593995
-// 0.28125000009092205
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
 // 0.5000000000940816
 // "Accelerate1.flange_b.s:"
 // 0.0
-// 0.03125000007831456
-// 0.12500000008593995
-// 0.28125000009092205
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
 // 0.5000000000940816
 // "SlidingMass1.s:"
 // 0.5
 // 0.5312500000783146
 // 0.6250000000859399
-// 0.7812500000909219
-// 1.0000000000940816
+// 0.7812500000909222
+// 1.000000000094082
 // "SlidingMass1.flange_a.s:"
 // 0.0
-// 0.03125000007831456
-// 0.12500000008593995
-// 0.28125000009092205
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
 // 0.5000000000940816
 // "SlidingMass1.flange_b.s:"
 // 1.0
-// 1.0312500000783147
+// 1.031250000078315
 // 1.12500000008594
 // 1.281250000090922
-// 1.5000000000940816
+// 1.500000000094082
 // "SlidingMass1.v:"
 // 0.0
 // 0.25

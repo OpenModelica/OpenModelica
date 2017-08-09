@@ -15,12 +15,14 @@ val(x[4],{0.0});
 // ""
 // record SimulationResult
 //     resultFile = "nonlinear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
-// {-0.00000011818556310636672}
-// {0.000000011818556310636671}
-// {0.000000020120183294182308}
-// {0.000000020120183294182308}
+// {0.0}
+// {0.0}
+// {0.0}
+// {0.0}
 // endResult

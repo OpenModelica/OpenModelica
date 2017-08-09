@@ -1910,7 +1910,9 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // record SimulationResult
 //     resultFile = "asmaFlow_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "[Modelica 3.2.1/Electrical/Machines.mo:15348:7-15350:33:writable] Warning: Parameter terminalBox.terminalConnection has no value, and is fixed during initialization (fixed=true), using available start value (start="Y") as default value.
 // [Modelica 3.2.1/Electrical/Machines.mo:12918:7-12920:69:writable] Warning: Parameter aimc.TsOperational has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.

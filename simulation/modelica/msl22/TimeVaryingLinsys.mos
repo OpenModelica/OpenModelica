@@ -20,16 +20,18 @@ val(z,1.0);
 // true
 // record SimulationResult
 //     resultFile = "TimeVaryingLinSys_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TimeVaryingLinSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TimeVaryingLinSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0.0
-// 0.7409179558374784
-// 2.0002306303259902
+// 0.740917955837479
+// 2.00023063032616
 // 0.0
-// 0.7072656353289658
-// 0.9998154957341605
+// 0.7072656353307183
+// 0.999815495742419
 // 0.0
-// 0.10363281766557812
-// -0.00009225212766753752
+// 0.1036328176636065
+// -9.225213717606988e-05
 // endResult

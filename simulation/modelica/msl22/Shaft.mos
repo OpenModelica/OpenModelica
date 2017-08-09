@@ -19,8 +19,10 @@ val(inertia3.w,0.6),val(inertia3.w,0.8),val(inertia3.w,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.SpringInertia.Shaft_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.Shaft', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.Shaft', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,-0.00009272522097921075,-0.0022773597546722024,-0.01191280171726627,-0.026917482413935084,-0.027425906918207826}
+// {0.0,-9.272522097943873e-05,-0.002277359754688934,-0.01191280171725629,-0.02691748241390565,-0.02742590691823057}
 // endResult

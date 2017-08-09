@@ -40,6 +40,7 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT"); getErrorStrin
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real r1(start=0, fixed=true) = 0
@@ -58,6 +59,7 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT"); getErrorStrin
 // |                 | |       | | | [2] parameter String s3(start=\"three\") = \"three\"
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // LOG_INIT          | info    | ### END INITIALIZATION ###
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[<interactive>:5:5-5:22:writable] Warning: Parameter r1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.

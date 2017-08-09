@@ -29,6 +29,9 @@ runScript(modelTesting);getErrorString();
 // {"converter_e.singlePhaseElectroMagneticConverter[3].Phi.re","converter_e.singlePhaseElectroMagneticConverter[3].Phi.im","loss_m.Phi.re","loss_m.Phi.im"}
 // Simulation options: startTime = 0.0, stopTime = 40.0, numberOfIntervals = 4000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses', options = '', outputFormat = 'mat', variableFilter = 'time|converter_e.singlePhaseElectroMagneticConverter.3..Phi.re|converter_e.singlePhaseElectroMagneticConverter.3..Phi.im|loss_m.Phi.re|loss_m.Phi.im', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

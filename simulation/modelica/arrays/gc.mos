@@ -111,6 +111,7 @@ simulate(gctest, numberOfIntervals=2); getErrorString();
 //     end for;
 //   end for;
 // end gctest;
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // 1000
 // model gctest
 //   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself
@@ -175,6 +176,7 @@ simulate(gctest, numberOfIntervals=2); getErrorString();
 //     end for;
 //   end for;
 // end gctest;
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

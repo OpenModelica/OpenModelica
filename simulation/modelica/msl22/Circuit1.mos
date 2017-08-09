@@ -23,10 +23,12 @@ val(sine1.y,0.6),val(sine1.y,0.8),val(sine1.y,1.0)};
 // true
 // record SimulationResult
 //     resultFile = "TestModels.BlockModels.SystemTests.Circuit1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.Circuit1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.Circuit1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// {0.0,-0.02415824134568002,0.05770445638890009,0.06878340392257971,0.0702827361495914,0.07048568788783238}
-// {0.0,-6.048997802701891,-6.8676255305200735,-6.9784142193264485,-6.993408452670447,-6.995437078418943}
-// {0.0,-0.00000000000013255538825697785,-0.00000000000026511077651401064,-0.0000000000021922411465050527,-0.0000000000005302215530296627,0.0000000000004321650792202638}
+// {0.0,-0.02415824134574351,0.05770445638878563,0.06878340392229909,0.07028273614939118,0.07048568788782161}
+// {0.0,-6.04899780270191,-6.86762553052018,-6.978414219326635,-6.993408452670834,-6.995437078418879}
+// {0.0,-5.388445916248355e-13,-1.077689183249671e-12,-4.742921812218947e-12,-2.155378366499342e-12,4.321650792202638e-13}
 // endResult

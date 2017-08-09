@@ -23,6 +23,7 @@ simulate(AssertTests.powAssert2); getErrorString();
 //     messages = "Simulation execution failed for model: AssertTests.powAssert2
 // assert            | debug   | powAssert2.mos:9: Invalid root: (0)^(-0.1)
 // assert            | info    | simulation terminated by an assertion at initialization
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

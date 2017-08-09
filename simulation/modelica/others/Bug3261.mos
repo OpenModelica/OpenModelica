@@ -39,7 +39,9 @@ val(A[1,1], 1);
 // record SimulationResult
 //     resultFile = "overrideBug_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'overrideBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
@@ -52,7 +54,9 @@ val(A[1,1], 1);
 // record SimulationResult
 //     resultFile = "overrideBug_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'overrideBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override x[2]=5,A[1,1]=100,x[1]=4 -output x[1],x[2],A[1,1]'",
-//     messages = "time=1,x[1]=45311.588691568431386,x[2]=1433.1325544733929291,A[1,1]=100
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// time=1,x[1]=45311.588691568431386,x[2]=1433.1325544733929291,A[1,1]=100
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

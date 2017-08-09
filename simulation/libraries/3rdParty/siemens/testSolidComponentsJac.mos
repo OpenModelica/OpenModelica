@@ -41,7 +41,9 @@ res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.
 // record SimulationResult
 //     resultFile = "SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.SolidComponents.Tests.wall_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=symbolical'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}

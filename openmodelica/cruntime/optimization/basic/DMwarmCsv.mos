@@ -17,7 +17,8 @@ res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","R
 // record SimulationResult
 //     resultFile = "diesel_model_res.csv",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected'",
-//     messages = "
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:p_em(start = 0.339267, nominal = 1.01111, min = 0.337038, max = 1.01111, init = 0.339267)
@@ -49,14 +50,16 @@ res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","R
 // LOG_IPOPT_ERROR   | info    | max error is 2.52825e-08 for the approximation of the state p_em(time = 0.485556)
 // LOG_IPOPT_ERROR   | info    | max error is 3.66997e-09 for the approximation of the state p_em(time = 0.485556)
 // LOG_IPOPT_ERROR   | info    | max error is 1.48205e-10 for the approximation of the state p_em(time = 0.485556)
-// LOG_IPOPT_ERROR   | info    | max error is 2.86215e-13 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.86256e-13 for the approximation of the state p_em(time = 0.485556)
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // record SimulationResult
 //     resultFile = "diesel_model_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -csvInput ./diesel_model_res.csv -ipopt_max_iter=-1 -emit_protected'",
-//     messages = "
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:p_em(start = 0.339267, nominal = 1.01111, min = 0.337038, max = 1.01111, init = 0.339267)
@@ -69,7 +72,8 @@ res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","R
 // number of nonlinear constraints: 0
 // ========================================================
 //
-// max_iter = -1"
+// max_iter = -1stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}

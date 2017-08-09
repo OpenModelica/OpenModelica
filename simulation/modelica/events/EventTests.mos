@@ -44,7 +44,8 @@ res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat", "Ev
 // record SimulationResult
 //     resultFile = "testEvents_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOTI'",
-//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | states variables
 // |                 | |       | | | [1] Real x(start=-0.25, nominal=1) = -0.25 (pre: -0.25)
 // |                 | |       | | | [2] Real y(start=0.25, nominal=1) = 0.25 (pre: 0.25)
@@ -63,6 +64,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat", "Ev
 // |                 | |       | | | [7] Boolean w2(start=false) = false (pre: false)
 // |                 | |       | | | [8] Boolean w3(start=true) = true (pre: true)
 // |                 | |       | | | [9] Boolean w4(start=true) = true (pre: true)
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

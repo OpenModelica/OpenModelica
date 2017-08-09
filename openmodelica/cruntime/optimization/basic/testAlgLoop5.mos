@@ -112,6 +112,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 1.99957e-08 for the constraint $con$conDer(time = 47.4)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.99957e-08 for the constraint $con$conDer(time = 47.4)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.99957e-08 for the constraint $con$conDer(time = 47.4)
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):

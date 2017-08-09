@@ -3459,15 +3459,17 @@ val(evaporator_qm_S, 100);
 // record SimulationResult
 //     resultFile = "DrumBoilerModel_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrumBoilerModel_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=q_F=10,Y_Valve=1'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 10.0
 // 1.0
-// 1.066186919287032
-// 1.132373838574064
-// -16.62186183089507
-// 101.4102117488924
-// 66.98717542979452
-// -1.132373838574064
+// 1.066186906578206
+// 1.132373813156412
+// -16.62186204272286
+// 101.4102114120473
+// 66.98717539189781
+// -1.132373813156412
 // endResult

@@ -35,6 +35,7 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EventIterationLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: EventIterationLoop
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // assert            | debug   | Simulation terminated due to too many, i.e. 20, event iterations.
 // |                 | |       | This could either indicate an inconsistent system or an undersized limit of event iterations.
 // |                 | |       | The limit of event iterations can be specified using the runtime flag '–mei=<value>'.

@@ -83,8 +83,10 @@ val(C5.i,60.0);
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.Analog.Examples.CauerLowPassOPV_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 600, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassOPV', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 600, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassOPV', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "R1.v:"
 // -0.0
@@ -96,50 +98,50 @@ val(C5.i,60.0);
 // -1.0
 // "R2.v:"
 // -0.0
-// 0.000253740481070983
-// 0.49936659960685476
+// 0.0002537404782735835
+// 0.4993665996062486
 // "R2.i:"
 // -0.0
-// 0.000253740481070983
-// 0.49936659960685476
+// 0.0002537404782735835
+// 0.4993665996062486
 // "R3.v:"
 // 0.0
-// -0.007364533583544441
-// -0.49970786317424226
+// -0.007364533509801463
+// -0.4997078631745762
 // "R3.i:"
 // 0.0
-// -0.007364533583544441
-// -0.49970786317424226
+// -0.007364533509801463
+// -0.4997078631745762
 // "R11.v:"
 // -0.0
-// -0.0004310599875592409
-// -0.4997076551161655
+// -0.000431059983263338
+// -0.4997076551161084
 // "R11.i:"
 // -0.0
-// -0.0004310599875592409
-// -0.4997076551161655
+// -0.000431059983263338
+// -0.4997076551161084
 // "Op1.out.v:"
 // -0.0
-// 0.007364533583544441
-// 0.49970786317424226
+// 0.007364533509801463
+// 0.4997078631745762
 // "Op1.out.i:"
 // 0.0
-// -1.2154891995198456
-// -0.0010057230782982152
+// -1.215489199613541
+// -0.001005723078507992
 // "Op5.out.v:"
 // 0.0
-// 0.0004310599875592409
-// 0.4997076551161655
+// 0.000431059983263338
+// 0.4997076551161084
 // "Op5.out.v:"
 // 0.0
-// 0.0004310599875592409
-// 0.4997076551161655
+// 0.000431059983263338
+// 0.4997076551161084
 // "C5.v:"
 // -0.0
-// 0.007364533583544441
-// 0.49970786317424226
+// 0.007364533509801463
+// 0.4997078631745762
 // "C5.i:"
 // 0.0
-// 0.200454800400942
-// 0.00016586080649546624
+// 0.200454800416394
+// 0.0001658608065300561
 // endResult

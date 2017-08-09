@@ -17,11 +17,13 @@ val(y,1.0);
 // true
 // record SimulationResult
 //     resultFile = "dertest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'dertest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dertest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 10.0
-// 4.198212019151337
+// 4.19821202610832
 // -1.0
-// -1.4291655499951887
+// -1.429165554394553
 // endResult

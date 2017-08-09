@@ -40,7 +40,9 @@ val(y, {0.0,0.25,0.5,0.75,1.0});
 // record SimulationResult
 //     resultFile = "nonlinear_system.nonlinearDelayTest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinearDelayTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
 //          y:VARIABLE()  type: Real
@@ -48,6 +50,6 @@ val(y, {0.0,0.25,0.5,0.75,1.0});
 //          x2:VARIABLE()  type: Real
 // "
 // {-1.572302755514847,-1.618421380238098,-1.738059371463845,-1.818945608412304,-1.907039392827518}
-// {0.7861513777574233,0.7500029985869119,0.69961337366976,0.6092948563143594,0.499555664003668}
-// {0.0,-0.201552919327918,-0.4383459284777345,-0.7178289496303605,-1.044667436491888}
+// {0.7861513777574233,0.7500029985869119,0.6996133736697597,0.609294856314359,0.4995556640036673}
+// {0.0,-0.201552919327918,-0.4383459284777347,-0.7178289496303617,-1.04466743649189}
 // endResult

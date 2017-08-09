@@ -30,7 +30,9 @@ val(c,0.5); getErrorString();
 // record SimulationResult
 //     resultFile = "Algorithm2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Algorithm2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 8
@@ -77,11 +79,11 @@ val(c,0.5); getErrorString();
 // "
 // -0.5
 // ""
-// -0.2933812051163163
+// -0.2933812051163164
 // ""
 // 1.059928192325525
 // ""
-// 0.7066187948836837
+// 0.7066187948836835
 // ""
 // -0.3533093974418418
 // ""

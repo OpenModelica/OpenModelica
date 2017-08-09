@@ -30,8 +30,10 @@ y3/1000.0;
 // true
 // record SimulationResult
 //     resultFile = "WhenStat3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 800, tolerance = 0.0000000001, method = 'rungekutta', fileNamePrefix = 'WhenStat3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 800, tolerance = 1e-10, method = 'rungekutta', fileNamePrefix = 'WhenStat3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // true
 // 1.0

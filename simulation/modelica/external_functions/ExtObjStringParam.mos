@@ -22,7 +22,7 @@ simulate(ExtObjStringParam2, startTime=0.0, stopTime=1.0, numberOfIntervals=2, t
 // ""
 // record SimulationResult
 //     resultFile = "ExtObjStringParam_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'ExtObjStringParam', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ExtObjStringParam', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "constructors says 'sampledata.xml'
 // constructors says 'sampledata.xml'
 // constructors says 'sampledata.xml'
@@ -123,6 +123,8 @@ simulate(ExtObjStringParam2, startTime=0.0, stopTime=1.0, numberOfIntervals=2, t
 // constructors says 'sampledata.xml'
 // constructors says 'sampledata.xml'
 // constructors says 'sampledata.xml'
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // destructor says 'sampledata.xml'
 // destructor says 'sampledata.xml'
 // destructor says 'sampledata.xml'
@@ -227,8 +229,10 @@ simulate(ExtObjStringParam2, startTime=0.0, stopTime=1.0, numberOfIntervals=2, t
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "ExtObjStringParam2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'ExtObjStringParam2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ExtObjStringParam2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "constructors says 'sampledata.xml'
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // destructor says 'sampledata.xml'
 // "
 // end SimulationResult;

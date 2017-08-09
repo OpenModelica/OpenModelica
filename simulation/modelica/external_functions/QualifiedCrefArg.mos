@@ -23,14 +23,14 @@ getErrorString();
 //   input Real y;
 //   output R res;
 // end QualifiedCrefArg.R;
-// 
+//
 // impure function QualifiedCrefArg.f
 //   input QualifiedCrefArg.R ri = QualifiedCrefArg.R(1.0, 2.0);
 //   output QualifiedCrefArg.R r;
-// 
+//
 //   external \"C\" r.y = f_ext(ri.x, ri.y, r);
 // end QualifiedCrefArg.f;
-// 
+//
 // class QualifiedCrefArg
 //   Real r1.x;
 //   Real r1.y;
@@ -44,7 +44,9 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "QualifiedCrefArg_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'QualifiedCrefArg', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 6.0
 // 42.0

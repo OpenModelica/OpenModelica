@@ -40,8 +40,10 @@ val(R2.v,1.0);
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.Analog.Examples.ShowVariableResistor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowVariableResistor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowVariableResistor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Ramp1.y:"
 // 2.0
@@ -52,19 +54,19 @@ val(R2.v,1.0);
 // "VariableResistor.v:"
 // 0.0
 // -0.5675675675675675
-// 0.000000000000000004050421400599522
+// -7.611099250848241e-17
 // 0.6595744680851062
-// 0.0000000000000001695664798819412
+// 1.6978606021123e-16
 // "VariableResistor.i:"
-// -0.0
-// -0.21621621621621623
-// 0.0000000000000000006324634533111614
-// 0.17021276595744678
-// 0.000000000000000037681439973764714
+// 0.0
+// -0.2162162162162162
+// -2.34187669256869e-17
+// 0.1702127659574468
+// 3.773023560249555e-17
 // "R2.v:"
 // 0.0
 // -0.3333333333333334
-// 0.000000000000000001771782769074047
+// -4.076600168545497e-17
 // 0.3333333333333334
-// 0.0000000000000000816431199431569
+// 8.153200337090993e-17
 // endResult

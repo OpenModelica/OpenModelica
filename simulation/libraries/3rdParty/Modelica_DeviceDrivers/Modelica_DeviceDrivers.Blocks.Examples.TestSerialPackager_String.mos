@@ -31,6 +31,9 @@ runScript(modelTesting);getErrorString();
 // ""
 // Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String', options = '', outputFormat = 'mat', variableFilter = 'time|findString.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // Warning: Alias equations of external objects are not Modelica compliant as in:
 //     addInteger.pkgOut[1].pkg = resetPointer.pkgIn.pkg

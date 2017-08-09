@@ -29,7 +29,9 @@ val(R1.v,0.2); getErrorString();
 // record SimulationResult
 //     resultFile = "Tearing10_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
@@ -74,8 +76,8 @@ val(R1.v,0.2); getErrorString();
 //  * Linear torn systems: 1 {(1,100.0%) 9}
 //  * Non-linear torn systems: 0
 // "
-// -2.842170943040401e-14
+// -2.791204333037424e-14
 // ""
-// -2.842170943040401e-13
+// -2.791204333037424e-13
 // ""
 // endResult

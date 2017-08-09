@@ -31,6 +31,9 @@ runScript(modelTesting);getErrorString();
 // {"friction.v_rel","innerContactA.s_rel","innerContactB.s_rel","outerContactA.v_rel","outerContactB.s_rel","outerContactB.v_rel"}
 // Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.PreLoad', options = '', outputFormat = 'mat', variableFilter = 'time|friction.v_rel|innerContactA.s_rel|innerContactB.s_rel|outerContactA.v_rel|outerContactB.s_rel|outerContactB.v_rel', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.PreLoad_res.mat
+// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

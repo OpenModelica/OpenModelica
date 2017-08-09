@@ -33,9 +33,11 @@ simulate(initializationTests.SingularInitial, startTime=0.0, stopTime=0.0); getE
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.SingularInitial', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: initializationTests.SingularInitial
+// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != 4 = 4.0 - z
 // stdout            | warning | Error in initialization. Storing results and exiting.
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: The given system is mixed-determined.   [index = 1]

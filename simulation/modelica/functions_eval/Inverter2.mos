@@ -24,6 +24,8 @@ getErrorString();
 //     resultFile = "Inverter2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 2000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Inverter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | warning | The step-size 5e-15 is too small. Adjust the step-size to 1e-12.
+// stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.

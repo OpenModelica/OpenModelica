@@ -20,12 +20,14 @@ val(resistor1.v,1.0);
 // true
 // record SimulationResult
 //     resultFile = "Trapezoidtest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 0.00000001, method = 'dassl', fileNamePrefix = 'Trapezoidtest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'Trapezoidtest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // 0.0
 // 0.5
 // 1.0
-// 0.49999999999999944
+// 0.4999999999999994
 // 0.0
 // endResult

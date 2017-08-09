@@ -20,10 +20,12 @@ val(hydr.left.p,1.01);
 // record SimulationResult
 //     resultFile = "PRVSystem_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.2, numberOfIntervals = 119999, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'PRVSystem', options = '', outputFormat = 'mat', variableFilter = 'hydr.left.p|hydr.x', cflags = '', simflags = '-noEventEmit'",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// 1.888990295012324e-06
-// 10009941.55056878
+// 1.888990294992979e-06
+// 10009941.55056857
 // endResult

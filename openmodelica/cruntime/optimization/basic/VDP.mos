@@ -21,7 +21,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "nmpcVDP_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcVDP', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:cost(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
@@ -38,6 +39,7 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
+// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

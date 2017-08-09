@@ -25,7 +25,9 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Cir
 // record SimulationResult
 //     resultFile = "DrModelicaForTesting.Circuit_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Circuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "[Modelica 3.1/Electrical/Analog/Basic.mo:68:3-69:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.1/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter src.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
