@@ -1167,6 +1167,21 @@ algorithm
   end matchcontinue;
 end scalarRecCrefsForOneDimRec;
 
+protected function partiallyConstantArrayNeedsExpansion
+"if constScalarCrefs are part of an array output cref, this cref needs to be expanded. Thats not supported right now"
+  input list<DAE.ComponentRef> allOutputCrefsIn;
+  input list<DAE.ComponentRef> constScalarCrefs;
+  output Boolean bOut=false;
+algorithm
+  for cref in allOutputCrefsIn loop
+    if Types.isArray(ComponentReference.crefType(cref)) then
+      if List.isMemberOnTrue(cref, constScalarCrefs, ComponentReference.crefEqualWithoutSubs) then
+        bOut := true;
+      end if;
+    end if;
+  end for;
+end partiallyConstantArrayNeedsExpansion;
+
 protected function buildVariableFunctionParts "builds the output elements of the new function, the output expression for the new function call (lhs-exp)
 and the crefs of the variable outputs of the new function
 author: Waurich TUD 2014-04"
@@ -1217,6 +1232,11 @@ algorithm
         allOutputCrefs = allOutputCrefs2;
         //print("\n allOutputCrefs \n"+stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
         //print("\n varScalarCrefsInFunc \n"+stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+"\n");
+
+        if partiallyConstantArrayNeedsExpansion(allOutputCrefs, constScalarCrefs) then
+          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("A partially constant array needs expansion. Thats not supported.\n"); end if;
+          fail();
+        end if;
 
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReference.crefEqual);
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
@@ -1273,11 +1293,13 @@ algorithm
         (varOutputs,outputExp,varScalarCrefs);
     else
       equation
-        print("buildVariableFunctionParts failed!\n");
-        print("\n scalarOutputs \n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
-        print("\n constScalarCrefs \n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-        print("\n allOutputs "+"\n"+DAEDump.dumpElementsStr(allOutputs)+"\n");
-        print("\n lhsExpIn "+"\n"+ExpressionDump.dumpExpStr(lhsExpIn,0)+"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("buildVariableFunctionParts failed!\n");
+          print("\n scalarOutputs \n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
+          print("\n constScalarCrefs \n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+          print("\n allOutputs "+"\n"+DAEDump.dumpElementsStr(allOutputs)+"\n");
+          print("\n lhsExpIn "+"\n"+ExpressionDump.dumpExpStr(lhsExpIn,0)+"\n");
+        end if;
       then
         fail();
   end matchcontinue;
