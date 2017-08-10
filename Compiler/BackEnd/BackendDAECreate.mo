@@ -115,6 +115,7 @@ protected
   list<BackendDAE.TimeEvent> timeEvents;
   String neqStr, nvarStr;
   Integer varSize, eqnSize, numCheckpoints;
+  BackendDAE.EqSystem syst;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -148,7 +149,8 @@ algorithm
   ieqnarr := BackendEquation.listEquation(ieqns);
   einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEndedList.fromList({}), ZeroCrossings.new(), 0);
   symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {}), (NONE(), ({}, {}, ({}, {}), -1), {})};
-  outBackendDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr)::{},
+  syst := BackendDAEUtil.createEqSystem(vars_1, eqnarr, {}, BackendDAE.UNKNOWN_PARTITION(), reqnarr);
+  outBackendDAE := BackendDAE.DAE(syst::{},
                                   BackendDAE.SHARED(globalKnownVars,
                                                     localKnownVars,
                                                     extVars,
@@ -167,17 +169,11 @@ algorithm
                                                     BackendDAEUtil.emptyPartitionsInfo()
                                                     ));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
-  varSize := BackendVariable.varsSize(vars_1);
-  eqnSize := BackendEquation.equationArraySize(eqnarr);
-  neqStr := intString(eqnSize);
-  nvarStr := intString(varSize);
+  BackendDAEUtil.checkIncidenceMatrixSolvability(syst, functionTree);
 
-  if varSize <> eqnSize then
-    Error.addMessage(if varSize > eqnSize then Error.UNDERDET_EQN_SYSTEM else Error.OVERDET_EQN_SYSTEM, {neqStr, nvarStr});
-    fail();
+  if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
+    Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{String(BackendEquation.equationArraySize(syst.orderedEqs)), String(BackendVariable.varsSize(syst.orderedVars))},Absyn.dummyInfo);
   end if;
-
-  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
   execStat("Generate backend data structure");
   return;
   else

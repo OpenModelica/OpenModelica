@@ -879,6 +879,10 @@ public constant Message CLASS_EXTENDS_TARGET_NOT_FOUND = MESSAGE(579, TRANSLATIO
   Util.gettext("Base class targeted by class extends %s not found in the inherited classes."));
 public constant Message ASSIGN_PARAM_FIXED_ERROR = MESSAGE(580, TRANSLATION(), ERROR(),
   Util.gettext("Trying to assign to parameter component %s(fixed=true) in %s := %s"));
+public constant Message EQN_NO_SPACE_TO_SOLVE = MESSAGE(581, SYMBOLIC(), WARNING(),
+  Util.gettext("Equation %s (size: %s) %s is not big enough to solve for enough variables.\n  Remaining unsolved variables are: %s\n  Already solved: %s\n  Equations used to solve those variables:%s"));
+public constant Message VAR_NO_REMAINING_EQN = MESSAGE(582, SYMBOLIC(), WARNING(),
+  Util.gettext("Variable %s does not have any remaining equation to be solved in.\n  The original equations were:%s"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

@@ -1662,7 +1662,7 @@ algorithm
         b = i > 1;
         // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
-        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError) else {syst};
+        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError, funcs) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
         GC.free(eqPartMap);

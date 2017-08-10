@@ -156,8 +156,10 @@ algorithm
       Boolean samesize;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EqSystem syst;
+      DAE.FunctionTree functionTree;
 
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs)::{})) equation
+    case BackendDAE.DAE(eqs=(syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs))::{}, shared=BackendDAE.SHARED(functionTree=functionTree)) equation
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
       nVars = BackendVariable.varsSize(vars);
@@ -271,7 +273,7 @@ algorithm
       equation
         allvars = BackendVariable.mergeVariables(syst.orderedVars, shared.globalKnownVars);
         ((_, expcrefs)) = traverseBackendDAEExpsVars(syst.orderedVars, checkBackendDAEExp, (allvars, {}));
-       ((_, expcrefs)) = traverseBackendDAEExpsEqns(shared.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
+        ((_, expcrefs)) = traverseBackendDAEExpsEqns(shared.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsVars(shared.globalKnownVars, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.orderedEqs, checkBackendDAEExp, (allvars, expcrefs));
         ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
@@ -9059,6 +9061,179 @@ algorithm
     end match;
   end for;
 end getNoDerivativeInputPosition;
+
+public function checkIncidenceMatrixSolvability "Performs a limited matching algorithm to sometimes figure out which equations are superflours or which variables are never solved for."
+  input BackendDAE.EqSystem syst;
+  input DAE.FunctionTree functionTree;
+protected
+  Integer varSize, eqnSize, v, eq, count;
+  BackendDAE.IncidenceMatrix m, mT, mOrig, mTOrig;
+  list<Integer> vars, eqs, varsInOrig, eqsInOrig;
+  array<Integer> solvedVars;
+  array<list<tuple<DAE.ComponentRef,Integer>>> solvedEqs;
+  list<SourceInfo> infos;
+  list<tuple<DAE.ComponentRef,Integer>> names;
+  Integer errors = 0, numSolved = 0, eqSize, lenInfos, lenVars;
+  Boolean cont = true;
+  BackendDAE.Variables varsArray;
+  BackendDAE.Var var;
+  BackendDAE.EquationArray eqsArray;
+  BackendDAE.Equation _equation;
+  constant Boolean debug=false;
+  constant Boolean alwaysCheck=false;
+  SourceInfo info;
+algorithm
+  varsArray := syst.orderedVars;
+  eqsArray := syst.orderedEqs;
+  varSize := BackendVariable.varsSize(varsArray);
+  eqnSize := BackendEquation.equationArraySize(eqsArray);
+  if varSize <> eqnSize then
+    Error.addMessage(if varSize > eqnSize then Error.UNDERDET_EQN_SYSTEM else Error.OVERDET_EQN_SYSTEM, {String(eqnSize), String(varSize)});
+  elseif not alwaysCheck then
+    return;
+  end if;
+  (_, mOrig, mTOrig) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(functionTree));
+
+  m := arrayCopy(mOrig);
+  mT := arrayCopy(mTOrig);
+
+  solvedVars := arrayCreate(arrayLength(mT), 0);
+  solvedEqs := arrayCreate(arrayLength(m), {});
+
+  if debug then
+    print("Got adjacency matrix "+String(varSize)+" "+String(arrayLength(m))+" "+String(eqnSize)+" "+String(arrayLength(mT))+"...\n");
+  end if;
+  count := 0;
+  while cont and count < 1000 loop
+    cont := false;
+    count := count+1;
+    for i in 1:arrayLength(m) /* Not eqnSize; that is the size including arrays */ loop
+      if not listEmpty(arrayGet(solvedEqs, i)) then
+        continue;
+      end if;
+      _equation := BackendEquation.get(eqsArray, i);
+      info := BackendEquation.equationInfo(_equation);
+      eqSize := BackendEquation.equationSize(_equation);
+      vars := arrayGet(m, i);
+      lenVars := listLength(vars);
+      if eqSize == 0 then
+        arrayUpdate(solvedEqs, i, {(DAE.emptyCref,0)});
+        continue;
+      end if;
+      if lenVars <= eqSize then
+        if lenVars < eqSize then
+          variableDoesNotFitInEquation(i, vars, mOrig, eqsArray, varsArray, solvedVars);
+          errors := errors+1;
+          if lenVars == 0 then
+            arrayUpdate(solvedEqs, i, (DAE.emptyCref,0)::arrayGet(solvedEqs,i));
+          end if;
+        end if;
+        for v in vars loop
+          var := BackendVariable.getVarAt(varsArray, v);
+          arrayUpdate(solvedEqs, i, (var.varName,v)::arrayGet(solvedEqs,i));
+          arrayUpdate(solvedVars, v, i);
+          eqs := arrayGet(mT, v);
+          for eq in eqs loop
+            // Remove references to the variable in other equations since we can't solve it there
+            arrayUpdate(m, eq, List.setDifference(arrayGet(m, eq), vars));
+          end for;
+          numSolved := numSolved+1;
+        end for;
+        cont := true;
+      end if;
+    end for;
+
+    if debug then
+      print("Number of equations solved: " + String(numSolved-errors) + "\n");
+      print("Number of errors: " + String(errors) + "\n");
+    end if;
+
+    for i in 1:arrayLength(mT) /* = varSize */ loop
+      if 0 <> arrayGet(solvedVars, i) then
+        continue;
+      end if;
+      eqs := arrayGet(mT, i);
+      var := BackendVariable.getVarAt(varsArray, i);
+      info := var.source.info;
+      if listLength(eqs) == 0 then
+        Error.addSourceMessage(Error.VAR_NO_REMAINING_EQN, {
+          ComponentReference.printComponentRefStr(var.varName),
+          stringAppendList(list("\n  Equation " + String(eq) + ": " + BackendDump.equationString(BackendEquation.get(eqsArray, eq)) + ", which needs to solve for " + stringDelimitList(list(ComponentReference.printComponentRefStr(Util.tuple21(tpl)) for tpl in arrayGet(solvedEqs, eq)), ", ") for eq in arrayGet(mTOrig, i)))
+          }, info);
+        arrayUpdate(solvedVars, i, -1);
+      elseif listLength(eqs) == 1 then
+        {eq} := eqs;
+        eqSize := BackendEquation.equationSize(BackendEquation.get(eqsArray, eq));
+        names := arrayGet(solvedEqs, eq);
+        lenInfos := listLength(names);
+        arrayUpdate(solvedVars, i, eq);
+        arrayUpdate(solvedEqs, eq, (var.varName,i)::names);
+        if lenInfos >= eqSize then
+          variableDoesNotFitInEquation(eq, {i}, mOrig, eqsArray, varsArray, solvedVars);
+          errors := errors+1;
+        end if;
+        vars := arrayGet(m, eq);
+        if lenInfos+1 >= eqSize then // TODO: FIXME
+          for v in vars loop
+            // Remove references to the equation in other variables since we can't solve it there
+            arrayUpdate(mT, v, List.setDifference(arrayGet(mT, v), eqs));
+          end for;
+        end if;
+        numSolved := numSolved+1;
+        cont := true;
+      end if;
+    end for;
+
+    if debug then
+      print("Number of equations solved: " + String(numSolved-errors) + "\n");
+      print("Number of errors: " + String(errors) + "\n");
+    end if;
+  end while;
+  true := 0 == errors;
+  if alwaysCheck and varSize == eqnSize then
+    return;
+  end if;
+  fail();
+end checkIncidenceMatrixSolvability;
+
+protected function variableDoesNotFitInEquation
+  input Integer eq;
+  input list<Integer> vars;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.EquationArray eqsArray;
+  input BackendDAE.Variables varsArray;
+  input array<Integer> solvedVars;
+protected
+  BackendDAE.Equation _equation;
+  list<Integer> varsInOrig, eqsInOrig;
+  String eqsString;
+  SourceInfo info;
+  Integer eqSize;
+algorithm
+  _equation := BackendEquation.get(eqsArray, eq);
+  info := BackendEquation.equationInfo(_equation);
+  eqSize := BackendEquation.equationSize(_equation);
+
+  varsInOrig := List.setDifference(arrayGet(m, eq), vars);
+  eqsInOrig := List.sortedUnique(List.sort(list(arrayGet(solvedVars,myVar) for myVar guard arrayGet(solvedVars,myVar)>0 in varsInOrig), intGt), intEq);
+  eqsString := stringAppendList(list("\n    Equation " + String(eqNum) + " (size: "+String(BackendEquation.equationSize(BackendEquation.get(eqsArray, eqNum)))+"): " + BackendDump.equationString(BackendEquation.get(eqsArray, eqNum)) for eqNum in eqsInOrig));
+  Error.addSourceMessage(Error.EQN_NO_SPACE_TO_SOLVE, {
+    String(eq),
+    String(eqSize),
+    BackendDump.equationString(_equation),
+    getVariableNamesForErrorMessage(varsArray, vars),
+    getVariableNamesForErrorMessage(varsArray, varsInOrig),
+    eqsString
+    }, info);
+end variableDoesNotFitInEquation;
+
+protected function getVariableNamesForErrorMessage
+  input BackendDAE.Variables varsArray;
+  input list<Integer> vars;
+  output String names;
+algorithm
+  names := stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, v))) for v in vars), ", ");
+end getVariableNamesForErrorMessage;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

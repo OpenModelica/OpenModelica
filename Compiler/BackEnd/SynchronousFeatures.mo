@@ -2600,7 +2600,7 @@ algorithm
   partitionCnt := partitionIndependentBlocks0(m, mT, rm, rmT, eqPartMap, varPartMap, reqsPartition, varsPartition, rvarsPartition);
 
   if partitionCnt > 1 then
-    (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqPartMap, reqsPartition, mT, rmT, false);
+    (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqPartMap, reqsPartition, mT, rmT, false, funcs);
   else
     (systs, outUnpartRemEqs) := ({syst}, {});
   end if;
@@ -3049,6 +3049,7 @@ public function partitionIndependentBlocksSplitBlocks
   input BackendDAE.IncidenceMatrix mT;
   input BackendDAE.IncidenceMatrix rmT;
   input Boolean throwNoError;
+  input DAE.FunctionTree funcs;
   output list<BackendDAE.EqSystem> systs = {};
   output list<BackendDAE.Equation> unpartRemovedEqs;
   output array<Integer> varPartMap;
@@ -3056,7 +3057,6 @@ protected
   array<list<BackendDAE.Equation>> ea, rea;
   array<list<BackendDAE.Var>> va;
   Integer i1, i2;
-  String s1, s2;
   Boolean b, b1 = true;
   BackendDAE.EqSystem syst;
   array<Integer> varsPartition;
@@ -3070,10 +3070,8 @@ algorithm
   i2 := BackendVariable.varsSize(inSyst.orderedVars);
 
   if i1 <> i2 and not throwNoError then
-  s1 := intString(i1);
-  s2 := intString(i2);
-  Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM,
-    {s1, s2}, Absyn.dummyInfo);
+    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, Absyn.dummyInfo);
+    BackendDAEUtil.checkIncidenceMatrixSolvability(inSyst, funcs);
     fail();
   end if;
 
