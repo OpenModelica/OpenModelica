@@ -16,5 +16,8 @@ simulate(ModelBalance2);getErrorString();
 //     messages = "Failed to build model: ModelBalance2"
 // end SimulationResult;
 // "Error: Too few equations, under-determined system. The model has 1 equation(s) and 2 variable(s).
+// [simulation/modelica/equations/ModelBalance2.mo:9:3-9:12:writable] Warning: Variable x does not have any remaining equation to be solved in.
+//   The original equations were:
+//   Equation 1: y = 2 + x, which needs to solve for y
 // "
 // endResult

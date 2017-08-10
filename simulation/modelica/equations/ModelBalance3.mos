@@ -18,5 +18,11 @@ getErrorString();
 //     messages = "Failed to build model: ModelBalance3"
 // end SimulationResult;
 // "Error: Too many equations, over-determined system. The model has 3 equation(s) and 2 variable(s).
+// [simulation/modelica/equations/ModelBalance3.mo:14:3-14:12:writable] Warning: Equation 3 (size: 1) x = 2 + y is not big enough to solve for enough variables.
+//   Remaining unsolved variables are: 
+//   Already solved: x, y
+//   Equations used to solve those variables:
+//     Equation 1 (size: 1): x = 2
+//     Equation 2 (size: 1): y = 2 + x
 // "
 // endResult

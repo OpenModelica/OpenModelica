@@ -16,5 +16,17 @@ getErrorString(); // simulation failed, check error string.
 //     messages = "Failed to build model: DoubleWhenConflict"
 // end SimulationResult;
 // "Error: Too many equations, over-determined system. The model has 2 equation(s) and 1 variable(s).
+// Warning: Equation 2 (size: 1) algorithm
+//   when x <= 5.0 then
+//     close := false;
+//   end when;
+//  is not big enough to solve for enough variables.
+//   Remaining unsolved variables are: 
+//   Already solved: close
+//   Equations used to solve those variables:
+//     Equation 1 (size: 1): algorithm
+//   when x >= 5.0 then
+//     close := true;
+//   end when;
 // "
 // endResult
