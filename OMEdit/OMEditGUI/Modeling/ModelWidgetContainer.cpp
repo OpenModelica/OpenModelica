@@ -4892,7 +4892,7 @@ void ModelWidget::getModelTransitions()
 {
   QList<QList<QString>> transitions = MainWindow::instance()->getOMCProxy()->getTransitions(mpLibraryTreeItem->getNameStructure());
   for (int i = 0 ; i < transitions.size() ; i++) {
-    QList<QString> transition = transitions.at(i);
+    QStringList transition = transitions.at(i);
     // get start component
     Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(transition.at(0));
     // show error message if start component is not found.
@@ -4943,7 +4943,7 @@ void ModelWidget::getModelInitialStates()
 {
   QList<QList<QString>> initialStates = MainWindow::instance()->getOMCProxy()->getInitialStates(mpLibraryTreeItem->getNameStructure());
   for (int i = 0 ; i < initialStates.size() ; i++) {
-    QList<QString> initialState = initialStates.at(i);
+    QStringList initialState = initialStates.at(i);
     // get initial state component
     Component *pInitialStateComponent = mpDiagramGraphicsView->getComponentObject(initialState.at(0));
     // show error message if initial state component is not found.
