@@ -1468,6 +1468,7 @@ algorithm
   oVarCRef := listGet(oVarCRefLstIn,indxIn);
   cRef := ComponentReference.makeCrefQual(prefix,DAE.T_COMPLEX_DEFAULT,{},oVarCRef);
   cRef := ComponentReference.replaceSubsWithString(cRef);
+  cRef := ComponentReference.crefSetLastType(cRef, DAE.T_REAL_DEFAULT);
   varExp := Expression.crefExp(cRef);
   replacementOut := BackendVarTransform.addReplacement(replacementIn,oVarCRef,varExp,NONE());
   ty := ComponentReference.crefLastType(cRef);
