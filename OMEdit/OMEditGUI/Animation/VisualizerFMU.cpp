@@ -174,6 +174,25 @@ void VisualizerFMU::simulate(TimeManager& omvm)
     omvm.setSimTime(simulateStep(omvm.getSimTime()));
 }
 
+void VisualizerFMU::updateSystem()
+{
+  // Set states
+  mpFMU->setContinuousStates();
+  int zero_crossning_event = 0;
+  mpFMU->prepareSimulationStep(mpTimeManager->getVisTime());
+  bool zeroCrossingEvent = mpFMU->checkForTriggeredEvent();
+  if (mpSimSettings->getIterateEvents() && (mpSimSettings->getCallEventUpdate() || zeroCrossingEvent || mpFMU->itsEventTime()))
+  {
+    mpFMU->handleEvents(mpSimSettings->getIntermediateResults());
+  }
+  // Solve system
+  mpFMU->solveSystem();
+  // Step is complete
+  mpFMU->completedIntegratorStep(mpSimSettings->getCallEventUpdate());
+  updateVisAttributes(mpTimeManager->getVisTime());
+}
+
+
 double VisualizerFMU::simulateStep(const double time)
 {
   int zero_crossning_event = 0;
@@ -333,3 +352,9 @@ void VisualizerFMU::setSimulationSettings(double stepsize, Solver solver, bool i
   mpSimSettings->setSolver(solver);
   mpSimSettings->setIterateEvents(iterateEvents);
 }
+
+FMUWrapperAbstract* VisualizerFMU::getFMU()
+{
+  return mpFMU;
+};
+

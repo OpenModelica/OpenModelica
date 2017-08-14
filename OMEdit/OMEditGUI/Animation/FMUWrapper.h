@@ -50,6 +50,10 @@ typedef struct
   double* _statesDer;
   double* _eventIndicators;
   double* _eventIndicatorsPrev;
+  unsigned int* _stateVRs;
+  unsigned int* _inputVRs;
+  unsigned int* _paramVRs;
+  std::vector<std::string> _stateNames;
   size_t _nStates;
   size_t _nEventIndicators;
   fmi1_status_t _fmiStatus;
@@ -150,6 +154,7 @@ class FMUWrapper_ME_1 : public FMUWrapperAbstract
   void completedIntegratorStep(int* callEventUpdate);
 
   const FMUData* getFMUData();
+  fmi1_import_t* getFMU();
   void fmi_get_real(unsigned int* valueRef, double* res);
   unsigned int fmi_get_variable_by_name(const char* name);
 
@@ -182,6 +187,7 @@ class FMUWrapper_ME_2 : public FMUWrapperAbstract
   void do_event_iteration(fmi2_import_t *fmu, fmi2_event_info_t *eventInfo);
 
   const FMUData* getFMUData();
+  fmi2_import_t* getFMU();
   void fmi_get_real(unsigned int* valueRef, double* res);
   unsigned int fmi_get_variable_by_name(const char* name);
 

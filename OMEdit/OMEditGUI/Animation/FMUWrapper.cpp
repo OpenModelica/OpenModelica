@@ -34,6 +34,8 @@
 
 
 #include "FMUWrapper.h"
+#include "Modeling/MessagesWidget.h"
+#include "Util/Helper.h"
 
 SimSettingsFMU::SimSettingsFMU()
                 : _callEventUpdate(fmi1_false),
@@ -209,6 +211,23 @@ void FMUWrapper_ME_1::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
   mFMUdata._statesDer = (fmi1_real_t*) calloc(mFMUdata._nStates, sizeof(double));
   mFMUdata._eventIndicators = (fmi1_real_t*) calloc(mFMUdata._nEventIndicators, sizeof(double));
   mFMUdata._eventIndicatorsPrev = (fmi1_real_t*) calloc(mFMUdata._nEventIndicators, sizeof(double));
+  mFMUdata._stateVRs = (unsigned int*) malloc(mFMUdata._nStates* sizeof(unsigned int));
+
+  // get states to manipulate them
+  mFMUdata._fmiStatus = fmi1_import_get_state_value_references(mpFMU, mFMUdata._stateVRs, mFMUdata._nStates);
+  if (!mFMUdata._fmiStatus)
+  {
+  for (unsigned int i=0; i<mFMUdata._nStates; i++)
+  {
+    fmi1_import_variable_t * stateVar = fmi1_import_get_variable_by_vr(mpFMU, fmi1_base_type_enu_t::fmi1_base_type_real, mFMUdata._stateVRs[i]);
+    mFMUdata._stateNames.push_back(fmi1_import_get_variable_name(stateVar));
+  }
+  }
+  else
+  {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, QObject::tr("fmi1_import_get_state_value_references returned failure code"+mFMUdata._fmiStatus),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+  }
 
   // Instantiate model
   jm_status_enu_t jmstatus = fmi1_import_instantiate_model(mpFMU, "Test ME model instance");
@@ -239,6 +258,11 @@ void FMUWrapper_ME_1::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
 const FMUData* FMUWrapper_ME_1::getFMUData()
 {
   return &mFMUdata;
+}
+
+fmi1_import_t* FMUWrapper_ME_1::getFMU()
+{
+  return mpFMU;
 }
 
 void FMUWrapper_ME_1::setContinuousStates()
@@ -399,6 +423,27 @@ void FMUWrapper_ME_2::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
   mFMUdata._statesDer = (double*)calloc(mFMUdata._nStates, sizeof(double));
   mFMUdata._eventIndicators = (double*)calloc(mFMUdata._nEventIndicators, sizeof(double));
   mFMUdata._eventIndicatorsPrev = (double*)calloc(mFMUdata._nEventIndicators, sizeof(double));
+  mFMUdata._stateVRs = (unsigned int*) malloc(mFMUdata._nStates*sizeof(unsigned int));
+  mFMUdata._stateNames = {};
+
+  // initialize variables
+  std::string stateVarName = "";
+  std::string derVarName = "";
+
+  //set state VRs and Names
+  fmi2_import_variable_list_t* derVariables = fmi2_import_get_derivatives_list(mpFMU);
+  mFMUdata._stateVRs =  (unsigned int*)fmi2_import_get_value_referece_list(derVariables);
+  for (unsigned int i=0;i<mFMUdata._nStates;i++){
+    fmi2_import_variable_t *derVar = fmi2_import_get_variable_by_vr(mpFMU, fmi2_base_type_enu_t::fmi2_base_type_real, mFMUdata._stateVRs[i]);
+    derVarName = std::string(fmi2_import_get_variable_name(derVar));
+    if (derVarName.size() >= 5){
+      fmi2_import_variable_t * stateVar = (fmi2_import_variable_t*)fmi2_import_get_real_variable_derivative_of(fmi2_import_get_variable_as_real(derVar));
+      stateVarName = std::string(fmi2_import_get_variable_name(stateVar));
+      //std::cout<<" state "<<i<<" : "<<stateVarName<<std::endl;
+      mFMUdata._stateNames.push_back(stateVarName);
+      mFMUdata._stateVRs[i] = (unsigned int)fmi2_import_get_variable_vr(fmi2_import_get_variable_by_name(mpFMU, stateVarName.c_str()));
+    }
+  }
 
   // Instantiate model
   jm_status_enu_t jmstatus = fmi2_import_instantiate(mpFMU, "Test ME model instance",fmi2_model_exchange,0,0);
@@ -461,6 +506,10 @@ const FMUData* FMUWrapper_ME_2::getFMUData()
   return &mFMUdata;
 }
 
+fmi2_import_t* FMUWrapper_ME_2::getFMU()
+{
+  return mpFMU;
+}
 
 void FMUWrapper_ME_2::setContinuousStates()
 {

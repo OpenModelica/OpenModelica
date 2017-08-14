@@ -40,12 +40,29 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QTimer>
+#include <QDoubleSpinBox>
+#include <QLabel>
 
 #include "FMUSettingsDialog.h"
 
 class VisualizerAbstract;
 class ViewerWidget;
 class Label;
+
+class DoubleSpinBoxIndexed : public QDoubleSpinBox
+{
+  Q_OBJECT
+
+public:
+  explicit DoubleSpinBoxIndexed(QWidget *pParent, int idx);
+  int mStateIdx;
+signals:
+  void valueChangedFrom(double val, int idx);
+private slots:
+   void slotForwardValueChanged(double val);
+private slots:
+
+};
 
 class AbstractAnimationWindow : public QMainWindow
 {
@@ -70,10 +87,12 @@ protected:
   //widgets
   ViewerWidget *mpViewerWidget;
   QToolBar* mpAnimationToolBar;
+  QDockWidget* mpAnimationParameterDockerWidget;
   QAction *mpAnimationChooseFileAction;
   QAction *mpAnimationInitializeAction;
   QAction *mpAnimationPlayAction;
   QAction *mpAnimationPauseAction;
+  QAction *mpInteractiveControlAction;
   QSlider* mpAnimationSlider;
   Label *mpAnimationTimeLabel;
   QLineEdit *mpTimeTextBox;
@@ -82,6 +101,8 @@ protected:
   QComboBox *mpPerspectiveDropDownBox;
   QAction *mpRotateCameraLeftAction;
   QAction *mpRotateCameraRightAction;
+  QVector<DoubleSpinBoxIndexed*> mSpinBoxVector;
+  QVector<QLabel*> mStateLabels;
   osg::Matrixd mStashedViewMatrix;
   bool mCameraInitialized;
 
@@ -92,6 +113,8 @@ protected:
   void cameraPositionTop();
   double computeDistanceToOrigin();
   void openFMUSettingsDialog(VisualizerFMU *pVisualizerFMU);
+  void updateControlPanelValues();
+
 public slots:
   void updateScene();
   void chooseAnimationFileSlotFunction();
@@ -104,6 +127,8 @@ public slots:
   void setPerspective(int value);
   void rotateCameraLeft();
   void rotateCameraRight();
+  void initInteractiveControlPanel();
+  void setStateSolveSystem(double val, int idx);
 };
 
 #endif // ABSTRACTANIMATIONWINDOW_H

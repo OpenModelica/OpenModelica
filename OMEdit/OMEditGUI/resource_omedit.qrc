@@ -26,6 +26,7 @@
         <file>Resources/icons/simulate-equation.svg</file>
         <file>Resources/icons/simulate-debug.svg</file>
         <file>Resources/icons/simulate-animation.svg</file>
+        <file>Resources/icons/control-panel.svg</file>
         <file>Resources/icons/simulation-center.svg</file>
         <file>Resources/css/stylesheet.qss</file>
         <file>Resources/icons/check.svg</file>
@@ -181,5 +182,6 @@
         <file>Resources/icons/completerType.svg</file>
         <file>Resources/icons/completerCodeSnippets.svg</file>
         <file>Resources/icons/array-parametric-plot-window.svg</file>
+        <file>Resources/icons/update.svg</file>
     </qresource>
 </RCC>
