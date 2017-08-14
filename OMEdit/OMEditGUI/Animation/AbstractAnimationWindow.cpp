@@ -535,8 +535,6 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizerFMU* pVisualizerFM
  */
 void AbstractAnimationWindow::updateScene()
 {
-    std::cout<<"updateScene"<<std::endl;
-
   if (!(mpVisualizer == NULL)) {
     //set time label
     if (!mpVisualizer->getTimeManager()->isPaused()) {
@@ -549,91 +547,11 @@ void AbstractAnimationWindow::updateScene()
         mpAnimationSlider->blockSignals(state);
       }
     }
-    std::cout<<"updateScene2"<<std::endl;
 
     //update the scene
     mpVisualizer->sceneUpdate();
     mpViewerWidget->update();
-    std::cout<<"updateScene3"<<std::endl;
 
-
-    if (mpVisualizer->getCamMountShape()==nullptr)
-    {
-        std::cout<<"NULL"<<std::endl;
-    }
-    else
-    {
-        std::cout<<"NOT NULL"<<std::endl;
-    }
-
-    if (mpVisualizer->getCamMountShape())
-    {
-      osg::Matrixd matObj = mpVisualizer->getCamMountShape()->_mat;
-      std::cout << "obj" << matObj(0, 0) << ", " << matObj(0, 1) << ", " << matObj(0, 2) << ", " << matObj(0, 3) << std::endl;
-      std::cout << "    " << matObj(1, 0) << ", " << matObj(1, 1) << ", " << matObj(1, 2) << ", " << matObj(1, 3) << std::endl;
-      std::cout << "    " << matObj(2, 0) << ", " << matObj(2, 1) << ", " << matObj(2, 2) << ", " << matObj(2, 3) << std::endl;
-      std::cout << "    " << matObj(3, 0) << ", " << matObj(3, 1) << ", " << matObj(3, 2) << ", " << matObj(3, 3) << std::endl;
-      std::cout<<"DONE"<<std::endl;
-
-      osg::Matrixd maniMat = mpViewerWidget->getSceneView()->getCameraManipulator()->getMatrix();
-      std::cout << "mani" << maniMat(0, 0) << ", " << maniMat(0, 1) << ", " << maniMat(0, 2) << ", " << maniMat(0, 3) << std::endl;
-      std::cout << "    " << maniMat(1, 0) << ", " << maniMat(1, 1) << ", " << maniMat(1, 2) << ", " << maniMat(1, 3) << std::endl;
-      std::cout << "    " << maniMat(2, 0) << ", " << maniMat(2, 1) << ", " << maniMat(2, 2) << ", " << maniMat(2, 3) << std::endl;
-      std::cout << "    " << maniMat(3, 0) << ", " << maniMat(3, 1) << ", " << maniMat(3, 2) << ", " << maniMat(3, 3) << std::endl;
-      std::cout<<"DONE"<<std::endl;
-
-      osg::Matrixd matCam = mpViewerWidget->getUmountedCamMatrix();
-      std::cout << "cam " << matCam(0, 0) << ", " << matCam(0, 1) << ", " << matCam(0, 2) << ", " << matCam(0, 3) << std::endl;
-      std::cout << "    " << matCam(1, 0) << ", " << matCam(1, 1) << ", " << matCam(1, 2) << ", " << matCam(1, 3) << std::endl;
-      std::cout << "    " << matCam(2, 0) << ", " << matCam(2, 1) << ", " << matCam(2, 2) << ", " << matCam(2, 3) << std::endl;
-      std::cout << "    " << matCam(3, 0) << ", " << matCam(3, 1) << ", " << matCam(3, 2) << ", " << matCam(3, 3) << std::endl;
-      std::cout<<"DONE"<<std::endl;
-
-      osg::Vec3 center = matObj.getTrans();
-      osg::Vec3 eye = matCam.getTrans();
-      std::cout << "objgPos " << center[0] << ", " << center[1] << ", " << center[2] << std::endl;
-      std::cout << "camgPos " << eye[0] << ", " << eye[1] << ", " << eye[2] << std::endl;
-      osg::Vec3 up;
-      double dist = osg::Vec3((center-eye)).length();
-
-      std::cout<<"dist "<<dist<<std::endl;
-      matCam.getLookAt(eye,center,up,dist);
-      std::cout << "eye " << eye[0] << ", " << eye[1] << ", " << eye[2] << std::endl;
-      std::cout << "center " << center[0] << ", " << center[1] << ", " << center[2] << std::endl;
-      std::cout << "up " << up[0] << ", " << up[1] << ", " << up[2] << std::endl;
-
-      //center = center-matObj.getTrans();
-      //eye = eye-matObj.getTrans();
-      /*
-      center[0] = center[0]-matObj(3,0)+mpVisualizer->getCamMountMat0()(3,0);
-      center[1] = center[1]-matObj(3,1)+mpVisualizer->getCamMountMat0()(3,1);
-      center[2] = center[2]-matObj(3,2)+mpVisualizer->getCamMountMat0()(3,2);
-
-      eye[0] = eye[0]-matObj(3,0)+mpVisualizer->getCamMountMat0()(3,0);
-      eye[1] = eye[1]-matObj(3,1)+mpVisualizer->getCamMountMat0()(3,1);
-      eye[2] = eye[2]-matObj(3,2)+mpVisualizer->getCamMountMat0()(3,2);
-  */
-      std::cout << "center2 " << center[0] << ", " << center[1] << ", " << center[2] << std::endl;
-      std::cout << "eye2 " << eye[0] << ", " << eye[1] << ", " << eye[2] << std::endl;
-
-      //osg::Matrixd mat3 = camManipulatorMat.lookAt(eye, center, osg::Vec3(0,1,0));
-      osg::Matrixd mat4 = matCam;
-      osg::Matrixd mat3 = maniMat;
-      mat3.makeLookAt(eye, center, up);
-      mat3 = mat3.translate(matObj.getTrans()+mat3.getTrans());
-
-      osg::Matrixd _mat = mat3;
-      std::cout << "mat " << _mat(0, 0) << ", " << _mat(0, 1) << ", " << _mat(0, 2) << ", " << _mat(0, 3) << std::endl;
-      std::cout << "    " << _mat(1, 0) << ", " << _mat(1, 1) << ", " << _mat(1, 2) << ", " << _mat(1, 3) << std::endl;
-      std::cout << "    " << _mat(2, 0) << ", " << _mat(2, 1) << ", " << _mat(2, 2) << ", " << _mat(2, 3) << std::endl;
-      std::cout << "    " << _mat(3, 0) << ", " << _mat(3, 1) << ", " << _mat(3, 2) << ", " << _mat(3, 3) << std::endl;
-      std::cout<<"DONE"<<std::endl;
-
-      mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat3);
-    }
-    else{
-      std::cout<<"too bad"<<std::endl;
-    }
     updateControlPanelValues();
   }
 }
