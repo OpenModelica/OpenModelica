@@ -76,6 +76,7 @@ public:
   std::string getSelectedShape() {return mSelectedShape;}
   void setSelectedShape(std::string shape) {mSelectedShape = shape;}
   void pickShape(int x, int y);
+  osg::Matrixd getUmountedCamMatrix();
 protected:
   virtual void paintEvent(QPaintEvent *paintEvent);
   virtual void paintGL();
@@ -95,6 +96,8 @@ private:
   osgViewer::View* mpSceneView;
   std::string mSelectedShape;
   AbstractAnimationWindow *mpAnimationWidget;
+  osg::Matrixd mUnmountedCam;
+  bool mCamIsMounted;
 public slots:
   void changeShapeTransparency();
   void removeTransparencyForAllShapes();
@@ -103,6 +106,8 @@ public slots:
   void applyCustomTexture();
   void removeTexture();
   void changeShapeColor();
+  void mountCamera();
+  void unmountCamera();
 
 };
 

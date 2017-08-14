@@ -271,7 +271,8 @@ VisualizerAbstract::VisualizerAbstract()
   : _visType(VisType::NONE),
     mpOMVisualBase(nullptr),
     mpOMVisScene(nullptr),
-    mpUpdateVisitor(nullptr)
+    mpUpdateVisitor(nullptr),
+    mpCamMountShape(nullptr)
 {
   mpTimeManager = new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0);
 }
@@ -385,7 +386,23 @@ void VisualizerAbstract::pauseVisualization()
   mpTimeManager->setPause(true);
 }
 
+void VisualizerAbstract::setCamMountShape(ShapeObject* shape)
+{
+  mpCamMountShape = shape;
+  mCamMountMat0 = shape->_mat;
+  std::cout<<"mounted shape "<<mpCamMountShape->_id<<std::endl;
+}
 
+ShapeObject* VisualizerAbstract::getCamMountShape()
+{
+  return mpCamMountShape;
+}
+
+
+osg::Matrix VisualizerAbstract::getCamMountMat0()
+{
+  return mCamMountMat0;
+}
 
 
 OMVisScene::OMVisScene()

@@ -183,5 +183,6 @@
         <file>Resources/icons/completerCodeSnippets.svg</file>
         <file>Resources/icons/array-parametric-plot-window.svg</file>
         <file>Resources/icons/update.svg</file>
+        <file>Resources/icons/cam.svg</file>
     </qresource>
 </RCC>

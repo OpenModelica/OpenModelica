@@ -170,6 +170,11 @@ class VisualizerAbstract
   VisType getVisType() const;
   OMVisScene* getOMVisScene() const;
   std::string getModelFile() const;
+
+  void setCamMountShape(ShapeObject* shape);
+  ShapeObject* getCamMountShape();
+  osg::Matrix getCamMountMat0();
+
   //virtual void setSimulationSettings(const UserSimSettingsFMU& simSetFMU) { };
   //virtual void simulate(TimeManager& omvm) = 0;
   virtual void startVisualization();
@@ -180,7 +185,10 @@ protected:
   OMVisScene* mpOMVisScene;
   UpdateVisitor* mpUpdateVisitor;
   TimeManager* mpTimeManager;
+  ShapeObject* mpCamMountShape;
+  osg::Matrix mCamMountMat0;
 };
+
 
 osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
 osg::Vec3f V3mulMat3(osg::Vec3f V, osg::Matrix3 M);

@@ -68,7 +68,8 @@ void Viewer::setUpThreading()
  * \param flags
  */
 ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
-  : GLWidget(parent, flags)
+  : GLWidget(parent, flags),
+    mCamIsMounted(false)
 {
   // Set the number of samples used for multisampling
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
@@ -236,10 +237,10 @@ void ViewerWidget::pickShape(int x, int y)
 
     if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty())) {
       mSelectedShape = hitr->nodePath.back()->getName();
-      //std::cout<<"Object identified by name "<<mSelectedShape<<std::endl;
+      std::cout<<"Object identified by name "<<mSelectedShape<<std::endl;
     } else if (hitr->drawable.valid()) {
       mSelectedShape = hitr->drawable->className();
-      //std::cout<<"Object identified by its drawable "<<mSelectedShape<<std::endl;
+      std::cout<<"Object identified by its drawable "<<mSelectedShape<<std::endl;
     }
   }
 }
@@ -263,6 +264,7 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
   QAction action4(QIcon(":/Resources/icons/checkered.svg"), tr("Apply Check Texture"), this);
   QAction action5(QIcon(":/Resources/icons/texture.svg"), tr("Apply Custom Texture"), this);
   QAction action6(QIcon(":/Resources/icons/undo.svg"), tr("Remove Texture"), this);
+  QAction action7(QIcon(":/Resources/icons/cam.svg"), tr("Mount/Unmount Camera"), this);
 
   //if a shape is picked, we can set it transparent
   if (0 != QString::compare(name,QString(""))) {
@@ -275,12 +277,15 @@ void ViewerWidget::showShapePickContextMenu(const QPoint& pos)
     shapeMenu.addAction( &action4);
     shapeMenu.addAction( &action5);
     shapeMenu.addAction( &action6);
+    shapeMenu.addSeparator();
+    shapeMenu.addAction( &action7);
     connect(&action1, SIGNAL(triggered()), this, SLOT(changeShapeTransparency()));
     connect(&action2, SIGNAL(triggered()), this, SLOT(makeShapeInvisible()));
     connect(&action3, SIGNAL(triggered()), this, SLOT(changeShapeColor()));
     connect(&action4, SIGNAL(triggered()), this, SLOT(applyCheckTexture()));
     connect(&action5, SIGNAL(triggered()), this, SLOT(applyCustomTexture()));
     connect(&action6, SIGNAL(triggered()), this, SLOT(removeTexture()));
+    connect(&action7, SIGNAL(triggered()), this, SLOT(mountCamera()));
   }
   contextMenu.addAction(&action0);
   connect(&action0, SIGNAL(triggered()), this, SLOT(removeTransparencyForAllShapes()));
@@ -334,6 +339,43 @@ void ViewerWidget::removeTexture()
       }
     }
 }
+
+/*!
+ * \brief ViewerWidget::mountCamera
+ */
+void ViewerWidget::mountCamera()
+{
+  ShapeObject* shape = nullptr;
+  if ((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape)))
+  {
+    //mUnmountedCam = getSceneView()->getCamera()->getViewMatrix();
+    mUnmountedCam = getSceneView()->getCameraManipulator()->getMatrix();
+
+    std::cout<<"when mounting mpUnmountedCam "<<mUnmountedCam.getTrans()[0]<<"-"<<mUnmountedCam.getTrans()[1]<<"-"<<mUnmountedCam.getTrans()[2]<<std::endl;
+    mCamIsMounted = true;
+    mpAnimationWidget->getVisualizer()->setCamMountShape(shape);
+    std::cout<<"when mounting set "<<mpAnimationWidget->getVisualizer()->getCamMountShape()->_id<<std::endl;
+  }
+}
+
+/*!
+ * \brief ViewerWidget::mountCamera
+ */
+void ViewerWidget::unmountCamera()
+{
+  std::cout<<"unmount camera"<<std::endl;
+  mpAnimationWidget->getVisualizer()->setCamMountShape(nullptr);
+  mUnmountedCam = osg::Matrix::identity();
+}
+
+/*!
+ * \brief ViewerWidget::getUmountedCamMatrix
+ */
+osg::Matrixd ViewerWidget::getUmountedCamMatrix()
+{
+  return mUnmountedCam;
+}
+
 
 /*!
  * \brief ViewerWidget::applyCustomTexture
