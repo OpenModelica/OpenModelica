@@ -246,7 +246,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  For example, -help=f prints detailed information for command-line flag f.",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */
   "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
-  "  If disabled, first try to solve without homotopy and only use homotopy as fallback option.",
+  "  Without this flag, the solver first tries to solve the initialization problem without homotopy and only uses homotopy as fallback option.",
   /* FLAG_IDA_MAXERRORTESTFAIL */
   "  value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
   /* FLAG_IDA_MAXNONLINITERS */
