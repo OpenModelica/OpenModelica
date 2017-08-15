@@ -232,7 +232,7 @@ source/interface.inc: interface.mos
 	$(OPENMODELICA_ROOT)/build/bin/omc +g=MetaModelica +d=nogen interface.mos
 	mv interface.inc $@
 
-OMEDIT_ICONS_BASE=connect-mode.svg parametric-plot-window.svg plot-window.svg re-simulate.svg tlm-simulate.svg interface-data.svg simulation-parameters.svg
+OMEDIT_ICONS_BASE=connect-mode.svg transition-mode.svg parametric-plot-window.svg plot-window.svg re-simulate.svg tlm-simulate.svg interface-data.svg simulation-parameters.svg
 OMEDIT_ICONS_SVG=$(OMEDIT_ICONS_BASE:%=source/media/omedit-icons/%)
 OMEDIT_ICONS_PDF=$(OMEDIT_ICONS_SVG:%.svg=%.pdf)
 OMEDIT_ICONS_PNG=$(OMEDIT_ICONS_SVG:%.svg=%.png)
