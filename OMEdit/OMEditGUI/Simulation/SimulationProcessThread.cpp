@@ -286,7 +286,10 @@ void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::
   mIsSimulationProcessRunning = false;
   QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
+    /* Ticket:4486
+     * Don't print the success message since omc now outputs the success information.
+     */
+    //emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
   } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
     emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
   } else {
