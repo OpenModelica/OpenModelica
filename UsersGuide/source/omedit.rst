@@ -234,7 +234,9 @@ The prespective shows the list of stack frames, breakpoints and variables.
 Modeling a Model
 ----------------
 
-Creating a New Modelica class
+.. _creating-new-class :
+
+Creating a New Modelica Class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Creating a new Modelica class in OMEdit is rather straightforward.
@@ -297,7 +299,7 @@ In order to connect one component model to another the user first needs
 to enable the connect mode (|connect-mode|) from the toolbar.
 
 Move the mouse over the connector. The mouse cursor will change from arrow cursor to cross cursor.
-To start the connection press left button and keep it pressed and move. Now release the left button.
+To start the connection press left button and move while keeping the button pressed. Now release the left button.
 Move towards the end connector and click when cursor changes to cross cursor.
 
 .. |connect-mode| image:: media/omedit-icons/connect-mode.*
@@ -356,7 +358,7 @@ General Tab
 -  *Number of Processors* – the number of processors used to build the simulation.
 
 -  *Build Only* – only builds the class.
-       
+
 -  *Launch Transformational Debugger* – launches the transformational debugger.
 
 -  *Launch Algorithmic Debugger* – launches the algorithmic debugger.
@@ -553,7 +555,7 @@ By pushing the *previous* button, the animation jumps to the initial point of ti
 Points of time can be selected by moving the *time slider* or by inserting a simulation time in the *Time-box*.
 The speed factor of animation in relation to realtime can be set in the *Speed-dialog*.
 Other animations can be openend by using the *open file* button and selecting a result file with a corresping scene description file.
-	
+
 The 3D camera view can be manipulated as follows:
 
 ========================  ============================== ========================
@@ -573,22 +575,22 @@ Additional Visualization Features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The shapes that are displayed in the viewer can be selected with shift + right click.
 If a shape is selected, a context menu pops up that offers additional visualization features
- 
+
 .. figure :: media/pick_shape.png
   :name: A context menu to set additional visualization features for the selected shape.
 
 The following features can be selected:
 
-========================  ================================================================================================ 
-  Menu                      Description                  
-========================  ================================================================================================ 
+========================  ================================================================================================
+  Menu                      Description
+========================  ================================================================================================
 Change Transparency       The shape becomes either transparent or intransparent.
 Make Shape Invisible      The shape becomes invisible.
 Change Color              A color dialog pops up and the color of the shape can be set.
 Apply Check Texture       A checked texture is applied to the shape.
 Apply Custom Texture      A file selection dialog pops up and an image file can be selected as a texture.
 Remove Texture            Removes the current texture of the shape.
-========================  ================================================================================================ 
+========================  ================================================================================================
 
 |
 .. figure :: media/visual_features.png
@@ -663,7 +665,7 @@ annotation of the model.
 Global head section in documentation
 ------------------------------------
 
-If you want to use same styles or same JavaScript for the classes contained inside a package then 
+If you want to use same styles or same JavaScript for the classes contained inside a package then
 you can define ``__OpenModelica_infoHeader`` annotation inside the ``Documentation`` annotation of a package.
 For example,
 
@@ -684,11 +686,11 @@ For example,
   end P;
 
 In the above example model ``M`` does not need to define the javascript function ``HelloWorld``.
-It is only defined once at the package level using the ``__OpenModelica_infoHeader`` and then all classes 
+It is only defined once at the package level using the ``__OpenModelica_infoHeader`` and then all classes
 contained in the package can use it.
 
 In addition styles and JavaScript can be added from file locations using Modelica URIs.
-Example: 
+Example:
 
 .. code-block :: modelica
 
@@ -831,7 +833,7 @@ Text Editor
      Sets the font for the editor.
 
   -  *Font Size* – Sets the font size for the editor.
-  
+
 Modelica Editor
 ~~~~~~~~~~~~~~~
 
@@ -1131,8 +1133,8 @@ For debugging capability, see :ref:`debugging`.
 Editing Modelica Standard Library
 ---------------------------------
 
-By default OMEdit loads the Modelica Standard Library (MSL) as a system library. System libraries are read-only. 
-If you want to edit MSL you need to load it as user library instead of system library. We don't recommend editing 
+By default OMEdit loads the Modelica Standard Library (MSL) as a system library. System libraries are read-only.
+If you want to edit MSL you need to load it as user library instead of system library. We don't recommend editing
 MSL but if you really need to and understand the consequences then follow these steps,
 
 -  Go to *Tools > Options > Libraries*.
@@ -1140,3 +1142,36 @@ MSL but if you really need to and understand the consequences then follow these 
 -  Uncheck *force loading of Modelica Standard Library*.
 -  Add *$OPENMODELICAHOME/lib/omlibrary/Modelica X.X/package.mo* under user libraries.
 -  Restart OMEdit.
+
+State Machines
+--------------
+
+Creating a New Modelica State Class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Follow the same steps as defined in :ref:`creating-new-class`.
+Additionally make sure you check the *State* checkbox.
+
+.. figure :: media/new-state.png
+  :name: omedit-new-state
+
+  Creating a new Modelica state.
+
+Making Transitions
+~~~~~~~~~~~~~~~~~~
+
+In order to make a transition from one state to another the user first needs
+to enable the transition mode (|transition-mode|) from the toolbar.
+
+Move the mouse over the state. The mouse cursor will change from arrow cursor to cross cursor.
+To start the transition press left button and move while keeping the button pressed. Now release the left button.
+Move towards the end state and click when cursor changes to cross cursor.
+
+A *Create Transition* dialog box will appear which allows you to set the transition attributes.
+Cancelling the dialog will cancel the transition.
+
+Double click the transition or right click and choose *Edit Transition* to modify the transition attributes.
+
+.. |transition-mode| image:: media/omedit-icons/transition-mode.*
+  :height: 14pt
+  :alt: OMEdit transition mode icon
