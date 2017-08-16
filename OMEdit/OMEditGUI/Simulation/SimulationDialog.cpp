@@ -177,12 +177,15 @@ void SimulationDialog::setUpForm()
   pSimulationIntervalGridLayout->setColumnStretch(1, 1);
   pSimulationIntervalGridLayout->addWidget(mpStartTimeLabel, 0, 0);
   pSimulationIntervalGridLayout->addWidget(mpStartTimeTextBox, 0, 1);
+  pSimulationIntervalGridLayout->addWidget(new Label(Helper::secs), 0, 2);
   pSimulationIntervalGridLayout->addWidget(mpStopTimeLabel, 1, 0);
   pSimulationIntervalGridLayout->addWidget(mpStopTimeTextBox, 1, 1);
+  pSimulationIntervalGridLayout->addWidget(new Label(Helper::secs), 1, 2);
   pSimulationIntervalGridLayout->addWidget(mpNumberofIntervalsRadioButton, 2, 0);
-  pSimulationIntervalGridLayout->addWidget(mpNumberofIntervalsSpinBox, 2, 1);
+  pSimulationIntervalGridLayout->addWidget(mpNumberofIntervalsSpinBox, 2, 1, 1, 2);
   pSimulationIntervalGridLayout->addWidget(mpIntervalRadioButton, 3, 0);
   pSimulationIntervalGridLayout->addWidget(mpIntervalTextBox, 3, 1);
+  pSimulationIntervalGridLayout->addWidget(new Label(Helper::secs), 3, 2);
   mpSimulationIntervalGroupBox->setLayout(pSimulationIntervalGridLayout);
   // Integration
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));

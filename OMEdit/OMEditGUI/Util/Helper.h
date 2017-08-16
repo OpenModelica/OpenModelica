@@ -355,6 +355,7 @@ public:
   static QString immediate;
   static QString synchronize;
   static QString priority;
+  static QString secs;
 };
 
 class GUIMessages : public QObject

@@ -353,6 +353,7 @@ QString Helper::condition;
 QString Helper::immediate;
 QString Helper::synchronize;
 QString Helper::priority;
+QString Helper::secs;
 
 void Helper::initHelperVariables()
 {
@@ -599,6 +600,7 @@ void Helper::initHelperVariables()
   Helper::immediate = tr("Immediate");
   Helper::synchronize = tr("Synchronize");
   Helper::priority = tr("Priority:");
+  Helper::secs = tr("secs");
 }
 
 QString GUIMessages::getMessage(int type)
