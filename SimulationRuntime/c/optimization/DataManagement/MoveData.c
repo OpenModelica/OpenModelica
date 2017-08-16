@@ -134,17 +134,17 @@ int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
  * author: Vitalij Ruge
  */
 static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
-
   char * cflags = NULL;
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_NP];
-  if(cflags){
+  if (cflags) {
     dim->np = atoi(cflags);
-    if(dim->np != 1 && dim->np!=3){
+    if (dim->np != 1 && dim->np!=3) {
       warningStreamPrint(LOG_STDOUT, 0, "FLAG_OPTIZER_NP is %i. Currently optimizer support only 1 and 3.\nFLAG_OPTIZER_NP set of 3", dim->np);
       dim->np = 3;
     }
-  }else
+  } else {
     dim->np = 3; /*ToDo*/
+  }
   dim->nx = data->modelData->nStates;
   dim->nu = data->modelData->nInputVars;
   dim->nv = dim->nx + dim->nu;
@@ -155,14 +155,17 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
   dim->nReal = data->modelData->nVariablesReal;
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
+  dim->nsi = -1; /* Initialize the data just in case */
   data->callback->getTimeGrid(data, &dim->nsi, &time->tt); /* TODO: dim->nsi is long*, expected is int* */
   time->model_grid = (modelica_boolean)(dim->nsi > 0);
 
-  if(!time->model_grid)
+  if (!time->model_grid) {
     dim->nsi = data->simulationInfo->numSteps;
+  }
 
-  if(cflags)
+  if (cflags) {
     dim->nsi = getNsi(cflags, dim->nsi, &dim->exTimeGrid);
+  }
 
   dim->nt = dim->nsi*dim->np;
   dim->NV = dim->nt*dim->nv;
