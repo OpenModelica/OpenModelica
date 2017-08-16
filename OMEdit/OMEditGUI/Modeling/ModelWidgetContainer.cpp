@@ -2463,6 +2463,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
   /* If we are creating the connection OR creating any shape then don't show context menu */
   if (isCreatingConnection() ||
+      isCreatingTransition() ||
       isCreatingLineShape() ||
       isCreatingPolygonShape() ||
       isCreatingRectangleShape() ||
