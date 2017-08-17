@@ -1415,12 +1415,18 @@ algorithm
       equation
         e = getExpFromArgMap(argmap,cref);
         (e,_) = ExpressionSimplify.simplify(e);
-      then (e,(argmap,checkcr,true));
+      then (e,inTuple);
 
-    case (e as DAE.CREF(componentRef = cref),(argmap,checkcr,true))
+    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       guard
-        BaseHashTable.hasKey(cref,checkcr)
-      then (e,(argmap,checkcr,false));
+        BaseHashTable.hasKey(ComponentReference.crefFirstCref(cref),checkcr)
+      then (inExp,(argmap,checkcr,false));
+
+    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
+      equation
+        getExpFromArgMap(argmap,ComponentReference.crefStripSubs(ComponentReference.crefFirstCref(cref)));
+        // We have something like v[i].re and v is in the inputs... So we fail to inline.
+      then (inExp,(argmap,checkcr,false));
 
     case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true))
       equation
@@ -1432,7 +1438,7 @@ algorithm
         isFunctionPointerCall = Types.isFunctionReferenceVar(ty2);
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
         (e,_) = ExpressionSimplify.simplify(e);
-      then (e,(argmap,checkcr,true));
+      then (e,inTuple);
 
     case (e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true))
       equation
@@ -1453,7 +1459,7 @@ algorithm
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,isImpure,isFunctionPointerCall,inlineType,tc));
         e = boxIfUnboxedFunRef(e,ty);
         (e,_) = ExpressionSimplify.simplify(e);
-      then (e,(argmap,checkcr,true));
+      then (e,inTuple);
 
     case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(),builtin=false)),(argmap,checkcr,true))
       equation
@@ -1461,7 +1467,7 @@ algorithm
         true = BaseHashTable.hasKey(cref,checkcr);
       then (e,(argmap,checkcr,false));
 
-    case (e,(argmap,checkcr,replacedfailed)) then (e,(argmap,checkcr,replacedfailed));
+    else (inExp,inTuple);
   end matchcontinue;
 end replaceArgs;
 
