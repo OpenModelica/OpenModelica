@@ -2661,6 +2661,9 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpSplitter->setContentsMargins(0, 0, 0, 0);
   mpSplitter->addWidget(mpRecentFilesFrame);
   mpSplitter->addWidget(mpLatestNewsFrame);
+  // Read the welcome page splitter state
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  mpSplitter->restoreState(pSettings->value("welcomePage/splitterState").toByteArray());
   // bottom frame
   mpBottomFrame = new QFrame;
   mpBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");

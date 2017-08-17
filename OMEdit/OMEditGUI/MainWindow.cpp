@@ -574,6 +574,8 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
   // save the grid lines
   pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
+  // save the splitter state of welcome page
+  pSettings->setValue("welcomePage/splitterState", mpWelcomePageWidget->getSplitter()->saveState());
   delete pSettings;
   // delete the OptionsDialog object
   OptionsDialog::destroy();
