@@ -528,24 +528,23 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
   QRadialGradient radialGradient;
   switch (mFillPattern) {
     case StringHandler::FillHorizontalCylinder:
-      linearGradient = QLinearGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.center().x(), boundingRectangle.y());
-      linearGradient.setColorAt(0.0, mFillColor);
+      linearGradient = QLinearGradient(boundingRectangle.center().x(), boundingRectangle.top(), boundingRectangle.center().x(), boundingRectangle.bottom());
+      linearGradient.setColorAt(0.0, mLineColor);
+      linearGradient.setColorAt(0.5, mFillColor);
       linearGradient.setColorAt(1.0, mLineColor);
-      linearGradient.setSpread(QGradient::ReflectSpread);
       painter->setBrush(linearGradient);
       break;
     case StringHandler::FillVerticalCylinder:
-      linearGradient = QLinearGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.x(), boundingRectangle.center().y());
-      linearGradient.setColorAt(0.0, mFillColor);
+      linearGradient = QLinearGradient(boundingRectangle.left(), boundingRectangle.center().y(), boundingRectangle.right(), boundingRectangle.center().y());
+      linearGradient.setColorAt(0.0, mLineColor);
+      linearGradient.setColorAt(0.5, mFillColor);
       linearGradient.setColorAt(1.0, mLineColor);
-      linearGradient.setSpread(QGradient::ReflectSpread);
       painter->setBrush(linearGradient);
       break;
     case StringHandler::FillSphere:
       radialGradient = QRadialGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.width());
       radialGradient.setColorAt(0.0, mFillColor);
       radialGradient.setColorAt(1.0, mLineColor);
-      //radialGradient.setSpread(QGradient::ReflectSpread);
       painter->setBrush(radialGradient);
       break;
     case StringHandler::FillSolid:
