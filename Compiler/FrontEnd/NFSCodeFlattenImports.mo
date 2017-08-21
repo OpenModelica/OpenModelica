@@ -127,7 +127,6 @@ algorithm
       SCode.Mod mods;
       SCode.Attributes attr;
       Env env;
-      SCode.Ident bc;
       SCode.ClassDef cdef;
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
@@ -145,12 +144,12 @@ algorithm
       then
         (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
 
-    case (SCode.CLASS_EXTENDS(bc, mods, cdef), _, _)
+    case (SCode.CLASS_EXTENDS(mods, cdef), _, _)
       equation
         (cdef, env) = flattenClassDef(cdef, inEnv, inInfo);
         mods = flattenModifier(mods, env, inInfo);
       then
-        (SCode.CLASS_EXTENDS(bc, mods, cdef), env);
+        (SCode.CLASS_EXTENDS(mods, cdef), env);
 
     case (SCode.DERIVED(ty, mods, attr), env, _)
       equation

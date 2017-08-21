@@ -439,7 +439,6 @@ algorithm
       list<SCode.Enum> lst_1;
       list<Absyn.EnumLiteral> lst;
       SCode.Comment scodeCmt;
-      String name;
       Absyn.Path path;
       list<Absyn.Path> pathLst;
       list<String> typeVars;
@@ -501,7 +500,7 @@ algorithm
       then
         (SCode.OVERLOAD(pathLst),scodeCmt);
 
-    case (Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
+    case (Absyn.CLASS_EXTENDS(modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
       equation
         // fprintln(Flags.TRANSLATE "translating model extends " + name + " ... end " + name + ";");
         els = translateClassdefElements(parts);
@@ -515,7 +514,7 @@ algorithm
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
       then
-        (SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl)),scodeCmt);
+        (SCode.CLASS_EXTENDS(mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl)),scodeCmt);
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation

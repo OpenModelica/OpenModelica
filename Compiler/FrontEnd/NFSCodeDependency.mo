@@ -2035,49 +2035,37 @@ end updateItemEnv;
 
 protected function collectUsedClassDef
   "Collects the contents of a class definition."
-  input SCode.ClassDef inClassDef;
-  input Env inEnv;
+  input output SCode.ClassDef classDef;
+  input output Env env;
   input NFSCodeEnv.Frame inClassEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
-  output SCode.ClassDef outClass;
-  output Env outEnv;
 algorithm
-  (outClass, outEnv) :=
-  match(inClassDef, inEnv, inClassEnv, inClassName, inAccumPath)
+  () := match classDef
     local
       list<SCode.Element> el;
-      list<SCode.Equation> neq, ieq;
-      list<SCode.AlgorithmSection> nal, ial;
-      list<SCode.ConstraintSection> nco;
-      Option<SCode.ExternalDecl> ext_decl;
-      list<SCode.Annotation> annl;
-      Option<SCode.Comment> cmt;
-      SCode.Ident bc;
-      SCode.Mod mods;
-      Env env;
-      list<Absyn.NamedArg> clats;
+      SCode.ClassDef cdef;
 
-    case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl), _, _, _, _)
-      equation
-        (el, env) =
-          collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
+    case SCode.PARTS(elementLst = el)
+      algorithm
+        (el, env) := collectUsedElements(el, env, inClassEnv, inClassName, inAccumPath);
+        classDef.elementLst := el;
       then
-        (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl), env);
+        ();
 
-    case (SCode.CLASS_EXTENDS(bc, mods,
-        SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl)), _, _, _, _)
-      equation
-        (el, env) =
-          collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
+    case SCode.CLASS_EXTENDS(composition = cdef)
+      algorithm
+        (cdef, env) := collectUsedClassDef(cdef, env, inClassEnv, inClassName, inAccumPath);
+        classDef.composition := cdef;
       then
-        (SCode.CLASS_EXTENDS(bc, mods,
-          SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl)), env);
+        ();
 
-    case (SCode.ENUMERATION(), _, _, _, _)
-      then (inClassDef, {inClassEnv});
+    else
+      algorithm
+        env := {inClassEnv};
+      then
+        ();
 
-    else (inClassDef, {inClassEnv});
   end match;
 end collectUsedClassDef;
 

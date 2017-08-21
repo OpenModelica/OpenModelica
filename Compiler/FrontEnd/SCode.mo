@@ -187,7 +187,6 @@ uniontype ClassDef
   end PARTS;
 
   record CLASS_EXTENDS "an extended class definition plus the additional parts"
-    Ident                      baseClassName       "the name of the base class we have to extend";
     Mod                        modifications       "the modifications that need to be applied to the base class";
     ClassDef                   composition         "the new composition";
   end CLASS_EXTENDS;
@@ -1265,7 +1264,6 @@ protected function classDefEqual
        Mod mod1,mod2;
        list<Enum> elst1,elst2;
        list<Ident> ilst1,ilst2;
-       String bcName1, bcName2;
        list<Absyn.NamedArg> clsttrs1,clsttrs2;
 
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_),
@@ -1293,15 +1291,14 @@ protected function classDefEqual
        then
          true;
 
-     case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_)),
-           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_)))
+     case (CLASS_EXTENDS(mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_)),
+           CLASS_EXTENDS(mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_)))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
          List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
          List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
          List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
-         true = stringEq(bcName1,bcName2);
          true = modEqual(mod1,mod2);
        then
          true;
@@ -4353,74 +4350,43 @@ public function replaceElementsInClassDef
  if derived a SOME(element) is returned,
  otherwise the modified class def and NONE()"
   input Program inProgram;
-  input ClassDef inClassDef;
+  input output ClassDef classDef;
   input Program inElements;
-  output ClassDef outClassDef;
-  output Option<Element> outElementOpt;
+        output Option<Element> outElementOpt;
 algorithm
-  (outClassDef, outElementOpt) := matchcontinue(inProgram, inClassDef, inElements)
+  outElementOpt := match classDef
     local
-      Program els;
       Element e;
       Absyn.Path p;
-      Absyn.Ident i;
-      list<Element> elementLst "the list of elements";
-      list<Equation> normalEquationLst "the list of equations";
-      list<Equation> initialEquationLst "the list of initial equations";
-      list<AlgorithmSection> normalAlgorithmLst "the list of algorithms";
-      list<AlgorithmSection> initialAlgorithmLst "the list of initial algorithms";
-      list<ConstraintSection> constraintLst "the list of constraints";
-      list<Absyn.NamedArg> clsattrs "the list of class attributes. Currently for Optimica extensions";
-      Option<ExternalDecl> externalDecl "used by external functions";
-      list<Annotation> annotationLst "the list of annotations found in between class elements, equations and algorithms";
-      Ident baseClassName "the name of the base class we have to extend";
-      Mod modifications "the modifications that need to be applied to the base class";
       ClassDef composition;
 
     // a derived class
-    case (_, DERIVED(typeSpec = Absyn.TPATH(path = p)), _)
-      equation
-        e = getElementWithPath(inProgram, p);
-        e = replaceElementsInElement(inProgram, e, inElements);
+    case DERIVED(typeSpec = Absyn.TPATH(path = p))
+      algorithm
+        e := getElementWithPath(inProgram, p);
+        e := replaceElementsInElement(inProgram, e, inElements);
       then
-        (inClassDef, SOME(e));
+        SOME(e);
 
     // a parts
-    case (_,
-          PARTS(
-            _,
-            normalEquationLst,
-            initialEquationLst,
-            normalAlgorithmLst,
-            initialAlgorithmLst,
-            constraintLst,
-            clsattrs,
-            externalDecl),
-          _)
+    case PARTS()
+      algorithm
+        classDef.elementLst := inElements;
       then
-        (PARTS(inElements,
-               normalEquationLst,
-               initialEquationLst,
-               normalAlgorithmLst,
-               initialAlgorithmLst,
-               constraintLst,
-               clsattrs,
-               externalDecl), NONE());
-
-    // a class extends, non derived
-    case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
-      equation
-        (composition, NONE()) = replaceElementsInClassDef(inProgram, composition, inElements);
-      then
-        (CLASS_EXTENDS(baseClassName, modifications, composition), NONE());
+        NONE();
 
     // a class extends
-    case (_, CLASS_EXTENDS(_, _, composition), _)
-      equation
-        (composition, SOME(e)) = replaceElementsInClassDef(inProgram, composition, inElements);
+    case CLASS_EXTENDS(composition = composition)
+      algorithm
+        (composition, outElementOpt) := replaceElementsInClassDef(inProgram, composition, inElements);
+
+        if isNone(outElementOpt) then
+          classDef.composition := composition;
+        end if;
       then
-        (inClassDef, SOME(e));
-  end matchcontinue;
+        outElementOpt;
+
+  end match;
 end replaceElementsInClassDef;
 
 protected function getElementWithId
@@ -4925,7 +4891,7 @@ algorithm
       Attributes attr;
 
     case (DERIVED(ty, _, attr), _) then DERIVED(ty, inMod, attr);
-    case (CLASS_EXTENDS(bc, _, cdef), _) then CLASS_EXTENDS(bc, inMod, cdef);
+    case (CLASS_EXTENDS(_, cdef), _) then CLASS_EXTENDS(inMod, cdef);
 
   end match;
 end setClassDefMod;

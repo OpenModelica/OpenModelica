@@ -1259,7 +1259,6 @@ public function extendEnvWithClassExtends
 algorithm
   outEnv := match(inClassExtends, inEnv)
     local
-      SCode.Ident bc;
       SCode.Partial pp;
       SCode.Encapsulated ep;
       SCode.Restriction res;
@@ -1269,7 +1268,7 @@ algorithm
       SCode.Mod mods;
       SCode.ClassDef cdef;
       SCode.Element cls, ext;
-      String el_str, env_str, err_msg;
+      String name, el_str, env_str, err_msg;
       SCode.Comment cmt;
 
     // When a 'class extends X' is encountered we insert a 'class X extends
@@ -1281,27 +1280,27 @@ algorithm
     // added to the class environment's extends table. The rest of the work is
     // done later in updateClassExtends when we have a complete environment.
     case (SCode.CLASS(
+        name = name,
         prefixes = prefixes,
         encapsulatedPrefix = ep,
         partialPrefix = pp,
         restriction = res,
         classDef = SCode.CLASS_EXTENDS(
-          baseClassName = bc,
           modifications = mods,
           composition = cdef),
         cmt=cmt, info = info), _)
       equation
         // Construct a new PARTS class with the data from the class extends.
-        cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, cmt, info);
+        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
 
         // Construct the class environment and add the new extends to it.
         cls_env = NFSCodeEnv.makeClassEnvironment(cls, false);
-        ext = SCode.EXTENDS(Absyn.IDENT(bc), SCode.PUBLIC(), mods, NONE(), info);
+        ext = SCode.EXTENDS(Absyn.IDENT(name), SCode.PUBLIC(), mods, NONE(), info);
         cls_env = addClassExtendsInfoToEnv(ext, cls_env);
 
         // Finally add the class to the environment.
         env = NFSCodeEnv.extendEnvWithItem(
-          NFSCodeEnv.newClassItem(cls, cls_env, NFSCodeEnv.CLASS_EXTENDS()), inEnv, bc);
+          NFSCodeEnv.newClassItem(cls, cls_env, NFSCodeEnv.CLASS_EXTENDS()), inEnv, name);
       then env;
 
     case (_, _)

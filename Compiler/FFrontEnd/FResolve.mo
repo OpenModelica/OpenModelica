@@ -436,7 +436,7 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefClassExtends(r);
-        FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = id))) = FNode.refData(r);
+        FCore.CL(e = SCode.CLASS(name = id)) = FNode.refData(r);
         // get the parent where the extends are!
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!
@@ -449,7 +449,7 @@ algorithm
     case (r, g)
       equation
         true = FNode.isRefClassExtends(r);
-        FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = id))) = FNode.refData(r);
+        FCore.CL(e = SCode.CLASS(name = id)) = FNode.refData(r);
         // get the parent where the extends are!
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!

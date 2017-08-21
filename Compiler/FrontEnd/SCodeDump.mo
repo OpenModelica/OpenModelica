@@ -235,10 +235,10 @@ algorithm
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
-                     classDef = SCode.CLASS_EXTENDS(baseClassName = str))
+                     classDef = SCode.CLASS_EXTENDS())
       equation
         ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class extends ",n," extends ", str, ";"});
+        res = stringAppendList({ioStr, "class extends ",n,";"});
       then
         res;
 

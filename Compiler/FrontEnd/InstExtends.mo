@@ -501,7 +501,7 @@ algorithm
         SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) = cl;
 
         SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
+        SCode.CLASS_EXTENDS(mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
 
         classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2);
         compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
@@ -524,7 +524,7 @@ algorithm
         SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) = cl;
 
         SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
+        SCode.CLASS_EXTENDS(mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
 
         classDef = SCode.DERIVED(derivedTySpec, derivedMod, attrs);
         compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
@@ -1025,7 +1025,6 @@ algorithm
       Option<SCode.Comment> c;
       Absyn.TypeSpec ts,ts_1;
       SCode.Attributes attr;
-      String name;
       SCode.Mod mod,mod_1;
       FCore.Graph env;
       SCode.ClassDef cd,cd_1;
@@ -1042,7 +1041,7 @@ algorithm
       then if referenceEq(elts,elts_1) and referenceEq(ne,ne_1) and referenceEq(ie,ie_1) and referenceEq(na,na_1) and referenceEq(ia,ia_1) and referenceEq(nc,nc_1)
            then inCd else SCode.PARTS(elts_1,ne_1,ie_1,na_1,ia_1,nc_1,clats,ed);
 
-    case (env,SCode.CLASS_EXTENDS(name,mod,cd as SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)))
+    case (env,SCode.CLASS_EXTENDS(mod,cd as SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)))
       equation
         mod_1 = fixModifications(cache,env,mod,inTree);
         elts_1 = fixList(cache,env,elts,tree,fixElement);
@@ -1054,7 +1053,7 @@ algorithm
         cd_1 = if referenceEq(elts,elts_1) and referenceEq(ne,ne_1) and referenceEq(ie,ie_1) and referenceEq(na,na_1) and referenceEq(ia,ia_1) and referenceEq(nc,nc_1)
              then cd else SCode.PARTS(elts_1,ne_1,ie_1,na_1,ia_1,nc_1,clats,ed);
       then if referenceEq(cd,cd_1) and referenceEq(mod,mod_1)
-           then inCd else SCode.CLASS_EXTENDS(name,mod_1,cd_1);
+           then inCd else SCode.CLASS_EXTENDS(mod_1,cd_1);
 
     case (env,SCode.DERIVED(ts,mod,attr))
       equation

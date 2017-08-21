@@ -136,7 +136,7 @@ algorithm
         FNode.addChildRef(inParentRef, name, nr);
         // add constrained by node
         g = mkConstrainClass(cls, nr, inKind, g);
-        g = mkClassChildren(cdef, nr, inKind, g);
+        g = mkClassChildren(name, cdef, nr, inKind, g);
       then
         g;
 
@@ -318,6 +318,7 @@ end mkBindingNode;
 
 protected function mkClassChildren
 "Extends the graph with a class's components."
+  input String name;
   input SCode.ClassDef inClassDef;
   input Ref inParentRef;
   input Kind inKind;
@@ -334,7 +335,6 @@ algorithm
       Ref nr;
       Absyn.TypeSpec ts;
       Absyn.Path p;
-      Name name;
       SCode.Mod m;
       Absyn.ArrayDim ad;
       list<SCode.Equation> eqs, ieqs;
@@ -365,9 +365,9 @@ algorithm
       then
         g;
 
-    case (SCode.CLASS_EXTENDS(baseClassName = name, composition = cdef, modifications = m), _, _, g)
+    case (SCode.CLASS_EXTENDS(composition = cdef, modifications = m), _, _, g)
       equation
-        g = mkClassChildren(cdef, inParentRef, inKind, g);
+        g = mkClassChildren(name, cdef, inParentRef, inKind, g);
         g = mkModNode(FNode.modNodeName, m, FCore.MS_CLASS_EXTENDS(name), inParentRef, inKind, g);
       then
         g;
