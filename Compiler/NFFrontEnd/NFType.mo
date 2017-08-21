@@ -427,5 +427,44 @@ public
     end for;
   end subscript;
 
+  function isEqual
+    input Type ty1;
+    input Type ty2;
+    output Boolean equal;
+  algorithm
+    if referenceEq(ty1, ty2) then
+      equal := true;
+      return;
+    end if;
+
+    if valueConstructor(ty1) <> valueConstructor(ty2) then
+      equal := false;
+      return;
+    end if;
+
+    equal := match (ty1, ty2)
+      local
+        list<String> names1, names2;
+
+      case (ENUMERATION(), ENUMERATION())
+        then List.isEqualOnTrue(ty1.literals, ty2.literals, stringEq);
+
+      case (ARRAY(), ARRAY())
+        then isEqual(ty1.elementType, ty2.elementType) and
+             List.isEqualOnTrue(ty1.dimensions, ty2.dimensions, Dimension.isEqualKnown);
+
+      case (TUPLE(names = SOME(names1)), TUPLE(names = SOME(names2)))
+        then List.isEqualOnTrue(names1, names2, stringEq) and
+             List.isEqualOnTrue(ty1.types, ty2.types, isEqual);
+
+      case (TUPLE(names = NONE()), TUPLE(names = NONE()))
+        then List.isEqualOnTrue(ty1.types, ty2.types, isEqual);
+
+      case (TUPLE(), TUPLE()) then false;
+
+      else true;
+    end match;
+  end isEqual;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

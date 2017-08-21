@@ -39,6 +39,7 @@ import Absyn;
 import Type = NFType;
 import NFFunction.Function;
 import Pointer;
+import Error;
 
 public
 uniontype InstNodeType
@@ -251,9 +252,9 @@ uniontype InstNode
       case CLASS_NODE() then node.name;
       case COMPONENT_NODE() then node.name;
       // For bug catching, these names should never be used.
-      case REF_NODE() then "$ref" + String(node.index);
-      case IMPLICIT_SCOPE() then "$implicit";
-      case EMPTY_NODE() then "$empty";
+      case REF_NODE() then "$REF[" + String(node.index) + "]";
+      case IMPLICIT_SCOPE() then "$IMPLICIT";
+      case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;
 
@@ -605,8 +606,7 @@ uniontype InstNode
       case IMPLICIT_SCOPE() then scopePath(node.parentScope);
 
       // For debugging.
-      case REF_NODE() then Absyn.IDENT("$REF" + String(node.index));
-      case EMPTY_NODE() then Absyn.IDENT("$EMPTY");
+      else Absyn.IDENT(name(node));
     end match;
   end scopePath;
 
@@ -732,6 +732,46 @@ uniontype InstNode
       else false;
     end match;
   end refEqual;
+
+  function checkIdentical
+    input InstNode node1;
+    input InstNode node2;
+  algorithm
+    () := matchcontinue (node1, node2)
+      case (CLASS_NODE(), CLASS_NODE())
+        guard Class.isIdentical(getClass(node1), getClass(node2)) then ();
+      case (COMPONENT_NODE(), COMPONENT_NODE())
+        guard Component.isIdentical(component(node1), component(node2)) then ();
+      else
+        algorithm
+          Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,
+            {toString(node1), toString(node2)},
+            {InstNode.info(node1), InstNode.info(node2)});
+        then
+          fail();
+    end matchcontinue;
+  end checkIdentical;
+
+  function toString
+    input InstNode node;
+    output String name;
+  algorithm
+    name := match node
+      case COMPONENT_NODE() then Component.toString(node.name, Pointer.access(node.component));
+      else name(node);
+    end match;
+  end toString;
+
+  function isRedeclare
+    input InstNode node;
+    output Boolean isRedeclare;
+  algorithm
+    isRedeclare := match node
+      case CLASS_NODE() then SCode.isElementRedeclare(definition(node));
+      case COMPONENT_NODE() then Component.isRedeclare(Pointer.access(node.component));
+      else false;
+    end match;
+  end isRedeclare;
 
 end InstNode;
 

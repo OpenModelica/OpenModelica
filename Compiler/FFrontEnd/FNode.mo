@@ -349,15 +349,15 @@ end addChildRef;
 protected function printElementConflictError
   input Ref newRef;
   input Ref oldRef;
+  input RefTree.Key name;
   output Ref dummy;
 protected
   SourceInfo info1, info2;
-  String name;
 algorithm
   if Config.acceptMetaModelicaGrammar() then
     dummy := newRef;
   else
-    (name, info1) := SCode.elementNameInfo(FNode.getElementFromRef(newRef));
+    info1 := SCode.elementInfo(FNode.getElementFromRef(newRef));
     info2 := SCode.elementInfo(FNode.getElementFromRef(oldRef));
     Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {name}, {info2, info1});
     fail();

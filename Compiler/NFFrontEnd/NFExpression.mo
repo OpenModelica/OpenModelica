@@ -537,14 +537,13 @@ public
     list<list<Expression>> partexps;
     Integer dimsize;
   algorithm
-
-    assert(listLength(inDims) > 0, "Empty dimension list given in arrayFromList.");
+    assert(not listEmpty(inDims), "Empty dimension list given in arrayFromList.");
 
     ldim::restdims := inDims;
     dimsize := Dimension.size(ldim);
     ty := Type.liftArrayLeft(elemTy, ldim);
 
-    if listLength(inDims) == 1 then
+    if List.hasOneElement(inDims) then
       assert(dimsize == listLength(inExps), "Length mismatch in arrayFromList.");
       outExp := ARRAY(ty,inExps);
       return;

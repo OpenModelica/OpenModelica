@@ -71,6 +71,13 @@ algorithm
   end match;
 end printNodeStr;
 
+partial function ConflictFunc
+  input Value newValue "The value given by the caller.";
+  input Value oldValue "The value already in the tree.";
+  input Key key "The key associated with the values.";
+  output Value value "The value that will replace the existing value.";
+end ConflictFunc;
+
 replaceable function addConflictDefault = addConflictFail
   "Default conflict resolving function for add.";
 
@@ -78,6 +85,7 @@ function addConflictFail
   "Conflict resolving function for add which fails on conflict."
   input Value newValue;
   input Value oldValue;
+  input Key key;
   output Value value;
 algorithm
   fail();
@@ -87,6 +95,7 @@ function addConflictReplace
   "Conflict resolving function for add which replaces the old value with the new."
   input Value newValue;
   input Value oldValue;
+  input Key key;
   output Value value = newValue;
 end addConflictReplace;
 
@@ -94,6 +103,7 @@ function addConflictKeep
   "Conflict resolving function for add which keeps the old value."
   input Value newValue;
   input Value oldValue;
+  input Key key;
   output Value value = oldValue;
 end addConflictKeep;
 
@@ -104,12 +114,6 @@ redeclare function add
   input Value inValue;
   input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
   output Tree tree=inTree;
-
-  partial function ConflictFunc
-    input Value newValue "The value given by the caller.";
-    input Value oldValue "The value already in the tree.";
-    output Value value "The value that will replace the existing value.";
-  end ConflictFunc;
 algorithm
   tree := match tree
     local
@@ -134,7 +138,7 @@ algorithm
           tree.right := add(tree.right, inKey, inValue, conflictFunc);
         else
           // Use the given function to resolve the conflict.
-          value := conflictFunc(inValue, tree.value);
+          value := conflictFunc(inValue, tree.value, key);
           if not referenceEq(tree.value, value) then
             tree.value := value;
           end if;
@@ -154,7 +158,7 @@ algorithm
           outTree := NODE(tree.key, tree.value, 2, EMPTY(), LEAF(inKey,inValue));
         else
           // Use the given function to resolve the conflict.
-          value := conflictFunc(inValue, tree.value);
+          value := conflictFunc(inValue, tree.value, key);
           if not referenceEq(tree.value, value) then
             tree.value := value;
           end if;
@@ -171,12 +175,6 @@ redeclare function addList
   input output Tree tree;
   input list<tuple<Key,Value>> inValues;
   input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
-
-  partial function ConflictFunc
-    input Value newValue "The value given by the caller.";
-    input Value oldValue "The value already in the tree.";
-    output Value value "The value that will replace the existing value.";
-  end ConflictFunc;
 protected
   Key key;
   Value value;
@@ -187,41 +185,65 @@ algorithm
   end for;
 end addList;
 
-function get
-  "Gets a value from the tree given a key."
-  input Tree inTree;
-  input Key inKey;
-  output Value outValue;
-protected
-  Key key;
-  Integer key_comp;
-  Tree tree;
-algorithm
-  key := match inTree
-    case NODE() then inTree.key;
-    case LEAF() then inTree.key;
-  end match;
-  key_comp := keyCompare(inKey, key);
+function update
+  "Alias for add that replaces the node in case of conflict."
+  input Tree tree;
+  input Key key;
+  input Value value;
+  output Tree outTree = add(tree, key, value, addConflictReplace);
+end update;
 
-  outValue := match (key_comp, inTree)
-    case ( 0, LEAF()) then inTree.value;
-    case ( 0, NODE()) then inTree.value;
-    case ( 1, NODE(right = tree)) then get(tree, inKey);
-    case (-1, NODE(left = tree)) then get(tree, inKey);
+function get
+  "Fetches a value from the tree given a key, or fails if no value is associated
+   with the key."
+  input Tree tree;
+  input Key key;
+  output Value value;
+protected
+  Key k;
+algorithm
+  k := match tree
+    case NODE() then tree.key;
+    case LEAF() then tree.key;
+  end match;
+
+  value := match (keyCompare(key, k), tree)
+    case ( 0, LEAF()) then tree.value;
+    case ( 0, NODE()) then tree.value;
+    case ( 1, NODE()) then get(tree.right, key);
+    case (-1, NODE()) then get(tree.left, key);
   end match;
 end get;
+
+function getOpt
+  "Fetches a value from the tree given a key, or returns NONE if no value is
+   associated with the key."
+  input Tree tree;
+  input Key key;
+  output Option<Value> value;
+protected
+  Key k;
+algorithm
+  k := match tree
+    case NODE() then tree.key;
+    case LEAF() then tree.key;
+    else key;
+  end match;
+
+  value := match (keyCompare(key, k), tree)
+    case ( 0, LEAF()) then SOME(tree.value);
+    case ( 0, NODE()) then SOME(tree.value);
+    case ( 1, NODE()) then getOpt(tree.right, key);
+    case (-1, NODE()) then getOpt(tree.left, key);
+    else NONE();
+  end match;
+end getOpt;
 
 function fromList
   "Creates a new tree from a list of key-value pairs."
   input list<tuple<Key,Value>> inValues;
   input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
   output Tree tree = EMPTY();
-
-  partial function ConflictFunc
-    input Value newValue "The value given by the caller.";
-    input Value oldValue "The value already in the tree.";
-    output Value value "The value that will replace the existing value.";
-  end ConflictFunc;
 protected
   Key key;
   Value value;
@@ -285,22 +307,16 @@ redeclare function join
   input output Tree tree;
   input Tree treeToJoin;
   input ConflictFunc conflictFunc = addConflictDefault "Used to resolve conflicts.";
-
-  partial function ConflictFunc
-    input Value newValue "The value given by the caller.";
-    input Value oldValue "The value already in the tree.";
-    output Value value "The value that will replace the existing value.";
-  end ConflictFunc;
 algorithm
   tree := match treeToJoin
     case EMPTY() then tree;
     case NODE()
       algorithm
-        tree := add(tree, treeToJoin.key, treeToJoin.value, conflictFunc=conflictFunc);
-        tree := join(tree, treeToJoin.left, conflictFunc=conflictFunc);
-        tree := join(tree, treeToJoin.right, conflictFunc=conflictFunc);
+        tree := add(tree, treeToJoin.key, treeToJoin.value, conflictFunc);
+        tree := join(tree, treeToJoin.left, conflictFunc);
+        tree := join(tree, treeToJoin.right, conflictFunc);
       then tree;
-    case LEAF() then add(tree, treeToJoin.key, treeToJoin.value, conflictFunc=conflictFunc);
+    case LEAF() then add(tree, treeToJoin.key, treeToJoin.value, conflictFunc);
   end match;
 end join;
 
@@ -408,7 +424,6 @@ algorithm
     local
       Key key;
       Value value;
-      Tree branch;
 
     case NODE(key=key, value=value)
       algorithm
@@ -426,6 +441,39 @@ algorithm
     else outResult;
   end match;
 end fold;
+
+function fold_2<FT1, FT2>
+  "Like fold, but takes two fold arguments."
+  input Tree tree;
+  input FoldFunc foldFunc;
+  input output FT1 foldArg1;
+  input output FT2 foldArg2;
+
+  partial function FoldFunc
+    input Key key;
+    input Value value;
+    input output FT1 foldArg1;
+    input output FT2 foldArg2;
+  end FoldFunc;
+algorithm
+  () := match tree
+    case NODE()
+      algorithm
+        (foldArg1, foldArg2) := fold_2(tree.left, foldFunc, foldArg1, foldArg2);
+        (foldArg1, foldArg2) := foldFunc(tree.key, tree.value, foldArg1, foldArg2);
+        (foldArg1, foldArg2) := fold_2(tree.right, foldFunc, foldArg1, foldArg2);
+      then
+        ();
+
+    case LEAF()
+      algorithm
+        (foldArg1, foldArg2) := foldFunc(tree.key, tree.value, foldArg1, foldArg2);
+      then
+        ();
+
+    else ();
+  end match;
+end fold_2;
 
 function foldCond<FT>
   "Like fold, but if the fold function returns false it will not continue down

@@ -471,7 +471,7 @@ public constant Message CIRCULAR_COMPONENTS = MESSAGE(170, TRANSLATION(), ERROR(
 public constant Message FAILURE_TO_DEDUCE_DIMS_FROM_MOD = MESSAGE(171, TRANSLATION(), WARNING(),
   Util.gettext("Failed to deduce dimensions of %s due to unknown dimensions of modifier %s."));
 public constant Message REPLACEABLE_BASE_CLASS = MESSAGE(172, TRANSLATION(), ERROR(),
-  Util.gettext("Part %s of base class %s is replaceable."));
+  Util.gettext("Class %s in extends %s is replaceable."));
 public constant Message NON_REPLACEABLE_CLASS_EXTENDS = MESSAGE(173, TRANSLATION(), ERROR(),
   Util.gettext("Non-replaceable base class %s in class extends."));
 public constant Message ERROR_FROM_HERE = MESSAGE(174, TRANSLATION(), NOTIFICATION(),

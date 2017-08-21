@@ -78,6 +78,7 @@ import Absyn.Path;
 import NFClassTree.ClassTree;
 import NFSections.Sections;
 import NFInstNode.CachedData;
+import StringUtil;
 
 public
 function instClassInProgram
@@ -260,7 +261,7 @@ algorithm
     case SCode.CLASS(classDef = cdef as SCode.DERIVED(typeSpec = ty, modifications = der_mod))
       algorithm
         // Look up the class that's being derived from and expand it.
-        ext_node := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), def.info);
+        ext_node :: _ := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), def.info);
         ext_node := expand(ext_node);
 
         // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
@@ -345,6 +346,7 @@ function expandExtends
 protected
   SCode.Element def;
   Absyn.Path base_path;
+  list<InstNode> base_nodes;
   InstNode scope, base_node;
   SCode.Visibility vis;
   SCode.Mod smod;
@@ -355,9 +357,9 @@ algorithm
 
   // Look up the base class and expand it.
   scope := InstNode.parent(ext);
-  base_node := Lookup.lookupBaseClassName(base_path, scope, info);
+  base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, info);
   checkExtendsLoop(base_node, base_path, info);
-  checkReplaceableBaseClass(base_node, base_path, info);
+  checkReplaceableBaseClass(base_nodes, base_path, info);
   base_node := expand(base_node);
 
   ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def), base_node);
@@ -396,32 +398,45 @@ end checkExtendsLoop;
 function checkReplaceableBaseClass
   "Checks that all parts of a name used as a base class are transitively
    non-replaceable."
-  input InstNode baseClass;
+  input list<InstNode> baseClasses;
   input Absyn.Path basePath;
   input SourceInfo info;
 protected
-  Integer count;
-  InstNode node = baseClass;
+  Integer i = 0, pos;
+  String name;
+  list<InstNode> rest;
 algorithm
-  count := Absyn.pathPartCount(basePath);
+  for base in baseClasses loop
+    i := i + 1;
 
-  for i in 1:count loop
-    if isReplaceable(node) then
-      Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS,
-        {InstNode.name(node)}, info);
+    if SCode.isElementReplaceable(InstNode.definition(base)) then
+      // The path might contain several classes with the same name, so mark the
+      // class in the path string to make it clear which one we mean.
+      if listLength(baseClasses) > 1 then
+        rest := baseClasses;
+        name := "";
+
+        for j in 1:i-1 loop
+          name := "." + InstNode.name(listHead(rest)) + name;
+          rest := listRest(rest);
+        end for;
+
+        name := "<" + InstNode.name(listHead(rest)) + ">" + name;
+        rest := listRest(rest);
+
+        for n in rest loop
+          name := InstNode.name(n) + "." + name;
+        end for;
+      else
+        name := Absyn.pathString(basePath);
+      end if;
+
+      Error.addMultiSourceMessage(Error.REPLACEABLE_BASE_CLASS,
+        {InstNode.name(base), name}, {InstNode.info(base), info});
       fail();
     end if;
-
-    node := InstNode.parent(node);
   end for;
 end checkReplaceableBaseClass;
-
-function isReplaceable
-  input InstNode node;
-  output Boolean isReplaceable = false;
-algorithm
-
-end isReplaceable;
 
 function expandBuiltinExtends
   "This function handles the case where a class extends from a builtin type,
@@ -458,7 +473,7 @@ function instClass
   input Modifier modifier;
   input InstNode parent = InstNode.EMPTY_NODE();
 protected
-  InstNode par;
+  InstNode par, redecl_node;
   Class cls, inst_cls;
   ClassTree cls_tree;
   Modifier cls_mod, mod;
@@ -468,19 +483,21 @@ algorithm
   cls_mod := Class.getModifier(cls);
   cls_mod := Modifier.merge(modifier, cls_mod);
 
-  cls_mod := match cls_mod
-    case Modifier.REDECLARE()
+  () := match (cls, cls_mod)
+    case (_, Modifier.REDECLARE())
       algorithm
-        node := expand(cls_mod.element);
-        cls := InstNode.getClass(node);
+        if not InstNode.isClass(cls_mod.element) then
+          Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+            {"class", InstNode.name(node), "component"},
+            {InstNode.info(cls_mod.element), InstNode.info(node)});
+        end if;
+
+        redecl_node := expand(cls_mod.element);
+        node := instClass(redecl_node, Modifier.NOMOD(), parent);
       then
-        Class.getModifier(cls);
+        ();
 
-    else cls_mod;
-  end match;
-
-  () := match cls
-    case Class.EXPANDED_CLASS()
+    case (Class.EXPANDED_CLASS(), _)
       algorithm
         (node, par) := ClassTree.instantiate(node, parent);
         Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
@@ -496,6 +513,9 @@ algorithm
         // Apply modifier in this scope.
         applyModifier(mod, cls_tree, InstNode.name(node));
 
+        cls_tree := ClassTree.replaceDuplicates(cls_tree);
+        ClassTree.checkDuplicates(cls_tree);
+
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree, function instExtends(parent = par));
 
@@ -505,7 +525,7 @@ algorithm
       then
         ();
 
-    case Class.DERIVED_CLASS()
+    case (Class.DERIVED_CLASS(), _)
       algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
@@ -513,7 +533,7 @@ algorithm
       then
         ();
 
-    case Class.PARTIAL_BUILTIN()
+    case (Class.PARTIAL_BUILTIN(), _)
       algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
@@ -620,7 +640,7 @@ protected
   ClassTree cls_tree;
 algorithm
   cls_tree := Class.classTree(InstNode.getClass(extendsNode));
-  ClassTree.mapExtends(cls_tree, function modifyExtends(scope = scope));
+  ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
 
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
   SCode.EXTENDS(baseClassPath = basepath, modifications = smod, info = info) := elem;
@@ -652,13 +672,19 @@ algorithm
       then
         ();
 
+    case Class.DERIVED_CLASS()
+      algorithm
+        node := instExtends(cls.baseClass, parent);
+      then
+        ();
+
     else ();
   end match;
 end instExtends;
 
 function applyModifier
   input Modifier modifier;
-  input ClassTree cls;
+  input output ClassTree cls;
   input String clsName;
 protected
   list<Modifier> mods;
@@ -687,6 +713,8 @@ algorithm
       InstNode.classApply(node, Class.mergeModifier, mod);
     end if;
   end for;
+
+  ClassTree.copyModifiersToDups(cls);
 end applyModifier;
 
 function instComponent
@@ -703,20 +731,25 @@ protected
   Component.Attributes attr;
   list<Dimension> dims;
 algorithm
-  def := InstNode.definition(node);
   comp := InstNode.component(node);
   mod := Component.getModifier(comp);
 
-  () := match (mod, comp, def)
-    case (Modifier.REDECLARE(), _, _)
+  () := match (mod, comp)
+    case (Modifier.REDECLARE(), _)
       algorithm
+        if not InstNode.isComponent(mod.element) then
+          Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+            {"component", InstNode.name(node), "class"},
+            {InstNode.info(mod.element), InstNode.info(node)});
+        end if;
+
         comp := InstNode.component(mod.element);
         InstNode.updateComponent(comp, node);
         instComponent(node, parent, InstNode.parent(mod.element));
       then
         ();
 
-    case (_, Component.COMPONENT_DEF(), SCode.COMPONENT())
+    case (_, Component.COMPONENT_DEF(definition = def as SCode.COMPONENT()))
       algorithm
         comp_mod := Modifier.fromElement(def, parent);
         comp_mod := Modifier.merge(comp.modifier, comp_mod);
@@ -731,7 +764,8 @@ algorithm
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes);
         binding := Modifier.binding(comp_mod);
-        inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding, attr, def.info);
+        inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding,
+           attr, SCode.isElementRedeclare(def), def.info);
         InstNode.updateComponent(inst_comp, node);
       then
         ();
@@ -847,6 +881,8 @@ algorithm
         InstNode.updateClass(cls, node);
       then
         ();
+
+    case Class.INSTANCED_CLASS() then ();
 
     else
       algorithm

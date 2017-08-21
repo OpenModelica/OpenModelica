@@ -787,6 +787,7 @@ end extendEnvWithItem;
 function extendEnvWithItemConflict
   input Item newItem;
   input Item oldItem;
+  input String name;
   output Item item;
 algorithm
   item := linkItemUsage(oldItem, newItem);

@@ -44,6 +44,7 @@ import Expression = NFExpression;
 
 protected
 import NFInstUtil;
+import List;
 
 public
 constant Component.Attributes CONST_ATTR =
@@ -98,6 +99,7 @@ uniontype Component
     array<Dimension> dimensions;
     Binding binding;
     Component.Attributes attributes;
+    Boolean isRedeclare;
     SourceInfo info;
   end UNTYPED_COMPONENT;
 
@@ -400,6 +402,62 @@ uniontype Component
       else false;
     end match;
   end isPublic;
+
+  function isIdentical
+    input Component comp1;
+    input Component comp2;
+    output Boolean identical = false;
+  algorithm
+    identical := match (comp1, comp2)
+      case (UNTYPED_COMPONENT(), UNTYPED_COMPONENT())
+        algorithm
+          if not Class.isIdentical(InstNode.getClass(comp1.classInst),
+                                   InstNode.getClass(comp2.classInst)) then
+            return;
+          end if;
+
+          if not Binding.isEqual(comp1.binding, comp2.binding) then
+            return;
+          end if;
+        then
+          true;
+
+      else true;
+    end match;
+  end isIdentical;
+
+  function toString
+    input String name;
+    input Component component;
+    output String str;
+  algorithm
+    str := match component
+      local
+        SCode.Element def;
+
+      case COMPONENT_DEF(definition = def as SCode.Element.COMPONENT())
+        then Dump.unparseTypeSpec(def.typeSpec) + " " + name +
+             Modifier.toString(component.modifier);
+
+      case UNTYPED_COMPONENT()
+        then InstNode.name(component.classInst) + " " + name +
+             List.toString(arrayList(component.dimensions), Dimension.toString, "", "[", ", ", "]", false) +
+             Binding.toString(component.binding, " = ");
+
+    end match;
+  end toString;
+
+  function isRedeclare
+    input Component component;
+    output Boolean isRedeclare;
+  algorithm
+    isRedeclare := match component
+      case COMPONENT_DEF() then SCode.isElementRedeclare(component.definition);
+      case UNTYPED_COMPONENT() then component.isRedeclare;
+      else false;
+    end match;
+  end isRedeclare;
+
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -248,6 +248,7 @@ public
   function merge
     input Modifier outerMod;
     input Modifier innerMod;
+    input String name = "";
     output Modifier mergedMod;
   algorithm
     mergedMod := match(outerMod, innerMod)
@@ -448,6 +449,7 @@ protected
      element, otherwise it's an error."
     input Modifier mod1;
     input Modifier mod2;
+    input String name = "";
     input ModifierScope scope;
     input list<String> prefix = {};
     output Modifier mod;

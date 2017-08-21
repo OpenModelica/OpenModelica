@@ -65,12 +65,19 @@ function lookupBaseClassName
   input Absyn.Path name;
   input InstNode scope;
   input SourceInfo info;
-  output InstNode node;
+  output list<InstNode> nodes;
 protected
   LookupState state;
 algorithm
-  (node, state) := lookupNameWithError(name, scope, info, Error.LOOKUP_BASECLASS_ERROR);
-  LookupState.assertClass(state, node, name, info);
+  try
+    (nodes, state) := lookupNames(name, scope);
+  else
+    Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
+      {Absyn.pathString(name), InstNode.name(scope)}, info);
+    fail();
+  end try;
+
+  LookupState.assertClass(state, listHead(nodes), name, info);
 end lookupBaseClassName;
 
 function lookupComponent
@@ -316,7 +323,7 @@ algorithm
   try
     (node, state) := lookupName(name, scope);
   else
-    Error.addSourceMessage(errorType, {Absyn.pathString(name), "<unknown>"}, info);
+    Error.addSourceMessage(errorType, {Absyn.pathString(name), InstNode.name(scope)}, info);
     fail();
   end try;
 end lookupNameWithError;
@@ -346,6 +353,38 @@ algorithm
 
   end match;
 end lookupName;
+
+function lookupNames
+  input Absyn.Path name;
+  input InstNode scope;
+  output list<InstNode> nodes;
+  output LookupState state;
+algorithm
+  (nodes, state) := match name
+    local
+       InstNode node;
+
+    // Simple name, look it up in the given scope.
+    case Absyn.Path.IDENT()
+      algorithm
+        (node, state) := lookupFirstIdent(name.name, scope);
+      then
+        ({node}, state);
+
+    // Qualified name, look up first part in the given scope and look up the
+    // rest of the name in the found element.
+    case Absyn.Path.QUALIFIED()
+      algorithm
+        (node, state) := lookupFirstIdent(name.name, scope);
+      then
+        lookupLocalNames(name.path, node, {node}, state, InstNode.refEqual(node, scope));
+
+    // Fully qualified path, start from top scope.
+    case Absyn.Path.FULLYQUALIFIED()
+      then lookupNames(name.path, InstNode.topScope(scope));
+
+  end match;
+end lookupNames;
 
 function lookupFirstIdent
   "Looks up the first part of a name."
@@ -412,6 +451,55 @@ algorithm
   end match;
 end lookupLocalName;
 
+function lookupLocalNames
+  "Looks up a path in the given scope, without continuing the search in any
+   enclosing scopes if the path isn't found."
+  input Absyn.Path name;
+  input InstNode scope;
+  input output list<InstNode> nodes;
+  input output LookupState state;
+  input Boolean selfReference = false;
+protected
+  InstNode node = scope;
+algorithm
+  // Looking something up in a component is only legal when the name begins with
+  // a component reference, and for that we use lookupCref. So if the given node
+  // is a component we can immediately quit and give an error.
+  if not InstNode.isClass(scope) then
+    state := LookupState.STATE_COMP_CLASS();
+    return;
+  end if;
+
+  // If the given node extends from itself, like 'extends Modelica.Icons.***' in
+  // the MSL, then it's already being instantiated here.
+  if not selfReference then
+    node := Inst.instPackage(node);
+  end if;
+
+  // Look up the path in the scope.
+  (nodes, state) := match name
+    case Absyn.Path.IDENT()
+      algorithm
+        node := lookupLocalSimpleName(name.name, node);
+        state := LookupState.next(node, state);
+      then
+        (node :: nodes, state);
+
+    case Absyn.Path.QUALIFIED()
+      algorithm
+        node := lookupLocalSimpleName(name.name, node);
+        state := LookupState.next(node, state);
+      then
+        lookupLocalNames(name.path, node, node :: nodes, state);
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " was called with an invalid path.");
+      then
+        fail();
+  end match;
+end lookupLocalNames;
+
 function lookupSimpleBuiltinName
   input String name;
   output InstNode builtin;
@@ -453,6 +541,7 @@ algorithm
       // Look in the next enclosing scope.
       // TODO: The enclosing scope here will be a package, so the lookup should
       //       be restricted to constants only.
+      //foundScope := Inst.instPackage(InstNode.parentScope(foundScope));
       foundScope := InstNode.parentScope(foundScope);
     end try;
   end for;
@@ -498,14 +587,6 @@ algorithm
     case InstNode.CLASS_NODE() then InstNode.getClass(Inst.instPackage(node));
     case InstNode.COMPONENT_NODE() then InstNode.getClass(node);
   end match;
-
-  //scope := match node
-  //  case InstNode.CLASS_NODE()
-  //    then InstNode.getClass(Inst.expand(node));
-
-  //  case InstNode.COMPONENT_NODE()
-  //    then InstNode.getClass(node);
-  //end match;
 
   (node, nodes, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()

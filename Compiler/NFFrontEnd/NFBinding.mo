@@ -205,5 +205,27 @@ public
     end match;
   end toString;
 
+  function isEqual
+    input Binding binding1;
+    input Binding binding2;
+    output Boolean equal;
+  algorithm
+    equal := match (binding1, binding2)
+      case (UNBOUND(), UNBOUND()) then true;
+
+      // TODO: Handle propagated dims.
+      case (RAW_BINDING(), RAW_BINDING())
+        then Absyn.expEqual(binding1.bindingExp, binding2.bindingExp);
+
+      case (UNTYPED_BINDING(), UNTYPED_BINDING())
+        then Expression.isEqual(binding1.bindingExp, binding2.bindingExp);
+
+      case (TYPED_BINDING(), TYPED_BINDING())
+        then Expression.isEqual(binding1.bindingExp, binding2.bindingExp);
+
+      else false;
+    end match;
+  end isEqual;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;
