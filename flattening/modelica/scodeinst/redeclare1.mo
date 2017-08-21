@@ -19,8 +19,8 @@ end D;
 
 // Result:
 // Error processing file: redeclare1.mo
-// [redeclare1.mo:21:3-21:30:writable] Notification: From here:
-// [redeclare1.mo:17:15-17:26:writable] Error: Invalid redeclaration of model M as a component.
+// [flattening/modelica/scodeinst/redeclare1.mo:17:13-17:29:writable] Notification: From here:
+// [flattening/modelica/scodeinst/redeclare1.mo:12:15-12:26:writable] Error: Invalid redeclaration of class M as component.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

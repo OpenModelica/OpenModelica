@@ -9,7 +9,10 @@
 model A
   model B
     extends A;
+    Real x;
   end B;
+
+  B b;
 end A;
 
 model RecursiveExtends2

@@ -37,10 +37,14 @@ const17.mo \
 const3.mo \
 dim1.mo \
 dim13.mo \
+dim18.mo \
 dim3.mo \
 dim8.mo \
+DuplicateElements1.mo \
+DuplicateElements2.mo \
 DuplicateElements3.mo \
 DuplicateElements4.mo \
+DuplicateElementsValid1.mo \
 DuplicateMod1.mo \
 DuplicateMod2.mo \
 DuplicateMod3.mo \
@@ -60,6 +64,11 @@ Extends2.mo \
 Extends3.mo \
 Extends4.mo \
 ExtendImport1.mo \
+ExtendImport2.mo \
+ExtendReplaceable1.mo \
+ExtendReplaceable2.mo \
+ExtendReplaceable3.mo \
+ExtendReplaceable4.mo \
 ExtendSections.mo \
 ExtendSelf1.mo \
 ExtendSelf2.mo \
@@ -129,6 +138,7 @@ ImportQualifiedInvalid2.mo \
 ImportUnqualified1.mo \
 ImportUnqualified2.mo \
 ImportUnqualified3.mo \
+inst2.mo \
 inst3.mo \
 inst4.mo \
 inst5.mo \
@@ -141,6 +151,7 @@ loop2.mo \
 mod1.mo \
 mod10.mo \
 mod11.mo \
+mod12.mo \
 mod4.mo \
 mod5.mo \
 mod6.mo \
@@ -149,7 +160,6 @@ mod9.mo \
 ModClass1.mo \
 ModClass3.mo \
 ModClass6.mo \
-dim18.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 PackageConstant1.mo \
@@ -163,12 +173,18 @@ RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
+RecursiveExtends1.mo \
 RedeclareClass1.mo \
+RedeclareElementMissing1.mo \
+RedeclareElementMissing2.mo \
+redeclare1.mo \
 redeclare11.mo \
 redeclare12.mo \
 redeclare13.mo \
 redeclare2.mo \
 redeclare6.mo \
+redeclare7.mo \
+redeclare9.mo \
 Subscript1.mo \
 type2.mo \
 usertype1.mo \
@@ -182,22 +198,21 @@ when1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-redeclare9.mo \
-inst2.mo \
+DuplicateElements5.mo \
+DuplicateElements6.mo \
+DuplicateElements7.mo \
+DuplicateElements8.mo \
+DuplicateElementsValid2.mo \
 classextends1.mo \
 classextends2.mo \
+classextends3.mo \
 ModClass2.mo \
 ModClass4.mo \
 ModClass5.mo \
-DuplicateElements1.mo \
-DuplicateElements2.mo \
-DuplicateElements5.mo \
 DuplicateElementsCond1.mo \
-ExtendImport2.mo \
 bindings2.mo \
 bindings3.mo \
 ceval4.mo \
-classextends3.mo \
 compfunc.mo \
 cond1.mo \
 cond2.mo \
@@ -315,7 +330,6 @@ loop1.mo \
 loop3.mo \
 loop4.mo \
 MissingRedeclare1.mo \
-mod12.mo \
 mod13.mo \
 mod7.mo \
 MultiInheritanceRedeclare1.mo \
@@ -324,14 +338,11 @@ noretcall1.mo \
 PartialInst.mo \
 PropagateRedeclareMod1.mo \
 Range1.mo \
-RecursiveExtends1.mo \
 RecursiveExtends2.mo \
-redeclare1.mo \
 redeclare10.mo \
 redeclare3.mo \
 redeclare4.mo \
 redeclare5.mo \
-redeclare7.mo \
 redeclare8.mo \
 RedeclaredFunction1.mo \
 type1.mo \

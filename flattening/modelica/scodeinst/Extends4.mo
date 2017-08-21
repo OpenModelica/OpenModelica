@@ -21,7 +21,7 @@ end Extends4;
 
 // Result:
 // Error processing file: Extends4.mo
-// [flattening/modelica/scodeinst/Extends4.mo:11:3-11:6:writable] Error: Class C not found in scope <unknown>.
+// [flattening/modelica/scodeinst/Extends4.mo:11:3-11:6:writable] Error: Class C not found in scope A.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -29,12 +29,8 @@ model MultiInheritanceRedeclare1
 end MultiInheritanceRedeclare1;
 
 // Result:
-// Failed to type cref A.P.i
-// Error processing file: MultiInheritanceRedeclare1.mo
-// Error: Internal error Instantiation of MultiInheritanceRedeclare1 failed with no error message.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class MultiInheritanceRedeclare1
+//   Integer c.x = C.P.i;
+//   Integer c.y = C.P.j;
+// end MultiInheritanceRedeclare1;
 // endResult

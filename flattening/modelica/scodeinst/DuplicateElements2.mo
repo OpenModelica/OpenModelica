@@ -1,4 +1,4 @@
-// name: DuplicateElements2.mo
+// name: DuplicateElements2
 // keywords:
 // status: incorrect
 // cflags: -d=newInst

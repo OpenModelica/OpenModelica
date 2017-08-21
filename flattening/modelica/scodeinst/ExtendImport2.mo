@@ -21,3 +21,9 @@ end P3;
 model ExtendImport2
   extends P1.P2.P3.A;
 end ExtendImport2;
+
+// Result:
+// class ExtendImport2
+//   Real x;
+// end ExtendImport2;
+// endResult

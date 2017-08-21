@@ -1,4 +1,4 @@
-// name: DuplicateElements4
+// name: DuplicateElements6
 // keywords:
 // status: incorrect
 // cflags: -d=newInst
@@ -6,10 +6,23 @@
 // Checks that duplicate elements are detected and reported.
 //
 
-model DuplicateElements4
-  class x end x;
-  class x end x;
-end DuplicateElements4;
+model A
+  model B
+    Real x;
+  end B;
+end A;
+
+model C
+  model B
+    Real y;
+  end B;
+end C;
+
+model DuplicateElements6
+  extends A;
+  extends C;
+  B b;
+end DuplicateElements6;
 
 // Result:
 // Error processing file: DuplicateElements4.mo

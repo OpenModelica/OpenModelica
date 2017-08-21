@@ -1,4 +1,4 @@
-// name: DuplicateElements5.mo
+// name: DuplicateElements5
 // keywords:
 // status: incorrect
 // cflags: -d=newInst
@@ -16,9 +16,11 @@ model DuplicateElements5
 end DuplicateElements5;
 
 // Result:
-// Error processing file: DuplicateElements4.mo
-// [flattening/modelica/scodeinst/DuplicateElements4.mo:10:3-10:16:writable] Notification: From here:
-// [flattening/modelica/scodeinst/DuplicateElements4.mo:11:3-11:16:writable] Error: An element with name x is already declared in this scope.
+// Error processing file: DuplicateElements5.mo
+// [flattening/modelica/scodeinst/DuplicateElements5.mo:10:3-10:9:writable] Notification: From here:
+// [flattening/modelica/scodeinst/DuplicateElements5.mo:15:3-15:12:writable] Error: Duplicate elements (due to inherited elements) not identical:
+//   first element is:  Real x
+//   second element is: Integer x
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

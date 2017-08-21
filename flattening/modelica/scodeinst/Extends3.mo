@@ -34,16 +34,16 @@ model F
   Real f;
 end F;
 
-model Extends2
+model Extends3
   Real g;
   extends E;
   Real h;
   extends F;
   Real i;
-end Extends2;
+end Extends3;
 
 // Result:
-// class Extends2
+// class Extends3
 //   Real g;
 //   Real c;
 //   Real a;
@@ -52,10 +52,7 @@ end Extends2;
 //   Real d;
 //   Real h;
 //   Real e;
-//   Real a;
-//   Real x;
-//   Real b;
 //   Real f;
 //   Real i;
-// end Extends2;
+// end Extends3;
 // endResult
