@@ -2939,7 +2939,7 @@ protected
 algorithm
   b[1] := Types.isRealOrSubTypeReal(inType);
   b[2] := Types.isRecord(inType);
-  out := Util.boolOrList({b[1],b[2]});
+  out := boolOr(b[1],b[2]);
 end diffableTypes;
 
 

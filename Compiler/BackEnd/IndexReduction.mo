@@ -487,7 +487,6 @@ algorithm
       list<Integer> unassignedEqns,eqnsLst,varlst,discEqns;
       list<BackendDAE.Var> vlst;
       Boolean b,ba;
-      list<Boolean> blst;
 /*    case((unassignedEqns,eqnsLst))
       equation
         vindx = ass2[eindx];
@@ -504,9 +503,8 @@ algorithm
         varlst = m[eindx];
         varlst = List.map(varlst,intAbs);
         vlst = List.map1r(varlst,BackendVariable.getVarAt,vars);
-        blst = List.map(vlst,BackendVariable.isVarDiscrete);
-        // if there is a continues variable than b is false
-        b = Util.boolAndList(blst);
+        // if there is a continues variable then b is false
+        b = List.mapBoolAnd(vlst,BackendVariable.isVarDiscrete);
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
         unassignedEqns = List.consOnTrue(ba and not b, eindx, unassignedEqns);
         discEqns = List.consOnTrue(b, eindx, discEqns);

@@ -9791,7 +9791,7 @@ public function dimensionsKnownAndNonZero
   input list<DAE.Dimension> dims;
   output Boolean allKnown;
 algorithm
-  allKnown := Util.boolAndList(List.map(dims, dimensionKnownAndNonZero));
+  allKnown := List.mapBoolAnd(dims, dimensionKnownAndNonZero);
 end dimensionsKnownAndNonZero;
 
 public function dimensionUnknownOrExp
@@ -11484,14 +11484,12 @@ public function dimensionsList
   input DAE.Dimensions inDims;
   output list<Integer> outValues;
 protected
-  list<Boolean> boolHelperList;
   list<Integer> dims;
 algorithm
   outValues := matchcontinue(inDims)
     case (_)
       equation
-        boolHelperList = List.map(inDims, checkDimensionSizes);
-        true = List.reduce(boolHelperList,boolAnd);
+        true = List.mapBoolAnd(inDims, checkDimensionSizes);
         dims = List.map(inDims, dimensionSizeAll);
       then dims;
     else {};
@@ -11504,14 +11502,12 @@ public function expDimensionsList
   input list<DAE.Exp> inDims;
   output list<Integer> outValues;
 protected
-  list<Boolean> boolHelperList;
   list<Integer> dims;
 algorithm
   outValues := matchcontinue(inDims)
     case (_)
       equation
-        boolHelperList = List.map(inDims, checkExpDimensionSizes);
-        true = List.reduce(boolHelperList,boolAnd);
+        true = List.mapBoolAnd(inDims, checkExpDimensionSizes);
         dims = List.map(inDims, expInt);
         then dims;
     else {};
@@ -11535,13 +11531,11 @@ algorithm
     case(head::_)
       equation
         //print("isCrefListWithEqualIdents: \n" + stringDelimitList(List.map1(iExpressions, ExpressionDump.dumpExpStr, 1), ""));
-        boolHelperList = List.map(iExpressions, isCref);
-        true = List.reduce(boolHelperList,boolAnd);
+        true = List.mapBoolAnd(iExpressions, isCref);
         //print("isCrefListWithEqualIdents: all crefs!\n");
         crefs = List.map(iExpressions, expCref);
         headCref = expCref(head);
-        boolHelperList = List.map1(crefs, ComponentReference.crefEqualWithoutLastSubs, headCref);
-        tmpCrefWithEqualIdents = List.reduce(boolHelperList,boolAnd);
+        tmpCrefWithEqualIdents = List.map1BoolAnd(crefs, ComponentReference.crefEqualWithoutLastSubs, headCref);
         //print("isCrefListWithEqualIdents: returns " + boolString(tmpCrefWithEqualIdents) + "\n\n");
       then tmpCrefWithEqualIdents;
     case({})

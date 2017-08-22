@@ -4299,7 +4299,7 @@ algorithm
     end for;//end comps
 
     //dump edges
-    for eqIdx in List.intRange(arrayLength(m)) loop
+    for eqIdx in 1:arrayLength(m) loop
       for varIdx in arrayGet(m, eqIdx) loop
         if intLe(varIdx, 0) then
           lineType := GraphML.DASHED();
@@ -4400,7 +4400,7 @@ protected
   Integer i;
   String s1;
 algorithm
-  for i in List.intRange(arrayLength(constraints)) loop
+  for i in 1:arrayLength(constraints) loop
     s1 := stringDelimitList(List.map(arrayGet(constraints,i),BackendDump.equationString),"\n")+"\n------------------\n";
     if listEmpty(arrayGet(constraints,i)) then
       s1 := "empty Constraints\n";

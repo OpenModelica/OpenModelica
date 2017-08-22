@@ -1498,7 +1498,7 @@ algorithm
     case (DAE.T_FUNCTION(funcArg={_}),_) then false; // Unary functions are legal even if we are not interested in them
     case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(defaultBinding=NONE())::DAE.FUNCARG(defaultBinding=NONE())::rest),_)
       equation
-        isBinaryFunc = Util.boolAndList(List.mapMap(rest, Types.funcArgDefaultBinding, isSome));
+        isBinaryFunc = List.mapMapBoolAnd(rest, Types.funcArgDefaultBinding, isSome);
         // Error.assertionOrAddSourceMessage(isBinaryFunc, Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 3..n to have default values"}, info);
       then isBinaryFunc; // Unary functions are legal even if we are not interested in them
     else
@@ -1517,7 +1517,7 @@ algorithm
       list<DAE.FuncArg> rest;
     case DAE.T_FUNCTION(funcArg=DAE.FUNCARG(defaultBinding=NONE())::rest)
       equation
-        isBinaryFunc = Util.boolAndList(List.mapMap(rest, Types.funcArgDefaultBinding, isSome));
+        isBinaryFunc = List.mapMapBoolAnd(rest, Types.funcArgDefaultBinding, isSome);
       then isBinaryFunc;
     else false;
   end match;

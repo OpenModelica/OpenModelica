@@ -136,8 +136,8 @@ public function makeTupleAssignmentNoTypeCheck
 protected
   Boolean b1,b2;
 algorithm
-  b1 := List.applyAndFold(lhs, boolAnd, Expression.isWild, true);
-  b2 := List.applyAndFold(List.restOrEmpty(lhs), boolAnd, Expression.isWild, true);
+  b1 := List.mapBoolAnd(lhs, Expression.isWild);
+  b2 := List.mapBoolAnd(List.restOrEmpty(lhs), Expression.isWild);
   outStatement := makeTupleAssignmentNoTypeCheck2(b1,b2,ty,lhs,rhs,source);
 end makeTupleAssignmentNoTypeCheck;
 

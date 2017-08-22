@@ -4598,7 +4598,7 @@ algorithm
   partCosts := listReverse(partCosts);
   //cluster them and correct task<->partition mapping
   (partitions,_) := HpcOmTaskGraph.distributeToClusters(List.intRange(arrayLength(partMap)),partCosts,n);
-  for partIdx in List.intRange(n) loop
+  for partIdx in 1:n loop
     part := arrayGet(partitions,partIdx);
     clusters := List.map1(part,Array.getIndexFirst,partMap);
     part := List.fold(clusters,listAppend,{});

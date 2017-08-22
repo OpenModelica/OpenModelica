@@ -1529,9 +1529,9 @@ algorithm
   end if;
 
   // skip is when equations
-  skip := Util.boolAndList(List.map(eqnlst, BackendEquation.isWhenEquation));
+  skip := List.mapBoolAnd(eqnlst, BackendEquation.isWhenEquation);
   // skip is discrete
-  skip := Util.boolAndList(List.map(varlst, BackendVariable.isVarDiscrete)) or skip;
+  skip := List.mapBoolAnd(varlst, BackendVariable.isVarDiscrete) or skip;
 
   outFold := match comp
     local
@@ -2046,9 +2046,9 @@ algorithm
     end if;
 
     // skip is when equations
-    skip := Util.boolAndList(List.map(orgeqnLst, BackendEquation.isWhenEquation));
+    skip := List.mapBoolAnd(orgeqnLst, BackendEquation.isWhenEquation);
     // skip is discrete
-    skip := Util.boolAndList(List.map(varlst, BackendVariable.isVarDiscrete)) or skip;
+    skip := List.mapBoolAnd(varlst, BackendVariable.isVarDiscrete) or skip;
     // skip algebraic equation if dynamic option is selected
     skipEquations := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then true; case 3 then BackendDAEUtil.blockIsDynamic(eqnNums, stateeqnsmark); end match;
 
@@ -5876,7 +5876,7 @@ algorithm
 
       // Check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      true = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
+      true = List.mapMapBoolAnd(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal);
 
       // Simplify
       (e1, _) = ExpressionSimplify.simplify(e1);
@@ -5894,7 +5894,7 @@ algorithm
 
       // check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      true = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
+      true = List.mapMapBoolAnd(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal);
 
       // wbraun:
       // TODO: Fix createNonlinearResidualEquations support cases where
@@ -5910,7 +5910,7 @@ algorithm
 
       // check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      false = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
+      false = List.mapMapBoolAnd(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal);
 
       s1 = ExpressionDump.printExpStr(e1);
       s2 = ExpressionDump.printExpStr(e2);
@@ -5925,7 +5925,7 @@ algorithm
 
       // check that all crefs are of Type Real
       // otherwise we can't solve that with one Non-linear equation
-      true = Util.boolAndList(List.mapMap(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal));
+      true = List.mapMapBoolAnd(crefs, ComponentReference.crefLastType, Types.isRealOrSubTypeReal);
 
       s1 = ExpressionDump.printExpStr(e1);
       s2 = ExpressionDump.printExpStr(e2);
@@ -9942,13 +9942,11 @@ algorithm (outRefs) := matchcontinue(inRefs, firstOrderInSec)
     list<tuple<DAE.ComponentRef, Integer>> rest;
     Integer idx;
     DAE.ComponentRef cr;
-    list<Boolean> bl;
 
   case({}, _) then {};
   case((cr, _)::rest, _)
     equation
-      bl = List.map1(firstOrderInSec, ComponentReference.crefEqual, cr);
-      true = Util.boolOrList(bl);
+      true = List.map1BoolOr(firstOrderInSec, ComponentReference.crefEqual, cr);
       rest = setFirstOrderInSecondOrderVarIndex(rest, firstOrderInSec);
     then
       (cr, 2)::rest;

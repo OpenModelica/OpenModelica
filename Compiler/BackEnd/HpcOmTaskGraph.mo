@@ -6632,7 +6632,7 @@ algorithm
     act := act+1;
   end for;
   print("\n");
-  for part in List.intRange(numPartitions) loop
+  for part in 1:numPartitions loop
     //print("activators: "+intLstString(listGet(activatorsForPartitions,part))+"\t\t\t\tnodes: \t"+intLstString(listGet(partitions,part))+"\n\n");
     print("activators: "+intLstString(listGet(activatorsForPartitions,part))+"\t\t\t\tderStateTasks: "+intLstString(List.map1(listGet(activatorsForPartitions,part),List.getIndexFirst,stateToActivators))+"\t\t\t\tnodes: \t"+intLstString(listGet(partitions,part))+"\n");
   end for;

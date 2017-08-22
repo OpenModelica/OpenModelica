@@ -715,7 +715,6 @@ algorithm
       list<Integer> rest, roots, constraints, elst, rlst;
       Integer o;
       Boolean foundflow, constr;
-      list<Boolean> blst;
       list<BackendDAE.Var> vlst;
     case ({}, _, _, _, _, _, _, _, _, _, _, _)
       then
@@ -730,8 +729,7 @@ algorithm
         // check for partner
         //  BackendDump.debuglst((rlst, intString, ", ", "\n"));
         vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
-        blst = List.map(vlst, BackendVariable.isFlowVar);
-        constr = Util.boolAndList(blst);
+        constr = List.mapBoolAnd(vlst, BackendVariable.isFlowVar);
         constraints = List.consOnTrue(constr, o, iconstraints);
         //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o], intString, ", ", "\n"));
@@ -1034,7 +1032,7 @@ protected
 algorithm
   //  print("Add orpan[" + intString(orphan) + "] = " + intString(preorphan) + "\n");
   olst := arr[orphan];
-  olst := List.union({preorphan}, olst);
+  olst := List.unionElt(preorphan, olst);
   _:=arrayUpdate(arr, orphan, olst);
 end addPreOrphan;
 
@@ -3241,7 +3239,6 @@ algorithm
       list<DAE.ComponentRef> crlst, crlst1;
       list<DAE.Exp> elst;
       list<Integer> ilst;
-      list<Boolean> blst;
       HashSet.HashSet set;
 
     // a = f(...)
@@ -3310,8 +3307,7 @@ algorithm
         crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
         true = intEq(size, listLength(crlst));
         cr::crlst1 = crlst;
-        blst = List.map1(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
-        true = Util.boolAndList(blst);
+        true = List.map1BoolAnd(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
         // check if crefs no on other side
         set = HashSet.emptyHashSet();
         crnosubs = ComponentReference.crefStripLastSubs(cr);
@@ -3334,8 +3330,7 @@ algorithm
         crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
         true = intEq(size, listLength(crlst));
         cr::crlst1 = crlst;
-        blst = List.map1(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
-        true = Util.boolAndList(blst);
+        true = List.map1BoolAnd(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
         // check if crefs no on other side
         set = HashSet.emptyHashSet();
         crnosubs = ComponentReference.crefStripLastSubs(cr);

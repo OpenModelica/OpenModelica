@@ -3218,6 +3218,49 @@ algorithm
   end for;
 end mapBoolOr;
 
+public function mapBoolAnd<TI>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if not inFunc(e) then
+      return;
+    end if;
+  end for;
+  res := true;
+end mapBoolAnd;
+
+public function mapMapBoolAnd<TI,TI2>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  input MapBFunc inBFunc;
+  output Boolean res = false;
+
+  partial function MapBFunc
+    input TI2 inElement;
+    output Boolean outBool;
+  end MapBFunc;
+  partial function MapFunc
+    input TI inElement;
+    output TI2 outElement;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if not inBFunc(inFunc(e)) then
+      return;
+    end if;
+  end for;
+  res := true;
+end mapMapBoolAnd;
+
 
 public function map1BoolOr<TI, ArgT1>
   "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
@@ -3240,6 +3283,29 @@ algorithm
     end if;
   end for;
 end map1BoolOr;
+
+
+public function map1BoolAnd<TI, ArgT1>
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
+  inFunc takes one additional argument."
+  input list<TI> inList;
+  input MapFunc inFunc;
+  input ArgT1 inArg1;
+  output Boolean res = false;
+
+  partial function MapFunc
+    input TI inElement;
+    input ArgT1 inArg1;
+    output Boolean outBool;
+  end MapFunc;
+algorithm
+  for e in inList loop
+    if not inFunc(e, inArg1) then
+      return;
+    end if;
+  end for;
+  res := true;
+end map1BoolAnd;
 
 
 public function map1ListBoolOr<TI, ArgT1>

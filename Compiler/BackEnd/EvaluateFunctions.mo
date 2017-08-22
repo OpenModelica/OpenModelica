@@ -2016,7 +2016,7 @@ algorithm
           stmt1 = if isCon then DAE.STMT_ASSIGN(typ,exp1,exp2,source) else stmt;
           tplExpsLHS = if isTpl then Expression.getComplexContents(exp1) else {};
           tplExpsRHS = if isTpl then Expression.getComplexContents(exp2) else {};
-          tplStmts = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS);
+          tplStmts = makeAssignmentMap(tplExpsLHS,tplExpsRHS);
           stmts1 = if isTpl then tplStmts else {stmt1};
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
             print("evaluated assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
@@ -2071,7 +2071,7 @@ algorithm
           stmt1 = if isCon then DAE.STMT_ASSIGN(typ,exp1,exp2,source) else stmt;
           tplExpsLHS = if isTpl then Expression.getComplexContents(exp1) else {};
           tplExpsRHS = if isTpl then Expression.getComplexContents(exp2) else {};
-          tplStmts = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS);
+          tplStmts = makeAssignmentMap(tplExpsLHS,tplExpsRHS);
           stmts1 = if isTpl then tplStmts else {stmt1};
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
             print("evaluated array assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
@@ -2156,7 +2156,7 @@ algorithm
           tplExpsLHS = if isCon then tplExpsLHS else {};
           tplExpsRHS = DAEUtil.getTupleExps(exp1);
           tplExpsRHS = if isCon then tplExpsRHS else {};
-          stmtsNew = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS); // if the tuple is completely constant
+          stmtsNew = makeAssignmentMap(tplExpsLHS,tplExpsRHS); // if the tuple is completely constant
 
           stmtsNew = if isCon then stmtsNew else {stmt};
           stmts2 = if intEq(size,0) then {DAE.STMT_ASSIGN(typ,exp2,exp1,DAE.emptyElementSource)} else stmtsNew;
@@ -2552,7 +2552,7 @@ algorithm
         print(" check getStatementLHS for WHEN!\n"+DAEDump.ppStatementStr(stmt));
       end if;
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
-      expLst = List.fold({stmt1},getStatementLHS,expLst);
+      expLst = getStatementLHS(stmt1,expLst);
     then expLst;
   case(DAE.STMT_WHEN(statementLst=stmtLst1,elseWhen=NONE()),_)
     equation
@@ -3159,7 +3159,7 @@ algorithm
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
          //bcall(not predicted,print,"remove the replacement for: "+stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+"\n");
          // build the additional statements and update the old one
-         addStmts = List.map2(List.intRange(listLength(outExps)),makeAssignmentMap,outExps,expLst);
+         addStmts = makeAssignmentMap(outExps,expLst);
          stmtNew = updateStatementsInIfStmt(stmtsLst,stmtIn);
 
          // print("the new predicted stmts: \n"+stringDelimitList(List.map({stmtNew},DAEDump.ppStatementStr),"\n")+"\nAnd the additional "+stringDelimitList(List.map(addStmts,DAEDump.ppStatementStr),"\n")+"\n");
@@ -3305,50 +3305,40 @@ end updateStatementsInElse;
 protected function compareConstantExps "compares the lists of expressions if there are the same constants at the same position
 author:Waurich TUD 2014-04"
   input list<list<DAE.Exp>> expLstLstIn;
-  output list<Integer> posLstOut;
-protected
-  Integer num;
-  list<Integer> idcs;
+  output list<Integer> posLstOut = {};
 algorithm
-  num := listLength(listHead(expLstLstIn));
-  idcs := List.intRange(num);
-  posLstOut := List.fold1(idcs,compareConstantExps2,expLstLstIn,{});
+  for i in 1:listLength(listHead(expLstLstIn)) loop
+    posLstOut := compareConstantExps2(i, expLstLstIn, posLstOut);
+  end for;
 end compareConstantExps;
 
 protected function compareConstantExps2
   input Integer idx;
   input list<list<DAE.Exp>> expLstLst;
-  input list<Integer> posIn;
-  output list<Integer> posOut;
+  input output list<Integer> pos;
 protected
   Boolean b1,b2;
-  list<Boolean> bLst;
-  list<Integer> posLst;
   DAE.Exp firstExp;
   list<DAE.Exp> expLst,rest;
 algorithm
   expLst := List.map1(expLstLst,listGet,idx);
-  firstExp::rest := expLst;
-  bLst := List.map(expLst,Expression.isConst);
-  b1 := List.fold(bLst,boolAnd,true);
-  bLst := List.map1(rest,Expression.expEqual,firstExp);
-  b2 := List.fold(bLst,boolAnd,true);
-  posLst := idx::posIn;
-  posOut := if b1 and b2 then posLst else posIn;
+  b1 := List.mapBoolAnd(expLst,Expression.isConst);
+  if b1 then
+    firstExp::rest := expLst;
+    b2 := List.map1BoolAnd(rest,Expression.expEqual,firstExp);
+    if b2 then
+      pos := idx::pos;
+    end if;
+  end if;
 end compareConstantExps2;
 
-protected function makeAssignmentMap "mapping function fo build the statements for a list of lhs and rhs exps.
+protected function makeAssignmentMap "mapping function to build the statements for a list of lhs and rhs exps.
 author:Waurich TUD 2014-04"
-  input Integer idx;
   input list<DAE.Exp> lhs;
   input list<DAE.Exp> rhs;
-  output DAE.Statement stmt;
-protected
-  DAE.Exp e1,e2;
+  output list<DAE.Statement> stmts;
 algorithm
-  e1 := listGet(lhs,idx);
-  e2 := listGet(rhs,idx);
-  stmt := makeAssignment(e1,e2);
+  stmts := list(makeAssignment(e1, e2) threaded for e1 in lhs, e2 in rhs);
 end makeAssignmentMap;
 
 protected function makeAssignment "makes an DAE.STMT_ASSIGN of the 2 DAE.Exp"

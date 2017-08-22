@@ -4748,7 +4748,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(_,_) equation
-      res = Util.boolOrList(List.map1(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
+      res = List.map1BoolOr(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr);
     then res;
     else false;
   end matchcontinue;

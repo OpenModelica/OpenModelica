@@ -2703,7 +2703,7 @@ algorithm
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
         b3 = Types.extendsBasicType(ty);
-        true = Util.boolOrList({b1, b2, b3});
+        true = boolOr(b1, boolOr(b2, b3));
 
         ErrorExt.rollBack("instBasictypeBaseclass");
       then

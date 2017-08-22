@@ -2606,7 +2606,7 @@ algorithm
     case DAE.T_ARRAY(ty=ty) then isRecordInvoled(ty);
     case DAE.T_FUNCTION(funcResultType=ty) then isRecordInvoled(ty);
     case DAE.T_TUPLE(types)
-    then Util.boolOrList(List.map(types, isRecordInvoled));
+    then List.mapBoolOr(types, isRecordInvoled);
     else false;
   end match;
 end isRecordInvoled;

@@ -2108,7 +2108,7 @@ import Util;
     Integer i;
   algorithm
     tmpArray := iArray;
-    for i in List.intRange(arrayLength(tmpArray)) loop
+    for i in 1:arrayLength(tmpArray) loop
       if(intNe(i, iIndex)) then
         tmpArray := arrayUpdate(tmpArray, i, arrayGet(tmpArray, i) + iOffset);
       end if;

@@ -7045,7 +7045,7 @@ algorithm
       equation
         (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
         (elements_1,changed2) = renameClassInElements(elements, old_comp, new_comp, env);
-        changed = Util.boolOrList({changed1,changed2});
+        changed = boolOr(changed1,changed2);
       then
         ((Absyn.PUBLIC(elements_1) :: res_1),changed);
 
@@ -7053,7 +7053,7 @@ algorithm
       equation
         (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
         (elements_1,changed2) = renameClassInElements(elements, old_comp, new_comp, env);
-        changed = Util.boolOrList({changed1,changed2});
+        changed = boolOr(changed1,changed2);
       then
         ((Absyn.PROTECTED(elements_1) :: res_1),changed);
 
@@ -7097,7 +7097,7 @@ algorithm
         element_1 = Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,elementspec_1,info,
           constrainClass));
-        changed = Util.boolOrList({changed1,changed2});
+        changed = boolOr(changed1,changed2);
       then
         ((element_1 :: res_1),changed);
     case ((element :: res),old_comp,new_comp,env)
