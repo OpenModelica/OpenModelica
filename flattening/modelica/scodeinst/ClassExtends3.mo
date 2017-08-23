@@ -1,7 +1,9 @@
-// name: classextends2.mo
+// name: ClassExtends3
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
+//
+// Checks that modifiers on class extends are applied.
 //
 
 model A
@@ -17,7 +19,7 @@ model A
   M2 m2_a;
 end A;
 
-model B
+model ClassExtends3
   extends A;
 
   model extends M1(x = 2.0)
@@ -30,10 +32,10 @@ model B
 
   M1 m1_b;
   M2 m2_b;
-end B;
+end ClassExtends3;
 
 // Result:
-// class B
+// class ClassExtends3
 //   Real m1_a.x = 2.0;
 //   Real m1_a.y;
 //   Real m2_a.x = 3.0;
@@ -42,5 +44,7 @@ end B;
 //   Real m1_b.y;
 //   Real m2_b.x = 3.0;
 //   Real m2_b.y;
-// end B;
+// end ClassExtends3;
+// [flattening/modelica/scodeinst/ClassExtends3.mo:25:3-27:9:writable] Warning: Missing redeclare prefix on class extends M1, treating like redeclare anyway.
+//
 // endResult

@@ -17,6 +17,12 @@ ceval3.mo \
 ceval5.mo \
 ceval6.mo \
 ClassAsComponentError.mo \
+ClassExtends1.mo \
+ClassExtends2.mo \
+ClassExtends3.mo \
+ClassExtendsBuiltin1.mo \
+ClassExtendsBuiltin2.mo \
+ClassExtendsMissing1.mo \
 ClassMod1.mo \
 ClassMod2.mo \
 CompAsFunc.mo \
@@ -203,8 +209,6 @@ DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
 DuplicateElementsValid2.mo \
-classextends1.mo \
-classextends2.mo \
 classextends3.mo \
 ModClass2.mo \
 ModClass4.mo \
