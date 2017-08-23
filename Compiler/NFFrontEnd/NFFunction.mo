@@ -149,7 +149,6 @@ constant FunctionMatchKind EXACT_MATCH = FunctionMatchKind.EXACT();
 constant FunctionMatchKind CAST_MATCH = FunctionMatchKind.CAST();
 constant FunctionMatchKind NO_MATCH = FunctionMatchKind.NOT_COMPATIBLE();
 
-
 uniontype Function
 
   record FUNCTION
@@ -176,16 +175,10 @@ uniontype Function
     Pointer<Boolean> collected;
   algorithm
     (inputs, outputs, locals) := collectParams(node);
-    // Slots should be created after typing
-    // slots := makeSlots(inputs);
     attr := makeAttributes(node, inputs, outputs);
-    collected := Pointer.create(false);
-    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
-
     // Make sure builtin functions aren't added to the function tree.
-    if isBuiltin(fn) then
-      collect(fn);
-    end if;
+    collected := Pointer.create(isBuiltinAttr(attr));
+    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
   end new;
 
   protected
@@ -226,6 +219,7 @@ uniontype Function
     input SourceInfo info;
     output ComponentRef fn_ref;
     output InstNode fn_node;
+    output Boolean specialBuiltin;
   protected
     CachedData cache;
     Absyn.Path fn_path;
@@ -235,8 +229,8 @@ uniontype Function
     cache := InstNode.cachedData(fn_node);
 
     // Check if a cached instantiation of this function already exists.
-    fn_node := match cache
-      case CachedData.FUNCTION() then fn_node;
+    (fn_node, specialBuiltin) := match cache
+      case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
       else instFunc2(fn_path,fn_node, info);
     end match;
   end instFunc;
@@ -246,9 +240,9 @@ uniontype Function
     input Absyn.Path fnPath;
     input output InstNode fnNode;
     input SourceInfo info;
+          output Boolean specialBuiltin;
   algorithm
-
-    fnNode := match InstNode.definition(fnNode)
+    (fnNode, specialBuiltin) := match InstNode.definition(fnNode)
       local
         SCode.ClassDef cdef;
         Function fn;
@@ -261,10 +255,11 @@ uniontype Function
             cr := Absyn.pathToCref(p);
             (_,sub_fnNode) := instFunc(cr,fnNode /*This should be the scope right?*/,info);
             for f in getCachedFuncs(sub_fnNode) loop
-              fnNode := InstNode.cacheAddFunc(f, fnNode);
+              fnNode := InstNode.cacheAddFunc(f, false, fnNode);
             end for;
           end for;
-        then fnNode;
+        then
+          (fnNode, false);
 
       case SCode.CLASS()
         algorithm
@@ -272,8 +267,10 @@ uniontype Function
           fnNode := Inst.instantiate(fnNode);
           Inst.instExpressions(fnNode);
           fn := Function.new(fnPath, fnNode);
-          fnNode := InstNode.cacheAddFunc(fn, fnNode);
-        then fnNode;
+          specialBuiltin := isSpecialBuiltin(fn);
+          fnNode := InstNode.cacheAddFunc(fn, specialBuiltin, fnNode);
+        then
+          (fnNode, specialBuiltin);
 
     end match;
   end instFunc2;
@@ -661,13 +658,32 @@ uniontype Function
 
   function isBuiltin
     input Function fn;
+    output Boolean isBuiltin = isBuiltinAttr(fn.attributes);
+  end isBuiltin;
+
+  function isBuiltinAttr
+    input DAE.FunctionAttributes attrs;
     output Boolean isBuiltin;
   algorithm
-    isBuiltin := match fn.attributes.isBuiltin
+    isBuiltin := match attrs.isBuiltin
       case DAE.FunctionBuiltin.FUNCTION_NOT_BUILTIN() then false;
       else true;
     end match;
-  end isBuiltin;
+  end isBuiltinAttr;
+
+  function isSpecialBuiltin
+    input Function fn;
+    output Boolean special;
+  algorithm
+    if not isBuiltin(fn) then
+      special := false;
+    else
+      special := match fn.path
+        case Absyn.IDENT(name = "size") then true;
+        else false;
+      end match;
+    end if;
+  end isSpecialBuiltin;
 
   function isImpure
     input Function fn;

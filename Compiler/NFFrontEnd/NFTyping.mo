@@ -479,6 +479,7 @@ algorithm
     case Expression.TYPENAME() then (exp, exp.ty, Const.C_CONST());
     case Expression.ARRAY() then typeArray(exp.elements, info);
     case Expression.RANGE() then typeRange(exp, info);
+    case Expression.SIZE() then typeSize(exp, info);
 
     case Expression.END() then (exp, Type.INTEGER(), Const.C_CONST());
 
@@ -713,6 +714,54 @@ algorithm
      Expression.toString(exp2), Type.toString(ty2)}, info);
   fail();
 end printRangeTypeError;
+
+function typeSize
+  input output Expression sizeExp;
+  input SourceInfo info;
+        output Type sizeType;
+        output DAE.Const variability;
+protected
+  Option<Expression> oindex;
+  Expression exp, index;
+  Type exp_ty, index_ty;
+  TypeCheck.MatchKind ty_match;
+algorithm
+  Expression.SIZE(exp = exp, dimIndex = oindex) := sizeExp;
+
+  (exp, exp_ty, _) := typeExp(exp, info);
+
+  // The first argument must be an array of any type.
+  if not Type.isArray(exp_ty) then
+    Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
+    fail();
+  end if;
+
+  if isSome(oindex) then
+    SOME(index) := oindex;
+    (index, index_ty, variability) := typeExp(index, info);
+
+    // The second argument must be an Integer.
+    (index, _, ty_match) :=
+      TypeCheck.matchTypes(index_ty, Type.INTEGER(), index);
+
+    if TypeCheck.isIncompatibleMatch(ty_match) then
+      Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
+        {"2", "size ", "dim", Expression.toString(index), Type.toString(index_ty), "Integer"}, info);
+      fail();
+    end if;
+
+    oindex := SOME(index);
+    sizeType := Type.INTEGER();
+  else
+    // TODO: Fill in correct dimension size here.
+    sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(1)});
+    // The number of dimensions is always known, but the dimension sizes
+    // themselves might not be known here.
+    variability := DAE.C_VAR();
+  end if;
+
+  sizeExp := Expression.SIZE(exp, oindex);
+end typeSize;
 
 function typeSections
   input InstNode classNode;

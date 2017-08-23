@@ -76,6 +76,7 @@ uniontype CachedData
   record FUNCTION
     list<Function> funcs;
     Boolean typed;
+    Boolean specialBuiltin;
   end FUNCTION;
 
   function empty
@@ -84,12 +85,14 @@ uniontype CachedData
 
   function addFunc
     input Function fn;
+    input Boolean specialBuiltin;
     input output CachedData cache;
   algorithm
     cache := match cache
-      case NO_CACHE() then FUNCTION({fn}, false);
+      case NO_CACHE() then FUNCTION({fn}, false, specialBuiltin);
       // Append to end so the error messages are ordered properly.
-      case FUNCTION() then FUNCTION(listAppend(cache.funcs,{fn}), false);
+      case FUNCTION() then FUNCTION(listAppend(cache.funcs,{fn}), false,
+                                    cache.specialBuiltin or specialBuiltin);
       else
         algorithm
           assert(false, getInstanceName() + ": Invalid cache for function");
@@ -685,12 +688,13 @@ uniontype InstNode
 
   function cacheAddFunc
     input Function fn;
+    input Boolean specialBuiltin;
     input output InstNode node;
   algorithm
     () := match node
       case CLASS_NODE()
         algorithm
-          Pointer.update(node.cached, CachedData.addFunc(fn, Pointer.access(node.cached)));
+          Pointer.update(node.cached, CachedData.addFunc(fn, specialBuiltin, Pointer.access(node.cached)));
         then
           ();
 

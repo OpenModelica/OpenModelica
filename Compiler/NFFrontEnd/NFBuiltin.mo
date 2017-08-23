@@ -115,7 +115,7 @@ constant InstNode REAL_TYPE = InstNode.CLASS_NODE("Real",
 constant InstNode INT_TYPE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.INTEGER(), NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true)),
+  Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true, false)),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode BOOLEAN_TYPE = InstNode.CLASS_NODE("Boolean",
@@ -130,7 +130,7 @@ constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
   Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({
     NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
     NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
-    NFBuiltinFuncs.STRING_REAL_FORMAT}, true)),
+    NFBuiltinFuncs.STRING_REAL_FORMAT}, true, false)),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode ENUM_TYPE = InstNode.CLASS_NODE("enumeration",

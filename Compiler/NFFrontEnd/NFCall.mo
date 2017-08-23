@@ -119,10 +119,16 @@ uniontype Call
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
+    Boolean specialBuiltin;
   algorithm
-    (fn_ref, fn_node) := Function.instFunc(functionName,scope,info);
+    (fn_ref, fn_node, specialBuiltin) := Function.instFunc(functionName,scope,info);
     (args, named_args) := instArgs(functionArgs, scope, info);
-    callExp := Expression.CALL(UNTYPED_CALL(fn_ref, {}, args, named_args));
+
+    if specialBuiltin and Absyn.crefFirstIdent(functionName) == "size" then
+      callExp := makeSizeCall(args, named_args, info);
+    else
+      callExp := Expression.CALL(UNTYPED_CALL(fn_ref, {}, args, named_args));
+    end if;
   end instantiate;
 
   function instArgs
@@ -170,7 +176,7 @@ uniontype Call
     Call call, argtycall;
     InstNode fn_node;
     list<Function> fnl;
-    Boolean fn_typed;
+    Boolean fn_typed, special;
     Function fn;
     list<Expression> args;
     list<Type> arg_ty;
@@ -182,12 +188,12 @@ uniontype Call
       case Expression.CALL(call = call as UNTYPED_CALL(ref = ComponentRef.CREF(node = fn_node)))
         algorithm
           // Fetch the cached function(s).
-          CachedData.FUNCTION(fnl, fn_typed) := InstNode.cachedData(fn_node);
+          CachedData.FUNCTION(fnl, fn_typed, special) := InstNode.cachedData(fn_node);
 
           // Type the function(s) if not already done.
           if not fn_typed then
             fnl := list(Function.typeFunction(f) for f in fnl);
-            InstNode.setCachedData(CachedData.FUNCTION(fnl, true), fn_node);
+            InstNode.setCachedData(CachedData.FUNCTION(fnl, true, special), fn_node);
           end if;
 
           // Type the arguments.
@@ -197,8 +203,6 @@ uniontype Call
 
           args := list(Util.tuple31(a) for a in tyArgs);
 
-          // This does segfault when list is empty
-          // variability := Types.constAnd(Util.tuple33(a) for a in tyArgs);
           variability := DAE.C_CONST();
           for a in tyArgs loop
             variability := Types.constAnd(variability,Util.tuple33(a));
@@ -288,7 +292,7 @@ uniontype Call
 
           (args, typematched, matchKind) := matchFunction(fn, call.arguments, call.named_args, info);
 
-          if(typematched) then
+          if typematched then
             matchedFunctions := (fn,args,matchKind)::matchedFunctions;
             matchingFuncs := fn::matchingFuncs;
           end if;
@@ -471,6 +475,34 @@ uniontype Call
     end match;
   end typedFunction;
 
+  function makeSizeCall
+    input list<Expression> posArgs;
+    input list<NamedArg> namedArgs;
+    input SourceInfo info;
+    output Expression callExp;
+  protected
+    Integer argc = listLength(posArgs);
+    Expression arg1, arg2;
+  algorithm
+    if not listEmpty(namedArgs) then
+      for arg in namedArgs loop
+        Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+          {"size", Util.tuple21(arg)}, info);
+      end for;
+      fail();
+    end if;
+
+    callExp := match posArgs
+      case {arg1} then Expression.SIZE(arg1, NONE());
+      case {arg1, arg2} then Expression.SIZE(arg1, SOME(arg2));
+      else
+        algorithm
+          Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
+            {"size", "", ":\n  size(array) => Integer[:]\n  size(array, Integer) => Integer"}, info);
+        then
+          fail();
+    end match;
+  end makeSizeCall;
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");
