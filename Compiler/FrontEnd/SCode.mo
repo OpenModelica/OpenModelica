@@ -4580,6 +4580,16 @@ algorithm
   end match;
 end isDerivedClass;
 
+public function isClassExtends
+  input Element cls;
+  output Boolean isCE;
+algorithm
+  isCE := match cls
+    case CLASS(classDef = CLASS_EXTENDS()) then true;
+    else false;
+  end match;
+end isClassExtends;
+
 public function setDerivedTypeSpec
 "@auhtor: adrpo
  set the base class path in extends"

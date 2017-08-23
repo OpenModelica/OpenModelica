@@ -147,7 +147,7 @@ protected
   Class cls;
 algorithm
   // Create a fake SCode.Element for the top scope, so we don't have to make the
-  // definition in InstNode an option.
+  // definition in InstNode an Option only because of this node.
   cls_elem := SCode.CLASS("<top>", SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
     SCode.PARTS(topClasses, {}, {}, {}, {}, {}, {}, NONE()),
@@ -157,7 +157,7 @@ algorithm
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
 
   // Create a new class from the elements, and update the inst node with it.
-  cls := Class.fromSCode(topClasses, topNode);
+  cls := Class.fromSCode(topClasses, false, topNode);
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
@@ -185,29 +185,37 @@ function partialInstClass2
   input SCode.Element definition;
   input InstNode scope;
   output Class cls;
+protected
+  SCode.ClassDef cdef, ce_cdef;
+  Type ty;
 algorithm
-  cls := match definition
-    local
-      SCode.ClassDef cdef;
-      Type ty;
+  assert(SCode.elementIsClass(definition), getInstanceName() + " got non-class element");
+  SCode.CLASS(classDef = cdef) := definition;
 
-    // A long class definition, add it's elements to a new scope.
-    case SCode.CLASS(classDef = cdef as SCode.PARTS())
-      then Class.fromSCode(cdef.elementLst, scope);
+  cls := match cdef
+    // A long class definition, add its elements to a new scope.
+    case SCode.PARTS()
+      then Class.fromSCode(cdef.elementLst, false, scope);
+
+    // A class extends, add its elements to a new scope.
+    case SCode.CLASS_EXTENDS(composition = ce_cdef as SCode.PARTS())
+      algorithm
+        // Give a warning if the class extends is not declared as a redeclare.
+        // This was not clarified until Modelica 3.4, so for now we just treat
+        // all class extends like redeclares and give a warning about it.
+        if not SCode.isElementRedeclare(definition) then
+          Error.addSourceMessage(Error.CLASS_EXTENDS_MISSING_REDECLARE,
+            {SCode.elementName(definition)}, SCode.elementInfo(definition));
+        end if;
+      then
+        Class.fromSCode(ce_cdef.elementLst, true, scope);
 
     // An enumeration definition, add the literals to a new scope.
-    case SCode.CLASS(classDef = cdef as SCode.ENUMERATION())
+    case SCode.ENUMERATION()
       algorithm
         ty := makeEnumerationType(cdef.enumLst, scope);
       then
         Class.fromEnumeration(cdef.enumLst, ty, scope);
-
-//    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
-//      algorithm
-//        // get the already existing classes with the same name
-//        print(getInstanceName() + " got class extends: " + definition.name + "\n");
-//      then
-//        fail();
 
     else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD());
   end match;
@@ -239,14 +247,18 @@ function expandClass2
   input output InstNode node;
 protected
   SCode.Element def = InstNode.definition(node);
+  SCode.ClassDef cdef;
+  SourceInfo info;
+  String name;
 algorithm
-  node := match def
+  SCode.CLASS(name = name, classDef = cdef, info = info) := def;
+
+  node := match cdef
     local
       Absyn.TypeSpec ty;
       SCode.Mod der_mod;
       SCode.Element ext;
       Class c;
-      SCode.ClassDef cdef;
       list<SCode.Element> exts;
       array<InstNode> comps;
       Modifier mod;
@@ -257,23 +269,7 @@ algorithm
       list<Dimension> dims;
       ClassTree tree;
 
-    // A short class definition, e.g. class A = B.
-    case SCode.CLASS(classDef = cdef as SCode.DERIVED(typeSpec = ty, modifications = der_mod))
-      algorithm
-        // Look up the class that's being derived from and expand it.
-        ext_node :: _ := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), def.info);
-        ext_node := expand(ext_node);
-
-        // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
-        prefs := instClassPrefixes(def);
-        dims := list(Dimension.RAW_DIM(d) for d in cdef.attributes.arrayDims);
-        mod := Class.getModifier(InstNode.getClass(node));
-        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, cdef.attributes.direction);
-        node := InstNode.updateClass(c, node);
-      then
-        node;
-
-    case SCode.CLASS(classDef = cdef as SCode.PARTS())
+    case SCode.PARTS()
       algorithm
         c := InstNode.getClass(node);
         // Change the class to an empty expanded class, to avoid instantiation loops.
@@ -295,12 +291,50 @@ algorithm
       then
         node;
 
-//    case SCode.CLASS(classDef = cdef as SCode.CLASS_EXTENDS())
-//      algorithm
-//        // get the already existing classes with the same name
-//        print(getInstanceName() + " got class extends: " + def.name + "\n");
-//      then
-//        fail();
+    // A short class definition, e.g. class A = B.
+    case SCode.DERIVED(typeSpec = ty, modifications = der_mod)
+      algorithm
+        // Look up the class that's being derived from and expand it.
+        ext_node :: _ := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), info);
+        ext_node := expand(ext_node);
+
+        // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
+        prefs := instClassPrefixes(def);
+        dims := list(Dimension.RAW_DIM(d) for d in cdef.attributes.arrayDims);
+        mod := Class.getModifier(InstNode.getClass(node));
+        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, cdef.attributes.direction);
+        node := InstNode.updateClass(c, node);
+      then
+        node;
+
+    case SCode.CLASS_EXTENDS()
+      algorithm
+        tree := Class.classTree(InstNode.getClass(InstNode.parent(node)));
+        ext_node := ClassTree.getRedeclaredNode(name, tree);
+        ext_node := expand(ext_node);
+        ext_node := InstNode.setNodeType(InstNodeType.BASE_CLASS(node, def), ext_node);
+
+        c := InstNode.getClass(node);
+        c := Class.initExpandedClass(c);
+        node := InstNode.updateClass(c, node);
+
+        Class.EXPANDED_CLASS(elements = tree, modifier = mod) := c;
+        builtin_ext := ClassTree.mapFoldExtends(tree, expandExtends, NONE());
+        ClassTree.setClassExtends(ext_node, tree);
+        prefs := instClassPrefixes(def);
+
+        if isSome(builtin_ext) or Class.isBuiltin(InstNode.getClass(ext_node)) then
+          node := Util.getOptionOrDefault(builtin_ext, ext_node);
+          Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
+            {InstNode.name(node)}, InstNode.info(node));
+          fail();
+        else
+          tree := ClassTree.expand(tree);
+          c := Class.EXPANDED_CLASS(tree, mod, prefs);
+          node := InstNode.updateClass(c, node);
+        end if;
+      then
+        node;
 
     else
       algorithm
@@ -353,6 +387,10 @@ protected
   Option<SCode.Annotation> ann;
   SourceInfo info;
 algorithm
+  if InstNode.isEmpty(ext) then
+    return;
+  end if;
+
   def as SCode.Element.EXTENDS(base_path, vis, smod, ann, info) := InstNode.definition(ext);
 
   // Look up the base class and expand it.
@@ -500,7 +538,7 @@ algorithm
     case (Class.EXPANDED_CLASS(), _)
       algorithm
         (node, par) := ClassTree.instantiate(node, parent);
-        Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
+        inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition.
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
@@ -515,6 +553,7 @@ algorithm
 
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
         ClassTree.checkDuplicates(cls_tree);
+        InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree, function instExtends(parent = par));
@@ -643,12 +682,21 @@ algorithm
   ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
 
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  SCode.EXTENDS(baseClassPath = basepath, modifications = smod, info = info) := elem;
-
-  // TODO: Lookup the base class and merge its modifier.
-  //ext_node := Lookup.lookupBaseClassName(basepath, scope, info);
-
   ext_mod := Modifier.fromElement(elem, scope);
+
+  () := match elem
+    case SCode.EXTENDS()
+      algorithm
+        // TODO: Lookup the base class and merge its modifier.
+        // ext_node := Lookup.lookupBaseClassName(elem.basepath, scope, elem.info);
+      then
+        ();
+
+    // Class extends?
+    case SCode.CLASS()
+      then ();
+  end match;
+
   applyModifier(ext_mod, cls_tree, InstNode.name(extendsNode));
 end modifyExtends;
 

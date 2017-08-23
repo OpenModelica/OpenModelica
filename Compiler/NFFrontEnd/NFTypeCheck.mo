@@ -1416,7 +1416,7 @@ algorithm
       algorithm
         assert(false, getInstanceName() + " IMPLEMENT ME.");
       then
-        fail();
+        actualType;
 
     else
       algorithm

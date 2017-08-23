@@ -102,12 +102,13 @@ uniontype Class
 
   function fromSCode
     input list<SCode.Element> elements;
+    input Boolean isClassExtends;
     input InstNode scope;
     output Class cls;
   protected
     ClassTree tree;
   algorithm
-    tree := ClassTree.fromSCode(elements, scope);
+    tree := ClassTree.fromSCode(elements, isClassExtends, scope);
     cls := PARTIAL_CLASS(tree, Modifier.NOMOD());
   end fromSCode;
 
@@ -157,6 +158,7 @@ uniontype Class
     isBuiltin := match cls
       case PARTIAL_BUILTIN() then true;
       case INSTANCED_BUILTIN() then true;
+      case DERIVED_CLASS() then isBuiltin(InstNode.getClass(cls.baseClass));
       else false;
     end match;
   end isBuiltin;

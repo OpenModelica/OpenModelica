@@ -725,6 +725,8 @@ ERROR(),
   Util.gettext("Range of type %s may not specify a step size."));
 public constant Message RANGE_INVALID_TYPE = MESSAGE(298, TRANSLATION(), ERROR(),
   Util.gettext("Range has invalid type %s."));
+public constant Message CLASS_EXTENDS_MISSING_REDECLARE = MESSAGE(299, TRANSLATION(), WARNING(),
+  Util.gettext("Missing redeclare prefix on class extends %s, treating like redeclare anyway."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

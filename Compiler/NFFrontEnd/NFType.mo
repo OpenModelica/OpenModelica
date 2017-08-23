@@ -407,7 +407,9 @@ public
         then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType), ty.attributes, Absyn.IDENT("TODO:FIXME"));
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
-      case Type.COMPLEX() then DAE.T_COMPLEX_DEFAULT;
+      case Type.COMPLEX()
+        // TODO: Use proper ClassInf.State here.
+        then DAE.Type.T_COMPLEX(ClassInf.MODEL(Absyn.IDENT(InstNode.name(ty.cls))), {}, NONE());
       else
         algorithm
           assert(false, getInstanceName() + " got unknown type: " + anyString(ty));

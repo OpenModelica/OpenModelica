@@ -192,11 +192,13 @@ public
       array<InstNode> classes;
       array<InstNode> components;
       array<InstNode> imports;
+      DuplicateTree.Tree duplicates;
     end FLAT_TREE;
 
     function fromSCode
       "Creates a new class tree from a list of SCode elements."
       input list<SCode.Element> elements;
+      input Boolean isClassExtends;
       input InstNode parent;
       output ClassTree tree;
     protected
@@ -210,15 +212,31 @@ public
     algorithm
       ltree := LookupTree.new();
 
-      // Count the elements and create arrays for them. We can't do this for
-      // imports though, since an import clause might import multiple elements.
+      // Count the different types of elements.
       (clsc, compc, extc) := countElements(elements);
+
+      // If the class is a class extends, reserve space for the extends.
+      if isClassExtends then
+        extc := extc + 1;
+      end if;
+
+      // Preallocate arrays for the elements. We can't do this for imports
+      // though, since an import clause might import multiple elements.
       clss := arrayCreateNoInit(clsc, InstNode.EMPTY_NODE());
       comps := arrayCreateNoInit(compc + extc, InstNode.EMPTY_NODE());
       exts := arrayCreateNoInit(extc, InstNode.EMPTY_NODE());
       dups := DuplicateTree.new();
       // Make a temporary class tree so we can do lookup for error reporting.
       tree := PARTIAL_TREE(ltree, clss, comps, exts, listArray({}), dups);
+
+      // If the class is a class extends, fill in the first extends with an
+      // empty node so we don't have unassigned memory after this step.
+      if isClassExtends then
+        exts[1] := InstNode.EMPTY_NODE();
+        comps[1] := InstNode.REF_NODE(1);
+        ext_idx := ext_idx + 1;
+        comp_idx := comp_idx + 1;
+      end if;
 
       for e in elements loop
         () := match e
@@ -232,7 +250,7 @@ public
 
               // If the class is an element redeclare, add an entry in the duplicate
               // tree so we can check later that it actually redeclares something.
-              if SCode.isElementRedeclare(e) then
+              if SCode.isElementRedeclare(e) or SCode.isClassExtends(e) then
                 dups := DuplicateTree.add(dups, e.name, DuplicateTree.newRedeclare(lentry));
               end if;
             then
@@ -324,7 +342,7 @@ public
       end for;
 
       // Enumerations can't contain extends, so we can go directly to a flat tree here.
-      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}));
+      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), DuplicateTree.EMPTY());
     end fromEnumeration;
 
     function expand
@@ -577,7 +595,7 @@ public
             flatten2(tree.classes, clss, dup_cls);
             flatten2(tree.components, comps, dup_comp);
           then
-            FLAT_TREE(tree.tree, clss, comps, tree.imports);
+            FLAT_TREE(tree.tree, clss, comps, tree.imports, tree.duplicates);
 
         else tree;
       end match;
@@ -810,8 +828,13 @@ public
         // A redeclare element without an element to replace.
         case DuplicateTree.EntryType.REDECLARE guard listEmpty(entry.children)
           algorithm
-            Error.addSourceMessage(Error.REDECLARE_NONEXISTING_ELEMENT,
-              {name}, InstNode.info(kept));
+            if SCode.isClassExtends(InstNode.definition(kept)) then
+              Error.addSourceMessage(Error.CLASS_EXTENDS_TARGET_NOT_FOUND,
+                {name}, InstNode.info(kept));
+            else
+              Error.addSourceMessage(Error.REDECLARE_NONEXISTING_ELEMENT,
+                {name}, InstNode.info(kept));
+            end if;
           then
             fail();
 
@@ -839,6 +862,35 @@ public
     algorithm
       identical := true;
     end isIdentical;
+
+    function getRedeclaredNode
+      input String name;
+      input ClassTree tree;
+      output InstNode node;
+    protected
+      DuplicateTree.Entry entry;
+    algorithm
+      try
+        entry := DuplicateTree.get(getDuplicates(tree), name);
+        entry := listHead(entry.children);
+
+        if isSome(entry.node) then
+          SOME(node) := entry.node;
+        else
+          node := resolveEntry(entry.entry, tree);
+        end if;
+      else
+        assert(false, getInstanceName() + " failed on " + name);
+      end try;
+    end getRedeclaredNode;
+
+    function setClassExtends
+      input InstNode extNode;
+      input output ClassTree tree;
+    algorithm
+      arrayUpdate(getExtends(tree), 1, extNode);
+    end setClassExtends;
+
   protected
 
     function instExtendsComps
@@ -868,6 +920,18 @@ public
         case INSTANTIATED_TREE() then tree.exts;
       end match;
     end getExtends;
+
+    function getDuplicates
+      input ClassTree tree;
+      output DuplicateTree.Tree duplicates;
+    algorithm
+      duplicates := match tree
+        case PARTIAL_TREE() then tree.duplicates;
+        case EXPANDED_TREE() then tree.duplicates;
+        case INSTANTIATED_TREE() then tree.duplicates;
+        case FLAT_TREE() then tree.duplicates;
+      end match;
+    end getDuplicates;
 
     function lookupTree
       input ClassTree ctree;

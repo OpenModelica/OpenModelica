@@ -255,15 +255,6 @@ uniontype Function
         Absyn.ComponentRef cr;
         InstNode sub_fnNode;
 
-      case SCode.CLASS(classDef = cdef as SCode.PARTS())
-        algorithm
-          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
-          fnNode := Inst.instantiate(fnNode);
-          Inst.instExpressions(fnNode);
-          fn := Function.new(fnPath, fnNode);
-          fnNode := InstNode.cacheAddFunc(fn, fnNode);
-        then fnNode;
-
       case SCode.CLASS(classDef = cdef as SCode.OVERLOAD())
         algorithm
           for p in cdef.pathLst loop
@@ -274,6 +265,16 @@ uniontype Function
             end for;
           end for;
         then fnNode;
+
+      case SCode.CLASS()
+        algorithm
+          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
+          fnNode := Inst.instantiate(fnNode);
+          Inst.instExpressions(fnNode);
+          fn := Function.new(fnPath, fnNode);
+          fnNode := InstNode.cacheAddFunc(fn, fnNode);
+        then fnNode;
+
     end match;
   end instFunc2;
 

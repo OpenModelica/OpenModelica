@@ -502,6 +502,10 @@ uniontype InstNode
     output SourceInfo info;
   algorithm
     info := matchcontinue node
+      local
+        InstNodeType ty;
+      case CLASS_NODE(nodeType = ty as InstNodeType.BASE_CLASS())
+        then SCode.elementInfo(ty.definition);
       case CLASS_NODE() then SCode.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
       case COMPONENT_NODE() then info(node.parent);
