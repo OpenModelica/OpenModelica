@@ -2253,7 +2253,7 @@ algorithm
 end evaluateFunctions_updateStatement;
 
 
-protected function evaluateForStatement"evaluates a for statement. neste for loops wont work"
+protected function evaluateForStatement"evaluates a for statement. nested for loops wont work"
   input DAE.Statement stmtIn;
   input DAE.FunctionTree funcTreeIn;
   input BackendVarTransform.VariableReplacements replIn;
@@ -2277,8 +2277,9 @@ algorithm
     (range,_) := BackendVarTransform.replaceExp(range,replIn,NONE());
     (start,stop,step) := getRangeBounds(range);
     true := intEq(step,1);
+    true := intGe(stop,start);
     repl := replIn;
-    for i in List.intRange2(start,stop) loop
+    for i in start:stop loop
       repl := BackendVarTransform.addReplacement(repl, ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),DAE.ICONST(i),NONE());
       (stmts,_,repl,_) := evaluateFunctions_updateStatement(stmtsIn,funcTreeIn,repl,i,{});
 
@@ -2302,8 +2303,7 @@ algorithm
     lhsExps := List.unique(lhsExps);
     lhsExpLst := List.map(lhsExps,Expression.getComplexContents); //consider arrays etc.
     lhsExps := listAppend(List.flatten(lhsExpLst),lhsExps);
-    lhsExps := List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
-    outputs := List.map(lhsExps,Expression.expCref);
+    outputs := list(Expression.expCref(e) for e guard Expression.isCref(e) in lhsExps); //remove e.g. ASUBs and consider only the scalar subs
     repl := replIn;
     BackendVarTransform.removeReplacements(repl,outputs,NONE());
     stmtsOut := {stmtIn};
@@ -2321,9 +2321,10 @@ algorithm
   (start, stop, step) := match(range)
     local
       Integer i1,i2,i3;
-  case(DAE.RANGE(start= DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2)))
+  case(DAE.RANGE(start=DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2)))
+    equation
     then (i1,i2,1);
-  case(DAE.RANGE(start= DAE.ICONST(i1),step=SOME(DAE.ICONST(i3)),stop=DAE.ICONST(i2)))
+  case(DAE.RANGE(start=DAE.ICONST(i1),step=SOME(DAE.ICONST(i3)),stop=DAE.ICONST(i2)))
     then (i1,i2,i3);
   else
   equation
