@@ -191,6 +191,11 @@ redeclare2.mo \
 redeclare6.mo \
 redeclare7.mo \
 redeclare9.mo \
+Size1.mo \
+SizeInvalidArgs1.mo \
+SizeInvalidArgs2.mo \
+SizeInvalidType1.mo \
+SizeInvalidType2.mo \
 Subscript1.mo \
 type2.mo \
 usertype1.mo \
