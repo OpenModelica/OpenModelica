@@ -816,6 +816,9 @@ protected
   HashSet.HashSet hs;
   list<DAE.ComponentRef> crefs;
 algorithm
+  // lochel: workaround to align all elements
+  globalKnownVars := BackendVariable.listVar(BackendVariable.varList(globalKnownVars));
+
   outInitVars := selectInitializationVariables(dae.eqs);
   outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectInitializationVariables2, outInitVars);
   outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, selectInitializationVariables2, outInitVars);
@@ -846,6 +849,7 @@ algorithm
     // flattern list and look for cyclic dependencies
     flatComps := list(flattenParamComp(comp, globalKnownVars) for comp in comps);
     //BackendDump.dumpIncidenceRow(flatComps);
+    //BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
 
     // select secondary parameters
     secondary := arrayCreate(nGlobalKnownVars, 0);
@@ -857,6 +861,7 @@ algorithm
       v := BackendVariable.getVarAt(globalKnownVars, i);
       bindExp := BackendVariable.varBindExpStartValueNoFail(v);
       crefs := Expression.getAllCrefsExpanded(bindExp);
+      //BackendDump.dumpVarList({v}, intString(i));
 
       _ := match(v)
         // primary parameter

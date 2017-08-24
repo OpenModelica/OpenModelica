@@ -1345,12 +1345,17 @@ protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
 algorithm
-  arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
-  foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
-  (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
-  oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
-  oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
-  ((ouniqueEqIndex, olocalKnownVars)) := BackendVariable.traverseBackendDAEVars(shared.localKnownVars, traverseKnVarsToSimEqSystem, (ouniqueEqIndex, {}));
+  try
+    arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
+    foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
+    (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
+    oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+    oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
+    ((ouniqueEqIndex, olocalKnownVars)) := BackendVariable.traverseBackendDAEVars(shared.localKnownVars, traverseKnVarsToSimEqSystem, (ouniqueEqIndex, {}));
+  else
+    Error.addInternalError("createEquationsForSystems failed", sourceInfo());
+    fail();
+  end try;
 end createEquationsForSystems;
 
 protected function createEquationsForSystems1
