@@ -3681,18 +3681,8 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"loadTorque\"/>
+//           <exp:QualifiedNamePart name=\"torque\"/>
 //           <exp:QualifiedNamePart name=\"phi_support\"/>
-//         </exp:Identifier>
-//         <exp:RealLiteral>0.0</exp:RealLiteral>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"speedSensor\"/>
-//           <exp:QualifiedNamePart name=\"flange\"/>
-//           <exp:QualifiedNamePart name=\"tau\"/>
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
@@ -3819,6 +3809,24 @@ readFile("Bug3857.xml"); getErrorString();
 //       <exp:Sub>
 //         <exp:Identifier>
 //           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"Ta2\"/>
+//         </exp:Identifier>
+//         <exp:Div>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sd_max\"/>
+//           </exp:Identifier>
+//           <exp:Identifier>
+//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//             <exp:QualifiedNamePart name=\"sdd_max\"/>
+//           </exp:Identifier>
+//         </exp:Div>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //           <exp:QualifiedNamePart name=\"Ta1\"/>
 //         </exp:Identifier>
 //         <fun:Assertion>
@@ -3838,24 +3846,6 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:StringLiteral>\"Model error: Argument of sqrt should be &gt;= 0\"</exp:StringLiteral>
 //           </fun:Message>
 //         </fun:Assertion>
-//       </exp:Sub>
-//     </equ:Equation>  
-//     <equ:Equation>
-//       <exp:Sub>
-//         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//           <exp:QualifiedNamePart name=\"Ta2\"/>
-//         </exp:Identifier>
-//         <exp:Div>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"sd_max\"/>
-//           </exp:Identifier>
-//           <exp:Identifier>
-//             <exp:QualifiedNamePart name=\"kinematicPTP\"/>
-//             <exp:QualifiedNamePart name=\"sdd_max\"/>
-//           </exp:Identifier>
-//         </exp:Div>
 //       </exp:Sub>
 //     </equ:Equation>  
 //     <equ:Equation>
@@ -4167,7 +4157,17 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
-//           <exp:QualifiedNamePart name=\"torque\"/>
+//           <exp:QualifiedNamePart name=\"speedSensor\"/>
+//           <exp:QualifiedNamePart name=\"flange\"/>
+//           <exp:QualifiedNamePart name=\"tau\"/>
+//         </exp:Identifier>
+//         <exp:RealLiteral>0.0</exp:RealLiteral>
+//       </exp:Sub>
+//     </equ:Equation>  
+//     <equ:Equation>
+//       <exp:Sub>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"loadTorque\"/>
 //           <exp:QualifiedNamePart name=\"phi_support\"/>
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>

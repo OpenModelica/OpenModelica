@@ -36,8 +36,8 @@ getErrorString();
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.one] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// "[<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.three] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.two] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.three] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.one] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // "
 // endResult

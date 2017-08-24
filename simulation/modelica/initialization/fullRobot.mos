@@ -56,9 +56,9 @@ val(mechanics.r6.w, 0);
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// "[Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // 0.0

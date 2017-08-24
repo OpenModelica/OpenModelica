@@ -20,14 +20,14 @@ getErrorString();
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Lying] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Sitting] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Standing] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Tilting] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// "[simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[5] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[4] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[5] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:9:4-9:32:writable] Warning: Parameter tmodel.arrayByInt[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Tilting] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Standing] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Sitting] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Lying] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // "
 // endResult

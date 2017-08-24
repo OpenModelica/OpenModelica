@@ -37,12 +37,12 @@ runScript(modelTesting);getErrorString();
 // stdout            | info    | The simulation finished successfully.
 //
 // Files Equal!
-// [Modelica 3.1/Electrical/Machines.mo:7939:5-7939:73:writable] Warning: Parameter transformerData.f has no value, and is fixed during initialization (fixed=true), using available start value (start=50.0) as default value.
-// [Modelica 3.1/Electrical/Machines.mo:7940:5-7941:53:writable] Warning: Parameter transformerData.V1 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
-// [Modelica 3.1/Electrical/Machines.mo:7945:5-7946:86:writable] Warning: Parameter transformerData.V2 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
-// [Modelica 3.1/Electrical/Machines.mo:7951:5-7952:33:writable] Warning: Parameter transformerData.SNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=30000.0) as default value.
-// [Modelica 3.1/Electrical/Machines.mo:7953:5-7954:36:writable] Warning: Parameter transformerData.v_sc has no value, and is fixed during initialization (fixed=true), using available start value (start=0.05) as default value.
 // [Modelica 3.1/Electrical/Machines.mo:7955:5-7956:40:writable] Warning: Parameter transformerData.P_sc has no value, and is fixed during initialization (fixed=true), using available start value (start=300.0) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7953:5-7954:36:writable] Warning: Parameter transformerData.v_sc has no value, and is fixed during initialization (fixed=true), using available start value (start=0.05) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7951:5-7952:33:writable] Warning: Parameter transformerData.SNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=30000.0) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7945:5-7946:86:writable] Warning: Parameter transformerData.V2 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7940:5-7941:53:writable] Warning: Parameter transformerData.V1 has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7939:5-7939:73:writable] Warning: Parameter transformerData.f has no value, and is fixed during initialization (fixed=true), using available start value (start=50.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true

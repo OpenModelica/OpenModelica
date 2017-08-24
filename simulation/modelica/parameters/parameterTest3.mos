@@ -233,8 +233,8 @@ simulate(parameterTest3); getErrorString();
 //     messages = "Failed to build model: parameterTest3"
 // end SimulationResult;
 // "Error: Cyclically dependent parameters found:
-//          p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real 
-//          p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real
+//          p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
+//          p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real
 // Error: No system for the symbolic initialization was generated
 // "
 // endResult

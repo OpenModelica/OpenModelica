@@ -36,13 +36,13 @@ val(R1.v,0.2); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 54
 //  * Number of variables: 54
-// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R2.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R3.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R4.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R5.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Sources.mo:288:5-288:61:writable] Warning: Parameter S.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.2.2/Electrical/Analog/Sources.mo:290:5-290:68:writable] Warning: Parameter S.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Sources.mo:288:5-288:61:writable] Warning: Parameter S.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R5.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R4.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R3.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R2.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Basic.mo:54:5-55:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 2
 //  * Number of states: 0 ('-d=stateselection' for list of states)

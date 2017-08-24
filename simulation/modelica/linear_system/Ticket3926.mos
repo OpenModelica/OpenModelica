@@ -53,6 +53,7 @@ val(q2, 0.0);getErrorString();
 // "Error: A torn linear system has no symbolic jacobian and currently there are no means to solve that numerically. Please compile with the module "calculateStrongComponentJacobians" to provide symbolic jacobians for torn linear systems.
 // [SimCode/SimCodeUtil.mo:0:0-0:0:writable] Error: Internal error function createOdeSystem failed for component torn linear Equationsystem{{{1:1}},
 // {2:2} Size: 1
+// [SimCode/SimCodeUtil.mo:0:0-0:0:writable] Error: Internal error createEquationsForSystems failed
 // [SimCode/SimCodeUtil.mo:0:0-0:0:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
 //
