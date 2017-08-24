@@ -789,7 +789,9 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   {
     freeSolverData(data, &solverInfo);
   }
-  infoStreamPrint(LOG_STDOUT, 0, "The simulation finished successfully.");
+
+  if (!retVal)
+    infoStreamPrint(LOG_STDOUT, 0, "The simulation finished successfully.");
 
   TRACE_POP
   return retVal;
