@@ -56,7 +56,6 @@ getErrorString();
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.202853
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

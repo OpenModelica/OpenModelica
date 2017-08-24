@@ -43,7 +43,6 @@ simulate(SingularModel2, stopTime=10); getErrorString();
 // assert            | debug   | Solving linear system 7 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_LS.
 // assert            | info    | simulation terminated by an assertion at initialization
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

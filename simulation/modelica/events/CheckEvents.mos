@@ -87,7 +87,6 @@ simulate(CheckSqrt,stopTime=2.0);getErrorString();
 // stdout            | warning | A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER
 // stdout            | warning | can't continue. time = 1.000000
 // stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 1
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

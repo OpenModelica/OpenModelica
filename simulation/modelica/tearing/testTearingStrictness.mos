@@ -35,7 +35,6 @@ simulate(testTearingStrictness, simflags="-ls=lapack -override b=0"); getErrorSt
 // stdout            | info    | The initialization finished successfully without homotopy method.
 // assert            | debug   | division leads to inf or nan at time 0, (a=-1) / (b=0), where divisor b is: b
 // assert            | info    | simulation terminated by an assertion at initialization
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

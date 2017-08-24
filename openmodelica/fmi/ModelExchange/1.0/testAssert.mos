@@ -56,7 +56,6 @@ getErrorString();
 // [ERROR][testAssertFMI] [error][FMU status:Error] fmiCompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmiCompletedIntegratorStep failed with status : Error
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.202853
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

@@ -24,7 +24,6 @@ simulate(STest1, tolerance=1e-5, numberOfIntervals=100);
 // |                 | |       | x < 0.1
 // assert            | error   | x reached 0.1 at time 0.105 b =true i =     66
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.105
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // endResult

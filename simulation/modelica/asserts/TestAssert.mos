@@ -116,7 +116,6 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // |                 | |       | false
 // assert            | error   | Variable x is too big
 // assert            | info    | simulation terminated by an assertion at initialization
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
@@ -140,7 +139,6 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // |                 | |       | m2.x < 10.0
 // assert            | error   | Variable x is too big
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.5005
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

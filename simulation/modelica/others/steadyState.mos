@@ -28,7 +28,6 @@ simulate(Hydrogen_Iodide, stopTime=10, simflags="-steadyState -steadyStateTol=1e
 // assert            | debug   | steady state reached at time = 3
 // |                 | |       |   * max(|d(x_i)/dt|/nominal(x_i)) = 9.98919e-06
 // |                 | |       |   * relative tolerance = 1e-05
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

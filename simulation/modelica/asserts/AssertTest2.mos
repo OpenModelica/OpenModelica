@@ -21,7 +21,6 @@ getErrorString(); // simulation failed, check error string.
 // |                 | |       | 5.0 >= assertTest.lowlimit and 5.0 <= assertTest.highlimit
 // assert            | error   | Variable x out of limit
 // assert            | info    | simulation terminated by an assertion at initialization
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

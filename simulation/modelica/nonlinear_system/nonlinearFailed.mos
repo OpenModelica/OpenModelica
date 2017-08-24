@@ -15,7 +15,6 @@ simulate(nonlinear_system.nonlinearFailed); getErrorString();
 // assert            | warning | The following assertion has been violated during initialization at time 0.000000
 // assert            | debug   | Model error: Argument of asin(1.1) outside the domain -1.0 <= 1.1 <= 1.0
 // assert            | info    | simulation terminated by an assertion at initialization
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

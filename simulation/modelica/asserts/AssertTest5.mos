@@ -42,7 +42,6 @@ getErrorString();
 // |                 | |       | assertTest.x >= 0.5
 // assert            | error   | Variable x(=0.416667) out of limit
 // stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.583333
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

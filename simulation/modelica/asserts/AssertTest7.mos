@@ -138,7 +138,6 @@ getErrorString();
 // stdout            | warning | can't continue. time = 0.500000
 // Value of x(=0.5)
 // stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.5
-// stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
