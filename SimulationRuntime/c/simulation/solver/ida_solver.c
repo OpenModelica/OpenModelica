@@ -910,6 +910,29 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     solverInfo->solverStatsTmp[4] = tmp;
   }
 
+  /* get more statistics */
+  if (useStream[LOG_SOLVER_V])
+  {
+    long int tmp1,tmp2;
+    double dtmp;
+
+    infoStreamPrint(LOG_SOLVER_V, 1, "### IDAStats ###");
+    /* nonlinear stats */
+    tmp1 = tmp2 = 0;
+    flag = IDAGetNonlinSolvStats(idaData->ida_mem, &tmp1, &tmp2);
+    infoStreamPrint(LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear iterations performed: %ld", tmp1);
+    infoStreamPrint(LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear convergence failures that have occurred: %ld", tmp2);
+
+    /* others */
+    flag = IDAGetTolScaleFactor(idaData->ida_mem, &dtmp);
+    infoStreamPrint(LOG_SOLVER_V, 0, " ## Suggested scaling factor for user tolerances: %g", dtmp);
+
+    flag = IDAGetNumLinSolvSetups(idaData->ida_mem, &tmp1);
+    infoStreamPrint(LOG_SOLVER_V, 0, " ## Number of calls made to the linear solver setup function: %ld", tmp1);
+
+    messageClose(LOG_SOLVER_V);
+  }
+
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## Finished Integrator step.");
 
   TRACE_POP
