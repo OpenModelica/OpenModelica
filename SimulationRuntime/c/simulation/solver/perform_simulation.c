@@ -67,9 +67,21 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
-  if (!omc_flag[FLAG_DAE_MODE])
+
+  if (omc_flag[FLAG_DAE_MODE]) /* dae mode */
+  {
+    /* in all mode = 1 (all) nothing to do */
+    /* in mode = 2 (dynamic) we need to update the algebraic part */
+    if (compiledInDAEMode == 2)
+    {
+      data->callback->functionAlgebraics(data, threadData);
+    }
+  }
+  else /* ode mode */
+  {
     data->callback->functionODE(data, threadData);
-  data->callback->functionAlgebraics(data, threadData);
+    data->callback->functionAlgebraics(data, threadData);
+  }
   data->callback->output_function(data, threadData);
   data->callback->function_storeDelayed(data, threadData);
   storePreValues(data);
