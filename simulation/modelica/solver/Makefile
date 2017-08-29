@@ -37,13 +37,6 @@ problem5-symSolverExp.mos \
 problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
-testDAEp1.mos \
-testDAEp2.mos \
-testDAEp3.mos \
-testDAEp4.mos \
-testDAEp5.mos \
-testDAEp6.mos \
-testDAEmodeDrumBoiler.mos
 
 # run only symSolver tests
 SYMSOLVER = \
