@@ -1884,6 +1884,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   solverData->timeValue = data->localData[0]->timeValue;
   solverData->minValue = systemData->min;
   solverData->maxValue = systemData->max;
+  solverData->info = 0;
 
   vecConst(solverData->m,1.0,solverData->ones);
 
@@ -2022,7 +2023,6 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   {
     giveUp = 1;
 
-    solverData->info = 0;
     /*if (!skipNewton) newtonAlgorithm(solverData, solverData->x); */
     if (!skipNewton){
 
