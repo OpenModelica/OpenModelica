@@ -590,6 +590,7 @@ typedef struct SIMULATION_INFO
   int jacobianEvals;                   /* number of different columns to evaluate functionODE */
   int currentJacobianEval;             /* current column to evaluate functionODE for Jacobian*/
 
+  int homotopyUsed;                    /* =1 the initialization problem was solved with a homotopy method, =0 otherwise */
   double lambda;                       /* homotopy parameter E [0, 1.0] */
 
   /* indicators for simulations state */

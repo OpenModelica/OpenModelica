@@ -185,7 +185,8 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   FILE *pFile = NULL;
   long i;
   MODEL_DATA *mData = data->modelData;
-  int solvedWithHomotopy = 0;
+
+  data->simulationInfo->homotopyUsed = 0;
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -221,7 +222,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if(init_lambda_steps > 0)
-      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system without homotopy method. If homotopy is available the homotopy method is used now.");
+      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
   }
 
   /* If there is homotopy in the model and global homotopy is activated
@@ -236,6 +237,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     if(ACTIVE_STREAM(LOG_INIT))
     {
       sprintf(buffer, "%s_global_homotopy.csv", mData->modelFilePrefix);
+      infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = fopen(buffer, "wt");
       fprintf(pFile, "\"sep=,\"\n%s", "lambda");
       for(i=0; i<mData->nVariablesReal; ++i)
@@ -276,7 +278,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
           check_mixed_solutions(data, 0))
         break;
     }
-    solvedWithHomotopy = 1;
+    data->simulationInfo->homotopyUsed = 1;
     messageClose(LOG_INIT);
   }
 
@@ -291,7 +293,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
 
   if (!retVal)
-    infoStreamPrint(LOG_STDOUT, 0, "The initialization finished successfully %s homotopy method.", solvedWithHomotopy ? "with" : "without");
+    infoStreamPrint(LOG_STDOUT, 0, "The initialization finished successfully %s homotopy method.", data->simulationInfo->homotopyUsed ? "with" : "without");
 
   TRACE_POP
   return retVal;
