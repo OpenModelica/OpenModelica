@@ -55,6 +55,7 @@ double linearSparseSolverMaxDensity = 0.2;
 int linearSparseSolverMinSize = 4001;
 double nonlinearSparseSolverMaxDensity = 0.2;
 int nonlinearSparseSolverMinSize = 10001;
+double maxStepFactor = 1e12;
 double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
 double steadyStateTol = 1e-3;

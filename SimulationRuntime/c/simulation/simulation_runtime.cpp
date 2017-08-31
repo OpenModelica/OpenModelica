@@ -862,6 +862,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
   }
 
+  if(omc_flag[FLAG_NEWTON_MAX_STEP_FACTOR]) {
+    maxStepFactor = atof(omc_flagValue[FLAG_NEWTON_MAX_STEP_FACTOR]);
+    infoStreamPrint(LOG_STDOUT, 0, "Maximum step size factor for a Newton step changed to %g", newtonFTol);
+  }
+
   if(omc_flag[FLAG_STEADY_STATE_TOL]) {
     steadyStateTol = atof(omc_flagValue[FLAG_STEADY_STATE_TOL]);
     infoStreamPrint(LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);

@@ -85,6 +85,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MAX_STEP_SIZE */         "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "measureTimePlotFormat",
   /* FLAG_NEWTON_FTOL */           "newtonFTol",
+  /* FLAG_NEWTON_MAX_STEP_FACTOR */"newtonMaxStepFactor",
   /* FLAG_NEWTON_XTOL */           "newtonXTol",
   /* FLAG_NEWTON_STRATEGY */       "newton",
   /* FLAG_NLS */                   "nls",
@@ -174,6 +175,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size for supported solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality",
   /* FLAG_NEWTON_FTOL */           "[double (default 1e-12)] tolerance respecting residuals for updating solution vector in Newton solver",
+  /* FLAG_NEWTON_MAX_STEP_FACTOR */"[double (default 1e12)] maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). Used currently only by kinsol.",
   /* FLAG_NEWTON_XTOL */           "[double (default 1e-12)] tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver",
   /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                   "value specifies the nonlinear solver",
@@ -353,6 +355,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Tolerance respecting residuals for updating solution vector in Newton solver."
   "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol."
   "  The value is a Double with default value 1e-12.",
+  /* FLAG_NEWTON_MAX_STEP_FACTOR */
+  "  Maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). "
+  "  Used currently only by kinsol.",
   /* FLAG_NEWTON_XTOL */
   "  Tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver."
   "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol."
@@ -496,6 +501,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MAX_STEP_SIZE */         FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_FTOL */           FLAG_TYPE_OPTION,
+  /* FLAG_NEWTON_MAX_STEP_FACTOR */FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_XTOL */           FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */       FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,

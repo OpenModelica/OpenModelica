@@ -102,6 +102,7 @@ typedef struct NLS_KINSOL_DATA
   /* ### tolerances ### */
   double fnormtol;        /* function tolerance */
   double scsteptol;       /* step tolerance */
+  double maxstepfactor;   /* maximum newton step factor mxnewtstep = maxstepfactor * norm2(xScaling) */
 
   /* ### work arrays ### */
   N_Vector initialGuess;
@@ -186,6 +187,8 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
 
   kinsolData->fnormtol  = sqrt(newtonFTol);     /* function tolerance */
   kinsolData->scsteptol = sqrt(newtonXTol);     /* step tolerance */
+
+  kinsolData->maxstepfactor = maxStepFactor;     /* step tolerance */
 
   kinsolData->initialGuess = N_VNew_Serial(size);
   kinsolData->xScale = N_VNew_Serial(size);
@@ -653,6 +656,15 @@ void nlsKinsolInfoPrint(const char *module, const char *function, char *msg, voi
 }
 
 static
+void nlsKinsolSetMaxNewtonStep(NLS_KINSOL_DATA *kinsolData, double maxstepfactor)
+{
+  /* set maximum step size */
+  N_VConst(maxstepfactor, kinsolData->fTmp);
+  KINSetMaxNewtonStep(kinsolData->kinsolMemory, N_VWL2Norm(kinsolData->xScale, kinsolData->fTmp));
+
+}
+
+static
 void nlsKinsolResetInitial(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA* nlsData, int mode)
 {
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
@@ -775,6 +787,7 @@ int nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nls
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL max iterations %d", 20*kinsolData->size);
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL strategy %d", kinsolData->kinsolStrategy);
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL current retry %d", kinsolData->retries);
+  infoStreamPrint(LOG_NLS_V, 0, "KINSOL max step %g", (*(KINMem)kinsolData->kinsolMemory).kin_mxnstepin);
 
   messageClose(LOG_NLS_V);
 
@@ -805,13 +818,16 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     break;
   /* just retry with new initial guess */
   case KIN_MXNEWT_5X_EXCEEDED:
-    warningStreamPrint(LOG_NLS, 0, "initial guess was too far away from the solution. Try again.\n");
+    warningStreamPrint(LOG_NLS, 0, "Newton step exceed the maximum step size several times. Try again after increasing maximum step size.\n");
+    kinsolData->maxstepfactor *= 1e5;
+    nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
     return 1;
     break;
   /* just retry without line search */
   case KIN_LINESEARCH_NONCONV:
     warningStreamPrint(LOG_NLS, 0, "kinsols line search did not convergence. Try without.\n");
     kinsolData->kinsolStrategy = KIN_NONE;
+    kinsolData->retries--;
     return 1;
   /* maybe happened because of an out-dated factorization, so just retry  */
   case KIN_LSETUP_FAIL:
@@ -926,6 +942,9 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* set f scaling */
   nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
+
+  /* set maximum step size */
+  nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
 
   /*  */
   do{
