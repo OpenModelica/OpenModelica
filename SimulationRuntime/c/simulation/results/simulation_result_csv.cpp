@@ -74,8 +74,8 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
     fprintf(fout, formatint, (data->localData[0])->integerVars[i]);
   for(i = 0; i < data->modelData->nVariablesBoolean; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
     fprintf(fout, formatbool, (data->localData[0])->booleanVars[i]);
-  for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
-    fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
+  //for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
+  //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
 
   for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1) {
     if (data->modelData->realAlias[i].aliasType == 2) {
@@ -103,10 +103,10 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
     }
   }
-  for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1) {
-    /* there would no negation of a string happen */
-    fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
-  }
+  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1) {
+  //  /* there would no negation of a string happen */
+  //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
+  //}
   fseek(fout, -1, SEEK_CUR); // removes the eol comma separator
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -131,8 +131,8 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
     fprintf(fout, format, mData->integerVarsData[i].info.name);
   for(i = 0; i < mData->nVariablesBoolean; i++) if(!mData->booleanVarsData[i].filterOutput)
     fprintf(fout, format, mData->booleanVarsData[i].info.name);
-  for(i = 0; i < mData->nVariablesString; i++) if(!mData->stringVarsData[i].filterOutput)
-    fprintf(fout, format, mData->stringVarsData[i].info.name);
+  //for(i = 0; i < mData->nVariablesString; i++) if(!mData->stringVarsData[i].filterOutput)
+  //  fprintf(fout, format, mData->stringVarsData[i].info.name);
 
   for(i = 0; i < mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1)
     fprintf(fout, format, mData->realAlias[i].info.name);
@@ -140,8 +140,8 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
     fprintf(fout, format, mData->integerAlias[i].info.name);
   for(i = 0; i < mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1)
     fprintf(fout, format, mData->booleanAlias[i].info.name);
-  for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1)
-    fprintf(fout, format, mData->stringAlias[i].info.name);
+  //for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1)
+  //  fprintf(fout, format, mData->stringAlias[i].info.name);
   fseek(fout, -1, SEEK_CUR); // removes the eol comma separator
   fprintf(fout,"\n");
   self->storage = fout;
