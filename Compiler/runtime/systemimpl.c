@@ -355,7 +355,7 @@ static char* SystemImpl__readFile(const char* filename)
   }
 
   /* adrpo: if size is larger than the max string, return a different string */
-#ifndef _LP64
+#if !(defined(_LP64) || defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__))
   if (statstr.st_size > (pow((double)2, (double)22) * 4)) {
     const char *c_tokens[1]={filename};
     c_add_message(NULL,85, /* ERROR_OPENING_FILE */

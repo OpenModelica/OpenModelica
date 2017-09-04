@@ -63,7 +63,7 @@
  * - 2^(32-10) + 1 (header) on 32 bit systems
  * - 2^(64-10) + 1 (header) on 64 bit systems
  */
-#if defined(_LP64) || defined(_LLP64) || defined(_WIN64)
+#if defined(_LP64) || defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__)
 #define MMC_MAX_SLOTS (18014398509481984) /* max words slots header */
 #else
 #define MMC_MAX_SLOTS (4194304)           /* max words slots header */
