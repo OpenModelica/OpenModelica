@@ -306,14 +306,23 @@ static int getNewtonStrategy()
   return NEWTON_NONE;
 }
 
-static int getNlsLSSolver()
+static int getNlsLSSolver(int nlsSolver)
 {
   int i;
   const char *cflags = omc_flagValue[FLAG_NLS_LS];
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
-    return NLS_LS_LAPACK; /* default method */
+  {
+    if (nlsSolver == NLS_KINSOL)
+    {
+      return NLS_LS_KLU; /* default kinsol linear solver method */
+    }
+    else
+    {
+      return NLS_LS_LAPACK; /* default method */
+    }
+  }
 
   for(i=1; i<NLS_LS_MAX; ++i)
     if(*method == NLS_LS_METHOD[i])
@@ -834,7 +843,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   data->simulationInfo->lssMethod = getlinearSparseSolverMethod();
   data->simulationInfo->newtonStrategy = getNewtonStrategy();
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
-  data->simulationInfo->nlsLinearSolver = getNlsLSSolver();
+  data->simulationInfo->nlsLinearSolver = getNlsLSSolver(data->simulationInfo->nlsMethod);
 
   if(omc_flag[FLAG_LSS_MAX_DENSITY]) {
     linearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_LSS_MAX_DENSITY]);
