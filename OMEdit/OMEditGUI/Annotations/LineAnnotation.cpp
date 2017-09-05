@@ -232,9 +232,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
   }
   mPoints = points;
   mOrigin = QPointF(0, 0);
-  if (!text.isEmpty()) {
-    mpTextAnnotation = new TextAnnotation(text, this);
-  }
+  mpTextAnnotation = new TextAnnotation(text, this);
   // set the graphics view
   mpGraphicsView->addItem(this);
 }
