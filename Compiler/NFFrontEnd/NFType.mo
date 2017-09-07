@@ -335,6 +335,17 @@ public
     end try;
   end getTypeDims;
 
+  function nthDimension
+    input Type ty;
+    input Integer index;
+    output Dimension dim;
+  algorithm
+    dim := match ty
+      case ARRAY() then listGet(ty.dimensions, index);
+      case FUNCTION() then nthDimension(ty.resultType, index);
+    end match;
+  end nthDimension;
+
   function dimensionCount
     input Type ty;
     output Integer dimCount;
@@ -370,7 +381,7 @@ public
       case Type.REAL() then "Real";
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
-      case Type.ENUMERATION() then "enumeration()";
+      case Type.ENUMERATION() then "enumeration(" + stringDelimitList(ty.literals, ", ") + ")";
       case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.CLOCK() then "Clock";
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";

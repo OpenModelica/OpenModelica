@@ -268,6 +268,18 @@ uniontype Class
       else true;
     end match;
   end isIdentical;
+
+  function getDimensions
+    input Class cls;
+    output list<Dimension> dims;
+  algorithm
+    dims := match cls
+      case DERIVED_CLASS()
+        then listAppend(cls.dims, getDimensions(InstNode.getClass(cls.baseClass)));
+      else {};
+    end match;
+  end getDimensions;
+
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -41,6 +41,8 @@ encapsulated package NFTypeCheck
 import DAE;
 import Dimension = NFDimension;
 import Expression = NFExpression;
+import NFInstNode.InstNode;
+import NFBinding.Binding;
 
 protected
 import Debug;
@@ -1371,7 +1373,9 @@ algorithm
   compatibleType := match (actualType)
     local
       list<Dimension> dims1, dims2;
+      Dimension dim1, dim2;
       Type ety1, ety2;
+      Boolean compat;
 
     case Type.INTEGER() then actualType;
     case Type.REAL() then actualType;
@@ -1388,27 +1392,8 @@ algorithm
 
     case Type.ARRAY()
       algorithm
-        // Check that the element types are compatible.
-        ety1 := actualType.elementType;
-        ety2 := Type.arrayElementType(expectedType);
-
         (expression, compatibleType, matchKind) :=
-          matchTypes(ety1, ety2, expression, allowUnknown);
-
-        // If the element types are compatible, check the dimensions too.
-        if isCompatibleMatch(matchKind) then
-          dims1 := actualType.dimensions;
-          dims2 := Type.arrayDims(expectedType);
-
-          // The arrays must have the same number of dimensions.
-          if listLength(dims1) == listLength(dims2) then
-            dims1 := list(if Dimension.isEqualKnown(dim1, dim2) then
-              dim1 else Dimension.UNKNOWN() threaded for dim1 in dims1, dim2 in dims2);
-            compatibleType := Type.liftArrayLeftList(compatibleType, dims1);
-          else
-            matchKind := MatchKind.NOT_COMPATIBLE;
-          end if;
-        end if;
+          matchArrayTypes(actualType, expectedType, expression, allowUnknown);
       then
         compatibleType;
 
@@ -1426,6 +1411,70 @@ algorithm
 
   end match;
 end matchTypes;
+
+function matchArrayTypes
+  input Type arrayType1;
+  input Type arrayType2;
+  input output Expression expression;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Type ety1, ety2;
+  list<Dimension> dims1, dims2;
+  Dimension dim1, dim2;
+  Boolean compat;
+algorithm
+  Type.ARRAY(elementType = ety1, dimensions = dims1) := arrayType1;
+  Type.ARRAY(elementType = ety2, dimensions = dims2) := arrayType2;
+
+  // Check that the element types are compatible.
+  (expression, compatibleType, matchKind) :=
+    matchTypes(ety1, ety2, expression, allowUnknown);
+
+  // If the element types are compatible, check the dimensions too.
+  if isCompatibleMatch(matchKind) then
+    // The arrays must have the same number of dimensions.
+    if listLength(dims1) == listLength(dims2) then
+      while not listEmpty(dims1) loop
+        dim1 :: dims1 := dims1;
+        dim2 :: dims2 := dims2;
+
+        // And the dimensions must be equal.
+        (dim1, compat) := matchDimensions(dim1, dim2, allowUnknown);
+
+        if not compat then
+          matchKind := MatchKind.NOT_COMPATIBLE;
+          break;
+        end if;
+
+        compatibleType := Type.liftArrayLeft(compatibleType, dim1);
+      end while;
+    else
+      matchKind := MatchKind.NOT_COMPATIBLE;
+    end if;
+  end if;
+end matchArrayTypes;
+
+function matchDimensions
+  input Dimension dim1;
+  input Dimension dim2;
+  input Boolean allowUnknown;
+  output Dimension compatibleDim;
+  output Boolean compatible = true;
+algorithm
+  compatibleDim := match (dim1, dim2, allowUnknown)
+    case (UNKNOWN(), _, true) then dim2;
+    case (_, UNKNOWN(), true) then dim1;
+    case (EXP(), _, true) then dim2;
+    case (_, EXP(), true) then dim1;
+    else
+      algorithm
+        compatible := Dimension.size(dim1) == Dimension.size(dim2);
+      then
+        dim1;
+  end match;
+end matchDimensions;
 
 function matchTypes_cast
   input Type actualType;
@@ -2175,6 +2224,42 @@ algorithm
     else true;
   end match;
 end checkConstVariability;
+
+function matchBinding
+  input output Binding binding;
+  input Type componentType;
+  input InstNode component;
+algorithm
+  () := match binding
+    local
+      MatchKind ty_match;
+      Expression exp;
+      Type ty;
+
+    case Binding.TYPED_BINDING()
+      algorithm
+        (exp, ty, ty_match) := matchTypes(binding.bindingType, componentType, binding.bindingExp);
+
+        if not isCompatibleMatch(ty_match) then
+          Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+            {InstNode.name(component), Binding.toString(binding), Type.toString(componentType),
+             Type.toString(binding.bindingType)}, binding.info);
+          fail();
+        elseif isCastMatch(ty_match) then
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.propagatedDims, binding.info);
+        end if;
+      then
+        ();
+
+    case Binding.UNBOUND() then ();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got untyped binding " + Binding.toString(binding));
+      then
+        fail();
+  end match;
+end matchBinding;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

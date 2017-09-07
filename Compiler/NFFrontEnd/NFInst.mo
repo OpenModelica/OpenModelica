@@ -300,7 +300,7 @@ algorithm
 
         // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
         prefs := instClassPrefixes(def);
-        dims := list(Dimension.RAW_DIM(d) for d in cdef.attributes.arrayDims);
+        dims := list(Dimension.RAW_DIM(d) for d in Absyn.typeSpecDimensions(ty));
         mod := Class.getModifier(InstNode.getClass(node));
         c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, cdef.attributes.direction);
         node := InstNode.updateClass(c, node);
@@ -516,6 +516,7 @@ protected
   ClassTree cls_tree;
   Modifier cls_mod, mod;
   list<Modifier> type_attr;
+  list<Dimension> dims;
 algorithm
   cls := InstNode.getClass(node);
   cls_mod := Class.getModifier(cls);
@@ -568,7 +569,8 @@ algorithm
       algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
-        node := instClass(cls.baseClass, mod, parent);
+        cls.baseClass := instClass(cls.baseClass, mod, parent);
+        node := InstNode.replaceClass(cls, node);
       then
         ();
 
@@ -923,6 +925,18 @@ algorithm
       then
         ();
 
+    case Class.DERIVED_CLASS()
+      algorithm
+        sections := instExpressions(cls.baseClass, scope, sections);
+
+        if not listEmpty(cls.dims) then
+          cls.dims := list(instDimension(d, InstNode.parent(node), InstNode.info(node))
+            for d in cls.dims);
+          InstNode.updateClass(cls, node);
+        end if;
+      then
+        ();
+
     case Class.INSTANCED_BUILTIN()
       algorithm
         cls.attributes := list(instBuiltinAttribute(a) for a in cls.attributes);
@@ -958,18 +972,45 @@ function instComponentExpressions
   input InstNode scope;
 protected
   Component c = InstNode.component(component);
-  array<Dimension> dims;
+  array<Dimension> dims, all_dims;
+  list<Dimension> cls_dims;
+  Integer len;
 algorithm
   () := match c
     case Component.UNTYPED_COMPONENT(dimensions = dims)
       algorithm
         c.binding := instBinding(c.binding);
-
-        for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], scope, c.info);
-        end for;
-
         instExpressions(c.classInst, component);
+
+        cls_dims := Class.getDimensions(InstNode.getClass(c.classInst));
+        len := arrayLength(dims);
+
+        if listEmpty(cls_dims) then
+          // If we have no type dimensions, simply instantiate the component's dimensions.
+          for i in 1:len loop
+            dims[i] := instDimension(dims[i], scope, c.info);
+          end for;
+        else
+          // If we have type dimensions, allocate space for them and add them to
+          // the component's dimensions.
+          all_dims := Dangerous.arrayCreateNoInit(len + listLength(cls_dims), Dimension.UNKNOWN());
+
+          // Instantiate the component's dimensions.
+          for i in 1:len loop
+            all_dims[i] := instDimension(dims[i], scope, c.info);
+          end for;
+
+          // Add the already instantiated dimensions from the type.
+          len := len + 1;
+          for e in cls_dims loop
+            all_dims[len] := e;
+            len := len + 1;
+          end for;
+
+          // Update the dimensions in the component.
+          c.dimensions := all_dims;
+        end if;
+
         InstNode.updateComponent(c, component);
       then
         ();

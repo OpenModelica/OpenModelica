@@ -67,6 +67,14 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import NFSections.Sections;
 
+uniontype TypingError
+  record NO_ERROR end NO_ERROR;
+
+  record OUT_OF_BOUNDS
+    Integer upperBound;
+  end OUT_OF_BOUNDS;
+end TypingError;
+
 public
 function typeClass
   input InstNode cls;
@@ -94,6 +102,7 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls);
   ClassTree cls_tree;
+  list<Dimension> dims;
 algorithm
   ty := match c
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
@@ -103,6 +112,9 @@ algorithm
         end for;
       then
         Type.COMPLEX(cls);
+
+    case Class.DERIVED_CLASS()
+      then typeComponents(c.baseClass);
 
     case Class.INSTANCED_BUILTIN() then c.ty;
 
@@ -120,22 +132,19 @@ function typeComponent
   input InstNode component;
 protected
   Component c = InstNode.component(component);
-  SourceInfo info;
   Type ty;
 algorithm
   () := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT()
       algorithm
-        info := InstNode.info(component);
-
         // Type the component's dimensions.
-        typeDimensions(c.dimensions, InstNode.name(component), info);
+        typeDimensions(c.dimensions, InstNode.name(component), c.binding, c.info);
 
         // Type the component's children.
         ty := typeComponents(c.classInst);
 
-        // Add the dimensions from the component to it's type.
+        // Add the dimensions from the component to its type.
         ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
 
         // Finally, update the component in the instance tree.
@@ -220,27 +229,50 @@ end typeIterator;
 function typeDimensions
   input output array<Dimension> dimensions;
   input String elementName;
+  input Binding binding;
   input SourceInfo info;
 algorithm
   for i in 1:arrayLength(dimensions) loop
-    dimensions[i] := typeDimension(dimensions[i], elementName, i, info);
+    typeDimension(dimensions[i], elementName, binding, i, dimensions, info);
   end for;
 end typeDimensions;
 
 function typeDimension
   input output Dimension dimension;
   input String elementName;
+  input Binding binding;
   input Integer index;
+  input array<Dimension> dimensions;
   input SourceInfo info;
 algorithm
   dimension := match dimension
     local
       Expression exp;
       DAE.Const var;
+      Dimension dim;
+      Binding b;
+
+    // Print an error when a dimension that's currently being processed is
+    // found, which indicates a dependency loop. Another way of handling this
+    // would be to instead view the dimension as unknown and infer it from the
+    // binding, which means that things like x[size(x, 1)] = {...} could be
+    // handled. But that is not specified and doesn't seem needed, and can also
+    // give different results depending on the declaration order of components.
+    case Dimension.UNTYPED(isProcessing = true)
+      algorithm
+        // TODO: Tell the user which variables are involved in the loop (can be
+        //       found with DFS on the dimension expression. Maybe have a limit
+        //       on the output in case there's a lot of dimensions involved.
+        Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
+          {String(index), elementName, Expression.toString(dimension.dimension)}, info);
+      then
+        fail();
 
     // If the dimension is not typed, type it.
     case Dimension.UNTYPED()
       algorithm
+        arrayUpdate(dimensions, index, Dimension.UNTYPED(dimension.dimension, true));
+
         (exp, _, var) := typeExp(dimension.dimension, info);
 
         // TODO: Improve this error message:
@@ -251,8 +283,43 @@ algorithm
 
         exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(elementName, index, exp, info));
         exp := SimplifyExp.simplifyExp(exp);
+
+        dim := Dimension.fromExp(exp);
+        arrayUpdate(dimensions, index, dim);
       then
-        Dimension.fromExp(exp);
+        dim;
+
+    // If the dimension is unknown, try to infer it from the components binding.
+    case Dimension.UNKNOWN()
+      algorithm
+        dim := match binding
+          // Print an error if there's no binding.
+          case Binding.UNBOUND()
+            algorithm
+              Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
+                {elementName}, info);
+            then
+              fail();
+
+          // An untyped binding, type the expression only as much as is needed
+          // to get the dimension we're looking for.
+          case Binding.UNTYPED_BINDING()
+            algorithm
+              dim := typeExpDim(binding.bindingExp, index, info);
+            then
+              dim;
+
+          // A typed binding, get the dimension from the binding's type.
+          case Binding.TYPED_BINDING()
+            algorithm
+              dim := nthDimensionBoundsChecked(binding.bindingType, index);
+            then
+              dim;
+        end match;
+
+        arrayUpdate(dimensions, index, dim);
+      then
+        dim;
 
     // Other kinds of dimensions are already typed.
     else dimension;
@@ -273,6 +340,12 @@ algorithm
         for c in cls_tree.components loop
           typeComponentBinding(c);
         end for;
+      then
+        ();
+
+    case Class.DERIVED_CLASS()
+      algorithm
+        cls := typeBindings(c.baseClass);
       then
         ();
 
@@ -301,25 +374,35 @@ algorithm
   () := match c
     local
       Binding binding;
+      InstNode cls;
       MatchKind matchKind;
+      Boolean dirty;
 
     case Component.TYPED_COMPONENT()
       algorithm
         binding := typeBinding(c.binding);
-        if not referenceEq(binding, c.binding) then
+        dirty := not referenceEq(binding, c.binding);
+
+        // If the binding changed during typing it means it was an untyped
+        // binding which is now typed, and it needs to be type checked.
+        if dirty then
+          binding := TypeCheck.matchBinding(binding, c.ty, component);
           c.binding := binding;
+        end if;
+
+        cls := typeBindings(c.classInst);
+
+        // The component's type can change, e.g. if it was a derived class that
+        // was resolved to its base class.
+        if not referenceEq(cls, c.classInst) then
+          c.classInst := cls;
+          dirty := true;
+        end if;
+
+        // Update the node if the component changed.
+        if dirty then
           InstNode.updateComponent(c, component);
         end if;
-
-        if Binding.isTyped(binding) then
-          (_, _, matchKind) := TypeCheck.matchTypes(Binding.getType(binding), c.ty, Binding.getTypedExp(binding));
-          if not TypeCheck.isCompatibleMatch(matchKind) then
-            Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, {InstNode.name(component), Binding.toString(binding), Type.toString(c.ty), Type.toString(Binding.getType(binding))}, Binding.getInfo(binding));
-            fail();
-          end if;
-        end if;
-
-        typeBindings(c.classInst);
       then
         ();
 
@@ -560,6 +643,161 @@ algorithm
   end for;
 end typeExpl;
 
+function typeExpDim
+  "Returns the requested dimension of the given expression, while doing as
+   little typing as possible. This function returns TypingError.OUT_OF_BOUNDS if
+   the given index doesn't refer to a valid dimension, in which case the
+   returned dimension is undefined."
+  input Expression exp;
+  input Integer dimIndex;
+  input SourceInfo info;
+        output Dimension dim;
+        output TypingError error;
+algorithm
+  (dim, error) := match exp
+    local
+      Type ty;
+
+    // An untyped array, use typeArrayDim to get the dimension.
+    case Expression.ARRAY(ty = Type.UNKNOWN())
+      then typeArrayDim(exp, dimIndex);
+
+    // A typed array, fetch the dimension from its type.
+    case Expression.ARRAY()
+      then nthDimensionBoundsChecked(exp.ty, dimIndex);
+
+    // A cref, use typeCrefDim to get the dimension.
+    case Expression.CREF()
+      then typeCrefDim(exp.cref, dimIndex, info);
+
+    // Any other expression, type the whole expression and get the dimension
+    // from the type.
+    else
+      algorithm
+        (_, ty, _) := typeExp(exp, info);
+      then
+        nthDimensionBoundsChecked(ty, dimIndex);
+
+  end match;
+end typeExpDim;
+
+function typeArrayDim
+  "Returns the requested dimension of an array dimension. This function is meant
+   to be used on an untyped array, for a typed array it's better to just use
+   e.g.  nthDimensionBoundsChecked on its type."
+  input Expression arrayExp;
+  input Integer dimIndex;
+  output Dimension dim;
+  output TypingError error;
+algorithm
+  // We don't yet know the number of dimensions, but the index must at least be 1.
+  if dimIndex < 1 then
+    dim := Dimension.UNKNOWN();
+    error := TypingError.OUT_OF_BOUNDS(Expression.dimensionCount(arrayExp));
+  else
+    (dim, error) := typeArrayDim2(arrayExp, dimIndex);
+  end if;
+end typeArrayDim;
+
+function typeArrayDim2
+  input Expression arrayExp;
+  input Integer dimIndex;
+  input Integer dimCount = 0;
+        output Dimension dim;
+        output TypingError error;
+algorithm
+  (dim, error) := match (arrayExp, dimIndex)
+    case (Expression.ARRAY(), 1)
+      then (Dimension.INTEGER(listLength(arrayExp.elements)), TypingError.NO_ERROR());
+
+    // Modelica arrays are non-ragged and only the last dimension of an array
+    // expression can be empty, so just traverse into the first element.
+    case (Expression.ARRAY(), _)
+      then typeArrayDim2(listHead(arrayExp.elements), dimIndex - 1, dimCount + 1);
+
+    else
+      algorithm
+        dim := Dimension.UNKNOWN();
+        error := TypingError.OUT_OF_BOUNDS(dimCount);
+      then
+        (dim, error);
+
+  end match;
+end typeArrayDim2;
+
+function typeCrefDim
+  input ComponentRef cref;
+  input Integer dimIndex;
+  input SourceInfo info;
+  output Dimension dim;
+  output TypingError error;
+algorithm
+  (dim, error) := match cref
+    case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
+      then typeComponentDim(cref.node, dimIndex, info);
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got invalid cref.");
+      then
+        fail();
+
+  end match;
+end typeCrefDim;
+
+function typeComponentDim
+  input InstNode component;
+  input Integer dimIndex;
+  input SourceInfo info;
+  output Dimension dim;
+  output TypingError error;
+protected
+  Component c = InstNode.component(component);
+algorithm
+  (dim, error) := match c
+    local
+      Dimension d;
+      Type ty;
+
+    // An untyped component, get the requested dimension from the component and type it.
+    case Component.UNTYPED_COMPONENT()
+      algorithm
+        if dimIndex < 1 or dimIndex > arrayLength(c.dimensions) then
+          error := TypingError.OUT_OF_BOUNDS(arrayLength(c.dimensions));
+          d := Dimension.UNKNOWN();
+        else
+          error := TypingError.NO_ERROR();
+          d := arrayGet(c.dimensions, dimIndex);
+          d := typeDimension(d, InstNode.name(component), c.binding, dimIndex, c.dimensions, info);
+        end if;
+      then
+        (d, error);
+
+    // A typed component, get the requested dimension from its type.
+    else nthDimensionBoundsChecked(Component.getType(c), dimIndex);
+
+  end match;
+end typeComponentDim;
+
+function nthDimensionBoundsChecked
+  "Returns the requested dimension from the given type, along with a TypingError
+   indicating whether the index was valid or not."
+  input Type ty;
+  input Integer dimIndex;
+  output Dimension dim;
+  output TypingError error;
+protected
+  Integer dim_size = Type.dimensionCount(ty);
+algorithm
+  if dimIndex < 1 or dimIndex > dim_size then
+    dim := Dimension.UNKNOWN();
+    error := TypingError.OUT_OF_BOUNDS(dim_size);
+  else
+    dim := Type.nthDimension(ty, dimIndex);
+    error := TypingError.NO_ERROR();
+  end if;
+end nthDimensionBoundsChecked;
+
 function typeCref
   input ComponentRef cref;
   input SourceInfo info;
@@ -721,46 +959,76 @@ function typeSize
         output Type sizeType;
         output DAE.Const variability;
 protected
-  Option<Expression> oindex;
   Expression exp, index;
   Type exp_ty, index_ty;
   TypeCheck.MatchKind ty_match;
+  Integer iindex, dim_size;
+  Dimension dim;
+  TypingError ty_err;
 algorithm
-  Expression.SIZE(exp = exp, dimIndex = oindex) := sizeExp;
+  (sizeExp, sizeType, variability) := match sizeExp
+    case Expression.SIZE(dimIndex = SOME(index))
+      algorithm
+        (index, index_ty, variability) := typeExp(index, info);
 
-  (exp, exp_ty, _) := typeExp(exp, info);
+        // The second argument must be an Integer.
+        (index, _, ty_match) :=
+          TypeCheck.matchTypes(index_ty, Type.INTEGER(), index);
 
-  // The first argument must be an array of any type.
-  if not Type.isArray(exp_ty) then
-    Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
-    fail();
-  end if;
+        if TypeCheck.isIncompatibleMatch(ty_match) then
+          Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
+            {"2", "size ", "dim", Expression.toString(index), Type.toString(index_ty), "Integer"}, info);
+          fail();
+        end if;
 
-  if isSome(oindex) then
-    SOME(index) := oindex;
-    (index, index_ty, variability) := typeExp(index, info);
+        // TODO: Only evaluate the index if it's a constant (parameter?),
+        //       otherwise just return a size expression.
+        index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
+        index := SimplifyExp.simplifyExp(index);
 
-    // The second argument must be an Integer.
-    (index, _, ty_match) :=
-      TypeCheck.matchTypes(index_ty, Type.INTEGER(), index);
+        // TODO: Print an error if the index couldn't be evaluated to an int.
+        Expression.INTEGER(iindex) := index;
 
-    if TypeCheck.isIncompatibleMatch(ty_match) then
-      Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
-        {"2", "size ", "dim", Expression.toString(index), Type.toString(index_ty), "Integer"}, info);
-      fail();
-    end if;
+        (dim, ty_err) := typeExpDim(sizeExp.exp, iindex, info);
 
-    oindex := SOME(index);
-    sizeType := Type.INTEGER();
-  else
-    // TODO: Fill in correct dimension size here.
-    sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(1)});
-    // The number of dimensions is always known, but the dimension sizes
-    // themselves might not be known here.
-    variability := DAE.C_VAR();
-  end if;
+        () := match ty_err
+          case NO_ERROR() then ();
 
-  sizeExp := Expression.SIZE(exp, oindex);
+          // The first argument wasn't an array.
+          case OUT_OF_BOUNDS(0)
+            algorithm
+              Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
+            then
+              fail();
+
+          // The index referred to an invalid dimension.
+          case OUT_OF_BOUNDS()
+            algorithm
+              Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
+                {String(iindex), Expression.toString(sizeExp.exp), String(ty_err.upperBound)}, info);
+            then
+              fail();
+        end match;
+
+        dim_size := Dimension.size(dim);
+      then
+        (Expression.INTEGER(dim_size), Type.INTEGER(), DAE.C_CONST());
+
+    case Expression.SIZE()
+      algorithm
+        (exp, exp_ty, _) := typeExp(sizeExp.exp, info);
+
+        // The first argument must be an array of any type.
+        if not Type.isArray(exp_ty) then
+          Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
+          fail();
+        end if;
+
+        sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(Type.dimensionCount(exp_ty))});
+      then
+        (Expression.SIZE(exp, NONE()), sizeType, DAE.C_PARAM());
+
+  end match;
 end typeSize;
 
 function typeSections

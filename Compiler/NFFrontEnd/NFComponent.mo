@@ -457,7 +457,6 @@ uniontype Component
       else false;
     end match;
   end isRedeclare;
-
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

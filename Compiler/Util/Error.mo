@@ -727,6 +727,8 @@ public constant Message RANGE_INVALID_TYPE = MESSAGE(298, TRANSLATION(), ERROR()
   Util.gettext("Range has invalid type %s."));
 public constant Message CLASS_EXTENDS_MISSING_REDECLARE = MESSAGE(299, TRANSLATION(), WARNING(),
   Util.gettext("Missing redeclare prefix on class extends %s, treating like redeclare anyway."));
+public constant Message CYCLIC_DIMENSIONS = MESSAGE(300, TRANSLATION(), ERROR(),
+  Util.gettext("Dimension %s of %s, '%s', could not be evaluated due to a cyclic dependency."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

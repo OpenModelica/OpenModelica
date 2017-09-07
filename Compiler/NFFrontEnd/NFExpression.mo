@@ -711,5 +711,21 @@ public
     end match;
   end toDAE;
 
+  function dimensionCount
+    input Expression exp;
+    output Integer dimCount;
+  algorithm
+    dimCount := match exp
+      case ARRAY(ty = Type.UNKNOWN())
+        then 1 + dimensionCount(listHead(exp.elements));
+      case ARRAY() then Type.dimensionCount(exp.ty);
+      case RANGE() then Type.dimensionCount(exp.ty);
+      case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
+      case CAST() then dimensionCount(exp.exp);
+      // TODO: Add more expressions.
+      else 0;
+    end match;
+  end dimensionCount;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

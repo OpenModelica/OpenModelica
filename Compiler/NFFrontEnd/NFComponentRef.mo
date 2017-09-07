@@ -115,7 +115,7 @@ public
     () := match cref
       case CREF()
         algorithm
-          cref.subscripts := subscript :: cref.subscripts;
+          cref.subscripts := listAppend(cref.subscripts, {subscript});
         then
           ();
     end match;

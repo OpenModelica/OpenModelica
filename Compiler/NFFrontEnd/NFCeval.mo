@@ -61,6 +61,16 @@ uniontype EvalTarget
   end RANGE;
 
   record IGNORE_ERRORS end IGNORE_ERRORS;
+
+  function isRange
+    input EvalTarget target;
+    output Boolean isRange;
+  algorithm
+    isRange := match target
+      case RANGE() then true;
+      else false;
+    end match;
+  end isRange;
 end EvalTarget;
 
 function evalExp
@@ -76,13 +86,15 @@ algorithm
       Call call;
       Component comp;
       Option<Expression> oexp;
+      ComponentRef cref;
 
-    case Expression.CREF(cref=ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
+    case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
       algorithm
         Typing.typeComponentBinding(c);
         binding := Component.getBinding(InstNode.component(c));
+        exp1 := evalBinding(binding, exp, target);
       then
-        evalBinding(binding, exp, target);
+        Expression.subscript(exp1, cref.subscripts);
 
     case Expression.TYPENAME()
       then evalTypename(exp.ty, exp, target);
@@ -231,23 +243,29 @@ function evalTypename
 protected
   list<Expression> lits;
 algorithm
-  exp := match ty
-    case Type.ARRAY(elementType = Type.BOOLEAN())
-      then Expression.ARRAY(ty, {Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
+  // Only expand the typename into an array if it's used as a range, and keep
+  // them as typenames when used as e.g. dimensions.
+  if not EvalTarget.isRange(target) then
+    exp := originExp;
+  else
+    exp := match ty
+      case Type.ARRAY(elementType = Type.BOOLEAN())
+        then Expression.ARRAY(ty, {Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
 
-    case Type.ARRAY(elementType = Type.ENUMERATION())
-      algorithm
-        lits := Expression.makeEnumLiterals(ty.elementType);
-      then
-        Expression.ARRAY(ty, lits);
+      case Type.ARRAY(elementType = Type.ENUMERATION())
+        algorithm
+          lits := Expression.makeEnumLiterals(ty.elementType);
+        then
+          Expression.ARRAY(ty, lits);
 
-    else
-      algorithm
-        assert(false, getInstanceName() + " got invalid typename");
-      then
-        fail();
+      else
+        algorithm
+          assert(false, getInstanceName() + " got invalid typename");
+        then
+          fail();
 
-  end match;
+    end match;
+  end if;
 end evalTypename;
 
 annotation(__OpenModelica_Interface="frontend");
