@@ -14,7 +14,7 @@ end FuncBuiltinRem;
 
 // Result:
 // class FuncBuiltinRem
-//   Real r1 = OpenModelica.Internal.intRem(5, 2);
+//   Real r1 = /*Real*/(OpenModelica.Internal.intRem(5, 2));
 //   Real r2 = OpenModelica.Internal.realRem(5.0, 2.0);
 //   Real r3 = OpenModelica.Internal.realRem(8.0, 3.0);
 // end FuncBuiltinRem;

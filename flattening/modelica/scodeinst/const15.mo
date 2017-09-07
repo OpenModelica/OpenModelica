@@ -18,6 +18,6 @@ end C;
 
 // Result:
 // class C
-//   Real x = B.i;
+//   Real x = /*Real*/(B.i);
 // end C;
 // endResult

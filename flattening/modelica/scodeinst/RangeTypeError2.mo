@@ -15,7 +15,7 @@ end RangeTypeError2;
 // [flattening/modelica/scodeinst/RangeTypeError2.mo:10:3-10:24:writable] Error: Type mismatch in range: '1' of type
 //   Integer
 // is not type compatible with 'E.one' of type
-//   enumeration()
+//   enumeration(one, two, three)
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

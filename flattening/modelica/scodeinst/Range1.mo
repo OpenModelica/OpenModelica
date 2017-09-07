@@ -7,7 +7,7 @@
 
 model Range1
   type E = enumeration(one, two, three);
-  Real x[E] = E.one:E.three;
+  E x[E] = E.one:E.three;
 end Range1;
 
 // Result:

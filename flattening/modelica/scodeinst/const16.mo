@@ -24,6 +24,6 @@ end M;
 
 // Result:
 // class M
-//   Real x = P.P.P.i;
+//   Real x = /*Real*/(P.P.P.i);
 // end M;
 // endResult

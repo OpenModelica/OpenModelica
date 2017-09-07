@@ -14,7 +14,7 @@ end RangeInvalidStep3;
 
 // Result:
 // Error processing file: RangeInvalidStep3.mo
-// [flattening/modelica/scodeinst/RangeInvalidStep3.mo:12:3-12:31:writable] Error: Range of type enumeration() may not specify a step size.
+// [flattening/modelica/scodeinst/RangeInvalidStep3.mo:12:3-12:31:writable] Error: Range of type enumeration(one, two, three) may not specify a step size.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

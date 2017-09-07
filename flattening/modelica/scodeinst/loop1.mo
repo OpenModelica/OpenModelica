@@ -1,9 +1,8 @@
 // name: loop1.mo
 // keywords:
-// status: correct
-// cflags:   -d=newInst
+// status: incorrect
+// cflags: -d=newInst
 //
-// FAILREASON: Not good enough error message.
 //
 
 
@@ -16,13 +15,8 @@ model A
 end A;
 
 // Result:
-// Failed to type cref i
-// Failed to type cref j
-// Failed to type cref i
-// Failed to type cref a
-// SCodeInst.instClass failed
 // Error processing file: loop1.mo
-// Error: Internal error Found cyclic dependencies, but failed to show error.
+// [flattening/modelica/scodeinst/loop1.mo:14:3-14:34:writable] Error: Dimension 1 of x, 'i', could not be evaluated due to a cyclic dependency.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
