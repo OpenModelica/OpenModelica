@@ -6882,6 +6882,9 @@ algorithm
 
   // generate system for initialization
   (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+  if Flags.isSet(Flags.WARN_NO_NOMINAL) then
+    warnAboutIterationVariablesWithNoNominal(outInitDAE);
+  end if;
 
   // use function tree from initDAE further for simDAE
   simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
@@ -6897,6 +6900,9 @@ algorithm
 
   // post-optimization phase
   simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
+  if Flags.isSet(Flags.WARN_NO_NOMINAL) then
+    warnAboutIterationVariablesWithNoNominal(simDAE);
+  end if;
 
   // sort the globalKnownVars
   simDAE := sortGlobalKnownVarsInDAE(simDAE);
@@ -9234,6 +9240,54 @@ protected function getVariableNamesForErrorMessage
 algorithm
   names := stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, v))) for v in vars), ", ");
 end getVariableNamesForErrorMessage;
+
+// =============================================================================
+// warn about iteration variables with no nominal attribute
+//
+// =============================================================================
+
+protected function warnAboutIterationVariablesWithNoNominal
+" author: ptaeuber"
+  input BackendDAE.BackendDAE inDAE;
+protected
+  BackendDAE.StrongComponents comps;
+  String daeTypeStr, compKind;
+  list<Integer> vlst = {};
+  list<BackendDAE.Var> vars;
+algorithm
+  daeTypeStr := BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType);
+  for syst in inDAE.eqs loop
+    BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := syst;
+
+    // Go through all the strongly connected components.
+    for comp in comps loop
+      // Get the component's variables.
+      (compKind, vlst) := match(comp)
+        case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NONLINEAR())
+          then ("nonlinear equation system in the " + daeTypeStr + " DAE:", vlst);
+        case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_GENERIC())
+          then ("equation system w/o analytic Jacobian in the " + daeTypeStr + " DAE:", vlst);
+        case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NO_ANALYTIC())
+          then ("equation system w/o analytic Jacobian in the " + daeTypeStr + " DAE:", vlst);
+        case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
+          then ("torn nonlinear equation system in the " + daeTypeStr + " DAE:", vlst);
+        // If the component is none of these types, do nothing.
+        else ("", {});
+      end match;
+
+      if not listEmpty(vlst) then
+        // Filter out the variables that are missing start values.
+        vars := List.map1r(vlst, BackendVariable.getVarAt, syst.orderedVars);
+        vars := list(v for v guard(not BackendVariable.varHasNominalValue(v)) in vars);
+
+        // Print a warning if we found any variables with missing start values.
+        if not listEmpty(vars) then
+          Error.addCompilerWarning(BackendDump.varListStringIndented(vars, "Iteration variables with no nominal value in " + compKind));
+        end if;
+      end if;
+    end for;
+  end for;
+end warnAboutIterationVariablesWithNoNominal;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

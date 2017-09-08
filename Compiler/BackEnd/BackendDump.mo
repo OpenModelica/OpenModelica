@@ -452,6 +452,40 @@ algorithm
   outTpl := (varNo + 1, buffer);
 end var1String;
 
+public function varListStringIndented
+  input list<BackendDAE.Var> inVars;
+  input String heading;
+  output String outString;
+algorithm
+  outString := match(inVars, heading)
+    local
+      String buffer;
+
+    case (_, "") equation
+      ((_, buffer)) = List.fold(inVars, var1StringIndented, (1, ""));
+    then buffer;
+
+    else equation
+      ((_, buffer)) = List.fold(inVars, var1StringIndented, (1, ""));
+      buffer = heading + "\n" + buffer;
+    then buffer;
+  end match;
+end varListStringIndented;
+
+protected function var1StringIndented
+  input BackendDAE.Var inVar;
+  input tuple<Integer /*inVarNo*/, String /*buffer*/> inTpl;
+  output tuple<Integer /*outVarNo*/, String /*buffer*/> outTpl;
+protected
+  Integer varNo;
+  String buffer;
+algorithm
+  (varNo, buffer) := inTpl;
+  buffer := buffer + "   " + intString(varNo) + ": ";
+  buffer := buffer + varString(inVar) + "\n";
+  outTpl := (varNo + 1, buffer);
+end var1StringIndented;
+
 protected function printExternalObjectClasses "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses cls;
 algorithm
