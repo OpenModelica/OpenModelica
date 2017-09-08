@@ -2050,7 +2050,7 @@ algorithm
       // all variables for new equation system
       // d(ordered vars)/d(dummyVar)
       diffVars = BackendVariable.varList(orderedVars);
-      derivedVariables = createAllDiffedVars(diffVars, x, diffedVars, 0, matrixName, {});
+      derivedVariables = createAllDiffedVars(diffVars, x, diffedVars, matrixName);
 
       jacOrderedVars = BackendVariable.listVar1(derivedVariables);
       // known vars: all variable from original system + seed
@@ -2093,59 +2093,71 @@ protected function createAllDiffedVars "author: wbraun"
   input list<BackendDAE.Var> inVars;
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inAllVars;
+  input String inMatrixName;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  try
+    outVars := createAllDiffedVarsWork(inVars, inCref, inAllVars, 0, inMatrixName, {});
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.createAllDiffedVars failed"});
+    fail();
+  end try;
+end createAllDiffedVars;
+
+protected function createAllDiffedVarsWork "author: wbraun,hkiel"
+  input list<BackendDAE.Var> inVars;
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inAllVars;
   input Integer inIndex;
   input String inMatrixName;
   input list<BackendDAE.Var> iVars;
   output list<BackendDAE.Var> outVars;
 algorithm
-  outVars := matchcontinue(inVars, inCref,inAllVars,inIndex,inMatrixName,iVars)
+  outVars := match(inVars, inCref,inAllVars,inIndex,inMatrixName,iVars)
   local
-    BackendDAE.Var  r1,v1;
+    BackendDAE.Var r1;
     DAE.ComponentRef currVar, cref, derivedCref;
     list<BackendDAE.Var> restVar;
+    Integer index;
 
     case({}, _, _, _, _, _)
     then listReverse(iVars);
 
     // skip for dicrete variable
-    case(BackendDAE.VAR(varKind=BackendDAE.DISCRETE())::restVar,cref,_,_, _, _) equation
+    case(BackendDAE.VAR(varKind=BackendDAE.DISCRETE())::restVar, cref, _, _, _, _)
      then
-       createAllDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);
+       createAllDiffedVarsWork(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);
 
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
-      (_, _) = BackendVariable.getVarSingle(currVar, inAllVars);
-      currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar, cref, _, index, _, _) algorithm
+       try
+        (_, _) := BackendVariable.getVarSingle(currVar, inAllVars);
+        currVar := ComponentReference.crefPrefixDer(currVar);
+        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        r1 := BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+        index := index + 1;
+      else
+        currVar := ComponentReference.crefPrefixDer(currVar);
+        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        r1 := BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      end try;
     then
-      createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
+      createAllDiffedVarsWork(restVar, cref, inAllVars, index, inMatrixName,r1::iVars);
 
-    case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
-      (_, _) = BackendVariable.getVarSingle(currVar, inAllVars);
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+    case(BackendDAE.VAR(varName=currVar)::restVar, cref, _, index, _, _) algorithm
+      try
+        (_, _) := BackendVariable.getVarSingle(currVar, inAllVars);
+        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        r1 := BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+        index := index + 1;
+      else
+        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        r1 := BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+      end try;
     then
-      createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
+      createAllDiffedVarsWork(restVar, cref, inAllVars, index, inMatrixName,r1::iVars);
 
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
-      currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
-    then
-      createAllDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
-
-    case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
-    then
-      createAllDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
-
-    else
-     equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.createAllDiffedVars failed"});
-    then fail();
-  end matchcontinue;
-end createAllDiffedVars;
+  end match;
+end createAllDiffedVarsWork;
 
 protected function deriveAll "author: lochel"
   input list<BackendDAE.Equation> inEquations;
