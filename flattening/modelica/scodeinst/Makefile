@@ -236,7 +236,7 @@ DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
 DuplicateElementsValid2.mo \
-classextends3.mo \
+ClassExtends4.mo \
 ModClass2.mo \
 ModClass4.mo \
 ModClass5.mo \

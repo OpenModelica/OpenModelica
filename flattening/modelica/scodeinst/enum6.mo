@@ -18,6 +18,9 @@ end M;
 
 // Result:
 // class M
+//   constant Real p.e[E.one];
+//   constant Real p.e[E.two];
+//   constant Real p.e[E.three];
 //   Real e[P.E.one];
 //   Real e[P.E.two];
 //   Real e[P.E.three];
