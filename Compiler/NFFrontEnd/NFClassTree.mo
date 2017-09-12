@@ -475,7 +475,7 @@ public
             // Make a new extends array, and recursively instantiate the extends nodes.
             exts := arrayCopy(exts);
             for i in 1:arrayLength(exts) loop
-              (node, _, cls_count, comp_count) := instantiate(exts[i]);
+              (node, _, cls_count, comp_count) := instantiate(exts[i], instance);
               exts[i] := node;
               // Add the inherited elements to the class/component counts.
               classCount := cls_count + classCount;

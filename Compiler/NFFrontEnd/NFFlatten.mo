@@ -314,19 +314,24 @@ function flattenFunctionParams
 protected
   InstNode node;
   Component comp;
+  ComponentRef prefix;
+  Type ty;
 algorithm
   for i in arrayLength(components):-1:1 loop
     node := components[i];
     comp := InstNode.component(node);
+    ty := Component.getType(comp);
+    prefix := ComponentRef.fromNode(node, ty, {});
 
     (elements, funcs) :=
-      flattenFunctionParam(comp, InstNode.name(node), elements, funcs);
+      flattenFunctionParam(comp, InstNode.name(node), prefix, elements, funcs);
   end for;
 end flattenFunctionParams;
 
 function flattenFunctionParam
   input Component component;
   input String name;
+  input ComponentRef prefix;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
 algorithm
@@ -350,7 +355,7 @@ algorithm
         cref := DAE.CREF_IDENT(name, ty, {});
         attr := component.attributes;
         (binding_exp, funcs) :=
-          flattenBinding(component.binding, ComponentRef.EMPTY(), funcs);
+          flattenBinding(component.binding, prefix, funcs);
 
         var_attr := match i
           case Class.INSTANCED_BUILTIN()
@@ -416,10 +421,10 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
-        if binding.propagatedDims <= 0 then
+        if binding.propagatedLevels < 0 then
           e := binding.bindingExp;
         else
-          subs := List.lastN(List.flatten(ComponentRef.allSubscripts(prefix)), binding.propagatedDims);
+          subs := List.flatten(List.lastN(ComponentRef.allSubscripts(prefix), binding.propagatedLevels + 1));
           e := Expression.subscript(binding.bindingExp, subs);
         end if;
 

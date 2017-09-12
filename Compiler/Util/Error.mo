@@ -503,7 +503,7 @@ public constant Message INVALID_SIZE_INDEX = MESSAGE(186, TRANSLATION(), ERROR()
 public constant Message ALGORITHM_TRANSITION_FAILURE = MESSAGE(187, TRANSLATION(), ERROR(),
   Util.gettext("Algorithm section is not allowed in %s."));
 public constant Message FAILURE_TO_DEDUCE_DIMS_NO_MOD = MESSAGE(188, TRANSLATION(), ERROR(),
-  Util.gettext("Failed to deduce dimensions of %s due to missing binding equation."));
+  Util.gettext("Failed to deduce dimension %s of %s due to missing binding equation."));
 public constant Message FUNCTION_MULTIPLE_ALGORITHM = MESSAGE(189, TRANSLATION(), WARNING(),
   Util.gettext("The behavior of multiple algorithm sections in function %s is not standard Modelica. OpenModelica will execute the sections in the order in which they were declared or inherited (same ordering as inherited input/output arguments, which also are not standardized)."));
 public constant Message STATEMENT_GENERIC_FAILURE = MESSAGE(190, TRANSLATION(), ERROR(),

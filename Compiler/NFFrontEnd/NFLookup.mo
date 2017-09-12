@@ -107,7 +107,7 @@ protected
   Type ty;
 algorithm
   if InstNode.isClass(component) then
-    ty := Class.getType(InstNode.getClass(component));
+    ty := Class.getType(InstNode.getClass(Inst.expand(component)));
 
     state := match ty
       case Type.ENUMERATION() then LookupState.STATE_COMP();

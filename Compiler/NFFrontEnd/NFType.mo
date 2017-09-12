@@ -137,6 +137,26 @@ public
     end if;
   end unliftArray;
 
+  function unliftArrayN
+    input Integer N;
+    input output Type ty;
+  protected
+    Type el_ty;
+    list<Dimension> dims;
+  algorithm
+    ARRAY(el_ty, dims) := ty;
+
+    for i in 1:N loop
+      dims := listRest(dims);
+    end for;
+
+    if listEmpty(dims) then
+      ty := el_ty;
+    else
+      ty := ARRAY(el_ty, dims);
+    end if;
+  end unliftArrayN;
+
   function isInteger
     input Type ty;
     output Boolean isInteger;
@@ -321,19 +341,9 @@ public
     dims := match ty
       case ARRAY() then ty.dimensions;
       case FUNCTION() then arrayDims(ty.resultType);
+      else {};
     end match;
   end arrayDims;
-
-  function getTypeDims
-    input Type ty;
-    output list<Dimension> dims;
-  algorithm
-    try
-      dims := arrayDims(ty);
-    else
-      dims := {};
-    end try;
-  end getTypeDims;
 
   function nthDimension
     input Type ty;

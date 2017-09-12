@@ -152,7 +152,7 @@ public
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, 0, scope, mod.info);
+          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, scope, mod.info);
           submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
@@ -326,33 +326,38 @@ public
      checking, so that it matches the binding. To do this we need to now how many
      dimensions the binding has been propagated through. In this case it's been
      propagated from B.a to A.x, and since B.a has one dimension we should add
-     that dimension to A.x to make it match the binding. The number of dimensions
-     that a binding is propagated through is therefore saved in a binding. A
-     binding can also have the 'each' prefix, meaning that the binding should be
-     applied as it is. In that case we set the dimension counter to -1 and don't
-     increment it when the binding is propagated.
+     that dimension to A.x to make it match the binding. The number of levels a
+     binding is propagated through is therefore saved in each binding. A binding
+     can also have the 'each' prefix, meaning that the binding should be applied
+     as it is. In that case we set the level counter to -1 and don't increment
+     it when the binding is propagated.
 
      This function simply goes through a modifier recursively and increments the
-     dimension counter by the number of dimensions that an element has."
+     level counter by 1 for all bindings in the modifier, but will not traverse
+     into submodifiers that have the 'each' prefix."
     input output Modifier modifier;
-    input Integer dimensions;
   algorithm
-    if dimensions == 0 then
-      return;
-    end if;
-
     _ := match modifier
       case MODIFIER()
         algorithm
-          modifier.binding := propagateBinding(modifier.binding, dimensions);
-          modifier.subModifiers := ModTable.map(modifier.subModifiers,
-            function propagateSubMod(dimensions = dimensions));
+          modifier.binding := propagateBinding(modifier.binding);
+          modifier.subModifiers := ModTable.map(modifier.subModifiers, propagateSubMod);
         then
           ();
 
       else ();
     end match;
   end propagate;
+
+  function isEach
+    input Modifier mod;
+    output Boolean isEach;
+  algorithm
+    isEach := match mod
+      case MODIFIER(eachPrefix = SCode.EACH()) then true;
+      else false;
+    end match;
+  end isEach;
 
   function checkEach
     input Modifier mod;
@@ -489,23 +494,19 @@ protected
   function propagateSubMod
     input String name;
     input output Modifier modifier;
-    input Integer dimensions;
   algorithm
-    modifier := propagate(modifier, dimensions);
+    if not isEach(modifier) then
+      modifier := propagate(modifier);
+    end if;
   end propagateSubMod;
 
   function propagateBinding
     input output Binding binding;
-    input Integer dimensions;
   algorithm
     _ := match binding
-      // Special case for the each prefix, don't do anything.
-      case Binding.RAW_BINDING(propagatedDims = -1) then ();
-
-      // A normal binding, increment with the dimension count.
       case Binding.RAW_BINDING()
         algorithm
-          binding.propagatedDims := binding.propagatedDims + dimensions;
+          binding.propagatedLevels := binding.propagatedLevels + 1;
         then
           ();
 

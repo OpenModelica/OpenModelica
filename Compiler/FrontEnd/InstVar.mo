@@ -811,23 +811,6 @@ algorithm
       Absyn.Path path;
       list<DAE.Var> vars;
 
-    /*
-    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
-      equation
-        true = SCode.isPartial(cl);
-
-        //Do not flatten because it is a function
-        dims_1 = InstUtil.instDimExpLst(dims, impl);
-
-        (cache,env_1,ih,ci_state,vars) = Inst.partialInstClassIn(cache, env, ih, mod, pre, ci_state, cl, SCode.PUBLIC(), inst_dims, 0);
-        dae = DAE.emptyDae;
-        (cache, path) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(n));
-        ty = DAE.T_COMPLEX(ci_state, vars, NONE(), {path});
-        ty = InstUtil.makeArrayType(dims, ty);
-      then
-        (cache,env_1,ih,store,dae,csets,ty,graph);*/
-
-
     // Rules for instantation of function variables (e.g. input and output
 
     // Function variables with modifiers (outputs or local/protected variables)
@@ -1035,7 +1018,8 @@ algorithm
     case (_,_,_,_,_,DAE.NOMOD(),_,n,_,_,_,
       ((DAE.DIM_UNKNOWN()) :: _),_,_,_,_,info,_,_)
       equation
-        Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,{n},info);
+        Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
+          {String(listLength(inSubscripts) + 1), n},info);
       then
         fail();
 

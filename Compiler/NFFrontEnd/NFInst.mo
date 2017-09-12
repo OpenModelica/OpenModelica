@@ -806,14 +806,14 @@ algorithm
 
         dims := list(Dimension.RAW_DIM(d) for d in def.attributes.arrayDims);
         Modifier.checkEach(comp_mod, listEmpty(dims), InstNode.name(node));
-        comp_mod := Modifier.propagate(comp_mod, listLength(dims));
+        binding := Modifier.binding(comp_mod);
+        comp_mod := Modifier.propagate(comp_mod);
 
         // Instantiate the type of the component.
         cls := instTypeSpec(def.typeSpec, comp_mod, scope, node, def.info);
 
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes);
-        binding := Modifier.binding(comp_mod);
         inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding,
            attr, SCode.isElementRedeclare(def), def.info);
         InstNode.updateComponent(inst_comp, node);
@@ -909,7 +909,7 @@ algorithm
       algorithm
         // Instantiate expressions in the extends nodes.
         sections := ClassTree.foldExtends(cls_tree,
-          function instExpressions(scope = node), sections);
+          function instExpressions(scope = scope), sections);
 
         // Instantiate expressions in the local components.
         ClassTree.applyLocalComponents(cls_tree,
@@ -1036,7 +1036,7 @@ algorithm
       algorithm
         bind_exp := instExp(binding.bindingExp, binding.scope, binding.info, allowTypename);
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.propagatedDims, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.propagatedLevels, binding.info);
 
     else binding;
   end match;
@@ -1385,7 +1385,7 @@ algorithm
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
-        binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), 0, scope, info);
+        binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), scope, info);
         binding := instBinding(binding, allowTypename = true);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
@@ -1513,7 +1513,7 @@ algorithm
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
-        binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), 0, scope, info);
+        binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), scope, info);
         binding := instBinding(binding, allowTypename = true);
 
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);

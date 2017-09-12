@@ -63,6 +63,9 @@ public
         Integer istart, istep, istop;
         Real rstart, rstep, rstop;
         Type ty;
+        list<String> literals;
+        Absyn.Path path;
+        list<Expression> values;
 
       case Expression.ARRAY() then ARRAY_RANGE(exp.elements);
 
@@ -85,6 +88,28 @@ public
                             step = NONE(),
                             stop = Expression.REAL(rstop))
         then REAL_RANGE(rstart, 1.0, rstop);
+
+      case Expression.RANGE(start = Expression.ENUM_LITERAL(ty = ty, index = istart),
+                            step = NONE(),
+                            stop = Expression.ENUM_LITERAL(index = istop))
+        algorithm
+          Type.ENUMERATION(typePath = path, literals = literals) := ty;
+          values := {};
+
+          if istart <= istop then
+            for i in 2:istart loop
+              literals := listRest(literals);
+            end for;
+
+            for i in istart:istop loop
+              values := Expression.ENUM_LITERAL(ty, listHead(literals), i) :: values;
+              literals := listRest(literals);
+            end for;
+
+            values := listReverse(values);
+          end if;
+        then
+          ARRAY_RANGE(values);
 
       else
         algorithm

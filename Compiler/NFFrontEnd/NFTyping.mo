@@ -73,6 +73,16 @@ uniontype TypingError
   record OUT_OF_BOUNDS
     Integer upperBound;
   end OUT_OF_BOUNDS;
+
+  function isError
+    input TypingError error;
+    output Boolean isError;
+  algorithm
+    isError := match error
+      case NO_ERROR() then false;
+      else true;
+    end match;
+  end isError;
 end TypingError;
 
 public
@@ -251,6 +261,7 @@ algorithm
       DAE.Const var;
       Dimension dim;
       Binding b;
+      TypingError ty_err;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -297,7 +308,7 @@ algorithm
           case Binding.UNBOUND()
             algorithm
               Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
-                {elementName}, info);
+                {String(index), elementName}, info);
             then
               fail();
 
@@ -305,16 +316,18 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              dim := typeExpDim(binding.bindingExp, index, info);
+              dim := typeExpDim(binding.bindingExp, index + binding.propagatedLevels, info);
             then
               dim;
 
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
             algorithm
-              dim := nthDimensionBoundsChecked(binding.bindingType, index);
+              dim := nthDimensionBoundsChecked(binding.bindingType, index + binding.propagatedLevels);
             then
               dim;
+
+          else Dimension.UNKNOWN();
         end match;
 
         arrayUpdate(dimensions, index, dim);
@@ -428,7 +441,7 @@ algorithm
       algorithm
         (exp, ty, var) := typeExp(exp, binding.info);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.propagatedDims, binding.info);
+        Binding.TYPED_BINDING(exp, ty, var, binding.propagatedLevels, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -493,7 +506,7 @@ algorithm
         exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding.bindingExp, binding.info));
         exp := SimplifyExp.simplifyExp(exp);
       then
-        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.propagatedDims, binding.info);
+        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.propagatedLevels, binding.info);
 
     else
       algorithm

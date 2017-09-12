@@ -47,7 +47,7 @@ public
   record RAW_BINDING
     Absyn.Exp bindingExp;
     InstNode scope;
-    Integer propagatedDims;
+    Integer propagatedLevels;
     SourceInfo info;
   end RAW_BINDING;
 
@@ -55,7 +55,7 @@ public
     Expression bindingExp;
     Boolean isProcessing;
     InstNode scope;
-    Integer propagatedDims;
+    Integer propagatedLevels;
     SourceInfo info;
   end UNTYPED_BINDING;
 
@@ -63,7 +63,7 @@ public
     Expression bindingExp;
     Type bindingType;
     DAE.Const variability;
-    Integer propagatedDims;
+    Integer propagatedLevels;
     SourceInfo info;
   end TYPED_BINDING;
 
@@ -71,7 +71,6 @@ public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
     input SCode.Each eachPrefix;
-    input Integer dimensions;
     input InstNode scope;
     input SourceInfo info;
     output Binding binding;
@@ -83,7 +82,7 @@ public
 
       case SOME(exp)
         algorithm
-          pd := if SCode.eachBool(eachPrefix) then -1 else dimensions;
+          pd := if SCode.eachBool(eachPrefix) then -1 else 0;
         then
           RAW_BINDING(exp, scope, pd, info);
 
@@ -175,9 +174,9 @@ public
     output Boolean isEach;
   algorithm
     isEach := match binding
-      case RAW_BINDING() then binding.propagatedDims == -1;
-      case UNTYPED_BINDING() then binding.propagatedDims == -1;
-      case TYPED_BINDING() then binding.propagatedDims == -1;
+      case RAW_BINDING() then binding.propagatedLevels == -1;
+      case UNTYPED_BINDING() then binding.propagatedLevels == -1;
+      case TYPED_BINDING() then binding.propagatedLevels == -1;
       else false;
     end match;
   end isEach;

@@ -2234,19 +2234,33 @@ algorithm
     local
       MatchKind ty_match;
       Expression exp;
-      Type ty;
+      Type ty, comp_ty;
+      InstNode parent;
+      list<Dimension> dims;
 
     case Binding.TYPED_BINDING()
       algorithm
-        (exp, ty, ty_match) := matchTypes(binding.bindingType, componentType, binding.bindingExp);
+        comp_ty := componentType;
+
+        if binding.propagatedLevels > 0 then
+          parent := component;
+
+          for i in 1:binding.propagatedLevels loop
+            parent := InstNode.parent(parent);
+            dims := Type.arrayDims(InstNode.getType(parent));
+            comp_ty := Type.liftArrayLeftList(comp_ty, dims);
+          end for;
+        end if;
+
+        (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp);
 
         if not isCompatibleMatch(ty_match) then
           Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-            {InstNode.name(component), Binding.toString(binding), Type.toString(componentType),
+            {InstNode.name(component), Binding.toString(binding), Type.toString(comp_ty),
              Type.toString(binding.bindingType)}, binding.info);
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.propagatedDims, binding.info);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.propagatedLevels, binding.info);
         end if;
       then
         ();
