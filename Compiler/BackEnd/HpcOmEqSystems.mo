@@ -509,12 +509,12 @@ algorithm
 
    // handle the strongComponent (system of equations) to solve the tearing vars
    (compsEqSys,resEqsOut,tVarsOut,addEqLst,addVarLst) := buildEqSystemComponent(resEqIdcs0,tVarIdcs0,resEqsOut,tVarsOut,a_iArr,ishared);
-   (resEqsOut,_) := BackendVarTransform.replaceEquations(hs,derRepl,NONE());//introduce der(.) for $DER.i
-       //BackendDump.dumpComponents(compsEqSys);
-       //BackendDump.dumpVarList(tVarsOut,"tVarsOut");
-       //BackendDump.dumpEquationList(resEqsOut,"resEqsOut");
-       //BackendDump.dumpVarList(addVarLst,"addVarLst");
-      //BackendDump.dumpEquationList(addEqLst,"addEqLst");
+   (resEqsOut,_) := BackendVarTransform.replaceEquations(resEqsOut,derRepl,NONE());//introduce der(.) for $DER.i
+     //BackendDump.dumpComponents(compsEqSys);
+     //BackendDump.dumpVarList(tVarsOut,"tVarsOut");
+     //BackendDump.dumpEquationList(resEqsOut,"resEqsOut");
+     //BackendDump.dumpVarList(addVarLst,"addVarLst");
+     //BackendDump.dumpEquationList(addEqLst,"addEqLst");
 
    eqsNewOut := listAppend(eqsNewOut,addEqLst);
    varsNewOut := listAppend(varsNewOut,addVarLst);
