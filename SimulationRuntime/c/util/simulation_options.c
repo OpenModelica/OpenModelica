@@ -112,6 +112,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NOEVENTEMIT */                  "noEventEmit",
   /* FLAG_NO_RESTART */                   "noRestart",
   /* FLAG_NO_ROOTFINDING */               "noRootFinding",
+  /* FLAG_NO_SCALING */                   "noScaling",
   /* FLAG_NO_SUPPRESS_ALG */              "noSuppressAlg",
   /* FLAG_OPTDEBUGEJAC */                 "optDebugJac",
   /* FLAG_OPTIMIZER_NP */                 "optimizerNP",
@@ -214,6 +215,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEVENTEMIT */                  "do not emit event points to the result file",
   /* FLAG_NO_RESTART */                   "disables the restart of the integration method after an event is performed, used by the methods: dassl, ida",
   /* FLAG_NO_ROOTFINDING */               "disables the internal root finding procedure of methods: dassl and ida.",
+  /* FLAG_NO_SCALING */                   "disables scaling for the variables and the residuals in the algebraic nonlinear solver kinsol.",
   /* FLAG_NO_SUPPRESS_ALG */              "flag to not suppress algebraic variables in the local error test of ida solver in daeMode",
   /* FLAG_OPTDEBUGEJAC */                 "value specifies the number of iter from the dyn. optimization, which will be debug, creating *csv and *py file",
   /* FLAG_OPTIMIZER_NP */                 "value specifies the number of points in a subinterval",
@@ -445,6 +447,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Disables the restart of the integration method after an event is performed, used by the methods: dassl, ida",
   /* FLAG_NO_ROOTFINDING */
   "  Disables the internal root finding procedure of methods: dassl and ida.",
+  /* FLAG_NO_SCALING */
+  "  Disables scaling for the variables and the residuals in the algebraic nonlinear solver kinsol.",
   /* FLAG_NO_SUPPRESS_ALG */
   "  flag to not suppress algebraic variables in the local error test of the ida solver in daeMode.\n"
   "  In general, the use of this option is discouraged when solving DAE systems of index 1,\n"
@@ -575,6 +579,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NOEQUIDISTANT_OUT_TIME*/        FLAG_TYPE_OPTION,
   /* FLAG_NO_RESTART */                   FLAG_TYPE_FLAG,
   /* FLAG_NO_ROOTFINDING */               FLAG_TYPE_FLAG,
+  /* FLAG_NO_SCALING */                   FLAG_TYPE_FLAG,
   /* FLAG_NO_SUPPRESS_ALG */              FLAG_TYPE_FLAG,
   /* FLAG_NOEVENTEMIT */                  FLAG_TYPE_FLAG,
   /* FLAG_OPTDEBUGEJAC */                 FLAG_TYPE_OPTION,

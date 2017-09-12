@@ -35,6 +35,7 @@
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
 #include "simulation/simulation_info_json.h"
+#include "simulation/options.h"
 #include "util/omc_error.h"
 #include "omc_math.h"
 
@@ -687,12 +688,19 @@ void nlsKinsolXScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double *xScaling = NV_DATA_S(kinsolData->xScale);
   int i;
+
+  /* if noScaling flag is used overwrite mode */
+  if (omc_flag[FLAG_NO_SCALING])
+  {
+    mode = SCALING_ONES;
+  }
+
   /* Use nominal value or the actual working point for scaling */
   switch (mode)
   {
     case SCALING_NOMINALSTART:
       for (i=0;i<nlsData->size;i++){
-        xScaling[i] = 1/fmax(nlsData->nominal[i],fabs(xStart[i]));
+        xScaling[i] = 1.0/fmax(nlsData->nominal[i],fabs(xStart[i]));
       }
       break;
     case SCALING_ONES:
@@ -708,6 +716,13 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
   N_Vector x = kinsolData->initialGuess;
   int i,j;
   SlsMat spJac;
+
+  /* if noScaling flag is used overwrite mode */
+  if (omc_flag[FLAG_NO_SCALING])
+  {
+    mode = SCALING_ONES;
+  }
+
   /* Use nominal value or the actual working point for scaling */
   switch (mode)
   {
@@ -799,6 +814,7 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
   double fNorm;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
   double *xScaling = NV_DATA_S(kinsolData->xScale);
+  long outL;
 
   /* check what kind of error
    *   retValue < 0 -> a non recoverable issue
@@ -852,6 +868,11 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     {
       retValue = 1;
     }
+    break;
+  case KIN_LINESEARCH_BCFAIL:
+    KINGetNumBetaCondFails(kinsolData->kinsolMemory, &outL);
+    warningStreamPrint(LOG_NLS, 0, "kinsols runs into issues with beta-condition fails: %ld\n", outL);
+    retValue = 1;
     break;
   default:
     errorStreamPrint(LOG_STDOUT, 0, "kinsol has a serious solving issue ERROR %d\n", errorCode);
@@ -995,7 +1016,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
   {
     /* check if solution really solves the residuals */
     nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes, &kinsolData->userData);
-    fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fRes);
+    fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fScale);
     infoStreamPrint(LOG_NLS, 0, "scaled Euclidean norm of F(u) = %e", fNormValue);
     if (FTOL_WITH_LESS_ACCURANCY<fNormValue)
     {
