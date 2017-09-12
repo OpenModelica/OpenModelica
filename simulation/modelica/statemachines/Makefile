@@ -16,6 +16,7 @@ EnteringByReset.mos \
 FAILINGTESTFILES = \
 SingleState.mos \
 AccessFromOutside.mos \
+ConferenceTut1DeadEnd.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
