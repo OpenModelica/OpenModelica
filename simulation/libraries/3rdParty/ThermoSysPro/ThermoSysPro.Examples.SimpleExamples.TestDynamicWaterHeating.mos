@@ -212,37 +212,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed at time 425.982.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | Solving non-linear system 4308 failed at time=425.982.
-// |                 | |       | For more information please use -lv LOG_NLS.
 // stdout            | warning | While solving non-linear system an assertion failed at time 409.598.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed at time 409.598.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | Solving non-linear system 4308 failed at time=409.598.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// stdout            | warning | While solving non-linear system an assertion failed at time 507.382.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_functions.c:5039: Invalid root: (-0.000337341)^(-0.5)
-// assert            | debug   | ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_functions.c:5039: Invalid root: (-0.000337353)^(-0.5)
-// stdout            | warning | While solving non-linear system an assertion failed at time 507.382.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed at time 507.382.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// stdout            | warning | While solving non-linear system an assertion failed at time 507.382.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS

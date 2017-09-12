@@ -622,7 +622,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// post-optimization module calculateStrongComponentJacobians (initialization)
+// post-optimization module solveSimpleEquations (initialization)
 // ########################################
 //
 //
@@ -638,9 +638,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic]
-// 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic]
-// 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic]
+// 1/1 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic]
+// 2/2 (1): y = (-x ^ 3.0) ^ 0.3333333333333333   [dynamic]
+// 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -724,7 +724,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// post-optimization module solveSimpleEquations (initialization)
+// post-optimization module calculateStrongComponentJacobians (initialization)
 // ########################################
 //
 //

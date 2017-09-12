@@ -34,6 +34,35 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // Final Results
 // ###############################################################
 //
+// ########### Updated Variable List (jacobian) (2)
+// ========================================
+// 1: $res.1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real  unreplaceable
+// 2: $cse1:VARIABLE()  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (2, 2)
+// ========================================
+// 1/1 (1): $res.1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * ySeedNLSJac0   [dynamic]
+// 2/2 (1): $cse1 = cos(y)   [unknown]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (3)
+// ========================================
+// 1: input ySeedNLSJac0:STATE_DER()  type: Real 
+// 2: input x:VARIABLE()  type: Real 
+// 3: input $res[1]:VARIABLE()  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse1 - cos(y) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
 // ########### Updated Variable List (simulation) (1)
 // ========================================
 // 1: y:VARIABLE()  type: Real 
@@ -69,26 +98,26 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
-// 1: $res.1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: $cse1:VARIABLE()  type: Real  unreplaceable
+// 1: $res.1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 2: $cse2:VARIABLE()  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)
 // ========================================
-// 1/1 (1): $res.1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * ySeedNLSJac0   [unknown]
-// 2/2 (1): $cse1 = cos(y)   [unknown]
+// 1/1 (1): $res.1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse2) * ySeedNLSJac1   [unknown]
+// 2/2 (1): $cse2 = cos(y)   [unknown]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: input ySeedNLSJac0:STATE_DER()  type: Real 
+// 1: input ySeedNLSJac1:STATE_DER()  type: Real 
 // 2: input x:VARIABLE(fixed = true )  = cos(z)  type: Real 
 // 3: input $res[1]:VARIABLE()  type: Real 
 //
 //
 // ########### CSE Replacements (1/43)
 // ========================================
-// 1: $cse1 - cos(y) - {}
+// 1: $cse2 - cos(y) - {}
 // record SimulationResult
 //     resultFile = "CSE.wrapFunctionCalls11_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
