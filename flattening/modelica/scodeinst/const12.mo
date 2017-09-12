@@ -1,9 +1,8 @@
-// name: const12.mo
+// name: const12
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
-// FAILREASON: Subscripted types not handled yet.
 //
 
 package A
@@ -20,17 +19,8 @@ model B
 end B;
 
 // Result:
-//
-// EXPANDED FORM:
-//
 // class B
-//   Real x = {1,2,3};
-// end B;
-//
-//
-// Found 1 components and 0 parameters.
-// class B
-//   constant Integer j = 2;
-//   Real x = 2.0;
+//   constant Integer j = A.m[1].i[2];
+//   Real x = /*Real*/(j);
 // end B;
 // endResult

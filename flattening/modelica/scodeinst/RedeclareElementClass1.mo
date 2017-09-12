@@ -19,3 +19,9 @@ model RedeclareElementClass1
     Real x = 2.0;
   end B;
 end RedeclareElementClass1;
+
+// Result:
+// class RedeclareElementClass1
+//   Real b.x = 2.0;
+// end RedeclareElementClass1;
+// endResult

@@ -11,11 +11,9 @@ model Range1
 end Range1;
 
 // Result:
-// Error processing file: Range1.mo
-// [flattening/modelica/scodeinst/Range1.mo:10:3-10:28:writable] Error: Expected E to be a component, but found class instead.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class Range1
+//   enumeration(one, two, three) x[E.one] = E.one;
+//   enumeration(one, two, three) x[E.two] = E.two;
+//   enumeration(one, two, three) x[E.three] = E.three;
+// end Range1;
 // endResult

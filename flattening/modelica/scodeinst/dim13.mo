@@ -1,7 +1,7 @@
-// name: dim13.mo
+// name: dim13
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 
 

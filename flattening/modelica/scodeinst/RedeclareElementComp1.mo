@@ -15,7 +15,7 @@ model RedeclareElementComp1
 end RedeclareElementComp1;  
 
 // Result:
-// class B
-//   Real m.y;
-// end B;
+// class RedeclareElementComp1
+//   Real x = 2.0;
+// end RedeclareElementComp1;
 // endResult

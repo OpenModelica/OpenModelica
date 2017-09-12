@@ -1,7 +1,7 @@
-// name: dim16.mo
+// name: dim16
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 
 model B

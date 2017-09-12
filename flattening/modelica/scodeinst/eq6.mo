@@ -24,8 +24,8 @@ end B;
 //   Real a[2].x;
 //   Real a[3].x;
 // equation
-//   a[1].x = 2.0;
-//   a[2].x = 2.0;
-//   a[3].x = 2.0;
+//   a[1].x = P[1].i;
+//   a[2].x = P[2].i;
+//   a[3].x = P[3].i;
 // end B;
 // endResult
