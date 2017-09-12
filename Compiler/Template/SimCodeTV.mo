@@ -3513,6 +3513,13 @@ package DAEUtil
 
 end DAEUtil;
 
+package BackendDAEUtil
+  function isInitOptModuleActivated
+    input String initOptModule;
+    output Boolean isActivated;
+  end isInitOptModuleActivated;
+end BackendDAEUtil;
+
 package Types
   function getDimensionSizes
     input DAE.Type inType;

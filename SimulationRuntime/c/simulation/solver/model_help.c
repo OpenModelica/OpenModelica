@@ -64,6 +64,18 @@ int compiledInDAEMode = 0;
 int compiledWithSymSolver = 0;
 double numericalDifferentiationDeltaXlinearize = 1e-8;
 double numericalDifferentiationDeltaXsolver = 1e-8;
+double homAdaptBend = 0.5;
+double homHEps = 1e-5;
+int homMaxLambdaSteps = 0;
+int homMaxNewtonSteps = 20;
+int homMaxTries = 10;
+double homTauDecreasingFactor = 10.0;
+double homTauDecreasingFactorPredictor = 2.0;
+double homTauIncreasingFactor = 2.0;
+double homTauIncreasingThreshold = 10.0;
+double homTauMax = 10.0;
+double homTauMin = 1e-4;
+double homTauStart = 0.2;
 
 static double tolZC;
 

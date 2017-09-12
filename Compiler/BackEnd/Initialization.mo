@@ -95,10 +95,11 @@ protected
   BackendDAE.Variables vars, fixvars;
   Boolean b, b1, b2, useHomotopy;
   String msg;
+  list<String> disabledModules;
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2, outAllPrimaryParameters;
-  list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules, initOptModulesLambda0;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
@@ -220,7 +221,17 @@ algorithm
     if not stringEq(Config.simCodeTarget(), "Cpp") then
       initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, outGlobalKnownVars);
     end if;
-    initOptModules := BackendDAEUtil.getInitOptModules(NONE());
+
+    if useHomotopy then
+      disabledModules := {};
+    else
+      disabledModules := {"inlineHomotopy", "generateHomotopyComponents"};
+    end if;
+
+    initOptModules := BackendDAEUtil.getInitOptModules(NONE(), {}, disabledModules);
+    if BackendDAEUtil.isInitOptModuleActivated("generateHomotopyComponents", initOptModules) and not BackendDAEUtil.isInitOptModuleActivated("inlineHomotopy", initOptModules) then
+      initOptModules := (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy")::initOptModules;
+    end if;
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(SOME("none"));
     initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
@@ -234,8 +245,9 @@ algorithm
 
     // compute system for lambda=0
     if useHomotopy and stringEq(Flags.getConfigString(Flags.HOMOTOPY_APPROACH), "global") then
+      initOptModulesLambda0 := BackendDAEUtil.getInitOptModules(NONE(),{"replaceHomotopyWithSimplified"},{"inlineHomotopy", "generateHomotopyComponents"});
       initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
-      initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, (replaceHomotopyWithSimplified, "replaceHomotopyWithSimplified")::initOptModules, matchingAlgorithm, daeHandler);
+      initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, initOptModulesLambda0, matchingAlgorithm, daeHandler);
       outInitDAE_lambda0 := SOME(initdae0);
       initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared));
     else
@@ -2596,7 +2608,7 @@ end removeInitializationStuff2;
 //
 // =============================================================================
 
-protected function replaceHomotopyWithSimplified
+public function replaceHomotopyWithSimplified
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
 algorithm

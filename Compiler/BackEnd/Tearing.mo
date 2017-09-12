@@ -309,7 +309,7 @@ algorithm
       Boolean mixedSystem;
 
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
-      true = getLinearfromJacType(jacType);
+      true = BackendDAEUtil.getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
         if debugFlag then
@@ -338,7 +338,7 @@ algorithm
 
     // tearing of non-linear systems
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
-      false = getLinearfromJacType(jacType);
+      false = BackendDAEUtil.getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
         if debugFlag then
@@ -1605,7 +1605,7 @@ algorithm
         varindxarr = listArray(vindx);
         ovars = List.map1r(tvars,arrayGet,varindxarr);
         innerEquations = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
-        linear = getLinearfromJacType(jacType);
+        linear = BackendDAEUtil.getLinearfromJacType(jacType);
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1657,24 +1657,6 @@ algorithm
 end omcTearing4_1;
 
 
-protected function getLinearfromJacType "  author: Frenkel TUD 2012-09"
-  input BackendDAE.JacobianType jacType;
-  output Boolean linear;
-algorithm
-  linear := match(jacType)
-    case (BackendDAE.JAC_CONSTANT()) then true;
-    case (BackendDAE.JAC_LINEAR()) then true;
-    case (BackendDAE.JAC_NONLINEAR()) then false;
-    case (BackendDAE.JAC_NO_ANALYTIC()) then false;
-  end match;
-end getLinearfromJacType;
-
-
-
-
-
-
-
 // =============================================================================
 //
 // Tearing from Book of Cellier
@@ -1718,7 +1700,7 @@ protected
   String s,modelName;
   constant Boolean debug = false;
 algorithm
-  linear := getLinearfromJacType(jacType);
+  linear := BackendDAEUtil.getLinearfromJacType(jacType);
   BackendDAE.EQSYSTEM(stateSets = stateSets) := isyst;
   noDynamicStateSelection := listEmpty(stateSets);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
@@ -4286,7 +4268,7 @@ protected
   list<list<Integer>> powerSet={};
   list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
 algorithm
-  linear := getLinearfromJacType(jacType);
+  linear := BackendDAEUtil.getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -4626,7 +4608,7 @@ protected
   String modelName;
 algorithm
 
-  linear := getLinearfromJacType(jacType);
+  linear := BackendDAEUtil.getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
 
   // Generate Subsystem to get the incidence matrix

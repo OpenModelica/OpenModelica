@@ -1117,7 +1117,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
-       <%if listEmpty(initialEquations_lambda0) then '0' else '1'%>,
+       <%if listEmpty(initialEquations_lambda0) then '0' else if not BackendDAEUtil.isInitOptModuleActivated("generateHomotopyComponents") then '1' else '2'%>, /* useHomotopy - 0: no homotopy or local homotopy, 1: global homotopy, 2: new global homotopy approach */
        <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
@@ -1152,14 +1152,12 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
-       <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>
+       <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
        #ifdef FMU_EXPERIMENTAL
-       ,<%symbolName(modelNamePrefixStr,"functionODE_Partial")%>
-       ,<%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>
+       <%symbolName(modelNamePrefixStr,"functionODE_Partial")%>,
+       <%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>,
        #endif
-       ,<%symbolName(modelNamePrefixStr,"inputNames")%>
-
-    <%\n%>
+       <%symbolName(modelNamePrefixStr,"inputNames")%>
     };
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, delayedExps, modelNamePrefixStr, isModelExchangeFMU)%>
