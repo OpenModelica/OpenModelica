@@ -28,6 +28,7 @@ InheritanceProtected.mo \
 InheritancePublic.mo \
 InheritanceSeveral.mo \
 InheritanceSimple.mo \
+InheritedFullyQualifiedName.mo \
 InvalidComponentExtends1.mo \
 InvalidComponentExtends2.mo \
 InvalidInheritedExtends1.mo \
