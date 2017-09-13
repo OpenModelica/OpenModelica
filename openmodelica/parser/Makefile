@@ -24,6 +24,7 @@ DotName.mos \
 EmptyWithin.mo \
 Identifier.mo \
 IfElseIf.mo \
+ImportFullyQualified.mo \
 InvalidPartialFunction.mo \
 MetaModelicaMatchElse.mo \
 MetaModelicaStringOpModelicaLexer.mo \
