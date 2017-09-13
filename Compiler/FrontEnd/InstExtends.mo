@@ -1500,6 +1500,12 @@ algorithm
       SCode.Element c;
       Boolean isOutside;
 
+    case (env, Absyn.CREF_FULLYQUALIFIED())
+      algorithm
+        env := FGraph.topScope(inEnv);
+      then
+        fixCref(cache, env, inCref.componentRef, tree);
+
     case (env,cref)
       algorithm
         id := Absyn.crefFirstIdent(cref);
