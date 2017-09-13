@@ -1383,16 +1383,6 @@ name_path2 returns [void* ast]
   ;
 
 name_path_star returns [void* ast, int unqual, void* lst]
-@init{ dot = 0; np.lst = 0; np.unqual = 0; } :
-  (dot=DOT)? np=name_path_star2
-  {
-    $ast = dot ? Absyn__FULLYQUALIFIED(np.ast) : np.ast;
-    $unqual = np.unqual;
-    $lst = np.lst;
-  }
-  ;
-
-name_path_star2 returns [void* ast, int unqual, void* lst]
 @init{ id = 0; uq = 0; mlst = 0; p.ast = 0; p.lst = 0; } :
     { LA(2) != DOT || LA(3) == LBRACE }? (id=IDENT|id=CODE) ( uq=STAR_EW | DOT LBRACE mlst=name_path_group RBRACE )?
     {
@@ -1400,7 +1390,7 @@ name_path_star2 returns [void* ast, int unqual, void* lst]
       $unqual = uq != 0;
       $lst = mlst;
     }
-  | (id=IDENT|id=CODE) DOT p=name_path_star2
+  | (id=IDENT|id=CODE) DOT p=name_path_star
     {
       $ast = Absyn__QUALIFIED(token_to_scon(id),p.ast);
       $unqual = p.unqual;
