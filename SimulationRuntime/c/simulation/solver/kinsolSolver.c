@@ -99,6 +99,7 @@ typedef struct NLS_KINSOL_DATA
   int kinsolStrategy;
   int retries;
   int solved;                 /* if the system is once solved reuse linear matrix information */
+  int nominalJac;
 
   /* ### tolerances ### */
   double fnormtol;        /* function tolerance */
@@ -190,6 +191,7 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
   kinsolData->scsteptol = newtonXTol;     /* step tolerance */
 
   kinsolData->maxstepfactor = maxStepFactor;     /* step tolerance */
+  kinsolData->nominalJac = 0;             /* calculate for scaling the scaled matrix */
 
   kinsolData->initialGuess = N_VNew_Serial(size);
   kinsolData->xScale = N_VNew_Serial(size);
@@ -368,7 +370,12 @@ int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, DlsMat Jac, void *use
 
     for(j = 0; j < N; j++)
     {
-      DENSE_ELEM(Jac, j, i) = (fRes[j] - fx[j]) * delta_hh;
+      if (kinsolData->nominalJac){
+        DENSE_ELEM(Jac, j, i) = (fRes[j] - fx[j]) * delta_hh  / xScaling[i];
+      }else{
+        DENSE_ELEM(Jac, j, i) = (fRes[j] - fx[j]) * delta_hh;
+      }
+
     }
     x[i] = xsave;
   }
@@ -474,7 +481,11 @@ int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N_Ve
         while(nth < sparsePattern->leadindex[ii+1])
         {
           j  =  sparsePattern->index[nth];
-          setJacElementKluSparse(j, ii, (fRes[j] - fx[j]) * delta_hh[ii], nth, Jac);
+          if (kinsolData->nominalJac){
+            setJacElementKluSparse(j, ii, (fRes[j] - fx[j]) * delta_hh[ii] / xScaling[ii], nth, Jac);
+          }else{
+            setJacElementKluSparse(j, ii, (fRes[j] - fx[j]) * delta_hh[ii], nth, Jac);
+          }
           nth++;
         };
         x[ii] = xsave[ii];
@@ -520,6 +531,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N
   /* prepare variables */
   double *x = N_VGetArrayPointer(vecX);
   double *fx = N_VGetArrayPointer(vecFX);
+  double *xScaling = NV_DATA_S(kinsolData->xScale);
 
   SPARSE_PATTERN* sparsePattern = &(nlsData->sparsePattern);
   ANALYTIC_JACOBIAN* analyticJacobian = &data->simulationInfo->analyticJacobians[nlsData->jacobianIndex];
@@ -534,16 +546,13 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N
   /* reset matrix */
   SlsSetToZero(Jac);
 
-  /* update x for the matrix */
-  nlsKinsolResiduals(vecX, vecFX, userData);
-
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
     for(ii=0; ii < kinsolData->size; ii++)
     {
       if(sparsePattern->colorCols[ii]-1 == i)
       {
-        analyticJacobian->seedVars[ii] = 1;
+        analyticJacobian->seedVars[ii] = 1.0;
       }
     }
     ((nlsData->analyticalJacobianColumn))(data, threadData);
@@ -556,7 +565,11 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N
         while(nth < sparsePattern->leadindex[ii+1])
         {
           j  =  sparsePattern->index[nth];
-          setJacElementKluSparse(j, ii, analyticJacobian->resultVars[j], nth, Jac);
+          if (kinsolData->nominalJac){
+            setJacElementKluSparse(j, ii, analyticJacobian->resultVars[j] / xScaling[ii] , nth, Jac);
+          }else{
+            setJacElementKluSparse(j, ii, analyticJacobian->resultVars[j], nth, Jac);
+          }
           nth++;
         };
         analyticJacobian->seedVars[ii] = 0;
@@ -731,6 +744,12 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
       N_Vector tmp1 = N_VNew_Serial(kinsolData->size);
       N_Vector tmp2 = N_VNew_Serial(kinsolData->size);
 
+      /* enable scaled jacobian */
+      kinsolData->nominalJac = 1;
+
+      /* update x for the matrix */
+      nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
+
       /* calculate the right jacobian */
       if(nlsData->isPatternAvailable && kinsolData->linearSolverMethod == 3)
       {
@@ -747,15 +766,10 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
         nlsDenseJac(nlsData->size, x, kinsolData->fTmp, denseJac, &kinsolData->userData, tmp1, tmp2);
         spJac = SlsConvertDls(denseJac);
       }
+      /* disable scaled jacobian */
+      kinsolData->nominalJac = 0;
 
-      /* debug */
-      if (ACTIVE_STREAM(LOG_NLS_JAC)){
-        infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Matrix for F-Scaling:");
-        PrintSparseMat(spJac);
-        messageClose(LOG_NLS_JAC);
-      }
-
-      _omc_fillVector(_omc_createVector(nlsData->size,fScaling), 1.);
+      _omc_fillVector(_omc_createVector(nlsData->size,fScaling), 1e-12);
       for(i=0; i<spJac->NNZ; ++i){
         if (fScaling[spJac->rowvals[i]] < fabs(spJac->data[i])){
           fScaling[spJac->rowvals[i]] = fabs(spJac->data[i]);
@@ -1016,7 +1030,9 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
   {
     /* check if solution really solves the residuals */
     nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes, &kinsolData->userData);
-    fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fScale);
+    N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
+    fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fRes);
+
     infoStreamPrint(LOG_NLS, 0, "scaled Euclidean norm of F(u) = %e", fNormValue);
     if (FTOL_WITH_LESS_ACCURANCY<fNormValue)
     {
