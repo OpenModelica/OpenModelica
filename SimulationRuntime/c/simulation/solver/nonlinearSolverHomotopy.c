@@ -620,7 +620,8 @@ void vecDivScaling(int n, double *a, double *b, double *c)
 {
   int i;
   for (i=0;i<n;i++)
-    c[i] = a[i]/fmax(1.0,fabs(b[i]));
+    c[i] = a[i]/fabs(b[i]);
+    // c[i] = a[i]/fmax(1.0,fabs(b[i]));
 }
 
 void vecNormalize(int n, double *a, double *b)
@@ -722,14 +723,16 @@ void scaleMatrixRows(int n, int m, double *A)
   int i, j;
   double rowMax;
   for (i=0;i<n;i++) {
-    rowMax = delta; /* This might be changed to smaller number */
-    for (j=0;j<m;j++) {
+    rowMax = 0; /* This might be changed to delta */
+    for (j=0;j<n;j++) {
       if (fabs(A[i+j*(m-1)]) > rowMax) {
          rowMax = fabs(A[i+j*(m-1)]);
       }
     }
-    for (j=0;j<m;j++)
-      A[i+j*(m-1)] /= rowMax;
+    if (rowMax>0) {
+      for (j=0;j<m;j++)
+        A[i+j*(m-1)] /= rowMax;
+    }
   }
 }
 
@@ -1465,7 +1468,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       );
     }
 #endif
-    if ((error_f_sqrd_scaled < 1e-30*error_f_sqrd) || countNegativeSteps > 20)
+    if (countNegativeSteps > 20)
     {
       debugInt(LOG_NLS_V,"UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
