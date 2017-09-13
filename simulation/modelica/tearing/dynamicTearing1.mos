@@ -596,8 +596,6 @@ val(z2,1.1); getErrorString();
 // LOG_DT            | info    | Constraints of the casual tearing set are violated! Now the strict tearing set is used.
 // LOG_DT            | info    | Solving nonlinear system 18 (STRICT TEARING SET if tearing enabled) at time =   1.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 33 (CASUAL TEARING SET, strict: 28) at time =   1.0000000000e+00
-// LOG_DT            | info    | The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...
-// LOG_DT            | info    | It is not the solution.
 // LOG_DT            | info    | Solving the casual tearing set failed! Now the strict tearing set is used.
 // LOG_DT            | info    | Solving nonlinear system 28 (STRICT TEARING SET if tearing enabled) at time =   1.0000000000e+00
 // LOG_DT            | info    | Solving nonlinear system 23 (CASUAL TEARING SET, strict: 18) at time =   1.0040000000e+00

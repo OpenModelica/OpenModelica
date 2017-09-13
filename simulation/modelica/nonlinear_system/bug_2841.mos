@@ -81,13 +81,13 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | function values: [2-dim]
 // |                 | |       | |      -0.35724392       0.25583073 
 // LOG_NLS_V         | info    | scaled function values: [2-dim]
-// |                 | |       | |      -0.17862196       0.25583073 
+// |                 | |       | |      -0.17862196       0.32849316 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.5510381250e+05
-// LOG_NLS_V         | info    | delta_x_scaled =   2.5510381250e+00
+// LOG_NLS_V         | info    | delta_x_scaled =   2.6029017761e+00
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   4.3940025040e-01
-// LOG_NLS_V         | info    | error_f_scaled =   3.1201789440e-01
+// LOG_NLS_V         | info    | error_f_scaled =   3.7391651425e-01
 // LOG_NLS_V         | info    | newtonFTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | Iteration: 2
 // LOG_NLS_V         | info    | newton step
@@ -105,7 +105,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |     -0.012979095     -0.023836877 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.9711975486e+04
-// LOG_NLS_V         | info    | delta_x_scaled =   2.9711975486e-01
+// LOG_NLS_V         | info    | delta_x_scaled =   3.2668067324e-01
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   8.9380216642e-02
 // LOG_NLS_V         | info    | error_f_scaled =   2.7141364009e-02
@@ -126,7 +126,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |    0.00038176671    0.00055228655 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   3.8894602256e+03
-// LOG_NLS_V         | info    | delta_x_scaled =   3.8894602256e-02
+// LOG_NLS_V         | info    | delta_x_scaled =   3.9405401054e-02
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   2.2072982312e-03
 // LOG_NLS_V         | info    | error_f_scaled =   6.7139128116e-04
@@ -147,7 +147,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |    2.4931307e-07    2.6503402e-07 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   6.2746972448e+01
-// LOG_NLS_V         | info    | delta_x_scaled =   6.2746972448e-04
+// LOG_NLS_V         | info    | delta_x_scaled =   6.9380430845e-04
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   1.4052454980e-06
 // LOG_NLS_V         | info    | error_f_scaled =   3.6386816259e-07
@@ -168,7 +168,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |    1.0271701e-13     8.595627e-14 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   2.7596879198e-02
-// LOG_NLS_V         | info    | delta_x_scaled =   2.7596879199e-07
+// LOG_NLS_V         | info    | delta_x_scaled =   3.6775904375e-07
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   5.5523886249e-13
 // LOG_NLS_V         | info    | error_f_scaled =   1.3393753756e-13
@@ -189,7 +189,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |                0   -4.6312676e-17 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   7.4635040900e-09
-// LOG_NLS_V         | info    | delta_x_scaled =   7.4635040908e-14
+// LOG_NLS_V         | info    | delta_x_scaled =   1.3268481481e-13
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   1.1102230246e-16
 // LOG_NLS_V         | info    | error_f_scaled =   4.6312676255e-17
@@ -259,7 +259,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |    8.8472946e-17    9.2625353e-17 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   7.7595205169e-12
-// LOG_NLS_V         | info    | delta_x_scaled =   7.7595205169e-17
+// LOG_NLS_V         | info    | delta_x_scaled =   7.9960543487e-17
 // LOG_NLS_V         | info    | newtonXTol          =   1.0000000000e-12
 // LOG_NLS_V         | info    | error_f        =   4.9650683065e-16
 // LOG_NLS_V         | info    | error_f_scaled =   1.2808949265e-16
