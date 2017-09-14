@@ -173,7 +173,7 @@ algorithm
     if Expression.isConst(e) then
       eOut := e;
     elseif Expression.isCref(e) then
-      eOut := getConstCrefBinding(cr,vars);
+      eOut := getConstCrefBinding(Expression.expCref(e),vars);
     else
       Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ExpressionDump.printExpStr(e)+"\n", sourceInfo());
     end if;
