@@ -2643,9 +2643,12 @@ int System_getTerminalWidth(void)
 
 #include "simulation_options.h"
 
+#define SB_SIZE 8192*2
+#define SB_SIZE_MINUS_ONE (SB_SIZE-1)
+
 char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 {
-  static char buf[8192];
+  static char buf[SB_SIZE];
   int i,j;
   const char **desc = detailed ? FLAG_DETAILED_DESC : FLAG_DESC;
   char *cur = buf;
@@ -2653,13 +2656,13 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
   for(i=1; i<FLAG_MAX; ++i)
   {
     if (sphinx) {
-      cur += snprintf(cur, 8191-(buf-cur), "\n.. _simflag-%s :\n\n", FLAG_NAME[i]);
+      cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "\n.. _simflag-%s :\n\n", FLAG_NAME[i]);
     }
     if (FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
       if (sphinx) {
-        cur += snprintf(cur, 8191-(buf-cur), ":ref:`-%s <simflag-%s>`\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), ":ref:`-%s <simflag-%s>`\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
-        cur += snprintf(cur, 8191-(buf-cur), "<-%s>\n%s\n", FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "<-%s>\n%s\n", FLAG_NAME[i], desc[i]);
       }
     } else if (FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
       int numExtraFlags=0;
@@ -2667,9 +2670,9 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       const char **flagName;
       const char **flagDesc;
       if (sphinx) {
-        cur += snprintf(cur, 8191-(buf-cur), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
-        cur += snprintf(cur, 8191-(buf-cur), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       }
 
       switch(i) {
@@ -2712,20 +2715,20 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       }
 
       if (numExtraFlags) {
-        cur += snprintf(cur, 8191-(buf-cur), "\n");
+        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "\n");
         if (flagName) {
           for (j=firstExtraFlag; j<numExtraFlags; j++) {
-            cur += snprintf(cur, 8191-(buf-cur), "  * %s (%s)\n", flagName[j], flagDesc[j]);
+            cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "  * %s (%s)\n", flagName[j], flagDesc[j]);
           }
         } else {
           for (j=firstExtraFlag; j<numExtraFlags; j++) {
-            cur += snprintf(cur, 8191-(buf-cur), "  * %s\n", flagDesc[j]);
+            cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "  * %s\n", flagDesc[j]);
           }
         }
       }
 
     } else {
-      cur += snprintf(cur, 8191-(buf-cur), "[unknown flag-type] <-%s>\n", FLAG_NAME[i]);
+      cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "[unknown flag-type] <-%s>\n", FLAG_NAME[i]);
     }
   }
   *cur = 0;
