@@ -26,6 +26,7 @@ ClassAsComponentError.mo \
 ClassExtends1.mo \
 ClassExtends2.mo \
 ClassExtends3.mo \
+ClassExtends4.mo \
 ClassExtendsBuiltin1.mo \
 ClassExtendsBuiltin2.mo \
 ClassExtendsMissing1.mo \
@@ -188,13 +189,17 @@ mod1.mo \
 mod10.mo \
 mod11.mo \
 mod12.mo \
+mod13.mo \
 mod4.mo \
 mod5.mo \
 mod6.mo \
 mod8.mo \
 mod9.mo \
 ModClass1.mo \
+ModClass2.mo \
 ModClass3.mo \
+ModClass4.mo \
+ModClass5.mo \
 ModClass6.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
@@ -214,10 +219,12 @@ RedeclareElementComp1.mo \
 RedeclareElementMissing1.mo \
 RedeclareElementMissing2.mo \
 redeclare1.mo \
+redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
 redeclare13.mo \
 redeclare2.mo \
+redeclare4.mo \
 redeclare6.mo \
 redeclare7.mo \
 redeclare9.mo \
@@ -251,10 +258,6 @@ DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
 DuplicateElementsValid2.mo \
-ClassExtends4.mo \
-ModClass2.mo \
-ModClass4.mo \
-ModClass5.mo \
 DuplicateElementsCond1.mo \
 ceval4.mo \
 cond1.mo \
@@ -355,7 +358,6 @@ InvalidVariability1.mo \
 InvalidVariability2.mo \
 loop4.mo \
 MissingRedeclare1.mo \
-mod13.mo \
 MultiInheritanceRedeclare1.mo \
 MultiInheritanceRedeclare2.mo \
 noretcall1.mo \
@@ -363,9 +365,7 @@ PartialInst.mo \
 PropagateRedeclareMod1.mo \
 Range1.mo \
 RecursiveExtends2.mo \
-redeclare10.mo \
 redeclare3.mo \
-redeclare4.mo \
 redeclare5.mo \
 redeclare8.mo \
 RedeclaredFunction1.mo \

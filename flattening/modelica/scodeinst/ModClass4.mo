@@ -3,6 +3,7 @@
 // status: correct
 // cflags: -d=newInst
 //
+//
 
 model A
   model B
@@ -30,7 +31,7 @@ end ModClass4;
 // class ModClass4
 //   Real a1.c.x = 1.0;
 //   Real a1.b.c.x = 1.0;
-//   Real a2.c.x = 1.0;
-//   Real a2.b.c.x = 1.0;
+//   Real a2.c.x;
+//   Real a2.b.c.x;
 // end ModClass4;
 // endResult

@@ -1,29 +1,31 @@
-// name: redeclare10.mo
+// name: redeclare10
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
 //
 
 package B
-  constant Real x = 1.0;
-  constant Real y = 3.0;
+  constant Integer x = 1;
+  constant Integer y = 3;
 end B;
 
 model C
   replaceable package A
-    constant Real x = 2.0;
+    constant Integer x = 2;
   end A;
 end C;
 
 model D
   extends C(redeclare package A = B);
 
-  Real x = A.y;
+  Real x[A.y];
 end D;
 
 // Result:
 // class D
-//   Real x = 3.0;
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
 // end D;
 // endResult
