@@ -53,6 +53,8 @@ import List;
 import Types;
 import Operator = NFOperator;
 import Type = NFType;
+import Class = NFClass.Class;
+import ClassTree = NFClassTree;
 
 public
 
@@ -1376,6 +1378,7 @@ algorithm
       Dimension dim1, dim2;
       Type ety1, ety2;
       Boolean compat;
+      InstNode cls;
 
     case Type.INTEGER() then actualType;
     case Type.REAL() then actualType;
@@ -1399,7 +1402,8 @@ algorithm
 
     case Type.COMPLEX()
       algorithm
-        assert(false, getInstanceName() + " IMPLEMENT ME.");
+        (expression, compatibleType, matchKind) :=
+          matchComplexTypes(actualType, expectedType, expression, allowUnknown);
       then
         actualType;
 
@@ -1411,6 +1415,84 @@ algorithm
 
   end match;
 end matchTypes;
+
+function matchComplexTypes
+  input Type actualType;
+  input Type expectedType;
+  input output Expression expression;
+  input Boolean allowUnknown;
+        output Type compatibleType = actualType;
+        output MatchKind matchKind = MatchKind.EXACT;
+protected
+  Class cls1, cls2;
+  InstNode anode, enode;
+  array<InstNode> comps1, comps2;
+  Absyn.Path path;
+  Type ty;
+  Expression e;
+  list<Expression> elements, matched_elements = {};
+  MatchKind mk;
+algorithm
+  Type.COMPLEX(cls = anode) := actualType;
+  Type.COMPLEX(cls = enode) := expectedType;
+  cls1 := InstNode.getClass(anode);
+  cls2 := InstNode.getClass(enode);
+
+  () := match (cls1, cls2, expression)
+    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
+          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)),
+          Expression.RECORD(elements = elements))
+      algorithm
+        if arrayLength(comps1) <> arrayLength(comps2) or
+           arrayLength(comps1) <> listLength(elements) then
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        else
+          for i in 1:arrayLength(comps1) loop
+            e :: elements := elements;
+            (e, _, mk) := matchTypes(InstNode.getType(comps1[i]), InstNode.getType(comps2[i]), e, allowUnknown);
+            matched_elements := e :: matched_elements;
+
+            if mk == MatchKind.CAST then
+              matchKind := mk;
+            elseif mk <> MatchKind.EXACT then
+              matchKind := MatchKind.NOT_COMPATIBLE;
+              break;
+            end if;
+          end for;
+
+          if matchKind == MatchKind.CAST then
+            expression.elements := listReverse(matched_elements);
+          end if;
+        end if;
+      then
+        ();
+
+    case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
+          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _)
+      algorithm
+        if arrayLength(comps1) <> arrayLength(comps2) then
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        else
+          for i in 1:arrayLength(comps1) loop
+            (_, _, mk) := matchTypes(InstNode.getType(comps1[i]), InstNode.getType(comps2[i]), expression, allowUnknown);
+
+            if mk <> MatchKind.EXACT then
+              matchKind := MatchKind.NOT_COMPATIBLE;
+              break;
+            end if;
+          end for;
+        end if;
+      then
+        ();
+
+    else
+      algorithm
+        matchKind := MatchKind.NOT_COMPATIBLE;
+      then
+        ();
+
+  end match;
+end matchComplexTypes;
 
 function matchArrayTypes
   input Type arrayType1;

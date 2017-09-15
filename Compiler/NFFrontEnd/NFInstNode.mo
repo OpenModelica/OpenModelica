@@ -686,6 +686,18 @@ uniontype InstNode
     end match;
   end setCachedData;
 
+  function resetCache
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          node.cached := CachedData.empty();
+        then
+          ();
+    end match;
+  end resetCache;
+
   function cacheAddFunc
     input Function fn;
     input Boolean specialBuiltin;

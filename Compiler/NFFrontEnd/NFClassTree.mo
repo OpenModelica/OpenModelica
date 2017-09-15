@@ -658,6 +658,17 @@ public
       element := resolveEntry(entry, tree);
     end lookupElement;
 
+    function lookupElementPtr
+      input String name;
+      input ClassTree tree;
+      output Mutable<InstNode> element;
+    protected
+      LookupTree.Entry entry;
+    algorithm
+      entry := LookupTree.get(lookupTree(tree), name);
+      element := resolveEntryPtr(entry, tree);
+    end lookupElementPtr;
+
     function applyExtends
       input ClassTree tree;
       input FuncT func;

@@ -887,6 +887,7 @@ protected
   Type ty;
 algorithm
   for e in elements loop
+    // TODO: Type checking.
     (exp, ty, var) := typeExp(e, info);
     variability := Types.constAnd(var, variability);
     expl := exp :: expl;

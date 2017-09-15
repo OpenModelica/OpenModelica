@@ -532,7 +532,7 @@ algorithm
         end if;
 
         redecl_node := expand(cls_mod.element);
-        node := instClass(redecl_node, Modifier.NOMOD(), parent);
+        node := instClass(redecl_node, cls_mod.mod, parent);
       then
         ();
 
@@ -738,6 +738,7 @@ function applyModifier
   input String clsName;
 protected
   list<Modifier> mods;
+  Mutable<InstNode> node_ptr;
   InstNode node;
   Component comp;
 algorithm
@@ -749,18 +750,21 @@ algorithm
 
   for mod in mods loop
     try
-      node := ClassTree.lookupElement(Modifier.name(mod), cls);
+      node_ptr := ClassTree.lookupElementPtr(Modifier.name(mod), cls);
     else
       Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
         {Modifier.name(mod), clsName}, Modifier.info(mod));
       fail();
     end try;
 
+    node := Mutable.access(node_ptr);
     if InstNode.isComponent(node) then
       InstNode.componentApply(node, Component.mergeModifier, mod);
     else
       partialInstClass(node);
-      InstNode.classApply(node, Class.mergeModifier, mod);
+      node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
+      node := InstNode.resetCache(node);
+      Mutable.update(node_ptr, node);
     end if;
   end for;
 
@@ -785,7 +789,7 @@ algorithm
   mod := Component.getModifier(comp);
 
   () := match (mod, comp)
-    case (Modifier.REDECLARE(), _)
+    case (Modifier.REDECLARE(), Component.COMPONENT_DEF(definition = def))
       algorithm
         if not InstNode.isComponent(mod.element) then
           Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
@@ -793,8 +797,11 @@ algorithm
             {InstNode.info(mod.element), InstNode.info(node)});
         end if;
 
-        comp := InstNode.component(mod.element);
-        InstNode.updateComponent(comp, node);
+        comp_mod := Modifier.fromElement(def, parent);
+        comp_mod := Modifier.merge(comp_mod, mod.mod);
+        inst_comp := InstNode.component(mod.element);
+        inst_comp := Component.setModifier(comp_mod, inst_comp);
+        InstNode.updateComponent(inst_comp, node);
         instComponent(node, parent, InstNode.parent(mod.element));
       then
         ();

@@ -130,6 +130,7 @@ uniontype Modifier
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
     InstNode element;
+    Modifier mod;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -160,7 +161,7 @@ public
           MODIFIER(name, mod.finalPrefix, mod.eachPrefix, binding, submod_table, mod.info);
 
       case SCode.REDECL()
-        then REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(mod.element, scope));
+        then REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(mod.element, scope), NOMOD());
 
     end match;
   end create;
@@ -270,6 +271,18 @@ public
           submods := ModTable.join(innerMod.subModifiers, outerMod.subModifiers, merge);
         then
           MODIFIER(outerMod.name, outerMod.finalPrefix, outerMod.eachPrefix, binding, submods, outerMod.info);
+
+      case (REDECLARE(), MODIFIER())
+        algorithm
+          outerMod.mod := merge(outerMod.mod, innerMod);
+        then
+          outerMod;
+
+      case (MODIFIER(), REDECLARE())
+        algorithm
+          innerMod.mod := merge(outerMod, innerMod.mod);
+        then
+          innerMod;
 
       case (REDECLARE(), _) then outerMod;
       case (_, REDECLARE()) then innerMod;
