@@ -1685,6 +1685,13 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
       QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
       expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
     }
+
+    if (pLibraryTreeItem->getModelWidget()) {
+      pLibraryTreeItem->getModelWidget()->updateModelText();
+    } else {
+      updateLibraryTreeItemClassText(pLibraryTreeItem);
+    }
+
     // remove the LibraryTreeItem from Libraries Browser
     beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
     // unload the LibraryTreeItem children if any and then unload the LibraryTreeItem.
