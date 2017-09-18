@@ -37,11 +37,12 @@
    this header file is shipped with the Modelica Standard Library.
 */
 
-#ifndef MODELICA_UTILITIES_H
-#define MODELICA_UTILITIES_H
+#ifndef MODELICA_UTILITIES_H_
+#define MODELICA_UTILITIES_H_
 
 #include <stddef.h>
 #include <stdarg.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -59,7 +60,7 @@ extern "C" {
 #if __STDC_VERSION__ >= 201112L
 #define MODELICA_NORETURN _Noreturn
 #define MODELICA_NORETURNATTR
-#elif __cplusplus >= 201103L
+#elif defined(__cplusplus) && __cplusplus >= 201103L
 #if (defined(__GNUC__) && __GNUC__ >= 5) || \
     (defined(__GNUC__) && defined(__GNUC_MINOR__) && __GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 #define MODELICA_NORETURN [[noreturn]]

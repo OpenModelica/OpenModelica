@@ -1,6 +1,7 @@
-/* ModelicaStandardTable.h - External table functions header
+/* ModelicaStandardTables.h - External table functions header
 
-   Copyright (C) 2013-2016, Modelica Association, DLR and ITI GmbH
+   Copyright (C) 2013-2017, Modelica Association, DLR, and ESI ITI GmbH
+   Copyright (C) 2008-2013, Modelica Association and DLR
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -25,15 +26,42 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Definition of interface to external functions for table computation
-   in the Modelica Standard Library:
+/* The following #define's are available.
 
-      Modelica.Blocks.Sources.CombiTimeTable
-      Modelica.Blocks.Tables.CombiTable1D
-      Modelica.Blocks.Tables.CombiTable1Ds
-      Modelica.Blocks.Tables.CombiTable2D
+   NO_FILE_SYSTEM        : A file system is not present (e.g. on dSPACE or xPC).
+   NO_TABLE_COPY         : Do not copy table data passed to _init functions
+                           This is a potentially unsafe optimization (ticket #1143).
+   TABLE_SHARE           : If NO_FILE_SYTEM is not defined then common/shared table
+                           arrays are stored in a global hash table in order to
+                           avoid superfluous file input access and to decrease the
+                           utilized memory (tickets #1110 and #1550).
+   DEBUG_TIME_EVENTS     : Trace time events of CombiTimeTable
+   DUMMY_FUNCTION_USERTAB: Use a dummy function "usertab"
 
    Release Notes:
+      Apr. 24, 2017: by Thomas Beutlich, ESI ITI GmbH
+                     Added functions to retrieve minimum and maximum abscissa
+                     values of CombiTable2D (ticket #2244)
+
+      Apr. 15, 2017: by Thomas Beutlich, ESI ITI GmbH
+                     Added support for time event generation (independent of
+                     smoothness) in CombiTimeTable (ticket #2080)
+
+      Apr. 11, 2017: by Thomas Beutlich, ESI ITI GmbH
+                     Revised initialization of CombiTimeTable, CombiTable1D
+                     and CombiTable2D (ticket #1899)
+                     - Already read table in the initialization functions
+                     - Removed the implementation of the read functions
+
+      Apr. 07, 2017: by Thomas Beutlich, ESI ITI GmbH
+                     Added support for shift time (independent of start time)
+                     in CombiTimeTable (ticket #1771)
+
+      Feb. 25, 2017: by Thomas Beutlich, ESI ITI GmbH
+                     Added support for extrapolation in CombiTable1D (ticket #1839)
+                     Added functions to retrieve minimum and maximum abscissa
+                     values of CombiTable1D (ticket #2120)
+
       Oct. 27, 2015: by Thomas Beutlich, ITI GmbH
                      Added nonnull attribute/annotations (ticket #1436)
 
@@ -42,31 +70,6 @@
 
       Jan. 27, 2008: by Martin Otter, DLR
                      Implemented a first version
-
-   Copyright (C) 2008, Modelica Association and DLR
-   Copyright (C) 2013-2015, Modelica Association, DLR and ITI GmbH
-   All rights reserved.
-
-   Redistribution and use in source and binary forms, with or without
-   modification, are permitted provided that the following conditions are met:
-
-   1. Redistributions of source code must retain the above copyright notice,
-      this list of conditions and the following disclaimer.
-
-   2. Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-   CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /* A table can be defined in the following ways when initializing the table:
@@ -75,18 +78,25 @@
          (= table    is "NoName" or has only blanks AND
             fileName is "NoName" or has only blanks).
 
-     (2) Read from a file (tableName, fileName have to be supplied).
+     (2) Read from a file (fileName, tableName have to be supplied).
 
    Tables may be linearly interpolated or the first derivative
-   may be continuous. In the latter case, Akima-Splines are used.
+   may be continuous. In the latter case, cubic Hermite splines with Akima slope
+   approximation, Fritsch-Butland slope approximation (univariate only) or Steffen
+   slope approximation (univariate only) are used.
 */
 
-#ifndef _MODELICASTANDARDTABLES_H_
-#define _MODELICASTANDARDTABLES_H_
+#ifndef MODELICA_STANDARDTABLES_H_
+#define MODELICA_STANDARDTABLES_H_
 
 #include <stdlib.h>
+
+#if !defined(MODELICA_EXPORT)
 #if defined(__cplusplus)
-extern "C" {
+#define MODELICA_EXPORT extern "C"
+#else
+#define MODELICA_EXPORT
+#endif
 #endif
 
 /*
@@ -106,7 +116,7 @@ extern "C" {
 #define _Inout_
 #endif
 
-void* ModelicaStandardTables_CombiTimeTable_init(_In_z_ const char* tableName,
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTimeTable_init(_In_z_ const char* tableName,
                                                  _In_z_ const char* fileName,
                                                  _In_ double* table, size_t nRow,
                                                  size_t nColumn,
@@ -114,51 +124,66 @@ void* ModelicaStandardTables_CombiTimeTable_init(_In_z_ const char* tableName,
                                                  _In_ int* columns,
                                                  size_t nCols, int smoothness,
                                                  int extrapolation) MODELICA_NONNULLATTR;
+  /* Same as ModelicaStandardTables_CombiTimeTable_init2, but without shiftTime, timeEvents and
+     verbose arguments
+  */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTimeTable_init2(_In_z_ const char* fileName,
+                                                  _In_z_ const char* tableName,
+                                                  _In_ double* table, size_t nRow,
+                                                  size_t nColumn,
+                                                  double startTime,
+                                                  _In_ int* columns,
+                                                  size_t nCols, int smoothness,
+                                                  int extrapolation,
+                                                  double shiftTime,
+                                                  int timeEvents,
+                                                  int verbose) MODELICA_NONNULLATTR;
   /* Initialize 1-dim. table where first column is time
 
-     -> tableName: Name of table
      -> fileName: Name of file
+     -> tableName: Name of table
      -> table: If tableName="NoName" or has only blanks AND
                fileName ="NoName" or has only blanks, then
                this pointer points to a 2-dim. array (row-wise storage)
                in the Modelica environment that holds this matrix.
      -> nRow: Number of rows of table
      -> nColumn: Number of columns of table
-     -> startTime: Output = offset for time < startTime
+     -> startTime: Start time of inter-/extrapolation
      -> columns: Columns of table to be interpolated
      -> nCols: Number of columns of table to be interpolated
      -> smoothness: Interpolation type
-                    = 1: constant
-                    = 2: linear
-                    = 3: continuous first derivative
+                    = 1: linear
+                    = 2: continuous first derivative (by Akima splines)
+                    = 3: constant
+                    = 4: monotonicity-preserving, continuous first derivative
+                         (by Fritsch-Butland splines)
+                    = 5: monotonicity-preserving, continuous first derivative
+                         (by Steffen splines)
      -> extrapolation: Extrapolation type
-                       = 1: no
-                       = 2: hold first/last value
-                       = 3: linear
-                       = 4: periodic
+                       = 1: hold first/last value
+                       = 2: linear
+                       = 3: periodic
+                       = 4: no
+     -> shiftTime: Shift time of first table column
+     -> timeEvents: Time event handling (for constant or linear interpolation)
+                    = 1: always
+                    = 2: at discontinuities
+                    = 3: no
+     -> verbose: Print message that file is loading
      <- RETURN: Pointer to internal memory of table structure
   */
 
-void ModelicaStandardTables_CombiTimeTable_close(void* tableID);
+MODELICA_EXPORT void ModelicaStandardTables_CombiTimeTable_close(void* tableID);
   /* Close table and free allocated memory */
 
-double ModelicaStandardTables_CombiTimeTable_read(void* tableID, int force,
-                                                  int verbose);
-  /* Read table from file
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_minimumTime(void* tableID);
+  /* Return minimum abscissa defined in table (= table[1,1]) */
 
-     -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTimeTable_init
-     -> force: Read only if forced or not yet read
-     -> verbose: Print message that file is loading
-     <- RETURN: = 1, if table was successfully read from file
-  */
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_maximumTime(void* tableID);
+  /* Return maximum abscissa defined in table (= table[end,1]) */
 
-double ModelicaStandardTables_CombiTimeTable_minimumTime(void* tableID);
-  /* Return minimum time defined in table (= table[1,1]) */
-
-double ModelicaStandardTables_CombiTimeTable_maximumTime(void* tableID);
-  /* Return maximum time defined in table (= table[end,1]) */
-
-double ModelicaStandardTables_CombiTimeTable_getValue(void* tableID,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_getValue(void* tableID,
                                                       int icol, double t,
                                                       double nextTimeEvent,
                                                       double preNextTimeEvent);
@@ -172,7 +197,7 @@ double ModelicaStandardTables_CombiTimeTable_getValue(void* tableID,
      <- RETURN : Ordinate value
   */
 
-double ModelicaStandardTables_CombiTimeTable_getDerValue(void* tableID,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_getDerValue(void* tableID,
                                                          int icol,
                                                          double t,
                                                          double nextTimeEvent,
@@ -189,7 +214,7 @@ double ModelicaStandardTables_CombiTimeTable_getDerValue(void* tableID,
      <- RETURN: Derivative of ordinate value
   */
 
-double ModelicaStandardTables_CombiTimeTable_nextTimeEvent(void* tableID, double t);
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_nextTimeEvent(void* tableID, double t);
   /* Return next time event in table
 
      -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTimeTable_init
@@ -197,47 +222,68 @@ double ModelicaStandardTables_CombiTimeTable_nextTimeEvent(void* tableID, double
      <- RETURN: Next abscissa value > t that triggers a time event
   */
 
-void* ModelicaStandardTables_CombiTable1D_init(_In_z_ const char* tableName,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_read(void* tableID, int force,
+                                                  int verbose);
+  /* Empty function, kept only for backward compatibility */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTable1D_init(_In_z_ const char* tableName,
                                                _In_z_ const char* fileName,
                                                _In_ double* table, size_t nRow,
                                                size_t nColumn,
                                                _In_ int* columns,
                                                size_t nCols, int smoothness) MODELICA_NONNULLATTR;
+  /* Same as ModelicaStandardTables_CombiTable1D_init2, but without extrapolation and
+     verbose arguments
+  */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTable1D_init2(_In_z_ const char* fileName,
+                                                _In_z_ const char* tableName,
+                                                _In_ double* table, size_t nRow,
+                                                size_t nColumn,
+                                                _In_ int* columns,
+                                                size_t nCols, int smoothness,
+                                                int extrapolation,
+                                                int verbose) MODELICA_NONNULLATTR;
   /* Initialize 1-dim. table defined by matrix, where first column
      is x-axis and further columns of matrix are interpolated
 
-     -> tableName: Name of table
      -> fileName: Name of file
+     -> tableName: Name of table
      -> table: If tableName="NoName" or has only blanks AND
                fileName ="NoName" or has only blanks, then
                this pointer points to a 2-dim. array (row-wise storage)
                in the Modelica environment that holds this matrix.
      -> nRow: Number of rows of table
      -> nColumn: Number of columns of table
-     -> startTime: Output = offset for time < startTime
      -> columns: Columns of table to be interpolated
      -> nCols: Number of columns of table to be interpolated
      -> smoothness: Interpolation type
-                    = 1: constant
-                    = 2: linear
-                    = 3: continuous first derivative
+                    = 1: linear
+                    = 2: continuous first derivative (by Akima splines)
+                    = 3: constant
+                    = 4: monotonicity-preserving, continuous first derivative
+                         (by Fritsch-Butland splines)
+                    = 5: monotonicity-preserving, continuous first derivative
+                         (by Steffen splines)
+     -> extrapolation: Extrapolation type
+                       = 1: hold first/last value
+                       = 2: linear
+                       = 3: periodic
+                       = 4: no
+     -> verbose: Print message that file is loading
      <- RETURN: Pointer to internal memory of table structure
   */
 
-void ModelicaStandardTables_CombiTable1D_close(void* tableID);
+MODELICA_EXPORT void ModelicaStandardTables_CombiTable1D_close(void* tableID);
   /* Close table and free allocated memory */
 
-double ModelicaStandardTables_CombiTable1D_read(void* tableID, int force,
-                                                int verbose);
-  /* Read table from file
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_minimumAbscissa(void* tableID);
+  /* Return minimum abscissa defined in table (= table[1,1]) */
 
-     -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTable1D_init
-     -> force: Read only if forced or not yet read
-     -> verbose: Print message that file is loading
-     <- RETURN: = 1, if table was successfully read from file
-  */
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_maximumAbscissa(void* tableID);
+  /* Return maximum abscissa defined in table (= table[end,1]) */
 
-double ModelicaStandardTables_CombiTable1D_getValue(void* tableID, int icol,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_getValue(void* tableID, int icol,
                                                     double u);
   /* Interpolate in table
 
@@ -247,7 +293,7 @@ double ModelicaStandardTables_CombiTable1D_getValue(void* tableID, int icol,
      <- RETURN : Ordinate value
   */
 
-double ModelicaStandardTables_CombiTable1D_getDerValue(void* tableID, int icol,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_getDerValue(void* tableID, int icol,
                                                        double u, double der_u);
   /* Interpolated derivative in table
 
@@ -258,10 +304,22 @@ double ModelicaStandardTables_CombiTable1D_getDerValue(void* tableID, int icol,
      <- RETURN: Derivative of ordinate value
   */
 
-void* ModelicaStandardTables_CombiTable2D_init(_In_z_ const char* tableName,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_read(void* tableID, int force,
+                                                int verbose);
+  /* Empty function, kept only for backward compatibility */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTable2D_init(_In_z_ const char* tableName,
                                                _In_z_ const char* fileName,
                                                _In_ double* table, size_t nRow,
                                                size_t nColumn, int smoothness) MODELICA_NONNULLATTR;
+  /* Same as ModelicaStandardTables_CombiTable2D_init2, but without verbose argument */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTable2D_init2(_In_z_ const char* fileName,
+                                                _In_z_ const char* tableName,
+                                                _In_ double* table, size_t nRow,
+                                                size_t nColumn, int smoothness,
+                                                int extrapolation,
+                                                int verbose) MODELICA_NONNULLATTR;
   /* Initialize 2-dim. table defined by matrix, where first column
      is x-axis, first row is y-axis and the matrix elements are the
      z-values.
@@ -278,26 +336,30 @@ void* ModelicaStandardTables_CombiTable2D_init(_In_z_ const char* tableName,
      -> nRow: Number of rows of table
      -> nColumn: Number of columns of table
      -> smoothness: Interpolation type
-                    = 1: constant
-                    = 2: linear
-                    = 3: continuous first derivative
+                    = 1: bilinear
+                    = 2: continuous first derivative (by bivariate Akima splines)
+                    = 3: bivariate constant
+     -> extrapolation: Extrapolation type
+                       = 1: hold first/last value
+                       = 2: linear
+                       = 3: periodic
+                       = 4: no
+     -> verbose: Print message that file is loading
      <- RETURN: Pointer to internal memory of table structure
   */
 
-void ModelicaStandardTables_CombiTable2D_close(void* tableID);
+MODELICA_EXPORT void ModelicaStandardTables_CombiTable2D_close(void* tableID);
   /* Close table and free allocated memory */
 
-double ModelicaStandardTables_CombiTable2D_read(void* tableID, int force,
-                                                int verbose);
-  /* Read table from file
+MODELICA_EXPORT void ModelicaStandardTables_CombiTable2D_minimumAbscissa(void* tableID,
+                                                         _Inout_ double* uMin);
+  /* Get minimum abscissa defined in table (= table[2,1] and table[1,2]) */
 
-     -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTable2D_init
-     -> force: Read only if forced or not yet read
-     -> verbose: Print message that file is loading
-     <- RETURN: = 1, if table was successfully read from file
-  */
+MODELICA_EXPORT void ModelicaStandardTables_CombiTable2D_maximumAbscissa(void* tableID,
+                                                         _Inout_ double* uMax);
+  /* Get maximum abscissa defined in table (= table[end,1] and table[1,end]) */
 
-double ModelicaStandardTables_CombiTable2D_getValue(void* tableID, double u1,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable2D_getValue(void* tableID, double u1,
                                                     double u2);
   /* Interpolate in table
 
@@ -307,7 +369,7 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* tableID, double u1,
      <- RETURN : Interpolated value
   */
 
-double ModelicaStandardTables_CombiTable2D_getDerValue(void* tableID, double u1,
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable2D_getDerValue(void* tableID, double u1,
                                                        double u2, double der_u1,
                                                        double der_u2);
   /* Interpolated derivative in table
@@ -320,8 +382,8 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* tableID, double u1,
      <- RETURN: Derivative of interpolated value
   */
 
-#if defined(__cplusplus)
-}
-#endif
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable2D_read(void* tableID, int force,
+                                                int verbose);
+  /* Empty function, kept only for backward compatibility */
 
-#endif /* _MODELICASTANDARDTABLES_H_ */
+#endif
