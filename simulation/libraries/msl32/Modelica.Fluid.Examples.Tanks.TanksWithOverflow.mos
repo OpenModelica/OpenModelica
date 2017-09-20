@@ -33,9 +33,6 @@ runScript(modelTesting);getErrorString();
 // assert            | warning | The following assertion has been violated at time 5.000000
 // |                 | |       | overflow.flowModel.states[1].p >= 0.0 and overflow.flowModel.states[1].p <= 100000000.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= overflow.flowModel.states[1].p <= 100000000.0, has value: -93465.5
-// assert            | warning | The following assertion has been violated at time 70.000000
-// |                 | |       | lowerTank.ports[2].p >= 0.0 and lowerTank.ports[2].p <= 100000000.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= lowerTank.ports[2].p <= 100000000.0, has value: -14378
 // stdout            | info    | The simulation finished successfully.
 //
 // "true

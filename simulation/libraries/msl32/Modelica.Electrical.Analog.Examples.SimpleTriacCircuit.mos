@@ -926,6 +926,14 @@ runScript(modelTesting);getErrorString();
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS
+// assert            | debug   | division leads to inf or nan at time 0.000220019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
+// assert            | debug   | division leads to inf or nan at time 0.000220019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
+// assert            | debug   | division leads to inf or nan at time 0.000220019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
+// assert            | debug   | division leads to inf or nan at time 0.000220019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
+// stdout            | warning | While solving non-linear system an assertion failed at time 0.000220019.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
 // assert            | debug   | division leads to inf or nan at time 0.00027, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 // assert            | debug   | division leads to inf or nan at time 0.00027, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 // assert            | debug   | division leads to inf or nan at time 0.00027, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
@@ -1346,14 +1354,6 @@ runScript(modelTesting);getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0.00027, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 // assert            | debug   | division leads to inf or nan at time 0.00027, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 // stdout            | warning | While solving non-linear system an assertion failed at time 0.00027.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | division leads to inf or nan at time 0.000320019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
-// assert            | debug   | division leads to inf or nan at time 0.000320019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
-// assert            | debug   | division leads to inf or nan at time 0.000320019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
-// assert            | debug   | division leads to inf or nan at time 0.000320019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
-// stdout            | warning | While solving non-linear system an assertion failed at time 0.000320019.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS
@@ -2200,14 +2200,6 @@ runScript(modelTesting);getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0.00047, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 // assert            | debug   | division leads to inf or nan at time 0.00047, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor1.Roff
 // stdout            | warning | While solving non-linear system an assertion failed at time 0.00047.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
-// assert            | debug   | division leads to inf or nan at time 0.000520019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
-// assert            | debug   | division leads to inf or nan at time 0.000520019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
-// assert            | debug   | division leads to inf or nan at time 0.000520019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
-// assert            | debug   | division leads to inf or nan at time 0.000520019, (a=inf) / (b=1.56863e+07), where divisor b is: simpleTriac.thyristor.Roff
-// stdout            | warning | While solving non-linear system an assertion failed at time 0.000520019.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS
