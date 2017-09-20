@@ -26,22 +26,19 @@ model B
 end B;
 
 // Result:
-// function a1.f
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := 2.0 * x;
-// end a1.f;
-//
 // function a2.f
 //   input Real x;
 //   output Real y;
 // algorithm
-//   y := 3.0 * x;
+//   y := x * A.z;
 // end a2.f;
 //
 // class B
-//   Real x = a1.f(2.0);
-//   Real y = a2.f(3.0);
+//   constant Real a1.z = 2.0;
+//   constant Real a1.w = a1.f(a1.z);
+//   constant Real a2.z = 3.0;
+//   constant Real a2.w = a2.f(a2.z);
+//   Real x = a1.w;
+//   Real y = a2.w;
 // end B;
 // endResult

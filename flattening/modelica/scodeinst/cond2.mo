@@ -18,15 +18,6 @@ model B
 end B;
 
 // Result:
-//
-// EXPANDED FORM:
-//
-// class B
-//   Real a1.x;
-// end B;
-//
-//
-// Found 1 components and 0 parameters.
 // class B
 //   Real a1.x;
 // end B;

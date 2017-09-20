@@ -19,21 +19,8 @@ model B
 end B;
 
 // Result:
-//
-// EXPANDED FORM:
-//
-// class B
-//   Real a.x = a.f();
-//   Real a.y = 2;
-//   Real x = A.f();
-// end B;
-//
-//
-// Found 3 components and 0 parameters.
 // Error processing file: func2.mo
-// [func2.mo:16:3-16:6:writable] Error: Variable a: Internal error ValuesUtil.valueExp failed for
-// [func2.mo:11:3-11:15:writable] Error: Type mismatch in binding x = A.f(), expected subtype of Real, got type #NORETCALL#.
-// Error: Error occurred while flattening model B
+// [flattening/modelica/scodeinst/func2.mo:12:3-12:15:writable] Error: Type mismatch in binding x = A.f(), expected subtype of Real, got type ().
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

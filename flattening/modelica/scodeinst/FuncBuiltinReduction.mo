@@ -36,7 +36,7 @@ model FuncBuiltinReduction
   E e1 = min(e for e in E.one:E.three);
   E e2 = max(e for e in E);
   E e3 = min(e for e in E.three:E.one);
-  E e3 = max(e for e in E.three:E.one);
+  E e4 = max(e for e in E.three:E.one);
 end FuncBuiltinReduction;
 
 // Result:

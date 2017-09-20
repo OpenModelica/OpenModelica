@@ -11,9 +11,11 @@ end Subscript1;
 
 // Result:
 // class Subscript1
-//   Real x[1] = 1;
-//   Real x[2] = 2;
-//   Real x[3] = 3;
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
 //   Real y = x[2];
+// equation
+//   x = {1.0, 2.0, 3.0};
 // end Subscript1;
 // endResult

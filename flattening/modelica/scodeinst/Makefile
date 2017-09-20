@@ -39,9 +39,6 @@ conn1.mo \
 conn2.mo \
 conn4.mo \
 const1.mo \
-const2.mo \
-const7.mo \
-const8.mo \
 const10.mo \
 const11.mo \
 const12.mo \
@@ -50,7 +47,11 @@ const14.mo \
 const15.mo \
 const16.mo \
 const17.mo \
+const2.mo \
 const3.mo \
+const4.mo \
+const7.mo \
+const8.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
@@ -88,9 +89,14 @@ enum4.mo \
 enum5.mo \
 enum7.mo \
 enum8.mo \
+EnumRangeBinding1.mo \
 eq1.mo \
+eq2.mo \
+eq3.mo \
+eq4.mo \
 eq6.mo \
 eq7.mo \
+eq8.mo \
 eq10.mo \
 Extends1.mo \
 Extends2.mo \
@@ -119,8 +125,10 @@ ForStatement2.mo \
 ForStatementArray.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
+func2.mo \
 FuncBuiltinAbs.mo \
 FuncBuiltinCeil.mo \
+FuncBuiltinCross.mo \
 FuncBuiltinDelay.mo \
 FuncBuiltinDer.mo \
 FuncBuiltinDiv.mo \
@@ -135,6 +143,9 @@ FuncBuiltinMod.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSemiLinear.mo \
 FuncBuiltinSign.mo \
+FuncBuiltinSize.mo \
+FuncBuiltinSkew.mo \
+FuncBuiltinSpatialDistribution.mo \
 FuncBuiltinSqrt.mo \
 FuncBuiltinTerminal.mo \
 FuncClassParam.mo \
@@ -158,6 +169,9 @@ FuncVariability.mo \
 FuncViaComp.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
+FunctionMultiOutput1.mo \
+FunctionNoOutput1.mo \
+FunctionStreamPrefix.mo \
 ih1.mo \
 ih2.mo \
 ih3.mo \
@@ -201,6 +215,7 @@ ModClass3.mo \
 ModClass4.mo \
 ModClass5.mo \
 ModClass6.mo \
+MultiInheritanceRedeclare2.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 PackageConstant1.mo \
@@ -253,6 +268,10 @@ when1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+const5.mo \
+const6.mo \
+dim2.mo \
+ExtendsVisibility.mo \
 DuplicateElements5.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
@@ -276,20 +295,11 @@ conn8.mo \
 conn9.mo \
 conngraph1.mo \
 conngraph2.mo \
-const4.mo \
-const5.mo \
-const6.mo \
 ConstantConnector1.mo \
 ConstantConnector2.mo \
 ConstantConnector3.mo \
-dim2.mo \
 enum6.mo \
-eq2.mo \
-eq3.mo \
-eq4.mo \
 eq5.mo \
-eq8.mo \
-eq9.mo \
 expconn1.mo \
 expconn2.mo \
 expconn3.mo \
@@ -297,14 +307,9 @@ expconn4.mo \
 expconn5.mo \
 expconn6.mo \
 expconn7.mo \
-ExtendsVisibility.mo \
 func1.mo \
-func2.mo \
-func4.mo \
-func8.mo \
 FuncBuiltinCardinality.mo \
 FuncBuiltinChange.mo \
-FuncBuiltinCross.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinEnumTypeName.mo \
 FuncBuiltinFill.mo \
@@ -323,10 +328,7 @@ FuncBuiltinReduction.mo \
 FuncBuiltinReinit.mo \
 FuncBuiltinSample.mo \
 FuncBuiltinScalar.mo \
-FuncBuiltinSize.mo \
-FuncBuiltinSkew.mo \
 FuncBuiltinSmooth.mo \
-FuncBuiltinSpatialDistribution.mo \
 FuncBuiltinSum.mo \
 FuncBuiltinSymmetric.mo \
 FuncBuiltinTranspose.mo \
@@ -359,11 +361,8 @@ InvalidVariability2.mo \
 loop4.mo \
 MissingRedeclare1.mo \
 MultiInheritanceRedeclare1.mo \
-MultiInheritanceRedeclare2.mo \
-noretcall1.mo \
 PartialInst.mo \
 PropagateRedeclareMod1.mo \
-Range1.mo \
 RecursiveExtends2.mo \
 redeclare3.mo \
 redeclare5.mo \

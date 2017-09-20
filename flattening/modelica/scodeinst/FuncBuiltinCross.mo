@@ -11,11 +11,11 @@ model FuncBuiltinCross
 end FuncBuiltinCross;
 
 // Result:
-// Error processing file: FuncBuiltinCross.mo
-// Error: Internal error Instantiation of FuncBuiltinCross failed with no error message.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinCross
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+// equation
+//   x = cross({1.0, 2.0, 3.0}, {4.0, 5.0, 6.0});
+// end FuncBuiltinCross;
 // endResult

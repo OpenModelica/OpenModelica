@@ -11,11 +11,17 @@ model FuncBuiltinSkew
 end FuncBuiltinSkew;
 
 // Result:
-// Error processing file: FuncBuiltinSkew.mo
-// Error: Internal error Instantiation of FuncBuiltinSkew failed with no error message.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinSkew
+//   Real x[1,1];
+//   Real x[1,2];
+//   Real x[1,3];
+//   Real x[2,1];
+//   Real x[2,2];
+//   Real x[2,3];
+//   Real x[3,1];
+//   Real x[3,2];
+//   Real x[3,3];
+// equation
+//   x = skew({1.0, 2.0, 3.0});
+// end FuncBuiltinSkew;
 // endResult

@@ -30,7 +30,7 @@ end MultiInheritanceRedeclare1;
 
 // Result:
 // class MultiInheritanceRedeclare1
-//   Integer c.x = C.P.i;
-//   Integer c.y = C.P.j;
+//   Integer c.x = P.i;
+//   Integer c.y = P.j;
 // end MultiInheritanceRedeclare1;
 // endResult

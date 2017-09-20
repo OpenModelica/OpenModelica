@@ -20,17 +20,6 @@ model M2
 end M2;
 
 // Result:
-//
-// EXPANDED FORM:
-//
-// class M2
-//   parameter Boolean b1 = true;
-//   parameter Boolean b2 = false;
-//   Real x = 2;
-// end M2;
-//
-//
-// Found 1 components and 2 parameters.
 // class M2
 //   parameter Boolean b1 = true;
 //   parameter Boolean b2 = false;

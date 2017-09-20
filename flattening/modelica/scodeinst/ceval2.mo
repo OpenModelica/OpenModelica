@@ -12,8 +12,10 @@ end A;
 // class A
 //   parameter Integer n = 1;
 //   parameter Integer m = 2 + n;
-//   Real x[1] = 1.0;
-//   Real x[2] = 1.0;
-//   Real x[3] = 1.0;
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+// equation
+//   x = {1.0, 1.0, 1.0};
 // end A;
 // endResult

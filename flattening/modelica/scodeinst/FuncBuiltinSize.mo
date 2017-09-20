@@ -16,13 +16,21 @@ model FuncBuiltinSize
 end FuncBuiltinSize;
 
 // Result:
-// Error processing file: FuncBuiltinSize.mo
-// [flattening/modelica/scodeinst/FuncBuiltinSize.mo:11:3-11:26:writable] Error: No matching function found for size(x, 1) in component <REMOVE ME>
-// candidates are :
-//   size()
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinSize
+//   Real x[1,1,1];
+//   Real x[1,1,2];
+//   Real x[1,1,3];
+//   Real x[1,2,1];
+//   Real x[1,2,2];
+//   Real x[1,2,3];
+//   Integer i1 = 1;
+//   Integer i2 = 2;
+//   Integer i3 = 3;
+//   Integer i4 = 3;
+//   Integer i5[1];
+//   Integer i5[2];
+//   Integer i5[3];
+// equation
+//   i5 = size(x);
+// end FuncBuiltinSize;
 // endResult

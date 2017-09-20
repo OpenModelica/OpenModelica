@@ -6,7 +6,7 @@
 
 
 class P
-  constant Integer i = 3;
+  constant Real i = 3;
 end P;
 
 model A
@@ -16,7 +16,11 @@ end A;
 
 // Result:
 // class A
-//   Real x[1] = 1.0;
-//   Real x[2] = 2.0;
+//   constant Real p[1].i = 1.0;
+//   constant Real p[2].i = 2.0;
+//   Real x[1];
+//   Real x[2];
+// equation
+//   x = {p[1].i, p[2].i};
 // end A;
 // endResult

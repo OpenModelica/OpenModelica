@@ -35,8 +35,10 @@ end A;
 //   parameter Boolean b10 = 1 <> 0;
 //   parameter Boolean b = b1 or b2 and not b3 or b4 and b5 and not b6 or b7 and not b8 and not b9 and b10;
 //   parameter Integer n = if b then 2 else 3;
-//   Real x[1] = 1.0;
-//   Real x[2] = 2.0;
-//   Real x[3] = 3.0;
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+// equation
+//   x = {1.0, 2.0, 3.0};
 // end A;
 // endResult
