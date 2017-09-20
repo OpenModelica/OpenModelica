@@ -1229,7 +1229,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 {
   int numberOfIterations = 0 ,i, j, n=solverData->n, m=solverData->m;
   int  pos = solverData->n, rank;
-  double error_f_sqrd, error_f1_sqrd, error_f2_sqrd, error_f_sqrd_scaled, delta_x_sqrd, delta_x_sqrd_scaled, grad_f;
+  double error_f_sqrd, error_f1_sqrd, error_f2_sqrd, error_f_sqrd_scaled, error_f1_sqrd_scaled;
+  double delta_x_sqrd, delta_x_sqrd_scaled, grad_f, grad_f_scaled;
   int numberOfSmallSteps = 0;
   double error_f_old = 1e100;
   int countNegativeSteps = 0;
@@ -1258,7 +1259,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
   /* calculated error of function values */
   error_f_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
-  error_f_sqrd_scaled = error_f_sqrd;
+  vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->fvecScaled);
+  error_f_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->fvecScaled);
 
   while(1)
   {
@@ -1332,15 +1334,18 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       /* Damping (see Numerical Recipes) */
       /* calculate gradient of quadratic function for damping strategy */
       grad_f = -2.0*error_f_sqrd;
+      grad_f_scaled = -2.0*error_f_sqrd_scaled;
       error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
+      vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->f2);
+      error_f1_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->f2);
       debugDouble(LOG_NLS_V,"Need to damp, grad_f = ", grad_f);
       debugDouble(LOG_NLS_V,"Need to damp, error_f = ", sqrt(error_f_sqrd));
-
       debugDouble(LOG_NLS_V,"Need to damp this!! lambda1 = ", lambda1);
       debugDouble(LOG_NLS_V,"Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
-
       debugDouble(LOG_NLS_V,"Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
-      if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f) && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
+      if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f)
+        && (error_f1_sqrd_scaled > error_f_sqrd_scaled + alpha*lambda1*grad_f_scaled)
+        && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
       {
         lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1_sqrd-error_f_sqrd-lambda1*grad_f)),lambdaMin);
         debugDouble(LOG_NLS_V,"Need to damp this!! lambda2 = ", lambda2);
