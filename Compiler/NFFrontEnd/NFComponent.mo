@@ -378,6 +378,16 @@ uniontype Component
     end match;
   end isConst;
 
+  function isVar
+    input Component component;
+    output Boolean isConst;
+  algorithm
+    isConst := match variability(component)
+      case DAE.VarKind.VARIABLE() then true;
+      else false;
+    end match;
+  end isVar;
+
   function visibility
     input Component component;
     output DAE.VarVisibility visibility;

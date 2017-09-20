@@ -36,6 +36,8 @@ protected
   import List;
 
   import Expression = NFExpression;
+  import Function = NFFunction;
+  import RangeIterator = NFRangeIterator;
 
 public
   import Absyn.Path;
@@ -71,6 +73,7 @@ public
   end ENUM_LITERAL;
 
   record CREF
+    Type ty;
     ComponentRef cref;
   end CREF;
 
@@ -89,6 +92,11 @@ public
     Option<Expression> step;
     Expression stop;
   end RANGE;
+
+  record TUPLE
+    Type ty;
+    list<Expression> elements;
+  end TUPLE;
 
   record RECORD
     Path path; // Maybe not needed since the type contains the name. Prefix?
@@ -262,6 +270,12 @@ public
         then
           comp;
 
+      case TUPLE()
+        algorithm
+          TUPLE(elements = expl) := exp2;
+        then
+          compareList(exp1.elements, expl);
+
       case CALL()
         algorithm
           CALL(call = c) := exp2;
@@ -422,12 +436,24 @@ public
       case REAL() then Type.REAL();
       case STRING() then Type.STRING();
       case BOOLEAN() then Type.BOOLEAN();
-      case CAST(ty, _)
-        algorithm
-          ty := if listMember(ty, {Type.INTEGER(), Type.REAL(), Type.STRING(), Type.BOOLEAN()}) then ty else Type.UNKNOWN();
-        then ty;
+      case ENUM_LITERAL() then exp.ty;
+      case CREF() then exp.ty;
+      case ARRAY() then exp.ty;
+      case RANGE() then exp.ty;
+      case TUPLE() then exp.ty;
+      case RECORD() then exp.ty;
+      case CALL() then Call.typeOf(exp.call);
       case SIZE(dimIndex = SOME(_)) then Type.INTEGER();
+      case SIZE() then typeOf(exp.exp);
       case END() then Type.INTEGER();
+      case BINARY() then Operator.typeOf(exp.operator);
+      case UNARY() then Operator.typeOf(exp.operator);
+      case LBINARY() then Operator.typeOf(exp.operator);
+      case LUNARY() then Operator.typeOf(exp.operator);
+      case RELATION() then Operator.typeOf(exp.operator);
+      case IF() then typeOf(exp.trueBranch);
+      case CAST() then exp.ty;
+      case UNBOX() then exp.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -510,7 +536,7 @@ public
         algorithm
           cref := ComponentRef.addSubscript(Subscript.INDEX(INTEGER(index)), array.cref);
         then
-          CREF(cref);
+          CREF(Type.unliftArray(array.ty), cref);
 
     end match;
   end arrayElement;
@@ -586,7 +612,6 @@ public
     input Expression exp;
     output String str;
   protected
-    Expression e;
     Type t;
   algorithm
     str := match exp
@@ -600,7 +625,7 @@ public
 
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.toString(exp.ty);
-      case ARRAY() then "{" + stringDelimitList(List.map(exp.elements, toString), ", ") + "}";
+      case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
 
       case RANGE() then toString(exp.start) +
                         (
@@ -608,6 +633,7 @@ public
                         then ":" + toString(Util.getOption(exp.step))
                         else ""
                         ) + ":" + toString(exp.stop);
+      case TUPLE() then "(" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + ")";
       case CALL() then Call.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
                         (
@@ -669,6 +695,7 @@ public
                else NONE(),
                toDAE(exp.stop));
 
+      case TUPLE() then DAE.TUPLE(list(toDAE(e) for e in exp.elements));
       case CALL() then Call.toDAE(exp.call);
 
       case SIZE()
@@ -726,6 +753,341 @@ public
       else 0;
     end match;
   end dimensionCount;
+
+  function traverse
+    input Expression exp;
+    input TraverseFunc func;
+    output Expression outExp;
+
+    partial function TraverseFunc
+      input output Expression e;
+    end TraverseFunc;
+  algorithm
+    outExp := match exp
+      local
+        Expression e1, e2, e3, e4;
+
+      case CREF() then CREF(exp.ty, traverseCref(exp.cref, func));
+      case ARRAY() then ARRAY(exp.ty, list(traverse(e, func) for e in exp.elements));
+
+      case RANGE(step = SOME(e2))
+        algorithm
+          e1 := traverse(exp.start, func);
+          e4 := traverse(e2, func);
+          e3 := traverse(exp.stop, func);
+        then
+          if referenceEq(exp.start, e1) and referenceEq(e2, e4) and
+            referenceEq(exp.stop, e3) then exp else RANGE(exp.ty, e1, SOME(e4), e3);
+
+      case RANGE()
+        algorithm
+          e1 := traverse(exp.start, func);
+          e3 := traverse(exp.stop, func);
+        then
+          if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3)
+            then exp else RANGE(exp.ty, e1, NONE(), e3);
+
+      case TUPLE() then TUPLE(exp.ty, list(traverse(e, func) for e in exp.elements));
+
+      case RECORD()
+        then RECORD(exp.path, exp.ty, list(traverse(e, func) for e in exp.elements));
+
+      case CALL() then CALL(traverseCall(exp.call, func));
+
+      case SIZE(dimIndex = SOME(e2))
+        algorithm
+          e1 := traverse(exp.exp, func);
+          e3 := traverse(e2, func);
+        then
+          if referenceEq(exp.exp, e1) and referenceEq(e2, e3) then exp else SIZE(e1, SOME(e3));
+
+      case SIZE()
+        algorithm
+          e1 := traverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else SIZE(e1, NONE());
+
+      case BINARY()
+        algorithm
+          e1 := traverse(exp.exp1, func);
+          e2 := traverse(exp.exp2, func);
+        then
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else BINARY(e1, exp.operator, e2);
+
+      case UNARY()
+        algorithm
+          e1 := traverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else UNARY(exp.operator, e1);
+
+      case LBINARY()
+        algorithm
+          e1 := traverse(exp.exp1, func);
+          e2 := traverse(exp.exp2, func);
+        then
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else LBINARY(e1, exp.operator, e2);
+
+      case LUNARY()
+        algorithm
+          e1 := traverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else LUNARY(exp.operator, e1);
+
+      case RELATION()
+        algorithm
+          e1 := traverse(exp.exp1, func);
+          e2 := traverse(exp.exp2, func);
+        then
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else RELATION(e1, exp.operator, e2);
+
+      case IF()
+        algorithm
+          e1 := traverse(exp.condition, func);
+          e2 := traverse(exp.trueBranch, func);
+          e3 := traverse(exp.falseBranch, func);
+        then
+          if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
+             referenceEq(exp.falseBranch, e3) then exp else IF(e1, e2, e3);
+
+      case CAST()
+        algorithm
+          e1 := traverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
+
+      case UNBOX()
+        algorithm
+          e1 := traverse(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
+
+      else exp;
+    end match;
+
+    outExp := func(outExp);
+  end traverse;
+
+  function traverseOpt
+    input Option<Expression> exp;
+    input TraverseFunc func;
+    output Option<Expression> outExp;
+
+    partial function TraverseFunc
+      input output Expression e;
+    end TraverseFunc;
+  protected
+    Expression e;
+  algorithm
+    if isSome(exp) then
+      SOME(e) := exp;
+      outExp := SOME(traverse(e, func));
+    end if;
+  end traverseOpt;
+
+  function traverseCall
+    input Call call;
+    input TraverseFunc func;
+    output Call outCall;
+
+    partial function TraverseFunc
+      input output Expression e;
+    end TraverseFunc;
+  algorithm
+    outCall := match call
+      local
+        list<Expression> args;
+        list<Function.NamedArg> nargs;
+        list<Function.TypedArg> targs;
+        list<Function.TypedNamedArg> tnargs;
+        String s;
+        Expression e;
+        Type t;
+        DAE.Const c;
+
+      case Call.UNTYPED_CALL()
+        algorithm
+          args := list(traverse(arg, func) for arg in call.arguments);
+          nargs := {};
+
+          for arg in call.named_args loop
+            (s, e) := arg;
+            e := traverse(e, func);
+            nargs := (s, e) :: nargs;
+          end for;
+        then
+          Call.UNTYPED_CALL(call.ref, call.matchingFuncs, args, listReverse(nargs));
+
+      case Call.ARG_TYPED_CALL()
+        algorithm
+          targs := {};
+          tnargs := {};
+
+          for arg in call.arguments loop
+            (e, t, c) := arg;
+            e := traverse(e, func);
+            targs := (e, t, c) :: targs;
+          end for;
+
+          for arg in call.named_args loop
+            (s, e, t, c) := arg;
+            e := traverse(e, func);
+            tnargs := (s, e, t, c) :: tnargs;
+          end for;
+        then
+          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
+
+      case Call.TYPED_CALL()
+        algorithm
+          args := list(traverse(arg, func) for arg in call.arguments);
+        then
+          Call.TYPED_CALL(call.fn, args, call.attributes);
+
+    end match;
+  end traverseCall;
+
+  function traverseCref
+    input ComponentRef cref;
+    input TraverseFunc func;
+    output ComponentRef outCref;
+
+    partial function TraverseFunc
+      input output Expression e;
+    end TraverseFunc;
+  algorithm
+    outCref := match cref
+      local
+        list<Subscript> subs;
+        ComponentRef rest;
+
+      case ComponentRef.CREF()
+        algorithm
+          subs := list(traverseSubscript(s, func) for s in cref.subscripts);
+          rest := traverseCref(cref.restCref, func);
+        then
+          ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end traverseCref;
+
+  function traverseSubscript
+    input Subscript subscript;
+    input TraverseFunc func;
+    output Subscript outSubscript;
+
+    partial function TraverseFunc
+      input output Expression e;
+    end TraverseFunc;
+  algorithm
+    outSubscript := match subscript
+      case Subscript.UNTYPED() then Subscript.UNTYPED(traverse(subscript.exp, func));
+      case Subscript.INDEX() then Subscript.INDEX(traverse(subscript.index, func));
+      case Subscript.SLICE() then Subscript.SLICE(traverse(subscript.slice, func));
+      else subscript;
+    end match;
+  end traverseSubscript;
+
+  function expand
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        RangeIterator range_iter;
+        list<Expression> expl;
+
+      case CREF(ty = Type.ARRAY()) then expandCref(exp);
+
+      case ARRAY(ty = Type.ARRAY(elementType = Type.ARRAY()))
+        algorithm
+          exp.elements := list(expand(e) for e in exp.elements);
+        then
+          exp;
+
+      case RANGE()
+        algorithm
+          range_iter := RangeIterator.fromExp(exp);
+        then
+          ARRAY(exp.ty, RangeIterator.toList(range_iter));
+
+      else exp;
+    end match;
+  end expand;
+
+  function expandCref
+    input Expression crefExp;
+    output Expression arrayExp;
+  protected
+    list<list<list<Subscript>>> subs;
+  algorithm
+    arrayExp := match crefExp
+      case CREF(cref = ComponentRef.CREF())
+        algorithm
+          subs := expandCref2(crefExp.cref);
+        then
+          expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
+
+      else crefExp;
+    end match;
+  end expandCref;
+
+  function expandCref2
+    input ComponentRef cref;
+    input output list<list<list<Subscript>>> subs = {};
+  protected
+    list<list<Subscript>> cr_subs = {};
+  algorithm
+    subs := match cref
+      case ComponentRef.CREF()
+        algorithm
+          for dim in listReverse(Type.arrayDims(cref.ty)) loop
+            cr_subs := RangeIterator.map(RangeIterator.fromDim(dim), Subscript.makeIndex) :: cr_subs;
+          end for;
+        then
+          expandCref2(cref.restCref, cr_subs :: subs);
+
+      else subs;
+    end match;
+  end expandCref2;
+
+  function expandCref3
+    input list<list<list<Subscript>>> subs;
+    input ComponentRef cref;
+    input Type crefType;
+    input list<list<Subscript>> accum = {};
+    output Expression arrayExp;
+  algorithm
+    arrayExp := match subs
+      case {} then CREF(crefType, ComponentRef.fillSubscripts(accum, cref));
+      else expandCref4(listHead(subs), {}, accum, listRest(subs), cref, crefType);
+    end match;
+  end expandCref3;
+
+  function expandCref4
+    input list<list<Subscript>> subs;
+    input list<Subscript> comb = {};
+    input list<list<Subscript>> accum = {};
+    input list<list<list<Subscript>>> restSubs;
+    input ComponentRef cref;
+    input Type crefType;
+    output Expression arrayExp;
+  protected
+    list<Expression> expl = {};
+    Type arr_ty;
+  algorithm
+    arrayExp := match subs
+      case {} then expandCref3(restSubs, cref, crefType, listReverse(comb) :: accum);
+      else
+        algorithm
+          expl := list(expandCref4(listRest(subs), sub :: comb, accum, restSubs, cref, crefType)
+            for sub in listHead(subs));
+          arr_ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), Dimension.fromExpList(expl));
+        then
+          ARRAY(arr_ty, expl);
+    end match;
+  end expandCref4;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

@@ -1109,6 +1109,12 @@ algorithm
       then
         Expression.RANGE(Type.UNKNOWN(), e1, oe, e3);
 
+    case Absyn.Exp.TUPLE()
+      algorithm
+        expl := list(instExp(e, scope, info) for e in absynExp.expressions);
+      then
+        Expression.TUPLE(Type.UNKNOWN(), expl);
+
     case Absyn.Exp.BINARY()
       algorithm
         e1 := instExp(absynExp.exp1, scope, info);
@@ -1199,7 +1205,7 @@ algorithm
 
     cref := match comp
       case Component.ITERATOR()
-        then Expression.CREF(ComponentRef.fromNode(node, comp.ty, {}, Origin.ITERATOR));
+        then Expression.CREF(Type.UNKNOWN(), ComponentRef.fromNode(node, comp.ty, {}, Origin.ITERATOR));
 
       case Component.ENUM_LITERAL()
         then comp.literal;
@@ -1209,7 +1215,7 @@ algorithm
           cr := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
           cr := makeCref(absynCref, nodes, scope, info, cr);
         then
-          Expression.CREF(cr);
+          Expression.CREF(Type.UNKNOWN(), cr);
     end match;
   else
     if allowTypename then
@@ -1224,7 +1230,7 @@ algorithm
     else
       cr := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
       cr := makeCref(absynCref, nodes, scope, info, cr);
-      cref := Expression.CREF(cr);
+      cref := Expression.CREF(Type.UNKNOWN(), cr);
     end if;
   end if;
 

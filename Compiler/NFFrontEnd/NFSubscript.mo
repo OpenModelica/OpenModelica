@@ -63,6 +63,11 @@ public
     end match;
   end fromExp;
 
+  function makeIndex
+    input Expression exp;
+    output Subscript subscript = INDEX(exp);
+  end makeIndex;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;

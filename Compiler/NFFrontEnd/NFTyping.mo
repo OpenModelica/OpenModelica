@@ -66,6 +66,7 @@ import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Types;
 import NFSections.Sections;
+import List;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -140,11 +141,11 @@ end typeComponents;
 
 function typeComponent
   input InstNode component;
+  output Type ty;
 protected
   Component c = InstNode.component(component);
-  Type ty;
 algorithm
-  () := match c
+  ty := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT()
       algorithm
@@ -160,12 +161,12 @@ algorithm
         // Finally, update the component in the instance tree.
         InstNode.updateComponent(Component.setType(ty, c), component);
       then
-        ();
+        ty;
 
     // A component that has already been typed, skip it.
-    case Component.TYPED_COMPONENT() then ();
-    case Component.ITERATOR() then ();
-    case Component.ENUM_LITERAL() then ();
+    case Component.TYPED_COMPONENT() then c.ty;
+    case Component.ITERATOR() then c.ty;
+    case Component.ENUM_LITERAL(literal = Expression.ENUM_LITERAL(ty = ty)) then ty;
 
     // Any other type of component shouldn't show up here.
     else
@@ -173,7 +174,7 @@ algorithm
         assert(false, getInstanceName() + " got uninstantiated component " +
           InstNode.name(component));
       then
-        ();
+        fail();
 
   end match;
 end typeComponent;
@@ -565,16 +566,24 @@ algorithm
       DAE.Const var1, var2, var3;
       Type ty1, ty2, ty3;
       Operator op;
+      ComponentRef cref;
 
     case Expression.INTEGER() then (exp, Type.INTEGER(), Const.C_CONST());
     case Expression.REAL() then (exp, Type.REAL(), Const.C_CONST());
     case Expression.STRING() then (exp, Type.STRING(), Const.C_CONST());
     case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), Const.C_CONST());
     case Expression.ENUM_LITERAL() then (exp, exp.ty, Const.C_CONST());
-    case Expression.CREF() then typeCref(exp.cref, info);
+
+    case Expression.CREF()
+      algorithm
+        (cref, ty, variability) := typeCref(exp.cref, info);
+      then
+        (Expression.CREF(ty, cref), ty, variability);
+
     case Expression.TYPENAME() then (exp, exp.ty, Const.C_CONST());
     case Expression.ARRAY() then typeArray(exp.elements, info);
     case Expression.RANGE() then typeRange(exp, info);
+    case Expression.TUPLE() then typeTuple(exp.elements, info);
     case Expression.SIZE() then typeSize(exp, info);
 
     case Expression.END() then (exp, Type.INTEGER(), Const.C_CONST());
@@ -721,7 +730,7 @@ function typeArrayDim2
 algorithm
   (dim, error) := match (arrayExp, dimIndex)
     case (Expression.ARRAY(), 1)
-      then (Dimension.INTEGER(listLength(arrayExp.elements)), TypingError.NO_ERROR());
+      then (Dimension.fromExpList(arrayExp.elements), TypingError.NO_ERROR());
 
     // Modelica arrays are non-ragged and only the last dimension of an array
     // expression can be empty, so just traverse into the first element.
@@ -812,31 +821,41 @@ algorithm
 end nthDimensionBoundsChecked;
 
 function typeCref
-  input ComponentRef cref;
+  input output ComponentRef cref;
   input SourceInfo info;
-  output Expression exp;
-  output Type ty;
-  output DAE.Const variability;
+        output Type ty;
+        output DAE.Const variability;
+
+  import NFComponentRef.Origin;
 algorithm
-  (exp, ty, variability) := match cref
+  (cref, ty, variability) := match cref
     local
-      Component comp;
-      Class cls;
-      ComponentRef cr;
+      ComponentRef rest_cr;
+      Type node_ty, cref_ty;
+      list<Subscript> subs;
+
+    case ComponentRef.CREF(origin = Origin.SCOPE)
+      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
-        typeComponent(cref.node);
-        comp := InstNode.component(cref.node);
-        ty := Component.getType(comp);
+        node_ty := typeComponent(cref.node);
         variability := ComponentRef.getVariability(cref);
-        cref.subscripts := typeSubscripts(cref.subscripts, info);
-        cref.ty := Type.subscript(ty, cref.subscripts);
+        subs := typeSubscripts(cref.subscripts, info);
+        cref_ty := Type.subscript(node_ty, subs);
+        (rest_cr, ty, _) := typeCref(cref.restCref, info);
+        ty := Type.liftArrayLeftList(cref_ty, Type.arrayDims(ty));
       then
-        (Expression.CREF(cref), cref.ty, variability);
+        (ComponentRef.CREF(cref.node, subs, cref_ty, cref.origin, rest_cr), ty, variability);
+
+    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
+      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
+
+    case ComponentRef.EMPTY()
+      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
 
     case ComponentRef.WILD()
-      then (Expression.CREF(ComponentRef.WILD()), Type.UNKNOWN(), DAE.Const.C_VAR());
+      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
 
     else
       algorithm
@@ -893,7 +912,7 @@ algorithm
     expl := exp :: expl;
   end for;
 
-  arrayType := Type.liftArrayLeft(ty, Dimension.INTEGER(listLength(expl)));
+  arrayType := Type.liftArrayLeft(ty, Dimension.fromExpList(expl));
   arrayExp := Expression.ARRAY(arrayType, listReverse(expl));
 end typeArray;
 
@@ -954,6 +973,24 @@ algorithm
   rangeExp := Expression.RANGE(rangeType, start_exp, ostep_exp, stop_exp);
 end typeRange;
 
+function typeTuple
+  input list<Expression> elements;
+  input SourceInfo info;
+  output Expression tupleExp;
+  output Type tupleType;
+  output DAE.Const variability;
+protected
+  list<Expression> expl;
+  list<Type> tyl;
+  list<DAE.Const> valr;
+algorithm
+  (expl, tyl, valr) := typeExpl(elements, info);
+  tupleType := Type.TUPLE(tyl, NONE());
+  tupleExp := Expression.TUPLE(tupleType, expl);
+  variability := List.fold(valr, Types.constAnd, DAE.C_CONST());
+end typeTuple;
+
+protected
 function printRangeTypeError
   input Expression exp1;
   input Type ty1;

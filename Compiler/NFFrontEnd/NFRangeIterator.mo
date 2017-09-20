@@ -180,5 +180,43 @@ public
     end match;
   end hasNext;
 
+  function toList
+    input RangeIterator iterator;
+    output list<Expression> expl = {};
+  protected
+    RangeIterator iter;
+    Expression exp;
+  algorithm
+    iter := iterator;
+
+    while hasNext(iter) loop
+      (iter, exp) := next(iter);
+      expl := exp :: expl;
+    end while;
+
+    expl := listReverse(expl);
+  end toList;
+
+  function map<T>
+    input RangeIterator iterator;
+    input FuncT func;
+    output list<T> lst = {};
+
+    partial function FuncT
+      input Expression exp;
+      output T res;
+    end FuncT;
+  protected
+    RangeIterator iter = iterator;
+    Expression exp;
+  algorithm
+    while hasNext(iter) loop
+      (iter, exp) := next(iter);
+      lst := func(exp) :: lst;
+    end while;
+
+    lst := listReverse(lst);
+  end map;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFRangeIterator;

@@ -1400,12 +1400,19 @@ algorithm
       then
         compatibleType;
 
+    case Type.TUPLE()
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchTupleTypes(actualType, expectedType, expression, allowUnknown);
+      then
+        compatibleType;
+
     case Type.COMPLEX()
       algorithm
         (expression, compatibleType, matchKind) :=
           matchComplexTypes(actualType, expectedType, expression, allowUnknown);
       then
-        actualType;
+        compatibleType;
 
     else
       algorithm
@@ -1538,6 +1545,35 @@ algorithm
   end if;
 end matchArrayTypes;
 
+function matchTupleTypes
+  input Type tupleType1;
+  input Type tupleType2;
+  input output Expression expression;
+  input Boolean allowUnknown;
+        output Type compatibleType = tupleType1;
+        output MatchKind matchKind = MatchKind.EXACT;
+protected
+  list<Type> tyl1, tyl2;
+  Type ty2;
+algorithm
+  Type.TUPLE(types = tyl1) := tupleType1;
+  Type.TUPLE(types = tyl2) := tupleType2;
+
+  if listLength(tyl1) > listLength(tyl2) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    return;
+  end if;
+
+  for ty1 in tyl1 loop
+    ty2 :: tyl2 := tyl2;
+    (_, _, matchKind) := matchTypes(ty1, ty2, expression, allowUnknown);
+
+    if matchKind <> MatchKind.EXACT then
+      break;
+    end if;
+  end for;
+end matchTupleTypes;
+
 function matchDimensions
   input Dimension dim1;
   input Dimension dim2;
@@ -1545,17 +1581,15 @@ function matchDimensions
   output Dimension compatibleDim;
   output Boolean compatible = true;
 algorithm
-  compatibleDim := match (dim1, dim2, allowUnknown)
-    case (UNKNOWN(), _, true) then dim2;
-    case (_, UNKNOWN(), true) then dim1;
-    case (EXP(), _, true) then dim2;
-    case (_, EXP(), true) then dim1;
+  if Dimension.isEqualKnown(dim1, dim2) then
+    compatibleDim := dim1;
+  elseif allowUnknown then
+    if Dimension.isKnown(dim1) then
+      compatibleDim := dim1;
     else
-      algorithm
-        compatible := Dimension.size(dim1) == Dimension.size(dim2);
-      then
-        dim1;
-  end match;
+      compatibleDim := dim2;
+    end if;
+  end if;
 end matchDimensions;
 
 function matchTypes_cast

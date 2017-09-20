@@ -36,6 +36,9 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import NFInstNode.InstNode;
+  import RangeIterator = NFRangeIterator;
+  import Dimension = NFDimension;
+  import Expression = NFExpression;
 
   import ComponentRef = NFComponentRef;
 
@@ -65,6 +68,13 @@ public
     input Origin origin = Origin.CREF;
     output ComponentRef cref = CREF(node, subs, ty, origin, EMPTY());
   end fromNode;
+
+  function rest
+    input ComponentRef cref;
+    output ComponentRef restCref;
+  algorithm
+    CREF(restCref = restCref) := cref;
+  end rest;
 
   function getType
     input ComponentRef cref;
@@ -121,6 +131,32 @@ public
     end match;
   end addSubscript;
 
+  function fillSubscripts
+    "This function takes a list of subscript lists and a cref, and adds the
+     first subscript list to the first part of the cref, the second list to the
+     second part, and so on. This function is meant to be used to fill in all
+     subscripts in a cref such that it becomes a scalar, so the type of each
+     cref part is set to the array element type for that part."
+    input list<list<Subscript>> subscripts;
+    input output ComponentRef cref;
+  algorithm
+    cref := match (subscripts, cref)
+      local
+        list<Subscript> subs;
+        list<list<Subscript>> rest_subs;
+        ComponentRef rest_cref;
+
+      case (subs :: rest_subs, CREF())
+        algorithm
+          rest_cref := fillSubscripts(rest_subs, cref.restCref);
+        then
+          CREF(cref.node, listAppend(cref.subscripts, subs),
+            Type.arrayElementType(cref.ty), cref.origin, rest_cref);
+
+      case ({}, _) then cref;
+    end match;
+  end fillSubscripts;
+
   function setSubscripts
     input list<Subscript> subscripts;
     input output ComponentRef cref;
@@ -152,6 +188,7 @@ public
   algorithm
     cref := match (srcCref, dstCref)
       case (EMPTY(), _) then dstCref;
+      case (_, EMPTY()) then dstCref;
       case (_, CREF(origin = Origin.ITERATOR)) then dstCref;
 
       case (CREF(), CREF(origin = Origin.CREF))
@@ -164,7 +201,7 @@ public
         algorithm
           cref := transferSubscripts(srcCref.restCref, dstCref.restCref);
         then
-          CREF(dstCref.node, srcCref.subscripts, dstCref.ty, dstCref.origin, cref);
+          CREF(dstCref.node, srcCref.subscripts, srcCref.ty, dstCref.origin, cref);
 
       else
         algorithm
@@ -264,6 +301,44 @@ public
       cref := CREF(n, {}, InstNode.getType(n), Origin.SCOPE, cref);
     end for;
   end fromNodeList;
+
+  function vectorize
+    input ComponentRef cref;
+    output list<ComponentRef> crefs;
+  algorithm
+    crefs := match cref
+      local
+        list<Dimension> dims;
+        RangeIterator iter;
+        Expression exp;
+        list<list<Subscript>> subs;
+        list<list<Subscript>> new_subs;
+        Subscript sub;
+
+      case CREF()
+        algorithm
+          dims := Type.arrayDims(cref.ty);
+          subs := {cref.subscripts};
+
+          for dim in listReverse(dims) loop
+            iter := RangeIterator.fromDim(dim);
+            new_subs := {};
+
+            while RangeIterator.hasNext(iter) loop
+              (iter, exp) := RangeIterator.next(iter);
+              sub := Subscript.INDEX(exp);
+              new_subs := listAppend(list(sub :: s for s in subs), new_subs);
+            end while;
+
+            subs := new_subs;
+          end for;
+
+        then
+          listReverse(setSubscripts(s, cref) for s in subs);
+
+      else {cref};
+    end match;
+  end vectorize;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

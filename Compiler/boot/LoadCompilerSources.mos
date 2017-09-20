@@ -105,6 +105,7 @@ if true then /* Suppress output */
     //"../NFFrontEnd/NFEvalFunction.mo",
     //"../NFFrontEnd/NFExpandableConnectors.mo",
     "../NFFrontEnd/NFExpression.mo",
+    "../NFFrontEnd/NFExpressionIterator.mo",
     "../NFFrontEnd/NFExtend.mo",
     "../NFFrontEnd/NFFlatten.mo",
     "../NFFrontEnd/NFFunction.mo",

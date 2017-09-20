@@ -109,6 +109,26 @@ public uniontype Statement
     SourceInfo info;
   end FAILURE;
 
+  function info
+    input Statement stmt;
+    output SourceInfo info;
+  algorithm
+    info := match stmt
+      case ASSIGNMENT() then stmt.info;
+      case FUNCTION_ARRAY_INIT() then stmt.info;
+      case FOR() then stmt.info;
+      case IF() then stmt.info;
+      case WHEN() then stmt.info;
+      case ASSERT() then stmt.info;
+      case TERMINATE() then stmt.info;
+      case REINIT() then stmt.info;
+      case NORETCALL() then stmt.info;
+      case WHILE() then stmt.info;
+      case RETURN() then stmt.info;
+      case BREAK() then stmt.info;
+      case FAILURE() then stmt.info;
+    end match;
+  end info;
 end Statement;
 
 annotation(__OpenModelica_Interface="frontend");

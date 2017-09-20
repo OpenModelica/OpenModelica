@@ -97,6 +97,11 @@ public
     end match;
   end fromExp;
 
+  function fromExpList
+    input list<Expression> expl;
+    output Dimension dim = INTEGER(listLength(expl));
+  end fromExpList;
+
   function toDAE
     input Dimension dim;
     output DAE.Dimension daeDim;
@@ -143,21 +148,21 @@ public
   end isEqual;
 
   public function allEqual
-  input list<Dimension> dims1;
-  input list<Dimension> dims2;
-  output Boolean allEqual;
-algorithm
-  allEqual := match(dims1, dims2)
-    local
-      Dimension dim1, dim2;
-      list<Dimension> rest1, rest2;
+    input list<Dimension> dims1;
+    input list<Dimension> dims2;
+    output Boolean allEqual;
+  algorithm
+    allEqual := match(dims1, dims2)
+      local
+        Dimension dim1, dim2;
+        list<Dimension> rest1, rest2;
 
-    case ({}, {}) then true;
-    case (dim1::rest1, dim2::rest2) guard isEqual(dim1, dim2)
-      then allEqual(rest1, rest2);
-    else false;
-  end match;
-end allEqual;
+      case ({}, {}) then true;
+      case (dim1::rest1, dim2::rest2) guard isEqual(dim1, dim2)
+        then allEqual(rest1, rest2);
+      else false;
+    end match;
+  end allEqual;
 
   function isEqualKnown
     input Dimension dim1;
@@ -168,9 +173,23 @@ end allEqual;
       case (UNKNOWN(), _) then false;
       case (_, UNKNOWN()) then false;
       case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (EXP(), _) then false;
+      case (_, EXP()) then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqualKnown;
+
+  function isKnown
+    input Dimension dim;
+    output Boolean known;
+  algorithm
+    known := match dim
+      case INTEGER() then true;
+      case BOOLEAN() then true;
+      case ENUM() then true;
+      else false;
+    end match;
+  end isKnown;
 
   function toString
     input Dimension dim;

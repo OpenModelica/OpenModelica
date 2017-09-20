@@ -355,7 +355,17 @@ uniontype Call
 
   end matchFunctions;
 
-  protected
+  function typeOf
+    input Call call;
+    output Type ty;
+  algorithm
+    ty := match call
+      case TYPED_CALL(attributes = CallAttributes.CALL_ATTR(ty = ty)) then ty;
+      else Type.UNKNOWN();
+    end match;
+  end typeOf;
+
+protected
   function matchFunction
     input Function func;
     input list<TypedArg> args;

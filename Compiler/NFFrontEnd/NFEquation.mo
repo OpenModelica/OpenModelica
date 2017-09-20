@@ -44,6 +44,13 @@ public uniontype Equation
     SourceInfo info;
   end EQUALITY;
 
+  record ARRAY_EQUALITY
+    Expression lhs;
+    Expression rhs;
+    Type ty;
+    SourceInfo info;
+  end ARRAY_EQUALITY;
+
   record CONNECT
     Expression lhs "The left hand side component.";
     //NFConnect2.Face lhsFace "The face of the lhs component, inside or outside.";

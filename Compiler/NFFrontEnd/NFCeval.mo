@@ -87,6 +87,7 @@ algorithm
       Component comp;
       Option<Expression> oexp;
       ComponentRef cref;
+      Dimension dim;
 
     case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
       algorithm
@@ -129,10 +130,17 @@ algorithm
       then
         Expression.CALL(call);
 
+    case Expression.SIZE(dimIndex = SOME(exp1))
+      algorithm
+        dim := listGet(Type.arrayDims(Expression.typeOf(exp.exp)), Expression.toInteger(evalExp(exp1, target)));
+      then
+        Expression.INTEGER(Dimension.size(dim));
+
     case Expression.SIZE()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
-      then fail();
+        expl := list(Expression.INTEGER(Dimension.size(d)) for d in Type.arrayDims(Expression.typeOf(exp.exp)));
+      then
+        Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(listLength(expl))}), expl);
 
     case Expression.BINARY()
       algorithm

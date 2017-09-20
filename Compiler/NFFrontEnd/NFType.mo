@@ -397,7 +397,7 @@ public
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
       case Type.TUPLE() then "tuple(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
-      case Type.NORETCALL() then "noretcall()";
+      case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then InstNode.name(ty.cls);
       else
