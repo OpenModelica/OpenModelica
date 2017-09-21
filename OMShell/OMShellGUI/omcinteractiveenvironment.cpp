@@ -76,7 +76,7 @@ namespace IAEX
   {
     if (selfInstance == NULL)
     {
-      selfInstance = new IAEX::OmcInteractiveEnvironment();
+      selfInstance = new OmcInteractiveEnvironment();
     }
     return selfInstance;
   }
@@ -88,12 +88,13 @@ namespace IAEX
   OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
   {
     // set the language by reading the OMEdit settings file.
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
-    QLocale settingsLocale = QLocale(settings.value("language").toString());
-    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+    // enabling the locale settings causes OMShell to crash
+    //QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    //QLocale settingsLocale = QLocale(settings.value("language").toString());
+    //settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     void *args = mmc_mk_nil();
-    QString locale = "+locale=" + settingsLocale.name();
-    args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
+    //QString locale = "+locale=" + settingsLocale.name();
+    //args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
     // initialize threadData
     threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
     void *st = 0;
@@ -162,7 +163,6 @@ namespace IAEX
    */
   void OmcInteractiveEnvironment::evalExpression(const QString expr)
   {
-qDebug("A");
     error_.clear(); // clear any error!
     // call OMC with expression
     void *reply_str = NULL;
@@ -170,24 +170,17 @@ qDebug("A");
     MMC_TRY_TOP_INTERNAL()
 
     MMC_TRY_STACK()
-    qDebug("A");
 
     if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.toStdString().c_str()), symbolTable_, &reply_str, &symbolTable_)) {
-      qDebug("B");
       return;
     }
-    qDebug("A");
     result_ = MMC_STRINGDATA(reply_str);
-    qDebug("A");
     result_ = result_.trimmed();
     reply_str = NULL;
     // see if there are any errors if the expr is not "quit()"
-    qDebug("A");
     if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), symbolTable_, &reply_str, &symbolTable_)) {
-      qDebug("C");
       return;
     }
-    qDebug("D");
     error_ = MMC_STRINGDATA(reply_str);
     error_ = error_.trimmed();
     if( error_.size() > 2 ) {

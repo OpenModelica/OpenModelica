@@ -259,9 +259,9 @@ OMS::OMS( QWidget* parent )
   cursor_.insertText( copyright_info_, textFormat_ );
   cursor_.insertText( tr("\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n"), textFormat_ );
 
-
+  delegate_ = IAEX::OmcInteractiveEnvironment::getInstance();
   // create command compleation instance
-  QString openmodelica( omhome );
+  QString openmodelica( delegate_->OpenModelicaHome() );
   if( openmodelica.isEmpty() )
     QMessageBox::critical( 0, "OMShell Error", "Could not find environment variable OPENMODELICAHOME, command completion will not work" );
 

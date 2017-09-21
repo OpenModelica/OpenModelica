@@ -37,6 +37,7 @@
 
 #include "meta/meta_modelica.h"
 #include "inputcelldelegate.h"
+#include "omc_config.h"
 
 namespace IAEX
 {

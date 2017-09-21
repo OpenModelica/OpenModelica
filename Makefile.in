@@ -15,7 +15,7 @@ install:
 	mkdir -p ${DESTDIR}/Applications/
 	cp -a build/Applications/OMShell@APP@ ${DESTDIR}/Applications/
 endif
-	mkdir -p ${DESTDIR}/lib/@host_short@/omc/ ${DESTDIR}/share/omedit/nls/
+	mkdir -p ${DESTDIR}/lib/@host_short@/omc/ ${DESTDIR}/share/omshell/nls/
 	cp -a build/lib/@host_short@/omc/* ${DESTDIR}/lib/@host_short@/omc/
 
 mkbuilddirs:
@@ -25,7 +25,7 @@ omshell: mkbuilddirs
 mosh: mkbuilddirs
 	$(MAKE) -C mosh/src
 clean:
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
+	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
 	$(MAKE) -C mosh/src clean
 distclean: clean
 	rm -f config.status configure Makefile OMShell/OMShellGUI/Makefile.unix

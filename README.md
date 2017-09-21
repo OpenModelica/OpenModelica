@@ -2,8 +2,7 @@
 
 ## Dependencies
 
-- [OpenModelica](https://openmodelica.org), compiled with CORBA support
-- CORBA implementation (omniORB, or possibly MICO)
+- [OpenModelica](https://openmodelica.org)
 
 ## Build instructions
 
