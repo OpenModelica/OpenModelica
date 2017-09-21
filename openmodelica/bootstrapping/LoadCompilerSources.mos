@@ -95,7 +95,6 @@ if true then /* Suppress output */
     prefixPath + "NFFrontEnd/NFDimension.mo",
     prefixPath + "NFFrontEnd/NFEquation.mo",
     prefixPath + "NFFrontEnd/NFFlatten.mo",
-    prefixPath + "NFFrontEnd/NFFunc.mo",
     prefixPath + "NFFrontEnd/NFInst.mo",
     prefixPath + "NFFrontEnd/NFClass.mo",
     prefixPath + "NFFrontEnd/NFInstNode.mo",

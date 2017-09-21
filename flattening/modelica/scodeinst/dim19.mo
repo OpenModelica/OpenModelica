@@ -1,9 +1,8 @@
 // name: dim19.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
-// FAILREASON: Bindings not subscripted.
 //
 
 model A

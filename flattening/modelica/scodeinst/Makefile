@@ -50,26 +50,35 @@ const17.mo \
 const2.mo \
 const3.mo \
 const4.mo \
+const5.mo \
+const6.mo \
 const7.mo \
 const8.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
 DimCyclic4.mo \
+DimInvalidExp1.mo \
+DimInvalidExp2.mo \
+DimInvalidExp3.mo \
+DimInvalidType1.mo \
+DimInvalidType2.mo \
+DimRagged1.mo \
+DimRagged2.mo \
 DimSize1.mo \
 DimSize2.mo \
 DimSize3.mo \
+DimUnknown1.mo \
+DimUnknown2.mo \
+DimUnknown3.mo \
+DimUnknown4.mo \
+DimUnknown5.mo \
+DimUnknown6.mo \
 dim1.mo \
-dim10.mo \
-dim12.mo \
 dim13.mo \
-dim14.mo \
-dim15.mo \
 dim16.mo \
-dim17.mo \
 dim18.mo \
 dim19.mo \
-dim3.mo \
 dim7.mo \
 dim8.mo \
 DuplicateElements1.mo \
@@ -268,8 +277,6 @@ when1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-const5.mo \
-const6.mo \
 dim2.mo \
 ExtendsVisibility.mo \
 DuplicateElements5.mo \

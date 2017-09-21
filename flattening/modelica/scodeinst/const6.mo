@@ -3,7 +3,6 @@
 // status: incorrect
 // cflags: -d=newInst
 //
-// FAILREASON: Variability not yet propagated.
 //
 
 
@@ -14,17 +13,8 @@ model M
 end M;
 
 // Result:
-//
-// EXPANDED FORM:
-//
-// class M
-//   parameter Integer x = 3;
-// end M;
-//
-//
-// Found 0 components and 1 parameters.
 // Error processing file: const6.mo
-// [const6.mo:9:3-9:25:writable] Error: Component j of variability CONST has binding x of higher variability PARAM.
+// [flattening/modelica/scodeinst/const6.mo:11:3-11:25:writable] Error: Component j of variability constant has binding 'x' of higher variability parameter.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
