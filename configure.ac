@@ -32,13 +32,6 @@ m4_include([common/m4/omhome.m4])
 
 FIND_OPENMODELICAHOME()
 
-OMNIORB_DEFAULT=yes
-m4_include([common/m4/corba.m4])
-
-if test -z "$USE_CORBA"; then
-  AC_MSG_ERROR([OMShell requires using the OMC CORBA interface. Configure using --with-omniORB.])
-fi
-
 AC_SUBST(LIBREADLINE)
 AC_SUBST(OMSHELL_TERMINAL)
 AC_MSG_CHECKING([if the user wants to compile OMShell-terminal])
@@ -74,5 +67,5 @@ else
   fi
 fi
 
-AC_OUTPUT(Makefile OMShell/OMShellGUI/Makefile.unix OMShell/OMShellGUI/OMShell.config mosh/src/Makefile OMShell/OMShellGUI/omc_config.h)
+AC_OUTPUT(Makefile OMShell/OMShellGUI/Makefile.unix OMShell/OMShellGUI/OMShell.config mosh/src/Makefile OMShell/OMShellGUI/omc_config.h mosh/src/omc_config.h)
 # AC_CONFIG_COMMANDS([Clean qmake stuff],[make clean])

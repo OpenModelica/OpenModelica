@@ -35,27 +35,35 @@
 
 #include <QtCore/QString>
 
-#include "omc_communicator.h"
+#include "meta/meta_modelica.h"
 #include "inputcelldelegate.h"
 
 namespace IAEX
 {
   class OmcInteractiveEnvironment : public InputCellDelegate
   {
-  public:
+  private:
     OmcInteractiveEnvironment();
     virtual ~OmcInteractiveEnvironment();
 
+  public:
+    threadData_t *threadData_;
+    void *symbolTable_;
+
+    static OmcInteractiveEnvironment* getInstance();
     virtual QString getResult();
-    virtual void evalExpression(QString expr);
-    virtual void closeConnection();        // Added 2006-02-02 AF
-    virtual void reconnect();          // Added 2006-02-09 AF
-    virtual bool startDelegate();        // Added 2006-02-09 AF
-    static bool startOMC();            // Added 2006-02-09 AF
+    virtual QString getError();
+    virtual int getErrorLevel();
+    virtual void evalExpression(const QString expr);
+    static QString OMCVersion();
+    static QString OpenModelicaHome();
+    static QString TmpPath();
 
   private:
-    OmcCommunicator &comm_;
+    static OmcInteractiveEnvironment* selfInstance;
     QString result_;
+    QString error_;
+    int severity;
   };
 }
 #endif

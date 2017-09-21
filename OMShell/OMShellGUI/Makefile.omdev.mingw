@@ -18,17 +18,9 @@ Makefile: OMShellGUI.pro
 
 clean: Makefile
 	test ! -f Makefile || $(MAKE) -f Makefile clean
-	rm -rf ../bin/$(NAME)$(EXE) omc_communication.* Makefile Makefile.Debug Makefile.Release object_script.*
+	rm -rf ../bin/$(NAME)$(EXE) Makefile Makefile.Debug Makefile.Release object_script.*
 
-omc_communication.cc: $(builddir_share)/omc/omc_communication.idl
-ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	$(OMDEV)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug $<
-else
-	$(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug $<
-endif
-omc_communication.h: omc_communication.cc
-
-$(NAME): omc_communication.cc omc_communication.h Makefile
+$(NAME): Makefile
 	$(MAKE) -f Makefile
 
 build: $(NAME)
@@ -37,5 +29,3 @@ build: $(NAME)
 	cp -p commands.xml $(builddir_share)/omshell/
 	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
 	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
-
-

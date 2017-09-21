@@ -11,12 +11,9 @@ Makefile: OMShell.config
 	$(QMAKE)
 
 clean: Makefile
-	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) omc_communication.* Makefile
+	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) Makefile
 
-omc_communication.cc omc_communication.h: @OPENMODELICAHOME@/share/omc/omc_communication.idl
-	@IDLCMD@ $<
-
-$(NAME): Makefile OMShell.config omc_communication.cc
+$(NAME): Makefile OMShell.config
 	$(MAKE) -f Makefile
 
 build: $(NAME)

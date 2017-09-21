@@ -33,5 +33,5 @@ Makefile: Makefile.in config.status
 	./config.status
 config.status: configure
 	./config.status -recheck
-configure: configure.ac common/m4/corba.m4 common/m4/omhome.m4 common/m4/qmake.m4
+configure: configure.ac common/m4/omhome.m4 common/m4/qmake.m4
 	autoconf

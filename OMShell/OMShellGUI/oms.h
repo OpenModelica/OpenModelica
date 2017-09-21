@@ -112,8 +112,6 @@ public slots:
   void aboutOMS();
   void aboutQT();          // Added 2006-02-21 AF
   void print();
-  static bool startServer();
-  static void stopServer();
   void clear();
 
 private slots:

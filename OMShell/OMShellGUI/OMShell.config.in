@@ -1,10 +1,8 @@
 QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
-CORBALIBS = @CORBALIBS@
-CORBAINC = @CORBA_QMAKE_INCLUDES@
-USE_CORBA = @QT_USE_CORBA@
+OMCLIBS = -L@OMBUILDDIR@/lib/@host_short@/omc -Wl,-rpath,@loader_path/../../../../lib/@host_short@/omc,-rpath,@loader_path/../../../../lib/,-rpath,@OMBUILDDIR@/lib/@host_short@/omc,-rpath,@OMBUILDDIR@/lib/ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
 INCLUDEPATH += $$system(echo @CFLAGS@ | sed "s/\ //g" | grep ^-I | sed s/^-I//)
-QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
-QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
+QMAKE_CFLAGS = -g @CFLAGS@ @CPPFLAGS@
+QMAKE_CXXFLAGS = -g @CXXFLAGS@ @CPPFLAGS@
 QMAKE_LFLAGS += @LDFLAGS@

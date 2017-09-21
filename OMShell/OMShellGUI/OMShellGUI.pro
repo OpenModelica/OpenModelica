@@ -11,15 +11,11 @@ TARGET = OMShell
 TEMPLATE = app
 
 SOURCES += commandcompletion.cpp \
-    omc_communication.cc \
-    omc_communicator.cpp \
     omcinteractiveenvironment.cpp \
     oms.cpp \
     main.cpp
 
 HEADERS += commandcompletion.h \
-    omc_communication.h \
-    omc_communicator.h \
     omcinteractiveenvironment.h \
     oms.h
 
@@ -32,15 +28,11 @@ win32 {
   ISMINGW32 = $$find(UNAME, MINGW32)
   message(uname: $$UNAME)
   count( ISMINGW32, 1 ) {
-    CORBAINC = $$(OMDEV)/lib/omniORB-4.2.0-mingw32/include
-    CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.2.0-mingw32/lib/x86_win32 -lomniORB420_rt -lomnithread40_rt
     DEFINES += __x86__ \
                __NT__ \
                __OSVERSION__=4 \
                __WIN32__
   } else {
-    CORBAINC = $$(OMDEV)/lib/omniORB-4.2.0-mingw64/include
-    CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.2.0-mingw64/lib/x86_win32 -lomniORB420_rt -lomnithread40_rt
     DEFINES += __x86__ \
 	           __x86_64__ \
 	           __NT__ \
@@ -54,8 +46,8 @@ win32 {
 }
 #---------End OMNIorb
 
-INCLUDEPATH += $${CORBAINC}
-LIBS += $${CORBALIBS}
+LIBS += $${OMCLIBS}
+INCLUDEPATH += ../../../build/include/omc/c
 
 CONFIG += warn_off
 

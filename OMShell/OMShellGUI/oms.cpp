@@ -59,7 +59,7 @@ using namespace std;
 
 static QString omc_version_;
 static QString omhome;
-static IAEX::InputCellDelegate* delegate_;
+static IAEX::OmcInteractiveEnvironment* delegate_;
 
 //A small trick to get access to protected function in QThread.
 class SleeperThread : public QThread
@@ -248,9 +248,6 @@ OMS::OMS( QWidget* parent )
 //  connect( this, SIGNAL( emitQuit() ),
 //    qApp, SLOT( quit() ));
 
-  // start server
-  startServer();
-
   // windows stuff
   resize( 800, 600 );
   setWindowTitle( tr("OMShell - OpenModelica Shell") );
@@ -298,7 +295,6 @@ OMS::OMS( QWidget* parent )
 OMS::~OMS()
 {
   delete mainFrame_;
-  delete delegate_;
   delete commandcompletion_;
 
   delete fileMenu_;
@@ -509,7 +505,6 @@ void OMS::returnPressed()
   // send command to OMC
   if( delegate_ )
   {
-eval:
     // 2006-02-02 AF, Added try-catch
     try
     {
@@ -548,13 +543,7 @@ eval:
   }
   else
   {
-    if( startServer() )
-    {
-      cursor_.insertText("[ERROR] No OMC serer started - restarted OMC\n" );
-      goto eval;
-    }
-    else
-      cursor_.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
+    cursor_.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
   }
 
   // add new command line
@@ -564,45 +553,7 @@ eval:
 void OMS::exceptionInEval(exception &e)
 {
   // 2006-0-09 AF, try to reconnect to OMC first.
-  try
-  {
-    delegate_->closeConnection();
-    delegate_->reconnect();
-    returnPressed();
-  }
-  catch( exception &e )
-  {
-    // unable to reconnect, ask if user want to restart omc.
-    QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-    int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-      msg,
-      QMessageBox::Yes | QMessageBox::Default,
-      QMessageBox::No );
-
-    if( result == QMessageBox::Yes )
-    {
-      delegate_->closeConnection();
-      if( delegate_->startDelegate() )
-      {
-        // 2006-03-14 AF, wait before trying to reconnect,
-        // give OMC time to start up
-        SleeperThread::msleep( 1000 );
-
-        //delegate_->closeConnection();
-        try
-        {
-          delegate_->reconnect();
-          returnPressed();
-        }
-        catch( exception &e )
-        {
-          QMessageBox::critical( 0, tr("Communication Error"),
-            tr("<B>Unable to communication correctlly with OMC. OMShell will therefore close.</B>") );
-          close();
-        }
-      }
-    }
-  }
+  returnPressed();
 }
 
 void OMS::insertNewline()
@@ -793,39 +744,20 @@ void OMS::loadModelicaLibrary()
 bool OMS::exit()
 {
   // check if omc is running, if so: ask if it is ok that omc also closes.
-  try
-  {
-    if( delegate_ )
-    {
-      delegate_->closeConnection();
-      delegate_->reconnect();
+  QMessageBox *msgBox = new QMessageBox(0);
+  msgBox->setWindowTitle(tr("Close OMC"));
+  msgBox->setIcon(QMessageBox::Question);
+  msgBox->setText(tr("Quit OMShell?"));
+  msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+  msgBox->setDefaultButton(QMessageBox::Yes);
 
-      QMessageBox *msgBox = new QMessageBox(0);
-      msgBox->setWindowTitle(tr("Close OMC"));
-      msgBox->setIcon(QMessageBox::Question);
-      msgBox->setText(tr("OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)"));
-      msgBox->setStandardButtons(QMessageBox::Ok | QMessageBox::No | QMessageBox::Cancel);
-      msgBox->setDefaultButton(QMessageBox::Ok);
+  int result = msgBox->exec();
 
-      int result = msgBox->exec();
-
-      if( result == QMessageBox::Ok )
-      {
-        stopServer();
-        return true;
-      }
-      else if (result == QMessageBox::No)
-      {
-          return true;
-      }
-      else if (result == QMessageBox::Cancel)
-      {
-          return false;
-      }
-    }
+  if( result == QMessageBox::Yes ) {
+    return true;
+  } else {
+    return false;
   }
-  catch(exception e)
-  {}
 }
 
 void OMS::fontSize()
@@ -871,81 +803,6 @@ void OMS::aboutQT()
 void OMS::print()
 {
   // TODO: Implement print
-}
-
-bool OMS::startServer()
-{
-  bool omcNowStarted = false;
-  QString getVersionStr = "getVersion()";
-  QString getOMHomeStr = "getInstallationDirectoryPath()";
-
-  if( delegate_ == 0 )
-  {
-    try
-    {
-      delegate_ = new IAEX::OmcInteractiveEnvironment();
-      omcNowStarted = true;
-
-      // get version no
-      delegate_->evalExpression( getVersionStr );
-      omc_version_ = delegate_->getResult();
-      omc_version_.remove( "\"" );
-      // get omhome
-      delegate_->evalExpression( getOMHomeStr );
-      omhome = delegate_->getResult();
-      omhome.remove( "\"" );
-    }
-    catch( exception &e )
-    {
-      if( !IAEX::OmcInteractiveEnvironment::startOMC() )
-      {
-        QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMShell will not work correctly." );
-      }
-      else
-      {
-        // 2006-03-14 AF, wait before trying to reconnect,
-        // give OMC time to start up
-        SleeperThread::msleep( 3000 );
-
-        delegate_ = new IAEX::OmcInteractiveEnvironment();
-        omcNowStarted = true;
-
-        // get version no
-        QString getTempStr = "getTempDirectoryPath()";
-        delegate_->evalExpression( getTempStr );
-        QString tmpDir = delegate_->getResult()+"/OpenModelica/";
-        tmpDir.remove("\"");
-        if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
-        tmpDir = "cd(\"" + tmpDir + "\")";
-        cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
-        delegate_->evalExpression(tmpDir);
-        cout << "cdToTempDir: " << delegate_->getResult().toStdString() << std::endl;
-
-        QString getVersionStr = "getVersion()";
-        delegate_->evalExpression( getVersionStr );
-        omc_version_ = delegate_->getResult();
-        omc_version_.remove( "\"" );
-        cout << "OMC version " << omc_version_.toStdString() << std::endl;
-
-        // get omhome
-        delegate_->evalExpression( getOMHomeStr );
-        omhome = delegate_->getResult();
-        omhome.remove( "\"" );
-        cout << "OPENMODELICAHOME: " << omhome.toStdString() << std::endl;
-      }
-    }
-  }
-
-  return omcNowStarted;
-}
-
-void OMS::stopServer()
-{
-  if( delegate_ )
-  {
-    QString quit = "quit()";
-    delegate_->evalExpression( quit );
-  }
 }
 
 void OMS::clear()

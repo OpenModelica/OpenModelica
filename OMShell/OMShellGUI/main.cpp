@@ -90,11 +90,9 @@ int main(int argc, char *argv[])
 {
   QApplication app(argc, argv);
 
-  OMS::startServer();
-
-  IAEX::OmcInteractiveEnvironment env;
-  env.evalExpression("getInstallationDirectoryPath()");
-  QString dir = unparse(env.getResult()) + "/share/omshell/nls";
+  IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance();
+  env->evalExpression("getInstallationDirectoryPath()");
+  QString dir = unparse(env->getResult()) + "/share/omshell/nls";
   QString locale = QString("OMShell_") + QLocale::system().name();
 
   QTranslator translator;
