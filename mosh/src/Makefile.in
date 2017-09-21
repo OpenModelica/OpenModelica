@@ -5,25 +5,15 @@ CXX=@CXX@
 
 EXEEXT=@EXEEXT@
 
-USE_CORBA = @USE_CORBA@
-
-CORBALIB = @CORBALIBS@
-CORBAINC = @CORBACFLAGS@
-
-CFLAGS = @CFLAGS@ -Wall $(USE_CORBA)
-CPPFLAGS = $(CORBAINC) @CPPFLAGS@
+CFLAGS = @CFLAGS@ -Wall -I../../../build/include/omc/c
+CPPFLAGS = @CPPFLAGS@
 CXXFLAGS = $(CFLAGS)
 LDFLAGS = @LDFLAGS@ $(LIBS)
 
-LIBS = @LIBREADLINE@ -lncurses $(CORBALIB) -lm -lpthread
+LIBS = @LIBREADLINE@ -lncurses -lm -lpthread -L@OMBUILDDIR@/lib/@host_short@/omc -Wl,-rpath,@loader_path/../../../../lib/@host_short@/omc,-rpath,@loader_path/../../../../lib/,-rpath,@OMBUILDDIR@/lib/@host_short@/omc,-rpath,@OMBUILDDIR@/lib/ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
 
 
-OBJS += mosh.o options.o
-
-ifdef USE_CORBA
-  OBJS += omc_communication.o
-mosh.o: omc_communication.h
-endif
+OBJS += mosh.o omcinteractiveenvironment.o options.o
 
 PROG = OMShell-terminal
 
@@ -33,18 +23,13 @@ release: $(PROG)$(EXEEXT)
 $(PROG)$(EXEEXT) : $(OBJS)
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LDFLAGS)
 
-omc_communication.cpp: omc_communication.cc
-	ln -s $< $@
-omc_communication.cc: @OPENMODELICAHOME@/share/omc/omc_communication.idl
-	@IDLCMD@ $<
-omc_communication.h: omc_communication.cc
-
 clean:
-	-rm -f *.o *~ core *.core omc_communication.* $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
+	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
 
 
 mosh.o : mosh.cpp
 options.o: options.cpp
+omcinteractiveenvironment.o: omcinteractiveenvironment.cpp
 
 
 .PRECIOUS: Makefile

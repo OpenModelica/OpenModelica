@@ -46,14 +46,10 @@
 #include <sys/unistd.h>
 #include <sys/stat.h>
 
-#include <netinet/in.h>
-#include <netdb.h>
 
 #include <sys/param.h> /* MAXPATHLEN */
 #include "options.h"
-#ifdef USE_CORBA
-#include "omc_communication.h"
-#endif
+#include "omcinteractiveenvironment.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #else
@@ -63,16 +59,7 @@
 using namespace std;
 
 /* Local functios */
-void open_socket(char* hostname, int port);
-
-char * check_omhome(void);
-
-void init_sockaddr (struct sockaddr_in *name,
-                             const char *hostname,
-                             int port);
-
-void doCorbaCommunication(int argc, char **argv,const string *);
-void doSocketCommunication(const string*);
+void doOMCCommunication(const string *);
 
 
 /* Global variables */
@@ -84,9 +71,6 @@ int maxhistoryfileentries = 3000;
    and calls appropriate function. */
 int main(int argc, char* argv[])
 {
-  bool corba_comm=false;
-  bool noserv=false;
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
   historyfile = "mosh_history";
 #else
@@ -102,103 +86,37 @@ int main(int argc, char* argv[])
   wordfree(&p);
 #endif
 
-  char * omhome=check_omhome();
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
 
   const string *scriptname = getFlagValue("f",argc,argv);
-  if ((noserv=flagSet("noserv",argc,argv))&&!scriptname){
-    cout << "Skip starting server, assumed to be running" << endl;
-  }
-  if ((corba_comm=flagSet("corba",argc,argv))&& !scriptname) {
-
-    cout << "Using corba communication" << endl;
-  }
   if(!scriptname) {
     cout << "OMShell "
          << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << endl
          << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
          << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
   }
-  const char* errorfile = "/tmp/omshell.log";
-  if (corba_comm) {
-    if (!noserv) {
-      // Starting background server using corba
-      char systemstr[1024];
-      if (omhome)
-        sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s 2>&1 &", omhome, errorfile);
-      else
-        sprintf(systemstr, "omc +d=interactiveCorba > %s 2>&1 &", errorfile);
-      int res = system(systemstr);
-      if (res) {
-        if (omhome)
-          cerr << "Failed to start server using " << systemstr << endl;
-        else
-          cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
-        return EXIT_FAILURE;
-      }
-      if (!scriptname) cout << "Started server using:"<< systemstr << "\n" << endl;
-    }
-    sleep(1); // wait a second for the server to start
-    doCorbaCommunication(argc,argv,scriptname);
-  } else {
-    if (!noserv) {
-     // Starting background server using corba
-      char systemstr[1024];
-      if (omhome)
-        sprintf(systemstr, "%s/bin/omc +d=interactive > %s 2>&1 &", omhome, errorfile);
-      else
-        sprintf(systemstr, "omc +d=interactive > %s 2>&1 &", errorfile);
-      int res = system(systemstr);
-      if (res) {
-        if (omhome)
-          cerr << "Failed to start server using " << systemstr << endl;
-        else
-          cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
-        return EXIT_FAILURE;
-      }
-      if (!scriptname) cout << "Started server using:"<< systemstr << endl;
-    }
-    sleep(1); // wait a second for the server to start
-    doSocketCommunication(scriptname);
-  }
+  doOMCCommunication(scriptname);
 
   delete scriptname;
   return EXIT_SUCCESS;
 }
 
-#ifdef USE_CORBA
-void doCorbaCommunication(int argc, char **argv, const string *scriptname)
+void doOMCCommunication(const string *scriptname)
 {
- CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);
-  char uri[300];
-  const char *user = getenv("USER");
-  if (user == NULL) { user = "nobody"; }
-  sprintf (uri, "file:///tmp/openmodelica.%s.objid",user);
-
-  CORBA::Object_var obj = orb->string_to_object(uri);
-
-  OmcCommunication_var client = OmcCommunication::_narrow(obj);
-
-  char cd_buf[MAXPATHLEN];
-  char cd_cmd[MAXPATHLEN+6];
-  if (NULL != getcwd(cd_buf,MAXPATHLEN)) {
-    sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
-    char* res = client->sendExpression(cd_cmd);
-    CORBA::string_free(res);
-  }
+  IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance();
+  env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
+  string cmdLine = env->getResult();
+  cout << "Set shortOutput flag: " << cmdLine.c_str() << std::endl;
 
   if (scriptname) { // Execute script and output return value
+    cout << "executing <" << scriptname << ">" << endl;
     const char * str=("runScript(\""+*scriptname+"\")").c_str();
-    char *res=client->sendExpression(str);
-    CORBA::string_free(res);
+    env->evalExpression(str);
+    string res = env->getResult();
     cout << res << endl;
     return;
   }
 
-  if (CORBA::is_nil(client)) {
-    cerr << "Could not locate omc server." << endl;
-    exit(1);
-  }
   // initialize history usage
   using_history();
 
@@ -208,159 +126,19 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
   bool done=false;
   while (!done) {
     char* line = readline(">>> ");
-    if ( line == 0 || strcmp(line,"quit()") == 0 ) {
-      done =true;
+    if ( line == 0 || strncmp(line,"quit()",6) == 0 ) {
+      done = true;
       if (line == 0)  { line = strdup("quit()"); }
     }
     if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
       if (!done) add_history(line);
-      char *res =client->sendExpression(line);
-      if (done) {
-        sleep(1);
-      }
-      cout << res;
-      CORBA::string_free(res);
+      env->evalExpression(line);
+      string res = env->getResult();
+      cout << res << endl;
     }
     free(line);
   }
   // write history file
   write_history(historyfile);
   history_truncate_file(historyfile, maxhistoryfileentries);
-}
-#else
-void doCorbaCommunication(int argc, char **argv, const string *scriptname)
-{
-  cerr << "CORBA support disabled. configure with --with-CORBA to enable and recompile." << endl;
-  exit(1);
-}
-#endif
-
-void doSocketCommunication(const string * scriptname)
-{
-  int port=29500;
-  char buf[40000];
-
-  const char* hostname ="localhost";
-  // TODO: add port nr. and host as command line option
-
- /* Create the socket. */
-  int sock = socket (PF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
-    {
-      perror ("socket (client)");
-      exit (EXIT_FAILURE);
-    }
-
-
-  int tryconnect = 0;
-  bool connected=false;
-  while (!connected && tryconnect < 10 ) {
-    /* Connect to the server. */
-    struct sockaddr_in servername;
-    init_sockaddr (&servername, hostname, port);
-    if (0 > connect (sock, (struct sockaddr *) &servername, sizeof (servername)))
-    {
-      tryconnect++;
-      if(connected % 3 == 0) {sleep(1); } // Sleep a second every third try...
-
-    } else {
-      connected=true;
-    }
-  }
-  if (!connected) {
-    perror("Error connecting to omc server in interactive mode.\n");
-    exit(1);
-  }
-
-  // Change directory for server to the same directory as client has
-  char cd_buf[MAXPATHLEN];
-  char cd_cmd[MAXPATHLEN+6];
-  getcwd(cd_buf,MAXPATHLEN);
-  sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
-  write(sock,cd_cmd,strlen(cd_cmd)+1);
-  read(sock,buf,40000);
-
-  if (scriptname) {
-    const char *str= ("runScript("+*scriptname+")").c_str();
-    int nbytes = write(sock,str,strlen(str)+1);
-    if (nbytes == 0) {
-      cout << "Error writing to server" << endl;
-      return;
-    }
-    int recvbytes = read(sock,buf,40000);
-    if (recvbytes == 0) {
-      cout << "Received 0 bytes, exiting" << endl;
-      return;
-    }
-    cout << buf << endl;
-    return;
-  }
-  // initialize history usage
-  using_history();
-
-  // Read the history file
-  read_history(historyfile);
-
-
-  bool done=false;
-  while (!done) {
-    char* line = readline(">>> ");
-    if ( line == 0 || strcmp(line,"quit()") == 0 ) {
-      done =true;
-      if (line == 0)  { line = strdup("quit()"); }
-    }
-    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
-      if (!done) add_history(line);
-      int nbytes = write(sock,line,strlen(line)+1);
-      if (nbytes == 0) {
-        cout << "Error writing to server" << endl;
-        free(line);
-        break;
-      }
-      int recvbytes = read(sock,buf,40000);
-      if (recvbytes == 0) {
-        cout << "Received 0 bytes, exiting" << endl;
-        free(line);
-        break;
-      }
-      cout << buf;
-    }
-    free(line);
-  }
-  close (sock);
-
-  // write history file
-  write_history(historyfile);
-  history_truncate_file(historyfile, maxhistoryfileentries);
-}
-
-
-char* check_omhome(void)
-{
-  char *str;
-
-  str=getenv("OPENMODELICAHOME");
-  /*if (str == NULL) {
-    printf("Error, OPENMODELICAHOME not set. Set OPENMODELICAHOME to the root directory of the OpenModlica installation\n");
-    exit(1);
-  }*/
-  return str;
-}
-
-void
-init_sockaddr (struct sockaddr_in *name,
-               const char *hostname,
-               int port)
-{
-  struct hostent *hostinfo;
-
-  name->sin_family = AF_INET;
-  name->sin_port = htons (port);
-  hostinfo = gethostbyname (hostname);
-  if (hostinfo == NULL)
-    {
-      fprintf (stderr, "Unknown host %s.\n", hostname);
-      exit (EXIT_FAILURE);
-    }
-  name->sin_addr = *(struct in_addr *) hostinfo->h_addr;
 }

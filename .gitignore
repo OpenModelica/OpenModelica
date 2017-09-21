@@ -25,4 +25,5 @@ mosh/src/Makefile
 mosh/src/OMShell-terminal
 mosh/src/omc_communication.cc
 mosh/src/omc_communication.h
+mosh/src/omc_config.h
 qmake.sh
