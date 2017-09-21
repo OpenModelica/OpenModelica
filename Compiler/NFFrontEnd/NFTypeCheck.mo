@@ -55,6 +55,8 @@ import Operator = NFOperator;
 import Type = NFType;
 import Class = NFClass.Class;
 import ClassTree = NFClassTree;
+import InstUtil = NFInstUtil;
+import DAEUtil;
 
 public
 
@@ -2284,17 +2286,17 @@ end getRangeTypeEnum;
 function checkIfExpression
   input Expression condExp;
   input Type condType;
-  input DAE.Const condVar;
+  input DAE.VarKind condVar;
   input Expression thenExp;
   input Type thenType;
-  input DAE.Const thenVar;
+  input DAE.VarKind thenVar;
   input Expression elseExp;
   input Type elseType;
-  input DAE.Const elseVar;
+  input DAE.VarKind elseVar;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
-  output DAE.Const outVar;
+  output DAE.VarKind outVar;
 protected
    Expression ec, e1, e2;
    String s1, s2, s3, s4;
@@ -2324,22 +2326,24 @@ algorithm
 
   outExp := Expression.IF(ec, e1, e2);
   outType := thenType;
-  outVar := Types.constAnd(thenVar, elseVar);
+  outVar := InstUtil.variabilityAnd(thenVar, elseVar);
 end checkIfExpression;
 
-function checkConstVariability
-  input DAE.Const actualVar;
+function matchVariability
+  input DAE.VarKind actualVar;
   input DAE.VarKind expectedVar;
   output Boolean matching;
 algorithm
   matching := match (actualVar, expectedVar)
-    case (DAE.Const.C_CONST(), _) then true;
+    case (DAE.VarKind.CONST(), _) then true;
     case (_, DAE.VarKind.CONST()) then false;
-    case (DAE.Const.C_PARAM(), _) then true;
+    case (DAE.VarKind.PARAM(), _) then true;
     case (_, DAE.VarKind.PARAM()) then false;
+    case (DAE.VarKind.DISCRETE(), _) then true;
+    case (_, DAE.VarKind.DISCRETE()) then false;
     else true;
   end match;
-end checkConstVariability;
+end matchVariability;
 
 function matchBinding
   input output Binding binding;
@@ -2362,7 +2366,7 @@ algorithm
           parent := component;
 
           for i in 1:binding.propagatedLevels loop
-            parent := InstNode.parent(parent);
+            parent := InstNode.parent(component);
             dims := Type.arrayDims(InstNode.getType(parent));
             comp_ty := Type.liftArrayLeftList(comp_ty, dims);
           end for;
@@ -2390,6 +2394,34 @@ algorithm
         fail();
   end match;
 end matchBinding;
+
+function checkDimension
+  "Checks that an expression used as a dimension is a parameter expression and
+   has a valid type for a dimension, otherwise prints an error and fails."
+  input Expression exp;
+  input Type ty;
+  input DAE.VarKind var;
+  input SourceInfo info;
+algorithm
+  if not Type.isInteger(ty) then
+    () := match exp
+      case Expression.TYPENAME(ty = Type.ARRAY(elementType = Type.BOOLEAN())) then ();
+      case Expression.TYPENAME(ty = Type.ARRAY(elementType = Type.ENUMERATION())) then ();
+      else
+        algorithm
+          Error.addSourceMessage(Error.INVALID_DIMENSION_TYPE,
+            {Expression.toString(exp), Type.toString(ty)}, info);
+        then
+          fail();
+    end match;
+  end if;
+
+  if not DAEUtil.isParamOrConstVarKind(var) then
+    Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
+      {Expression.toString(exp)}, info);
+    fail();
+  end if;
+end checkDimension;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

@@ -152,7 +152,7 @@ constant Binding STATESELECT_NEVER_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "never", 1),
     STATESELECT_TYPE_TYPE,
-    DAE.C_CONST(),
+    DAE.VarKind.CONST(),
     -1,
     Absyn.dummyInfo);
 
@@ -160,7 +160,7 @@ constant Binding STATESELECT_AVOID_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "avoid", 2),
     STATESELECT_TYPE_TYPE,
-    DAE.C_CONST(),
+    DAE.VarKind.CONST(),
     -1,
     Absyn.dummyInfo);
 
@@ -168,7 +168,7 @@ constant Binding STATESELECT_DEFAULT_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "default", 3),
     STATESELECT_TYPE_TYPE,
-    DAE.C_CONST(),
+    DAE.VarKind.CONST(),
     -1,
     Absyn.dummyInfo);
 
@@ -176,7 +176,7 @@ constant Binding STATESELECT_PREFER_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "prefer", 4),
     STATESELECT_TYPE_TYPE,
-    DAE.C_CONST(),
+    DAE.VarKind.CONST(),
     -1,
     Absyn.dummyInfo);
 
@@ -184,7 +184,7 @@ constant Binding STATESELECT_ALWAYS_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "always", 5),
     STATESELECT_TYPE_TYPE,
-    DAE.C_CONST(),
+    DAE.VarKind.CONST(),
     -1,
     Absyn.dummyInfo);
 

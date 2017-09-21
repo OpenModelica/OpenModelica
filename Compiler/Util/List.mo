@@ -3286,7 +3286,7 @@ end map1BoolOr;
 
 
 public function map1BoolAnd<TI, ArgT1>
-  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of true return value.
+  "Maps each element of a inList to Boolean type with inFunc. Stops mapping at first occurrence of false return value.
   inFunc takes one additional argument."
   input list<TI> inList;
   input MapFunc inFunc;

@@ -101,20 +101,11 @@ public
 
   function getVariability
     input ComponentRef cref;
-    output DAE.Const var;
+    output DAE.VarKind var;
   algorithm
     var := match cref
-      case CREF()
-        then
-          match Component.variability(InstNode.component(cref.node))
-            case DAE.VarKind.VARIABLE() then DAE.Const.C_VAR();
-            case DAE.VarKind.DISCRETE() then DAE.Const.C_VAR();
-            case DAE.VarKind.PARAM() then DAE.Const.C_PARAM();
-            case DAE.VarKind.CONST() then DAE.Const.C_CONST();
-            else DAE.Const.C_UNKNOWN();
-          end match;
-
-      else DAE.Const.C_UNKNOWN();
+      case CREF() then Component.variability(InstNode.component(cref.node));
+      else DAE.VarKind.VARIABLE();
     end match;
   end getVariability;
 

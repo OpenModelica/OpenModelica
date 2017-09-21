@@ -521,11 +521,20 @@ uniontype InstNode
     output Type ty;
   algorithm
     ty := match node
-      case CLASS_NODE() then
-        if Class.isBuiltin(Pointer.access(node.cls)) then
-          Class.getType(Pointer.access(node.cls))
-        else
-          Type.COMPLEX(node);
+      local
+        Class cls;
+
+      case CLASS_NODE()
+        algorithm
+          cls := Pointer.access(node.cls);
+        then
+          match cls
+            case Class.DERIVED_CLASS() then getType(cls.baseClass);
+            case Class.INSTANCED_CLASS() then Type.COMPLEX(node);
+            case Class.PARTIAL_BUILTIN() then cls.ty;
+            case Class.INSTANCED_BUILTIN() then cls.ty;
+            else Type.UNKNOWN();
+          end match;
 
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
     end match;
@@ -792,6 +801,24 @@ uniontype InstNode
       else false;
     end match;
   end isRedeclare;
+
+  function countDimensions
+    input InstNode node;
+    input Integer levels;
+    input Integer accumCount = 0;
+    output Integer dimCount;
+  algorithm
+    if levels <= 0 then
+      dimCount := accumCount;
+    else
+      dimCount := match node
+        case COMPONENT_NODE()
+          then countDimensions(node.parent, levels - 1,
+            Component.dimensionCount(Pointer.access(node.component)));
+        else accumCount;
+      end match;
+    end if;
+  end countDimensions;
 
 end InstNode;
 

@@ -60,8 +60,8 @@ import MatchKind = NFTypeCheck.MatchKind;
 
 public
 type NamedArg = tuple<String, Expression>;
-type TypedArg = tuple<Expression, Type, DAE.Const>;
-type TypedNamedArg = tuple<String, Expression, Type, DAE.Const>;
+type TypedArg = tuple<Expression, Type, DAE.VarKind>;
+type TypedNamedArg = tuple<String, Expression, Type, DAE.VarKind>;
 
 public
 type SlotType = enumeration(
@@ -484,7 +484,7 @@ uniontype Function
     String argName;
     Type ty;
     Expression argExp;
-    DAE.Const var;
+    DAE.VarKind var;
   algorithm
     // Try to find a slot and fill it with the argument expression.
     for i in 1:arrayLength(slots) loop
@@ -552,7 +552,7 @@ uniontype Function
       args := match (default, arg)
         case (_, SOME(a)) then a :: args; // Use the argument from the call if one was given.
         // TODO: save this info in the defaults in slots (the type we can get from the exp manually but the variability is lost.).
-        case (SOME(e), _) then (e,Expression.typeOf(e),DAE.C_CONST()) ::args; // Otherwise, check that a default value exists.
+        case (SOME(e), _) then (e,Expression.typeOf(e),DAE.VarKind.CONST()) ::args; // Otherwise, check that a default value exists.
         else // Give an error if no argument was given and there's no default value.
           algorithm
             if isSome(info) then
@@ -580,7 +580,7 @@ uniontype Function
     list<InstNode> inputs;
     Expression argexp, margexp;
     Type ty, mty;
-    DAE.Const var;
+    DAE.VarKind var;
     list<TypedArg> checked_args;
     Integer idx;
     TypeCheck.MatchKind matchKind;
@@ -613,7 +613,7 @@ uniontype Function
         return;
       end if;
 
-      correct := TypeCheck.checkConstVariability(var, Component.variability(comp));
+      correct := TypeCheck.matchVariability(var, Component.variability(comp));
 
       // Variability mismatch, print an error.
       if not correct then

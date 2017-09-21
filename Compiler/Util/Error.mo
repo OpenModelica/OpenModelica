@@ -729,6 +729,10 @@ public constant Message CLASS_EXTENDS_MISSING_REDECLARE = MESSAGE(299, TRANSLATI
   Util.gettext("Missing redeclare prefix on class extends %s, treating like redeclare anyway."));
 public constant Message CYCLIC_DIMENSIONS = MESSAGE(300, TRANSLATION(), ERROR(),
   Util.gettext("Dimension %s of %s, '%s', could not be evaluated due to a cyclic dependency."));
+public constant Message INVALID_DIMENSION_TYPE = MESSAGE(301, TRANSLATION(), ERROR(),
+  Util.gettext("Dimension '%s' of type %s is not an integer expression or an enumeration or Boolean type name."));
+public constant Message RAGGED_DIMENSION = MESSAGE(302, TRANSLATION(), ERROR(),
+  Util.gettext("Ragged dimensions are not yet supported (from dimension '%s')"));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

@@ -45,7 +45,7 @@ import Type = NFType;
 
 uniontype EvalTarget
   record DIMENSION
-    String name;
+    InstNode component;
     Integer index;
     Expression exp;
     SourceInfo info;
@@ -235,7 +235,7 @@ algorithm
     case EvalTarget.DIMENSION()
       algorithm
         Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
-          {Expression.toString(exp), target.name}, target.info);
+          {Expression.toString(exp), InstNode.name(target.component)}, target.info);
       then
         fail();
 

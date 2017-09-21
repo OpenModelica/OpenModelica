@@ -70,7 +70,7 @@ function typeRecordCall
   input SourceInfo info;
   output Expression typedExp;
   output Type ty;
-  output DAE.Const variability;
+  output DAE.VarKind variability;
 //protected
 //  InstNode instClassNode;
 //  list<InstNode> inputs;
@@ -84,7 +84,7 @@ function typeRecordCall
 algorithm
   typedExp := Expression.INTEGER(0);
   ty := Type.UNKNOWN();
-  variability := DAE.Const.C_VAR();
+  variability := DAE.VarKind.VARIABLE();
 //
 //  inputs := getRecordConstructorInputs(classNode);
 //

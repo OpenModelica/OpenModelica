@@ -905,7 +905,7 @@ public
         String s;
         Expression e;
         Type t;
-        DAE.Const c;
+        DAE.VarKind v;
 
       case Call.UNTYPED_CALL()
         algorithm
@@ -926,15 +926,15 @@ public
           tnargs := {};
 
           for arg in call.arguments loop
-            (e, t, c) := arg;
+            (e, t, v) := arg;
             e := traverse(e, func);
-            targs := (e, t, c) :: targs;
+            targs := (e, t, v) :: targs;
           end for;
 
           for arg in call.named_args loop
-            (s, e, t, c) := arg;
+            (s, e, t, v) := arg;
             e := traverse(e, func);
-            tnargs := (s, e, t, c) :: tnargs;
+            tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
           Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
@@ -1088,6 +1088,43 @@ public
           ARRAY(arr_ty, expl);
     end match;
   end expandCref4;
+
+  function arrayFirstScalar
+    "Returns the first scalar element of an array. Fails if the array is empty."
+    input Expression arrayExp;
+    output Expression exp;
+  algorithm
+    exp := match arrayExp
+      case ARRAY() then arrayFirstScalar(listHead(arrayExp.elements));
+      else arrayExp;
+    end match;
+  end arrayFirstScalar;
+
+  function arrayAllEqual
+    "Checks if all scalar elements in an array are equal to each other."
+    input Expression arrayExp;
+    output Boolean allEqual;
+  algorithm
+    allEqual := matchcontinue arrayExp
+      case ARRAY()
+        then arrayAllEqual2(arrayExp, arrayFirstScalar(arrayExp));
+      else true;
+    end matchcontinue;
+  end arrayAllEqual;
+
+  function arrayAllEqual2
+    input Expression arrayExp;
+    input Expression element;
+    output Boolean allEqual;
+  algorithm
+    allEqual := match arrayExp
+      case ARRAY(elements = ARRAY() :: _)
+        then List.map1BoolAnd(arrayExp.elements, arrayAllEqual2, element);
+      case ARRAY()
+        then List.map1BoolAnd(arrayExp.elements, isEqual, element);
+      else true;
+    end match;
+  end arrayAllEqual2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

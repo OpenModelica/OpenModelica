@@ -67,6 +67,7 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import NFSections.Sections;
 import List;
+import DAEUtil;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -109,25 +110,27 @@ end typeFunction;
 
 function typeComponents
   input InstNode cls;
-  output Type ty;
 protected
   Class c = InstNode.getClass(cls);
   ClassTree cls_tree;
   list<Dimension> dims;
 algorithm
-  ty := match c
+  () := match c
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
           typeComponent(c);
         end for;
       then
-        Type.COMPLEX(cls);
+        ();
 
     case Class.DERIVED_CLASS()
-      then typeComponents(c.baseClass);
+      algorithm
+        typeComponents(c.baseClass);
+      then
+        ();
 
-    case Class.INSTANCED_BUILTIN() then c.ty;
+    case Class.INSTANCED_BUILTIN() then ();
 
     else
       algorithm
@@ -150,16 +153,14 @@ algorithm
     case Component.UNTYPED_COMPONENT()
       algorithm
         // Type the component's dimensions.
-        typeDimensions(c.dimensions, InstNode.name(component), c.binding, c.info);
+        typeDimensions(c.dimensions, component, c.binding, c.info);
+
+        // Construct the type of the component and update the node with it.
+        ty := Type.liftArrayLeftList(InstNode.getType(c.classInst), arrayList(c.dimensions));
+        InstNode.updateComponent(Component.setType(ty, c), component);
 
         // Type the component's children.
-        ty := typeComponents(c.classInst);
-
-        // Add the dimensions from the component to its type.
-        ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
-
-        // Finally, update the component in the instance tree.
-        InstNode.updateComponent(Component.setType(ty, c), component);
+        typeComponents(c.classInst);
       then
         ty;
 
@@ -196,7 +197,7 @@ algorithm
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural then
-          if not Types.isParameterOrConstant(Binding.variability(binding)) then
+          if not DAEUtil.isParamOrConstVarKind(Binding.variability(binding)) then
             Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
               {Binding.toString(binding)}, info);
           else
@@ -239,18 +240,18 @@ end typeIterator;
 
 function typeDimensions
   input output array<Dimension> dimensions;
-  input String elementName;
+  input InstNode component;
   input Binding binding;
   input SourceInfo info;
 algorithm
   for i in 1:arrayLength(dimensions) loop
-    typeDimension(dimensions[i], elementName, binding, i, dimensions, info);
+    typeDimension(dimensions[i], component, binding, i, dimensions, info);
   end for;
 end typeDimensions;
 
 function typeDimension
   input output Dimension dimension;
-  input String elementName;
+  input InstNode component;
   input Binding binding;
   input Integer index;
   input array<Dimension> dimensions;
@@ -259,10 +260,12 @@ algorithm
   dimension := match dimension
     local
       Expression exp;
-      DAE.Const var;
+      DAE.VarKind var;
       Dimension dim;
       Binding b;
       TypingError ty_err;
+      Type ty;
+      Integer prop_dims;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -276,7 +279,7 @@ algorithm
         //       found with DFS on the dimension expression. Maybe have a limit
         //       on the output in case there's a lot of dimensions involved.
         Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
-          {String(index), elementName, Expression.toString(dimension.dimension)}, info);
+          {String(index), InstNode.name(component), Expression.toString(dimension.dimension)}, info);
       then
         fail();
 
@@ -285,18 +288,24 @@ algorithm
       algorithm
         arrayUpdate(dimensions, index, Dimension.UNTYPED(dimension.dimension, true));
 
-        (exp, _, var) := typeExp(dimension.dimension, info);
+        (exp, ty, var) := typeExp(dimension.dimension, info);
+        TypeCheck.checkDimension(exp, ty, var, info);
 
-        // TODO: Improve this error message:
-        // "Dimension %s of %s is not a parameter expression."
-        if not Types.isParameterOrConstant(var) then
-          Error.addSourceMessageAndFail(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
-        end if;
-
-        exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(elementName, index, exp, info));
+        exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
         exp := SimplifyExp.simplifyExp(exp);
 
-        dim := Dimension.fromExp(exp);
+        // It's possible to get an array expression here, for example if the
+        // dimension expression is a parameter whose binding comes from a
+        // modifier on an array component. If all the elements are equal we can
+        // just take one of them and use that, but we don't yet support the case
+        // where they are different. Creating a dimension from an array leads to
+        // weird things happening, so for now we print an error instead.
+        if not Expression.arrayAllEqual(exp) then
+          Error.addSourceMessage(Error.RAGGED_DIMENSION, {Expression.toString(exp)}, info);
+          fail();
+        end if;
+
+        dim := Dimension.fromExp(Expression.arrayFirstScalar(exp));
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -309,7 +318,7 @@ algorithm
           case Binding.UNBOUND()
             algorithm
               Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
-                {String(index), elementName}, info);
+                {String(index), InstNode.name(component)}, info);
             then
               fail();
 
@@ -317,14 +326,16 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              dim := typeExpDim(binding.bindingExp, index + binding.propagatedLevels, info);
+              prop_dims := InstNode.countDimensions(InstNode.parent(component), binding.propagatedLevels);
+              dim := typeExpDim(binding.bindingExp, index + prop_dims, info);
             then
               dim;
 
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
             algorithm
-              dim := nthDimensionBoundsChecked(binding.bindingType, index + binding.propagatedLevels);
+              prop_dims := InstNode.countDimensions(InstNode.parent(component), binding.propagatedLevels);
+              dim := nthDimensionBoundsChecked(binding.bindingType, index + prop_dims);
             then
               dim;
 
@@ -401,6 +412,15 @@ algorithm
         // binding which is now typed, and it needs to be type checked.
         if dirty then
           binding := TypeCheck.matchBinding(binding, c.ty, component);
+
+          if not TypeCheck.matchVariability(Binding.variability(binding), Component.variability(c)) then
+            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
+              {InstNode.name(component), InstUtil.variabilityString(Component.variability(c)),
+               "'" + Binding.toString(binding) + "'", InstUtil.variabilityString(Binding.variability(binding))},
+              Binding.getInfo(binding));
+            fail();
+          end if;
+
           c.binding := binding;
         end if;
 
@@ -436,7 +456,7 @@ algorithm
     local
       Expression exp;
       Type ty;
-      DAE.Const var;
+      DAE.VarKind var;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
@@ -556,23 +576,23 @@ function typeExp
   input output Expression exp;
   input SourceInfo info;
         output Type ty;
-        output DAE.Const variability;
+        output DAE.VarKind variability;
 
-  import DAE.Const;
+  import DAE.VarKind;
 algorithm
   (exp, ty, variability) := match exp
     local
       Expression e1, e2, e3;
-      DAE.Const var1, var2, var3;
+      DAE.VarKind var1, var2, var3;
       Type ty1, ty2, ty3;
       Operator op;
       ComponentRef cref;
 
-    case Expression.INTEGER() then (exp, Type.INTEGER(), Const.C_CONST());
-    case Expression.REAL() then (exp, Type.REAL(), Const.C_CONST());
-    case Expression.STRING() then (exp, Type.STRING(), Const.C_CONST());
-    case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), Const.C_CONST());
-    case Expression.ENUM_LITERAL() then (exp, exp.ty, Const.C_CONST());
+    case Expression.INTEGER() then (exp, Type.INTEGER(), VarKind.CONST());
+    case Expression.REAL() then (exp, Type.REAL(), VarKind.CONST());
+    case Expression.STRING() then (exp, Type.STRING(), VarKind.CONST());
+    case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), VarKind.CONST());
+    case Expression.ENUM_LITERAL() then (exp, exp.ty, VarKind.CONST());
 
     case Expression.CREF()
       algorithm
@@ -580,13 +600,13 @@ algorithm
       then
         (Expression.CREF(ty, cref), ty, variability);
 
-    case Expression.TYPENAME() then (exp, exp.ty, Const.C_CONST());
+    case Expression.TYPENAME() then (exp, exp.ty, VarKind.CONST());
     case Expression.ARRAY() then typeArray(exp.elements, info);
     case Expression.RANGE() then typeRange(exp, info);
     case Expression.TUPLE() then typeTuple(exp.elements, info);
     case Expression.SIZE() then typeSize(exp, info);
 
-    case Expression.END() then (exp, Type.INTEGER(), Const.C_CONST());
+    case Expression.END() then (exp, Type.INTEGER(), VarKind.CONST());
 
     case Expression.BINARY()
       algorithm
@@ -594,7 +614,7 @@ algorithm
         (e2, ty2, var2) := typeExp(exp.exp2, info);
         (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, exp.operator, e2, ty2);
       then
-        (exp, ty, Types.constAnd(var1, var2));
+        (exp, ty, InstUtil.variabilityAnd(var1, var2));
 
     case Expression.UNARY()
       algorithm
@@ -609,7 +629,7 @@ algorithm
         (e2, ty2, var2) := typeExp(exp.exp2, info);
         (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, exp.operator, e2, ty2);
       then
-        (exp, ty, Types.constAnd(var1, var2));
+        (exp, ty, InstUtil.variabilityAnd(var1, var2));
 
     case Expression.LUNARY()
       algorithm
@@ -624,7 +644,7 @@ algorithm
         (e2, ty2, var2) := typeExp(exp.exp2, info);
         (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, exp.operator, e2, ty2);
       then
-        (exp, ty, Types.constAnd(var1, var2));
+        (exp, ty, InstUtil.variabilityAnd(var1, var2));
 
     case Expression.IF()
       algorithm
@@ -651,10 +671,10 @@ function typeExpl
   input SourceInfo info;
   output list<Expression> explTyped = {};
   output list<Type> tyl = {};
-  output list<DAE.Const> varl = {};
+  output list<DAE.VarKind> varl = {};
 protected
   Expression exp;
-  DAE.Const var;
+  DAE.VarKind var;
   Type ty;
 algorithm
   for e in listReverse(expl) loop
@@ -790,7 +810,7 @@ algorithm
         else
           error := TypingError.NO_ERROR();
           d := arrayGet(c.dimensions, dimIndex);
-          d := typeDimension(d, InstNode.name(component), c.binding, dimIndex, c.dimensions, info);
+          d := typeDimension(d, component, c.binding, dimIndex, c.dimensions, c.info);
         end if;
       then
         (d, error);
@@ -824,7 +844,7 @@ function typeCref
   input output ComponentRef cref;
   input SourceInfo info;
         output Type ty;
-        output DAE.Const variability;
+        output DAE.VarKind variability;
 
   import NFComponentRef.Origin;
 algorithm
@@ -835,7 +855,7 @@ algorithm
       list<Subscript> subs;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
-      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
+      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
@@ -849,13 +869,13 @@ algorithm
         (ComponentRef.CREF(cref.node, subs, cref_ty, cref.origin, rest_cr), ty, variability);
 
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
-      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
+      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
 
     case ComponentRef.EMPTY()
-      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
+      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
 
     case ComponentRef.WILD()
-      then (cref, Type.UNKNOWN(), DAE.Const.C_VAR());
+      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
 
     else
       algorithm
@@ -898,17 +918,17 @@ function typeArray
   input SourceInfo info;
   output Expression arrayExp;
   output Type arrayType = Type.UNKNOWN();
-  output DAE.Const variability = DAE.C_CONST();
+  output DAE.VarKind variability = DAE.VarKind.CONST();
 protected
   Expression exp;
   list<Expression> expl = {};
-  DAE.Const var;
+  DAE.VarKind var;
   Type ty;
 algorithm
   for e in elements loop
     // TODO: Type checking.
     (exp, ty, var) := typeExp(e, info);
-    variability := Types.constAnd(var, variability);
+    variability := InstUtil.variabilityAnd(var, variability);
     expl := exp :: expl;
   end for;
 
@@ -920,13 +940,13 @@ function typeRange
   input output Expression rangeExp;
   input SourceInfo info;
         output Type rangeType;
-        output DAE.Const variability;
+        output DAE.VarKind variability;
 protected
   Expression start_exp, step_exp, stop_exp;
   Type start_ty, step_ty, stop_ty;
   Option<Expression> ostep_exp;
   Option<Type> ostep_ty;
-  DAE.Const start_var, step_var, stop_var;
+  DAE.VarKind start_var, step_var, stop_var;
   TypeCheck.MatchKind ty_match;
 algorithm
   Expression.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := rangeExp;
@@ -934,7 +954,7 @@ algorithm
   // Type start and stop.
   (start_exp, start_ty, start_var) := typeExp(start_exp, info);
   (stop_exp, stop_ty, stop_var) := typeExp(stop_exp, info);
-  variability := Types.constAnd(start_var, stop_var);
+  variability := InstUtil.variabilityAnd(start_var, stop_var);
 
   // Type check start and stop.
   (start_exp, stop_exp, rangeType, ty_match) :=
@@ -948,7 +968,7 @@ algorithm
     // Type step.
     SOME(step_exp) := ostep_exp;
     (step_exp, step_ty, step_var) := typeExp(step_exp, info);
-    variability := Types.constAnd(step_var, variability);
+    variability := InstUtil.variabilityAnd(step_var, variability);
 
     // Type check start and step.
     (start_exp, step_exp, rangeType, ty_match) :=
@@ -978,16 +998,16 @@ function typeTuple
   input SourceInfo info;
   output Expression tupleExp;
   output Type tupleType;
-  output DAE.Const variability;
+  output DAE.VarKind variability;
 protected
   list<Expression> expl;
   list<Type> tyl;
-  list<DAE.Const> valr;
+  list<DAE.VarKind> valr;
 algorithm
   (expl, tyl, valr) := typeExpl(elements, info);
   tupleType := Type.TUPLE(tyl, NONE());
   tupleExp := Expression.TUPLE(tupleType, expl);
-  variability := List.fold(valr, Types.constAnd, DAE.C_CONST());
+  variability := List.fold(valr, InstUtil.variabilityAnd, DAE.VarKind.CONST());
 end typeTuple;
 
 protected
@@ -1008,7 +1028,7 @@ function typeSize
   input output Expression sizeExp;
   input SourceInfo info;
         output Type sizeType;
-        output DAE.Const variability;
+        output DAE.VarKind variability;
 protected
   Expression exp, index;
   Type exp_ty, index_ty;
@@ -1063,7 +1083,7 @@ algorithm
 
         dim_size := Dimension.size(dim);
       then
-        (Expression.INTEGER(dim_size), Type.INTEGER(), DAE.C_CONST());
+        (Expression.INTEGER(dim_size), Type.INTEGER(), DAE.VarKind.CONST());
 
     case Expression.SIZE()
       algorithm
@@ -1077,7 +1097,7 @@ algorithm
 
         sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(Type.dimensionCount(exp_ty))});
       then
-        (Expression.SIZE(exp, NONE()), sizeType, DAE.C_PARAM());
+        (Expression.SIZE(exp, NONE()), sizeType, DAE.VarKind.PARAM());
 
   end match;
 end typeSize;

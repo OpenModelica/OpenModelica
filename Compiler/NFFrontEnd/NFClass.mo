@@ -163,17 +163,6 @@ uniontype Class
     end match;
   end isBuiltin;
 
-  function getType
-    input Class cls;
-    output Type ty;
-  algorithm
-    ty := match cls
-      case PARTIAL_BUILTIN() then cls.ty;
-      case INSTANCED_BUILTIN() then cls.ty;
-      else Type.UNKNOWN();
-    end match;
-  end getType;
-
   function classTree
     input Class cls;
     output ClassTree tree;

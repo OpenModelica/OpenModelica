@@ -604,8 +604,8 @@ algorithm
     case CachedData.NO_CACHE()
       algorithm
         inst := instantiate(node);
-        instExpressions(inst);
         InstNode.setCachedData(CachedData.PACKAGE(inst), node);
+        instExpressions(inst);
       then
         inst;
 

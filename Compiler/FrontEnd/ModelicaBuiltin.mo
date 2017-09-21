@@ -753,7 +753,7 @@ function spatialDistribution "Not yet implemented"
   input Real x;
   input Boolean positiveVelocity;
   parameter input Real initialPoints[:](each min = 0, each max = 1) = {0.0, 1.0};
-  parameter input Real initialValues[size(initialPoints)] = {0.0, 0.0};
+  parameter input Real initialValues[size(initialPoints, 1)] = {0.0, 0.0};
   output Real out0;
   output Real out1;
 external "builtin";

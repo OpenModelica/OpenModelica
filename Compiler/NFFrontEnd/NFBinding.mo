@@ -62,7 +62,7 @@ public
   record TYPED_BINDING
     Expression bindingExp;
     Type bindingType;
-    DAE.Const variability;
+    DAE.VarKind variability;
     Integer propagatedLevels;
     SourceInfo info;
   end TYPED_BINDING;
@@ -142,12 +142,9 @@ public
 
   function variability
     input Binding binding;
-    output DAE.Const var;
+    output DAE.VarKind var;
   algorithm
-    var := match binding
-      case TYPED_BINDING() then binding.variability;
-      else DAE.Const.C_UNKNOWN();
-    end match;
+    TYPED_BINDING(variability = var) := binding;
   end variability;
 
   function getInfo

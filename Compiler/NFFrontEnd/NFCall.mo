@@ -50,6 +50,7 @@ import List;
 import NFClass.Class;
 import ErrorExt;
 import Util;
+import InstUtil = NFInstUtil;
 
 protected
 import NFFunction.NamedArg;
@@ -171,7 +172,7 @@ uniontype Call
     input output Expression callExp;
     input SourceInfo info;
           output Type ty;
-          output DAE.Const variability;
+          output DAE.VarKind variability;
   protected
     Call call, argtycall;
     InstNode fn_node;
@@ -180,7 +181,7 @@ uniontype Call
     Function fn;
     list<Expression> args;
     list<Type> arg_ty;
-    list<DAE.Const> arg_var;
+    list<DAE.VarKind> arg_var;
     CallAttributes ca;
     list<TypedArg> tyArgs;
   algorithm
@@ -203,9 +204,9 @@ uniontype Call
 
           args := list(Util.tuple31(a) for a in tyArgs);
 
-          variability := DAE.C_CONST();
+          variability := DAE.VarKind.CONST();
           for a in tyArgs loop
-            variability := Types.constAnd(variability,Util.tuple33(a));
+            variability := InstUtil.variabilityAnd(variability,Util.tuple33(a));
           end for;
 
           // Construct the call expression.
@@ -240,7 +241,7 @@ uniontype Call
       local
         Expression arg;
         Type arg_ty;
-        DAE.Const arg_const;
+        DAE.VarKind arg_var;
         list<TypedArg> typedArgs;
         list<TypedNamedArg> typedNamedArgs;
         String name;
@@ -248,8 +249,8 @@ uniontype Call
       case UNTYPED_CALL() algorithm
         typedArgs := {};
         for arg in call.arguments loop
-          (arg, arg_ty, arg_const) := Typing.typeExp(arg,info);
-          typedArgs := (arg, arg_ty, arg_const)::typedArgs;
+          (arg, arg_ty, arg_var) := Typing.typeExp(arg,info);
+          typedArgs := (arg, arg_ty, arg_var)::typedArgs;
         end for;
 
         typedArgs := listReverse(typedArgs);
@@ -257,8 +258,8 @@ uniontype Call
         typedNamedArgs := {};
         for narg in call.named_args loop
           (name,arg) := narg;
-          (arg, arg_ty, arg_const) := Typing.typeExp(arg,info);
-          typedNamedArgs := (name, arg, arg_ty, arg_const)::typedNamedArgs;
+          (arg, arg_ty, arg_var) := Typing.typeExp(arg,info);
+          typedNamedArgs := (name, arg, arg_ty, arg_var)::typedNamedArgs;
         end for;
         listReverse(typedNamedArgs);
 
