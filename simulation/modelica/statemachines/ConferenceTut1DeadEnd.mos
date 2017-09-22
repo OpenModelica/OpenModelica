@@ -5,7 +5,7 @@
 
 loadFile("ConferenceTut1DeadEnd.mo");
 echo(false);
-simulate(ConferenceTut1DeadEnd, startTime=0, stopTime=30, numberOfIntervals = 0); getErrorString();
+simulate(ConferenceTut1DeadEnd, startTime=0, stopTime=30, numberOfIntervals = 0, simflags="-lv=LOG_DEBUG"); getErrorString();
 echo(true);
 val(i,30.0);
 
