@@ -1637,7 +1637,7 @@ algorithm
 
   // Boolean stateMachineInFinalState = finalStates[activeState];
   exp := DAE.CREF(stateMachineInFinalStateRef, DAE.T_BOOL_DEFAULT);
-  rhs := DAE.CREF(qCref("finalStates", tArrayBool, {DAE.INDEX(DAE.CREF(activeStateRef,DAE.T_INTEGER_DEFAULT))}, preRef), DAE.T_BOOL_DEFAULT);
+  rhs := DAE.CREF(qCref("finalStates", nStatesArrayBool, {DAE.INDEX(DAE.CREF(activeStateRef,DAE.T_INTEGER_DEFAULT))}, preRef), DAE.T_BOOL_DEFAULT);
   eqs := DAE.EQUATION(exp, rhs, DAE.emptyElementSource) :: eqs;
 
   // Now return the semantics equations of the flat state machine and associated variables and parameters
