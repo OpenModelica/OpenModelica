@@ -318,26 +318,28 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       case REAL_CLOCK(interval=baseInterval as RCONST(real=bi)) then
         (subPartitions |> subPartition =>
           match subPartition
-          case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+          case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fsub, denom=fsuper), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <Clock><Periodic
                   baseInterval="<%bi%>"
-                  <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
-                  <%if intGt(fres, 1) then 'superSampleFactor="'+fres+'"'%>
+                  <%if intGt(fsub, 1) then 'subSampleFactor="'+fsub+'"'%>
+                  <%if intGt(fsuper, 1) then 'superSampleFactor="'+fsuper+'"'%>
                   <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
+                  <%if intGt(sres, 1) then 'resolution="'+sres+'"'%>
                   /></Clock>
           >>
         ; separator="\n")
       case INTEGER_CLOCK(intervalCounter=ic as ICONST(integer=bic), resolution=res as ICONST(integer=resi)) then
         (subPartitions |> subPartition =>
           match subPartition
-          case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
+          case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fsub, denom=fsuper), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <Clock><Periodic
-                  intervalCounter="<%bic%>"
-                  resolution="<%resi%>"
-                  <%if intGt(fnom, 1) then 'subSampleFactor="'+fnom+'"'%>
+                  intervalCounter="<%intMul(bic, sres)%>"
+                  <%if intGt(fsub, 1) then 'subSampleFactor="'+fsub+'"'%>
+                  <%if intGt(fsuper, 1) then 'superSampleFactor="'+fsuper+'"'%>
                   <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
+                  resolution="<%intMul(resi, sres)%>"
                   /></Clock>
           >>
         ; separator="\n")
