@@ -529,7 +529,7 @@ algorithm
     //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
     //print("END MAPPING\n\n");
 
-    (crefToClockIndexHT, _) := List.fold(inBackendDAE.eqs, collectClockedVars, (HashTable.emptyHashTable(), 1));
+    (crefToClockIndexHT, _) := List.fold(listReverse(inBackendDAE.eqs), collectClockedVars, (HashTable.emptyHashTable(), 1));
 
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
