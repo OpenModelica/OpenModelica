@@ -166,6 +166,9 @@ algorithm
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
         // print("Mod.elabMod: calling elabExp on mod exp: " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
+        // Modifiers always apply to single components, so if the expression is
+        // a tuple (i.e. from a function call) select the first tuple element.
+        (e_1, prop) = Expression.tupleHead(e_1, prop);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (e_val, cache) = elabModValue(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)

@@ -13125,5 +13125,23 @@ algorithm
   cont := not res;
 end findCallIsInlineAfterIndexReduction;
 
+public function tupleHead
+  input DAE.Exp exp;
+  input DAE.Properties prop;
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
+algorithm
+  (outExp, outProp) := match (exp, prop)
+    local
+      DAE.Type ty;
+
+    case (DAE.Exp.TUPLE(_ :: _), DAE.Properties.PROP_TUPLE())
+      then (listHead(exp.PR), Types.propTupleFirstProp(prop));
+    case (_, DAE.Properties.PROP_TUPLE(type_ = DAE.T_TUPLE(types = ty :: _)))
+      then (DAE.Exp.TSUB(exp, 1, ty), Types.propTupleFirstProp(prop));
+    else (exp, prop);
+  end match;
+end tupleHead;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
