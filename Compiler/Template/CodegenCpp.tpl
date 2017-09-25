@@ -9470,8 +9470,8 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
           <<
           <%preExp%>
           _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
-          _clockShift[<%i%>] = <%interval%> * <%snom%>.0 / <%sres%>.0;
-          _clockTime[<%i%>] = _simTime + _clockShift[<%i%>];
+          _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
+          _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
           _clockStart[<%i%>] = true;
           _clockSubactive[<%i%>] = false;
           <%i%> ++;
@@ -10166,7 +10166,7 @@ template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCod
          // simplified treatment of clocks in model as time events
         for (int i = 0; i < _dimClock; i++)
         {
-          _timeEventData[_dimTimeEvent-_dimClock+i] = std::make_pair(_clockShift[i], _clockInterval[i]);
+          _timeEventData[_dimTimeEvent-_dimClock+i] = std::make_pair(_clockShift[i] * _clockInterval[i], _clockInterval[i]);
         }
       }
       >>
@@ -12514,8 +12514,8 @@ if intNe(subClockIdx,0) then
   let absSubClockIdx = intAdd(absClockIdx,subClockIdx)
   <<
   //activate boolean triggered subclock <%absSubClockIdx%> of the base sub-clock <%absClockIdx%> is triggered
-  if (_time_conditions[<%absClockIdx%> -1+<%numberOfTimeEvents%>] && (_simTime >= _clockShift[<%absSubClockIdx%> -1])) {
-  _time_conditions[<%absSubClockIdx%> -1+<%numberOfTimeEvents%>] = (_simTime >= _clockShift[<%absSubClockIdx%> -1]);
+  if (_time_conditions[<%absClockIdx%> -1+<%numberOfTimeEvents%>] && (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1])) {
+  _time_conditions[<%absSubClockIdx%> -1+<%numberOfTimeEvents%>] = (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1]);
   }
   >>
 else
