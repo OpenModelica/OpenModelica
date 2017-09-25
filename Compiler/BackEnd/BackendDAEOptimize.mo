@@ -2913,6 +2913,8 @@ algorithm
       DAE.Exp ifexp, fb;
       BackendDAE.Equation eq;
       list<BackendDAE.Equation> rest_res;
+      DAE.Exp zeroExp;
+      Integer size;
 
     case (_, _, {}, _, _)
       equation
@@ -2921,13 +2923,18 @@ algorithm
 
     case (_, _, fb::fbs, _, _)
       equation
+        size = Expression.sizeOf(Expression.typeof(fb));
         tbsRest = List.map(inExpLst2, List.rest);
         rest_res = makeEquationsFromResiduals(inExp1, tbsRest, fbs, inSource, inEqAttr);
-
         tbsFirst = List.map(inExpLst2, listHead);
-
         ifexp = Expression.makeNestedIf(inExp1,tbsFirst,fb);
-        eq = BackendDAE.EQUATION(DAE.RCONST(0.0), ifexp, inSource, inEqAttr);
+        if size==1 then
+          eq = BackendDAE.EQUATION(DAE.RCONST(0.0), ifexp, inSource, inEqAttr);
+        else
+          zeroExp = Expression.createZeroExpression(Expression.typeof(fb));
+          eq = BackendDAE.COMPLEX_EQUATION(size, zeroExp, ifexp, inSource, inEqAttr);
+        end if;
+
       then (eq::rest_res);
   end match;
 end makeEquationsFromResiduals;
