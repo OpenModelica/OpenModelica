@@ -72,7 +72,6 @@ using namespace std;
 #endif
 
 //IAEX Headers
-#include "inputcelldelegate.h"
 #include "commandcompletion.h"
 
 //Forward Declaration

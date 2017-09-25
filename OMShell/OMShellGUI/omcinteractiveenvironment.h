@@ -36,12 +36,11 @@
 #include <QtCore/QString>
 
 #include "meta/meta_modelica.h"
-#include "inputcelldelegate.h"
 #include "omc_config.h"
 
 namespace IAEX
 {
-  class OmcInteractiveEnvironment : public InputCellDelegate
+  class OmcInteractiveEnvironment
   {
   private:
     OmcInteractiveEnvironment();

@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 
 void doOMCCommunication(const string *scriptname)
 {
-  IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance();
+  OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
   env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
   string cmdLine = env->getResult();
   cout << "Set shortOutput flag: " << cmdLine.c_str() << std::endl;

@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2017, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -39,13 +39,9 @@
 
 #include "meta/meta_modelica.h"
 
-//using std::string;
-using namespace std;
 
-namespace IAEX
+class OmcInteractiveEnvironment
 {
-  class OmcInteractiveEnvironment
-  {
   private:
     OmcInteractiveEnvironment();
     virtual ~OmcInteractiveEnvironment();
@@ -55,19 +51,19 @@ namespace IAEX
     void *symbolTable_;
 
     static OmcInteractiveEnvironment* getInstance();
-    virtual string getResult();
-    virtual string getError();
+    virtual std::string getResult();
+    virtual std::string getError();
     virtual int getErrorLevel();
-    virtual void evalExpression(const string expr);
-    static string OMCVersion();
-    static string OpenModelicaHome();
-    static string TmpPath();
+    virtual void evalExpression(const std::string expr);
+    static std::string OMCVersion();
+    static std::string OpenModelicaHome();
+    static std::string TmpPath();
 
   private:
     static OmcInteractiveEnvironment* selfInstance;
-    string result_;
-    string error_;
+    std::string result_;
+    std::string error_;
     int severity;
-  };
-}
+};
+
 #endif

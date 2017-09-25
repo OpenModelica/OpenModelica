@@ -33,6 +33,7 @@
 //STD Headers
 #include <exception>
 #include <stdexcept>
+#include <algorithm>
 
 #include "omcinteractiveenvironment.h"
 #ifndef WIN32
@@ -45,17 +46,16 @@ void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warn
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
 int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
-void* omc_Main_init(void *threadData, void *args);
-void* omc_Main_readSettings(void *threadData, void *args);
+modelica_metatype omc_Main_init(void *threadData, modelica_metatype args);
+modelica_metatype omc_Main_readSettings(void *threadData, modelica_metatype args);
 #ifdef WIN32
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
 }
-string trim(string str);
-bool contains(string s1, string s2);
 
-namespace IAEX
-{
+static std::string trim(std::string str);
+static bool contains(std::string s1, std::string s2);
+
   OmcInteractiveEnvironment* OmcInteractiveEnvironment::selfInstance = NULL;
   OmcInteractiveEnvironment* OmcInteractiveEnvironment::getInstance()
   {
@@ -72,7 +72,7 @@ namespace IAEX
   */
   OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
   {
-    void *args = mmc_mk_nil();
+    modelica_metatype args = mmc_mk_nil();
     /* modifying args leads to a crash!!!
     // set the language by reading the OMEdit settings file.
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
@@ -81,7 +81,7 @@ namespace IAEX
     string locale = "+locale=" + settingsLocale.name();
     args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
     */
-    //string locale = "+locale=C";
+    //std::string locale = "+locale=C";
     //args = mmc_mk_cons(mmc_mk_scon(locale.c_str()), args);
 
     // initialize threadData
@@ -99,7 +99,7 @@ namespace IAEX
     evalExpression("setCommandLineOptions(\"+d=initialization\")");
 #ifdef WIN32
     evalExpression("getInstallationDirectoryPath()");
-    string result = getResult();
+    std::string result = getResult();
     //result = result.remove( "\"" );
     result.erase(std::remove(result.begin(), result.end(), '\"'), result.end());
     MMC_TRY_TOP_INTERNAL()
@@ -110,7 +110,7 @@ namespace IAEX
 
   OmcInteractiveEnvironment::~OmcInteractiveEnvironment() { }
 
-  string OmcInteractiveEnvironment::getResult() {
+  std::string OmcInteractiveEnvironment::getResult() {
     return result_;
   }
 
@@ -120,7 +120,7 @@ namespace IAEX
    *
    *\brief Method for get error message from OMC
    */
-  string OmcInteractiveEnvironment::getError() {
+  std::string OmcInteractiveEnvironment::getError() {
     return error_;
   }
 
@@ -144,7 +144,7 @@ namespace IAEX
    *
    * 2006-02-02 AF, Added try-catch statement
    */
-  void OmcInteractiveEnvironment::evalExpression(const string expr) {
+  void OmcInteractiveEnvironment::evalExpression(const std::string expr) {
     error_.clear(); // clear any error!
     // call OMC with expression
     void *reply_str = NULL;
@@ -198,53 +198,53 @@ namespace IAEX
    *
    *\brief Ststic method for returning the version of omc
    */
-  string OmcInteractiveEnvironment::OMCVersion()
+  std::string OmcInteractiveEnvironment::OMCVersion()
   {
-    string version( "(version)" );
+    std::string version( "(version)" );
 
     try
     {
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
-      string getVersion = "getVersion()";
+      std::string getVersion = "getVersion()";
       env->evalExpression( getVersion );
       version = env->getResult();
       //version.remove( "\"" );
       version.erase(std::remove(version.begin(), version.end(), '\"'), version.end());
       //delete env;
     }
-    catch( exception &e )
+    catch( std::exception &e )
     {
       e.what();
-      cerr << "Unable to get OMC version, OMC is not started." << endl;
+      std::cerr << "Unable to get OMC version, OMC is not started." << std::endl;
     }
 
     return version;
   }
 
-  string OmcInteractiveEnvironment::OpenModelicaHome()
+  std::string OmcInteractiveEnvironment::OpenModelicaHome()
   {
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     env->evalExpression("getInstallationDirectoryPath()");
-    string result = env->getResult();
+    std::string result = env->getResult();
     //result = result.remove( "\"" );
     result.erase(std::remove(result.begin(), result.end(), '\"'), result.end());
     return result;
   }
 
-  string OmcInteractiveEnvironment::TmpPath()
+  std::string OmcInteractiveEnvironment::TmpPath()
   {
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     env->evalExpression("getTempDirectoryPath()");
-    string result = env->getResult();
+    std::string result = env->getResult();
     //result = result.replace("\\", "/");
     result.replace( result.begin(), result.end(), '\\', '/');
     //result.remove( "\"" );
     result.erase(std::remove(result.begin(), result.end(), '\"'), result.end());
     return result+"/OpenModelica/";
   }
-}
 
-string trimRight(string str) {
+
+std::string trimRight(std::string str) {
   // trim trailing spaces
   size_t endpos = str.find_last_not_of(" \t");
   size_t startpos = str.find_first_not_of(" \t");
@@ -258,18 +258,18 @@ string trimRight(string str) {
   }
   return str;
 }
-string trimLeft(string str) {
+std::string trimLeft(std::string str) {
   // trim leading spaces
   size_t startpos = str.find_first_not_of(" \t");
-  if( string::npos != startpos )
+  if( std::string::npos != startpos )
   {
       str = str.substr( startpos );
   }
   return str;
 }
-string trim(string str) {
+std::string trim(std::string str) {
   return trimLeft(trimRight(str));
 }
-bool contains(string s1, string s2) {
+bool contains(std::string s1, std::string s2) {
   return (s1.find(s2) != std::string::npos);
 }

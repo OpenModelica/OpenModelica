@@ -27,9 +27,9 @@ clean:
 	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
 
 
-mosh.o : mosh.cpp
-options.o: options.cpp
-omcinteractiveenvironment.o: omcinteractiveenvironment.cpp
+mosh.o : mosh.cpp options.h omcinteractiveenvironment.h
+options.o: options.cpp options.h
+omcinteractiveenvironment.o: omcinteractiveenvironment.cpp options.h omcinteractiveenvironment.h
 
 
 .PRECIOUS: Makefile
