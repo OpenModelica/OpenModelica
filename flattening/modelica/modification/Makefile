@@ -56,7 +56,8 @@ Overwriting2.mo \
 Shadow1.mo \
 UsertypeModifications.mo \
 UsertypeArrayMod.mo \
-TestMissingModifiers.mos
+TestMissingModifiers.mos \
+TupleFuncMod.mo
 
 
 # test that currently fail. Move up when fixed.

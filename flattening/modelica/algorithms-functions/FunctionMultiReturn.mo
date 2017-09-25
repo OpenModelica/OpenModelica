@@ -31,7 +31,7 @@ end FunctionMultiReturn;
 // end f;
 //
 // class FunctionMultiReturn
-//   Real x = (6.0, 9.0)[1];
+//   Real x = 6.0;
 //   Real y;
 // equation
 //   y = 8.0;
