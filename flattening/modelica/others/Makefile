@@ -56,6 +56,7 @@ NonfixedParamSubscript.mo \
 NotDependsRecursive.mo \
 OverrideFinalTest.mo \
 Partial1.mo \
+PDEModelicaTest.mos \
 PEXPipeTotal.mo \
 Philosopher2.mo \
 Philosopher.mo \
