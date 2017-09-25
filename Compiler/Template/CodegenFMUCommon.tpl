@@ -321,9 +321,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fsub, denom=fsuper), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <Clock><Periodic
-                  baseInterval="<%bi%>"
+                  baseInterval="<%realDiv(bi, intReal(fsuper))%>"
                   <%if intGt(fsub, 1) then 'subSampleFactor="'+fsub+'"'%>
-                  <%if intGt(fsuper, 1) then 'superSampleFactor="'+fsuper+'"'%>
                   <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
                   <%if intGt(sres, 1) then 'resolution="'+sres+'"'%>
                   /></Clock>
@@ -337,9 +336,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           <Clock><Periodic
                   intervalCounter="<%intMul(bic, sres)%>"
                   <%if intGt(fsub, 1) then 'subSampleFactor="'+fsub+'"'%>
-                  <%if intGt(fsuper, 1) then 'superSampleFactor="'+fsuper+'"'%>
-                  <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
-                  resolution="<%intMul(resi, sres)%>"
+                  <%if intGt(intMul(snom, fsuper), 0) then 'shiftCounter="'+intMul(snom, fsuper)+'"'%>
+                  resolution="<%intMul(intMul(resi, sres), fsuper)%>"
                   /></Clock>
           >>
         ; separator="\n")

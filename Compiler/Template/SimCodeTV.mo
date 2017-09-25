@@ -104,6 +104,11 @@ package builtin
     output Boolean b;
   end intLt;
 
+  function intReal
+    input Integer i;
+    output Real r;
+  end intReal;
+
   function realInt
     input Real r;
     output Integer i;
