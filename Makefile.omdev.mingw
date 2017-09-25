@@ -8,6 +8,9 @@ OMBUILDDIR=$(CURDIR)/build
 endif
 
 ifeq ($(BUILDTYPE),)
+BUILDTYPE=$(BuildType)
+endif
+ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
 

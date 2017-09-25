@@ -22,10 +22,11 @@ CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 OMDEVMSYS=$(shell cygpath $$OMDEV)
 
 ifeq ($(BUILDTYPE),)
-	BUILDTYPE=Debug
+BUILDTYPE=$(BuildType)
 endif
-
-
+ifeq ($(BUILDTYPE),)
+BUILDTYPE=Debug
+endif
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	IS_MINGW32 = -DIS_MINGW32=ON
@@ -154,7 +155,7 @@ runtimeCpp:
 
 runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	echo 'Build the cppRuntime with MSVC'
+	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
 	mkdir -p Build_MSVC
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
