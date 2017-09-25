@@ -8376,19 +8376,22 @@ algorithm
       list<DAE.SubMod> subModLst;
       Option<DAE.EqMod> binding;
       DAE.SourceInfo info;
-      Integer N;
+      Integer N = -1;
       DAE.ComponentRef dcr;
+      DAE.SubMod domainSubMod;
     case(SCode.ATTR(isField=Absyn.NONFIELD()),_)
       //TODO: check that the domain attribute (modifier) is not present.
       then
         (inDims,inMod,NONE());
     case(SCode.ATTR(isField=Absyn.FIELD()),DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, binding = binding, info = info))
       equation
-//        DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption) = inMod;
+        //find the domain modifier:
+        (domainSubMod, subModLst) = List.findAndRemove(subModLst, findDomainSubMod);
+        dcr = getQualDcr(domainSubMod, inInfo);
         //get N from the domain and remove domain from the subModLst:
-        (N, subModLst, SOME(dcr)) = List.fold30(subModLst,domainSearchFunDAE,-1,{},NONE());
+        (N, dcr) = getNDcr(dcr);
         if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
-            {"Domain of the field variable '", name, "' not found."}, inInfo);
+            {"Domain of the field variable '" + name + "' not found."}, inInfo);
         end if;
         subModLst = listReverse(subModLst);
         subModLst = List.map(subModLst,addEach);
@@ -8396,57 +8399,78 @@ algorithm
         dim_f = DAE.DIM_INTEGER(N);
       then
         (dim_f::inDims, outMod, SOME((Absyn.CREF_IDENT(name, {}),dcr)));
+    case(_,DAE.NOMOD())
+      equation
+        Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
+            {"Field variable '" + name + "' has no domain modifier."}, inInfo);
+      then
+        (inDims,inMod,NONE());
   end match;
 end elabField;
 
-protected function domainSearchFunDAE
-"fold function to find domain modifier in modifiers list"
-//TODO: simplify this function, perhaps not use fold
+protected function findDomainSubMod
   input DAE.SubMod subMod;
-  input Integer inN;
-  input list<DAE.SubMod> inSubModLst;
-  input Option<DAE.ComponentRef> inCrOpt;
-  output Integer outN;
-  output list<DAE.SubMod> outSubModLst;
-  output Option<DAE.ComponentRef> outCrOpt;
+  output Boolean isDomain;
+algorithm
+   isDomain := matchcontinue subMod
+   local
+       DAE.Mod mod;
+     case DAE.NAMEMOD(ident="domain") then true;
+     else false;
+   end matchcontinue;
+end findDomainSubMod;
 
-  algorithm
-    (outSubModLst,outN,outCrOpt) := matchcontinue subMod
-    local
-      DAE.Mod mod;
-      list<DAE.SubMod>  subModLst;
-      Option<DAE.EqMod> eqModOption;
-//      list<Values.Value> values;
-//      list<String> names;
-      list<DAE.Var> varLst;
-      Integer N;
-      DAE.ComponentRef cr;
+protected function getQualDcr
+  input DAE.SubMod domainSubMod;
+  input SourceInfo inInfo;
+  output DAE.ComponentRef dcr;
+algorithm
+  dcr := match domainSubMod
+  local
+    DAE.ComponentRef cr;
     case DAE.NAMEMOD(ident="domain", mod=DAE.MOD(binding=SOME(
-          DAE.TYPED(
-            modifierAsExp=DAE.CREF(
-              componentRef = cr,
-              ty=DAE.T_COMPLEX(
-                complexClassType=ClassInf.RECORD(
-                  path=Absyn.FULLYQUALIFIED(
-                    path=Absyn.IDENT(name="DomainLineSegment1D")
-                  )
-                )
+      DAE.TYPED(
+        modifierAsExp=DAE.CREF(
+          componentRef = cr,
+          ty=DAE.T_COMPLEX(
+            complexClassType=ClassInf.RECORD(
+              path=Absyn.FULLYQUALIFIED(
+                path=Absyn.IDENT(name="DomainLineSegment1D")
               )
             )
           )
-        )))
+        )
+      )
+    )))
+    then cr;
+    case _
       equation
-        DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst)) = cr;
-        N = List.findSome(varLst,findN);
-      then (inSubModLst,N,SOME(cr));
-    case DAE.NAMEMOD(ident="domain")
-      equation
-        print("cant find N in the domain");
+        Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
+            {"The domain type is wrong.\n"}, inInfo);
       then
         fail();
-    else (subMod::inSubModLst,inN,inCrOpt);
-    end matchcontinue;
-end domainSearchFunDAE;
+  end match;
+end getQualDcr;
+
+protected function getNDcr
+  input DAE.ComponentRef dcr;
+  output Integer outN;
+  output DAE.ComponentRef outCrOpt;
+algorithm
+  (outN,outCrOpt) := matchcontinue dcr
+  local
+    DAE.ComponentRef cr1;
+    list<DAE.Var> varLst;
+    Integer N;
+    case DAE.CREF_QUAL(componentRef = cr1)
+      then getNDcr(cr1);
+    case DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst))
+      equation
+        N = List.findSome(varLst,findN);
+      then (N,dcr);
+  end matchcontinue;
+end getNDcr;
+
 
 protected function findN
 "a map function to find N in domain class modifiers"
@@ -8644,37 +8668,6 @@ algorithm
 end extrapFieldTraverseFun;
 
 
-
-
-
-/*
-
-//TODO: remove never called:
-protected function matchExtrapAndField
-  input Absyn.Exp lhs_exp;
-  input Absyn.Exp rhs_exp;
-  output Absyn.ComponentRef fieldCr;
-  protected String s;
-algorithm
-  s := "Ahoj";
-  fieldCr := match (lhs_exp, rhs_exp)
-    local
-      Absyn.ComponentRef fcr, fcr_arg;
-    case (Absyn.CALL(
-                          function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}),
-                          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(Absyn.CREF_IDENT())})
-                    ),
-         Absyn.CREF(fcr as Absyn.CREF_IDENT())
-         )
-    then
-      fcr;
-    case (Absyn.CREF(fcr as Absyn.CREF_IDENT()),Absyn.CALL(function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(Absyn.CREF_IDENT())})))
-    then
-      fcr;
-  end match;
-
-end matchExtrapAndField;
-*/
 protected function getDomNFields
   input DomainFieldsLst inDomFieldLst;
   input Absyn.ComponentRef inDomainCr;
