@@ -135,7 +135,7 @@ package Buildings  "Library with models for building energy and control systems"
         constant Modelica.SIunits.HeatFlux solCon = 1367.7 "Solar constant";
       protected
         final parameter String absFilNam = BaseClasses.getAbsolutePath(filNam) "Absolute path of the file";
-        Modelica.Blocks.Tables.CombiTable1Ds datRea(final tableOnFile = true, final tableName = "tab1", final fileName = absFilNam, final smoothness = Modelica.Blocks.Types.Smoothness.ContinuousDerivative, final columns = {2, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}) "Data reader";
+        Modelica.Blocks.Tables.CombiTable1Ds datRea(verboseRead = false, final tableOnFile = true, final tableName = "tab1", final fileName = absFilNam, final smoothness = Modelica.Blocks.Types.Smoothness.ContinuousDerivative, final columns = {2, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}) "Data reader";
         Buildings.BoundaryConditions.WeatherData.BaseClasses.CheckTemperature cheTemDryBul "Check dry bulb temperature ";
         Buildings.BoundaryConditions.WeatherData.BaseClasses.CheckTemperature cheTemDewPoi "Check dew point temperature";
         Buildings.BoundaryConditions.WeatherData.BaseClasses.ConvertRelativeHumidity conRelHum "Convert the relative humidity from percentage to [0, 1] ";
