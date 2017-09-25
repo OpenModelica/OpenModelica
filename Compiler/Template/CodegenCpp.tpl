@@ -9470,7 +9470,7 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
           <<
           <%preExp%>
           _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
-          _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
+          _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0 / <%fnom%>.0 * <%fres%>.0;
           _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
           _clockStart[<%i%>] = true;
           _clockSubactive[<%i%>] = false;
