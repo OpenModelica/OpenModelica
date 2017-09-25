@@ -613,15 +613,14 @@ void vecMultScaling(int n, double *a, double *b, double *c)
 {
   int i;
   for (i=0;i<n;i++)
-    c[i] = a[i]*fabs(b[i]);
+    c[i] = (fabs(b[i])>0 ? a[i]*fabs(b[i]):a[i]);
 }
 
 void vecDivScaling(int n, double *a, double *b, double *c)
 {
   int i;
   for (i=0;i<n;i++)
-    c[i] = a[i]/fabs(b[i]);
-    // c[i] = a[i]/fmax(1.0,fabs(b[i]));
+    c[i] = (fabs(b[i])>0 ? a[i]/fabs(b[i]):a[i]);
 }
 
 void vecNormalize(int n, double *a, double *b)
@@ -629,7 +628,7 @@ void vecNormalize(int n, double *a, double *b)
   int i;
   double norm = vec2Norm(n,a);
   for (i=0;i<n;i++)
-    b[i] = a[i]/norm;
+    b[i] = (norm>0 ? a[i]/norm:a[i]);
 }
 
 void vecConst(int n, double value, double *a)
