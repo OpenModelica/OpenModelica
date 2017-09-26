@@ -588,13 +588,13 @@ modelica_string* string_array_element_addr(const string_array_t * source,
  * k is one based
  */
 void cat_string_array(int k, string_array_t* dest, int n,
-                    string_array_t* first,...)
+                    const string_array_t* first,...)
 {
     va_list ap;
     int i, j, r, c;
     int n_sub = 1, n_super = 1;
     int new_k_dim_size = 0;
-    string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
+    const string_array_t **elts = (const string_array_t**)malloc(sizeof(string_array_t *) * n);
 
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
@@ -602,7 +602,7 @@ void cat_string_array(int k, string_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-        elts[i] = va_arg(ap,string_array_t*);
+        elts[i] = va_arg(ap,const string_array_t*);
     }
     va_end(ap);
 
@@ -650,13 +650,13 @@ void cat_string_array(int k, string_array_t* dest, int n,
  * k is one based
  */
 void cat_alloc_string_array(int k, string_array_t* dest, int n,
-                          string_array_t* first,...)
+                          const string_array_t* first,...)
 {
     va_list ap;
     int i, j, r, c;
     int n_sub = 1, n_super = 1;
     int new_k_dim_size = 0;
-    string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
+    const string_array_t **elts = (const string_array_t**)malloc(sizeof(string_array_t *) * n);
 
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
@@ -664,7 +664,7 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-        elts[i] = va_arg(ap,string_array_t*);
+        elts[i] = va_arg(ap,const string_array_t*);
     }
     va_end(ap);
 

@@ -635,13 +635,13 @@ modelica_integer* integer_array_element_addr(const integer_array_t * source,int 
  * k is one based
  */
 void cat_integer_array(int k, integer_array_t* dest, int n,
-                    integer_array_t* first,...)
+                    const integer_array_t* first,...)
 {
     va_list ap;
     int i, j, r, c;
     int n_sub = 1, n_super = 1;
     int new_k_dim_size = 0;
-    integer_array_t **elts = (integer_array_t**)malloc(sizeof(integer_array_t *) * n);
+    const integer_array_t **elts = (const integer_array_t**)malloc(sizeof(integer_array_t *) * n);
 
     omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
@@ -649,7 +649,7 @@ void cat_integer_array(int k, integer_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-        elts[i] = va_arg(ap,integer_array_t*);
+        elts[i] = va_arg(ap,const integer_array_t*);
     }
     va_end(ap);
 
@@ -697,13 +697,13 @@ void cat_integer_array(int k, integer_array_t* dest, int n,
  * k is one based
  */
 void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
-                          integer_array_t* first,...)
+                          const integer_array_t* first,...)
 {
     va_list ap;
     int i, j, r, c;
     int n_sub = 1, n_super = 1;
     int new_k_dim_size = 0;
-    integer_array_t **elts = (integer_array_t**)malloc(sizeof(integer_array_t *) * n);
+    const integer_array_t **elts = (const integer_array_t**)malloc(sizeof(integer_array_t *) * n);
 
     omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
@@ -711,7 +711,7 @@ void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-        elts[i] = va_arg(ap,integer_array_t*);
+        elts[i] = va_arg(ap,const integer_array_t*);
     }
     va_end(ap);
 

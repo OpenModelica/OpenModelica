@@ -620,13 +620,13 @@ modelica_real* real_array_element_addr(const real_array_t * source,int ndims,...
  * k is one based
  */
 void cat_real_array(int k, real_array_t* dest, int n,
-                    real_array_t* first,...)
+                    const real_array_t* first,...)
 {
     va_list ap;
     int i, j, r, c;
     int n_sub = 1, n_super = 1;
     int new_k_dim_size = 0;
-    real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
+    const real_array_t **elts = (const real_array_t**)malloc(sizeof(real_array_t *) * n);
 
     omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
@@ -634,7 +634,7 @@ void cat_real_array(int k, real_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-        elts[i] = va_arg(ap,real_array_t*);
+        elts[i] = va_arg(ap,const real_array_t*);
     }
     va_end(ap);
 
@@ -682,13 +682,13 @@ void cat_real_array(int k, real_array_t* dest, int n,
  * k is one based
  */
 void cat_alloc_real_array(int k, real_array_t* dest, int n,
-                          real_array_t* first,...)
+                          const real_array_t* first,...)
 {
     va_list ap;
     int i, j, r, c;
     int n_sub = 1, n_super = 1;
     int new_k_dim_size = 0;
-    real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
+    const real_array_t **elts = (const real_array_t**)malloc(sizeof(real_array_t *) * n);
 
     omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
@@ -696,7 +696,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
     elts[0] = first;
 
     for(i = 1; i < n; i++) {
-        elts[i] = va_arg(ap,real_array_t*);
+        elts[i] = va_arg(ap,const real_array_t*);
     }
     va_end(ap);
 

@@ -151,8 +151,8 @@ extern modelica_real* real_array_element_addr(const real_array_t * source,int nd
 extern modelica_real* real_array_element_addr1(const real_array_t * source,int ndims,int dim1);
 extern modelica_real* real_array_element_addr2(const real_array_t * source,int ndims,int dim1,int dim2);
 
-extern void cat_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
-extern void cat_alloc_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
+extern void cat_real_array(int k,real_array_t* dest, int n, const real_array_t* first,...);
+extern void cat_alloc_real_array(int k,real_array_t* dest, int n, const real_array_t* first,...);
 
 extern void range_alloc_real_array(modelica_real start,modelica_real stop,modelica_real inc,
                             real_array_t* dest);

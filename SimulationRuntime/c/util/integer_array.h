@@ -164,9 +164,9 @@ extern modelica_integer* integer_array_element_addr2(const integer_array_t * sou
                                                      int dim1,int dim2);
 
 extern void cat_integer_array(int k,integer_array_t* dest, int n,
-                              integer_array_t* first,...);
+                              const integer_array_t* first,...);
 extern void cat_alloc_integer_array(int k,integer_array_t* dest, int n,
-                                    integer_array_t* first,...);
+                                    const integer_array_t* first,...);
 
 extern void range_alloc_integer_array(modelica_integer start, modelica_integer stop,
                                       modelica_integer inc,integer_array_t* dest);

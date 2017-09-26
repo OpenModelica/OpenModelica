@@ -159,9 +159,9 @@ extern m_boolean* boolean_array_element_addr1(const boolean_array_t* source,int 
 extern m_boolean* boolean_array_element_addr2(const boolean_array_t* source,int ndims,int dim1,int dim2);
 
 extern void cat_boolean_array(int k,boolean_array_t* dest, int n,
-                       boolean_array_t* first,...);
+                       const boolean_array_t* first,...);
 extern void cat_alloc_boolean_array(int k,boolean_array_t* dest, int n,
-                             boolean_array_t* first,...);
+                             const boolean_array_t* first,...);
 
 extern void promote_boolean_array(const boolean_array_t* a, int n,boolean_array_t* dest);
 extern void promote_scalar_boolean_array(modelica_boolean s,int n,
