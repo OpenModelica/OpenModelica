@@ -19,35 +19,22 @@ HEADERS += commandcompletion.h \
     omcinteractiveenvironment.h \
     oms.h
 
-# -------For OMNIorb
 win32 {
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   # win32 vs. win64
-  UNAME = $$system(uname)
-  isEmpty(UNAME): UNAME = MINGW32
-  ISMINGW32 = $$find(UNAME, MINGW32)
-  message(uname: $$UNAME)
-  count( ISMINGW32, 1 ) {
-    DEFINES += __x86__ \
-               __NT__ \
-               __OSVERSION__=4 \
-               __WIN32__
-  } else {
-    DEFINES += __x86__ \
-	           __x86_64__ \
-	           __NT__ \
-               __OSVERSION__=4 \
-			   __WIN32__ \
-			   _WIN64 \
-			   MS_WIN64
+  contains(QT_ARCH, i386) { # 32-bit
+    QMAKE_LFLAGS += -Wl,--stack,16777216
+  } else { # 64-bit
+    QMAKE_LFLAGS += -Wl,--stack,33554432
   }
+  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+  OMCINC = $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMShell.config)
 }
-#---------End OMNIorb
 
 LIBS += $${OMCLIBS}
-INCLUDEPATH += ../../../build/include/omc/c
+INCLUDEPATH += $${OMCINC}
 
 CONFIG += warn_off
 

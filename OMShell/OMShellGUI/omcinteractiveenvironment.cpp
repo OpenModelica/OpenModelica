@@ -86,13 +86,12 @@ namespace IAEX
   OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
   {
     // set the language by reading the OMEdit settings file.
-    // enabling the locale settings causes OMShell to crash
-    //QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
-    //QLocale settingsLocale = QLocale(settings.value("language").toString());
-    //settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QLocale settingsLocale = QLocale(settings.value("language").toString());
+    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     void *args = mmc_mk_nil();
-    //QString locale = "+locale=" + settingsLocale.name();
-    //args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
+    QString locale = "+locale=" + settingsLocale.name();
+    args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
     // initialize threadData
     threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
     void *st = 0;

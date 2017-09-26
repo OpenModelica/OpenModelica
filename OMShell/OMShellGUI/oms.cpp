@@ -495,7 +495,7 @@ void OMS::returnPressed()
   // remove any newline
   commandText.simplified();
 
-  // if 'quit()' exit WinMosh
+  // if 'quit()' exit OMShell
   if( commandText == "quit()" )
   {
     close();
@@ -714,7 +714,7 @@ void OMS::loadModel()
 {
   QString filename = QFileDialog::getOpenFileName(
     this,
-    "WinMosh - Load Model",
+    "OMShell - Load Model",
     QString::null,
     "Modelica files (*.mo)" );
 

@@ -71,6 +71,7 @@ int maxhistoryfileentries = 3000;
    and calls appropriate function. */
 int main(int argc, char* argv[])
 {
+  MMC_INIT();
 #if defined(__MINGW32__) || defined(_MSC_VER)
   historyfile = "mosh_history";
 #else

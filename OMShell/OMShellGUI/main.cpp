@@ -88,6 +88,8 @@ QString unparse(QString value)
 
 int main(int argc, char *argv[])
 {
+  MMC_INIT();
+
   QApplication app(argc, argv);
 
   IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance();

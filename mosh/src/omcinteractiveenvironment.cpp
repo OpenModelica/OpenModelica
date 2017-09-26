@@ -73,16 +73,13 @@ static bool contains(std::string s1, std::string s2);
   OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
   {
     modelica_metatype args = mmc_mk_nil();
-    /* modifying args leads to a crash!!!
     // set the language by reading the OMEdit settings file.
-    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
-    QLocale settingsLocale = QLocale(settings.value("language").toString());
-    settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
-    string locale = "+locale=" + settingsLocale.name();
-    args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
-    */
-    //std::string locale = "+locale=C";
-    //args = mmc_mk_cons(mmc_mk_scon(locale.c_str()), args);
+    //QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    //QLocale settingsLocale = QLocale(settings.value("language").toString());
+    //settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
+    //string locale = "+locale=" + settingsLocale.name();
+    //args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
+    args = mmc_mk_cons(mmc_mk_scon("+locale=C"), args);
 
     // initialize threadData
     threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
