@@ -183,7 +183,6 @@ SOURCES += main.cpp \
   Git/CommitChangesDialog.cpp \
   Git/RevertCommitsDialog.cpp \
   Git/CleanDialog.cpp \
-  Traceability/TraceabilityQueryDialog.cpp \
   OMEditApplication.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
     Traceability/TraceabilityInformationURI.cpp
@@ -259,7 +258,6 @@ HEADERS  += Util/Helper.h \
   Git/CommitChangesDialog.h \
   Git/RevertCommitsDialog.h \
   Git/CleanDialog.h \
-  Traceability/TraceabilityQueryDialog.h \
   OMEditApplication.h \
   Traceability/TraceabilityGraphViewWidget.h \
     Traceability/TraceabilityInformationURI.h

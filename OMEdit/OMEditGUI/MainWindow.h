@@ -181,7 +181,6 @@ public:
   QAction* getCommitFilesAction() {return mpCommitFilesAction;}
   QAction* getRevertCommitAction() {return mpRevertCommitAction;}
   QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
-  QAction* getTraceabilityQueryAction() {return mpTraceabilityQueryAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);
@@ -327,7 +326,6 @@ private:
   QAction *mpCommitFilesAction;
   QAction *mpRevertCommitAction;
   QAction *mpCleanWorkingDirectoryAction;
-  QAction *mpTraceabilityQueryAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpShowOpenModelicaCommandPromptAction;
@@ -485,7 +483,6 @@ private slots:
   void commitFiles();
   void revertCommit();
   void cleanWorkingDirectory();
-  void queryTraceabilityInformation();
 private:
   void createActions();
   void createToolbars();

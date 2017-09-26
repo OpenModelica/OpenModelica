@@ -5914,7 +5914,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getCommitFilesAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getRevertCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(enabled && gitWorkingDirectory);
-  MainWindow::instance()->getTraceabilityQueryAction()->setEnabled(enabled && gitWorkingDirectory);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
@@ -5928,7 +5927,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       MainWindow::instance()->getCommitFilesAction()->setEnabled(false);
       MainWindow::instance()->getRevertCommitAction()->setEnabled(false);
       MainWindow::instance()->getCleanWorkingDirectoryAction()->setEnabled(false);
-      MainWindow::instance()->getTraceabilityQueryAction()->setEnabled(false);
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
