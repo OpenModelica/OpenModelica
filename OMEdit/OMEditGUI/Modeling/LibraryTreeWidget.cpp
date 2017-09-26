@@ -1685,13 +1685,6 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
       QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
       expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
     }
-
-    if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->updateModelText();
-    } else {
-      updateLibraryTreeItemClassText(pLibraryTreeItem);
-    }
-
     // remove the LibraryTreeItem from Libraries Browser
     beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
     // unload the LibraryTreeItem children if any and then unload the LibraryTreeItem.
@@ -1708,7 +1701,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
       LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
       // if we unload in a package saved in one file strucutre then we should update its containing file item text.
       if (pContainingFileParentLibraryTreeItem != pLibraryTreeItem) {
-        updateLibraryTreeItemClassText(pContainingFileParentLibraryTreeItem);
+        updateLibraryTreeItemClassText(pLibraryTreeItem);
       } else {
         // if we unload in a package saved in folder strucutre then we should mark its parent unsaved.
         pLibraryTreeItem->parent()->setIsSaved(false);
