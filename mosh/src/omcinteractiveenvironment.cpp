@@ -251,7 +251,7 @@ std::string trimRight(std::string str) {
       str = str.substr( startpos );
   }
   else {
-      str.erase(std::remove(std::begin(str), std::end(str), ' '), std::end(str));
+      str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
   }
   return str;
 }
