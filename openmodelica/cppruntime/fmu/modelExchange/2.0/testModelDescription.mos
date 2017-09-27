@@ -50,8 +50,7 @@ readFile("modelDescription.tmp.xml");
 //   <TypeDefinitions>
 //     <Clocks>
 //       <Clock><Periodic
-//               baseInterval=\"0.1\"
-//               subSampleFactor=\"2\"
+//               interval=\"0.2\"
 //               shiftCounter=\"3\"
 //               /></Clock>
 //     </Clocks>
