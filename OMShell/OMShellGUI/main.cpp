@@ -101,6 +101,21 @@ int main(int argc, char *argv[])
   translator.load(locale, dir);
   app.installTranslator(&translator);
 
+  env->evalExpression(QString("setCommandLineOptions(\"+d=shortOutput\")"));
+  // Avoid cluttering the whole disk with omc temp-files
+  QString tmpDir = env->TmpPath();
+  if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
+  tmpDir = QDir(tmpDir).canonicalPath();
+  //std::cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
+  QString cdCmd = "cd(\"" + tmpDir + "\")";
+  env->evalExpression(cdCmd);
+  QString cdRes = env->getResult();
+  cdRes.remove("\"");
+  if (0 != tmpDir.compare(cdRes)) {
+    QMessageBox::critical( 0, "OpenModelica Error", QString("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
+    exit(1);
+  }
+
   OMS oms;
   oms.show();
 
