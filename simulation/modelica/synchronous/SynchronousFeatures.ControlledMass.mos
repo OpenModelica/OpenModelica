@@ -205,7 +205,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // ========================================
 // 1: factor(1/2) shift(0/1)  event(false)
 // 2: factor(1/1) shift(0/1)  event(true)
-// 3: factor(5/1) shift(2/3)  event(false)
+// 3: factor(5/1) shift(2/15)  event(false)
 // 4: factor(1/1) shift(2/3)  event(false)
 //
 // synchronous features post-phase: synchronousFeatures
@@ -374,7 +374,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // ========================================
 // 1: factor(1/2) shift(0/1)  event(false)
 // 2: factor(1/1) shift(0/1)  event(true)
-// 3: factor(5/1) shift(2/3)  event(false)
+// 3: factor(5/1) shift(2/15)  event(false)
 // 4: factor(1/1) shift(2/3)  event(false)
 //
 // true
