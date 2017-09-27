@@ -697,7 +697,8 @@ fmi2Status fmi2SetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetReal: nvr = %d", nvr)
   // no check whether setting the value is allowed in the current state
-  for (i = 0; i < nvr; i++) {
+  for (i = 0; i < nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2SetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmi2Error;
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetReal: #r%d# = %.16g", vr[i], value[i])
@@ -715,7 +716,7 @@ fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
-  if (invalidState(comp, "fmi2SetReal", meStates, csStates))
+  if (invalidState(comp, "fmi2SetInteger", meStates, csStates))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2SetInteger", "vr[]", vr))
     return fmi2Error;
@@ -723,7 +724,8 @@ fmi2Status fmi2SetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetInteger: nvr = %d", nvr)
 
-  for (i = 0; i < nvr; i++) {
+  for (i = 0; i < nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2SetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmi2Error;
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetInteger: #i%d# = %d", vr[i], value[i])
@@ -740,7 +742,7 @@ fmi2Status fmi2SetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
-  if (invalidState(comp, "fmi2SetReal", meStates, csStates))
+  if (invalidState(comp, "fmi2SetBoolean", meStates, csStates))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2SetBoolean", "vr[]", vr))
     return fmi2Error;
@@ -748,7 +750,8 @@ fmi2Status fmi2SetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetBoolean: nvr = %d", nvr)
 
-  for (i = 0; i < nvr; i++) {
+  for (i = 0; i < nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2SetBoolean", vr[i], NUMBER_OF_BOOLEANS))
       return fmi2Error;
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetBoolean: #b%d# = %s", vr[i], value[i] ? "true" : "false")
@@ -766,7 +769,7 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode;
 
-  if (invalidState(comp, "fmi2SetReal", meStates, csStates))
+  if (invalidState(comp, "fmi2SetString", meStates, csStates))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2SetString", "vr[]", vr))
     return fmi2Error;
@@ -774,11 +777,11 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetString: nvr = %d", nvr)
 
-  for (i = 0; i < nvr; i++) {
+  for (i = 0; i < nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2SetString", vr[i], NUMBER_OF_STRINGS))
       return fmi2Error;
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetString: #s%d# = '%s'", vr[i], value[i])
-
     if (setString(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
   }
