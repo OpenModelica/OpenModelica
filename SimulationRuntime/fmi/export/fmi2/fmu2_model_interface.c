@@ -592,15 +592,29 @@ fmi2Status fmi2Reset(fmi2Component c)
 fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, fmi2Real value[])
 {
   int i;
-  ModelInstance *comp = (ModelInstance *)c;
+  ModelInstance *comp = (ModelInstance*)c;
+
   if (invalidState(comp, "fmi2GetReal", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetReal", "vr[]", vr))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetReal", "value[]", value))
     return fmi2Error;
+
 #if NUMBER_OF_REALS > 0
-  for (i = 0; i < nvr; i++) {
+  if (comp->_need_update)
+  {
+    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+    overwriteOldSimulationData(comp->fmuData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+    storePreValues(comp->fmuData);
+    comp->_need_update = 0;
+  }
+
+  for (i = 0; i < nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2GetReal", vr[i], NUMBER_OF_REALS))
       return fmi2Error;
     value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
