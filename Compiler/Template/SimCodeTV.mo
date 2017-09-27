@@ -151,6 +151,12 @@ package builtin
     output list<TypeVar> result;
   end listAppend;
 
+  function realMul
+    input Real x;
+    input Real y;
+    output Real z;
+  end realMul;
+
   function realDiv
     input Real x;
     input Real y;
