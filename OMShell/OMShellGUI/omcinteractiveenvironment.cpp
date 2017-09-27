@@ -33,6 +33,7 @@
 //STD Headers
 #include <exception>
 #include <stdexcept>
+#include <iterator> // for std::begin and std::end
 
 //QT Headers
 #include <QtGlobal>
