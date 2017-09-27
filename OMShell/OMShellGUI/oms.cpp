@@ -216,7 +216,7 @@ OMS::OMS( QWidget* parent )
   : QMainWindow( parent ), mpSettings(getApplicationSettings())
 {
   delegate_ = 0;
-  omc_version_ = "(version)";
+  omc_version_ = IAEX::OmcInteractiveEnvironment::OMCVersion();
   statusBar();
 
   mainFrame_ = new QFrame();
@@ -745,9 +745,9 @@ bool OMS::exit()
 {
   // check if omc is running, if so: ask if it is ok that omc also closes.
   QMessageBox *msgBox = new QMessageBox(0);
-  msgBox->setWindowTitle(tr("Close OMC"));
+  msgBox->setWindowTitle(tr("OMShell - Confirm Quit"));
   msgBox->setIcon(QMessageBox::Question);
-  msgBox->setText(tr("Quit OMShell?"));
+  msgBox->setText(tr("Are you sure you want to quit?"));
   msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
   msgBox->setDefaultButton(QMessageBox::Yes);
 

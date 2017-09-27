@@ -101,7 +101,6 @@ int main(int argc, char *argv[])
   translator.load(locale, dir);
   app.installTranslator(&translator);
 
-  env->evalExpression(QString("setCommandLineOptions(\"+d=shortOutput\")"));
   // Avoid cluttering the whole disk with omc temp-files
   QString tmpDir = env->TmpPath();
   if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);

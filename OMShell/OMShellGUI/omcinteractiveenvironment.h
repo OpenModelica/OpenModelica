@@ -36,7 +36,6 @@
 #include <QtCore/QString>
 
 #include "meta/meta_modelica.h"
-#include "omc_config.h"
 
 namespace IAEX
 {

@@ -20,12 +20,13 @@ HEADERS += commandcompletion.h \
     oms.h
 
 win32 {
-  QMAKE_LFLAGS += -Wl,--enable-auto-import
+  # define used for OpenModelica C-API
+  DEFINES += IMPORT_INTO=1
   # win32 vs. win64
   contains(QT_ARCH, i386) { # 32-bit
-    QMAKE_LFLAGS += -Wl,--stack,16777216
+    QMAKE_LFLAGS += -Wl,--stack,16777216,--enable-auto-import,--large-address-aware
   } else { # 64-bit
-    QMAKE_LFLAGS += -Wl,--stack,33554432
+    QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
   }
   OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
   OMCINC = $$(OMBUILDDIR)/include/omc/c
