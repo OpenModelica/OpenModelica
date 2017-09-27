@@ -17,7 +17,7 @@ To get everything running, you will need a few extras:
 - libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica) tables library supported by few other Modelica tools, so it does not do much)
 - libexpat (it's actually included in the FMIL sources which are included... but we do not compile those and it's better to use the OS-provided dynamically linked version)
 - ncurses, readline (optional, used by OMShell-terminal)
-- omniORB (optional; CORBA is used by OMOptim and OMShell)
+- omniORB (optional; CORBA is used by OMOptim)
 - OpenSceneGraph
 - Qt5 or Qt4, Webkit, QtOpenGL
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
