@@ -66,7 +66,6 @@
 #include "Git/CleanDialog.h"
 #include "Git/GitCommands.h"
 #include "Traceability/TraceabilityInformationURI.h"
-#include "Traceability/TraceabilityQueryDialog.h"
 #include "Traceability/TraceabilityGraphViewWidget.h"
 #include "omc_config.h"
 
@@ -2670,15 +2669,6 @@ void MainWindow::cleanWorkingDirectory()
 //  }
 }
 
-/*!
- * \brief MainWindow::queryTreaceabilityInformation
- * Slot activated when mpQueryTraceabilityAction triggered signal is raised.\n
- */
-void MainWindow::queryTraceabilityInformation()
-{
-  TraceabilityQueryDialog *pTraceabilityQueryDialog = new TraceabilityQueryDialog(this);
-  pTraceabilityQueryDialog->exec();
-}
 
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
@@ -2955,10 +2945,6 @@ void MainWindow::createActions()
   mpCleanWorkingDirectoryAction = new QAction("Clean", this);
   mpCleanWorkingDirectoryAction->setEnabled(false);
   connect(mpCleanWorkingDirectoryAction, SIGNAL(triggered()), SLOT(cleanWorkingDirectory()));
-  // Treaceability actions
-  mpTraceabilityQueryAction = new QAction("Query Traceability Information", this);
-  mpTraceabilityQueryAction->setEnabled(false);
-  connect(mpTraceabilityQueryAction, SIGNAL(triggered()), SLOT(queryTraceabilityInformation()));
   // Tools Menu
   // show OMC Logger widget action
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
@@ -3328,7 +3314,6 @@ void MainWindow::createMenus()
   QMenu *pTraceabilityMenu = new QMenu(menuBar());
   pTraceabilityMenu->setObjectName(tr("TraceabilityMenu"));
   pTraceabilityMenu->setTitle(tr("Traceability"));
-  pTraceabilityMenu->addAction(mpTraceabilityQueryAction);
   // add actions to Git menu
   pGitMenu->addAction(mpCreateGitRepositoryAction);
   pGitMenu->addSeparator();
@@ -3342,6 +3327,7 @@ void MainWindow::createMenus()
   pGitMenu->addAction(mpCleanWorkingDirectoryAction);
   pGitMenu->addSeparator();
   pGitMenu->addAction(pTraceabilityMenu->menuAction());
+  pGitMenu->setEnabled(false);
   // add Git menu to menu bar
   menuBar()->addAction(pGitMenu->menuAction());
   // Tools menu
