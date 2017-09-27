@@ -821,7 +821,7 @@ algorithm
     case(BackendDAE.SUBCLOCK(f1,s1,solver1),BackendDAE.SUBCLOCK(f2,s2,solver2))
       algorithm
         solver1 := mergeSolver(solver1,solver2);
-      then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(s1, s2), solver1);
+      then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(MMath.multRational(s1, f2), s2), solver1);
     case(BackendDAE.SUBCLOCK(f1,s1,solver1),BackendDAE.INFERED_SUBCLOCK())
       then subSeqClock;
     else
