@@ -634,7 +634,20 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetInteger", "value[]", value))
     return fmi2Error;
-  for (i = 0; i < nvr; i++) {
+
+  if (comp->_need_update)
+  {
+    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+    overwriteOldSimulationData(comp->fmuData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+    storePreValues(comp->fmuData);
+    comp->_need_update = 0;
+  }
+
+  for (i = 0; i < nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2GetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmi2Error;
     value[i] = getInteger(comp, vr[i]); // to be implemented by the includer of this file
@@ -653,6 +666,18 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetBoolean", "value[]", value))
     return fmi2Error;
+
+  if (comp->_need_update)
+  {
+    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+    overwriteOldSimulationData(comp->fmuData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+    storePreValues(comp->fmuData);
+    comp->_need_update = 0;
+  }
+
   for (i = 0; i < nvr; i++)
   {
     if (vrOutOfRange(comp, "fmi2GetBoolean", vr[i], NUMBER_OF_BOOLEANS))
@@ -673,7 +698,20 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2GetString", "value[]", value))
     return fmi2Error;
-  for (i=0; i<nvr; i++) {
+
+  if (comp->_need_update)
+  {
+    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+    overwriteOldSimulationData(comp->fmuData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+    storePreValues(comp->fmuData);
+    comp->_need_update = 0;
+  }
+
+  for (i=0; i<nvr; i++)
+  {
     if (vrOutOfRange(comp, "fmi2GetString", vr[i], NUMBER_OF_STRINGS))
       return fmi2Error;
     value[i] = getString(comp, vr[i]); // to be implemented by the includer of this file
