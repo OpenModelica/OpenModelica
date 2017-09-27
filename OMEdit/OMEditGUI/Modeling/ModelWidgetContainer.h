@@ -100,6 +100,7 @@ private:
   Component *mpClickedState;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
+  bool mSkipFoucusOutEvent;
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<LineAnnotation*> mTransitionsList;
@@ -130,7 +131,8 @@ private:
   QAction *mpRotateAntiClockwiseAction;
   QAction *mpFlipHorizontalAction;
   QAction *mpFlipVerticalAction;
-  QAction *mpAttributesAction;
+  QAction *mpSetInitialStateAction;
+  QAction *mpCancelTransitionAction;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
   CoOrdinateSystem mCoOrdinateSystem;
@@ -298,6 +300,8 @@ public slots:
   void rotateAntiClockwise();
   void flipHorizontal();
   void flipVertical();
+  void setInitialState();
+  void cancelTransition();
 protected:
   virtual void dragMoveEvent(QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);

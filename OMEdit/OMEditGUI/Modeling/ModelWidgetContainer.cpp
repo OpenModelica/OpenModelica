@@ -118,6 +118,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
+  mSkipFoucusOutEvent = false;
   mpConnectionLineAnnotation = 0;
   mpTransitionLineAnnotation = 0;
   mpLineShapeAnnotation = 0;
@@ -1204,6 +1205,14 @@ void GraphicsView::createActions()
   mpFlipVerticalAction->setShortcut(QKeySequence("v"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
   connect(mpFlipVerticalAction, SIGNAL(triggered()), SLOT(flipVertical()));
+  // set initial state Action
+  mpSetInitialStateAction = new QAction(tr("Set Initial State"), this);
+  mpSetInitialStateAction->setStatusTip(tr("Sets the state as initial state"));
+  connect(mpSetInitialStateAction, SIGNAL(triggered()), SLOT(setInitialState()));
+  // cancel transition Action
+  mpCancelTransitionAction = new QAction(tr("Cancel Transition"), this);
+  mpCancelTransitionAction->setStatusTip(tr("Cancels the current transition"));
+  connect(mpCancelTransitionAction, SIGNAL(triggered()), SLOT(cancelTransition()));
 }
 
 /*!
@@ -1828,6 +1837,40 @@ void GraphicsView::flipVertical()
 }
 
 /*!
+ * \brief GraphicsView::setInitialState
+ * Sets the state as initial.
+ */
+void GraphicsView::setInitialState()
+{
+  if (mpTransitionLineAnnotation) {
+    QString startComponentName;
+    if (mpTransitionLineAnnotation->getStartComponent()->getParentComponent()) {
+      startComponentName = QString(mpTransitionLineAnnotation->getStartComponent()->getRootParentComponent()->getName()).append(".")
+          .append(mpTransitionLineAnnotation->getStartComponent()->getName());
+    } else {
+      startComponentName = mpTransitionLineAnnotation->getStartComponent()->getName();
+    }
+    mpTransitionLineAnnotation->setStartComponentName(startComponentName);
+    mpTransitionLineAnnotation->setEndComponentName("");
+    mpTransitionLineAnnotation->setLineType(LineAnnotation::InitialStateType);
+    mpModelWidget->getUndoStack()->push(new AddInitialStateCommand(mpTransitionLineAnnotation, true));
+    mpModelWidget->updateModelText();
+    setIsCreatingTransition(false);
+  }
+}
+
+/*!
+ * \brief GraphicsView::cancelTransition
+ * Cancels the current transition.
+ */
+void GraphicsView::cancelTransition()
+{
+  if (mpTransitionLineAnnotation) {
+    removeCurrentTransition();
+  }
+}
+
+/*!
  * \brief GraphicsView::dragMoveEvent
  * Defines what happens when dragged and moved an object in a GraphicsView.
  * \param event - contains information of the drag operation.
@@ -2288,6 +2331,10 @@ void GraphicsView::focusOutEvent(QFocusEvent *event)
   if (QApplication::overrideCursor() && QApplication::overrideCursor()->shape() == Qt::CrossCursor) {
     QApplication::restoreOverrideCursor();
   }
+  if (mpTransitionLineAnnotation && !mSkipFoucusOutEvent) {
+    removeCurrentTransition();
+  }
+  mSkipFoucusOutEvent = false;
   QGraphicsView::focusOutEvent(event);
 }
 
@@ -2463,12 +2510,21 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
   /* If we are creating the connection OR creating any shape then don't show context menu */
   if (isCreatingConnection() ||
-      isCreatingTransition() ||
       isCreatingLineShape() ||
       isCreatingPolygonShape() ||
       isCreatingRectangleShape() ||
       isCreatingEllipseShape() ||
       isCreatingTextShape()) {
+    return;
+  }
+  // if creating a transition
+  if (isCreatingTransition()) {
+    mSkipFoucusOutEvent = true;
+    QMenu menu(MainWindow::instance());
+    menu.addAction(mpSetInitialStateAction);
+    menu.addSeparator();
+    menu.addAction(mpCancelTransitionAction);
+    menu.exec(event->globalPos());
     return;
   }
   // if some item is right clicked then don't show graphics view context menu
