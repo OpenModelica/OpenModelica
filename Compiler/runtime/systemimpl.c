@@ -2793,7 +2793,7 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
 
 void SystemImpl__initGarbageCollector(void)
 {
-  static init=0;
+  static int init=0;
   if (!init) {
     GC_init();
     GC_register_displacement(0);

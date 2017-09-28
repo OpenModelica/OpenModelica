@@ -619,13 +619,13 @@ void indent(){
 void Serializer_showBlocks(modelica_metatype object){
     if(MMC_IS_IMMEDIATE(object)){
         indent();
-        printf("%i\n",MMC_UNTAGFIXNUM(object));
+        printf("%li\n",MMC_UNTAGFIXNUM(object));
         return;
     }
     mmc_uint_t hdr = MMC_GETHDR(object);
     if(MMC_HDRISSTRING(hdr)){
         indent();
-        printf("str(%i)=\"%s\"\n",MMC_HDRSTRLEN(hdr),MMC_STRINGDATA(object));
+        printf("str(%lu)=\"%s\"\n",MMC_HDRSTRLEN(hdr),MMC_STRINGDATA(object));
         return;
     }
     if(hdr==MMC_REALHDR){
@@ -639,11 +639,11 @@ void Serializer_showBlocks(modelica_metatype object){
         int count = slots-1;
         if(ctor==255){// it's an array
             indent();
-            printf("array(%i)\n",slots);
+            printf("array(%lu)\n",slots);
         }
         else {
             indent();
-            printf("ctr(%i,%i)\n",ctor,slots);
+            printf("ctr(%lu,%lu)\n",ctor,slots);
             if(ctor>=3 && ctor!=255){ // It's a meta record
                 struct record_description* desc = (struct record_description*) MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(object),1));
                 indent();printf("  - %s\n",desc->path);
@@ -659,7 +659,7 @@ void Serializer_showBlocks(modelica_metatype object){
         return;
     }
 
-    printf("Unknown object %i\n",hdr);
+    printf("Unknown object %lu\n",hdr);
 }
 
 

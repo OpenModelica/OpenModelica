@@ -3248,8 +3248,6 @@ algorithm
   end match;
 end createTempVars;
 
-// no matchcontinue needed -> try/catch around whole
-// loops the eqs list -> no recursion needed
 protected function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
   input Integer iuniqueEqIndex;
