@@ -3217,6 +3217,9 @@ algorithm
     outValue := Values.STRING("");
     return;
   end try;
+
+  System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+
   isWindows := System.os() == "Windows_NT";
   // compile
   quote := if isWindows then "" else "'";
