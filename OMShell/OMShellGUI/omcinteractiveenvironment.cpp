@@ -171,14 +171,14 @@ namespace IAEX
     if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.toStdString().c_str()), symbolTable_, &reply_str, &symbolTable_)) {
       return;
     }
-    result_ = MMC_STRINGDATA(reply_str);
+    result_ = QString::fromUtf8(MMC_STRINGDATA(reply_str));
     result_ = result_.trimmed();
     reply_str = NULL;
     // see if there are any errors if the expr is not "quit()"
     if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), symbolTable_, &reply_str, &symbolTable_)) {
       return;
     }
-    error_ = MMC_STRINGDATA(reply_str);
+    error_ = QString::fromUtf8(MMC_STRINGDATA(reply_str));
     error_ = error_.trimmed();
     if( error_.size() > 2 ) {
       if (error_.contains("Error:")) {
