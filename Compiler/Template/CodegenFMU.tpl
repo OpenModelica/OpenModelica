@@ -1073,17 +1073,17 @@ match platform
   else
   <<
   <%fileNamePrefix%>_FMU:
-  <%\t%>$(MAKE) $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) > make.log
+  <%\t%>$(MAKE) CC="$(CC)" $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) 2>&1 | tee make.log
   <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
   ifeq (@LIBTYPE_DYNAMIC@,1)
-  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDFLAGS)
+  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDFLAGS)  2>&1 | tee -a make.log
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs config.log make.log ../binaries/$(FMIPLATFORM)/
   endif
   <%\t%>head -n20 Makefile > ../binaries/$(FMIPLATFORM)/config.summary
   ifeq (@LIBTYPE_STATIC@,1)
   <%\t%>rm -f <%modelNamePrefix%>.a
   <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(MAINOBJ) $(OFILES) $(RUNTIMEFILES)
-  <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs config.log ../binaries/$(FMIPLATFORM)/
+  <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs config.log make.log ../binaries/$(FMIPLATFORM)/
   endif
   <%\t%>$(MAKE) distclean
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *

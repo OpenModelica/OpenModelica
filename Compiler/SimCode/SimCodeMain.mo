@@ -293,6 +293,7 @@ algorithm
         if not Config.getRunningTestsuite() then
           resstr = System.pwd() + System.pathDelimiter() + resstr;
         end if;
+        ExecStat.execStat("translateModelFMU complete");
       then
         (cache, Values.STRING(resstr), st, dlow_1, libs, file_dir, resultValues);
     else

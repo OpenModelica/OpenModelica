@@ -144,9 +144,9 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
     DATA* fmudata = NULL;
-	MODEL_DATA* modelData = NULL;
-	SIMULATION_INFO* simInfo = NULL;
-	threadData_t *threadData = NULL;
+  MODEL_DATA* modelData = NULL;
+  SIMULATION_INFO* simInfo = NULL;
+  threadData_t *threadData = NULL;
 
     comp->functions = functions;
     comp->loggingOn = loggingOn;
@@ -199,14 +199,21 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   /* read input vars */
   /* input_function(comp->fmuData);*/
   /* allocate memory for non-linear system solvers */
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   initializeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
   /* allocate memory for non-linear system solvers */
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
   initializeLinearSystems(comp->fmuData, comp->threadData);
+#endif
   /* allocate memory for mixed system solvers */
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   initializeMixedSystems(comp->fmuData, comp->threadData);
+#endif
   /* allocate memory for state selection */
+#if !defined(OMC_NO_STATESELECTION)
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
-
+#endif
   return comp;
 }
 
@@ -643,7 +650,9 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
     /*TODO: Simulation stop time is need to calculate in before hand all sample events
             We shouldn't generate them all in beforehand */
     initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
     initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
+#endif
 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
@@ -689,6 +698,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
+#if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, threadData, 1, 1))
     {
       if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
@@ -696,6 +706,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       /* if new set is calculated reinit the solver */
       eventInfo->stateValuesChanged = fmiTrue;
     }
+#endif
 
     storePreValues(comp->fmuData);
 
@@ -800,6 +811,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     storePreValues(comp->fmuData);
     *callEventUpdate  = fmiFalse;
     /******** check state selection ********/
+#if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 0))
     {
       if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
@@ -807,6 +819,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
       /* if new set is calculated reinit the solver */
       *callEventUpdate = fmiTrue;
     }
+#endif
     /* TODO: fix the extrapolation in non-linear system
      *       then we can stop to save all variables in
      *       in the whole ringbuffer
@@ -829,17 +842,27 @@ fmiStatus fmiTerminate(fmiComponent c)
       "fmiTerminate");
 
   comp->state = modelTerminated;
-  /* free nonlinear system data */
-  freeNonlinearSystems(comp->fmuData, comp->threadData);
-  /* free mixed system data */
-  freeMixedSystems(comp->fmuData, comp->threadData);
-  /* free linear system data */
-  freeLinearSystems(comp->fmuData, comp->threadData);
-
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
+
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+  /* free nonlinear system data */
+  freeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
+  /* free mixed system data */
+  freeMixedSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
+  /* free linear system data */
+  freeLinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NO_STATESELECTION)
   /* free stateset data */
   freeStateSetData(comp->fmuData);
+#endif
+
+  /* free stateset data */
   deInitializeDataStruc(comp->fmuData);
   /* free simuation data */
   comp->functions.freeMemory(comp->fmuData->modelData);
