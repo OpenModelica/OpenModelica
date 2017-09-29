@@ -20,8 +20,8 @@ listFile(P1);
 // ""
 // true
 // true
-// ("package","",false,false,false,"P2",false,1,1,1,34,{},false,false,"","",false)
-// ("model","",false,false,false,"P2",false,1,12,1,26,{},false,false,"","",false)
+// ("package","",false,false,false,"P2",false,1,1,1,34,{},false,false,"","",false,"")
+// ("model","",false,false,false,"P2",false,1,12,1,26,{},false,false,"","",false,"")
 // "package P1
 //   model M1
 //   end M1;

@@ -264,7 +264,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getDerivedClassModifierValue(Resistance, quantity)
 // "\"Resistance\""
 // Evaluating: getClassInformation(vector3D)
-// ("type","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,4,1,4,67,{"3"},false,false,"","",false)
+// ("type","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,4,1,4,67,{"3"},false,false,"","",false,"")
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getInheritanceCount(vector3D)
@@ -310,7 +310,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getClassInformation(state1)
-// ("model","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,44,1,46,11,{},false,false,"","",true)
+// ("model","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,44,1,46,11,{},false,false,"","",true,"")
 // Evaluating: getErrorString()
 // ""
 // Evaluating: loadModel(Modelica, {"3.1"})
@@ -616,7 +616,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getClassInformation(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
-// ("class","Code",false,false,false,"Modelica 3.2.1/package.mo",false,572,9,625,17,{},false,false,"","",false)
+// ("class","Code",false,false,false,"Modelica 3.2.1/package.mo",false,572,9,625,17,{},false,false,"","",false,"")
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(Modelica.UsersGuide.Conventions.Documentation.Format.Code)

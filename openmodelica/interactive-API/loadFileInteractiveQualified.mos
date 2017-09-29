@@ -35,7 +35,7 @@ getElementsInfo(Something.Somewhere.BlaBla.Z);
 // Evaluating: loadFileInteractiveQualified("loadFileInteractiveQualified.mo")
 // {Something.Somewhere.Stuff,Something.Somewhere.Stuff2,Something.Somewhere.BlaBla}
 // Evaluating: getClassInformation(Something.Somewhere.Stuff)
-// ("class","Stuff Comment",false,false,false,"openmodelica/interactive-API/loadFileInteractiveQualified.mo",false,10,1,15,10,{},false,false,"","",false)
+// ("class","Stuff Comment",false,false,false,"openmodelica/interactive-API/loadFileInteractiveQualified.mo",false,10,1,15,10,{},false,false,"","",false,"")
 // Evaluating: getCrefInfo(Something)
 // {openmodelica/interactive-API/loadFileInteractiveQualifiedInit.mo,writable,8,1,14,14}
 // Evaluating: getElementsInfo(Something)

@@ -197,7 +197,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getClassInformation(A)
-// ("model","this is the class A",false,false,false,"",false,0,0,0,0,{},false,false,"","",false)
+// ("model","this is the class A",false,false,false,"",false,0,0,0,0,{},false,false,"","",false,"")
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -337,7 +337,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getClassInformation(A)
-// ("model","this is the class A",false,false,false,"",false,0,0,0,0,{},false,false,"","",false)
+// ("model","this is the class A",false,false,false,"",false,0,0,0,0,{},false,false,"","",false,"")
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
