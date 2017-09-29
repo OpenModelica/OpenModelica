@@ -3905,6 +3905,7 @@ function getClassInformation
   output String version;
   output String preferredView;
   output Boolean state;
+  output String access;
 external "builtin";
 annotation(
   Documentation(info="<html>

@@ -6969,7 +6969,7 @@ algorithm
 end getDymolaStateAnnotation;
 
 protected function getDymolaStateAnnotationModStr
-  "Extractor function for getDocumentationClassAnnotation"
+  "Extractor function for getDymolaStateAnnotation"
   input Option<Absyn.Modification> mod;
   output String stateStr;
 algorithm
@@ -6987,6 +6987,69 @@ algorithm
   end matchcontinue;
 end getDymolaStateAnnotationModStr;
 
+protected function getAccessAnnotation
+  "Returns the Protection(access=) annotation of a class.
+  This is annotated with the annotation:
+  annotation(Protection(access = Access.documentation)); in the class definition"
+  input Absyn.Path className;
+  input Absyn.Program p;
+  output String access;
+algorithm
+  access := match(className,p)
+    local
+      String accessStr;
+    case(_,_)
+      equation
+        accessStr = Interactive.getNamedAnnotation(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
+      then
+        accessStr;
+    else "";
+  end match;
+end getAccessAnnotation;
+
+protected function getAccessAnnotationString
+  "Extractor function for getAccessAnnotation"
+  input Option<Absyn.Modification> mod;
+  output String access;
+algorithm
+  access := match (mod)
+    local
+      list<Absyn.ElementArg> arglst;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      then getAccessAnnotationString2(arglst);
+
+  end match;
+end getAccessAnnotationString;
+
+protected function getAccessAnnotationString2
+  "Extractor function for getAccessAnnotation"
+  input list<Absyn.ElementArg> eltArgs;
+  output String access;
+algorithm
+  access := match eltArgs
+    local
+      list<Absyn.ElementArg> xs;
+      Absyn.ComponentRef cref;
+      String name;
+      Absyn.Info info;
+
+    case ({}) then "";
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="access"),
+          modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.CREF(cref)))))::xs)
+      equation
+        name = Dump.printComponentRefStr(cref);
+      then name;
+
+    case (_::xs)
+      equation
+        name = getAccessAnnotationString2(xs);
+      then name;
+
+    end match;
+end getAccessAnnotationString2;
+
 protected function getClassInformation
 "author: PA
   Returns all the possible class information.
@@ -6999,7 +7062,7 @@ protected function getClassInformation
   input Absyn.Program p;
   output Values.Value res_1;
 protected
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView;
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,version,preferredView,access;
   String dim_str,lastIdent;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly,isProtectedClass,isDocClass,isState;
   Absyn.Restriction restr;
@@ -7022,6 +7085,7 @@ algorithm
   version := CevalScript.getPackageVersion(path, p);
   Absyn.STRING(preferredView) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("preferredView"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
   isState := getDymolaStateAnnotation(path, p);
+  access := getAccessAnnotation(path, p);
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),
@@ -7039,7 +7103,8 @@ algorithm
     Values.BOOL(isDocClass),
     Values.STRING(version),
     Values.STRING(preferredView),
-    Values.BOOL(isState)
+    Values.BOOL(isState),
+    Values.STRING(access)
   });
 end getClassInformation;
 
