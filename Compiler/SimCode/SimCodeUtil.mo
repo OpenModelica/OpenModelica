@@ -4889,7 +4889,7 @@ protected function createAllDiffedSimVars "author: wbraun"
   input list<SimCodeVar.SimVar> iVars;
   output list<SimCodeVar.SimVar> outVars;
 algorithm
-  outVars := matchcontinue(inVars, inCref, inAllVars, inIndex, inMatrixName, iVars)
+  outVars := match(inVars, inCref, inAllVars, inIndex, inMatrixName, iVars)
   local
     BackendDAE.Var  v1;
     SimCodeVar.SimVar r1;
@@ -4899,51 +4899,59 @@ algorithm
     Boolean isProtected;
     Boolean hideResult = false;
     Integer index;
+    BackendDAE.VarKind varkind;
 
-    case({}, _, _, _, _, _)
-    then listReverse(iVars);
+    case({}, _, _, _, _, _) then listReverse(iVars);
+
     // skip for dicrete variable
     case(BackendDAE.VAR(varKind=BackendDAE.DISCRETE())::restVar, cref, _, _, _, _) equation
      then
        createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, iVars);
 
-     case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(), values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      BackendVariable.getVarSingle(currVar, inAllVars);
-      currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      isProtected = getProtected(dae_var_attr);
-      r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
-    then
-      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
-
-    case(BackendDAE.VAR(varName=currVar, values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      BackendVariable.getVarSingle(currVar, inAllVars);
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      isProtected = getProtected(dae_var_attr);
-      r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
-    then
-      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
-
-     case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(), values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      isProtected = getProtected(dae_var_attr);
-      r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
-    then
-      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
-
-    case(BackendDAE.VAR(varName=currVar, values = dae_var_attr)::restVar, cref, _, _, _, _) equation
-      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-      isProtected = getProtected(dae_var_attr);
-      r1 = SimCodeVar.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
-    then
-      createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
-
+     case(BackendDAE.VAR(varName=currVar, varKind=varkind, values = dae_var_attr)::restVar, cref, _, index, _, _) algorithm
+      try
+        BackendVariable.getVarSingle(currVar, inAllVars);
+        r1 := match (varkind)
+          case BackendDAE.STATE()
+            equation
+              currVar = ComponentReference.crefPrefixDer(currVar);
+              derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+              isProtected = getProtected(dae_var_attr);
+              index = index + 1;
+            then
+              SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
+          else
+            equation
+              derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+              isProtected = getProtected(dae_var_attr);
+              index = index + 1;
+            then
+              SimCodeVar.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
+        end match;
+      else
+        r1 := match (varkind)
+          case BackendDAE.STATE()
+            equation
+              currVar = ComponentReference.crefPrefixDer(currVar);
+              derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+              isProtected = getProtected(dae_var_attr);
+            then
+              SimCodeVar.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
+          else
+            equation
+              derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+              isProtected = getProtected(dae_var_attr);
+            then
+              SimCodeVar.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, isProtected, hideResult, NONE());
+        end match;
+      end try;
+     then
+       createAllDiffedSimVars(restVar, cref, inAllVars, index, inMatrixName, r1::iVars);
     else
      equation
       Error.addInternalError("function createAllDiffedSimVars failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end createAllDiffedSimVars;
 
 protected function collectAllJacobianEquations
