@@ -685,12 +685,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MODELICA_SYSTEM_LIB=<%fileNamePrefix%>
   CALCHELPERMAINFILE=OMCpp$(MODELICA_SYSTEM_LIB)CalcHelperMain.cpp
 
-  $(MODEL_NAME).fmu: $(MODELICA_SYSTEM_LIB)$(DLLEXT)
+  $(MODELICA_SYSTEM_LIB).fmu: $(MODELICA_SYSTEM_LIB)$(DLLEXT)
   <%\t%>rm -rf binaries
   <%\t%>mkdir -p "binaries/$(PLATFORM)"
   <%\t%>mv $(MODELICA_SYSTEM_LIB)$(DLLEXT) "binaries/$(PLATFORM)/"
-  <%\t%>rm -f $(MODEL_NAME).fmu
-  <%\t%>zip -r "$(MODEL_NAME).fmu" modelDescription.xml binaries
+  <%\t%>rm -f $(MODELICA_SYSTEM_LIB).fmu
+  <%\t%>zip -r "$(MODELICA_SYSTEM_LIB).fmu" modelDescription.xml binaries
   <%\t%>rm -rf binaries
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
@@ -802,7 +802,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   .PHONY: <%modelName%>.fmu $(CPPFILES) clean
 
-  <%modelName%>.fmu: $(OFILES)
+  <%fileNamePrefix%>.fmu: $(OFILES)
   <%\t%>$(CXX) -shared -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(LDFLAGS) $(LIBS)
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
   <%\t%>cp $(BINARIES) "binaries/$(PLATFORM)/"
@@ -812,12 +812,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>cp $(SUNDIALS_LIBRARIES_KINSOL) "binaries/$(PLATFORM)/"
   <%\t%>cp $(OMHOME)/share/omc/runtime/cpp/licenses/sundials.license "documentation/"
   endif
-  <%\t%>rm -f <%modelName%>.fmu
+  <%\t%>rm -f <%fileNamePrefix%>.fmu
   ifeq ($(USE_FMU_SUNDIALS),ON)
-  <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries documentation
+  <%\t%>zip -r "<%fileNamePrefix%>.fmu" modelDescription.xml binaries documentation
   <%\t%>rm -rf documentation
   else
-  <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries
+  <%\t%>zip -r "<%fileNamePrefix%>.fmu" modelDescription.xml binaries
   endif
 
   clean:
