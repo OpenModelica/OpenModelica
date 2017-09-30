@@ -52,7 +52,7 @@ end IntegerToEnumeration;
 //     end if;
 //   end when;
 //   when time > 0.4 then
-//     if 2 == e then
+//     if IntegerToEnumeration.Enum$e.two == e then
 //       z := 2;
 //     else
 //       z := -2;
