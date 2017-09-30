@@ -1183,33 +1183,33 @@ function makeEnumOperator
   input DAE.Type inType2;
   output tuple<DAE.Operator, list<DAE.Type>, DAE.Type> outOp;
 algorithm
-  outOp := matchcontinue(inOp, inType1, inType2)
+  outOp := matchcontinue(inType1, inType2)
     local
       DAE.Type op_ty;
       DAE.Operator op;
 
-    case (_, DAE.T_ENUMERATION(), DAE.T_ENUMERATION())
-      equation
-        op_ty = Types.simplifyType(inType1);
-        op = Expression.setOpType(inOp, op_ty);
-      then ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
-
-    case (_, DAE.T_ENUMERATION(), _)
-      equation
-        op_ty = Types.simplifyType(inType1);
-        op = Expression.setOpType(inOp, op_ty);
-      then
-        ((op, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
-
-    case (_, _, DAE.T_ENUMERATION())
+    case (DAE.T_ENUMERATION(), DAE.T_ENUMERATION())
       equation
         op_ty = Types.simplifyType(inType1);
         op = Expression.setOpType(inOp, op_ty);
       then
         ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
 
-    else
-      then ((inOp, {DAE.T_ENUMERATION_DEFAULT, DAE.T_ENUMERATION_DEFAULT}, DAE.T_BOOL_DEFAULT));
+    case (DAE.T_ENUMERATION(), _)
+      equation
+        op_ty = Types.simplifyType(inType1);
+        op = Expression.setOpType(inOp, op_ty);
+      then
+        ((op, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
+
+    case (_, DAE.T_ENUMERATION())
+      equation
+        op_ty = Types.simplifyType(inType2);
+        op = Expression.setOpType(inOp, op_ty);
+      then
+        ((op, {inType2, inType2}, DAE.T_BOOL_DEFAULT));
+
+    else ((inOp, {DAE.T_ENUMERATION_DEFAULT, DAE.T_ENUMERATION_DEFAULT}, DAE.T_BOOL_DEFAULT));
   end matchcontinue;
 end makeEnumOperator;
 
