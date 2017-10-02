@@ -290,6 +290,9 @@ SubscriptWrongType1.mo \
 SubscriptWrongType2.mo \
 Terminate1.mo \
 TerminateInvalid1.mo \
+TupleInvalid1.mo \
+TupleInvalid2.mo \
+TupleInvalid3.mo \
 type2.mo \
 TypeDim1.mo \
 TypeDim2.mo \
