@@ -346,7 +346,7 @@ algorithm
       SourceInfo info;
       Absyn.ComponentRef cref;
       SCode.Comment cmt;
-      Absyn.Exp exp;
+      Absyn.Exp crefExp, exp;
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
@@ -355,11 +355,11 @@ algorithm
       then
         ((equ, env));
 
-    case ((SCode.EQ_REINIT(cref = cref, expReinit = exp, comment = cmt,
+    case ((SCode.EQ_REINIT(cref = crefExp as Absyn.CREF(componentRef = cref), expReinit = exp, comment = cmt,
         info = info), env))
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-        equ = SCode.EQ_REINIT(cref, exp, cmt, info);
+        equ = SCode.EQ_REINIT(crefExp, exp, cmt, info);
         (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));

@@ -1172,7 +1172,7 @@ algorithm
       then
         ((equ, (ref, k, g)));
 
-    case ((equr as SCode.EQ_REINIT(cref = cref1), (ref, k, g)))
+    case ((equr as SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1)), (ref, k, g)))
       equation
         g = analyseCref(cref1, ref, k, g);
         (equ, (_, _, g)) = SCode.traverseEEquationExps(equr, traverseExp, (ref, k, g));

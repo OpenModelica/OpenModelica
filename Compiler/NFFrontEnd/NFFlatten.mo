@@ -148,10 +148,10 @@ algorithm
   () := match sections
     case Sections.SECTIONS()
       algorithm
-        (elements, funcs) := flattenEquations(sections.equations, prefix, elements, funcs);
-        (elements, funcs) := flattenInitialEquations(sections.initialEquations, prefix, elements, funcs);
-        (elements, funcs) := flattenAlgorithms(sections.algorithms, prefix, elements, funcs);
-        (elements, funcs) := flattenInitialAlgorithms(sections.initialAlgorithms, prefix, elements, funcs);
+        (elements, funcs) := flattenEquations(sections.equations, prefix, false, elements, funcs);
+        (elements, funcs) := flattenEquations(sections.initialEquations, prefix, true, elements, funcs);
+        (elements, funcs) := flattenAlgorithms(sections.algorithms, prefix, false, elements, funcs);
+        (elements, funcs) := flattenAlgorithms(sections.initialAlgorithms, prefix, true, elements, funcs);
       then
         ();
 
@@ -190,7 +190,7 @@ algorithm
         else
           if isSome(binding_exp) and Component.isVar(c) then
             binding_eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, new_pre), Util.getOption(binding_exp), ty, c.info);
-            (elements, funcs) := flattenEquation(binding_eq, prefix, elements, funcs);
+            (elements, funcs) := flattenEquation(binding_eq, prefix, false, elements, funcs);
             binding_exp := NONE();
           end if;
 
@@ -469,7 +469,14 @@ function flattenExp
         output Expression flatExp;
   input output DAE.FunctionTree funcs;
 algorithm
-  // TODO: Traverse the whole expression.
+  funcs := Expression.fold(exp, collectExpFunction, funcs);
+  flatExp := applyExpPrefix(prefix, exp);
+end flattenExp;
+
+function collectExpFunction
+  input Expression exp;
+  input output DAE.FunctionTree funcs;
+algorithm
   () := match exp
     case Expression.CALL()
       algorithm
@@ -479,9 +486,7 @@ algorithm
 
     else ();
   end match;
-
-  flatExp := applyExpPrefix(prefix, exp);
-end flattenExp;
+end collectExpFunction;
 
 function flattenExpOpt
   input Option<Expression> exp;
@@ -502,6 +507,7 @@ end flattenExpOpt;
 function flattenEquation
   input Equation eq;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
 protected
@@ -512,6 +518,7 @@ algorithm
       ExpressionIterator lhs_iter, rhs_iter;
       DAE.Element el;
       DAE.ElementSource esrc;
+      ComponentRef cr;
 
     case Equation.EQUALITY()
       algorithm
@@ -524,7 +531,7 @@ algorithm
         while ExpressionIterator.hasNext(lhs_iter) loop
           (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
           (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-          elements := DAE.EQUATION(Expression.toDAE(lhs), Expression.toDAE(rhs), esrc) :: elements;
+          elements := makeEqualityEq(lhs, rhs, esrc, isInitial) :: elements;
         end while;
       then
         elements;
@@ -536,23 +543,27 @@ algorithm
         rhs := Expression.expand(rhs);
         esrc := ElementSource.createElementSource(eq.info);
       then
-        DAE.ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)),
-          Expression.toDAE(lhs), Expression.toDAE(rhs), esrc) :: elements;
+        makeArrayEqualityEq(lhs, rhs, Type.arrayDims(eq.ty), esrc, isInitial) :: elements;
 
     case Equation.IF()
       algorithm
-        (el, funcs) := flattenIfEquation(eq.branches, prefix, eq.info, false, funcs);
+        (el, funcs) := flattenIfEquation(eq.branches, prefix, isInitial, eq.info, funcs);
       then
         el :: elements;
 
     case Equation.FOR()
       algorithm
-        (elements, funcs) := flattenForEquation(eq, prefix, elements, funcs);
+        (elements, funcs) := flattenForEquation(eq, prefix, isInitial, elements, funcs);
       then
         elements;
 
     case Equation.WHEN()
       algorithm
+        if isInitial then
+          Error.addSourceMessage(Error.INITIAL_WHEN, {}, eq.info);
+          fail();
+        end if;
+
         (el, funcs) := flattenWhenEquation(eq.branches, prefix, eq.info, funcs);
       then
         el :: elements;
@@ -563,26 +574,27 @@ algorithm
         (e2, funcs) := flattenExp(eq.message, prefix, funcs);
         (e3, funcs) := flattenExp(eq.level, prefix, funcs);
       then
-        DAE.ASSERT(
-            Expression.toDAE(e1), Expression.toDAE(e2), Expression.toDAE(e3),
-            ElementSource.createElementSource(eq.info)
-          ) :: elements;
+        makeAssertEq(e1, e2, e3, eq.info, isInitial) :: elements;
 
     case Equation.TERMINATE()
       algorithm
         (e1, funcs) := flattenExp(eq.message, prefix, funcs);
       then
-        DAE.TERMINATE(Expression.toDAE(e1), ElementSource.createElementSource(eq.info)) :: elements;
+        makeTerminateEq(e1, eq.info, isInitial) :: elements;
 
-    //case Equation.REINIT()
-    //  then
-    //    DAE.REINIT(eq.cref, eq.reinitExp, ElementSource.createElementSource(eq.info)) :: elements;
+    case Equation.REINIT(cref = Expression.CREF(cref = cr))
+      algorithm
+        Expression.CREF(cref = cr) := applyExpPrefix(prefix, eq.cref);
+        (e1, funcs) := flattenExp(eq.reinitExp, prefix, funcs);
+      then
+        DAE.REINIT(ComponentRef.toDAE(cr), Expression.toDAE(e1),
+          ElementSource.createElementSource(eq.info)) :: elements;
 
     case Equation.NORETCALL()
       algorithm
         (e1, funcs) := flattenExp(eq.exp, prefix, funcs);
       then
-        DAE.NORETCALL(Expression.toDAE(e1), ElementSource.createElementSource(eq.info)) :: elements;
+        makeNoretcallEq(e1, eq.info, isInitial) :: elements;
 
     case Equation.CONNECT()
       algorithm
@@ -597,56 +609,19 @@ end flattenEquation;
 function flattenEquations
   input list<Equation> equations;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
 algorithm
   for e in equations loop
-    (elements, funcs) := flattenEquation(e, prefix, elements, funcs);
+    (elements, funcs) := flattenEquation(e, prefix, isInitial, elements, funcs);
   end for;
 end flattenEquations;
-
-function flattenInitialEquation
-  input Equation eq;
-  input ComponentRef prefix;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-algorithm
-  elements := match eq
-    local
-      DAE.Exp lhs, rhs;
-      DAE.Element el;
-
-    case Equation.EQUALITY()
-      algorithm
-        lhs := Expression.toDAE(applyExpPrefix(prefix, eq.lhs));
-        rhs := Expression.toDAE(applyExpPrefix(prefix, eq.rhs));
-      then
-        DAE.INITIALEQUATION(lhs, rhs, ElementSource.createElementSource(eq.info)) :: elements;
-
-    case Equation.IF()
-      algorithm
-        (el, funcs) := flattenIfEquation(eq.branches, prefix, eq.info, true, funcs);
-      then
-        el :: elements;
-
-    else elements;
-  end match;
-end flattenInitialEquation;
-
-function flattenInitialEquations
-  input list<Equation> equations;
-  input ComponentRef prefix;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-algorithm
-  for eq in equations loop
-    (elements, funcs) := flattenInitialEquation(eq, prefix, elements, funcs);
-  end for;
-end flattenInitialEquations;
 
 function flattenForEquation
   input Equation forEq;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
 protected
@@ -664,7 +639,7 @@ algorithm
   Equation.FOR(iterator = iterator, body = body, info = info) := forEq;
 
   // Flatten the body of the for loop.
-  (dbody, funcs) := flattenEquations(body, prefix, {}, funcs);
+  (dbody, funcs) := flattenEquations(body, prefix, isInitial, {}, funcs);
 
   // Get the range to iterate over.
   Component.ITERATOR(binding = binding) := InstNode.component(iterator);
@@ -686,8 +661,8 @@ end flattenForEquation;
 function flattenIfEquation
   input list<tuple<Expression, list<Equation>>> ifBranches;
   input ComponentRef prefix;
-  input SourceInfo info;
   input Boolean isInitial;
+  input SourceInfo info;
         output DAE.Element ifEquation;
   input output DAE.FunctionTree funcs;
 protected
@@ -698,7 +673,7 @@ protected
 algorithm
   for b in ifBranches loop
     conditions := Util.tuple21(b) :: conditions;
-    (branch, funcs) := flattenEquations(Util.tuple22(b), prefix, {}, funcs);
+    (branch, funcs) := flattenEquations(Util.tuple22(b), prefix, isInitial, {}, funcs);
     branches := branch :: branches;
   end for;
 
@@ -740,23 +715,105 @@ algorithm
 
   head::rest := whenBranches;
   cond1 := Expression.toDAE(Util.tuple21(head));
-  (els1, funcs) := flattenEquations(Util.tuple22(head), prefix, {}, funcs);
+  (els1, funcs) := flattenEquations(Util.tuple22(head), prefix, false, {}, funcs);
   rest := listReverse(rest);
 
   for b in rest loop
     cond2 := Expression.toDAE(Util.tuple21(b));
-    (els2, funcs) := flattenEquations(Util.tuple22(b), prefix, {}, funcs);
+    (els2, funcs) := flattenEquations(Util.tuple22(b), prefix, false, {}, funcs);
     whenEquation := DAE.WHEN_EQUATION(cond2, els2, owhenEquation, ElementSource.createElementSource(info));
     owhenEquation := SOME(whenEquation);
   end for;
 
   whenEquation := DAE.WHEN_EQUATION(cond1, els1, owhenEquation, ElementSource.createElementSource(info));
-
 end flattenWhenEquation;
+
+function makeEqualityEq
+  input Expression lhs;
+  input Expression rhs;
+  input DAE.ElementSource src;
+  input Boolean isInitial;
+  output DAE.Element element;
+algorithm
+  if isInitial then
+    element := DAE.Element.INITIALEQUATION(Expression.toDAE(lhs), Expression.toDAE(rhs), src);
+  else
+    element := DAE.Element.EQUATION(Expression.toDAE(lhs), Expression.toDAE(rhs), src);
+  end if;
+end makeEqualityEq;
+
+function makeArrayEqualityEq
+  input Expression lhs;
+  input Expression rhs;
+  input list<Dimension> dims;
+  input DAE.ElementSource src;
+  input Boolean isInitial;
+  output DAE.Element element;
+protected
+  list<DAE.Dimension> dae_dims;
+algorithm
+  dae_dims := list(Dimension.toDAE(d) for d in dims);
+
+  if isInitial then
+    element := DAE.Element.INITIAL_ARRAY_EQUATION(dae_dims, Expression.toDAE(lhs), Expression.toDAE(rhs), src);
+  else
+    element := DAE.Element.ARRAY_EQUATION(dae_dims, Expression.toDAE(lhs), Expression.toDAE(rhs), src);
+  end if;
+end makeArrayEqualityEq;
+
+function makeAssertEq
+  input Expression condition;
+  input Expression message;
+  input Expression level;
+  input SourceInfo info;
+  input Boolean isInitial;
+  output DAE.Element element;
+protected
+  DAE.ElementSource src = ElementSource.createElementSource(info);
+algorithm
+  if isInitial then
+    element := DAE.INITIAL_ASSERT(Expression.toDAE(condition),
+      Expression.toDAE(message), Expression.toDAE(level), src);
+  else
+    element := DAE.ASSERT(Expression.toDAE(condition),
+      Expression.toDAE(message), Expression.toDAE(level), src);
+  end if;
+end makeAssertEq;
+
+function makeTerminateEq
+  input Expression message;
+  input SourceInfo info;
+  input Boolean isInitial;
+  output DAE.Element element;
+protected
+  DAE.ElementSource src = ElementSource.createElementSource(info);
+algorithm
+  if isInitial then
+    element := DAE.INITIAL_TERMINATE(Expression.toDAE(message), src);
+  else
+    element := DAE.TERMINATE(Expression.toDAE(message), src);
+  end if;
+end makeTerminateEq;
+
+function makeNoretcallEq
+  input Expression call;
+  input SourceInfo info;
+  input Boolean isInitial;
+  output DAE.Element element;
+protected
+  DAE.ElementSource src = ElementSource.createElementSource(info);
+algorithm
+  if isInitial then
+    element := DAE.INITIAL_NORETCALL(Expression.toDAE(call), src);
+  else
+    element := DAE.NORETCALL(Expression.toDAE(call), src);
+  end if;
+end makeNoretcallEq;
 
 function flattenStatement
   input Statement alg;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Statement> stmts;
   input output DAE.FunctionTree funcs;
 algorithm
@@ -792,18 +849,23 @@ algorithm
 
     case Statement.FOR()
       algorithm
-        (stmt, funcs) := flattenForStatement(alg, prefix, funcs);
+        (stmt, funcs) := flattenForStatement(alg, prefix, isInitial, funcs);
       then
         stmt :: stmts;
 
     case Statement.IF()
       algorithm
-        (stmt, funcs) := flattenIfStatement(alg.branches, prefix, alg.info, funcs);
+        (stmt, funcs) := flattenIfStatement(alg.branches, prefix, isInitial, alg.info, funcs);
       then
         stmt :: stmts;
 
     case Statement.WHEN()
       algorithm
+        if isInitial then
+          Error.addSourceMessage(Error.INITIAL_WHEN, {}, alg.info);
+          fail();
+        end if;
+
         (stmt, funcs) := flattenWhenStatement(alg.branches, prefix, alg.info, funcs);
       then
         stmt :: stmts;
@@ -826,13 +888,6 @@ algorithm
         DAE.STMT_TERMINATE(Expression.toDAE(e1),
           ElementSource.createElementSource(alg.info)) :: stmts;
 
-    //case Statement.REINIT()
-    //  then
-    //    DAE.STMT_REINIT(
-    //      Expression.toDAE(Expression.makeCrefExp(alg.cref, ComponentReference.crefType(alg.cref))),
-    //      Expression.toDAE(alg.reinitExp),
-    //      ElementSource.createElementSource(alg.info)) :: stmts;
-
     case Statement.NORETCALL()
       algorithm
         (e1, funcs) := flattenExp(alg.exp, prefix, funcs);
@@ -842,7 +897,7 @@ algorithm
 
     case Statement.WHILE()
       algorithm
-        (sts, funcs) := flattenStatements(alg.body, prefix, {}, funcs);
+        (sts, funcs) := flattenStatements(alg.body, prefix, isInitial, {}, funcs);
       then
         DAE.STMT_WHILE(Expression.toDAE(alg.condition), sts,
           ElementSource.createElementSource(alg.info)) :: stmts;
@@ -857,7 +912,7 @@ algorithm
 
     case Statement.FAILURE()
       algorithm
-        (sts, funcs) := flattenStatements(alg.body, prefix, {}, funcs);
+        (sts, funcs) := flattenStatements(alg.body, prefix, isInitial, {}, funcs);
       then
         DAE.STMT_FAILURE(sts, ElementSource.createElementSource(alg.info)) :: stmts;
 
@@ -868,11 +923,12 @@ end flattenStatement;
 public function flattenStatements
   input list<Statement> algs;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Statement> stmts;
   input output DAE.FunctionTree funcs;
 algorithm
   for s in algs loop
-    (stmts, funcs) := flattenStatement(s, prefix, stmts, funcs);
+    (stmts, funcs) := flattenStatement(s, prefix, isInitial, stmts, funcs);
   end for;
 
   stmts := listReverse(stmts);
@@ -881,56 +937,39 @@ end flattenStatements;
 function flattenAlgorithmStmts
   input list<Statement> algSection;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
 protected
   DAE.Algorithm alg;
   list<DAE.Statement> stmts;
 algorithm
-  (stmts, funcs) := flattenStatements(algSection, prefix, {}, funcs);
+  (stmts, funcs) := flattenStatements(algSection, prefix, isInitial, {}, funcs);
   alg := DAE.ALGORITHM_STMTS(stmts);
-  elements := DAE.ALGORITHM(alg, DAE.emptyElementSource) :: elements;
+
+  if isInitial then
+    elements := DAE.INITIALALGORITHM(alg, DAE.emptyElementSource) :: elements;
+  else
+    elements := DAE.ALGORITHM(alg, DAE.emptyElementSource) :: elements;
+  end if;
 end flattenAlgorithmStmts;
 
 function flattenAlgorithms
   input list<list<Statement>> algorithms;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input output list<DAE.Element> elements;
   input output DAE.FunctionTree funcs;
 algorithm
   for a in algorithms loop
-    (elements, funcs) := flattenAlgorithmStmts(a, prefix, elements, funcs);
+    (elements, funcs) := flattenAlgorithmStmts(a, prefix, isInitial, elements, funcs);
   end for;
 end flattenAlgorithms;
-
-function flattenInitialAlgorithmStmts
-  input list<Statement> algSection;
-  input ComponentRef prefix;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-protected
-  DAE.Algorithm alg;
-  list<DAE.Statement> stmts;
-algorithm
-  (stmts, funcs) := flattenStatements(algSection, prefix, {}, funcs);
-  alg := DAE.ALGORITHM_STMTS(stmts);
-  elements := DAE.INITIALALGORITHM(alg, DAE.emptyElementSource) :: elements;
-end flattenInitialAlgorithmStmts;
-
-function flattenInitialAlgorithms
-  input list<list<Statement>> algorithms;
-  input ComponentRef prefix;
-  input output list<DAE.Element> elements;
-  input output DAE.FunctionTree funcs;
-algorithm
-  for a in algorithms loop
-    (elements, funcs) := flattenInitialAlgorithmStmts(a, prefix, elements, funcs);
-  end for;
-end flattenInitialAlgorithms;
 
 function flattenIfStatement
   input list<tuple<Expression, list<Statement>>> ifBranches;
   input ComponentRef prefix;
+  input Boolean isInitial;
   input SourceInfo info;
         output DAE.Statement ifStatement;
   input output DAE.FunctionTree funcs;
@@ -943,12 +982,12 @@ protected
 algorithm
   head :: rest := ifBranches;
   cond1 := Expression.toDAE(Util.tuple21(head));
-  (stmts1, funcs) := flattenStatements(Util.tuple22(head), prefix, {}, funcs);
+  (stmts1, funcs) := flattenStatements(Util.tuple22(head), prefix, isInitial, {}, funcs);
   rest := listReverse(rest);
 
   for b in rest loop
     cond2 := Expression.toDAE(Util.tuple21(b));
-    (stmts2, funcs) := flattenStatements(Util.tuple22(b), prefix, {}, funcs);
+    (stmts2, funcs) := flattenStatements(Util.tuple22(b), prefix, isInitial, {}, funcs);
     elseStatement := DAE.ELSEIF(cond2, stmts2, elseStatement);
   end for;
 
@@ -970,12 +1009,12 @@ protected
 algorithm
   head :: rest := whenBranches;
   cond1 := Expression.toDAE(Util.tuple21(head));
-  (stmts1, funcs) := flattenStatements(Util.tuple22(head), prefix, {}, funcs);
+  (stmts1, funcs) := flattenStatements(Util.tuple22(head), prefix, false, {}, funcs);
   rest := listReverse(rest);
 
   for b in rest loop
     cond2 := Expression.toDAE(Util.tuple21(b));
-    (stmts2, funcs) := flattenStatements(Util.tuple22(b), prefix, {}, funcs);
+    (stmts2, funcs) := flattenStatements(Util.tuple22(b), prefix, false, {}, funcs);
     whenStatement := DAE.STMT_WHEN(cond2, {}, false, stmts2, owhenStatement, ElementSource.createElementSource(info));
     owhenStatement := SOME(whenStatement);
   end for;
@@ -986,6 +1025,7 @@ end flattenWhenStatement;
 function flattenForStatement
   input Statement forStmt;
   input ComponentRef prefix;
+  input Boolean isInitial;
         output DAE.Statement forDAE;
   input output DAE.FunctionTree funcs;
 protected
@@ -999,7 +1039,7 @@ protected
 algorithm
   Statement.FOR(iterator = iterator, body = body, info = info) := forStmt;
 
-  (dbody, funcs) := flattenStatements(body, prefix, {}, funcs);
+  (dbody, funcs) := flattenStatements(body, prefix, isInitial, {}, funcs);
 
   Component.ITERATOR(ty = ty, binding = binding) := InstNode.component(iterator);
   SOME(range) := Binding.typedExp(binding);

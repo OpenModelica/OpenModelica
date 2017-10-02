@@ -216,10 +216,10 @@ algorithm
       algorithm
         (node, state) := match cr.name
           case "time" then (NFBuiltin.TIME, LookupState.STATE_PREDEF_COMP());
-          case "Boolean" then (NFBuiltin.BOOLEAN_TYPE, LookupState.STATE_PREDEF_CLASS());
-          case "Integer" then (NFBuiltin.INT_TYPE, LookupState.STATE_FUNC());
-          case "String" then (NFBuiltin.STRING_TYPE, LookupState.STATE_FUNC());
-          case "StateSelect" then (NFBuiltin.STATESELECT_TYPE, LookupState.STATE_PREDEF_CLASS());
+          case "Boolean" then (NFBuiltin.BOOLEAN_TYPE_NODE, LookupState.STATE_PREDEF_CLASS());
+          case "Integer" then (NFBuiltin.INT_TYPE_NODE, LookupState.STATE_FUNC());
+          case "String" then (NFBuiltin.STRING_TYPE_NODE, LookupState.STATE_FUNC());
+          case "StateSelect" then (NFBuiltin.STATESELECT_TYPE_NODE, LookupState.STATE_PREDEF_CLASS());
           else
             algorithm
               matchType := MatchType.NOT_FOUND;
@@ -256,7 +256,7 @@ algorithm
                     InstNode.EMPTY_NODE();
               end match;
 
-              restNodes := {NFBuiltin.STATESELECT_TYPE, node};
+              restNodes := {NFBuiltin.STATESELECT_TYPE_NODE, node};
             then
               node;
 
@@ -500,10 +500,10 @@ function lookupSimpleBuiltinName
   output InstNode builtin;
 algorithm
   builtin := match name
-    case "Real" then NFBuiltin.REAL_TYPE;
-    case "Integer" then NFBuiltin.INT_TYPE;
-    case "Boolean" then NFBuiltin.BOOLEAN_TYPE;
-    case "String" then NFBuiltin.STRING_TYPE;
+    case "Real" then NFBuiltin.REAL_TYPE_NODE;
+    case "Integer" then NFBuiltin.INT_TYPE_NODE;
+    case "Boolean" then NFBuiltin.BOOLEAN_TYPE_NODE;
+    case "String" then NFBuiltin.STRING_TYPE_NODE;
   end match;
 end lookupSimpleBuiltinName;
 

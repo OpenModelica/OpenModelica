@@ -577,7 +577,7 @@ public constant Message NOTIFY_NOT_LOADED = MESSAGE(223, SCRIPTING(), NOTIFICATI
 public constant Message REINIT_MUST_BE_REAL = MESSAGE(224, TRANSLATION(), ERROR(),
   Util.gettext("The first argument to reinit must be a subtype of Real, but %s has type %s."));
 public constant Message REINIT_MUST_BE_VAR = MESSAGE(225, TRANSLATION(), ERROR(),
-  Util.gettext("The first argument to reinit must be a variable, but %s is a %s."));
+  Util.gettext("The first argument to reinit must be a continuous time variable, but %s is %s."));
 public constant Message CONNECT_TWO_SOURCES = MESSAGE(226, TRANSLATION(), WARNING(),
   Util.gettext("Connecting two signal sources while connecting %s to %s."));
 public constant Message INNER_OUTER_FORMAL_PARAMETER = MESSAGE(227, TRANSLATION(), ERROR(),
@@ -853,8 +853,8 @@ public constant Message CONT_CLOCKED_PARTITION_CONFLICT_VAR = MESSAGE(561, TRANS
   Util.gettext("Variable %s belongs to clocked and continuous partitions."));
 public constant Message ELSE_WHEN_CLOCK = MESSAGE(562, TRANSLATION(), ERROR(),
   Util.gettext("Clocked when equation can not contain elsewhen part."));
-public constant Message REINIT_NOTIN_WHEN = MESSAGE(563, TRANSLATION(), ERROR(),
-  Util.gettext("Operator reinit should be in body of when statement."));
+public constant Message REINIT_NOT_IN_WHEN = MESSAGE(563, TRANSLATION(), ERROR(),
+  Util.gettext("Operator reinit may only be used in the body of a when equation."));
 public constant Message NESTED_CLOCKED_WHEN = MESSAGE(564, TRANSLATION(), ERROR(),
   Util.gettext("Nested clocked when statements are not allowed."));
 public constant Message CLOCKED_WHEN_BRANCH = MESSAGE(565, TRANSLATION(), ERROR(),

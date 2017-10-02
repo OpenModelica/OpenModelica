@@ -391,11 +391,12 @@ public
       case Type.REAL() then "Real";
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
-      case Type.ENUMERATION() then "enumeration(" + stringDelimitList(ty.literals, ", ") + ")";
+      case Type.ENUMERATION() then "enumeration " + Absyn.pathString(ty.typePath) +
+        "(" + stringDelimitList(ty.literals, ", ") + ")";
       case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.CLOCK() then "Clock";
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
-      case Type.TUPLE() then "tuple(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
+      case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";

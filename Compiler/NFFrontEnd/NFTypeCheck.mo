@@ -1345,7 +1345,7 @@ algorithm
 
   if isIncompatibleMatch(matchKind) then
     (exp2, compatibleType, matchKind) :=
-      matchTypes_cast(type2, type1, exp2, allowUnknown);
+      matchTypes(type2, type1, exp2, allowUnknown);
   end if;
 end matchExpressions;
 
@@ -1558,18 +1558,18 @@ function matchTupleTypes
         output MatchKind matchKind = MatchKind.EXACT;
 protected
   list<Type> tyl1, tyl2;
-  Type ty2;
+  Type ty1;
 algorithm
   Type.TUPLE(types = tyl1) := tupleType1;
   Type.TUPLE(types = tyl2) := tupleType2;
 
-  if listLength(tyl1) > listLength(tyl2) then
+  if listLength(tyl1) < listLength(tyl2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
     return;
   end if;
 
-  for ty1 in tyl1 loop
-    ty2 :: tyl2 := tyl2;
+  for ty2 in tyl2 loop
+    ty1 :: tyl1 := tyl1;
     (_, _, matchKind) := matchTypes(ty1, ty2, expression, allowUnknown);
 
     if matchKind <> MatchKind.EXACT then
@@ -1618,6 +1618,24 @@ algorithm
         // TODO: FIXME: Maybe this should be generic match
       then
         (actualType, MatchKind.CAST);
+
+    // If the actual type is a tuple but the expected type isn't,
+    // try to use the first type in the tuple.
+    case (Type.TUPLE(types = _ :: _), _)
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchTypes(listHead(actualType.types), expectedType, expression, allowUnknown);
+
+        if isCompatibleMatch(matchKind) then
+          expression := match expression
+            case Expression.TUPLE() then listHead(expression.elements);
+            else Expression.TUPLE_ELEMENT(expression, 1, compatibleType);
+          end match;
+
+          matchKind := MatchKind.CAST;
+        end if;
+      then
+        (compatibleType, matchKind);
 
     // Allow unknown types in some cases, e.g. () has type METALIST(UNKNOWN)
     case (Type.UNKNOWN(), _)

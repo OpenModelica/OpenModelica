@@ -54,6 +54,7 @@ import Prefixes = NFPrefixes;
 import ExpOrigin = NFExpOrigin;
 
 protected
+import Builtin = NFBuiltin;
 import Ceval = NFCeval;
 import ClassInf;
 import ComponentRef = NFComponentRef;
@@ -187,7 +188,7 @@ end typeComponent;
 function typeIterator
   input InstNode iterator;
   input SourceInfo info;
-  input Boolean structural = false "If the iteration range must be a parameter expression or not.";
+  input Boolean structural "If the iteration range must be a parameter expression or not.";
 protected
   Component c = InstNode.component(iterator);
   Binding binding;
@@ -1076,7 +1077,7 @@ algorithm
   (expl, tyl, valr) := typeExpl(elements, info);
   tupleType := Type.TUPLE(tyl, NONE());
   tupleExp := Expression.TUPLE(tupleType, expl);
-  variability := List.fold(valr, Prefixes.variabilityMax, Variability.CONSTANT);
+  variability := if listEmpty(valr) then Variability.CONSTANT else listHead(valr);
 end typeTuple;
 
 protected
@@ -1250,17 +1251,26 @@ algorithm
   eq := match eq
     local
       Expression cond, e1, e2, e3;
-      Type ty1, ty2;
+      Type ty, ty1, ty2;
       list<Equation> eqs1, body;
       list<tuple<Expression, list<Equation>>> tybrs;
       InstNode iterator;
+      MatchKind mk;
 
     case Equation.EQUALITY()
       algorithm
         (e1, ty1) := typeExp(eq.lhs, eq.info, ExpOrigin.LHS());
-        (e2, _) := typeExp(eq.rhs, eq.info, ExpOrigin.RHS());
+        (e2, ty2) := typeExp(eq.rhs, eq.info, ExpOrigin.RHS());
+        (e1, e2, ty, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2);
+
+        if TypeCheck.isIncompatibleMatch(mk) then
+          Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR,
+            {Expression.toString(e1) + " = " + Expression.toString(e2),
+             Type.toString(ty1) + " = " + Type.toString(ty2)}, eq.info);
+          fail();
+        end if;
       then
-        Equation.EQUALITY(e1, e2, ty1, eq.info);
+        Equation.EQUALITY(e1, e2, ty, eq.info);
 
     case Equation.CONNECT()
       algorithm
@@ -1281,7 +1291,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, eq.info);
+              e1 := typeCondition(cond, eq.info, Error.IF_CONDITION_TYPE_ERROR);
               eqs1 := list(typeEquation(beq) for beq in body);
             then (e1, eqs1);
           end match
@@ -1294,7 +1304,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, eq.info);
+              e1 := typeCondition(cond, eq.info, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
               eqs1 := list(typeEquation(beq) for beq in body);
             then (e1, eqs1);
           end match
@@ -1304,22 +1314,21 @@ algorithm
 
     case Equation.ASSERT()
       algorithm
-        e1 := typeExp(eq.condition, eq.info);
-        e2 := typeExp(eq.message, eq.info);
-        e3 := typeExp(eq.level, eq.info);
+        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(), "assert", "condition", 1, eq.info);
+        e2 := typeOperatorArg(eq.message, Type.STRING(), "assert", "message", 2, eq.info);
+        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, "assert", "level", 3, eq.info);
       then
         Equation.ASSERT(e1, e2, e3, eq.info);
 
     case Equation.TERMINATE()
       algorithm
-        e1 := typeExp(eq.message, eq.info);
+        e1 := typeOperatorArg(eq.message, Type.STRING(), "terminate", "message", 1, eq.info);
       then
         Equation.TERMINATE(e1, eq.info);
 
     case Equation.REINIT()
       algorithm
-        e1 := typeExp(eq.cref, eq.info);
-        e2 := typeExp(eq.reinitExp, eq.info);
+        (e1, e2) := typeReinit(eq.cref, eq.reinitExp, eq.info);
       then
         Equation.REINIT(e1, e2, eq.info);
 
@@ -1349,17 +1358,27 @@ algorithm
       list<Statement> sts1, body;
       list<tuple<Expression, list<Statement>>> tybrs;
       InstNode iterator;
+      MatchKind mk;
 
     case Statement.ASSIGNMENT()
       algorithm
-        (e1, _) := typeExp(st.lhs, st.info, ExpOrigin.LHS());
-        (e2, _) := typeExp(st.rhs, st.info, ExpOrigin.RHS());
+        (e1, ty1) := typeExp(st.lhs, st.info, ExpOrigin.LHS());
+        (e2, ty2) := typeExp(st.rhs, st.info, ExpOrigin.RHS());
+
+        (e2, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, e2);
+
+        if TypeCheck.isIncompatibleMatch(mk) then
+          Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
+            {Expression.toString(e1), Expression.toString(e2),
+             Type.toString(ty1), Type.toString(ty2)}, st.info);
+          fail();
+        end if;
       then
         Statement.ASSIGNMENT(e1, e2, st.info);
 
     case Statement.FOR()
       algorithm
-        typeIterator(st.iterator, st.info);
+        typeIterator(st.iterator, st.info, structural = false);
         body := typeAlgorithm(st.body);
       then
         Statement.FOR(st.iterator, body, st.info);
@@ -1369,7 +1388,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, st.info);
+              e1 := typeCondition(cond, st.info, Error.IF_CONDITION_TYPE_ERROR);
               sts1 := list(typeStatement(bst) for bst in body);
             then (e1, sts1);
           end match
@@ -1382,7 +1401,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeExp(cond, st.info);
+              e1 := typeCondition(cond, st.info, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
               sts1 := list(typeStatement(bst) for bst in body);
             then (e1, sts1);
           end match
@@ -1392,24 +1411,17 @@ algorithm
 
     case Statement.ASSERT()
       algorithm
-        e1 := typeExp(st.condition, st.info);
-        e2 := typeExp(st.message, st.info);
-        e3 := typeExp(st.level, st.info);
+        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(), "assert", "condition", 1, st.info);
+        e2 := typeOperatorArg(st.message, Type.STRING(), "assert", "message", 2, st.info);
+        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, "assert", "level", 3, st.info);
       then
         Statement.ASSERT(e1, e2, e3, st.info);
 
     case Statement.TERMINATE()
       algorithm
-        e1 := typeExp(st.message, st.info);
+        e1 := typeOperatorArg(st.message, Type.STRING(), "terminate", "message", 1, st.info);
       then
         Statement.TERMINATE(e1, st.info);
-
-    case Statement.REINIT()
-      algorithm
-        e1 := typeExp(st.cref, st.info);
-        e2 := typeExp(st.reinitExp, st.info);
-      then
-        Statement.REINIT(e1, e2, st.info);
 
     case Statement.NORETCALL()
       algorithm
@@ -1419,7 +1431,7 @@ algorithm
 
     case Statement.WHILE()
       algorithm
-        e1 := typeExp(st.condition, st.info);
+        e1 := typeCondition(st.condition, st.info, Error.WHILE_CONDITION_TYPE_ERROR);
         sts1 := list(typeStatement(bst) for bst in st.body);
       then
         Statement.WHILE(e1, sts1, st.info);
@@ -1433,6 +1445,115 @@ algorithm
     else st;
   end match;
 end typeStatement;
+
+function typeCondition
+  input output Expression condition;
+  input SourceInfo info;
+  input Error.Message errorMsg;
+  input Boolean allowVector = false;
+        output Variability variability;
+protected
+  Type ty;
+  MatchKind mk;
+algorithm
+  (condition, ty, variability) := typeExp(condition, info);
+
+  if allowVector and Type.isVector(ty) then
+    (_, _, mk) := TypeCheck.matchTypes(Type.arrayElementType(ty), Type.BOOLEAN(), condition);
+  else
+    (_, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), condition);
+  end if;
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    Error.addSourceMessage(errorMsg,
+      {Expression.toString(condition), Type.toString(ty)}, info);
+    fail();
+  end if;
+end typeCondition;
+
+function typeOperatorArg
+  input output Expression arg;
+  input Type expectedType;
+  input String operatorName;
+  input String argName;
+  input Integer argIndex;
+  input SourceInfo info;
+protected
+  Type ty;
+  MatchKind mk;
+algorithm
+  (arg, ty, _) := typeExp(arg, info);
+  (arg, _, mk) := TypeCheck.matchTypes(ty, expectedType, arg);
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
+      {intString(argIndex), operatorName, argName, Expression.toString(arg),
+       Type.toString(ty), Type.toString(expectedType)}, info);
+    fail();
+  end if;
+end typeOperatorArg;
+
+function typeReinit
+  input output Expression crefExp;
+  input output Expression exp;
+  input SourceInfo info;
+protected
+  Variability var;
+  MatchKind mk;
+  Type ty1, ty2;
+algorithm
+  (crefExp, ty1, var) := typeExp(crefExp, info);
+  (exp, ty2, _) := typeExp(exp, info);
+
+  // The first argument must be a cref.
+  () := match crefExp
+    case Expression.CREF() then ();
+    else
+      algorithm
+        Error.addSourceMessage(Error.REINIT_MUST_BE_VAR_OR_ARRAY, {}, info);
+      then
+        fail();
+  end match;
+
+  // The first argument must be a continuous time variable.
+  if var <> Variability.CONTINUOUS then
+    Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
+      {Expression.toString(crefExp), Prefixes.variabilityString(var)}, info);
+    fail();
+  end if;
+
+  // The first argument must be a subtype of Real.
+  (_, _, mk) := TypeCheck.matchTypes(Type.arrayElementType(ty1), Type.REAL(), crefExp);
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    Error.addSourceMessage(Error.REINIT_MUST_BE_REAL,
+      {Expression.toString(crefExp), Type.toString(Type.arrayElementType(ty1))}, info);
+    fail();
+  end if;
+
+  // The second argument must be type compatible with the first.
+  (exp, _, mk) := TypeCheck.matchTypes(ty2, ty1, exp);
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
+      {"2", "reinit", "", Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+    fail();
+  end if;
+end typeReinit;
+
+//function typeReinit
+//  input output Expression crefExp;
+//  input output Expression exp;
+//  input SourceInfo info;
+//protected
+//  DAE.VarKind var;
+//  MatchKind mk;
+//  Type ty1, ty2;
+//algorithm
+//  (crefExp, ty1, var) := typeExp(crefExp, info);
+//
+//  if not DAEUtil.isParamV
+//  (_, _, mk) := TypeCheck.matchTypes(Type.arrayElementType(ty1), Type.REAL(), crefExp);
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTyping;

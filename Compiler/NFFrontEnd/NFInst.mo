@@ -1360,14 +1360,16 @@ end instEquation;
 function instEEquations
   input list<SCode.EEquation> scodeEql;
   input InstNode scope;
+  input Boolean insideWhen = false;
   output list<Equation> instEql;
 algorithm
-  instEql := list(instEEquation(eq, scope) for eq in scodeEql);
+  instEql := list(instEEquation(eq, scope, insideWhen) for eq in scodeEql);
 end instEEquations;
 
 function instEEquation
   input SCode.EEquation scodeEq;
   input InstNode scope;
+  input Boolean insideWhen = false;
   output Equation instEq;
 algorithm
   instEq := match scodeEq
@@ -1385,11 +1387,23 @@ algorithm
       algorithm
         exp1 := instExp(scodeEq.expLeft, scope, info);
         exp2 := instExp(scodeEq.expRight, scope, info);
+
+        if insideWhen and not checkLhsInWhen(exp1) then
+          Error.addSourceMessage(Error.WHEN_EQ_LHS, {Expression.toString(exp1)}, info);
+          fail();
+        end if;
       then
         Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), info);
 
     case SCode.EEquation.EQ_CONNECT(info = info)
       algorithm
+        if insideWhen then
+          Error.addSourceMessage(Error.CONNECT_IN_WHEN,
+            {Dump.printComponentRefStr(scodeEq.crefLeft),
+             Dump.printComponentRefStr(scodeEq.crefRight)}, info);
+          fail();
+        end if;
+
         exp1 := instCref(scodeEq.crefLeft, scope, info);
         exp2 := instCref(scodeEq.crefRight, scope, info);
       then
@@ -1401,7 +1415,7 @@ algorithm
         binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
-        eql := instEEquations(scodeEq.eEquationLst, for_scope);
+        eql := instEEquations(scodeEq.eEquationLst, for_scope, insideWhen);
       then
         Equation.FOR(iter, eql, info);
 
@@ -1413,7 +1427,7 @@ algorithm
         // Instantiate each branch and pair it up with a condition.
         branches := {};
         for branch in scodeEq.thenBranch loop
-          eql := instEEquations(branch, scope);
+          eql := instEEquations(branch, scope, insideWhen);
           exp1 :: expl := expl;
           branches := (exp1, eql) :: branches;
         end for;
@@ -1421,7 +1435,7 @@ algorithm
         // Instantiate the else-branch, if there is one, and make it a branch
         // with condition true (so we only need a simple list of branches).
         if not listEmpty(scodeEq.elseBranch) then
-          eql := instEEquations(scodeEq.elseBranch, scope);
+          eql := instEEquations(scodeEq.elseBranch, scope, insideWhen);
           branches := (Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
@@ -1429,13 +1443,18 @@ algorithm
 
     case SCode.EEquation.EQ_WHEN(info = info)
       algorithm
+        if insideWhen then
+          Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
+          fail();
+        end if;
+
         exp1 := instExp(scodeEq.condition, scope, info);
-        eql := instEEquations(scodeEq.eEquationLst, scope);
+        eql := instEEquations(scodeEq.eEquationLst, scope, insideWhen = true);
         branches := {(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
           exp1 := instExp(Util.tuple21(branch), scope, info);
-          eql := instEEquations(Util.tuple22(branch), scope);
+          eql := instEEquations(Util.tuple22(branch), scope, insideWhen = true);
           branches := (exp1, eql) :: branches;
         end for;
       then
@@ -1457,7 +1476,12 @@ algorithm
 
     case SCode.EEquation.EQ_REINIT(info = info)
       algorithm
-        exp1 := instCref(scodeEq.cref, scope, info);
+        if not insideWhen then
+          Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
+          fail();
+        end if;
+
+        exp1 := instExp(scodeEq.cref, scope, info);
         exp2 := instExp(scodeEq.expReinit, scope, info);
       then
         Equation.REINIT(exp1, exp2, info);
@@ -1574,10 +1598,9 @@ algorithm
 
     case SCode.Statement.ALG_REINIT(info = info)
       algorithm
-        exp1 := instCref(scodeStmt.cref, scope, info);
-        exp2 := instExp(scodeStmt.newValue, scope, info);
+        Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
       then
-        Statement.REINIT(exp1, exp2, info);
+        fail();
 
     case SCode.Statement.ALG_NORETCALL(info = info)
       algorithm
@@ -1624,6 +1647,23 @@ algorithm
   iterator := InstNode.fromComponent(name, iter_comp, scope);
   scope := InstNode.addIterator(iterator, scope);
 end addIteratorToScope;
+
+function checkLhsInWhen
+  input Expression exp;
+  output Boolean isValid;
+algorithm
+  isValid := match exp
+    case Expression.CREF() then true;
+    case Expression.TUPLE()
+      algorithm
+        for e in exp.elements loop
+          checkLhsInWhen(e);
+        end for;
+      then
+        true;
+    else false;
+  end match;
+end checkLhsInWhen;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

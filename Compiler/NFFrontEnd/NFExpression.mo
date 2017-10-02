@@ -161,6 +161,12 @@ public
     Type ty;
   end UNBOX;
 
+  record TUPLE_ELEMENT
+    Expression tupleExp;
+    Integer index;
+    Type ty;
+  end TUPLE_ELEMENT;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -373,6 +379,17 @@ public
         then
           compare(exp1.exp, e1);
 
+      case TUPLE_ELEMENT()
+        algorithm
+          TUPLE_ELEMENT(tupleExp = e1, index = i) := exp2;
+          comp := Util.intCompare(exp1.index, i);
+
+          if comp == 0 then
+            comp := compare(exp1.tupleExp, e1);
+          end if;
+        then
+          comp;
+
       else
         algorithm
           assert(false, getInstanceName() + " got unknown expression.");
@@ -455,6 +472,7 @@ public
       case IF() then typeOf(exp.trueBranch);
       case CAST() then exp.ty;
       case UNBOX() then exp.ty;
+      case TUPLE_ELEMENT() then exp.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -483,10 +501,7 @@ public
       case (UNARY(), _)
         then UNARY(exp.operator, typeCastElements(exp.exp, ty));
 
-      else
-        then
-          CAST(ty, exp);
-
+      else CAST(ty, exp);
     end match;
   end typeCastElements;
 
@@ -627,10 +642,10 @@ public
     Type t;
   algorithm
     str := match exp
-      case INTEGER() then String(exp.value);
-      case REAL() then String(exp.value);
+      case INTEGER() then intString(exp.value);
+      case REAL() then realString(exp.value);
       case STRING() then "\"" + exp.value + "\"";
-      case BOOLEAN() then String(exp.value);
+      case BOOLEAN() then boolString(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then Absyn.pathString(t.typePath) + "." + exp.name;
@@ -663,8 +678,8 @@ public
       case IF() then "if" + toString(exp.condition) + " then " + toString(exp.trueBranch) + " else " + toString(exp.falseBranch);
 
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
-
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
+      case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
 
       else anyString(exp);
     end match;
@@ -741,6 +756,9 @@ public
       case UNBOX()
         then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
+      case TUPLE_ELEMENT()
+        then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
+
       else
         algorithm
           assert(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'");
@@ -761,6 +779,7 @@ public
       case RANGE() then Type.dimensionCount(exp.ty);
       case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
       case CAST() then dimensionCount(exp.exp);
+      case TUPLE_ELEMENT() then Type.dimensionCount(exp.ty);
       // TODO: Add more expressions.
       else 0;
     end match;
@@ -875,6 +894,12 @@ public
           e1 := traverse(exp.exp, func);
         then
           if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
+
+      case TUPLE_ELEMENT()
+        algorithm
+          e1 := traverse(exp.tupleExp, func);
+        then
+          if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
 
       else exp;
     end match;
@@ -1001,6 +1026,176 @@ public
       else subscript;
     end match;
   end traverseSubscript;
+
+  function fold<ArgT>
+    input Expression exp;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT result;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    result := match exp
+      local
+        Expression e;
+
+      case CREF() then foldCref(exp.cref, func, arg);
+      case ARRAY() then List.fold(exp.elements, func, arg);
+
+      case RANGE(step = SOME(e))
+        algorithm
+          result := fold(exp.start, func, arg);
+          result := fold(e, func, result);
+        then
+          fold(exp.stop, func, result);
+
+      case RANGE()
+        algorithm
+          result := fold(exp.start, func, arg);
+        then
+          fold(exp.stop, func, result);
+
+      case TUPLE() then List.fold(exp.elements, func, arg);
+      case RECORD() then List.fold(exp.elements, func, arg);
+      case CALL() then foldCall(exp.call, func, arg);
+
+      case SIZE(dimIndex = SOME(e))
+        algorithm
+          result := fold(exp.exp, func, arg);
+        then
+          fold(e, func, result);
+
+      case SIZE() then fold(exp.exp, func, arg);
+
+      case BINARY()
+        algorithm
+          result := fold(exp.exp1, func, arg);
+        then
+          fold(exp.exp2, func, result);
+
+      case UNARY() then fold(exp.exp, func, arg);
+
+      case LBINARY()
+        algorithm
+          result := fold(exp.exp1, func, arg);
+        then
+          fold(exp.exp2, func, result);
+
+      case LUNARY() then fold(exp.exp, func, arg);
+
+      case RELATION()
+        algorithm
+          result := fold(exp.exp1, func, arg);
+        then
+          fold(exp.exp2, func, result);
+
+      case IF()
+        algorithm
+          result := fold(exp.condition, func, arg);
+          result := fold(exp.trueBranch, func, result);
+        then
+          fold(exp.falseBranch, func, result);
+
+      case CAST() then fold(exp.exp, func, arg);
+      case UNBOX() then fold(exp.exp, func, arg);
+      case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
+
+      else arg;
+    end match;
+
+    result := func(exp, result);
+  end fold;
+
+  function foldCall<ArgT>
+    input Call call;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    () := match call
+      local
+        Expression e;
+
+      case Call.UNTYPED_CALL()
+        algorithm
+          arg := List.fold(call.arguments, func, arg);
+
+          for arg in call.named_args loop
+            (_, e) := arg;
+            arg := fold(e, func, arg);
+          end for;
+        then
+          ();
+
+      case Call.ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            arg := fold(e, func, arg);
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            arg := fold(e, func, arg);
+          end for;
+        then
+          ();
+
+      case Call.TYPED_CALL()
+        algorithm
+          arg := List.fold(call.arguments, func, arg);
+        then
+          ();
+
+    end match;
+  end foldCall;
+
+  function foldCref<ArgT>
+    input ComponentRef cref;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    () := match cref
+      case ComponentRef.CREF()
+        algorithm
+          arg := List.fold(cref.subscripts, function foldSubscript(func = func), arg);
+          arg := foldCref(cref.restCref, func, arg);
+        then
+          ();
+
+      else ();
+    end match;
+  end foldCref;
+
+  function foldSubscript<ArgT>
+    input Subscript subscript;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT result;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    result := match subscript
+      case Subscript.UNTYPED() then fold(subscript.exp, func, arg);
+      case Subscript.INDEX() then fold(subscript.index, func, arg);
+      case Subscript.SLICE() then fold(subscript.slice, func, arg);
+    end match;
+  end foldSubscript;
 
   function expand
     input output Expression exp;

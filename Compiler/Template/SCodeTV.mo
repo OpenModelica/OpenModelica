@@ -551,7 +551,7 @@ package SCode
     end EQ_TERMINATE;
 
     record EQ_REINIT
-      Absyn.ComponentRef cref;
+      Absyn.Exp cref;
       Absyn.Exp expReinit;
       Comment comment;
       SourceInfo info;
@@ -625,7 +625,7 @@ package SCode
     end ALG_TERMINATE;
 
     record ALG_REINIT
-      Absyn.ComponentRef cref;
+      Absyn.Exp cref;
       Absyn.Exp newValue;
       Comment comment;
       SourceInfo info;

@@ -106,25 +106,25 @@ end Elements;
 // InstNodes for the builtin types. These have empty class trees to prevent
 // access to the attributes via dot notation (which is not needed for
 // modifiers and illegal in other cases).
-constant InstNode REAL_TYPE = InstNode.CLASS_NODE("Real",
+constant InstNode REAL_TYPE_NODE = InstNode.CLASS_NODE("Real",
   Elements.REAL,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.REAL(), NFClassTree.EMPTY, Modifier.NOMOD())),
   Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant InstNode INT_TYPE = InstNode.CLASS_NODE("Integer",
+constant InstNode INT_TYPE_NODE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.INTEGER(), NFClassTree.EMPTY, Modifier.NOMOD())),
   Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true, false)),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant InstNode BOOLEAN_TYPE = InstNode.CLASS_NODE("Boolean",
+constant InstNode BOOLEAN_TYPE_NODE = InstNode.CLASS_NODE("Boolean",
   Elements.BOOLEAN,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.BOOLEAN(), NFClassTree.EMPTY, Modifier.NOMOD())),
   Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
+constant InstNode STRING_TYPE_NODE = InstNode.CLASS_NODE("String",
   Elements.STRING,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.STRING(), NFClassTree.EMPTY, Modifier.NOMOD())),
   Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({
@@ -133,57 +133,57 @@ constant InstNode STRING_TYPE = InstNode.CLASS_NODE("String",
     NFBuiltinFuncs.STRING_REAL_FORMAT}, true, false)),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant InstNode ENUM_TYPE = InstNode.CLASS_NODE("enumeration",
+constant InstNode ENUM_TYPE_NODE = InstNode.CLASS_NODE("enumeration",
   Elements.ENUMERATION,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), NFClassTree.EMPTY, Modifier.NOMOD())),
   Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
-constant Type STATESELECT_TYPE_TYPE = Type.ENUMERATION(
+constant Type STATESELECT_TYPE = Type.ENUMERATION(
   Absyn.IDENT("StateSelect"), {"never", "avoid", "default", "prefer", "always"});
 
-constant InstNode STATESELECT_TYPE = InstNode.CLASS_NODE("StateSelect",
+constant InstNode STATESELECT_TYPE_NODE = InstNode.CLASS_NODE("StateSelect",
   Elements.STATESELECT,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(STATESELECT_TYPE_TYPE, NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(STATESELECT_TYPE, NFClassTree.EMPTY, Modifier.NOMOD())),
   Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant Binding STATESELECT_NEVER_BINDING =
   Binding.TYPED_BINDING(
-    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "never", 1),
-    STATESELECT_TYPE_TYPE,
+    Expression.ENUM_LITERAL(STATESELECT_TYPE, "never", 1),
+    STATESELECT_TYPE,
     Variability.CONSTANT,
     -1,
     Absyn.dummyInfo);
 
 constant Binding STATESELECT_AVOID_BINDING =
   Binding.TYPED_BINDING(
-    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "avoid", 2),
-    STATESELECT_TYPE_TYPE,
+    Expression.ENUM_LITERAL(STATESELECT_TYPE, "avoid", 2),
+    STATESELECT_TYPE,
     Variability.CONSTANT,
     -1,
     Absyn.dummyInfo);
 
 constant Binding STATESELECT_DEFAULT_BINDING =
   Binding.TYPED_BINDING(
-    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "default", 3),
-    STATESELECT_TYPE_TYPE,
+    Expression.ENUM_LITERAL(STATESELECT_TYPE, "default", 3),
+    STATESELECT_TYPE,
     Variability,
     -1,
     Absyn.dummyInfo);
 
 constant Binding STATESELECT_PREFER_BINDING =
   Binding.TYPED_BINDING(
-    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "prefer", 4),
-    STATESELECT_TYPE_TYPE,
+    Expression.ENUM_LITERAL(STATESELECT_TYPE, "prefer", 4),
+    STATESELECT_TYPE,
     Variability.CONSTANT,
     -1,
     Absyn.dummyInfo);
 
 constant Binding STATESELECT_ALWAYS_BINDING =
   Binding.TYPED_BINDING(
-    Expression.ENUM_LITERAL(STATESELECT_TYPE_TYPE, "always", 5),
-    STATESELECT_TYPE_TYPE,
+    Expression.ENUM_LITERAL(STATESELECT_TYPE, "always", 5),
+    STATESELECT_TYPE,
     Variability.CONSTANT,
     -1,
     Absyn.dummyInfo);
@@ -192,56 +192,59 @@ constant InstNode STATESELECT_NEVER =
   InstNode.COMPONENT_NODE("never",
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
-      STATESELECT_TYPE_TYPE,
+      STATESELECT_TYPE,
       STATESELECT_NEVER_BINDING,
       NFComponent.CONST_ATTR,
       Absyn.dummyInfo)),
-    STATESELECT_TYPE);
+    STATESELECT_TYPE_NODE);
 
 constant InstNode STATESELECT_AVOID =
   InstNode.COMPONENT_NODE("avoid",
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
-      STATESELECT_TYPE_TYPE,
+      STATESELECT_TYPE,
       STATESELECT_AVOID_BINDING,
       NFComponent.CONST_ATTR,
       Absyn.dummyInfo)),
-    STATESELECT_TYPE);
+    STATESELECT_TYPE_NODE);
 
 constant InstNode STATESELECT_DEFAULT =
   InstNode.COMPONENT_NODE("default",
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
-      STATESELECT_TYPE_TYPE,
+      STATESELECT_TYPE,
       STATESELECT_DEFAULT_BINDING,
       NFComponent.CONST_ATTR,
       Absyn.dummyInfo)),
-    STATESELECT_TYPE);
+    STATESELECT_TYPE_NODE);
 
 constant InstNode STATESELECT_PREFER =
   InstNode.COMPONENT_NODE("prefer",
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
-      STATESELECT_TYPE_TYPE,
+      STATESELECT_TYPE,
       STATESELECT_PREFER_BINDING,
       NFComponent.CONST_ATTR,
       Absyn.dummyInfo)),
-    STATESELECT_TYPE);
+    STATESELECT_TYPE_NODE);
 
 constant InstNode STATESELECT_ALWAYS =
   InstNode.COMPONENT_NODE("always",
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
-      STATESELECT_TYPE_TYPE,
+      STATESELECT_TYPE,
       STATESELECT_ALWAYS_BINDING,
       NFComponent.CONST_ATTR,
       Absyn.dummyInfo)),
-    STATESELECT_TYPE);
+    STATESELECT_TYPE_NODE);
+
+constant Type ASSERTIONLEVEL_TYPE = Type.ENUMERATION(
+  Absyn.IDENT("AssertionLevel"), {"error", "warning"});
 
 constant InstNode TIME =
   InstNode.COMPONENT_NODE("time",
     Pointer.createImmutable(Component.TYPED_COMPONENT(
-      REAL_TYPE,
+      REAL_TYPE_NODE,
       Type.REAL(),
       Binding.UNBOUND(),
       NFComponent.INPUT_ATTR,

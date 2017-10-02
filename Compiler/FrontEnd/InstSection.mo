@@ -293,7 +293,7 @@ protected function instEquationCommonWork
 algorithm
   (outDae, outState) := matchcontinue inEEquation
     local
-      Absyn.ComponentRef lhs_acr, rhs_acr;
+      Absyn.ComponentRef lhs_acr, rhs_acr, acr;
       SourceInfo info;
       Absyn.Exp lhs_aexp, rhs_aexp, range_aexp;
       SCode.Comment comment;
@@ -536,11 +536,11 @@ algorithm
       then
         (outDae, inState);
 
-    case SCode.EQ_REINIT(info = info)
+    case SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = acr), info = info)
       algorithm
         // Elaborate the cref.
         (outCache, cr_exp as DAE.CREF(cr, ty), cr_prop, _) :=
-          Static.elabCrefNoEval(outCache, inEnv, inEEquation.cref, inImpl, false, inPrefix, info);
+          Static.elabCrefNoEval(outCache, inEnv, acr, inImpl, false, inPrefix, info);
         true := checkReinitType(ty, cr_prop, cr, info);
 
         // Elaborate the reinit expression.
@@ -553,7 +553,7 @@ algorithm
         exp := Types.matchProp(exp, prop, cr_prop, true);
 
         (outCache, cr_exp, exp, cr_prop) := condenseArrayEquation(outCache,
-          inEnv, Absyn.CREF(inEEquation.cref), inEEquation.expReinit, cr_exp,
+          inEnv, inEEquation.cref, inEEquation.expReinit, cr_exp,
           exp, cr_prop, prop, inImpl, inPrefix, info);
         (outCache, cr_exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, cr_exp, inPrefix);
         (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix);
@@ -2383,7 +2383,7 @@ algorithm
     case SCode.ALG_REINIT(info = info)
       algorithm
         (outCache, cr_exp, cr_prop) := instExp(outCache, inEnv, inIH, inPrefix,
-          Absyn.CREF(inStatement.cref), inImpl, info);
+          inStatement.cref, inImpl, info);
         (outCache, exp, prop) := instExp(outCache, inEnv, inIH, inPrefix,
           inStatement.newValue, inImpl, info);
         source := ElementSource.addElementSourceFileInfo(inSource, info);

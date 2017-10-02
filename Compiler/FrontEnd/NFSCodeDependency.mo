@@ -1666,7 +1666,7 @@ algorithm
       then
         ((equ, env));
 
-    case ((equ as SCode.EQ_REINIT(cref = cref1, info = info), env))
+    case ((equ as SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1), info = info), env))
       equation
         analyseCref(cref1, env, info);
         (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));

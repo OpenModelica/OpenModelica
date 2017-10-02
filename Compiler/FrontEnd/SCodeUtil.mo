@@ -884,9 +884,8 @@ algorithm
       then SCode.ALG_TERMINATE(e1, comment, info);
 
     case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr), e2},
-        argNames = {}))
-      then SCode.ALG_REINIT(cr, e2, comment, info);
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2}, argNames = {}))
+      then SCode.ALG_REINIT(e1, e2, comment, info);
 
     case Absyn.ALG_NORETCALL()
       algorithm
@@ -1677,9 +1676,9 @@ algorithm
 
     // reinit(cref, exp)
     case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "reinit"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr), e2},
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2},
         argNames = {}))
-      then SCode.EQ_REINIT(cr, e2, inComment, inInfo);
+      then SCode.EQ_REINIT(e1, e2, inComment, inInfo);
 
     // Other nonreturning calls. assert, terminate and reinit with the wrong
     // number of arguments is also turned into a noretcall, since it's

@@ -1170,11 +1170,11 @@ algorithm
       equation
         exp = fixExp(cache,inEnv,exp,tree);
       then (SCode.EQ_TERMINATE(exp,comment,info));
-    case SCode.EQ_REINIT(cref,exp,comment,info)
+    case SCode.EQ_REINIT(exp1,exp,comment,info)
       equation
-        cref = fixCref(cache,inEnv,cref,tree);
+        exp1 = fixExp(cache,inEnv,exp1,tree);
         exp = fixExp(cache,inEnv,exp,tree);
-      then (SCode.EQ_REINIT(cref,exp,comment,info));
+      then (SCode.EQ_REINIT(exp1,exp,comment,info));
     case SCode.EQ_NORETCALL(exp,comment,info)
       equation
         exp = fixExp(cache,inEnv,exp,tree);
@@ -1318,11 +1318,11 @@ algorithm
         exp2 := fixExp(cache, inEnv, exp1, tree);
       then if referenceEq(exp1,exp2) then inStmt else SCode.ALG_TERMINATE(exp2, comment, info);
 
-    case SCode.ALG_REINIT(cr1, exp1, comment, info)
+    case SCode.ALG_REINIT(exp1, exp2, comment, info)
       algorithm
-        cr2 := fixCref(cache, inEnv, cr1, tree);
-        exp2 := fixExp(cache, inEnv, exp1, tree);
-      then if referenceEq(cr1,cr2) and referenceEq(exp1,exp2) then inStmt else SCode.ALG_REINIT(cr2, exp2, comment, info);
+        exp1_1 := fixExp(cache, inEnv, exp1, tree);
+        exp2_1 := fixExp(cache, inEnv, exp2, tree);
+      then if referenceEq(exp1, exp1_1) and referenceEq(exp2, exp2_1) then inStmt else SCode.ALG_REINIT(exp1_1, exp2_1, comment, info);
 
     case SCode.ALG_NORETCALL(exp1,comment,info)
       equation

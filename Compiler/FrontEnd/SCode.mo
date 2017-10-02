@@ -320,8 +320,8 @@ uniontype EEquation
   end EQ_TERMINATE;
 
   record EQ_REINIT "a reinit equation"
-    Absyn.ComponentRef cref      "the variable to initialize";
-    Absyn.Exp          expReinit "the new value" ;
+    Absyn.Exp cref      "the variable to initialize";
+    Absyn.Exp expReinit "the new value" ;
     Comment comment;
     SourceInfo info;
   end EQ_REINIT;
@@ -412,7 +412,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
   end ALG_TERMINATE;
 
   record ALG_REINIT
-    Absyn.ComponentRef cref;
+    Absyn.Exp cref;
     Absyn.Exp newValue;
     Comment comment;
     SourceInfo info;
@@ -1518,10 +1518,10 @@ algorithm
       then
         true;
 
-    case (EQ_REINIT(cref = cr1, expReinit = e1),EQ_REINIT(cref = cr2, expReinit = e2))
+    case (EQ_REINIT(), EQ_REINIT())
       equation
-        true = Absyn.expEqual(e1,e2);
-        true = Absyn.crefEqual(cr1,cr2);
+        true = Absyn.expEqual(eq1.cref, eq2.cref);
+        true = Absyn.expEqual(eq1.expReinit, eq2.expReinit);
       then
         true;
 
@@ -2055,7 +2055,7 @@ algorithm
 
     case ALG_REINIT()
       then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("reinit", {}),
-        Absyn.FUNCTIONARGS({Absyn.CREF(stmt.cref), stmt.newValue}, {})), NONE(), stmt.info);
+        Absyn.FUNCTIONARGS({stmt.cref, stmt.newValue}, {})), NONE(), stmt.info);
 
     case ALG_NORETCALL(Absyn.CALL(function_=functionCall,functionArgs=functionArgs),_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(functionCall,functionArgs),NONE(),info);
@@ -2286,7 +2286,7 @@ algorithm
 
     case EQ_REINIT()
       algorithm
-        outArg := inFunc(Absyn.CREF(inEquation.cref), outArg);
+        outArg := inFunc(inEquation.cref, outArg);
         outArg := inFunc(inEquation.expReinit, outArg);
       then
         outArg;
@@ -2383,7 +2383,7 @@ algorithm
 
     case ALG_REINIT()
       algorithm
-        outArg := inFunc(Absyn.CREF(inStatement.cref), outArg);
+        outArg := inFunc(inStatement.cref, outArg);
       then
         inFunc(inStatement.newValue, outArg);
 
@@ -2635,12 +2635,12 @@ algorithm
       then
         (EQ_TERMINATE(e1, comment, info), arg);
 
-    case (EQ_REINIT(cr1, e1, comment, info), traverser, _)
+    case (EQ_REINIT(e1, e2, comment, info), traverser, _)
       equation
-        (cr1, arg) = traverseComponentRefExps(cr1, traverser, inArg);
-        (e1, arg) = traverser(e1, arg);
+        (e1, arg) = traverser(e1, inArg);
+        (e2, arg) = traverser(e2, arg);
       then
-        (EQ_REINIT(cr1, e1, comment, info), arg);
+        (EQ_REINIT(e1, e2, comment, info), arg);
 
     case (EQ_NORETCALL(e1, comment, info), traverser, arg)
       equation
@@ -3090,10 +3090,10 @@ algorithm
 
     case (ALG_REINIT(), traverser, arg)
       algorithm
-        (Absyn.CREF(cref), arg) := traverser(Absyn.CREF(inStatement.cref), arg);
+        (e1, arg) := traverser(inStatement.cref, arg);
         (e2, arg) := traverser(inStatement.newValue, arg);
       then
-        (ALG_REINIT(cref, e2, inStatement.comment, inStatement.info), arg);
+        (ALG_REINIT(e1, e2, inStatement.comment, inStatement.info), arg);
 
     case (ALG_NORETCALL(e1, comment, info), traverser, arg)
       equation

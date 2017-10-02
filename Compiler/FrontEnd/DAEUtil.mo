@@ -2954,7 +2954,7 @@ algorithm
       case DAE.REINIT()
         equation
           info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
-          Error.addSourceMessageAndFail(Error.REINIT_NOTIN_WHEN, {}, info);
+          Error.addSourceMessageAndFail(Error.REINIT_NOT_IN_WHEN, {}, info);
         then ();
       else ();
     end match;
@@ -3004,7 +3004,7 @@ algorithm
       case DAE.REINIT()
         equation
           info = ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(el));
-          Error.addSourceMessageAndFail(Error.REINIT_NOTIN_WHEN, {}, info);
+          Error.addSourceMessageAndFail(Error.REINIT_NOT_IN_WHEN, {}, info);
         then ();
       case DAE.WHEN_EQUATION(cond, eqs, ew, source)
         equation

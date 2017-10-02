@@ -318,7 +318,7 @@ match equation
     let cmt_str = dumpComment(comment, options)
     'terminate(<%msg_str%>)<%cmt_str%>;'
   case EQ_REINIT(__) then
-    let cref_str = AbsynDumpTpl.dumpCref(cref)
+    let cref_str = AbsynDumpTpl.dumpExp(cref)
     let exp_str = AbsynDumpTpl.dumpExp(expReinit)
     let cmt_str = dumpComment(comment, options)
     'reinit(<%cref_str%>, <%exp_str%>)<%cmt_str%>;'
@@ -460,7 +460,7 @@ match statement
     let msg_str = AbsynDumpTpl.dumpExp(message)
     'terminate(<%msg_str%>);'
   case ALG_REINIT(__) then
-    let cr_str = AbsynDumpTpl.dumpCref(cref)
+    let cr_str = AbsynDumpTpl.dumpExp(cref)
     let exp_str = AbsynDumpTpl.dumpExp(newValue)
     'reinit(<%cr_str%>, <%exp_str%>);'
   case ALG_NORETCALL(__) then

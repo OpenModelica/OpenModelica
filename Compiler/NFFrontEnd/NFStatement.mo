@@ -79,12 +79,6 @@ public uniontype Statement
     SourceInfo info;
   end TERMINATE;
 
-  record REINIT
-    Expression cref "The variable to reinitialize.";
-    Expression reinitExp "The new value of the variable.";
-    SourceInfo info;
-  end REINIT;
-
   record NORETCALL
     Expression exp;
     SourceInfo info;
@@ -121,7 +115,6 @@ public uniontype Statement
       case WHEN() then stmt.info;
       case ASSERT() then stmt.info;
       case TERMINATE() then stmt.info;
-      case REINIT() then stmt.info;
       case NORETCALL() then stmt.info;
       case WHILE() then stmt.info;
       case RETURN() then stmt.info;
