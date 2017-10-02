@@ -31,11 +31,11 @@
 
 encapsulated uniontype NFBinding
 public
-  import DAE;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import SCode;
   import Type = NFType;
+  import NFPrefixes.Variability;
 
 protected
   import Dump;
@@ -62,7 +62,7 @@ public
   record TYPED_BINDING
     Expression bindingExp;
     Type bindingType;
-    DAE.VarKind variability;
+    Variability variability;
     Integer propagatedLevels;
     SourceInfo info;
   end TYPED_BINDING;
@@ -142,7 +142,7 @@ public
 
   function variability
     input Binding binding;
-    output DAE.VarKind var;
+    output Variability var;
   algorithm
     TYPED_BINDING(variability = var) := binding;
   end variability;

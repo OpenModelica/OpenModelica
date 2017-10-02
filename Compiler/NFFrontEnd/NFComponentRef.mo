@@ -39,6 +39,7 @@ protected
   import RangeIterator = NFRangeIterator;
   import Dimension = NFDimension;
   import Expression = NFExpression;
+  import NFPrefixes.Variability;
 
   import ComponentRef = NFComponentRef;
 
@@ -101,11 +102,11 @@ public
 
   function getVariability
     input ComponentRef cref;
-    output DAE.VarKind var;
+    output Variability var;
   algorithm
     var := match cref
       case CREF() then Component.variability(InstNode.component(cref.node));
-      else DAE.VarKind.VARIABLE();
+      else Variability.CONTINUOUS;
     end match;
   end getVariability;
 

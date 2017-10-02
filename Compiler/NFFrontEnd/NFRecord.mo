@@ -59,6 +59,7 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import Typing = NFTyping;
 import NFInstUtil;
+import NFPrefixes.Variability;
 
 public
 function typeRecordCall
@@ -70,7 +71,7 @@ function typeRecordCall
   input SourceInfo info;
   output Expression typedExp;
   output Type ty;
-  output DAE.VarKind variability;
+  output Variability variability;
 //protected
 //  InstNode instClassNode;
 //  list<InstNode> inputs;
@@ -84,7 +85,7 @@ function typeRecordCall
 algorithm
   typedExp := Expression.INTEGER(0);
   ty := Type.UNKNOWN();
-  variability := DAE.VarKind.VARIABLE();
+  variability := Variability.CONTINUOUS;
 //
 //  inputs := getRecordConstructorInputs(classNode);
 //

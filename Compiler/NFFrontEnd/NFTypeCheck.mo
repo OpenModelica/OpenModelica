@@ -43,6 +43,7 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFBinding.Binding;
+import NFPrefixes.Variability;
 
 protected
 import Debug;
@@ -57,6 +58,7 @@ import Class = NFClass.Class;
 import ClassTree = NFClassTree;
 import InstUtil = NFInstUtil;
 import DAEUtil;
+import Prefixes = NFPrefixes;
 
 public
 
@@ -2286,17 +2288,17 @@ end getRangeTypeEnum;
 function checkIfExpression
   input Expression condExp;
   input Type condType;
-  input DAE.VarKind condVar;
+  input Variability condVar;
   input Expression thenExp;
   input Type thenType;
-  input DAE.VarKind thenVar;
+  input Variability thenVar;
   input Expression elseExp;
   input Type elseType;
-  input DAE.VarKind elseVar;
+  input Variability elseVar;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
-  output DAE.VarKind outVar;
+  output Variability outVar;
 protected
    Expression ec, e1, e2;
    String s1, s2, s3, s4;
@@ -2326,24 +2328,8 @@ algorithm
 
   outExp := Expression.IF(ec, e1, e2);
   outType := thenType;
-  outVar := InstUtil.variabilityAnd(thenVar, elseVar);
+  outVar := Prefixes.variabilityMax(thenVar, elseVar);
 end checkIfExpression;
-
-function matchVariability
-  input DAE.VarKind actualVar;
-  input DAE.VarKind expectedVar;
-  output Boolean matching;
-algorithm
-  matching := match (actualVar, expectedVar)
-    case (DAE.VarKind.CONST(), _) then true;
-    case (_, DAE.VarKind.CONST()) then false;
-    case (DAE.VarKind.PARAM(), _) then true;
-    case (_, DAE.VarKind.PARAM()) then false;
-    case (DAE.VarKind.DISCRETE(), _) then true;
-    case (_, DAE.VarKind.DISCRETE()) then false;
-    else true;
-  end match;
-end matchVariability;
 
 function matchBinding
   input output Binding binding;
@@ -2400,7 +2386,7 @@ function checkDimension
    has a valid type for a dimension, otherwise prints an error and fails."
   input Expression exp;
   input Type ty;
-  input DAE.VarKind var;
+  input Variability var;
   input SourceInfo info;
 algorithm
   if not Type.isInteger(ty) then
@@ -2416,7 +2402,7 @@ algorithm
     end match;
   end if;
 
-  if not DAEUtil.isParamOrConstVarKind(var) then
+  if var > Variability.PARAMETER then
     Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
       {Expression.toString(exp)}, info);
     fail();

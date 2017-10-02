@@ -49,6 +49,9 @@ import NFMod.Modifier;
 import NFStatement.Statement;
 import NFType.Type;
 import Operator = NFOperator;
+import NFPrefixes.Variability;
+import Prefixes = NFPrefixes;
+import ExpOrigin = NFExpOrigin;
 
 protected
 import Ceval = NFCeval;
@@ -68,6 +71,7 @@ import Types;
 import NFSections.Sections;
 import List;
 import DAEUtil;
+import MetaModelica.Dangerous;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -193,11 +197,11 @@ algorithm
   () := match c
     case Component.ITERATOR(binding = Binding.UNTYPED_BINDING())
       algorithm
-        binding := typeBinding(c.binding);
+        binding := typeBinding(c.binding, ExpOrigin.ITERATION_RANGE());
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural then
-          if not DAEUtil.isParamOrConstVarKind(Binding.variability(binding)) then
+          if Binding.variability(binding) > Variability.PARAMETER then
             Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
               {Binding.toString(binding)}, info);
           else
@@ -260,7 +264,7 @@ algorithm
   dimension := match dimension
     local
       Expression exp;
-      DAE.VarKind var;
+      Variability var;
       Dimension dim;
       Binding b;
       TypingError ty_err;
@@ -288,7 +292,7 @@ algorithm
       algorithm
         arrayUpdate(dimensions, index, Dimension.UNTYPED(dimension.dimension, true));
 
-        (exp, ty, var) := typeExp(dimension.dimension, info);
+        (exp, ty, var) := typeExp(dimension.dimension, info, ExpOrigin.DIMENSION());
         TypeCheck.checkDimension(exp, ty, var, info);
 
         exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
@@ -305,7 +309,7 @@ algorithm
           fail();
         end if;
 
-        dim := Dimension.fromExp(Expression.arrayFirstScalar(exp));
+        dim := Dimension.fromExp(Expression.arrayFirstScalar(exp), var);
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -327,7 +331,7 @@ algorithm
           case Binding.UNTYPED_BINDING()
             algorithm
               prop_dims := InstNode.countDimensions(InstNode.parent(component), binding.propagatedLevels);
-              dim := typeExpDim(binding.bindingExp, index + prop_dims, info);
+              dim := typeExpDim(binding.bindingExp, index + prop_dims, ExpOrigin.DIMENSION(), info);
             then
               dim;
 
@@ -413,10 +417,10 @@ algorithm
         if dirty then
           binding := TypeCheck.matchBinding(binding, c.ty, component);
 
-          if not TypeCheck.matchVariability(Binding.variability(binding), Component.variability(c)) then
+          if Binding.variability(binding) > Component.variability(c) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-              {InstNode.name(component), InstUtil.variabilityString(Component.variability(c)),
-               "'" + Binding.toString(binding) + "'", InstUtil.variabilityString(Binding.variability(binding))},
+              {InstNode.name(component), Prefixes.variabilityString(Component.variability(c)),
+               "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
               Binding.getInfo(binding));
             fail();
           end if;
@@ -451,16 +455,17 @@ end typeComponentBinding;
 
 function typeBinding
   input output Binding binding;
+  input ExpOrigin origin = ExpOrigin.BINDING();
 algorithm
   binding := match binding
     local
       Expression exp;
       Type ty;
-      DAE.VarKind var;
+      Variability var;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
-        (exp, ty, var) := typeExp(exp, binding.info);
+        (exp, ty, var) := typeExp(exp, binding.info, origin);
       then
         Binding.TYPED_BINDING(exp, ty, var, binding.propagatedLevels, binding.info);
 
@@ -575,24 +580,24 @@ end checkEnumAttributes;
 function typeExp
   input output Expression exp;
   input SourceInfo info;
+  input ExpOrigin origin = ExpOrigin.NO_ORIGIN();
         output Type ty;
-        output DAE.VarKind variability;
-
-  import DAE.VarKind;
+        output Variability variability;
 algorithm
   (exp, ty, variability) := match exp
     local
       Expression e1, e2, e3;
-      DAE.VarKind var1, var2, var3;
+      Variability var1, var2, var3;
       Type ty1, ty2, ty3;
       Operator op;
       ComponentRef cref;
+      ExpOrigin next_origin;
 
-    case Expression.INTEGER() then (exp, Type.INTEGER(), VarKind.CONST());
-    case Expression.REAL() then (exp, Type.REAL(), VarKind.CONST());
-    case Expression.STRING() then (exp, Type.STRING(), VarKind.CONST());
-    case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), VarKind.CONST());
-    case Expression.ENUM_LITERAL() then (exp, exp.ty, VarKind.CONST());
+    case Expression.INTEGER() then (exp, Type.INTEGER(), Variability.CONSTANT);
+    case Expression.REAL() then (exp, Type.REAL(), Variability.CONSTANT);
+    case Expression.STRING() then (exp, Type.STRING(), Variability.CONSTANT);
+    case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), Variability.CONSTANT);
+    case Expression.ENUM_LITERAL() then (exp, exp.ty, Variability.CONSTANT);
 
     case Expression.CREF()
       algorithm
@@ -600,57 +605,74 @@ algorithm
       then
         (Expression.CREF(ty, cref), ty, variability);
 
-    case Expression.TYPENAME() then (exp, exp.ty, VarKind.CONST());
+    case Expression.TYPENAME()
+      algorithm
+        () := match origin
+          case ExpOrigin.ITERATION_RANGE() then ();
+          case ExpOrigin.DIMENSION() then ();
+          else
+            algorithm
+              Error.addSourceMessage(Error.INVALID_TYPENAME_USE,
+                {Type.typenameString(Type.arrayElementType(exp.ty))}, info);
+            then
+              fail();
+        end match;
+      then
+        (exp, exp.ty, Variability.CONSTANT);
+
     case Expression.ARRAY() then typeArray(exp.elements, info);
     case Expression.RANGE() then typeRange(exp, info);
     case Expression.TUPLE() then typeTuple(exp.elements, info);
     case Expression.SIZE() then typeSize(exp, info);
-
-    case Expression.END() then (exp, Type.INTEGER(), VarKind.CONST());
+    case Expression.END() then typeEnd(origin, info);
 
     case Expression.BINARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp1, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, info);
+        next_origin := ExpOrigin.next(origin);
+        (e1, ty1, var1) := typeExp(exp.exp1, info, next_origin);
+        (e2, ty2, var2) := typeExp(exp.exp2, info, next_origin);
         (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, exp.operator, e2, ty2);
       then
-        (exp, ty, InstUtil.variabilityAnd(var1, var2));
+        (exp, ty, Prefixes.variabilityMax(var1, var2));
 
     case Expression.UNARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp, info);
+        (e1, ty1, var1) := typeExp(exp.exp, info, ExpOrigin.next(origin));
         (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, exp.operator);
       then
         (exp, ty, var1);
 
     case Expression.LBINARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp1, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, info);
+        next_origin := ExpOrigin.next(origin);
+        (e1, ty1, var1) := typeExp(exp.exp1, info, next_origin);
+        (e2, ty2, var2) := typeExp(exp.exp2, info, next_origin);
         (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, exp.operator, e2, ty2);
       then
-        (exp, ty, InstUtil.variabilityAnd(var1, var2));
+        (exp, ty, Prefixes.variabilityMax(var1, var2));
 
     case Expression.LUNARY()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp, info);
+        (e1, ty1, var1) := typeExp(exp.exp, info, ExpOrigin.next(origin));
         (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, exp.operator);
       then
         (exp, ty, var1);
 
     case Expression.RELATION()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.exp1, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, info);
+        next_origin := ExpOrigin.next(origin);
+        (e1, ty1, var1) := typeExp(exp.exp1, info, next_origin);
+        (e2, ty2, var2) := typeExp(exp.exp2, info, next_origin);
         (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, exp.operator, e2, ty2);
       then
-        (exp, ty, InstUtil.variabilityAnd(var1, var2));
+        (exp, ty, Prefixes.variabilityMax(var1, var2));
 
     case Expression.IF()
       algorithm
-        (e1, ty1, var1) := typeExp(exp.condition, info);
-        (e2, ty2, var2) := typeExp(exp.trueBranch, info);
-        (e3, ty3, var3) := typeExp(exp.falseBranch, info);
+        next_origin := ExpOrigin.next(origin);
+        (e1, ty1, var1) := typeExp(exp.condition, info, next_origin);
+        (e2, ty2, var2) := typeExp(exp.trueBranch, info, next_origin);
+        (e3, ty3, var3) := typeExp(exp.falseBranch, info, next_origin);
       then
         TypeCheck.checkIfExpression(e1, ty1, var1, e2, ty2, var2, e3, ty3, var3, info);
 
@@ -671,10 +693,10 @@ function typeExpl
   input SourceInfo info;
   output list<Expression> explTyped = {};
   output list<Type> tyl = {};
-  output list<DAE.VarKind> varl = {};
+  output list<Variability> varl = {};
 protected
   Expression exp;
-  DAE.VarKind var;
+  Variability var;
   Type ty;
 algorithm
   for e in listReverse(expl) loop
@@ -692,6 +714,7 @@ function typeExpDim
    returned dimension is undefined."
   input Expression exp;
   input Integer dimIndex;
+  input ExpOrigin origin;
   input SourceInfo info;
         output Dimension dim;
         output TypingError error;
@@ -716,7 +739,7 @@ algorithm
     // from the type.
     else
       algorithm
-        (_, ty, _) := typeExp(exp, info);
+        (_, ty, _) := typeExp(exp, info, origin);
       then
         nthDimensionBoundsChecked(ty, dimIndex);
 
@@ -844,7 +867,7 @@ function typeCref
   input output ComponentRef cref;
   input SourceInfo info;
         output Type ty;
-        output DAE.VarKind variability;
+        output Variability variability;
 
   import NFComponentRef.Origin;
 algorithm
@@ -855,13 +878,13 @@ algorithm
       list<Subscript> subs;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
-      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
+      then (cref, Type.UNKNOWN(), Variability.CONTINUOUS);
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
         node_ty := typeComponent(cref.node);
         variability := ComponentRef.getVariability(cref);
-        subs := typeSubscripts(cref.subscripts, info);
+        subs := typeSubscripts(cref.subscripts, node_ty, cref.node, info);
         cref_ty := Type.subscript(node_ty, subs);
         (rest_cr, ty, _) := typeCref(cref.restCref, info);
         ty := Type.liftArrayLeftList(cref_ty, Type.arrayDims(ty));
@@ -869,13 +892,13 @@ algorithm
         (ComponentRef.CREF(cref.node, subs, cref_ty, cref.origin, rest_cr), ty, variability);
 
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
-      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
+      then (cref, Type.UNKNOWN(), Variability.CONTINUOUS);
 
     case ComponentRef.EMPTY()
-      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
+      then (cref, Type.UNKNOWN(), Variability.CONTINUOUS);
 
     case ComponentRef.WILD()
-      then (cref, Type.UNKNOWN(), DAE.VarKind.VARIABLE());
+      then (cref, Type.UNKNOWN(), Variability.CONTINUOUS);
 
     else
       algorithm
@@ -888,29 +911,75 @@ end typeCref;
 
 function typeSubscripts
   input list<Subscript> subscripts;
+  input Type crefType;
+  input InstNode node;
   input SourceInfo info;
   output list<Subscript> typedSubs;
+protected
+  list<Dimension> dims;
 algorithm
-  typedSubs := list(typeSubscript(s, info) for s in subscripts);
+  dims := Type.arrayDims(crefType);
+
+  if listLength(subscripts) > listLength(dims) then
+    Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+      {InstNode.name(node) + Subscript.toStringList(subscripts),
+       String(listLength(subscripts)), String(listLength(dims))}, info);
+    fail();
+  end if;
+
+  typedSubs := {};
+  for s in listReverse(subscripts) loop
+    typedSubs := typeSubscript(s, listHead(dims), info) :: typedSubs;
+    dims := listRest(dims);
+  end for;
 end typeSubscripts;
 
 function typeSubscript
-  input output Subscript subscript;
+  input Subscript subscript;
+  input Dimension dimension;
   input SourceInfo info;
+  output Subscript outSubscript = subscript;
+protected
+  Expression e;
+  Type ty, ety;
+  MatchKind mk;
 algorithm
-  subscript := match subscript
-    local
-      Expression e;
-      Type ty;
-
+  ty := match subscript
+    // An untyped subscript, type the expression and create a typed subscript.
     case Subscript.UNTYPED()
       algorithm
-        (e, ty, _) := typeExp(subscript.exp, info);
-      then
-        if Type.isArray(ty) then Subscript.SLICE(e) else Subscript.INDEX(e);
+        (e, ty, _) := typeExp(subscript.exp, info, ExpOrigin.SUBSCRIPT(dimension));
 
-    else subscript;
+        if Type.isArray(ty) then
+          outSubscript := Subscript.SLICE(e);
+          ty := Type.unliftArray(ty);
+        else
+          outSubscript := Subscript.INDEX(e);
+        end if;
+      then
+        ty;
+
+    // Other subscripts have already been typed, but still need to be type checked.
+    case Subscript.INDEX() then Expression.typeOf(subscript.index);
+    case Subscript.SLICE() then Type.unliftArray(Expression.typeOf(subscript.slice));
+    case Subscript.WHOLE() then Type.UNKNOWN();
+    else
+      algorithm
+        assert(false, getInstanceName() + " got untyped subscript");
+      then
+        fail();
   end match;
+
+  // Type check the subscript's type against the expected subscript type for the dimension.
+  ety := Dimension.subscriptType(dimension);
+  // We can have both : subscripts and : dimensions here, so we need to allow unknowns.
+  (_, _, mk) := TypeCheck.matchTypes(ty, ety, e, allowUnknown = true);
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    Error.addSourceMessage(Error.EXP_TYPE_MISMATCH,
+      {Subscript.toString(subscript), Type.toString(ety), Type.toString(ty)}, info);
+    fail();
+  end if;
 end typeSubscript;
 
 function typeArray
@@ -918,17 +987,17 @@ function typeArray
   input SourceInfo info;
   output Expression arrayExp;
   output Type arrayType = Type.UNKNOWN();
-  output DAE.VarKind variability = DAE.VarKind.CONST();
+  output Variability variability = Variability.CONSTANT;
 protected
   Expression exp;
   list<Expression> expl = {};
-  DAE.VarKind var;
+  Variability var;
   Type ty;
 algorithm
   for e in elements loop
     // TODO: Type checking.
     (exp, ty, var) := typeExp(e, info);
-    variability := InstUtil.variabilityAnd(var, variability);
+    variability := Prefixes.variabilityMax(var, variability);
     expl := exp :: expl;
   end for;
 
@@ -940,13 +1009,13 @@ function typeRange
   input output Expression rangeExp;
   input SourceInfo info;
         output Type rangeType;
-        output DAE.VarKind variability;
+        output Variability variability;
 protected
   Expression start_exp, step_exp, stop_exp;
   Type start_ty, step_ty, stop_ty;
   Option<Expression> ostep_exp;
   Option<Type> ostep_ty;
-  DAE.VarKind start_var, step_var, stop_var;
+  Variability start_var, step_var, stop_var;
   TypeCheck.MatchKind ty_match;
 algorithm
   Expression.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := rangeExp;
@@ -954,7 +1023,7 @@ algorithm
   // Type start and stop.
   (start_exp, start_ty, start_var) := typeExp(start_exp, info);
   (stop_exp, stop_ty, stop_var) := typeExp(stop_exp, info);
-  variability := InstUtil.variabilityAnd(start_var, stop_var);
+  variability := Prefixes.variabilityMax(start_var, stop_var);
 
   // Type check start and stop.
   (start_exp, stop_exp, rangeType, ty_match) :=
@@ -968,7 +1037,7 @@ algorithm
     // Type step.
     SOME(step_exp) := ostep_exp;
     (step_exp, step_ty, step_var) := typeExp(step_exp, info);
-    variability := InstUtil.variabilityAnd(step_var, variability);
+    variability := Prefixes.variabilityMax(step_var, variability);
 
     // Type check start and step.
     (start_exp, step_exp, rangeType, ty_match) :=
@@ -998,16 +1067,16 @@ function typeTuple
   input SourceInfo info;
   output Expression tupleExp;
   output Type tupleType;
-  output DAE.VarKind variability;
+  output Variability variability;
 protected
   list<Expression> expl;
   list<Type> tyl;
-  list<DAE.VarKind> valr;
+  list<Variability> valr;
 algorithm
   (expl, tyl, valr) := typeExpl(elements, info);
   tupleType := Type.TUPLE(tyl, NONE());
   tupleExp := Expression.TUPLE(tupleType, expl);
-  variability := List.fold(valr, InstUtil.variabilityAnd, DAE.VarKind.CONST());
+  variability := List.fold(valr, Prefixes.variabilityMax, Variability.CONSTANT);
 end typeTuple;
 
 protected
@@ -1028,7 +1097,7 @@ function typeSize
   input output Expression sizeExp;
   input SourceInfo info;
         output Type sizeType;
-        output DAE.VarKind variability;
+        output Variability variability;
 protected
   Expression exp, index;
   Type exp_ty, index_ty;
@@ -1060,7 +1129,7 @@ algorithm
         // TODO: Print an error if the index couldn't be evaluated to an int.
         Expression.INTEGER(iindex) := index;
 
-        (dim, ty_err) := typeExpDim(sizeExp.exp, iindex, info);
+        (dim, ty_err) := typeExpDim(sizeExp.exp, iindex, ExpOrigin.NO_ORIGIN(), info);
 
         () := match ty_err
           case NO_ERROR() then ();
@@ -1083,7 +1152,7 @@ algorithm
 
         dim_size := Dimension.size(dim);
       then
-        (Expression.INTEGER(dim_size), Type.INTEGER(), DAE.VarKind.CONST());
+        (Expression.INTEGER(dim_size), Type.INTEGER(), Variability.CONSTANT);
 
     case Expression.SIZE()
       algorithm
@@ -1097,10 +1166,48 @@ algorithm
 
         sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(Type.dimensionCount(exp_ty))});
       then
-        (Expression.SIZE(exp, NONE()), sizeType, DAE.VarKind.PARAM());
+        (Expression.SIZE(exp, NONE()), sizeType, Variability.PARAMETER);
 
   end match;
 end typeSize;
+
+function typeEnd
+  input ExpOrigin origin;
+  input SourceInfo info;
+  output Expression exp;
+  output Type ty;
+  output Variability variability;
+protected
+  Dimension dim;
+algorithm
+  dim := match origin
+    case ExpOrigin.SUBSCRIPT() then origin.dimension;
+    else
+      algorithm
+        Error.addSourceMessageAndFail(Error.END_ILLEGAL_USE_ERROR, {}, info);
+      then
+        fail();
+  end match;
+
+  (exp, ty, variability) := match dim
+    local
+      Integer sz;
+
+    case Dimension.INTEGER() then (Expression.INTEGER(dim.size), Type.INTEGER(), Variability.CONSTANT);
+    case Dimension.BOOLEAN() then (Expression.BOOLEAN(true), Type.BOOLEAN(), Variability.CONSTANT);
+    case Dimension.ENUM(enumType = ty as Type.ENUMERATION())
+      algorithm
+        sz := listLength(ty.literals);
+      then
+        (Expression.makeEnumLiteral(ty, sz), ty, Variability.CONSTANT);
+    case Dimension.EXP() then (dim.exp, Expression.typeOf(dim.exp), dim.var);
+    else
+      algorithm
+        assert(false, getInstanceName() + " got unknown dimension");
+      then
+        fail();
+  end match;
+end typeEnd;
 
 function typeSections
   input InstNode classNode;
@@ -1150,8 +1257,8 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        (e1, ty1) := typeExp(eq.lhs, eq.info);
-        (e2, _) := typeExp(eq.rhs, eq.info);
+        (e1, ty1) := typeExp(eq.lhs, eq.info, ExpOrigin.LHS());
+        (e2, _) := typeExp(eq.rhs, eq.info, ExpOrigin.RHS());
       then
         Equation.EQUALITY(e1, e2, ty1, eq.info);
 
@@ -1245,8 +1352,8 @@ algorithm
 
     case Statement.ASSIGNMENT()
       algorithm
-        (e1, _) := typeExp(st.lhs, st.info);
-        (e2, _) := typeExp(st.rhs, st.info);
+        (e1, _) := typeExp(st.lhs, st.info, ExpOrigin.LHS());
+        (e2, _) := typeExp(st.rhs, st.info, ExpOrigin.RHS());
       then
         Statement.ASSIGNMENT(e1, e2, st.info);
 

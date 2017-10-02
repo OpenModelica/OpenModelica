@@ -408,6 +408,16 @@ public
     end match;
   end toString;
 
+  function typenameString
+    input Type ty;
+    output String str;
+  algorithm
+    str := match ty
+      case Type.ENUMERATION() then Absyn.pathString(ty.typePath);
+      else toString(ty);
+    end match;
+  end typenameString;
+
   function toDAE
     input Type ty;
     output DAE.Type daeTy;

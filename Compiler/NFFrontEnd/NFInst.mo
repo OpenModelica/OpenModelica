@@ -79,6 +79,8 @@ import NFClassTree.ClassTree;
 import NFSections.Sections;
 import NFInstNode.CachedData;
 import StringUtil;
+import NFPrefixes.Variability;
+import Prefixes = NFPrefixes;
 
 public
 function instClassInProgram
@@ -838,14 +840,14 @@ function instComponentAttributes
 protected
   DAE.ConnectorType cty;
   DAE.VarParallelism par;
-  DAE.VarKind var;
+  Variability var;
   DAE.VarDirection dir;
   DAE.VarInnerOuter io;
   DAE.VarVisibility vis;
 algorithm
   cty := InstUtil.translateConnectorType(compAttr.connectorType);
   par := InstUtil.translateParallelism(compAttr.parallelism);
-  var := InstUtil.translateVariability(compAttr.variability);
+  var := Prefixes.variabilityFromSCode(compAttr.variability);
   dir := InstUtil.translateDirection(compAttr.direction);
   io  := InstUtil.translateInnerOuter(compPrefs.innerOuter);
   vis := InstUtil.translateVisibility(compPrefs.visibility);
@@ -893,7 +895,7 @@ algorithm
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
-              exp := instExp(dim.subscript, scope, info, true);
+              exp := instExp(dim.subscript, scope, info);
             then
               Dimension.UNTYPED(exp, false);
         end match;
@@ -1033,7 +1035,6 @@ end instComponentExpressions;
 
 function instBinding
   input output Binding binding;
-  input Boolean allowTypename = false;
 algorithm
   binding := match binding
     local
@@ -1041,7 +1042,7 @@ algorithm
 
     case Binding.RAW_BINDING()
       algorithm
-        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info, allowTypename);
+        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
       then
         Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.propagatedLevels, binding.info);
 
@@ -1069,7 +1070,6 @@ function instExp
   input Absyn.Exp absynExp;
   input InstNode scope;
   input SourceInfo info;
-  input Boolean allowTypename = false;
   output Expression exp;
 algorithm
   exp := match absynExp
@@ -1085,7 +1085,7 @@ algorithm
     case Absyn.Exp.BOOL() then Expression.BOOLEAN(absynExp.value);
 
     case Absyn.Exp.CREF()
-      then instCref(absynExp.componentRef, scope, info, allowTypename);
+      then instCref(absynExp.componentRef, scope, info);
 
     case Absyn.Exp.ARRAY()
       algorithm
@@ -1186,7 +1186,6 @@ function instCref
   input Absyn.ComponentRef absynCref;
   input InstNode scope;
   input SourceInfo info;
-  input Boolean allowTypename = false "Allows crefs referring to typenames if true.";
   output Expression cref;
 
   import NFComponentRef.Origin;
@@ -1198,7 +1197,7 @@ protected
   Type ty;
   Component comp;
 algorithm
-  (node, nodes, found_scope) := Lookup.lookupComponent(absynCref, scope, info, allowTypename);
+  (node, nodes, found_scope) := Lookup.lookupComponent(absynCref, scope, info);
 
   if InstNode.isComponent(node) then
     comp := InstNode.component(node);
@@ -1218,22 +1217,22 @@ algorithm
           Expression.CREF(Type.UNKNOWN(), cr);
     end match;
   else
-    if allowTypename then
-      ty := InstNode.getType(node);
+    ty := InstNode.getType(node);
 
-      ty := match ty
-        case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
-        case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
-      end match;
+    ty := match ty
+      case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
+      case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
+      else
+        algorithm
+          // This should be caught by lookupComponent, only type name classes
+          // are allowed to be used where a component is expected.
+          assert(false, getInstanceName() + " got unknown class node");
+        then
+          fail();
+    end match;
 
-      cref := Expression.TYPENAME(ty);
-    else
-      cr := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-      cr := makeCref(absynCref, nodes, scope, info, cr);
-      cref := Expression.CREF(Type.UNKNOWN(), cr);
-    end if;
+    cref := Expression.TYPENAME(ty);
   end if;
-
 end instCref;
 
 function makeCref
@@ -1399,7 +1398,7 @@ algorithm
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
         binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), scope, info);
-        binding := instBinding(binding, allowTypename = true);
+        binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
         eql := instEEquations(scodeEq.eEquationLst, for_scope);
@@ -1527,7 +1526,7 @@ algorithm
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
         binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), scope, info);
-        binding := instBinding(binding, allowTypename = true);
+        binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);
         stmtl := instStatements(scodeStmt.forBody, for_scope);

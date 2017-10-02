@@ -71,6 +71,7 @@ import NFClassTree.ClassTree;
 import Mutable;
 import NFSections.Sections;
 import ExpressionIterator = NFExpressionIterator;
+import Prefixes = NFPrefixes;
 
 public
 partial function ExpandScalarFunc<ElementT>
@@ -417,8 +418,8 @@ algorithm
   var := match attr
     case Component.Attributes.ATTRIBUTES()
       then
-        DAE.VAR(cref, attr.variability, attr.direction, attr.parallelism,
-          attr.visibility, ty, binding, {}, attr.connectorType,
+        DAE.VAR(cref, Prefixes.variabilityToDAE(attr.variability), attr.direction,
+          attr.parallelism, attr.visibility, ty, binding, {}, attr.connectorType,
           source, vattr, NONE(), Absyn.NOT_INNER_OUTER());
 
     else

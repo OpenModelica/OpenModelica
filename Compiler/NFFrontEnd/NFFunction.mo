@@ -36,6 +36,7 @@ import Expression = NFExpression;
 import Pointer;
 import NFInstNode.InstNode;
 import Type = NFType;
+import NFPrefixes.Variability;
 
 protected
 import Inst = NFInst;
@@ -55,13 +56,13 @@ import ComponentRef = NFComponentRef;
 import NFInstNode.CachedData;
 import Lookup = NFLookup;
 import ClassTree = NFClassTree.ClassTree;
-
+import Prefixes = NFPrefixes;
 import MatchKind = NFTypeCheck.MatchKind;
 
 public
 type NamedArg = tuple<String, Expression>;
-type TypedArg = tuple<Expression, Type, DAE.VarKind>;
-type TypedNamedArg = tuple<String, Expression, Type, DAE.VarKind>;
+type TypedArg = tuple<Expression, Type, Variability>;
+type TypedNamedArg = tuple<String, Expression, Type, Variability>;
 
 public
 type SlotType = enumeration(
@@ -484,7 +485,7 @@ uniontype Function
     String argName;
     Type ty;
     Expression argExp;
-    DAE.VarKind var;
+    Variability var;
   algorithm
     // Try to find a slot and fill it with the argument expression.
     for i in 1:arrayLength(slots) loop
@@ -552,7 +553,7 @@ uniontype Function
       args := match (default, arg)
         case (_, SOME(a)) then a :: args; // Use the argument from the call if one was given.
         // TODO: save this info in the defaults in slots (the type we can get from the exp manually but the variability is lost.).
-        case (SOME(e), _) then (e,Expression.typeOf(e),DAE.VarKind.CONST()) ::args; // Otherwise, check that a default value exists.
+        case (SOME(e), _) then (e,Expression.typeOf(e),Variability.CONSTANT) ::args; // Otherwise, check that a default value exists.
         else // Give an error if no argument was given and there's no default value.
           algorithm
             if isSome(info) then
@@ -580,7 +581,7 @@ uniontype Function
     list<InstNode> inputs;
     Expression argexp, margexp;
     Type ty, mty;
-    DAE.VarKind var;
+    Variability var;
     list<TypedArg> checked_args;
     Integer idx;
     TypeCheck.MatchKind matchKind;
@@ -613,13 +614,14 @@ uniontype Function
         return;
       end if;
 
-      correct := TypeCheck.matchVariability(var, Component.variability(comp));
-
       // Variability mismatch, print an error.
-      if not correct then
+      if var > Component.variability(comp) then
+        correct := false;
+
         if isSome(info) then
           Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
-            InstNode.name(inputnode), Expression.toString(argexp), DAEDump.dumpKindStr(Component.variability(comp))
+            InstNode.name(inputnode), Expression.toString(argexp),
+            Prefixes.variabilityString(Component.variability(comp))
           }, Util.getOption(info));
           return;
         end if;

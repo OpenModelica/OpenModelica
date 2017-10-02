@@ -38,6 +38,7 @@ protected
   import Expression = NFExpression;
   import Function = NFFunction;
   import RangeIterator = NFRangeIterator;
+  import NFPrefixes.Variability;
 
 public
   import Absyn.Path;
@@ -586,6 +587,17 @@ public
     outExp := arrayFromList(newlst, ty, restdims);
   end arrayFromList_impl;
 
+  function makeEnumLiteral
+    input Type enumType;
+    input Integer index;
+    output Expression literal;
+  protected
+    list<String> literals;
+  algorithm
+    Type.ENUMERATION(literals = literals) := enumType;
+    literal := ENUM_LITERAL(enumType, listGet(literals, index), index);
+  end makeEnumLiteral;
+
   function makeEnumLiterals
     input Type enumType;
     output list<Expression> literals;
@@ -905,7 +917,7 @@ public
         String s;
         Expression e;
         Type t;
-        DAE.VarKind v;
+        Variability v;
 
       case Call.UNTYPED_CALL()
         algorithm

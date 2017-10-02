@@ -517,7 +517,7 @@ public constant Message ARRAY_TYPE_MISMATCH = MESSAGE(193, TRANSLATION(), ERROR(
 public constant Message VECTORIZE_TWO_UNKNOWN = MESSAGE(194, TRANSLATION(), ERROR(),
   Util.gettext("Could not vectorize call with unknown dimensions due to finding two for-iterators: %s and %s."));
 public constant Message FUNCTION_SLOT_VARIABILITY = MESSAGE(195, TRANSLATION(), ERROR(),
-  Util.gettext("Function argument %s=%s is not a %sexpression."));
+  Util.gettext("Function argument %s=%s is not a %s expression."));
 public constant Message INVALID_ARRAY_DIM_IN_CONVERSION_OP = MESSAGE(196, TRANSLATION(), ERROR(),
   Util.gettext("Invalid dimension %s of argument to %s, expected dimension size %s but got %s."));
 public constant Message DUPLICATE_REDECLARATION = MESSAGE(197, TRANSLATION(), ERROR(),
@@ -619,7 +619,7 @@ public constant Message ASSIGN_UNKNOWN_ERROR = MESSAGE(244, TRANSLATION(), ERROR
 public constant Message WARNING_DEF_USE = MESSAGE(245, TRANSLATION(), WARNING(),
   Util.gettext("%s was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed."));
 public constant Message EXP_TYPE_MISMATCH = MESSAGE(246, TRANSLATION(), ERROR(),
-  Util.gettext("Expression %1 has type %3, expected type %2."));
+  Util.gettext("Expression '%1' has type %3, expected type %2."));
 public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(247, TRANSLATION(), ERROR(),
   Util.gettext("Found duplicate names in package.order file: %s."));
 public constant Message ERRONEOUS_TYPE_ERROR = MESSAGE(248, TRANSLATION(), ERROR(),
@@ -733,6 +733,8 @@ public constant Message INVALID_DIMENSION_TYPE = MESSAGE(301, TRANSLATION(), ERR
   Util.gettext("Dimension '%s' of type %s is not an integer expression or an enumeration or Boolean type name."));
 public constant Message RAGGED_DIMENSION = MESSAGE(302, TRANSLATION(), ERROR(),
   Util.gettext("Ragged dimensions are not yet supported (from dimension '%s')"));
+public constant Message INVALID_TYPENAME_USE = MESSAGE(303, TRANSLATION(), ERROR(),
+  Util.gettext("Type name '%s' is not allowed in this context."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

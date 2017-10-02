@@ -41,6 +41,7 @@ public
   import NFInstNode.InstNode;
   import Type = NFType;
   import ComponentRef = NFComponentRef;
+  import NFPrefixes.Variability;
 
   record RAW_DIM
     Absyn.Subscript dim;
@@ -64,6 +65,7 @@ public
 
   record EXP
     Expression exp;
+    Variability var;
   end EXP;
 
   record UNKNOWN
@@ -71,6 +73,7 @@ public
 
   function fromExp
     input Expression exp;
+    input Variability var;
     output Dimension dim;
   algorithm
     dim := match exp
@@ -93,7 +96,7 @@ public
                 fail();
           end match;
 
-      else Dimension.EXP(exp);
+      else Dimension.EXP(exp, var);
     end match;
   end fromExp;
 
@@ -190,6 +193,20 @@ public
       else false;
     end match;
   end isKnown;
+
+  function subscriptType
+    "Returns the expected type of a subscript for the given dimension."
+    input Dimension dim;
+    output Type ty;
+  algorithm
+    ty := match dim
+      case INTEGER() then Type.INTEGER();
+      case BOOLEAN() then Type.BOOLEAN();
+      case ENUM() then dim.enumType;
+      case EXP() then Expression.typeOf(dim.exp);
+      else Type.UNKNOWN();
+    end match;
+  end subscriptType;
 
   function toString
     input Dimension dim;

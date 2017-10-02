@@ -10217,7 +10217,7 @@ algorithm
       // Fail if the variability is wrong.
       if not Types.constEqualOrHigher(c1, c2) then
         exp_str := ExpressionDump.printExpStr(inExp);
-        c_str := DAEUtil.constStrFriendly(c2);
+        c_str := Types.unparseConst(c2);
         Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
           {fa1, exp_str, c_str}, inInfo);
       end if;

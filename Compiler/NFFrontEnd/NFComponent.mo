@@ -41,6 +41,7 @@ import SCode.Element;
 import SCode;
 import Type = NFType;
 import Expression = NFExpression;
+import NFPrefixes.Variability;
 
 protected
 import NFInstUtil;
@@ -51,7 +52,7 @@ constant Component.Attributes CONST_ATTR =
   Component.Attributes.ATTRIBUTES(
      DAE.NON_CONNECTOR(),
      DAE.NON_PARALLEL(),
-     DAE.VARIABLE(),
+     Variability.CONTINUOUS,
      DAE.BIDIR(),
      DAE.NOT_INNER_OUTER(),
      DAE.PUBLIC());
@@ -60,7 +61,7 @@ constant Component.Attributes INPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
      DAE.NON_CONNECTOR(),
      DAE.NON_PARALLEL(),
-     DAE.VARIABLE(),
+     Variability.CONTINUOUS,
      DAE.INPUT(),
      DAE.NOT_INNER_OUTER(),
      DAE.PUBLIC());
@@ -69,7 +70,7 @@ constant Component.Attributes OUTPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
      DAE.NON_CONNECTOR(),
      DAE.NON_PARALLEL(),
-     DAE.VARIABLE(),
+     Variability.CONTINUOUS,
      DAE.OUTPUT(),
      DAE.NOT_INNER_OUTER(),
      DAE.PUBLIC());
@@ -80,7 +81,7 @@ uniontype Component
       // adrpo: keep the order in DAE.ATTR
       DAE.ConnectorType connectorType;
       DAE.VarParallelism parallelism;
-      DAE.VarKind variability;
+      Variability variability;
       DAE.VarDirection direction;
       DAE.VarInnerOuter innerOuter;
       DAE.VarVisibility visibility;
@@ -356,36 +357,26 @@ uniontype Component
 
   function variability
     input Component component;
-    output DAE.VarKind variability;
+    output Variability variability;
   algorithm
     variability := match component
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case TYPED_COMPONENT(attributes = Attributes.DEFAULT()) then DAE.VarKind.VARIABLE();
+      case TYPED_COMPONENT(attributes = Attributes.DEFAULT()) then Variability.CONTINUOUS;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case UNTYPED_COMPONENT(attributes = Attributes.DEFAULT()) then DAE.VarKind.VARIABLE();
-      case ITERATOR() then DAE.VarKind.CONST();
+      case UNTYPED_COMPONENT(attributes = Attributes.DEFAULT()) then Variability.CONTINUOUS;
+      case ITERATOR() then Variability.CONSTANT;
       else fail();
     end match;
   end variability;
 
   function isConst
     input Component component;
-    output Boolean isConst;
-  algorithm
-    isConst := match variability(component)
-      case DAE.VarKind.CONST() then true;
-      else false;
-    end match;
+    output Boolean isConst = variability(component) == Variability.CONSTANT;
   end isConst;
 
   function isVar
     input Component component;
-    output Boolean isConst;
-  algorithm
-    isConst := match variability(component)
-      case DAE.VarKind.VARIABLE() then true;
-      else false;
-    end match;
+    output Boolean isConst = variability(component) == Variability.CONTINUOUS;
   end isVar;
 
   function visibility

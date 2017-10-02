@@ -84,7 +84,6 @@ function lookupComponent
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
   input SourceInfo info;
-  input Boolean allowTypename = false;
   output InstNode foundComponent "The component the cref resolves to.";
   output list<InstNode> restNodes "The rest of the found nodes.";
   output InstNode foundScope "The scope the first part of the cref was found in.";
@@ -92,11 +91,7 @@ protected
   LookupState state;
 algorithm
   (foundComponent, restNodes, foundScope, state) := lookupCref(cref, scope, info);
-
-  if allowTypename then
-    state := fixTypenameState(foundComponent, state);
-  end if;
-
+  state := fixTypenameState(foundComponent, state);
   LookupState.assertComponent(state, foundComponent, cref, info);
 end lookupComponent;
 
@@ -219,17 +214,17 @@ algorithm
   (node, restNodes) := match cr
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        node := match cr.name
-          case "time" then NFBuiltin.TIME;
-          case "Boolean" then NFBuiltin.BOOLEAN_TYPE;
-          case "Integer" algorithm state := LookupState.STATE_FUNC(); then NFBuiltin.INT_TYPE;
-          case "String" algorithm state := LookupState.STATE_FUNC(); then NFBuiltin.STRING_TYPE;
-          case "StateSelect" then NFBuiltin.STATESELECT_TYPE;
+        (node, state) := match cr.name
+          case "time" then (NFBuiltin.TIME, LookupState.STATE_PREDEF_COMP());
+          case "Boolean" then (NFBuiltin.BOOLEAN_TYPE, LookupState.STATE_PREDEF_CLASS());
+          case "Integer" then (NFBuiltin.INT_TYPE, LookupState.STATE_FUNC());
+          case "String" then (NFBuiltin.STRING_TYPE, LookupState.STATE_FUNC());
+          case "StateSelect" then (NFBuiltin.STATESELECT_TYPE, LookupState.STATE_PREDEF_CLASS());
           else
             algorithm
               matchType := MatchType.NOT_FOUND;
             then
-              InstNode.EMPTY_NODE();
+              (InstNode.EMPTY_NODE(), state);
         end match;
       then
         (node, {node});
