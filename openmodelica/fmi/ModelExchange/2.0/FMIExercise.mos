@@ -8,7 +8,7 @@ echo(false);
 loadModel(Modelica); getErrorString();
 loadFile("FMIExercise.mo"); getErrorString();
 translateModelFMU(FMIExercise.Components.PI, version="2.0"); getErrorString();
-importFMU("FMIExercise_Components_PI.fmu"); getErrorString();
+importFMU("FMIExercise.Components.PI.fmu"); getErrorString();
 loadFile("FMIExercise_Components_PI_me_FMU.mo"); getErrorString();
 simulate(FMIExercise.TestPIFMU); getErrorString();
 echo(true);

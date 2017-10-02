@@ -5,15 +5,15 @@
 //
 
 loadModel(Modelica); getErrorString();
-simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum,stopTime=3.0); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, stopTime=3.0); getErrorString();
 val(rev.phi, 0);
 val(rev.phi, 1);
 val(rev.phi, 2);
 val(rev.phi, 3);
 translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0"); getErrorString();
-importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu"); getErrorString();
+importFMU("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"); getErrorString();
 loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();
-simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU,stopTime=3.0); getErrorString();
+simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU, stopTime=3.0); getErrorString();
 val(rev_phi, 0);
 val(rev_phi, 1);
 val(rev_phi, 2);
@@ -34,7 +34,7 @@ val(rev_phi, 3);
 // -2.580150841077482
 // -1.577603053585166
 // -0.8529875495512017
-// "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu"
+// "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
 // ""
 // "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"
 // ""

@@ -2,33 +2,28 @@
 // keywords: simulation MSL Examples
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Blocks_Sources_BooleanPulse.fmu Modelica_Blocks_Sources_BooleanPulse_* Modelica.Blocks.Sources.BooleanPulse_* Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo Modelica_Blocks_Sources_BooleanPulse.libs Modelica_Blocks_Sources_BooleanPulse.lib Modelica_Blocks_Sources_BooleanPulse.so Modelica_Blocks_Sources_BooleanPulse.dll Modelica_Blocks_Sources_BooleanPulse.c Modelica_Blocks_Sources_BooleanPulse.makefile
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica, {"3.2.1"});
-translateModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="2.0");
-getErrorString();
+translateModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="2.0"); getErrorString();
 
-importFMU("Modelica_Blocks_Sources_BooleanPulse.fmu"); getErrorString();
-
+importFMU("Modelica.Blocks.Sources.BooleanPulse.fmu"); getErrorString();
 loadFile("Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo"); getErrorString();
-
-simulate(Modelica_Blocks_Sources_BooleanPulse_me_FMU);
-getErrorString();
+simulate(Modelica_Blocks_Sources_BooleanPulse_me_FMU); getErrorString();
 
 val(y, 0);
 val(y, 1);
 
-simulate(Modelica.Blocks.Sources.BooleanPulse);
-getErrorString();
+simulate(Modelica.Blocks.Sources.BooleanPulse); getErrorString();
 
 val(y, 0);
 val(y, 1);
 
 // Result:
 // true
-// "Modelica_Blocks_Sources_BooleanPulse.fmu"
+// "Modelica.Blocks.Sources.BooleanPulse.fmu"
 // "[Modelica 3.2.1/Blocks/Sources.mo:2790:5-2791:39:writable] Warning: Parameter period has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // "Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo"
