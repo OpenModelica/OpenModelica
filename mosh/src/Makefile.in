@@ -10,7 +10,7 @@ CPPFLAGS = @CPPFLAGS@
 CXXFLAGS = $(CFLAGS)
 LDFLAGS = @LDFLAGS@ $(LIBS)
 
-LIBS = @LIBREADLINE@ -lncurses -lm -lpthread -L@OMBUILDDIR@/lib/@host_short@/omc -Wl,-rpath,@loader_path/../../../../lib/@host_short@/omc,-rpath,@loader_path/../../../../lib/,-rpath,@OMBUILDDIR@/lib/@host_short@/omc,-rpath,@OMBUILDDIR@/lib/ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
+LIBS = @LIBREADLINE@ -lncurses -lm -lpthread -L@OMBUILDDIR@/lib/@host_short@/omc @RPATH@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
 
 
 OBJS += mosh.o omcinteractiveenvironment.o options.o

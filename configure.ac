@@ -6,6 +6,7 @@ AC_INIT([OMShell],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodeli
 AC_SUBST(APP)
 AC_SUBST(EXE)
 AC_SUBST(IDLCMD)
+AC_SUBST(RPATH)
 AC_SUBST(RPATH_QMAKE)
 AC_SUBST(host_short)
 
