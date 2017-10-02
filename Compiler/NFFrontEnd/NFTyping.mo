@@ -623,7 +623,7 @@ algorithm
 
     case Expression.ARRAY() then typeArray(exp.elements, info);
     case Expression.RANGE() then typeRange(exp, info);
-    case Expression.TUPLE() then typeTuple(exp.elements, info);
+    case Expression.TUPLE() then typeTuple(exp.elements, info, origin);
     case Expression.SIZE() then typeSize(exp, info);
     case Expression.END() then typeEnd(origin, info);
 
@@ -1066,6 +1066,7 @@ end typeRange;
 function typeTuple
   input list<Expression> elements;
   input SourceInfo info;
+  input ExpOrigin origin;
   output Expression tupleExp;
   output Type tupleType;
   output Variability variability;
@@ -1074,6 +1075,16 @@ protected
   list<Type> tyl;
   list<Variability> valr;
 algorithm
+  () := match origin
+    case ExpOrigin.LHS() then ();
+    else
+      algorithm
+        Error.addSourceMessage(Error.RHS_TUPLE_EXPRESSION,
+          {Expression.toString(Expression.TUPLE(Type.UNKNOWN(), elements))}, info);
+      then
+        fail();
+  end match;
+
   (expl, tyl, valr) := typeExpl(elements, info);
   tupleType := Type.TUPLE(tyl, NONE());
   tupleExp := Expression.TUPLE(tupleType, expl);
