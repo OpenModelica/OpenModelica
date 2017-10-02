@@ -1792,7 +1792,7 @@ algorithm
   end match;
 end ppStmtList;
 
-protected function ppStmtListStr "
+public function ppStmtListStr "
   Helper function to pp_stmt_str
 "
   input list<DAE.Statement> inAlgorithmStatementLst;

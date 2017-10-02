@@ -781,19 +781,17 @@ end differentiateExp;
 
       case {} then (listReverse(inStmtsAccum), inFunctionTree);
 
-      // skip discrete statements
-      case currStatement::restStatements guard( isDiscreteAssignStatment(currStatement) )
-        equation
-          derivedStatements1 = currStatement::inStmtsAccum;
-          (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree, maxIter);
-        then (derivedStatements2, functions);
-
       case (currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs, source=source))::restStatements
         equation
           (derivedLHS, functions) = differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
           (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
           (derivedRHS,_) = ExpressionSimplify.simplify(derivedRHS);
-          derivedStatements1 = {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source), currStatement};
+          /* if assigment is empty remove derived assignment */
+          if (Expression.isZero(derivedLHS)) then
+            derivedStatements1 = {currStatement};
+          else
+            derivedStatements1 = {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source), currStatement};
+          end if;
           derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
           (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);
         then (derivedStatements2, functions);
@@ -825,7 +823,7 @@ end differentiateExp;
         equation
           cref = ComponentReference.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
           controlVar = BackendDAE.VAR(cref, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
-          inputData = addAllVars({controlVar}, inInputData);
+          inputData = addGlobalVars({controlVar}, inInputData);
           (derivedStatements1, functions) = differentiateStatements(statementLst, inDiffwrtCref, inputData, inDiffType, {}, inFunctionTree, maxIter);
 
           derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, index, exp, derivedStatements1, source)};
@@ -1110,7 +1108,7 @@ algorithm
         (zero, inFunctionTree);
 
     // d(discrete)/d(x) = 0
-    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), _, _)
+    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
         (BackendDAE.VAR(varKind = kind),_) = BackendVariable.getVarSingle(cr, timevars);
         //print("\nExp-Cref\n known vars: " + ComponentReference.printComponentRefStr(cr));
@@ -1466,9 +1464,8 @@ algorithm
 
     case ("pre",_) equation
       tp = Expression.typeof(exp);
-      (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter);
-      exp_2 = Expression.makePureBuiltinCall("pre", {exp_1}, tp);
-    then (exp_2, inFuncs);
+      exp_1 = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+    then (exp_1, inFuncs);
 
     case ("previous",_) equation
       tp = Expression.typeof(exp);
@@ -1785,6 +1782,12 @@ algorithm
         (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
         (res1, funcs);
+
+    case ("sample", _, DAE.CALL_ATTR(ty=tp))
+      equation
+        (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (res1, inFunctionTree);
 
   end match;
 end differentiateCallExpNArg;
@@ -2578,6 +2581,11 @@ algorithm
       //print("Function diff: statemeants");
       (derbodyStmts, functions) = differentiateStatements(listReverse(bodyStmts), inDiffwrtCref, inputData, BackendDAE.DIFFERENTIATION_FUNCTION(), {}, functions, maxIter);
 
+      if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
+        funstring = DAEDump.ppStmtListStr(derbodyStmts, 0);
+        print("### Differentiate differentiateFunctionCallPartial stmts: \n" + funstring + "\n\n");
+      end if;
+
       // create function and add it to function tree
       dpath = Util.getOptionOrDefault(dpathOption, Absyn.stringPath("$DER" + funcname));
 
@@ -3003,6 +3011,35 @@ algorithm
   end match;
 end addAllVars;
 
+protected function addGlobalVars
+  input list<BackendDAE.Var> inVarsLst;
+  input BackendDAE.DifferentiateInputData inDiffData;
+  output BackendDAE.DifferentiateInputData outDiffData;
+algorithm
+  outDiffData := match(inVarsLst, inDiffData)
+    local
+      Option<BackendDAE.Variables> depVars, allVars, indepVars;
+      BackendDAE.Variables glVars;
+      list<BackendDAE.Var> algVars;
+      list< .DAE.ComponentRef> diffCrefs;
+      Option<String> diffname;
+
+    case ({}, _)
+    then inDiffData;
+
+    case (_, BackendDAE.DIFFINPUTDATA(indepVars, depVars, SOME(glVars), allVars, algVars, diffCrefs, diffname)) equation
+      glVars = BackendVariable.addVars(inVarsLst, glVars);
+      //BackendDump.dumpVariables(allVars, "indep Vars: ");
+    then BackendDAE.DIFFINPUTDATA(indepVars, depVars, SOME(glVars), allVars, algVars, diffCrefs, diffname);
+
+    case (_, BackendDAE.DIFFINPUTDATA(indepVars, depVars, NONE(), allVars, algVars, diffCrefs, diffname)) equation
+      glVars = BackendVariable.listVar(inVarsLst);
+      //BackendDump.dumpVariables(allVars, "indep Vars: ");
+    then BackendDAE.DIFFINPUTDATA(indepVars, depVars, SOME(glVars), allVars, algVars, diffCrefs, diffname);
+
+  end match;
+end addGlobalVars;
+
 protected function lowerVarsElementVars
   input list<DAE.Element> inElementLstVars;
   input DAE.FunctionTree functions;
@@ -3039,7 +3076,6 @@ algorithm
     fail();
   end try;
 end addElementVars2Dep;
-
 
 protected function dumpInputData
   input BackendDAE.DifferentiateInputData inDiffData;

@@ -4905,12 +4905,7 @@ algorithm
 
     case({}, _, _, _, _, _) then listReverse(iVars);
 
-    // skip for dicrete variable
-    case(BackendDAE.VAR(varKind=BackendDAE.DISCRETE())::restVar, cref, _, _, _, _) equation
-     then
-       createAllDiffedSimVars(restVar, cref, inAllVars, inIndex, inMatrixName, iVars);
-
-     case(BackendDAE.VAR(varName=currVar, varKind=varkind, values = dae_var_attr)::restVar, cref, _, index, _, _) algorithm
+    case(BackendDAE.VAR(varName=currVar, varKind=varkind, values = dae_var_attr)::restVar, cref, _, index, _, _) algorithm
       try
         BackendVariable.getVarSingle(currVar, inAllVars);
         r1 := match (varkind)

@@ -2123,11 +2123,6 @@ algorithm
     case({}, _, _, _, _, _)
     then listReverse(iVars);
 
-    // skip for dicrete variable
-    case(BackendDAE.VAR(varKind=BackendDAE.DISCRETE())::restVar, cref, _, _, _, _)
-     then
-       createAllDiffedVarsWork(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);
-
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar, cref, _, index, _, _) algorithm
        try
         (_, _) := BackendVariable.getVarSingle(currVar, inAllVars);
@@ -2159,7 +2154,7 @@ algorithm
   end match;
 end createAllDiffedVarsWork;
 
-protected function deriveAll "author: lochel"
+protected function deriveAll
   input list<BackendDAE.Equation> inEquations;
   input list<Integer> ass2;
   input DAE.ComponentRef inDiffCref;
@@ -2169,7 +2164,7 @@ protected function deriveAll "author: lochel"
   output DAE.FunctionTree outFunctions = inFunctions;
 protected
   BackendDAE.Variables allVars;
-  list<BackendDAE.Equation> currDerivedEquations;
+  BackendDAE.Equation currDerivedEquation;
   list<BackendDAE.Var> solvedvars;
   list<Integer> ass2_1 = ass2, solvedfor;
   Boolean b;
@@ -2183,17 +2178,11 @@ algorithm
         print("\n");
       end if;
 
-      // filter discrete equataions
-      (solvedfor,ass2_1) := List.split(ass2_1, BackendEquation.equationSize(currEquation));
-      solvedvars := List.map1r(solvedfor,BackendVariable.getVarAt, allVars);
-      b := List.mapAllValueBool(solvedvars, BackendVariable.isVarDiscrete, true);
-      b := b or BackendEquation.isWhenEquation(currEquation);
-
-      (currDerivedEquations, outFunctions) := deriveAllHelper(b, currEquation, inDiffCref, inDiffData, outFunctions);
-      outDerivedEquations := listAppend(currDerivedEquations, outDerivedEquations);
+      (currDerivedEquation, outFunctions) := Differentiate.differentiateEquation(currEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(), outFunctions);
+      outDerivedEquations := currDerivedEquation::outDerivedEquations;
 
       if Flags.isSet(Flags.JAC_DUMP_EQN) then
-        BackendDump.printEquationList(currDerivedEquations);
+        BackendDump.printEquationList(outDerivedEquations);
         print("\n");
       end if;
     end for;
@@ -2205,36 +2194,6 @@ algorithm
     fail();
   end try;
 end deriveAll;
-
-protected function deriveAllHelper "author: wbraun"
-  input Boolean isDiscrete;
-  input BackendDAE.Equation inEquation;
-  input DAE.ComponentRef inDiffCref;
-  input BackendDAE.DifferentiateInputData inDiffData;
-  input DAE.FunctionTree inFunctions;
-  output list<BackendDAE.Equation> outDerivedEquations;
-  output DAE.FunctionTree outFunctions;
-algorithm
-  (outDerivedEquations, outFunctions) :=
-  match (isDiscrete)
-    local
-      BackendDAE.Equation derEquation;
-      DAE.FunctionTree functions;
-      list<DAE.ComponentRef> vars;
-      BackendDAE.Variables allVars, paramVars, stateVars, globalKnownVars;
-      list<Integer> ass2_1, solvedfor;
-
-    case (true) equation
-      if Flags.isSet(Flags.JAC_WARNINGS) then
-        print("BackendDAEOptimize.derive: discrete equation has been removed.\n");
-      end if;
-    then ({}, inFunctions);
-
-    case (false) equation
-      (derEquation, functions) = Differentiate.differentiateEquation(inEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(), inFunctions);
-    then ({derEquation}, functions);
-  end match;
-end deriveAllHelper;
 
 public function getJacobianMatrixbyName
   input BackendDAE.SymbolicJacobians injacobianMatrixes;
