@@ -166,6 +166,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;
   input String FMUVersion="";
+  input String fmuTargetName="";
   output SimCode.SimCode simCode;
   output tuple<Integer, list<tuple<Integer, Integer>>> outMapping "the highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself";
 protected
@@ -566,6 +567,7 @@ algorithm
                               simSettingsOpt,
                               filenamePrefix,
                               if isFMU then (filenamePrefix+".fmutmp/sources/") else "",
+                              fmuTargetName,
                               HpcOmSimCode.emptyHpcomData,
                               varToArrayIndexMapping,
                               varToIndexMapping,

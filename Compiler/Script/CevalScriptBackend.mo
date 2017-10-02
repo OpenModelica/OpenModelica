@@ -3257,8 +3257,8 @@ protected function buildModelFMU " author: Frenkel TUD
   output GlobalScript.SymbolTable st;
 protected
   Boolean staticSourceCodeFMU;
-  String filenameprefix, fmutmp, thisplatform, cmd, logfile,
-         makefileStr, LIBS, dir;
+  String filenameprefix, fmutmp, logfile, dir;
+  String fmuTargetName;
   GlobalScript.SimulationOptions defaulSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
@@ -3285,11 +3285,12 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix,".","_");
+  filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix, ".", "_");
+  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix);
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
   try
-    (cache, outValue, st,_, libs,_, _) := SimCodeMain.translateModelFMU(cache, inEnv, className, st, FMUVersion, FMUType, filenameprefix, addDummy, simSettings);
+    (cache, outValue, st,_, libs,_, _) := SimCodeMain.translateModelFMU(cache, inEnv, className, st, FMUVersion, FMUType, filenameprefix, fmuTargetName, addDummy, simSettings);
   else
     outValue := Values.STRING("");
     return;

@@ -345,6 +345,7 @@ package SimCode
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
       String fullPathPrefix; // Used for FMI where code is not generated in the same directory
+      String fmuTargetName;
       HpcOmSimCode.HpcOmData hpcomData;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;

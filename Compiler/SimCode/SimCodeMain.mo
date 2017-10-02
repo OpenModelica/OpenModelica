@@ -129,6 +129,7 @@ protected function generateModelCodeFMU "
   input String FMUVersion;
   input String FMUType;
   input String filenamePrefix;
+  input String fmuTargetName;
   input SimCode.SimulationSettings simSettings;
   output list<String> libs;
   output String fileDir;
@@ -151,7 +152,7 @@ algorithm
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, p, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, p, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -215,6 +216,7 @@ public function translateModelFMU
   input String inFMUVersion;
   input String inFMUType;
   input String inFileNamePrefix;
+  input String fmuTargetName;
   input Boolean addDummy "if true, add a dummy state";
   input SimCode.SimulationSettings inSimSettings;
   output FCore.Cache outCache;
@@ -274,7 +276,7 @@ algorithm
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, initDAE, initDAE_lambda0, removedInitialEquationLst, p, className, FMUVersion, FMUType, filenameprefix, inSimSettings);
+          generateModelCodeFMU(dlow_1, initDAE, initDAE_lambda0, removedInitialEquationLst, p, className, FMUVersion, FMUType, filenameprefix, fmuTargetName, inSimSettings);
 
         //reset config flag
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
@@ -289,7 +291,7 @@ algorithm
           ("timeFrontend", Values.REAL(timeFrontend))
           };
 
-        resstr = filenameprefix + ".fmu";
+        resstr = fmuTargetName + ".fmu";
         if not Config.getRunningTestsuite() then
           resstr = System.pwd() + System.pathDelimiter() + resstr;
         end if;
@@ -467,6 +469,7 @@ protected function createSimCode "
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;
   input String FMUVersion="";
+  input String fmuTargetName="";
   output SimCode.SimCode simCode;
 algorithm
   simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths, program,simSettingsOpt, recordDecls, literals, args)
@@ -505,7 +508,7 @@ algorithm
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
