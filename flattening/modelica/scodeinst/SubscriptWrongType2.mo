@@ -11,7 +11,7 @@ end SubscriptWrongType2;
 
 // Result:
 // Error processing file: SubscriptWrongType2.mo
-// [flattening/modelica/scodeinst/SubscriptWrongType2.mo:9:3-9:16:writable] Error: Expression '1' has type Integer, expected type enumeration(one, two, three).
+// [flattening/modelica/scodeinst/SubscriptWrongType2.mo:9:3-9:16:writable] Error: Expression '1' has type Integer, expected type enumeration E(one, two, three).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

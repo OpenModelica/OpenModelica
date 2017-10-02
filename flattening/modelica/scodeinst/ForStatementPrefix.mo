@@ -27,7 +27,7 @@ end ForStatementPrefix;
 //   Real a.x[5];
 // algorithm
 //   for i in 1:5 loop
-//     a.x[i] := i;
+//     a.x[i] := /*Real*/(i);
 //   end for;
 // end ForStatementPrefix;
 // endResult

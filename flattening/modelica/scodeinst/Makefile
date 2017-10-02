@@ -2,6 +2,12 @@ TEST=../../../rtest -v
 
 TESTFILES=\
 arrfunc.mo \
+Assert1.mo \
+Assert2.mo \
+Assert3.mo \
+AssertInvalid1.mo \
+AssertInvalid2.mo \
+AssertInvalid3.mo \
 Binding1.mo \
 BindingArray1.mo \
 BindingArray2.mo \
@@ -110,6 +116,7 @@ eq6.mo \
 eq7.mo \
 eq8.mo \
 eq10.mo \
+EquationInvalidType1.mo \
 Extends1.mo \
 Extends2.mo \
 Extends3.mo \
@@ -182,8 +189,11 @@ FuncViaComp.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
 FunctionMultiOutput1.mo \
+FunctionMultiOutput2.mo \
+FunctionMultiOutput3.mo \
 FunctionNoOutput1.mo \
 FunctionStreamPrefix.mo \
+IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
 ih3.mo \
@@ -255,6 +265,14 @@ redeclare4.mo \
 redeclare6.mo \
 redeclare7.mo \
 redeclare9.mo \
+Reinit1.mo \
+Reinit2.mo \
+ReinitInvalid1.mo \
+ReinitInvalid2.mo \
+ReinitInvalid3.mo \
+ReinitInvalid4.mo \
+ReinitInvalid5.mo \
+ReinitInvalid6.mo \
 Size1.mo \
 Size2.mo \
 SizeInvalidArgs1.mo \
@@ -265,10 +283,13 @@ SizeInvalidIndex3.mo \
 SizeInvalidIndex4.mo \
 SizeInvalidType1.mo \
 SizeInvalidType2.mo \
+StatementInvalidType1.mo \
 Subscript1.mo \
 SubscriptTooMany1.mo \
 SubscriptWrongType1.mo \
 SubscriptWrongType2.mo \
+Terminate1.mo \
+TerminateInvalid1.mo \
 type2.mo \
 TypeDim1.mo \
 TypeDim2.mo \
@@ -282,10 +303,12 @@ usertype4.mo \
 usertype5.mo \
 usertype6.mo \
 when1.mo \
+WhenNested1.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ComponentAttr1.mo \
 dim2.mo \
 ExtendsVisibility.mo \
 DuplicateElements5.mo \

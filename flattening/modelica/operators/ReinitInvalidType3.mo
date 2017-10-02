@@ -15,7 +15,7 @@ end ReinitInvalidType3;
 
 // Result:
 // Error processing file: ReinitInvalidType3.mo
-// [flattening/modelica/operators/ReinitInvalidType3.mo:12:5-12:19:writable] Error: The first argument to reinit must be a variable, but x is a constant.
+// [flattening/modelica/operators/ReinitInvalidType3.mo:12:5-12:19:writable] Error: The first argument to reinit must be a continuous time variable, but x is constant.
 // Error: Error occurred while flattening model ReinitInvalidType3
 //
 // # Error encountered! Exiting...

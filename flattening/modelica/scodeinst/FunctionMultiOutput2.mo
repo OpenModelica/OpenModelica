@@ -1,4 +1,4 @@
-// name: FunctionMultiOutput1
+// name: FunctionMultiOutput2
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -11,11 +11,11 @@ function f
   output Real c = x * 4;
 end f;
 
-model FunctionMultiOutput1
-  Real x, y, z;
+model FunctionMultiOutput2
+  Real x;
 algorithm
-  (x, y, z) := f(2.0);
-end FunctionMultiOutput1;
+  x := f(x);
+end FunctionMultiOutput2;
 
 // Result:
 // function f
@@ -25,11 +25,9 @@ end FunctionMultiOutput1;
 //   output Real c = x * 4.0;
 // end f;
 //
-// class FunctionMultiOutput1
+// class FunctionMultiOutput2
 //   Real x;
-//   Real y;
-//   Real z;
 // algorithm
-//   (x, y, z) := f(2.0);
-// end FunctionMultiOutput1;
+//   x := f(x)[1];
+// end FunctionMultiOutput2;
 // endResult

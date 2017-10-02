@@ -3,7 +3,6 @@
 // status: correct
 // cflags:   -d=newInst
 //
-// FAILREASON: Expand of when equations not implemented.
 //
 
 model A

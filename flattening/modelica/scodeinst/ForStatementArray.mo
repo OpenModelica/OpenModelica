@@ -22,7 +22,7 @@ end ForStatementArray;
 //   Real x[5];
 // algorithm
 //   for i in {1, 2, 3, 4, 5} loop
-//     x[i] := i;
+//     x[i] := /*Real*/(i);
 //   end for;
 // end ForStatementArray;
 // endResult
