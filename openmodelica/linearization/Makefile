@@ -22,9 +22,11 @@ test_04.mos \
 test_05.mos \
 test_06.mos \
 test_07.mos \
+ticket3701.mos \
 testknownvar.mos \
 testMathFuncs.mos \
-ticket3701.mos \
+testRecordDiff.mos \
+
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
