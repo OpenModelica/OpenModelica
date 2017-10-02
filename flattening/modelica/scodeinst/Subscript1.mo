@@ -1,4 +1,4 @@
-// name: Subscript1.mo
+// name: Subscript1
 // status: correct
 // cflags: -d=newInst
 //

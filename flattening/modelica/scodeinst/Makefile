@@ -91,6 +91,9 @@ DuplicateMod2.mo \
 DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
+End1.mo \
+EndInvalid1.mo \
+EndInvalid2.mo \
 enum1.mo \
 enum2.mo \
 enum3.mo \
@@ -263,9 +266,15 @@ SizeInvalidIndex4.mo \
 SizeInvalidType1.mo \
 SizeInvalidType2.mo \
 Subscript1.mo \
+SubscriptTooMany1.mo \
+SubscriptWrongType1.mo \
+SubscriptWrongType2.mo \
 type2.mo \
 TypeDim1.mo \
 TypeDim2.mo \
+TypenameInvalid1.mo \
+TypenameInvalid2.mo \
+TypenameInvalid3.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \
