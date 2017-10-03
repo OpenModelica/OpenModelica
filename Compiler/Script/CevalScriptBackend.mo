@@ -1317,10 +1317,16 @@ algorithm
         (cache,ret_val,st_1) := buildModelFMU(cache, env, className, st, str1, str2, filenameprefix, true);
       then (cache,ret_val,st_1);
 
+    case (cache,env,"translateModelFMU", _,st,_)
+      then (cache,Values.STRING(""),st);
+
     case (cache,env,"buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_,st,_)
       algorithm
         (cache,ret_val,st_1) := buildModelFMU(cache, env, className, st, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
       then (cache,ret_val,st_1);
+
+    case (cache,env,"buildModelFMU", _,st,_)
+      then (cache,Values.STRING(""),st);
 
     case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
