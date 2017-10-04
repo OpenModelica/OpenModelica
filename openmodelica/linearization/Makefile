@@ -22,10 +22,11 @@ test_04.mos \
 test_05.mos \
 test_06.mos \
 test_07.mos \
-ticket3701.mos \
+testDrumBoiler.mos \
 testknownvar.mos \
 testMathFuncs.mos \
 testRecordDiff.mos \
+ticket3701.mos \
 
 
 # test that currently fail. Move up when fixed. 
