@@ -2611,9 +2611,7 @@ QString OMCProxy::getCommandLineOptionsAnnotation(QString className)
 QList<QString> OMCProxy::getAnnotationNamedModifiers(QString className, QString annotation)
 {
   QList<QString> result = mpOMCInterface->getAnnotationNamedModifiers(className, annotation);
-  if (result.isEmpty()) {
-    printMessagesStringInternal();
-  }
+  getErrorString();
   return result;
 }
 

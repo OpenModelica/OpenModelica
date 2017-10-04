@@ -672,6 +672,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             }
             i++;
           }
+        } else if (simulationFlag.compare("additionalSimulationFlags") == 0) {
+          mpAdditionalSimulationFlagsTextBox->setText(value);
         }
       }
     }
@@ -1201,6 +1203,9 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   if (logStreams.size() > 0) {
     simulationFlags.append(QString("%1=\"%2\"").arg("lv").arg(logStreams.join(",")));
+  }
+  if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("additionalSimulationFlags").arg(mpAdditionalSimulationFlagsTextBox->text()));
   }
   QString newSimulationFlags = QString("__OpenModelica_simulationFlags(%1)").arg(simulationFlags.join(","));
   // if we have ModelWidget for class then put the change on undo stack.
