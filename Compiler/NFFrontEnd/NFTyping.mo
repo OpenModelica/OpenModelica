@@ -151,18 +151,19 @@ function typeComponent
   input InstNode component;
   output Type ty;
 protected
-  Component c = InstNode.component(component);
+  InstNode node = InstNode.resolveOuter(component);
+  Component c = InstNode.component(node);
 algorithm
   ty := match c
     // An untyped component, type it.
     case Component.UNTYPED_COMPONENT()
       algorithm
         // Type the component's dimensions.
-        typeDimensions(c.dimensions, component, c.binding, c.info);
+        typeDimensions(c.dimensions, node, c.binding, c.info);
 
         // Construct the type of the component and update the node with it.
         ty := Type.liftArrayLeftList(InstNode.getType(c.classInst), arrayList(c.dimensions));
-        InstNode.updateComponent(Component.setType(ty, c), component);
+        InstNode.updateComponent(Component.setType(ty, c), node);
 
         // Type the component's children.
         typeComponents(c.classInst);
@@ -399,7 +400,8 @@ end typeBindings;
 function typeComponentBinding
   input InstNode component;
 protected
-  Component c = InstNode.component(component);
+  InstNode node = InstNode.resolveOuter(component);
+  Component c = InstNode.component(node);
 algorithm
   () := match c
     local
@@ -416,11 +418,11 @@ algorithm
         // If the binding changed during typing it means it was an untyped
         // binding which is now typed, and it needs to be type checked.
         if dirty then
-          binding := TypeCheck.matchBinding(binding, c.ty, component);
+          binding := TypeCheck.matchBinding(binding, c.ty, node);
 
           if Binding.variability(binding) > Component.variability(c) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-              {InstNode.name(component), Prefixes.variabilityString(Component.variability(c)),
+              {InstNode.name(node), Prefixes.variabilityString(Component.variability(c)),
                "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
               Binding.getInfo(binding));
             fail();
@@ -440,14 +442,14 @@ algorithm
 
         // Update the node if the component changed.
         if dirty then
-          InstNode.updateComponent(c, component);
+          InstNode.updateComponent(c, node);
         end if;
       then
         ();
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid node " + InstNode.name(component));
+        assert(false, getInstanceName() + " got invalid node " + InstNode.name(node));
       then
         fail();
 
@@ -818,7 +820,8 @@ function typeComponentDim
   output Dimension dim;
   output TypingError error;
 protected
-  Component c = InstNode.component(component);
+  InstNode node = InstNode.resolveOuter(component);
+  Component c = InstNode.component(node);
 algorithm
   (dim, error) := match c
     local
@@ -834,7 +837,7 @@ algorithm
         else
           error := TypingError.NO_ERROR();
           d := arrayGet(c.dimensions, dimIndex);
-          d := typeDimension(d, component, c.binding, dimIndex, c.dimensions, c.info);
+          d := typeDimension(d, node, c.binding, dimIndex, c.dimensions, c.info);
         end if;
       then
         (d, error);
@@ -1238,7 +1241,7 @@ algorithm
         typed_cls := Class.setSections(sections, cls);
 
         for i in 1:arrayLength(components) loop
-          typeSections(InstNode.classScope(components[i]));
+          typeSections(InstNode.classScope(InstNode.resolveOuter(components[i])));
         end for;
 
         InstNode.updateClass(typed_cls, classNode);

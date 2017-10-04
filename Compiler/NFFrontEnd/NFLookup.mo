@@ -47,6 +47,12 @@ import NFLookupState.LookupState;
 import Type = NFType;
 import NFMod.Modifier;
 
+protected
+import NFInstNode.NodeTree;
+import NFInstNode.CachedData;
+import NFComponent.Component;
+
+public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
 
 function lookupClassName
@@ -152,9 +158,11 @@ protected
   MatchType match_ty;
   InstNode n;
 algorithm
+  // Check if the cref is one of the builtin types with reserved names.
   (node, restNodes, state, match_ty) := lookupBuiltinCref(cref, info);
 
   if match_ty == MatchType.NOT_FOUND then
+    // The cref was not a reserved builtin name, continue with normal lookup.
     match_ty := MatchType.FOUND;
 
     (node, restNodes, foundScope, state) := matchcontinue cref
@@ -186,7 +194,9 @@ algorithm
           (InstNode.EMPTY_NODE(), {}, scope, LookupState.STATE_BEGIN());
     end matchcontinue;
   else
-    foundScope := scope;
+    // The cref was one of the reserved builtin names defined in the top scope,
+    // return the correct scope.
+    foundScope := InstNode.topScope(scope);
   end if;
 
   if match_ty <> MatchType.FOUND then
@@ -196,7 +206,40 @@ algorithm
   end if;
 end lookupCref;
 
+function lookupInner
+  "Looks up the corresponding inner node given an outer node."
+  input InstNode outerNode;
+  input InstNode scope;
+  output InstNode innerNode;
 protected
+  String name = InstNode.name(outerNode);
+  InstNode cur_scope = scope;
+  InstNode prev_scope = scope;
+algorithm
+  while not InstNode.isEmpty(cur_scope) loop
+    try
+      // Check if we have an element with the same name as the outer node in this scope.
+      innerNode := InstNode.resolveOuter(Class.lookupElement(name, InstNode.getClass(cur_scope)));
+
+      if InstNode.isInner(innerNode) then
+        // Found an inner node, return it.
+        return;
+      else
+        // Found a node that's not inner, give a warning and continue looking.
+        Error.addMultiSourceMessage(Error.FOUND_NON_INNER,
+          {name}, {InstNode.info(outerNode), InstNode.info(innerNode)});
+        fail();
+      end if;
+    else
+      // Continue looking in the instance parent's scope.
+      prev_scope := cur_scope;
+      cur_scope := InstNode.parent(cur_scope);
+    end try;
+  end while;
+
+  // No inner found, try to generate one.
+  innerNode := generateInner(outerNode, prev_scope);
+end lookupInner;
 
 function lookupBuiltinCref
   input Absyn.ComponentRef cref;
@@ -280,7 +323,7 @@ function lookupLocalSimpleName
   input InstNode scope;
   output InstNode node;
 algorithm
-  node := Class.lookupElement(name, InstNode.getClass(scope));
+  node := InstNode.resolveInner(Class.lookupElement(name, InstNode.getClass(scope)));
 end lookupLocalSimpleName;
 
 function lookupSimpleName
@@ -298,7 +341,14 @@ algorithm
       return;
     else
       // TODO: Handle encapsulated scopes.
-      cur_scope := InstNode.parent(cur_scope);
+      // If the scope has the same name as we're looking for we can just return it.
+      if name == InstNode.name(cur_scope) then
+        node := cur_scope;
+        return;
+      else
+        // Otherwise, continue in the enclosing scope.
+        cur_scope := InstNode.parent(cur_scope);
+      end if;
     end try;
   end for;
 
@@ -415,8 +465,6 @@ algorithm
     return;
   end if;
 
-  // If the given node extends from itself, like 'extends Modelica.Icons.***' in
-  // the MSL, then it's already being instantiated here.
   if not selfReference then
     node := Inst.instPackage(node);
   end if;
@@ -528,7 +576,15 @@ algorithm
           then Class.lookupElement(name, InstNode.getClass(foundScope));
         case InstNode.COMPONENT_NODE()
           then Class.lookupElement(name, InstNode.getClass(foundScope));
+        case InstNode.INNER_OUTER_NODE()
+          then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
       end match;
+
+      // If the node is an outer node, return the inner instead.
+      if InstNode.isInnerOuterNode(node) then
+        node := InstNode.resolveInner(node);
+        foundScope := InstNode.parent(node);
+      end if;
 
       // We found a node, return it.
       return;
@@ -581,6 +637,7 @@ algorithm
   scope := match node
     case InstNode.CLASS_NODE() then InstNode.getClass(Inst.instPackage(node));
     case InstNode.COMPONENT_NODE() then InstNode.getClass(node);
+    case InstNode.INNER_OUTER_NODE() then InstNode.getClass(node.innerNode);
   end match;
 
   (node, nodes, state) := match cref
@@ -601,6 +658,97 @@ algorithm
 
   end match;
 end lookupCrefInNode;
+
+function generateInner
+  "Generates an inner element given an outer one, or returns the already
+   generated inner element if one has already been generated."
+  input InstNode outerNode;
+  input InstNode topScope;
+  output InstNode innerNode;
+protected
+  CachedData cache;
+  String name;
+  Option<InstNode> inner_node_opt;
+  InstNode inner_node;
+algorithm
+  cache := InstNode.cachedData(topScope);
+
+  () := match cache
+    case CachedData.TOP_SCOPE()
+      algorithm
+        name := InstNode.name(outerNode);
+        inner_node_opt := NodeTree.getOpt(cache.addedInner, name);
+
+        if isSome(inner_node_opt) then
+          // Found an already generated node, return it.
+          SOME(innerNode) := inner_node_opt;
+        else
+          // Otherwise, generate a new inner node and add it to the cache.
+          innerNode := makeInnerNode(outerNode);
+          innerNode := InstNode.setParent(cache.rootClass, innerNode);
+          cache.addedInner := NodeTree.add(cache.addedInner, name, innerNode);
+          InstNode.setCachedData(cache, topScope);
+        end if;
+      then
+        ();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got top node with missing cache");
+      then
+        fail();
+
+  end match;
+end generateInner;
+
+function makeInnerNode
+  "Returns a copy of the given node where the element definition has been
+   changed to have the inner prefix."
+  input output InstNode node;
+algorithm
+  node := match node
+    local
+      SCode.Element def;
+      SCode.Prefixes prefs;
+      Component comp;
+
+      case InstNode.CLASS_NODE(definition = def as SCode.CLASS(prefixes = prefs))
+        algorithm
+          prefs.innerOuter := Absyn.INNER();
+          def.prefixes := prefs;
+          node.definition := def;
+        then
+          node;
+
+      case InstNode.COMPONENT_NODE()
+        algorithm
+          comp := InstNode.component(node);
+
+          comp := match comp
+            case Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(prefixes = prefs))
+              algorithm
+                prefs.innerOuter := Absyn.INNER();
+                def.prefixes := prefs;
+                comp.definition := def;
+              then
+                comp;
+
+            else
+              algorithm
+                assert(false, getInstanceName() + " got unknown component");
+              then
+                fail();
+          end match;
+        then
+          InstNode.replaceComponent(comp, node);
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unknown node");
+        then
+          fail();
+  end match;
+end makeInnerNode;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFLookup;

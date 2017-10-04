@@ -167,7 +167,7 @@ function flattenComponent
 
   import Origin = NFComponentRef.Origin;
 protected
-  Component c = InstNode.component(component);
+  Component c;
   ComponentRef new_pre;
   Type ty;
   Option<Expression> binding_exp;
@@ -176,6 +176,19 @@ protected
   list<Dimension> dims;
   Equation binding_eq;
 algorithm
+  if InstNode.isInnerOuterNode(component) then
+    // If we get an outer component, flatten it if it's also inner.
+    if InstNode.isInner(component) then
+      c := InstNode.component(InstNode.resolveOuter(component));
+    else
+      // If it's only outer we skip it since we don't want outer component in the DAE.
+      return;
+    end if;
+  else
+    // A non-outer component, proceed as normal.
+    c := InstNode.component(component);
+  end if;
+
   _ := match c
     case Component.TYPED_COMPONENT()
       algorithm

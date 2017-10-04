@@ -41,11 +41,12 @@ import SCode.Element;
 import SCode;
 import Type = NFType;
 import Expression = NFExpression;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, InnerOuter};
 
 protected
 import NFInstUtil;
 import List;
+import Prefixes = NFPrefixes;
 
 public
 constant Component.Attributes CONST_ATTR =
@@ -54,7 +55,7 @@ constant Component.Attributes CONST_ATTR =
      DAE.NON_PARALLEL(),
      Variability.CONTINUOUS,
      DAE.BIDIR(),
-     DAE.NOT_INNER_OUTER(),
+     InnerOuter.NOT_INNER_OUTER,
      DAE.PUBLIC());
 
 constant Component.Attributes INPUT_ATTR =
@@ -63,7 +64,7 @@ constant Component.Attributes INPUT_ATTR =
      DAE.NON_PARALLEL(),
      Variability.CONTINUOUS,
      DAE.INPUT(),
-     DAE.NOT_INNER_OUTER(),
+     InnerOuter.NOT_INNER_OUTER,
      DAE.PUBLIC());
 
 constant Component.Attributes OUTPUT_ATTR =
@@ -72,7 +73,7 @@ constant Component.Attributes OUTPUT_ATTR =
      DAE.NON_PARALLEL(),
      Variability.CONTINUOUS,
      DAE.OUTPUT(),
-     DAE.NOT_INNER_OUTER(),
+     InnerOuter.NOT_INNER_OUTER,
      DAE.PUBLIC());
 
 uniontype Component
@@ -83,7 +84,7 @@ uniontype Component
       DAE.VarParallelism parallelism;
       Variability variability;
       DAE.VarDirection direction;
-      DAE.VarInnerOuter innerOuter;
+      InnerOuter innerOuter;
       DAE.VarVisibility visibility;
     end ATTRIBUTES;
 
@@ -376,7 +377,7 @@ uniontype Component
 
   function isVar
     input Component component;
-    output Boolean isConst = variability(component) == Variability.CONTINUOUS;
+    output Boolean isVar = variability(component) == Variability.CONTINUOUS;
   end isVar;
 
   function visibility
@@ -403,6 +404,54 @@ uniontype Component
       else false;
     end match;
   end isPublic;
+
+  function isRedeclare
+    input Component component;
+    output Boolean isRedeclare;
+  algorithm
+    isRedeclare := match component
+      case COMPONENT_DEF() then SCode.isElementRedeclare(component.definition);
+      case UNTYPED_COMPONENT() then component.isRedeclare;
+      else false;
+    end match;
+  end isRedeclare;
+
+  function innerOuter
+    input Component component;
+    output InnerOuter io;
+  algorithm
+    io := match component
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
+      case COMPONENT_DEF()
+        then Prefixes.innerOuterFromSCode(SCode.prefixesInnerOuter(
+          SCode.elementPrefixes(component.definition)));
+      else InnerOuter.NOT_INNER_OUTER;
+    end match;
+  end innerOuter;
+
+  function isInner
+    input Component component;
+    output Boolean isInner;
+  protected
+    InnerOuter io = innerOuter(component);
+  algorithm
+    isInner := io == InnerOuter.INNER or io == InnerOuter.INNER_OUTER;
+  end isInner;
+
+  function isOuter
+    input Component component;
+    output Boolean isOuter;
+  protected
+    InnerOuter io = innerOuter(component);
+  algorithm
+    isOuter := io == InnerOuter.OUTER or io == InnerOuter.INNER_OUTER;
+  end isOuter;
+
+  function isOnlyOuter
+    input Component component;
+    output Boolean isOuter = innerOuter(component) == InnerOuter.OUTER;
+  end isOnlyOuter;
 
   function isIdentical
     input Component comp1;
@@ -447,17 +496,6 @@ uniontype Component
 
     end match;
   end toString;
-
-  function isRedeclare
-    input Component component;
-    output Boolean isRedeclare;
-  algorithm
-    isRedeclare := match component
-      case COMPONENT_DEF() then SCode.isElementRedeclare(component.definition);
-      case UNTYPED_COMPONENT() then component.isRedeclare;
-      else false;
-    end match;
-  end isRedeclare;
 
   function dimensionCount
     input Component component;

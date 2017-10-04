@@ -50,6 +50,7 @@ import SCode;
 protected
 import Error;
 import List;
+import SCodeDump;
 
 constant Modifier EMPTY_MOD = NOMOD();
 
@@ -408,12 +409,13 @@ public
 
   function toString
     input Modifier mod;
+    input Boolean printName = true;
     output String string;
   algorithm
     string := match mod
       local
         list<Modifier> submods;
-        String subs_str;
+        String subs_str, binding_str, binding_sep;
 
       case NOMOD() then "";
       case MODIFIER()
@@ -421,13 +423,19 @@ public
           submods := ModTable.listValues(mod.subModifiers);
           if not listEmpty(submods) then
             subs_str := "(" + stringDelimitList(list(toString(s) for s in submods), ", ") + ")";
+            binding_sep := " = ";
           else
             subs_str := "";
+            binding_sep := if printName then " = " else "= ";
           end if;
-        then
-          mod.name + subs_str + Binding.toString(mod.binding, " = ");
 
-      case REDECLARE() then "redeclare";
+          binding_str := Binding.toString(mod.binding, binding_sep);
+        then
+          if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
+
+      case REDECLARE()
+        then SCodeDump.unparseElementStr(InstNode.definition(mod.element));
+
     end match;
   end toString;
 

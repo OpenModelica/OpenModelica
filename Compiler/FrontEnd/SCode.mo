@@ -3871,6 +3871,24 @@ algorithm
   end match;
 end isNotBuiltinClass;
 
+public function getElementNamedAnnotation
+  "Returns the annotation with the given name in the element, or fails if no
+   such annotation could be found."
+  input Element element;
+  input String name;
+  output Absyn.Exp exp;
+protected
+  Annotation ann;
+algorithm
+  ann := match element
+    case EXTENDS(ann = SOME(ann)) then ann;
+    case CLASS(cmt = COMMENT(annotation_ = SOME(ann))) then ann;
+    case COMPONENT(comment = COMMENT(annotation_ = SOME(ann))) then ann;
+  end match;
+
+  exp := getNamedAnnotation(ann, name);
+end getElementNamedAnnotation;
+
 public function getNamedAnnotation
   "Checks if the given annotation contains an entry with the given name with the
    value true."

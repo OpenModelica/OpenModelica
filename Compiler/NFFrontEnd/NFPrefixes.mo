@@ -40,6 +40,13 @@ type Variability = enumeration(
   CONTINUOUS
 );
 
+type InnerOuter = enumeration(
+  NOT_INNER_OUTER,
+  INNER,
+  OUTER,
+  INNER_OUTER
+);
+
 function variabilityFromSCode
   input SCode.Variability scodeVar;
   output Variability var;
@@ -87,6 +94,30 @@ function variabilityMin
   input Variability var2;
   output Variability var = if var1 > var2 then var2 else var1;
 end variabilityMin;
+
+function innerOuterFromSCode
+  input Absyn.InnerOuter scodeIO;
+  output InnerOuter io;
+algorithm
+  io := match scodeIO
+    case Absyn.NOT_INNER_OUTER() then InnerOuter.NOT_INNER_OUTER;
+    case Absyn.INNER() then InnerOuter.INNER;
+    case Absyn.OUTER() then InnerOuter.OUTER;
+    case Absyn.INNER_OUTER() then InnerOuter.INNER_OUTER;
+  end match;
+end innerOuterFromSCode;
+
+function innerOuterString
+  input InnerOuter io;
+  output String str;
+algorithm
+  str := match io
+    case InnerOuter.INNER then "inner";
+    case InnerOuter.OUTER then "outer";
+    case InnerOuter.INNER_OUTER then "inner outer";
+    else "";
+  end match;
+end innerOuterString;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFPrefixes;

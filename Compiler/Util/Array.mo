@@ -621,6 +621,33 @@ algorithm
   outArray := arrayUpdate(inArray, inIndex, listAppend(inArray[inIndex], inElements));
 end appendToElement;
 
+function appendList<T>
+  "Returns a new array with the list elements added to the end of the given array."
+  input array<T> arr;
+  input list<T> lst;
+  output array<T> outArray;
+protected
+  Integer arr_len = arrayLength(arr), lst_len;
+  T e;
+  list<T> rest;
+algorithm
+  if listEmpty(lst) then
+    outArray := arr;
+  elseif arr_len == 0 then
+    outArray := listArray(lst);
+  else
+    lst_len := listLength(lst);
+    outArray := arrayCreateNoInit(arr_len + lst_len, arr[1]);
+    copy(arr, outArray);
+
+    rest := lst;
+    for i in arr_len+1:arr_len+lst_len loop
+      e :: rest := rest;
+      arrayUpdateNoBoundsChecking(outArray, i, e);
+    end for;
+  end if;
+end appendList;
+
 function copy<T>
   "Copies all values from inArraySrc to inArrayDest. Fails if inArraySrc is
    larger than inArrayDest.

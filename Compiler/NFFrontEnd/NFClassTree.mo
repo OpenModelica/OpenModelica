@@ -43,6 +43,8 @@ protected
   import NFComponent.Component;
   import Inst = NFInst;
   import List;
+  import Lookup = NFLookup;
+  import SCodeDump;
 
 public
   encapsulated package LookupTree
@@ -445,8 +447,9 @@ public
       array<Mutable<InstNode>> clss, comps, ext_clss;
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
-      InstNode node;
+      InstNode node, parent_scope, inner_node;
       DuplicateTree.Tree dups;
+      Component comp;
     algorithm
       // TODO: If we don't have any extends we could probably generate a flat
       // tree directly and skip a lot of this.
@@ -461,6 +464,9 @@ public
             // If the instance is an empty node, use the cloned clsNode as the instance.
             if InstNode.isEmpty(instance) then
               instance := clsNode;
+              parent_scope := InstNode.parent(clsNode);
+            else
+              parent_scope := instance;
             end if;
 
             // Fetch the elements from the class tree.
@@ -490,6 +496,14 @@ public
             // class we're instantiating to be their parent.
             for c in old_clss loop
               c := InstNode.setParent(clsNode, c);
+
+              // If the class is outer, check that it's valid and link it with
+              // the corresponding inner class.
+              if InstNode.isOuter(c) then
+                checkOuterClass(c);
+                c := linkInnerOuter(c, parent_scope);
+              end if;
+
               arrayUpdateNoBoundsChecking(clss, cls_idx, Mutable.create(c));
               cls_idx := cls_idx + 1;
             end for;
@@ -513,9 +527,18 @@ public
               () := match c
                 case InstNode.COMPONENT_NODE()
                   algorithm
-                    // Set the components parent and create a unique instance for it.
+                    // Set the component's parent and create a unique instance for it.
                     node := InstNode.setParent(instance, c);
-                    node := InstNode.replaceComponent(InstNode.component(node), node);
+                    comp := InstNode.component(node);
+                    node := InstNode.replaceComponent(comp, node);
+
+                    // If the component is outer, link it with the corresponding
+                    // inner component.
+                    if Component.isOuter(comp) then
+                      node := linkInnerOuter(node, instance);
+                    end if;
+
+                    // Add the node to the component array.
                     arrayUpdateNoBoundsChecking(comps, comp_idx, Mutable.create(node));
                     local_comps := comp_idx :: local_comps;
                     comp_idx := comp_idx + 1;
@@ -573,6 +596,36 @@ public
         else ();
       end match;
     end replaceDuplicates;
+
+    function appendComponentsToInstTree
+      "Appens a list of local components to an instantiated class tree."
+      input list<Mutable<InstNode>> components;
+      input output ClassTree tree;
+    algorithm
+      if listEmpty(components) then
+        return;
+      else
+        () := match tree
+          local
+            Integer comp_idx;
+            list<Integer> local_comps;
+
+          case INSTANTIATED_TREE()
+            algorithm
+              comp_idx := arrayLength(tree.components);
+              tree.components := Array.appendList(tree.components, components);
+              local_comps := tree.localComponents;
+
+              for i in comp_idx+1:comp_idx+listLength(components) loop
+                local_comps := i :: local_comps;
+              end for;
+
+              tree.localComponents := local_comps;
+            then
+              ();
+        end match;
+      end if;
+    end appendComponentsToInstTree;
 
     function flatten
       input output ClassTree tree;
@@ -1511,6 +1564,63 @@ public
       Mutable.update(node_ptr, parent);
       entry.children := list(replaceDuplicates3(c, parent, tree) for c in entry.children);
     end replaceDuplicates3;
+
+    function linkInnerOuter
+      "Looks up the corresponding inner node for the given outer node,
+       and returns an INNER_OUTER_NODE containing them both."
+      input InstNode outerNode;
+      input InstNode scope;
+      output InstNode innerOuterNode;
+    protected
+      InstNode inner_node;
+    algorithm
+      inner_node := Lookup.lookupInner(outerNode, scope);
+
+      // Make sure we found a node of the same kind.
+      if valueConstructor(outerNode) <> valueConstructor(inner_node) then
+        Error.addMultiSourceMessage(Error.FOUND_WRONG_INNER_ELEMENT,
+          {InstNode.typeName(inner_node), InstNode.name(outerNode), InstNode.typeName(outerNode)},
+          {InstNode.info(outerNode), InstNode.info(inner_node)});
+        fail();
+      end if;
+
+      innerOuterNode := InstNode.INNER_OUTER_NODE(inner_node, outerNode);
+    end linkInnerOuter;
+
+    function checkOuterClass
+      "Checks that a class used as outer is valid, i.e. is a short class
+       definition with no modifier."
+      input InstNode outerCls;
+    protected
+      SCode.ClassDef def;
+    algorithm
+      if InstNode.isOnlyOuter(outerCls) then
+        def := SCode.getClassDef(InstNode.definition(outerCls));
+
+        () := match def
+          // Outer short class definition without mod is ok.
+          case SCode.ClassDef.DERIVED(modifications = SCode.Mod.NOMOD()) then ();
+
+          // Outer short class definition with mod is an error.
+          case SCode.ClassDef.DERIVED()
+            algorithm
+              Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
+                {SCodeDump.printModStr(def.modifications), InstNode.name(outerCls)},
+                InstNode.info(outerCls));
+            then
+              fail();
+
+          // Outer long class definition is an error.
+          else
+            algorithm
+              Error.addSourceMessage(Error.OUTER_LONG_CLASS,
+                {InstNode.name(outerCls)}, InstNode.info(outerCls));
+            then
+              fail();
+
+        end match;
+      end if;
+    end checkOuterClass;
 
   end ClassTree;
 

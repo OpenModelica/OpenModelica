@@ -62,6 +62,31 @@ uniontype InstNodeType
   end ROOT_CLASS;
 end InstNodeType;
 
+encapsulated package NodeTree
+  import BaseAvlTree;
+  import NFInstNode.InstNode;
+
+  extends BaseAvlTree(redeclare type Key = String,
+                      redeclare type Value = InstNode);
+
+  redeclare function extends keyStr
+  algorithm
+    outString := inKey;
+  end keyStr;
+
+  redeclare function extends valueStr
+  algorithm
+    outString := InstNode.toString(inValue);
+  end valueStr;
+
+  redeclare function extends keyCompare
+  algorithm
+    outResult := stringCompare(inKey1, inKey2);
+  end keyCompare;
+
+  annotation(__OpenModelica_Interface="util");
+end NodeTree;
+
 uniontype CachedData
   record NO_CACHE end NO_CACHE;
 
@@ -78,6 +103,11 @@ uniontype CachedData
     Boolean typed;
     Boolean specialBuiltin;
   end FUNCTION;
+
+  record TOP_SCOPE
+    NodeTree.Tree addedInner;
+    InstNode rootClass;
+  end TOP_SCOPE;
 
   function empty
     output Pointer<CachedData> cache = Pointer.create(NO_CACHE());
@@ -117,6 +147,12 @@ uniontype InstNode
     Pointer<Component> component;
     InstNode parent;
   end COMPONENT_NODE;
+
+  record INNER_OUTER_NODE
+    "A node representing an outer element, with a reference to the corresponding inner."
+    InstNode innerNode;
+    InstNode outerNode;
+  end INNER_OUTER_NODE;
 
   record REF_NODE
     Integer index;
@@ -193,6 +229,7 @@ uniontype InstNode
   algorithm
     isClass := match node
       case CLASS_NODE() then true;
+      case INNER_OUTER_NODE() then isClass(node.innerNode);
       else false;
     end match;
   end isClass;
@@ -213,6 +250,7 @@ uniontype InstNode
   algorithm
     isComponent := match node
       case COMPONENT_NODE() then true;
+      case INNER_OUTER_NODE() then isComponent(node.innerNode);
       else false;
     end match;
   end isComponent;
@@ -254,12 +292,28 @@ uniontype InstNode
     name := match node
       case CLASS_NODE() then node.name;
       case COMPONENT_NODE() then node.name;
+      case INNER_OUTER_NODE() then name(node.innerNode);
       // For bug catching, these names should never be used.
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case IMPLICIT_SCOPE() then "$IMPLICIT";
       case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;
+
+  function typeName
+    "Returns the type of node the given node is as a string."
+    input InstNode node;
+    output String name;
+  algorithm
+    name := match node
+      case CLASS_NODE() then "class";
+      case COMPONENT_NODE() then "component";
+      case INNER_OUTER_NODE() then typeName(node.innerNode);
+      case REF_NODE() then "ref node";
+      case IMPLICIT_SCOPE() then "implicit scope";
+      case EMPTY_NODE() then "empty node";
+    end match;
+  end typeName;
 
   function rename
     input String name;
@@ -671,6 +725,75 @@ uniontype InstNode
       else false;
     end match;
   end isOutput;
+
+  function isInner
+    input InstNode node;
+    output Boolean isInner;
+  algorithm
+    isInner := match node
+      case COMPONENT_NODE() then Component.isInner(Pointer.access(node.component));
+      case CLASS_NODE()
+        then Absyn.isInner(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+      case INNER_OUTER_NODE() then isInner(node.outerNode);
+      else false;
+    end match;
+  end isInner;
+
+  function isOuter
+    input InstNode node;
+    output Boolean isOuter;
+  algorithm
+    isOuter := match node
+      case COMPONENT_NODE() then Component.isOuter(Pointer.access(node.component));
+      case CLASS_NODE()
+        then Absyn.isOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+      case INNER_OUTER_NODE() then isOuter(node.outerNode);
+      else false;
+    end match;
+  end isOuter;
+
+  function isOnlyOuter
+    input InstNode node;
+    output Boolean isOuter;
+  algorithm
+    isOuter := match node
+      case COMPONENT_NODE() then Component.isOnlyOuter(Pointer.access(node.component));
+      case CLASS_NODE()
+        then Absyn.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+      case INNER_OUTER_NODE() then isOuter(node.outerNode);
+      else false;
+    end match;
+  end isOnlyOuter;
+
+  function isInnerOuterNode
+    input InstNode node;
+    output Boolean isIO;
+  algorithm
+    isIO := match node
+      case INNER_OUTER_NODE() then true;
+      else false;
+    end match;
+  end isInnerOuterNode;
+
+  function resolveInner
+    input InstNode node;
+    output InstNode innerNode;
+  algorithm
+    innerNode := match node
+      case INNER_OUTER_NODE() then node.innerNode;
+      else node;
+    end match;
+  end resolveInner;
+
+  function resolveOuter
+    input InstNode node;
+    output InstNode outerNode;
+  algorithm
+    outerNode := match node
+      case INNER_OUTER_NODE() then node.outerNode;
+      else node;
+    end match;
+  end resolveOuter;
 
   function cachedData
     input InstNode node;

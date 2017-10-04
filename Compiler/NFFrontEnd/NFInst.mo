@@ -78,8 +78,9 @@ import Absyn.Path;
 import NFClassTree.ClassTree;
 import NFSections.Sections;
 import NFInstNode.CachedData;
+import NFInstNode.NodeTree;
 import StringUtil;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, InnerOuter};
 import Prefixes = NFPrefixes;
 
 public
@@ -106,8 +107,12 @@ algorithm
   cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(), cls);
 
+  // Initialize the storage for automatically generated inner elements.
+  top := InstNode.setCachedData(CachedData.TOP_SCOPE(NodeTree.new(), cls), top);
+
   // Instantiate the class.
   inst_cls := instantiate(cls);
+  insertGeneratedInners(inst_cls, top);
   execStat("NFInst.instantiate("+ name +")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -304,6 +309,7 @@ algorithm
         prefs := instClassPrefixes(def);
         dims := list(Dimension.RAW_DIM(d) for d in Absyn.typeSpecDimensions(ty));
         mod := Class.getModifier(InstNode.getClass(node));
+
         c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, cdef.attributes.direction);
         node := InstNode.updateClass(c, node);
       then
@@ -541,6 +547,7 @@ algorithm
     case (Class.EXPANDED_CLASS(), _)
       algorithm
         (node, par) := ClassTree.instantiate(node, parent);
+        updateComponentClass(parent, node);
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition.
@@ -549,7 +556,7 @@ algorithm
         mod := Modifier.merge(cls_mod, mod);
 
         // Apply the modifiers of extends nodes.
-        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = node));
+        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
 
         // Apply modifier in this scope.
         applyModifier(mod, cls_tree, InstNode.name(node));
@@ -571,8 +578,10 @@ algorithm
       algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
+
         cls.baseClass := instClass(cls.baseClass, mod, parent);
         node := InstNode.replaceClass(cls, node);
+        updateComponentClass(parent, node);
       then
         ();
 
@@ -585,12 +594,23 @@ algorithm
         inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, type_attr);
 
         node := InstNode.replaceClass(inst_cls, node);
+        updateComponentClass(parent, node);
       then
         ();
 
     else ();
   end match;
 end instClass;
+
+function updateComponentClass
+  "Sets the class instance of a component node."
+  input output InstNode component;
+  input InstNode cls;
+algorithm
+  if InstNode.isComponent(component) then
+    component := InstNode.componentApply(component, Component.setClassInstance, cls);
+  end if;
+end updateComponentClass;
 
 function instPackage
   input output InstNode node;
@@ -692,7 +712,16 @@ algorithm
     case SCode.EXTENDS()
       algorithm
         // TODO: Lookup the base class and merge its modifier.
-        // ext_node := Lookup.lookupBaseClassName(elem.basepath, scope, elem.info);
+        ext_node :: _ := Lookup.lookupBaseClassName(elem.baseClassPath, scope, elem.info);
+
+        // Finding a different element than before expanding extends
+        // (probably an inherited element) is an error.
+        if not referenceEq(InstNode.definition(extendsNode), InstNode.definition(ext_node)) then
+          Error.addMultiSourceMessage(Error.FOUND_OTHER_BASECLASS,
+            {Absyn.pathString(elem.baseClassPath)},
+            {InstNode.info(extendsNode), InstNode.info(ext_node)});
+          fail();
+        end if;
       then
         ();
 
@@ -759,10 +788,20 @@ algorithm
       fail();
     end try;
 
-    node := Mutable.access(node_ptr);
+    node := InstNode.resolveOuter(Mutable.access(node_ptr));
+
     if InstNode.isComponent(node) then
       InstNode.componentApply(node, Component.mergeModifier, mod);
     else
+      if InstNode.isOnlyOuter(node) then
+        // Modifying an outer class is illegal. We can't check that in instClass
+        // since we get the inner class there, so we check it here instead.
+        Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
+          {Modifier.toString(mod, printName = false), Modifier.name(mod)},
+          Modifier.info(mod));
+        fail();
+      end if;
+
       partialInstClass(node);
       node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
       node := InstNode.resetCache(node);
@@ -780,14 +819,15 @@ function instComponent
 protected
   Component comp, inst_comp;
   SCode.Element def;
-  InstNode scp, cls;
+  InstNode scp, cls, comp_node;
   Modifier mod, comp_mod;
   Binding binding;
   DAE.Type ty;
   Component.Attributes attr;
   list<Dimension> dims;
 algorithm
-  comp := InstNode.component(node);
+  comp_node := InstNode.resolveOuter(node);
+  comp := InstNode.component(comp_node);
   mod := Component.getModifier(comp);
 
   () := match (mod, comp)
@@ -795,16 +835,17 @@ algorithm
       algorithm
         if not InstNode.isComponent(mod.element) then
           Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
-            {"component", InstNode.name(node), "class"},
-            {InstNode.info(mod.element), InstNode.info(node)});
+            {"component", InstNode.name(comp_node), "class"},
+            {InstNode.info(mod.element), InstNode.info(comp_node)});
         end if;
 
+        checkOuterComponentMod(mod, comp, comp_node);
         comp_mod := Modifier.fromElement(def, parent);
         comp_mod := Modifier.merge(comp_mod, mod.mod);
         inst_comp := InstNode.component(mod.element);
         inst_comp := Component.setModifier(comp_mod, inst_comp);
-        InstNode.updateComponent(inst_comp, node);
-        instComponent(node, parent, InstNode.parent(mod.element));
+        InstNode.updateComponent(inst_comp, comp_node);
+        instComponent(comp_node, parent, InstNode.parent(mod.element));
       then
         ();
 
@@ -812,26 +853,41 @@ algorithm
       algorithm
         comp_mod := Modifier.fromElement(def, parent);
         comp_mod := Modifier.merge(comp.modifier, comp_mod);
+        checkOuterComponentMod(comp_mod, comp, comp_node);
 
         dims := list(Dimension.RAW_DIM(d) for d in def.attributes.arrayDims);
-        Modifier.checkEach(comp_mod, listEmpty(dims), InstNode.name(node));
+        Modifier.checkEach(comp_mod, listEmpty(dims), InstNode.name(comp_node));
         binding := Modifier.binding(comp_mod);
         comp_mod := Modifier.propagate(comp_mod);
 
-        // Instantiate the type of the component.
-        cls := instTypeSpec(def.typeSpec, comp_mod, scope, node, def.info);
-
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes);
-        inst_comp := Component.UNTYPED_COMPONENT(cls, listArray(dims), binding,
-           attr, SCode.isElementRedeclare(def), def.info);
-        InstNode.updateComponent(inst_comp, node);
+        inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
+          binding, attr, SCode.isElementRedeclare(def), def.info);
+        InstNode.updateComponent(inst_comp, comp_node);
+
+        // Instantiate the type of the component.
+        cls := instTypeSpec(def.typeSpec, comp_mod, scope, comp_node, def.info);
       then
         ();
 
     else ();
   end match;
 end instComponent;
+
+function checkOuterComponentMod
+  "Prints an error message and fails if it gets an outer component and a
+   non-empty modifier."
+  input Modifier mod;
+  input Component comp;
+  input InstNode node;
+algorithm
+  if not Modifier.isEmpty(mod) and Component.isOnlyOuter(comp) then
+    Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
+      {Modifier.toString(mod, printName = false), InstNode.name(node)}, InstNode.info(node));
+    fail();
+  end if;
+end checkOuterComponentMod;
 
 function instComponentAttributes
   input SCode.Attributes compAttr;
@@ -842,14 +898,14 @@ protected
   DAE.VarParallelism par;
   Variability var;
   DAE.VarDirection dir;
-  DAE.VarInnerOuter io;
+  InnerOuter io;
   DAE.VarVisibility vis;
 algorithm
   cty := InstUtil.translateConnectorType(compAttr.connectorType);
   par := InstUtil.translateParallelism(compAttr.parallelism);
   var := Prefixes.variabilityFromSCode(compAttr.variability);
   dir := InstUtil.translateDirection(compAttr.direction);
-  io  := InstUtil.translateInnerOuter(compPrefs.innerOuter);
+  io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
   vis := InstUtil.translateVisibility(compPrefs.visibility);
   attributes := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis);
 end instComponentAttributes;
@@ -980,7 +1036,8 @@ function instComponentExpressions
   input InstNode component;
   input InstNode scope;
 protected
-  Component c = InstNode.component(component);
+  InstNode node = InstNode.resolveOuter(component);
+  Component c = InstNode.component(node);
   array<Dimension> dims, all_dims;
   list<Dimension> cls_dims;
   Integer len;
@@ -989,7 +1046,7 @@ algorithm
     case Component.UNTYPED_COMPONENT(dimensions = dims)
       algorithm
         c.binding := instBinding(c.binding);
-        instExpressions(c.classInst, component);
+        instExpressions(c.classInst, node);
 
         cls_dims := Class.getDimensions(InstNode.getClass(c.classInst));
         len := arrayLength(dims);
@@ -1020,7 +1077,7 @@ algorithm
           c.dimensions := all_dims;
         end if;
 
-        InstNode.updateComponent(c, component);
+        InstNode.updateComponent(c, node);
       then
         ();
 
@@ -1664,6 +1721,67 @@ algorithm
     else false;
   end match;
 end checkLhsInWhen;
+
+function insertGeneratedInners
+  "Inner elements can be generated automatically during instantiation if they're
+   missing, and are stored in the cache of the top scope since that's easily
+   accessible during lookup. This function copies any such inner elements into
+   the class we're instantiating, so that they are typed and flattened properly."
+  input InstNode node;
+  input InstNode topScope;
+protected
+  NodeTree.Tree inner_tree;
+  list<tuple<String, InstNode>> inner_nodes;
+  list<Mutable<InstNode>> inner_comps;
+  InstNode n;
+  String name, str;
+  Class cls;
+  ClassTree cls_tree;
+algorithm
+  CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.cachedData(topScope);
+
+  // Empty tree => nothing more to do.
+  if NodeTree.isEmpty(inner_tree) then
+    return;
+  end if;
+
+  inner_nodes := NodeTree.toList(inner_tree);
+  inner_comps := {};
+
+  for e in inner_nodes loop
+    (name, n) := e;
+
+    // Always print a warning that an inner element was automatically generated.
+    Error.addSourceMessage(Error.MISSING_INNER_ADDED,
+      {InstNode.typeName(n), name}, InstNode.info(n));
+
+    // Only components needs to be added to the class, since classes are
+    // not part of the flat class.
+    if InstNode.isComponent(n) then
+      // The components shouldn't have been instantiated yet, so do it here.
+      instComponent(n, node, node);
+
+      // If the component's class has a missingInnerMessage annotation, use it
+      // to give a diagnostic message.
+      try
+        Absyn.STRING(str) := SCode.getElementNamedAnnotation(
+          InstNode.definition(InstNode.classScope(n)), "missingInnerMessage");
+        Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {str}, InstNode.info(n));
+      else
+      end try;
+
+      // Add the instantiated component to the list.
+      inner_comps := Mutable.create(n) :: inner_comps;
+    end if;
+  end for;
+
+  // If we found any components, add them to the component list of the class tree.
+  if not listEmpty(inner_comps) then
+    cls := InstNode.getClass(node);
+    cls_tree := ClassTree.appendComponentsToInstTree(inner_comps, Class.classTree(cls));
+    InstNode.updateClass(Class.setClassTree(cls_tree, cls), node);
+  end if;
+end insertGeneratedInners;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

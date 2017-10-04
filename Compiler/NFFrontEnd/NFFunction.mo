@@ -36,7 +36,7 @@ import Expression = NFExpression;
 import Pointer;
 import NFInstNode.InstNode;
 import Type = NFType;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, InnerOuter};
 
 protected
 import Inst = NFInst;
@@ -769,7 +769,7 @@ protected
     output DAE.VarDirection direction;
   protected
     DAE.ConnectorType cty;
-    DAE.VarInnerOuter io;
+    InnerOuter io;
     DAE.VarVisibility vis;
   algorithm
     Component.Attributes.ATTRIBUTES(
@@ -793,16 +793,12 @@ protected
     end match;
 
     // Function components may not be inner/outer.
-    () := match io
-      case DAE.VarInnerOuter.NOT_INNER_OUTER() then ();
-      else
-        algorithm
-          Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
-            {DAEDump.unparseVarInnerOuter(io), InstNode.name(component)},
-            InstNode.info(component));
-        then
-          fail();
-    end match;
+    if io <> InnerOuter.NOT_INNER_OUTER then
+      Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
+        {Prefixes.innerOuterString(io), InstNode.name(component)},
+        InstNode.info(component));
+      fail();
+    end if;
 
     // Formal parameters must be public, other function variables must be protected.
     () := match (direction, vis)
