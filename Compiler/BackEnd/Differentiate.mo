@@ -2560,14 +2560,14 @@ algorithm
       funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
       diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},SOME(funcname));
 
-      (inputVarsDer, functions, inputVarsNoDer, blst) = differentiateElementVars(inputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTIATION_FUNCTION(), inFunctionTree, {}, {}, {}, maxIter);
-      (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter);
+      (inputVarsDer, functions, inputVarsNoDer, blst) = differentiateElementVars(inputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTIATION_FUNCTION(), inFunctionTree, {}, {}, {}, maxIter, true);
+      (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, false);
 
       //add protected variables to dependent Vars
       (inputData,_) = addElementVars2Dep(inputVarsNoDer, functions, diffFuncData);
       (inputData,_) = addElementVars2Dep(outputVarsNoDer, functions, inputData);
 
-      (protectedVarsDer, functions, protectedVarsNoDer, _) = differentiateElementVars(protectedVars, inDiffwrtCref, inputData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter);
+      (protectedVarsDer, functions, protectedVarsNoDer, _) = differentiateElementVars(protectedVars, inDiffwrtCref, inputData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, false);
 
       //add protected variables to dependent Vars
       (inputData,_) = addElementVars2Dep(protectedVarsNoDer, functions, inputData);
@@ -2628,6 +2628,7 @@ protected function differentiateElementVars
   input list<DAE.Element>  inElementsNoDer;
   input list<Boolean>  inBooleanLst;
   input Integer maxIter;
+  input Boolean elementListInputs; // filter discrete variables out for inputs
   output list<DAE.Element>  outElements;
   output DAE.FunctionTree outFunctionTree;
   output list<DAE.Element>  outElementsNoDer;
@@ -2659,7 +2660,7 @@ algorithm
       var = DAEUtil.replaceBindungInVar(dbinding, var);
       vars = var::inElementsDer;
       blst = true::inBooleanLst;
-      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter);
+      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
     case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) equation
@@ -2673,7 +2674,7 @@ algorithm
 
       vars = var::inElementsDer;
       blst = true::inBooleanLst;
-      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter);
+      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
     case((var as DAE.VAR(binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars)), _, _, _, _, _) equation
@@ -2683,11 +2684,13 @@ algorithm
 
       vars = var::inElementsNoDer;
       blst = false::inBooleanLst;
-      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, vars, blst, maxIter);
+      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, vars, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
     case((var1 as DAE.VAR(componentRef = cref, ty=tp, binding=SOME(binding)))::rest, _, _, _, _, _, _, _) equation
-      true = Types.isRealOrSubTypeReal(tp);
+      if elementListInputs then
+        true = Types.isRealOrSubTypeReal(tp);
+      end if;
       e = Expression.crefExp(cref);
       (e, functions) = differentiateCrefs(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       dcref = Expression.expCref(e);
@@ -2696,24 +2699,26 @@ algorithm
       var = DAEUtil.replaceBindungInVar(dbinding, var);
       vars = var::inElementsDer;
       blst = true::inBooleanLst;
-      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter);
+      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
     case((var1 as DAE.VAR(componentRef = cref, ty=tp))::rest, _, _, _, _, _, _, _) equation
-      true = Types.isRealOrSubTypeReal(tp);
+      if elementListInputs then
+        true = Types.isRealOrSubTypeReal(tp);
+      end if;
       e = Expression.crefExp(cref);
       (e, functions) = differentiateCrefs(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       dcref = Expression.expCref(e);
       var = DAEUtil.replaceCrefInVar(dcref, var1);
       vars = var::inElementsDer;
       blst = true::inBooleanLst;
-      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter);
+      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
     case((var as DAE.VAR())::rest, _, _, _, _, _, _, _) equation
       elementsNoDer = var::inElementsNoDer;
       blst = false::inBooleanLst;
-      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, elementsNoDer, blst, maxIter);
+      (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, elementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
   end matchcontinue;
 end differentiateElementVars;
