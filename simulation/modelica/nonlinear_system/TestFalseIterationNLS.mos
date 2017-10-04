@@ -169,13 +169,13 @@ val(h_i[5], 1.0); getErrorString();
 //
 // jacobianMatrices: 
 // ========================================
-// 	Jacobian idx: 3
-// 	
-// 	Jacobian idx: 2
+// 	Jacobian idx: 0
 // 	
 // 	Jacobian idx: 1
 // 	
-// 	Jacobian idx: 0
+// 	Jacobian idx: 2
+// 	
+// 	Jacobian idx: 3
 // 	
 //
 // modelInfo: 
@@ -217,7 +217,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.258319588039887e-316
+// 1.878581457404488e-316
 // ""
 // 0.0
 // ""
@@ -233,7 +233,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.26080335485466e-316
+// 1.881065224219261e-316
 // ""
 // 0.0
 // ""
