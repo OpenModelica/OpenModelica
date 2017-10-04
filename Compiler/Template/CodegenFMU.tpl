@@ -460,21 +460,7 @@ template initValsDefault(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(index=index, type_=type_) then
     let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-    match initialValue
-      case SOME(v as ICONST(__))
-      case SOME(v as RCONST(__))
-      case SOME(v as SCONST(__))
-      case SOME(v as BCONST(__))
-      case SOME(v as ENUM_LITERAL(__)) then
-      '<%str%> = <%initVal(v)%>;'
-      else
-        match type_
-          case T_INTEGER(__)
-          case T_REAL(__)
-          case T_ENUMERATION(__)
-          case T_BOOL(__) then '<%str%> = 0;'
-          case T_STRING(__) then '<%str%> = "";'
-          else 'UNKOWN_TYPE'
+    '<%str%> = <%initValDefault(var)%>;'
 end initValsDefault;
 
 template initParamsDefault(SimVar var, String arrayName) ::=
@@ -484,9 +470,28 @@ template initParamsDefault(SimVar var, String arrayName) ::=
     match initialValue
       case SOME(v as SCONST(__)) then
       '<%str%> = mmc_mk_scon(<%initVal(v)%>);'
-      case SOME(v) then
-      '<%str%> = <%initVal(v)%>;'
+      else
+      '<%str%> = <%initValDefault(var)%>;'
 end initParamsDefault;
+
+template initValDefault(SimVar var) ::=
+  match var
+    case var as SIMVAR(__) then
+    match var.initialValue
+      case SOME(v as ICONST(__))
+      case SOME(v as RCONST(__))
+      case SOME(v as SCONST(__))
+      case SOME(v as BCONST(__))
+      case SOME(v as ENUM_LITERAL(__)) then initVal(v)
+      else
+        match var.type_
+          case T_INTEGER(__)
+          case T_REAL(__)
+          case T_ENUMERATION(__)
+          case T_BOOL(__) then '0'
+          case T_STRING(__) then '""'
+          else error(sourceInfo(), 'Unknown type for initValDefault: <%unparseType(var.type_)%>')
+end initValDefault;
 
 template initVal(Exp initialValue)
 ::=
@@ -496,7 +501,7 @@ template initVal(Exp initialValue)
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "1" else "0"
   case ENUM_LITERAL(__) then '<%index%>'
-  else "*ERROR* initial value of unknown type"
+  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
 template eventUpdateFunction(SimCode simCode)
