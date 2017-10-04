@@ -5620,8 +5620,8 @@ end simulationParModelicaKernelsFile;
 ::=
   let &staticPrototypes = buffer ""
   <<
-  #ifndef <%stringReplace(filePrefix,".","_")%>__H
-  #define <%stringReplace(filePrefix,".","_")%>__H
+  #ifndef <%makeC89Identifier(filePrefix)%>__H
+  #define <%makeC89Identifier(filePrefix)%>__H
   <%commonHeader(filePrefix)%>
   #include "simulation/simulation_runtime.h"
   #ifdef __cplusplus

@@ -147,6 +147,13 @@ public function stringReplace
   external "C" res=System_stringReplace(str,source,target) annotation(Library = "omcruntime");
 end stringReplace;
 
+public function makeC89Identifier "Replaces unknown characters with _"
+  input String str;
+  output String res;
+
+  external "C" res=System_makeC89Identifier(str) annotation(Library = "omcruntime");
+end makeC89Identifier;
+
 public function toupper
   input String inString;
   output String outString;

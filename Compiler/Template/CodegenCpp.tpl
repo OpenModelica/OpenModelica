@@ -9550,32 +9550,6 @@ template testdimension(Dimension d)
   else '-1'
 end testdimension;
 
-/*
-template underscorePath(Path path)
- "Generate paths with components separated by underscores.
-  Replaces also the . in identifiers with _.
-  The dot might happen for world.gravityAccleration"
-::=
-  match path
-  case QUALIFIED(__) then
-    '<%replaceDotAndUnderscore(name)%>_<%underscorePath(path)%>'
-  case IDENT(__) then
-    replaceDotAndUnderscore(name)
-  case FULLYQUALIFIED(__) then
-    underscorePath(path)
-end underscorePath;
-*/
-
-template replaceDotAndUnderscore(String str)
- "Replace _ with __ and dot in identifiers with _"
-::=
-  match str
-  case name then
-    let str_dots = System.stringReplace(name,".", "_")
-    let str_underscores = System.stringReplace(str_dots, "_", "__")
-    '<%str_underscores%>'
-end replaceDotAndUnderscore;
-
 template functionInitial(list<SimEqSystem> startValueEquations, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>

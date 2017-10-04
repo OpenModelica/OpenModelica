@@ -201,8 +201,8 @@ template functionsHeaderFile(String filePrefix,
  "Generates the contents of the main C file for the function case."
 ::=
   <<
-  #ifndef <%stringReplace(filePrefix,".","_")%>__H
-  #define <%stringReplace(filePrefix,".","_")%>__H
+  #ifndef <%makeC89Identifier(filePrefix)%>__H
+  #define <%makeC89Identifier(filePrefix)%>__H
   <%commonHeader(filePrefix)%>
   #ifdef __cplusplus
   extern "C" {
@@ -301,8 +301,8 @@ template functionHeadersParModelica(String filePrefix, list<Function> functions)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
-  #ifndef <%stringReplace(filePrefix,".","_")%>__H
-  #define <%stringReplace(filePrefix,".","_")%>__H
+  #ifndef <%makeC89Identifier(filePrefix)%>__H
+  #define <%makeC89Identifier(filePrefix)%>__H
   //#include "helper.cl"
 
   <%parallelFunctionHeadersImpl(functions)%>

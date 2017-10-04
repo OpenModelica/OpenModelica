@@ -1287,6 +1287,11 @@ package System
     output String res;
   end stringReplace;
 
+  function makeC89Identifier
+    input String str;
+    output String res;
+  end makeC89Identifier;
+
   function tmpTick
     output Integer tickNo;
   end tmpTick;

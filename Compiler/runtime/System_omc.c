@@ -78,6 +78,21 @@ extern const char* System_stringReplace(const char* str, const char* source, con
   return res;
 }
 
+extern const char* System_makeC89Identifier(const char* str)
+{
+  int i=0, len=strlen(str);
+  char *res = omc_alloc_interface.malloc_strdup(str);
+  if (!((res[0]>='a' && res[0]<='z') || (res[0]>='A' && res[0]<='Z'))) {
+    res[0] = '_';
+  }
+  for (i=1; i<len; i++) {
+    if (!((res[i]>='a' && res[i]<='z') || (res[i]>='A' && res[i]<='Z') || (res[i]>='0' && res[i]<='9'))) {
+      res[i] = '_';
+    }
+  }
+  return res;
+}
+
 extern int System_stringFind(const char* str, const char* searchStr)
 {
   const char *found = strstr(str, searchStr);

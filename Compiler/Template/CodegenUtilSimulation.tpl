@@ -52,11 +52,7 @@ import CodegenUtil.*;
 template modelNamePrefix(SimCode simCode)
 ::=
   match simCode
-  case simCode as SIMCODE(__) then
-    System.stringReplace(fileNamePrefix,".", "_")
-  // underscorePath(mi.name)
-  // case simCode as SIMCODE(modelInfo=mi as MODELINFO(__)) then
-  // underscorePath(mi.name)
+  case simCode as SIMCODE(__) then makeC89Identifier(fileNamePrefix)
 end modelNamePrefix;
 
 template fileNamePrefix(SimCode simCode)
