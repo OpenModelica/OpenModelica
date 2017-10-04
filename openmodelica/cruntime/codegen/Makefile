@@ -2,14 +2,14 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
+bug2756.mos \
+FileNamePrefix.mos \
 NetworkLoop_total.mos
 
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES = \
-bug2756.mos \
-
 
 
 # Dependency files that are not .mo .mos or Makefile
