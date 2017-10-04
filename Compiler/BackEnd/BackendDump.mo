@@ -2317,6 +2317,33 @@ algorithm
   end match;
 end jacobianString;
 
+public function symJacString "dumps a string representation of a jacobian."
+  input tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> jacIn;
+  output String sOut;
+algorithm
+  sOut := match(jacIn)
+    local
+      BackendDAE.BackendDAE dae;
+      BackendDAE.SymbolicJacobian sJac;
+      BackendDAE.SparsePattern sparsePattern;
+      BackendDAE.SparseColoring coloring;
+      String s;
+  case((SOME(sJac), sparsePattern, _))
+    equation
+      ((dae,_,_,_,_)) = sJac;
+      s = "GENERIC JACOBIAN:\n";
+      dumpBackendDAE(dae,"Directional Derivatives System");
+      dumpSparsityPattern(sparsePattern,"Sparse Pattern");
+    then s;
+  case((NONE(), sparsePattern, _))
+    equation
+      s = "GENERIC JACOBIAN:\n";
+      dumpSparsityPattern(sparsePattern,"Sparse Pattern");
+    then s;
+
+  end match;
+end symJacString;
+
 public function dumpEqnsStr
 "Helper function to dump."
   input list<BackendDAE.Equation> eqns;

@@ -215,6 +215,8 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     Integer nClocks;
     Integer nSubClocks;
     Boolean hasLargeLinearEquationSystems; // True if model has large linear eq. systems that are crucial for performance.
+    list<SimEqSystem> linearSystems;
+    list<SimEqSystem> nonLinearSystems;
   end MODELINFO;
 end ModelInfo;
 

@@ -550,6 +550,8 @@ package SimCode
       list<String> labels;
       Integer nClocks;
       Integer nSubClocks;
+      list<SimEqSystem> linearSystems;
+      list<SimEqSystem> nonLinearSystems;
     end MODELINFO;
   end ModelInfo;
 

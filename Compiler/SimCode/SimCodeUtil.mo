@@ -416,52 +416,46 @@ algorithm
     initialEquations_lambda0 := List.map(initialEquations_lambda0, addDivExpErrorMsgtoSimEqSystem);
     removedInitialEquations := List.map(removedInitialEquations, addDivExpErrorMsgtoSimEqSystem);
 
-    // update indexNonLinear in SES_NONLINEAR and count
+    // collect all LinearSystem and NonlinearSystem algebraic system in modelInfo and update
+    // the corresponding index (indexNonLinear, indexLinear) in SES_NONLINEAR and SES_LINEAR
+    // Also collect all jacobians
     SymbolicJacsNLS := {};
-    (initialEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(initialEquations, 0, 0, 0, 0, {});
+    (initialEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(initialEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (initialEquations_lambda0, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(initialEquations_lambda0, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    (initialEquations_lambda0, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(initialEquations_lambda0, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (parameterEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(parameterEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    (parameterEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(parameterEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    (allEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(allEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (clockedPartitions, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoopsClockPartitions(clockedPartitions, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    (clockedPartitions, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsClockPartitions(clockedPartitions, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacsTemp) := countandIndexAlgebraicLoops(inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {});
+    (inlineEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(inlineEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // collect symbolic jacobians from state selection
-    (stateSets, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians) := indexStateSets(stateSets, {}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, {}, {});
-
-    // generate jacobian or linear model matrices
-    (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
-
-    // collect jacobian equation only for equantion info file
-    jacobianEquations := collectAllJacobianEquations(LinearMatrices);
+    (stateSets, modelInfo, SymbolicJacsStateSelect) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
 
     // collect symbolic jacobians in linear loops of the overall jacobians
-    (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, SymbolicJacs) := countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians, LinearMatrices);
+    (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
+    (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
+    // collect jacobian equation only for equantion info file
+    jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
 
-    jacobianEquations := listAppend(collectAllJacobianEquations(SymbolicJacsStateSelect), jacobianEquations);
-    SymbolicJacsNLS := listAppend(SymbolicJacsStateSelectInternal, SymbolicJacsNLS);
-    SymbolicJacsNLS := listAppend(SymbolicJacsStateSelect, SymbolicJacsNLS);
-    SymbolicJacs := listAppend(SymbolicJacsNLS, SymbolicJacs);
+    SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
     seedVars := collectAllSeedVars(SymbolicJacs);
     modelInfo := setSeedVars(seedVars, modelInfo);
     execStat("simCode: created linear, non-linear and system jacobian parts");
 
-
     // map index also odeEquations and algebraicEquations
     systemIndexMap := List.fold(allEquations, getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
     odeEquations := List.mapList1_1(odeEquations, setSystemIndexMap, systemIndexMap);
     algebraicEquations := List.mapList1_1(algebraicEquations, setSystemIndexMap, systemIndexMap);
-    numberofEqns := uniqueEqIndex; /* This is a *much* better estimate than the guessed number of equations */
-
-    // create model info
-    modelInfo := addNumEqnsandNumofSystems(modelInfo, numberofEqns, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberOfJacobians);
+    modelInfo := addNumEqns(modelInfo, uniqueEqIndex /* This is a *much* better estimate than the guessed number of equations */ );
 
     odeEquations := makeEqualLengthLists(odeEquations, Config.noProc());
     algebraicEquations := makeEqualLengthLists(algebraicEquations, Config.noProc());
@@ -916,25 +910,17 @@ algorithm
   modelInfo.vars := vars;
 end setSeedVars;
 
-protected function addNumEqnsandNumofSystems
+protected function addNumEqns
   input SimCode.ModelInfo modelInfo;
   input Integer numEqns;
-  input Integer numLinearSys;
-  input Integer numNonLinearSys;
-  input Integer numMixedLinearSys;
-  input Integer numOfJacobians;
   output SimCode.ModelInfo omodelInfo = modelInfo;
 protected
   SimCode.VarInfo varInfo;
 algorithm
   varInfo := omodelInfo.varInfo;
   varInfo.numEquations := numEqns;
-  varInfo.numLinearSystems := numLinearSys;
-  varInfo.numNonLinearSystems := numNonLinearSys;
-  varInfo.numMixedSystems := numMixedLinearSys;
-  varInfo.numJacobians := numOfJacobians;
   omodelInfo.varInfo := varInfo;
-end addNumEqnsandNumofSystems;
+end addNumEqns;
 
 protected function getSystemIndexMap
   input SimCode.SimEqSystem inEqn;
@@ -1036,236 +1022,215 @@ algorithm
   end match;
 end setSystemIndexMap;
 
-protected function countandIndexAlgebraicLoops "
-  counts algebraic loops and updates index of the systems, further all
-  symbolic jacobians are collected and therefore we also need to seek
-  for algebraic loops."
-  input list<SimCode.SimEqSystem> inEqns;
-  input Integer inLinearSysIndex;
-  input Integer inNonLinSysIndex;
-  input Integer inMixedSysIndex;
-  input Integer inJacobianIndex;
-  input list<SimCode.JacobianMatrix> inSymJacs;
-  output list<SimCode.SimEqSystem> outEqns;
-  output Integer outLinearSysIndex;
-  output Integer outNonLinSysIndex;
-  output Integer outMixedSysIndex;
-  output Integer outJacobianIndex;
-  output list<SimCode.JacobianMatrix> outSymJacs;
-algorithm
-  (outEqns, outSymJacs, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex) := countandIndexAlgebraicLoopsWork(inEqns, inSymJacs, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, {}, {});
-end countandIndexAlgebraicLoops;
-
-protected function countandIndexAlgebraicLoopsWork "
-  counts algebraic loops and updates index of the systems, further all
-  symbolic jacobians are collected and therefore we also need to seek
-  for algebraic loops."
-  input list<SimCode.SimEqSystem> inEqns;
-  input list<SimCode.JacobianMatrix> inSymJacs;
-  input Integer inLinearSysIndex;
-  input Integer inNonLinSysIndex;
-  input Integer inMixedSysIndex;
-  input Integer inJacobianIndex;
-  input list<SimCode.SimEqSystem> inEqnsAcc;
-  input list<SimCode.JacobianMatrix> inSymJacsAcc;
-  output list<SimCode.SimEqSystem> outEqns;
-  output list<SimCode.JacobianMatrix> outSymJacs;
-  output Integer outLinearSysIndex;
-  output Integer outNonLinSysIndex;
-  output Integer outMixedSysIndex;
-  output Integer outJacobianIndex;
-algorithm
-  (outEqns, outSymJacs, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex) := match(inEqns, inSymJacs, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inEqnsAcc, inSymJacsAcc)
-    local
-      Integer index, index2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, nUnknowns, nUnknowns2;
-      list<SimCode.SimEqSystem> eqs, eqs2, rest, res, accEqs;
-      list<DAE.ComponentRef> crefs, crefs2;
-      SimCode.SimEqSystem eq, cont;
-      list<SimCodeVar.SimVar> discVars;
-      list<SimCode.SimEqSystem> discEqs;
-      list<SimCode.JacobianMatrix> symjacs, symjacs2, restSymJacs, accJac;
-      Option<SimCode.JacobianMatrix> optSymJac;
-      SimCode.JacobianMatrix symJac, symJac2;
-      Boolean partOfMixed,partOfMixed2;
-      list<SimCodeVar.SimVar> vars,vars2;
-      list<DAE.Exp> beqs,beqs2;
-      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac,simJac2;
-      list<DAE.ElementSource> sources,sources2;
-      Boolean homotopySupport, homotopySupport2;
-      Boolean mixedSystem, mixedSystem2, tornSystem, tornSystem2;
-
-    case ({}, {}, _, _, _, _, _, _)
-      then (listReverse(inEqnsAcc), inSymJacsAcc, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex);
-
-    case ({}, symJac::restSymJacs, _, _, _, _, _, _)
-      equation
-        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex);
-        symjacs = symJac::listAppend(symjacs,inSymJacsAcc);
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork({}, restSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, inEqnsAcc, symjacs);
-      then (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    // No dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, NONE(), homotopySupport, mixedSystem, tornSystem), NONE())::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, nUnknowns, NONE(), homotopySupport, mixedSystem, tornSystem), NONE())::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, SOME(symJac as SimCode.JAC_MATRIX(columns={})), homotopySupport, mixedSystem, tornSystem), NONE())::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, nUnknowns, SOME(symJac), homotopySupport, mixedSystem, tornSystem), NONE())::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, SOME(symJac), homotopySupport, mixedSystem, tornSystem), NONE())::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs,inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, nUnknowns, SOME(symJac), homotopySupport, mixedSystem, tornSystem), NONE())::inEqnsAcc, symJac::inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, NONE(), sources, _, nUnknowns), NONE())::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, NONE(), sources, inLinearSysIndex, nUnknowns), NONE())::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, SOME(symJac), sources, _, nUnknowns), NONE())::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
-        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs,inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, SOME(symJac), sources, inLinearSysIndex, nUnknowns), NONE())::inEqnsAcc, symJac::inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    // Dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, NONE(), homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, nUnknowns2, NONE(), homotopySupport2, mixedSystem2, tornSystem2)))::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, nUnknowns, NONE(), homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, nUnknowns2, NONE(), homotopySupport2, mixedSystem2, tornSystem2)))::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, SOME(symJac as SimCode.JAC_MATRIX(columns={})), homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, nUnknowns2, SOME(symJac2 as SimCode.JAC_MATRIX(columns={})), homotopySupport2, mixedSystem2, tornSystem2)))::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, nUnknowns, SOME(symJac), homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, nUnknowns2, SOME(symJac2), homotopySupport2, mixedSystem2, tornSystem2)))::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, SOME(symJac), homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, nUnknowns2, SOME(symJac2), homotopySupport2, mixedSystem2, tornSystem2)))::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
-        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs2,listAppend(symjacs,inSymJacs)), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, nUnknowns, SOME(symJac), homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, nUnknowns2, SOME(symJac2), homotopySupport2, mixedSystem2, tornSystem2)))::inEqnsAcc, symJac2::symJac::inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, NONE(), sources, _, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem2, vars2, beqs2, simJac2, eqs2, NONE(), sources2, _, nUnknowns2)))::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
-        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys+1, countNonLinSys, countMixedSys, countJacobians,  {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, NONE(), sources, inLinearSysIndex, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem2, vars2, beqs2, simJac2, eqs2, NONE(), sources2, inLinearSysIndex+1, nUnknowns2)))::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, SOME(symJac), sources, _, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem2, vars2, beqs2, simJac2, eqs2, SOME(symJac2), sources2, _, nUnknowns2)))::rest, _, _, _, _, _, _, _)
-      equation
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
-        (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys+1, countNonLinSys, countMixedSys, countJacobians,  {}, {});
-        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs2,listAppend(symjacs,inSymJacs)), countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, SOME(symJac), sources, inLinearSysIndex, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem2, vars2, beqs2, simJac2, eqs2, SOME(symJac2), sources2, inLinearSysIndex+1, nUnknowns2)))::inEqnsAcc, symJac2::symJac::inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case (SimCode.SES_MIXED(index, cont, discVars, discEqs, _)::rest, _, _, _, _, _, _, _)
-      equation
-        ({cont}, _, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork({cont}, inSymJacs, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, {}, {});
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, {}, countLinearSys, countNonLinSys, countMixedSys+1, countJacobians, SimCode.SES_MIXED(index, cont, discVars, discEqs, inMixedSysIndex)::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case (eq::rest, _, _, _, _, _, _, _)
-      equation
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, eq::inEqnsAcc, inSymJacsAcc);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-  end match;
-end countandIndexAlgebraicLoopsWork;
-
-protected function countandIndexAlgebraicLoopsSymJac "
-  helper function to countandIndexAlgebraicLoops"
-  input SimCode.JacobianMatrix inSymjac;
-  input Integer inLinearSysIndex;
-  input Integer inNonLinSysIndex;
-  input Integer inMixedSysIndex;
-  input Integer inJacobianIndex;
-  output SimCode.JacobianMatrix outSymjac;
-  output Integer outLinearSysIndex;
-  output Integer outNonLinSysIndex;
-  output Integer outMixedSysIndex;
-  output Integer outJacobianIndex;
-  output list<SimCode.JacobianMatrix> outSymJacs;
+protected function addAlgebraicLoopsModelInfo "
+Adds algebraic loops from list of SimEqSystem into ModelInfo
+and SimEqSystem equation algebraic system index."
+  input output list<SimCode.SimEqSystem> eqns;
+  input output SimCode.ModelInfo modelInfo;
+  output list<SimCode.JacobianMatrix> symJacs = {};
 protected
-  list<SimCode.JacobianColumn> columns;
-  list<SimCodeVar.SimVar> vars;
-  String name;
-  SimCode.SparsityPattern sparsity,sparsityT;
-  list<list<Integer>> colors;
-  Integer maxcolor, index, partIdx;
+  list<SimCode.SimEqSystem> resEqns = {};
 algorithm
-  SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, index, partIdx) := inSymjac;
-  (columns, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, outSymJacs) := countandIndexAlgebraicLoopsSymJacColumn(columns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, {});
-  outSymjac := SimCode.JAC_MATRIX(columns, vars, name, sparsity, sparsityT, colors, maxcolor, outJacobianIndex, partIdx);
-  outJacobianIndex := outJacobianIndex + 1;
-end countandIndexAlgebraicLoopsSymJac;
+  for eqn in eqns loop
+    eqn := match(eqn)
+      local
+        SimCode.NonlinearSystem nlSyst, altNlSyst;
+        Option<SimCode.NonlinearSystem> optNlSyst;
+        SimCode.LinearSystem linearSyst, altLinearSyst;
+        Option<SimCode.LinearSystem> optLinearSyst;
+        SimCode.JacobianMatrix tmpSymJac;
+        list<SimCode.JacobianMatrix> tmpSymJacs, tmpAdditionalSymJacs;
+        list<SimCode.SimEqSystem> eqs;
+        SimCode.SimEqSystem system;
+      // nonlinear case
+      case SimCode.SES_NONLINEAR(nlSystem=nlSyst as SimCode.NONLINEARSYSTEM(), alternativeTearing=optNlSyst) equation
 
-protected function countandIndexAlgebraicLoopsSymJacColumn "
-  helper function to countandIndexAlgebraicLoops"
-  input list<SimCode.JacobianColumn> inSymColumn;
-  input Integer inLinearSysIndex;
-  input Integer inNonLinSysIndex;
-  input Integer inMixedSysIndex;
-  input Integer inJacobianIndex;
-  input list<SimCode.JacobianMatrix> inSymJacs;
-  output list<SimCode.JacobianColumn> outSymColumn;
-  output Integer outLinearSysIndex;
-  output Integer outNonLinSysIndex;
-  output Integer outMixedSysIndex;
-  output Integer outJacobianIndex;
-  output list<SimCode.JacobianMatrix> outSymJacs;
+        (nlSyst, modelInfo, symJacs) = updateNonLinearSyst(nlSyst, modelInfo, symJacs);
+
+        // process the alternative system
+        if isSome(optNlSyst) then
+          altNlSyst = Util.getOption(optNlSyst);
+          (altNlSyst, modelInfo, symJacs) = updateNonLinearSyst(altNlSyst, modelInfo, symJacs);
+	        optNlSyst = SOME(altNlSyst);
+        end if;
+        system = SimCode.SES_NONLINEAR(nlSyst, optNlSyst);
+        modelInfo.nonLinearSystems = system::modelInfo.nonLinearSystems;
+      then system;
+
+      // linear case
+      case SimCode.SES_LINEAR(lSystem=linearSyst as SimCode.LINEARSYSTEM(), alternativeTearing=optLinearSyst) equation
+
+        (linearSyst, modelInfo, symJacs) = updateLinearSyst(linearSyst, modelInfo, symJacs);
+
+        // process the alternative system
+        if isSome(optLinearSyst) then
+          altLinearSyst = Util.getOption(optLinearSyst);
+          (altLinearSyst, modelInfo, symJacs) = updateLinearSyst(altLinearSyst, modelInfo, symJacs);
+          optLinearSyst = SOME(altLinearSyst);
+        end if;
+        system = SimCode.SES_LINEAR(linearSyst, optLinearSyst);
+        modelInfo.linearSystems = system::modelInfo.linearSystems;
+      then system;
+
+      else eqn;
+    end match;
+    resEqns := eqn::resEqns;
+  end for;
+  eqns := listReverse(resEqns);
+end addAlgebraicLoopsModelInfo;
+
+protected function updateNonLinearSyst
+"Helper function of addAlgebraicLoopsModelInfo
+ Updates nonlinear system indexes"
+  input output SimCode.NonlinearSystem inSyst = inSyst;
+  input output SimCode.ModelInfo modelInfo = modelInfo;
+  input output list<SimCode.JacobianMatrix> allSymJacs = allSymJacs;
+protected
+  SimCode.VarInfo varInfo = modelInfo.varInfo;
+  list<SimCode.SimEqSystem> eqs;
+  SimCode.JacobianMatrix tmpSymJac;
+  list<SimCode.JacobianMatrix> tmpSymJacs;
+  constant Boolean debug = false;
 algorithm
-  (outSymColumn, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, outSymJacs) := match(inSymColumn, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inSymJacs)
-    local
-    list<SimCode.JacobianColumn> rest, result, res1;
-    list<SimCode.SimEqSystem> eqns, eqns1;
-    list<SimCodeVar.SimVar> vars;
-    Integer nRows;
-    Integer countLinearSys, countNonLinSys, countMixedSys, countJacobians;
-    list<SimCode.JacobianMatrix> symJacs;
 
-    case ({}, _, _, _, _, _)
-    then ({}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inSymJacs);
+  // set system index and count
+  inSyst.indexNonLinearSystem := varInfo.numNonLinearSystems;
+  varInfo.numNonLinearSystems := varInfo.numNonLinearSystems+1;
+  modelInfo.varInfo := varInfo;
 
-    case (SimCode.JAC_COLUMN(eqns, vars, nRows)::rest, _, _, _, _, _) equation
-      (eqns1, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs) = countandIndexAlgebraicLoops(eqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, inSymJacs);
-      (res1, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs) = countandIndexAlgebraicLoopsSymJacColumn(rest, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs);
-      result = SimCode.JAC_COLUMN(eqns1, vars, nRows)::res1;
-    then (result, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symJacs);
-  end match;
-end countandIndexAlgebraicLoopsSymJacColumn;
+  // collect the jacobian
+  if isSome(inSyst.jacobianMatrix) then
+    tmpSymJac := Util.getOption(inSyst.jacobianMatrix);
+    // add only if the directional derivativ is available and
+    // not just the sparsty pattern
+    if not listEmpty(tmpSymJac.columns) then
+	    ({tmpSymJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({tmpSymJac}, modelInfo);
+	    inSyst.jacobianMatrix := SOME(tmpSymJac);
+	    allSymJacs := listAppend(tmpSymJacs, allSymJacs);
+	    allSymJacs := tmpSymJac::allSymJacs;
+    end if;
+  end if;
 
-protected function countandIndexAlgebraicLoopsClockPartitions "
+  // proceed inSyst.eqs
+  (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(inSyst.eqs, modelInfo);
+  inSyst.eqs := eqs;
+  allSymJacs := listAppend(tmpSymJacs, allSymJacs);
+
+  if debug then
+    print("Update nonlinear system " + intString(inSyst.indexNonLinearSystem) +
+          " collected Jacobians: " + intString(listLength(allSymJacs)) + "\n");
+  end if;
+end updateNonLinearSyst;
+
+protected function updateLinearSyst
+"Helper function of addAlgebraicLoopsModelInfo
+ Updates linear system indexes"
+  input output SimCode.LinearSystem inSyst = inSyst;
+  input output SimCode.ModelInfo modelInfo = modelInfo;
+  input output list<SimCode.JacobianMatrix> allSymJacs = allSymJacs;
+protected
+  SimCode.VarInfo varInfo = modelInfo.varInfo;
+  list<SimCode.SimEqSystem> eqs;
+  SimCode.JacobianMatrix tmpSymJac;
+  list<SimCode.JacobianMatrix> tmpSymJacs;
+  constant Boolean debug = false;
+algorithm
+
+  // set system index and count
+  inSyst.indexLinearSystem := varInfo.numLinearSystems;
+  varInfo.numLinearSystems := varInfo.numLinearSystems+1;
+  modelInfo.varInfo := varInfo;
+
+  // collect the jacobian
+  if isSome(inSyst.jacobianMatrix) then
+    tmpSymJac := Util.getOption(inSyst.jacobianMatrix);
+    // add only if the directional derivativ is available and
+    // not just the sparsty pattern
+    if not listEmpty(tmpSymJac.columns) then
+      ({tmpSymJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({tmpSymJac}, modelInfo);
+      inSyst.jacobianMatrix := SOME(tmpSymJac);
+      allSymJacs := listAppend(tmpSymJacs, allSymJacs);
+      allSymJacs := tmpSymJac::allSymJacs;
+    end if;
+  end if;
+
+  // proceed inSyst.eqs
+  (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(inSyst.residual, modelInfo);
+  inSyst.residual := eqs;
+  allSymJacs := listAppend(tmpSymJacs, allSymJacs);
+
+  if debug then
+    print("Update linear system " + intString(inSyst.indexLinearSystem) +
+          " collected Jacobians: " + intString(listLength(allSymJacs)) + "\n");
+  end if;
+end updateLinearSyst;
+
+protected function addAlgebraicLoopsModelInfoSymJacs "
+Adds algebraic loops from list of SimEqSystem into ModelInfo
+and SimEqSystem equation algebraic system index."
+  input output list<SimCode.JacobianMatrix> symjacs;
+  input output SimCode.ModelInfo modelInfo;
+  output list<SimCode.JacobianMatrix> outSymJacsInSymJacs = {};
+protected
+  SimCode.JacobianColumn column;
+  list<SimCode.SimEqSystem> eqs;
+  SimCode.VarInfo varInfo;
+  list<SimCode.JacobianMatrix> tmpSymJacs;
+  list<SimCode.JacobianMatrix> outSymJacs = {};
+  constant Boolean debug = false;
+algorithm
+  for symjac in symjacs loop
+    varInfo := modelInfo.varInfo;
+    symjac.jacobianIndex := varInfo.numJacobians;
+    varInfo.numJacobians := varInfo.numJacobians + 1;
+    modelInfo.varInfo := varInfo;
+    if debug then
+      print("Collect Jacobian " + symjac.matrixName + " and set index to: " + intString(symjac.jacobianIndex) + "\n");
+    end if;
+  try
+    column::{} := symjac.columns;
+    (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(column.columnEqns, modelInfo);
+    outSymJacsInSymJacs := listAppend(tmpSymJacs, outSymJacsInSymJacs);
+    column.columnEqns := eqs;
+    symjac.columns := {column};
+    outSymJacs := symjac::outSymJacs;
+  else
+    outSymJacs := symjac::outSymJacs;
+  end try;
+  end for;
+  symjacs := listReverse(outSymJacs);
+  outSymJacsInSymJacs := listReverse(outSymJacsInSymJacs);
+end addAlgebraicLoopsModelInfoSymJacs;
+
+protected function addAlgebraicLoopsModelInfoStateSets
+" function to collect jacobians for statesets"
+  input list<SimCode.StateSet> inSets;
+  input SimCode.ModelInfo inModelInfo;
+  output list<SimCode.StateSet> outSets = {};
+  output SimCode.ModelInfo modelInfo = inModelInfo;
+  output list<SimCode.JacobianMatrix> outSymJacs = {};
+protected
+  SimCode.JacobianMatrix symJac;
+  list<SimCode.JacobianMatrix> tmpSymJacs;
+algorithm
+  for set in inSets loop
+    ({symJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({set.jacobianMatrix}, modelInfo);
+    outSymJacs := listAppend(tmpSymJacs, outSymJacs);
+    set.jacobianMatrix := symJac;
+    outSymJacs := symJac::outSymJacs;
+    outSets := set::outSets;
+  end for;
+  outSets := listReverse(outSets);
+  outSymJacs := listReverse(outSymJacs);
+end addAlgebraicLoopsModelInfoStateSets;
+
+protected function addAlgebraicLoopsClockPartitions "
   function to process clockPartitions for symbolic jacobians"
   input list<SimCode.ClockedPartition> inColockPartition;
-  input Integer inLinearSysIndex;
-  input Integer inNonLinSysIndex;
-  input Integer inMixedSysIndex;
-  input Integer inJacobianIndex;
-  input list<SimCode.JacobianMatrix> inSymJacs;
+  input SimCode.ModelInfo inModelInfo;
   output list<SimCode.ClockedPartition> outColockPartition = {};
-  output Integer outLinearSysIndex = inLinearSysIndex;
-  output Integer outNonLinSysIndex = inNonLinSysIndex;
-  output Integer outMixedSysIndex = inMixedSysIndex;
-  output Integer outJacobianIndex = inJacobianIndex;
-  output list<SimCode.JacobianMatrix> outSymJacs = inSymJacs;
+  output SimCode.ModelInfo modelInfo = inModelInfo;
+  output list<SimCode.JacobianMatrix> outSymJacs = {};
 protected
   SimCode.SubPartition subPartitionTmp;
   SimCode.ClockedPartition clockPartitionTmp;
@@ -1278,8 +1243,7 @@ algorithm
     subPartitionsTmp := {};
     for subPartion in clockPartion.subPartitions loop
       clockIndex := clockIndex + 1;
-      (equations, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, tmpJacs) :=
-       countandIndexAlgebraicLoops(subPartion.equations, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outJacobianIndex, {});
+      (equations, modelInfo, tmpJacs) := addAlgebraicLoopsModelInfo(subPartion.equations, modelInfo);
       tmpJacs := list(rewriteJacPartIdx(a,clockIndex) for a in tmpJacs);
       outSymJacs := listAppend(tmpJacs, outSymJacs);
       subPartitionTmp := SimCode.SUBPARTITION(
@@ -1294,7 +1258,7 @@ algorithm
     outColockPartition := clockPartitionTmp::outColockPartition;
   end for;
   outColockPartition := listReverse(outColockPartition);
-end countandIndexAlgebraicLoopsClockPartitions;
+end addAlgebraicLoopsClockPartitions;
 
 protected function rewriteJacPartIdx
   input SimCode.JacobianMatrix inJac;
@@ -4359,47 +4323,6 @@ algorithm
   end matchcontinue;
 end createStateSetsSets;
 
-protected function indexStateSets
-" function to collect jacobians for statesets"
-  input list<SimCode.StateSet> inSets;
-  input list<SimCode.JacobianMatrix> inSymJacs;
-  input Integer iNumLin;
-  input Integer iNumNonLin;
-  input Integer iNumMixed;
-  input Integer iNumJac;
-  input list<SimCode.StateSet> inSetsAccum;
-  input list<SimCode.JacobianMatrix> inSymAccumInternal;
-  output list<SimCode.StateSet> outSets;
-  output list<SimCode.JacobianMatrix> outSymJacs;
-  output list<SimCode.JacobianMatrix> outSymAccumInternal;
-  output Integer oNumLin;
-  output Integer oNumNonLin;
-  output Integer oNumMixed;
-  output Integer oNumJac;
-algorithm
-  (outSets, outSymJacs, outSymAccumInternal, oNumLin, oNumNonLin, oNumMixed, oNumJac) := match(inSets, inSymJacs, iNumLin, iNumNonLin, iNumMixed, iNumJac, inSetsAccum, inSymAccumInternal)
-    local
-      list<SimCode.StateSet> sets;
-      SimCode.StateSet set;
-      SimCode.JacobianMatrix symJac;
-      list<SimCode.JacobianMatrix> symJacs, symJacsInternal;
-      Integer numJac, numLin, numNonLin, numMixed;
-      Integer index;
-      Integer nCandidates;
-      Integer nStates;
-      list<DAE.ComponentRef> states;
-      list<DAE.ComponentRef> statescandidates;
-      DAE.ComponentRef crA;
-    case ({}, _, _, _, _, _, _, _) then (listReverse(inSetsAccum), listReverse(inSymJacs), inSymAccumInternal, iNumLin, iNumNonLin, iNumMixed, iNumJac);
-    case((SimCode.SES_STATESET(index=index, nCandidates=nCandidates, nStates=nStates, states=states, statescandidates=statescandidates, crA=crA, jacobianMatrix=symJac))::sets, _, _, _, _, _, _, _)
-    equation
-      (symJac, numLin, numNonLin, numMixed, numJac, symJacsInternal) = countandIndexAlgebraicLoopsSymJac(symJac, iNumLin, iNumNonLin, iNumMixed, iNumJac);
-      outSymAccumInternal = listAppend(inSymAccumInternal, symJacsInternal);
-      (outSets, outSymJacs, outSymAccumInternal, oNumLin, oNumNonLin, oNumMixed, oNumJac) = indexStateSets(sets, symJac::inSymJacs, numLin, numNonLin, numMixed, numJac, SimCode.SES_STATESET(index, nCandidates, nStates, states, statescandidates, crA, symJac)::inSetsAccum, outSymAccumInternal);
-     then (outSets, outSymJacs, outSymAccumInternal, oNumLin, oNumNonLin, oNumMixed, oNumJac);
-  end match;
-end indexStateSets;
-
 // =============================================================================
 // section to create SimCode symbolic jacobian from BackendDAE.Equations
 //
@@ -6965,7 +6888,7 @@ algorithm
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels, arrayLength(dlow.shared.partitionsInfo.basePartitions),
-                                   arrayLength(dlow.shared.partitionsInfo.subPartitions), hasLargeEqSystems);
+                                   arrayLength(dlow.shared.partitionsInfo.subPartitions), hasLargeEqSystems, {}, {});
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();
@@ -10516,20 +10439,11 @@ protected function collectAllFiles
 protected
   SimCode.ModelInfo modelInfo;
   SimCode.Files files = {} "all the files from SourceInfo and DAE.ELementSource";
-  Absyn.Path name;
-  String description, directory;
-  SimCode.VarInfo varInfo;
-  SimCodeVar.SimVars vars;
-  list<SimCodeFunction.Function> functions;
-  list<String> labels;
-  Integer nClocks, nSubClocks;
-  Boolean hasLargeLinearEquationSystems;
 algorithm
   if not Config.acceptMetaModelicaGrammar() then
     modelInfo := outSimCode.modelInfo;
-    SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, nClocks, nSubClocks, hasLargeLinearEquationSystems) := modelInfo;
-    files := getFilesFromSimVars(vars, files);
-    files := getFilesFromFunctions(functions, files);
+    files := getFilesFromSimVars(modelInfo.vars, files);
+    files := getFilesFromFunctions(modelInfo.functions, files);
     files := getFilesFromSimEqSystems( outSimCode.allEquations :: outSimCode.startValueEquations :: outSimCode.nominalValueEquations
                                        :: outSimCode.minValueEquations :: outSimCode.maxValueEquations :: outSimCode.parameterEquations
                                        :: outSimCode.removedEquations :: outSimCode.algorithmAndEquationAsserts
@@ -10538,7 +10452,6 @@ algorithm
     files := getFilesFromExtObjInfo(outSimCode.extObjInfo, files);
     files := getFilesFromJacobianMatrixes(outSimCode.jacobianMatrixes, files);
     files := List.sort(files, greaterFileInfo);
-    modelInfo := SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels, nClocks, nSubClocks, hasLargeLinearEquationSystems);
     outSimCode.modelInfo := modelInfo;
   end if;
 end collectAllFiles;
