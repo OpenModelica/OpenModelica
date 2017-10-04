@@ -243,6 +243,7 @@ void mmc_catch_dummy_fn();
 #define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;}
 #endif
 #define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)}
+#define MMC_RESTORE_INTERNAL(X) threadData->X = old_jumper;
 
 #define MMC_THROW_INTERNAL() {longjmp(*threadData->mmc_jumper,1);}
 #define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}

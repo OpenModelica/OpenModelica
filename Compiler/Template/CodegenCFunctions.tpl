@@ -6740,11 +6740,10 @@ case exp as MATCHEXPRESSION(__) then
           <%varDeclsInner%>
           <%preExpInner%>
           <%match exp.matchType
-          case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
+          case MATCH(switch=SOME(_)) then '{'
           else
           <<
           <%ix%> = 0;
-          <%done%> = 0;
           <% match exp.matchType case MATCHCONTINUE(__) then
           /* One additional MMC_TRY_INTERNAL() for each caught exceptionOne additional MMC_TRY_INTERNAL() for each caught exception
            * You would expect you could do the setjmp only once, but some counters I guess are stored in registers and would need to become volatile
@@ -6756,33 +6755,49 @@ case exp as MATCHEXPRESSION(__) then
           threadData->mmc_jumper = &new_mmc_jumper;
           >>
           %>
-          for (; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {
+          for (; <%ix%> < <%listLength(exp.cases)%>; <%ix%>++) {
           >>
           %>
             switch (MMC_SWITCH_CAST(<%ix%>)) {
-            <%daeExpMatchCases(exp.cases, tupleAssignExps, exp.matchType, ix, res, startIndexOutputs, prefix, startIndexInputs, exp.inputs, done, context, &varDecls, &auxFunction, System.tmpTickIndexReserve(1,0) /* Returns the current MM tick */)%>
+            <%daeExpMatchCases(exp.cases, tupleAssignExps, exp.matchType, ix, res, startIndexOutputs, prefix, startIndexInputs, exp.inputs, context, &varDecls, &auxFunction, System.tmpTickIndexReserve(1,0) /* Returns the current MM tick */)%>
             }
             goto <%prefix%>_end;
             <%prefix%>_end: ;
           }<%let() = codegenPopTryThrowIndex() ""%>
-          goto <%goto%>;
-          <%goto%>:;
           <% match exp.matchType case MATCHCONTINUE(__) then
+
           <<
+          goto <%goto%>;
+          <%prefix%>_done:
+          MMC_RESTORE_INTERNAL(mmc_jumper);
+          goto <%prefix%>_done2;
+          <%goto%>:;
           MMC_CATCH_INTERNAL(mmc_jumper);
-          if (!<%done%> && ++<%ix%> < <%listLength(exp.cases)%>) {
+          if (++<%ix%> < <%listLength(exp.cases)%>) {
             goto <%prefix%>_top;
           }
+          <%generateThrow()%>;
+          <%prefix%>_done2:;
           >>
+
+          else
+
+          <<
+          goto <%goto%>;
+          <%goto%>:;
+          <%generateThrow()%>;
+          goto <%prefix%>_done;
+          <%prefix%>_done:;
+          >>
+
           %>
-          if (!<%done%>) <%generateThrow()%>;
         }
       }
       >>
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Text done, Context context, Text &varDecls, Text &auxFunction, Integer startTmpTickIndex)
+template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Context context, Text &varDecls, Text &auxFunction, Integer startTmpTickIndex)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
   let() = System.tmpTickSetIndex(startTmpTickIndex,1)
@@ -6857,8 +6872,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     <%modelicaLine(c.resultInfo)%>
     <% if c.result then '<%preRes%><%caseRes%>' else '<%generateThrow()%>;<%\n%>' %>
     <%endModelicaLine()%>
-    <%done%> = 1;
-    break;
+    goto <%prefix%>_done;
   }<%\n%>
   >>
 end daeExpMatchCases;
