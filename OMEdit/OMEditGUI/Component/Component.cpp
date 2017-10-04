@@ -1580,7 +1580,11 @@ void Component::createClassShapes()
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && mComponentType != Component::Port) {
+    /* Ticket:4505
+     * If extends class is connector then don't use the diagram annotation.
+     */
+    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
+        mComponentType != Component::Port && mComponentType != Component::Extend) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
         pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
