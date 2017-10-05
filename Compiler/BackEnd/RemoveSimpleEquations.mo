@@ -3941,13 +3941,33 @@ protected function replaceEquationTraverser "
 algorithm
   (outEq,outTpl) := match (inEq,inTpl)
     local
-      BackendDAE.Equation e;
+      BackendDAE.Equation e, eqn;
+      DAE.Exp lhs, rhs, res;
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Equation> eqns, eqns1;
       Boolean b, b1;
     case (e, (repl, eqns, b))
       equation
         (eqns1, b1) = BackendVarTransform.replaceEquations({e}, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        if BackendEquation.isInitialEquation(e) and BackendEquation.isEquation(e) then
+          eqn = listHead(eqns1);
+
+          lhs = BackendEquation.getEquationLHS(eqn);
+          rhs = BackendEquation.getEquationRHS(eqn);
+          res = Expression.createResidualExp(lhs, rhs);
+
+          if Expression.isConst(res) then
+            if Expression.isZero(res) then
+              Error.addCompilerNotification("The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: " + BackendDump.equationString(e) + (if b1 then " -> " + BackendDump.equationString(eqn) else ""));
+              eqns1 = {};
+              b1 = true;
+            else
+              Error.addCompilerWarning("The following initial equation is inconsistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: " + BackendDump.equationString(e) + (if b1 then " -> " + BackendDump.equationString(eqn) else ""));
+              eqns1 = {};
+              b1 = true;
+            end if;
+          end if;
+        end if;
         eqns = listAppend(eqns1, eqns);
       then (e, (repl, eqns, b or b1));
   end match;

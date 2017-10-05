@@ -268,7 +268,7 @@ algorithm
         Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
       end if;
       if b2 then
-        Error.addCompilerWarning("Assuming redundant initial conditions for the following " + intString(listLength(removedEqns)) + " initial equations:\n" + warnAboutEqns2(removedEqns));
+        Error.addMessage(Error.INITIALIZATION_OVER_SPECIFIED, {"The following " + intString(listLength(removedEqns)) + " initial equations are redundant, so they are removed from the initialization sytem:\n" + warnAboutEqns2(removedEqns)});
       end if;
     else
       if b1 then
@@ -1692,8 +1692,7 @@ algorithm
 
     outMarkedEqns := downCompsMarker(listReverse(inFlatComps), inVecVarToEq, inM, inFlatComps, markedEqns, inLoopListComps);
   else
-    // TODO: change the message
-    Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
+    Error.addCompilerNotification("It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     fail();
   end try;
 end compsMarker;
@@ -1731,7 +1730,7 @@ algorithm
     then markedEqns;
 
     else equation
-      Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
+      Error.addCompilerNotification("It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     then fail();
   end matchcontinue;
 end compsMarker2;
@@ -1859,7 +1858,7 @@ algorithm
       //listParameter = parameterCheck(exp);
       //true = listEmpty(listParameter);
       eqn = BackendEquation.get(inEqnsOrig, inUnassignedEqn);
-      Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
+      // Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
     then ({inUnassignedEqn}, true, {});
 
     case _ equation
@@ -1911,7 +1910,7 @@ algorithm
       false = listEmpty(listVar);
 
       _ = BackendEquation.get(inEqnsOrig, inUnassignedEqn);
-      Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
+      Error.addCompilerNotification("It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     then ({}, false, {});
 
     case _ equation
