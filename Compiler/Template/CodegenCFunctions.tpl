@@ -6769,6 +6769,7 @@ case exp as MATCHEXPRESSION(__) then
           <<
           goto <%goto%>;
           <%prefix%>_done:
+          (void)<%ix%>;<%/* When we skip cases, the static analyzer thinks that is a dead assignment even if longjmp is in play. */%>
           MMC_RESTORE_INTERNAL(mmc_jumper);
           goto <%prefix%>_done2;
           <%goto%>:;
