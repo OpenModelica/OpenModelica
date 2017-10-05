@@ -9188,7 +9188,7 @@ algorithm
       eqs := arrayGet(mT, i);
       var := BackendVariable.getVarAt(varsArray, i);
       info := var.source.info;
-      if listLength(eqs) == 0 then
+      if listEmpty(eqs) then
         Error.addSourceMessage(Error.VAR_NO_REMAINING_EQN, {
           ComponentReference.printComponentRefStr(var.varName),
           stringAppendList(list("\n  Equation " + String(eq) + ": " + BackendDump.equationString(BackendEquation.get(eqsArray, eq)) + ", which needs to solve for " + stringDelimitList(list(ComponentReference.printComponentRefStr(Util.tuple21(tpl)) for tpl in arrayGet(solvedEqs, eq)), ", ") for eq in arrayGet(mTOrig, i)))

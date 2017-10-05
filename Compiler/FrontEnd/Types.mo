@@ -427,24 +427,19 @@ algorithm
       Type at;
       DAE.Dimensions ad;
       DAE.Dimension dim;
-      Integer ll;
       list<DAE.Var> vars;
       ClassInf.State CIS;
       DAE.EqualityConstraint ec;
 
     // convert just the array!
-    case DAE.T_ARRAY(at,dim::ad)
-      equation
-        ll = listLength(ad);
-        true = (ll == 0);
+    case DAE.T_ARRAY(at,{dim})
+  equation
         ty = expTypetoTypesType(at);
         tty = DAE.T_ARRAY(ty,{dim});
       then
         tty;
     case DAE.T_ARRAY(at,dim::ad)
       equation
-        ll = listLength(ad);
-        true = (ll > 0);
         ty = expTypetoTypesType(DAE.T_ARRAY(at,ad));
         tty = DAE.T_ARRAY(ty,{dim});
       then

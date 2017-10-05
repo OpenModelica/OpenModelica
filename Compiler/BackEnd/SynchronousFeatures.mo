@@ -93,7 +93,7 @@ protected
 algorithm
   (clockedSysts, contSysts) := List.splitOnTrue(inDAE.eqs, BackendDAEUtil.isClockedSyst);
 
-  if listLength(clockedSysts) > 0 then
+  if not listEmpty(clockedSysts) then
     shared := inDAE.shared;
 
     (clockedSysts, shared) := treatClockedStates(clockedSysts, shared);
@@ -124,7 +124,7 @@ algorithm
   (clockedSysts, systs) := List.splitOnTrue(inDAE.eqs, BackendDAEUtil.isClockedSyst);
   shared := inDAE.shared;
 
-  if listLength(systs) > 0 then
+  if not listEmpty(systs) then
     BackendDAE.DAE({syst}, shared) := BackendDAEOptimize.collapseIndependentBlocks(BackendDAE.DAE(systs, shared));
     (systs, clockedSysts1, unpartRemEqs) := baseClockPartitioning(syst, shared);
     assert(listLength(clockedSysts1) == 0, "Get clocked system in SynchronousFeatures.addContVarsEqs");

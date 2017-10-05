@@ -496,7 +496,7 @@ protected
    algorithm
        lst:=stringSplitAtChar(inString,delim);
        lst2:=List.map(lst, stringInt);
-       if(intGt(listLength(lst2), 0)) then
+       if not listEmpty(lst2) then
          i := List.fold(lst2,intMul,1);
        else
          i := 0;

@@ -890,7 +890,7 @@ protected function setJacobianVars "author: unknown
 protected
   SimCodeVar.SimVars vars;
 algorithm
-  if listLength(iJacobianVars) > 0 then
+  if not listEmpty(iJacobianVars) then
     vars := oModelInfo.vars;
     vars.jacobianVars := iJacobianVars;
     oModelInfo.vars := vars;

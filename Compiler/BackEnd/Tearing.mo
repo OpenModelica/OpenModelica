@@ -377,8 +377,10 @@ protected function getUserTearingSet
   output list<Integer> userResidualsThisComponent={};
 protected
   Integer i=1, start, end_;
+  Integer len;
 algorithm
-  while i < listLength(userTVars) loop
+  len := listLength(userTVars);
+  while i < len loop
       if intEq(listGet(userTVars,i),strongComponentIndex) then
         start := i+2;
         end_ := i + 1 + listGet(userTVars, i+1);
@@ -394,7 +396,8 @@ algorithm
   end while;
   if not listEmpty(userTvarsThisComponent) then
     i := 1;
-    while i < listLength(userResiduals) loop
+    len := listLength(userResiduals);
+    while i < len loop
         if intEq(listGet(userResiduals,i),strongComponentIndex) then
           start := i+2;
           end_ := i + 1 + listGet(userResiduals, i+1);

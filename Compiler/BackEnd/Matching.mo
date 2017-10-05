@@ -249,7 +249,7 @@ protected
 algorithm
   for i in 1:nEqns loop
     vars := m[i];
-    while not success and (listLength(vars) > 0) loop
+    while not success and not listEmpty(vars) loop
       j::vars := vars;
       // negative entries in adjacence matrix belong to states!!!
       if (j>0 and ass1[j] <= 0) then
