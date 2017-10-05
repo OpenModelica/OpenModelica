@@ -498,6 +498,16 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
   }
   mpArchivedSimulationItem->setStatus(Helper::finished);
+  // remove the generated files
+  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
+    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
+    QString outputFile = mSimulationOptions.getOutputFileName();
+    foreach (QString fileName, mGeneratedFilesList) {
+      if (QFile::exists(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName))) {
+        QFile::remove(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName));
+      }
+    }
+  }
 }
 
 /*!
@@ -590,16 +600,6 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   mpCancelButton->setEnabled(false);
   MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
-  // remove the generated files
-  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
-    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-    QString outputFile = mSimulationOptions.getOutputFileName();
-    foreach (QString fileName, mGeneratedFilesList) {
-      if (QFile::exists(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName))) {
-        QFile::remove(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName));
-      }
-    }
-  }
 }
 
 /*!
