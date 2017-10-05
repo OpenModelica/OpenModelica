@@ -5,6 +5,7 @@
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
+setCommandLineOptions("-d=initialization"); getErrorString();
 buildModel(OverdeterminedInitialization.Fluid.TwoVolumesFullInitial); getErrorString();
 
 // Result:
@@ -12,9 +13,13 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesFullInitial); getErrorSt
 // ""
 // true
 // ""
+// true
+// ""
 // {"OverdeterminedInitialization.Fluid.TwoVolumesFullInitial","OverdeterminedInitialization.Fluid.TwoVolumesFullInitial_init.xml"}
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: V1.medium.p = V1.p_start (V2.p_start = V1.p_start)
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          V1.medium.p = V1.p_start.
+// Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
+//          V1.ports[2].m_flow:VARIABLE(flow=true min = -100000.0 max = 100000.0 unit = "kg/s" )  "Mass flow rate from the connection point into the component" type: Real  [2]
 // "
 // endResult

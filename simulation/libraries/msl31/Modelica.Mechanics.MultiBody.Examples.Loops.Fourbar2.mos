@@ -24,7 +24,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 // "
 // end SimulationResult;
 // "[Modelica 3.1/Mechanics/MultiBody/Joints.mo:2345:5-2348:81:writable] Warning: The parameter universalSpherical.rodLength has fixed = false and a binding equation universalSpherical.rodLength = 1.048808848170152, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1.
-// Notification: It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "

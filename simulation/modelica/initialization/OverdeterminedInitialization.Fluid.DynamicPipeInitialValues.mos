@@ -5,9 +5,12 @@
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
+setCommandLineOptions("-d=initialization"); getErrorString();
 simulate(OverdeterminedInitialization.Fluid.DynamicPipeInitialValues); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true
@@ -19,8 +22,9 @@ simulate(OverdeterminedInitialization.Fluid.DynamicPipeInitialValues); getErrorS
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: The following equation is consistent and got removed from the initialization problem: pipe.mediums[1].p = 10000000.0
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          m_flow_initial:DISCRETE(unit = "kg/s" fixed = false )  type: Real
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          pipe.mediums[1].p = 10000000.0.
 // "
 // endResult

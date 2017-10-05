@@ -5,6 +5,7 @@
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
+setCommandLineOptions("-d=initialization"); getErrorString();
 buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent); getErrorString();
 
 // Result:
@@ -12,9 +13,12 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial
 // ""
 // true
 // ""
+// true
+// ""
 // {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent_init.xml"}
 // "Error: The initialization problem is inconsistent due to the following equation: x1 = 0.0 (1.0 = 0.0)
-// Notification: The following equation is consistent and got removed from the initialization problem: v1 = 0.0
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization sytem:
+//          x1 = 0.0
+//          v1 = 0.0.
 // "
 // endResult

@@ -5,6 +5,7 @@
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
+setCommandLineOptions("-d=initialization"); getErrorString();
 buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature); getErrorString();
 
 // Result:
@@ -12,9 +13,14 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyState
 // ""
 // true
 // ""
+// true
+// ""
 // {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature_init.xml"}
-// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.p1 = 0.0
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          $DER.p1 = 0.0.
+// Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
+//          T1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
+//          T2:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
+//          p2:VARIABLE(stateSelect=StateSelect.prefer )  type: Real
 // "
 // endResult

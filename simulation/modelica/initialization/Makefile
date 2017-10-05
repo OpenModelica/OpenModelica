@@ -74,6 +74,7 @@ OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState.mos \
 OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent.mos \
 OverdeterminedInitialization.Fluid.TwoVolumesFullInitial.mos \
 OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperature.mos \
+redundantInitialEquations.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

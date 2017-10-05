@@ -5,6 +5,7 @@
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
+setCommandLineOptions("-d=initialization"); getErrorString();
 buildModel(OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial); getErrorString();
 
 // Result:
@@ -12,8 +13,11 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateIniti
 // ""
 // true
 // ""
+// true
+// ""
 // {"OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial","OverdeterminedInitialization.Fluid.DynamicPipesSeriesSteadyStateInitial_init.xml"}
-// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.pipe1.mediums[5].p = 0.0
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: der(pipe1.mediums[1].p) = 0.0 -> 0.0 = 0.0
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          $DER.pipe1.mediums[5].p = 0.0.
 // "
 // endResult
