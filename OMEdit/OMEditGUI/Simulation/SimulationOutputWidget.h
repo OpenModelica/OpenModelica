@@ -98,6 +98,7 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
   QTabWidget *mpGeneratedFilesTabWidget;
+  QList<QString> mGeneratedFilesList;
   SimulationOutputHandler *mpSimulationOutputHandler;
   bool mIsOutputStructured;
   QTextBrowser *mpSimulationOutputTextBrowser;
