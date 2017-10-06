@@ -1000,7 +1000,7 @@ algorithm
     then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), NONE());
 
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, _, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem2, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, _, nUnknowns2))), _) equation
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, _, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, _, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, _, nUnknowns2))), _) equation
       sysIndex = inSysIndexMap[index];
       sysIndex2 = inSysIndexMap[index2];
     then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, sysIndex2, nUnknowns2)));
@@ -1051,7 +1051,7 @@ algorithm
         if isSome(optNlSyst) then
           altNlSyst = Util.getOption(optNlSyst);
           (altNlSyst, modelInfo, symJacs) = updateNonLinearSyst(altNlSyst, modelInfo, symJacs);
-	        optNlSyst = SOME(altNlSyst);
+          optNlSyst = SOME(altNlSyst);
         end if;
         system = SimCode.SES_NONLINEAR(nlSyst, optNlSyst);
         modelInfo.nonLinearSystems = system::modelInfo.nonLinearSystems;
@@ -1104,10 +1104,10 @@ algorithm
     // add only if the directional derivativ is available and
     // not just the sparsty pattern
     if not listEmpty(tmpSymJac.columns) then
-	    ({tmpSymJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({tmpSymJac}, modelInfo);
-	    inSyst.jacobianMatrix := SOME(tmpSymJac);
-	    allSymJacs := listAppend(tmpSymJacs, allSymJacs);
-	    allSymJacs := tmpSymJac::allSymJacs;
+      ({tmpSymJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({tmpSymJac}, modelInfo);
+      inSyst.jacobianMatrix := SOME(tmpSymJac);
+      allSymJacs := listAppend(tmpSymJacs, allSymJacs);
+      allSymJacs := tmpSymJac::allSymJacs;
     end if;
   end if;
 
@@ -1655,7 +1655,7 @@ algorithm
         // block is dynamic, belong in dynamic section
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
 
-        (equations1, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
+        (_, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
           createOdeSystem(true and createAlgebraicEquations, false, syst, shared, comp, uniqueEqIndex, tempvars, sccIndex, eqSccMapping, backendMapping);
         //eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
 
@@ -4511,7 +4511,7 @@ protected function createJacobianLinearCode
   output list<SimCode.JacobianMatrix> res = {};
   output Integer ouniqueEqIndex;
 algorithm
-  (res,ouniqueEqIndex) := matchcontinue (inSymjacs, inModelInfo, iuniqueEqIndex)
+  (res,ouniqueEqIndex) := match (inSymjacs, inModelInfo, iuniqueEqIndex)
     local
       SimCode.HashTableCrefToSimVar crefSimVarHT;
       SimCode.JacobianMatrix tmpJac;
@@ -4524,7 +4524,7 @@ algorithm
         (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, {"A", "B", "C", "D"}, {});
         // _ = Flags.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
-  end matchcontinue;
+  end match;
 end createJacobianLinearCode;
 
 protected function checkForEmptyBDAE
@@ -7973,7 +7973,7 @@ algorithm
     then s;
 
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac), SOME(SimCode.LINEARSYSTEM(indexLinearSystem=_))))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac), SOME(SimCode.LINEARSYSTEM())))
       equation
         s = "strict set:\n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"\tvariables:\n\t"+stringDelimitList(List.map(vars,simVarString),"\t\n");
@@ -8071,7 +8071,7 @@ algorithm
     then ();
 
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(residual=residual, jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(jacobianMatrix=jac, simJac=simJac), SOME(SimCode.LINEARSYSTEM(index=idx2,indexLinearSystem=idxLS2, residual=residual2, jacobianMatrix=jac2, simJac=simJac2))))
       equation
         print(simEqSystemString(eqSysIn));
         print("\n\tsimJac:\n");
@@ -8093,7 +8093,7 @@ algorithm
     then ();
 
     // dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(jacobianMatrix=jac), SOME(SimCode.NONLINEARSYSTEM(index=idx2,indexNonLinearSystem=idxNLS2,jacobianMatrix=jac2,eqs=eqs2, crefs=crefs2))))
       equation
         print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);

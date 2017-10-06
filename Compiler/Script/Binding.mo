@@ -229,15 +229,15 @@ algorithm
     list<Client> cls;
     list<Provider> prvs;
     list<Preferred> pref;
-    case SCode.CLASS("Modelica", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
+    case SCode.CLASS("Modelica", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(_, _,_,_,_,_,_,_), _, _)
       equation
       print("**** Ignoring Standard Modelica library \n");
       then {};
-     case SCode.CLASS("OpenModelica", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
+     case SCode.CLASS("OpenModelica", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(_, _,_,_,_,_,_,_), _, _)
       equation
       print("**** Ignoring Open Modelica library \n");
       then {};
-     case SCode.CLASS("Complex", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
+     case SCode.CLASS("Complex", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(_, _,_,_,_,_,_,_), _, _)
       equation
       print("**** Ignoring Complex library \n");
       then {};
@@ -325,7 +325,7 @@ output Absyn.Class out_vmodel;
    list<tuple<Absyn.Exp, String>>  out_es;
    Absyn.Exp exp, new_exp;
    Absyn.Class  out_class;
-    case CLIENT_E(_, typeSpec, rootType, _, iname, predecessors,
+    case CLIENT_E(_, typeSpec, rootType, _, iname, _,
       MEDIATOR(_, template, _, providers, {})::_) /* no preferred bindings indicated */
       equation
         print("... infer binding " + Dump.unparseTypeSpec(typeSpec) + "     " + Dump.unparseTypeSpec(rootType) + "\n");

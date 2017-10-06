@@ -506,15 +506,7 @@ algorithm
       end if;
     then (SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, exp));
 
-  else
-    algorithm
-      BackendDAE.VAR(bindExp=bind) := var;
-      if isSome(bind) then
-        _ := if not Expression.isConstValue(Util.getOption(bind)) and storeProtectedCrefs then BackendVariable.varExp(var) else Util.getOption(bind);
-      else _ := DAE.SCONST("NO_BINDING");
-      end if;
-       //print("whats this? :"+ComponentReference.printComponentRefStr(cref)+" with binding: "+ExpressionDump.printExpStr(exp)+"\n");
-    then visIn;
+  else visIn;
   end matchcontinue;
 end fillShapeObject;
 

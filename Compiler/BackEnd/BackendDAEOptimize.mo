@@ -503,7 +503,7 @@ algorithm
       equation
         (_::_,_::_)= BackendVariable.getVar(cr, vars);
       then (e,false,(true,vars,globalKnownVars,b1,true));
-    case (e,(b,vars,globalKnownVars,b1,b2)) then (e,not b,inTpl);
+    case (e,(b,_,_,_,_)) then (e,not b,inTpl);
 
   end matchcontinue;
 end traversingTimeEqnsFinder;
@@ -5909,7 +5909,7 @@ algorithm
         list<BackendDAE.Equation> eqnLst;
         Boolean hasHomotopy;
 
-      case(BackendDAE.SINGLEEQUATION(eqn=eqnIndex, var=varIndex))
+      case(BackendDAE.SINGLEEQUATION(eqn=eqnIndex))
         equation
           eqn = BackendEquation.get(system.orderedEqs, eqnIndex);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
@@ -5921,7 +5921,7 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.EQUATIONSYSTEM(eqns=eqnIndexes, vars=varIndexes))
+      case(BackendDAE.EQUATIONSYSTEM(eqns=eqnIndexes))
         equation
           if (homotopyLoopBeginning == 0) then
             eqnLst = BackendEquation.getList(eqnIndexes, system.orderedEqs);
@@ -5936,7 +5936,7 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.SINGLEARRAY(eqn=eqnIndex, vars=varIndexes))
+      case(BackendDAE.SINGLEARRAY(eqn=eqnIndex))
         equation
           eqn = BackendEquation.get(system.orderedEqs, eqnIndex);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
@@ -5949,7 +5949,7 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.SINGLEALGORITHM(eqn=eqnIndex, vars=varIndexes))
+      case(BackendDAE.SINGLEALGORITHM(eqn=eqnIndex))
         equation
           eqn = BackendEquation.get(system.orderedEqs, eqnIndex);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
@@ -5962,7 +5962,7 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIndex, vars=varIndexes))
+      case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIndex))
         equation
           eqn = BackendEquation.get(system.orderedEqs, eqnIndex);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
@@ -5975,7 +5975,7 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.SINGLEWHENEQUATION(eqn=eqnIndex, vars=varIndexes))
+      case(BackendDAE.SINGLEWHENEQUATION(eqn=eqnIndex))
         equation
           eqn = BackendEquation.get(system.orderedEqs, eqnIndex);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
@@ -5988,7 +5988,7 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.SINGLEIFEQUATION(eqn=eqnIndex, vars=varIndexes))
+      case(BackendDAE.SINGLEIFEQUATION(eqn=eqnIndex))
         equation
           eqn = BackendEquation.get(system.orderedEqs, eqnIndex);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
@@ -6001,14 +6001,14 @@ algorithm
           end if;
       then();
 
-      case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=resEqnIndexes, tearingvars=tVarIndexes, innerEquations=innerEquations)))
+      case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=resEqnIndexes, innerEquations=innerEquations)))
         equation
           if (homotopyLoopBeginning == 0) then
             eqnLst = BackendEquation.getList(resEqnIndexes, system.orderedEqs);
             (_, hasHomotopy) = BackendEquation.traverseExpsOfEquationList(eqnLst, BackendDAEUtil.containsHomotopyCall, false);
 
             if not hasHomotopy then
-              (innerEqnIndexes, innerVarIndexesLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+              (innerEqnIndexes,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
               eqnLst = BackendEquation.getList(innerEqnIndexes, system.orderedEqs);
               (_, hasHomotopy) = BackendEquation.traverseExpsOfEquationList(eqnLst, BackendDAEUtil.containsHomotopyCall, false);
             end if;

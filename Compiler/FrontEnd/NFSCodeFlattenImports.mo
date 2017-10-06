@@ -640,7 +640,7 @@ algorithm
       then
         (Absyn.CREF(cref), tup);
 
-    case (Absyn.CALL(function_ = cref, functionArgs = args as Absyn.FOR_ITER_FARG(exp = exp, iterType = iterType, iterators = iters)), (env, info))
+    case (Absyn.CALL(function_ = cref, functionArgs = Absyn.FOR_ITER_FARG(exp = exp, iterType = iterType, iterators = iters)), (env, info))
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);

@@ -790,7 +790,7 @@ algorithm
     then (Unit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //IFEXP
-    case (DAE.IFEXP(exp1, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
+    case (DAE.IFEXP(_, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
       //(_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
       (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitInEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut);
@@ -800,7 +800,7 @@ algorithm
       expListList = listAppend(expListList2, expListList3);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
-    case (DAE.IFEXP(exp1, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
+    case (DAE.IFEXP(_, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
       //(_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt);
       (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitInEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut);

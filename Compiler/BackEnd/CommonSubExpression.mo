@@ -853,7 +853,7 @@ algorithm
     guard isSkipCase(inExp, functionTree)
     then false;
 
-    case tsub as DAE.TSUB(exp=call as DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types)), expLst=expLst), ix=ix, ty=ty) algorithm
+    case tsub as DAE.TSUB(exp=call as DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types))), ix=ix, ty=ty) algorithm
       if not BaseHashTable.hasKey(call, HT) then
         index := index + 1;
         HT := BaseHashTable.add((call, index), HT);
@@ -879,7 +879,7 @@ algorithm
       end if;
     then true;
 
-    case DAE.CALL(attr=DAE.CALL_ATTR(ty=ty), expLst=expLst) algorithm
+    case DAE.CALL(attr=DAE.CALL_ATTR(ty=ty)) algorithm
       if not BaseHashTable.hasKey(inExp, HT) then
         index := index + 1;
         HT := BaseHashTable.add((inExp, index), HT);
@@ -2239,7 +2239,7 @@ algorithm
       DAE.Type ty;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
-  case({}, _, _, syst as BackendDAE.EQSYSTEM(orderedEqs=_))
+  case({}, _, _, syst as BackendDAE.EQSYSTEM())
     equation
     then (BackendDAEUtil.clearEqSyst(syst));
 

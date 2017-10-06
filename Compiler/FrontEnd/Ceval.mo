@@ -862,7 +862,7 @@ algorithm
       then
         (inCache, Values.EMPTY(inExp.scope, s, v, inExp.tyStr), inST);
 
-    case (_,env,e,_,_,_,_) guard Config.getGraphicsExpMode()
+    case (_,_,_,_,_,_,_) guard Config.getGraphicsExpMode()
       algorithm
         ty := Expression.typeof(inExp);
         v := Types.typeToValue(ty);

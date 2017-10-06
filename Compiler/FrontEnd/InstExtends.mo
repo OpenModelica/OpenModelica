@@ -141,7 +141,7 @@ algorithm
 
           if isSome(ocls) then
             SOME(cls) := ocls;
-            SCode.CLASS(name = cn, encapsulatedPrefix = encf, restriction = _) := cls;
+            SCode.CLASS(name = cn, encapsulatedPrefix = encf) := cls;
           else
             // Base class could not be found, print an error unless --permissive
             // is used.

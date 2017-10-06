@@ -8457,7 +8457,7 @@ protected function getNDcr
   output Integer outN;
   output DAE.ComponentRef outCrOpt;
 algorithm
-  (outN,outCrOpt) := matchcontinue dcr
+  (outN,outCrOpt) := match dcr
   local
     DAE.ComponentRef cr1;
     list<DAE.Var> varLst;
@@ -8468,7 +8468,7 @@ algorithm
       equation
         N = List.findSome(varLst,findN);
       then (N,dcr);
-  end matchcontinue;
+  end match;
 end getNDcr;
 
 

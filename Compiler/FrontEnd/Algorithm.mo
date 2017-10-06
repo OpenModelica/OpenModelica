@@ -381,7 +381,7 @@ protected
   String c, l, r;
 algorithm
   for p in props loop
-    _ := matchcontinue p
+    _ := match p
       // variables is fine
       case DAE.PROP(constFlag = DAE.C_VAR()) then ();
       // constant
@@ -407,7 +407,7 @@ algorithm
           ();
       // tuples? TODO! FIXME! can we get tuple here? maybe only for MetaModelica
       case DAE.PROP_TUPLE(_, _) then ();
-    end matchcontinue;
+    end match;
     i := i + 1;
   end for;
 end checkLHSWritable;

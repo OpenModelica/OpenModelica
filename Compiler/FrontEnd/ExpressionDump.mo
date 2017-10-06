@@ -1103,7 +1103,7 @@ algorithm
       then
         Graphviz.LNODE("CALL",{fs},{},argnodes);
 
-    case(DAE.PARTEVALFUNCTION(path = _,expList = args))
+    case(DAE.PARTEVALFUNCTION(expList = args))
       equation
         argnodes = List.map(args, dumpExpGraphviz);
       then
@@ -1469,7 +1469,7 @@ algorithm
       then
         res_str;
 
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = _),expr = exp,iterators={DAE.REDUCTIONITER(exp=iterexp)}),level)
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(),expr = exp,iterators={DAE.REDUCTIONITER(exp=iterexp)}),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;

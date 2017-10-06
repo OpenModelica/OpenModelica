@@ -822,7 +822,7 @@ algorithm
       algorithm
         solver1 := mergeSolver(solver1,solver2);
       then BackendDAE.SUBCLOCK(MMath.divRational(f1, f2), MMath.addRational(MMath.multRational(s1, f2), s2), solver1);
-    case(BackendDAE.SUBCLOCK(f1,s1,solver1),BackendDAE.INFERED_SUBCLOCK())
+    case(BackendDAE.SUBCLOCK(_,_,_),BackendDAE.INFERED_SUBCLOCK())
       then subSeqClock;
     else
       algorithm
@@ -909,7 +909,7 @@ algorithm
   local
     MMath.Rational shift;
     Option<String> solver;
-    case(BackendDAE.SUBCLOCK(factor,shift,solver))
+    case(BackendDAE.SUBCLOCK(factor,_,_))
       then factor;
     else
       then MMath.RAT1;
@@ -926,7 +926,7 @@ algorithm
   local
     MMath.Rational factor;
     Option<String> solver;
-    case(BackendDAE.SUBCLOCK(factor,shift,solver))
+    case(BackendDAE.SUBCLOCK(_,shift,_))
       then shift;
     else
       then MMath.RAT1;
@@ -942,7 +942,7 @@ algorithm
   solver := match(subClk)
   local
     MMath.Rational factor,shift;
-    case(BackendDAE.SUBCLOCK(factor,shift,solver))
+    case(BackendDAE.SUBCLOCK(_,_,solver))
       then solver;
     else
       then NONE();
@@ -1104,7 +1104,7 @@ algorithm
   case(BackendDAE.EQUATION(exp=DAE.CREF(),scalar=DAE.CLKCONST(clk=DAE.INFERRED_CLOCK())))
     algorithm
       then false;
-  case(BackendDAE.EQUATION(exp=DAE.CREF(),scalar=DAE.CLKCONST(clk=clk)))
+  case(BackendDAE.EQUATION(exp=DAE.CREF(),scalar=DAE.CLKCONST()))
     algorithm
       then true;
   else
@@ -1256,7 +1256,7 @@ algorithm
         removeEdge(eqIdx,varIdx,m,mT);
       then (clockEqsIn, eqIdx::subClockInterfaceEqIdxsIn, eq::subClockInterfaceEqsIn);
 
-    case(BackendDAE.EQUATION(scalar=e1, exp=e2))
+    case(BackendDAE.EQUATION(scalar=_))
       algorithm
         //print("Thats also not a base clock "+BackendDump.equationString(eq)+"\n");
       then (clockEqsIn, subClockInterfaceEqIdxsIn, subClockInterfaceEqsIn);

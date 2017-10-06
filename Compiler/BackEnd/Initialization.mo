@@ -533,13 +533,13 @@ algorithm
     then (stmts, inLeftCrs);
 
     // inactive when equation during initialization
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()) equation
+    case DAE.STMT_WHEN(exp=_, statementLst=stmts, elseWhen=NONE()) equation
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, BaseHashSet.add, inLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)) equation
+    case DAE.STMT_WHEN(exp=_, statementLst=stmts, elseWhen=SOME(stmt)) equation
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, BaseHashSet.add, inLeftCrs);
       (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
@@ -1857,7 +1857,7 @@ algorithm
       true = Expression.isZero(exp);
       //listParameter = parameterCheck(exp);
       //true = listEmpty(listParameter);
-      eqn = BackendEquation.get(inEqnsOrig, inUnassignedEqn);
+      _ = BackendEquation.get(inEqnsOrig, inUnassignedEqn);
       // Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
     then ({inUnassignedEqn}, true, {});
 
@@ -2294,7 +2294,7 @@ algorithm
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       preUsed = BaseHashSet.has(cr, hs);
 
-      crefExp = Expression.crefExp(cr);
+      _ = Expression.crefExp(cr);
 
       startCR = ComponentReference.crefPrefixStart(cr);
       startVar = BackendVariable.copyVarNewName(startCR, var);
@@ -2340,7 +2340,7 @@ algorithm
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       preUsed = BaseHashSet.has(cr, hs);
 
-      crefExp = Expression.crefExp(cr);
+      _ = Expression.crefExp(cr);
 
       startCR = ComponentReference.crefPrefixStart(cr);
       startVar = BackendVariable.copyVarNewName(startCR, var);

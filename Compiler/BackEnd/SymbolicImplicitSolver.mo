@@ -273,7 +273,7 @@ algorithm
         cont = false;
     then (DAE.BINARY(DAE.BINARY(e1, DAE.SUB(tp), e2), DAE.DIV(tp), e3), (List.unionElt(cr,cr_lst), orderedVars));
 
-    case (cr_lst, DAE.CREF(ty=tp, componentRef=cr))
+    case (cr_lst, DAE.CREF(ty=_, componentRef=cr))
       equation
         (e, cr_lst) = symSolverAppendStringToStates(cr, cr_lst, orderedVars);
     then (e, (cr_lst, orderedVars));

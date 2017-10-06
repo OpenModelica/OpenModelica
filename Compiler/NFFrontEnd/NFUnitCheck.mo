@@ -788,7 +788,7 @@ algorithm
     then (NFUnit.MASTER({}), (HtCr2U, HtS2U, HtU2S), expListList);
 
     //IFEXP
-    case (DAE.IFEXP(exp1, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
+    case (DAE.IFEXP(_, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
       //(_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}), inargs);
       (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt, inargs);
       (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitInEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut, inargs);
@@ -798,7 +798,7 @@ algorithm
       expListList = List.append_reverse(expListList2, expListList3);
     then (ut, (HtCr2U, HtS2U, HtU2S), expListList);
 
-    case (DAE.IFEXP(exp1, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
+    case (DAE.IFEXP(_, exp2, exp3), (HtCr2U, HtS2U, HtU2S), _) equation
       //(_, (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitInEquation(exp1, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}), inargs);
       (ut, (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitInEquation(exp2, (HtCr2U, HtS2U, HtU2S), inUt, inargs);
       (ut2, (HtCr2U, HtS2U, HtU2S), expListList3) = insertUnitInEquation(exp3, (HtCr2U, HtS2U, HtU2S), ut, inargs);

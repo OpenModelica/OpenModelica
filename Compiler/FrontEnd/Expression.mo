@@ -10696,7 +10696,7 @@ algorithm
       Absyn.Path p1,p2;
       list<DAE.Exp> exps;
     case (DAE.CAST(exp=exp),_) then splitRecord(exp,ty);
-     case (DAE.CREF(componentRef=_),DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}))
+     case (DAE.CREF(),DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(), varLst = {}))
        //Don't split External objects
       then fail();
     case (DAE.CREF(componentRef=cr),DAE.T_COMPLEX(varLst = vs))

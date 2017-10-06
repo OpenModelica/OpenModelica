@@ -595,7 +595,7 @@ algorithm
         // print("Func quard [there]: " + Absyn.pathString(func) + "\n");
       then cache;
 
-    case (CACHE(igraph,ef,ht,p,program),Absyn.FULLYQUALIFIED(_))
+    case (CACHE(_,ef,_,_,_),Absyn.FULLYQUALIFIED(_))
       equation
         Mutable.update(ef,DAE.AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
         // print("Func quard [new]: " + Absyn.pathString(func) + "\n");
@@ -624,7 +624,7 @@ algorithm
       Absyn.Path p;
       Absyn.Program program;
 
-    case (CACHE(igraph,ef,ht,p,program),_)
+    case (CACHE(_,ef,_,_,_),_)
       equation
         Mutable.update(ef,DAEUtil.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
@@ -647,7 +647,7 @@ algorithm
       Absyn.Path p;
       Absyn.Program program;
 
-    case (CACHE(igraph,ef,ht,p,program),_)
+    case (CACHE(_,ef,_,_,_),_)
       equation
         Mutable.update(ef,DAEUtil.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;

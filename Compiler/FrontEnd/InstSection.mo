@@ -2309,14 +2309,14 @@ algorithm
       then
         Algorithm.makeIf(cond_exp, cond_prop, if_branch, else_if_branches, else_branch, source);
 
-    case SCode.ALG_FOR(info=_)
+    case SCode.ALG_FOR()
       algorithm
         (outCache, outStatements) := instForStatement(outCache, inEnv, inIH,
           inPrefix, inState, inStatement, inSource, inInitial, inImpl, inUnrollLoops);
       then
         outStatements;
 
-    case SCode.ALG_PARFOR(info=_)
+    case SCode.ALG_PARFOR()
       algorithm
         (outCache, outStatements) := instParForStatement(outCache, inEnv, inIH,
           inPrefix, inState, inStatement, inSource, inInitial, inImpl, inUnrollLoops);

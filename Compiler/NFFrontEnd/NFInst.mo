@@ -299,7 +299,7 @@ algorithm
         node;
 
     // A short class definition, e.g. class A = B.
-    case SCode.DERIVED(typeSpec = ty, modifications = der_mod)
+    case SCode.DERIVED(typeSpec = ty, modifications = _)
       algorithm
         // Look up the class that's being derived from and expand it.
         ext_node :: _ := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), info);

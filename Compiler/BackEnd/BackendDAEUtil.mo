@@ -159,7 +159,7 @@ algorithm
       BackendDAE.EqSystem syst;
       DAE.FunctionTree functionTree;
 
-    case BackendDAE.DAE(eqs=(syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs))::{}, shared=BackendDAE.SHARED(functionTree=functionTree)) equation
+    case BackendDAE.DAE(eqs=(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs))::{}, shared=BackendDAE.SHARED(functionTree=_)) equation
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
       nVars = BackendVariable.varsSize(vars);
@@ -4354,7 +4354,7 @@ algorithm
         arrayUpdate(rowmark,i,-mark);
       then
         adjacencyRowAlgorithmInputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_UNSOLVABLE(),{})::iRow);
-    case (i::rest,_,_,_)
+    case (_::rest,_,_,_)
       then
         adjacencyRowAlgorithmInputs1(rest,mark,rowmark,iRow);
   end match;

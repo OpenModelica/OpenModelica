@@ -10106,7 +10106,7 @@ algorithm
       equation
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
+        (cache,e_1,DAE.PROP(_,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
         slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 

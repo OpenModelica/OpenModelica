@@ -1927,42 +1927,42 @@ algorithm
         ();
 
     // Special case for --preOptModules+=<value>
-    case (_, FLAGS(configFlags = _)) guard(configFlagEq(inFlag, PRE_OPT_MODULES_ADD))
+    case (_, _) guard(configFlagEq(inFlag, PRE_OPT_MODULES_ADD))
       equation
         setAdditionalOptModules(PRE_OPT_MODULES_ADD, PRE_OPT_MODULES_SUB, inValues);
       then
         ();
 
     // Special case for --preOptModules-=<value>
-    case (_, FLAGS(configFlags = _)) guard(configFlagEq(inFlag, PRE_OPT_MODULES_SUB))
+    case (_, _) guard(configFlagEq(inFlag, PRE_OPT_MODULES_SUB))
       equation
         setAdditionalOptModules(PRE_OPT_MODULES_SUB, PRE_OPT_MODULES_ADD, inValues);
       then
         ();
 
     // Special case for --postOptModules+=<value>
-    case (_, FLAGS(configFlags = _)) guard(configFlagEq(inFlag, POST_OPT_MODULES_ADD))
+    case (_, _) guard(configFlagEq(inFlag, POST_OPT_MODULES_ADD))
       equation
         setAdditionalOptModules(POST_OPT_MODULES_ADD, POST_OPT_MODULES_SUB, inValues);
       then
         ();
 
     // Special case for --postOptModules-=<value>
-    case (_, FLAGS(configFlags = _)) guard(configFlagEq(inFlag, POST_OPT_MODULES_SUB))
+    case (_, _) guard(configFlagEq(inFlag, POST_OPT_MODULES_SUB))
       equation
         setAdditionalOptModules(POST_OPT_MODULES_SUB, POST_OPT_MODULES_ADD, inValues);
       then
         ();
 
     // Special case for --initOptModules+=<value>
-    case (_, FLAGS(configFlags = _)) guard(configFlagEq(inFlag, INIT_OPT_MODULES_ADD))
+    case (_, _) guard(configFlagEq(inFlag, INIT_OPT_MODULES_ADD))
       equation
         setAdditionalOptModules(INIT_OPT_MODULES_ADD, INIT_OPT_MODULES_SUB, inValues);
       then
         ();
 
     // Special case for --initOptModules-=<value>
-    case (_, FLAGS(configFlags = _)) guard(configFlagEq(inFlag, INIT_OPT_MODULES_SUB))
+    case (_, _) guard(configFlagEq(inFlag, INIT_OPT_MODULES_SUB))
       equation
         setAdditionalOptModules(INIT_OPT_MODULES_SUB, INIT_OPT_MODULES_ADD, inValues);
       then

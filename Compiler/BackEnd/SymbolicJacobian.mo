@@ -1869,7 +1869,7 @@ algorithm
         seedlst = List.map1(comref_vars, createSeedVars, inName);
 
         // Differentiate the ODE system w.r.t states for jacobian
-        (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reducedDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        (backendDAE as BackendDAE.DAE(shared=_), funcs) = generateSymbolicJacobian(reducedDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;

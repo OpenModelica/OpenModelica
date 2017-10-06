@@ -954,7 +954,7 @@ algorithm
     case (cache,_,"updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                                       Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.STRING(_),
                                       Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
-                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=_,eqMod=Absyn.NOMOD())))},
+                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -1082,7 +1082,7 @@ algorithm
         (cache,Values.BOOL(false),st);
 
     case (cache,_,"updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
-                                        Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=_,eqMod=Absyn.NOMOD())))},
+                                        Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))},
           st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
@@ -1317,7 +1317,7 @@ algorithm
         (cache,ret_val,st_1) := buildModelFMU(cache, env, className, st, str1, str2, filenameprefix, true);
       then (cache,ret_val,st_1);
 
-    case (cache,env,"translateModelFMU", _,st,_)
+    case (cache,_,"translateModelFMU", _,st,_)
       then (cache,Values.STRING(""),st);
 
     case (cache,env,"buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_,st,_)
@@ -1325,7 +1325,7 @@ algorithm
         (cache,ret_val,st_1) := buildModelFMU(cache, env, className, st, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
       then (cache,ret_val,st_1);
 
-    case (cache,env,"buildModelFMU", _,st,_)
+    case (cache,_,"buildModelFMU", _,st,_)
       then (cache,Values.STRING(""),st);
 
     case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
@@ -7047,7 +7047,7 @@ algorithm
     case ({}) then "";
 
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name="access"),
-          modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.CREF(cref)))))::xs)
+          modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.CREF(cref)))))::_)
       equation
         name = Dump.printComponentRefStr(cref);
       then name;
@@ -7474,7 +7474,7 @@ algorithm
       list<Absyn.NamedArg> namedArgs;
       list<String> initialState;
 
-    case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs, argNames = namedArgs))
+    case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs, argNames = _))
       equation
         initialState = List.map(expArgs, Dump.printExpStr);
       then
@@ -7625,7 +7625,7 @@ algorithm
       Absyn.EquationItem x;
 
     case ({},_) then {};
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(name, Absyn.FUNCTIONARGS(expArgs, namedArgs))) :: xs), state_)
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(name, Absyn.FUNCTIONARGS(expArgs, _))) :: xs), state_)
       guard Absyn.crefEqual(name, Absyn.CREF_IDENT("initialState", {}))
       equation
         args = List.map(expArgs, Dump.printExpStr);

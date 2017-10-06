@@ -93,7 +93,7 @@ public
                             step = NONE(),
                             stop = Expression.ENUM_LITERAL(index = istop))
         algorithm
-          Type.ENUMERATION(typePath = path, literals = literals) := ty;
+          Type.ENUMERATION(typePath = _, literals = literals) := ty;
           values := {};
 
           if istart <= istop then
