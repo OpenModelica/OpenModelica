@@ -6489,12 +6489,13 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         omc_assert(threadData, info, "Range with a step of zero.");
       }<%\n%>
       >>
-    let &tmpVarDecls += match iter.exp case RANGE(__) then 'modelica_integer <%iter.id%>_length;<%\n%>'
+    let isArrayWithLength = if rangeExpStop then (match ri.path case IDENT(name="array") then "1" else "") else ""
+    let &tmpVarDecls += if isArrayWithLength then 'modelica_integer <%iter.id%>_length;<%\n%>'
     let &rangeExpPre += match iter.exp case RANGE(__) then '<%firstIndex%> = <%iteratorName%> /* Remember the range start-value */;<%\n%>' else (if firstIndex then '<%firstIndex%> = 1;<%\n%>')
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "")
     let &rangeExpPre += match iter.exp case RANGE(__) then '<%iteratorName%> = (<%rangeExp%>)-<%stepVar%>;<%\n%>' /* We pre-increment the counter, so subtract the step for the first variable for ranges */
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
-    let &rangeExpPre += if rangeExpStop then
+    let &rangeExpPre += if isArrayWithLength then
       <<
       <%iter.id%>_length = ((<%stopVar%>-<%firstIndex%>)/<%stepVar%>)+1;
       >>
