@@ -1989,7 +1989,7 @@ protected function checkCyclicalComponents
   input FCore.Graph inEnv;
   type Element = tuple<SCode.Element, DAE.Mod>;
 algorithm
-  _ := matchcontinue(inCycles, inEnv)
+  () := matchcontinue inCycles
     local
       list<list<Element>> cycles;
       list<list<String>> names;
@@ -1997,9 +1997,9 @@ algorithm
       String cycles_str, scope_str;
       list<tuple<Element, list<Element>>> graph;
 
-    case ({}, _) then ();
+    case {} then ();
 
-    case (_, _)
+    case _
       equation
         graph = Graph.filterGraph(inCycles, isElementParamOrConst);
         {} = Graph.findCycles(graph, isElementEqual);
@@ -2015,8 +2015,12 @@ algorithm
         cycles_str = "{" + cycles_str + "}";
         scope_str = FGraph.printGraphPathStr(inEnv);
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
+
+        if not Flags.isSet(Flags.IGNORE_CYCLES) then
+          fail();
+        end if;
       then
-        fail();
+        ();
   end matchcontinue;
 end checkCyclicalComponents;
 

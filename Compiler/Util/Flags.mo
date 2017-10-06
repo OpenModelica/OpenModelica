@@ -516,6 +516,8 @@ constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(170, "mergeAlgSections"
   Util.gettext("Disables coloring algorithm while sparsity detection."));
 constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(171, "warnNoNominal", false,
   Util.gettext("Prints the iteration variables in the initialization and simulation DAE, which do not have a nominal value."));
+constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(172, "ignoreCycles", false,
+  Util.gettext("Ignores cycles between constant/parameter components."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -694,7 +696,8 @@ constant list<DebugFlag> allDebugFlags = {
   NF_UNITCHECK,
   DISABLE_COLORING,
   MERGE_ALGORITHM_SECTIONS,
-  WARN_NO_NOMINAL
+  WARN_NO_NOMINAL,
+  IGNORE_CYCLES
 };
 
 public

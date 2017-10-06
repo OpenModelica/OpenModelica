@@ -467,7 +467,7 @@ public constant Message METARECORD_CONTAINS_METARECORD_MEMBER = MESSAGE(168, TRA
 public constant Message INVALID_EXTERNAL_OBJECT = MESSAGE(169, TRANSLATION(), ERROR(),
   Util.gettext("Invalid external object %s, %s."));
 public constant Message CIRCULAR_COMPONENTS = MESSAGE(170, TRANSLATION(), ERROR(),
-  Util.gettext("Cyclically dependent constants or parameters found in scope %s: %s."));
+  Util.gettext("Cyclically dependent constants or parameters found in scope %s: %s (ignore with -d=ignoreCycles)."));
 public constant Message FAILURE_TO_DEDUCE_DIMS_FROM_MOD = MESSAGE(171, TRANSLATION(), WARNING(),
   Util.gettext("Failed to deduce dimensions of %s due to unknown dimensions of modifier %s."));
 public constant Message REPLACEABLE_BASE_CLASS = MESSAGE(172, TRANSLATION(), ERROR(),
