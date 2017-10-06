@@ -20,6 +20,7 @@ bindings4.mo \
 bindings5.mo \
 bindings7.mo \
 BooleanDim.mo \
+BuiltinLookup1.mo \
 builtinmod.mo \
 builtinmod2.mo \
 BuiltinTime.mo \
@@ -214,6 +215,9 @@ InnerOuter2.mo \
 InnerOuter3.mo \
 InnerOuter4.mo \
 InnerOuter5.mo \
+InnerOuter6.mo \
+InnerOuter7.mo \
+InnerOuter8.mo \
 InnerOuterClass1.mo \
 InnerOuterInvalidMod1.mo \
 InnerOuterInvalidMod2.mo \
@@ -305,8 +309,11 @@ SizeInvalidIndex4.mo \
 SizeInvalidType1.mo \
 SizeInvalidType2.mo \
 StatementInvalidType1.mo \
+SubscriptEnum1.mo \
+SubscriptIterator1.mo \
 Subscript1.mo \
 SubscriptTooMany1.mo \
+SubscriptTypename1.mo \
 SubscriptWrongType1.mo \
 SubscriptWrongType2.mo \
 Terminate1.mo \
