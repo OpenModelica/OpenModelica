@@ -58,3 +58,4 @@ ExplicitEuler
 ImplicitEuler
 ImplicitTrapezoid
 SemiImplicitEuler
+ignoreCycles
