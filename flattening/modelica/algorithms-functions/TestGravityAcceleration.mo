@@ -149,6 +149,6 @@ end TestGravityAcceleration;
 //   gravity[2] = -9.81;
 //   gravity[3] = 0.0;
 // end TestGravityAcceleration;
-// [flattening/modelica/algorithms-functions/TestGravityAcceleration.mo:59:7-62:19:writable] Error: Cyclically dependent constants or parameters found in scope : {gravityType}, {g}, {mue}.
+// [flattening/modelica/algorithms-functions/TestGravityAcceleration.mo:59:7-62:19:writable] Error: Cyclically dependent constants or parameters found in scope : {gravityType}, {g}, {mue} (ignore with -d=ignoreCycles).
 //
 // endResult

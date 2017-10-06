@@ -12,7 +12,7 @@ end CyclicBindingParam;
 
 // Result:
 // Error processing file: CyclicBindingParam.mo
-// Error: Cyclically dependent constants or parameters found in scope CyclicBindingParam: {q,p}.
+// Error: Cyclically dependent constants or parameters found in scope CyclicBindingParam: {q,p} (ignore with -d=ignoreCycles).
 // Error: Error occurred while flattening model CyclicBindingParam
 //
 // # Error encountered! Exiting...
