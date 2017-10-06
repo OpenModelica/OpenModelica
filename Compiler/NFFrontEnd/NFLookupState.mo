@@ -86,19 +86,19 @@ uniontype LookupState
 
   "LookupState is used by the lookup to keep track of what state it's in so that
   the rules for composite name lookup can be enforced."
-  record STATE_BEGIN "The start state." end STATE_BEGIN;
-  record STATE_COMP "A component." end STATE_COMP;
-  record STATE_COMP_COMP "A component found in component." end STATE_COMP_COMP;
-  record STATE_COMP_CLASS "A class found in component." end STATE_COMP_CLASS;
-  record STATE_COMP_FUNC "A function found in component." end STATE_COMP_FUNC;
-  record STATE_PACKAGE "A package." end STATE_PACKAGE;
-  record STATE_CLASS "A class." end STATE_CLASS;
-  record STATE_FUNC "A function." end STATE_FUNC;
-  record STATE_PREDEF_COMP "A predefined component." end STATE_PREDEF_COMP;
-  record STATE_PREDEF_CLASS "A predefined class." end STATE_PREDEF_CLASS;
-  record STATE_ERROR "An error occured during lookup."
+  record BEGIN "The start state." end BEGIN;
+  record COMP "A component." end COMP;
+  record COMP_COMP "A component found in component." end COMP_COMP;
+  record COMP_CLASS "A class found in component." end COMP_CLASS;
+  record COMP_FUNC "A function found in component." end COMP_FUNC;
+  record PACKAGE "A package." end PACKAGE;
+  record CLASS "A class." end CLASS;
+  record FUNC "A function." end FUNC;
+  record PREDEF_COMP "A predefined component." end PREDEF_COMP;
+  record PREDEF_CLASS "A predefined class." end PREDEF_CLASS;
+  record ERROR "An error occured during lookup."
     LookupState errorState;
-  end STATE_ERROR;
+  end ERROR;
 
   function assertClass
     input LookupState endState;
@@ -106,7 +106,7 @@ uniontype LookupState
     input Absyn.Path name;
     input SourceInfo info;
   algorithm
-    assertState(endState, LookupState.STATE_CLASS(), node,
+    assertState(endState, LookupState.CLASS(), node,
       LookupStateName.PATH(name), info);
   end assertClass;
 
@@ -116,7 +116,7 @@ uniontype LookupState
     input Absyn.ComponentRef name;
     input SourceInfo info;
   algorithm
-    assertState(endState, LookupState.STATE_FUNC(), node,
+    assertState(endState, LookupState.FUNC(), node,
       LookupStateName.CREF(name), info);
   end assertFunction;
 
@@ -126,7 +126,7 @@ uniontype LookupState
     input Absyn.ComponentRef name;
     input SourceInfo info;
   algorithm
-    assertState(endState, LookupState.STATE_COMP(), node,
+    assertState(endState, LookupState.COMP(), node,
       LookupStateName.CREF(name), info);
   end assertComponent;
 
@@ -143,25 +143,25 @@ uniontype LookupState
         SourceInfo info2;
 
       // Found the expected kind of element.
-      case (STATE_COMP(),         STATE_COMP()) then ();
-      case (STATE_COMP_COMP(),    STATE_COMP()) then ();
-      case (STATE_PREDEF_COMP(),  STATE_COMP()) then ();
-      case (STATE_PACKAGE(),      STATE_CLASS()) then ();
-      case (STATE_CLASS(),        STATE_CLASS()) then ();
-      case (STATE_PREDEF_CLASS(), STATE_CLASS()) then ();
-      case (STATE_FUNC(),         STATE_CLASS()) then ();
-      case (STATE_FUNC(),         STATE_FUNC()) then ();
-      case (STATE_COMP_FUNC(),    STATE_FUNC()) then ();
+      case (COMP(),         COMP()) then ();
+      case (COMP_COMP(),    COMP()) then ();
+      case (PREDEF_COMP(),  COMP()) then ();
+      case (PACKAGE(),      CLASS()) then ();
+      case (CLASS(),        CLASS()) then ();
+      case (PREDEF_CLASS(), CLASS()) then ();
+      case (FUNC(),         CLASS()) then ();
+      case (FUNC(),         FUNC()) then ();
+      case (COMP_FUNC(),    FUNC()) then ();
 
       // Found a class via a component, but expected a function.
-      case (STATE_COMP_CLASS(), STATE_FUNC())
+      case (COMP_CLASS(), FUNC())
         algorithm
           printFoundWrongTypeError(endState, expectedState, name, info);
         then
           fail();
 
       // Found a function via a component, but didn't expect a function.
-      case (STATE_COMP_FUNC(), _)
+      case (COMP_FUNC(), _)
         algorithm
           name_str := LookupStateName.toString(name);
           Error.addSourceMessage(Error.FOUND_FUNC_NAME_VIA_COMP_NONCALL, {name_str}, info);
@@ -170,7 +170,7 @@ uniontype LookupState
 
       // Found a class via a component. Only components and functions are
       // allowed to be lookup up via a component.
-      case (STATE_COMP_CLASS(), _)
+      case (COMP_CLASS(), _)
         algorithm
           Error.addSourceMessage(Error.FOUND_CLASS_NAME_VIA_COMPONENT,
             {LookupStateName.toString(name)}, info);
@@ -179,7 +179,7 @@ uniontype LookupState
 
       // Invalid form when looking for a function via a component, only
       // c.C1...Cn.f is allowed.
-      case (STATE_ERROR(errorState = STATE_COMP_FUNC()), STATE_FUNC())
+      case (ERROR(errorState = COMP_FUNC()), FUNC())
         algorithm
           name_str := InstNode.name(node);
           info2 := InstNode.info(node);
@@ -188,7 +188,7 @@ uniontype LookupState
           fail();
 
       // Found class when looking up a composite component name.
-      case (STATE_ERROR(errorState = STATE_COMP_FUNC()), STATE_COMP())
+      case (ERROR(errorState = COMP_FUNC()), COMP())
         algorithm
           name_str := InstNode.name(node);
           Error.addSourceMessage(Error.CLASS_IN_COMPOSITE_COMP_NAME,
@@ -197,7 +197,7 @@ uniontype LookupState
           fail();
 
       // Found class via composite component name when actually looking for a class.
-      case (STATE_ERROR(errorState = STATE_COMP_FUNC()), _)
+      case (ERROR(errorState = COMP_FUNC()), _)
         algorithm
           name_str := InstNode.name(node);
           Error.addSourceMessage(Error.LOOKUP_CLASS_VIA_COMP_COMP,
@@ -206,7 +206,7 @@ uniontype LookupState
           fail();
 
       // Found class when looking up a composite component name.
-      case (STATE_ERROR(errorState = STATE_COMP_COMP()), STATE_COMP())
+      case (ERROR(errorState = COMP_COMP()), COMP())
         algorithm
           name_str := InstNode.name(node);
           Error.addSourceMessage(Error.CLASS_IN_COMPOSITE_COMP_NAME,
@@ -215,7 +215,7 @@ uniontype LookupState
           fail();
 
       // Found class via composite component name when actually looking for a class.
-      case (STATE_ERROR(errorState = STATE_COMP_COMP()), _)
+      case (ERROR(errorState = COMP_COMP()), _)
         algorithm
           name_str := InstNode.name(node);
           Error.addSourceMessage(Error.LOOKUP_CLASS_VIA_COMP_COMP,
@@ -238,7 +238,7 @@ uniontype LookupState
     output Boolean isError;
   algorithm
     isError := match state
-      case STATE_ERROR() then true;
+      case ERROR() then true;
       else false;
     end match;
   end isError;
@@ -249,16 +249,16 @@ uniontype LookupState
     output String str;
   algorithm
     str := match(state)
-      case STATE_BEGIN() then "<begin>";
-      case STATE_COMP() then System.gettext("component");
-      case STATE_COMP_COMP() then System.gettext("component");
-      case STATE_COMP_CLASS() then System.gettext("class");
-      case STATE_COMP_FUNC() then System.gettext("function");
-      case STATE_PACKAGE() then System.gettext("package");
-      case STATE_CLASS() then System.gettext("class");
-      case STATE_FUNC() then System.gettext("function");
-      case STATE_PREDEF_COMP() then System.gettext("component");
-      case STATE_PREDEF_CLASS() then System.gettext("class");
+      case BEGIN() then "<begin>";
+      case COMP() then System.gettext("component");
+      case COMP_COMP() then System.gettext("component");
+      case COMP_CLASS() then System.gettext("class");
+      case COMP_FUNC() then System.gettext("function");
+      case PACKAGE() then System.gettext("package");
+      case CLASS() then System.gettext("class");
+      case FUNC() then System.gettext("function");
+      case PREDEF_COMP() then System.gettext("component");
+      case PREDEF_CLASS() then System.gettext("class");
     end match;
   end lookupStateString;
 
@@ -313,7 +313,7 @@ uniontype LookupState
 
       // The first part of a name is allowed to be protected, it's only
       // accessing a protected element via dot-notation that's illegal.
-      case STATE_BEGIN() then ();
+      case BEGIN() then ();
 
       else
         algorithm
@@ -341,7 +341,7 @@ uniontype LookupState
     output LookupState state;
   algorithm
     if InstNode.isComponent(node) then
-      state := STATE_COMP();
+      state := COMP();
     else
       state := elementState(InstNode.definition(node));
     end if;
@@ -353,9 +353,9 @@ uniontype LookupState
     output LookupState state;
   algorithm
     state := match element
-      case SCode.CLASS(restriction = SCode.R_PACKAGE()) then STATE_PACKAGE();
-      case SCode.CLASS(restriction = SCode.R_FUNCTION()) then STATE_FUNC();
-      case SCode.CLASS() then STATE_CLASS();
+      case SCode.CLASS(restriction = SCode.R_PACKAGE()) then PACKAGE();
+      case SCode.CLASS(restriction = SCode.R_FUNCTION()) then FUNC();
+      case SCode.CLASS() then CLASS();
       else
         algorithm
           assert(false, getInstanceName() + " got unknown element.");
@@ -367,8 +367,8 @@ uniontype LookupState
   function next2
    "This function implements the state machine that checks which transitions are
     valid during composite name lookup, as defined in section 5.3.2 of the
-    specification. elementState is expected to be one of STATE_COMP,
-    STATE_CLASS, STATE_FUNC or STATE_PACKAGE, indicating what type the found
+    specification. elementState is expected to be one of COMP,
+    CLASS, FUNC or PACKAGE, indicating what type the found
     element is. The state machine looks like this flow diagram (nodes in
     [brackets] are nodes with an edge to themselves):
 
@@ -385,7 +385,7 @@ uniontype LookupState
            v(FUNC)          |
       [COMP_FUNC]<----------+
 
-    There's also STATE_PREDEF_COMP and STATE_PREDEF_CLASS for the predefined types
+    There's also PREDEF_COMP and PREDEF_CLASS for the predefined types
     and components, e.g. Real, time, etc., which are handled as special cases in
     lookupName and bypasses this state machine.
     "
@@ -399,47 +399,47 @@ uniontype LookupState
         String str;
 
       // Transitions from BEGIN.
-      case (_,               STATE_BEGIN())      then elementState;
+      case (_,         BEGIN())      then elementState;
 
       // Transitions from COMP.
-      case (STATE_COMP(),    STATE_COMP())       then STATE_COMP_COMP();
-      case (STATE_FUNC(),    STATE_COMP())       then STATE_COMP_FUNC();
-      case (_,               STATE_COMP())       then STATE_COMP_CLASS();
+      case (COMP(),    COMP())       then COMP_COMP();
+      case (FUNC(),    COMP())       then COMP_FUNC();
+      case (_,         COMP())       then COMP_CLASS();
 
       // Transitions from COMP_COMP.
-      case (STATE_COMP(),    STATE_COMP_COMP())  then STATE_COMP_COMP();
+      case (COMP(),    COMP_COMP())  then COMP_COMP();
 
       // Transitions from PACKAGE.
-      case (STATE_COMP(),    STATE_PACKAGE())    then STATE_COMP_COMP();
-      case (_,               STATE_PACKAGE())    then elementState;
+      case (COMP(),    PACKAGE())    then COMP_COMP();
+      case (_,         PACKAGE())    then elementState;
 
       // Transitions from CLASS/FUNC.
       // next has already checked that the found element is encapsulated or
       // the class/func looks like a package, so any transition is fine here.
-      case (STATE_COMP(),    STATE_CLASS())      then STATE_COMP_COMP();
-      case (_,               STATE_CLASS())      then elementState;
-      case (STATE_COMP(),    STATE_FUNC())       then STATE_COMP_COMP();
-      case (_,               STATE_FUNC())       then elementState;
+      case (COMP(),    CLASS())      then COMP_COMP();
+      case (_,         CLASS())      then elementState;
+      case (COMP(),    FUNC())       then COMP_COMP();
+      case (_,         FUNC())       then elementState;
 
       // Transitions from COMP_CLASS.
-      case (STATE_FUNC(),    STATE_COMP_CLASS()) then STATE_COMP_FUNC();
-      case (STATE_CLASS(),   STATE_COMP_CLASS()) then STATE_COMP_CLASS();
-      case (STATE_PACKAGE(), STATE_COMP_CLASS()) then STATE_COMP_CLASS();
+      case (FUNC(),    COMP_CLASS()) then COMP_FUNC();
+      case (CLASS(),   COMP_CLASS()) then COMP_CLASS();
+      case (PACKAGE(), COMP_CLASS()) then COMP_CLASS();
 
       // Transitions from COMP_FUNC.
-      case (STATE_FUNC(),    STATE_COMP_FUNC())  then STATE_COMP_FUNC();
-      case (STATE_CLASS(),   STATE_COMP_FUNC())  then STATE_COMP_CLASS();
-      case (STATE_PACKAGE(), STATE_COMP_FUNC())  then STATE_COMP_CLASS();
+      case (FUNC(),    COMP_FUNC())  then COMP_FUNC();
+      case (CLASS(),   COMP_FUNC())  then COMP_CLASS();
+      case (PACKAGE(), COMP_FUNC())  then COMP_CLASS();
 
       // When looking for a function in a component the only valid form is
       // c.M1..Mn.f, where M1..Mn are classes, but we found a component instead.
-      case (STATE_COMP(), _)
-        then STATE_ERROR(STATE_COMP_FUNC());
+      case (COMP(), _)
+        then ERROR(COMP_FUNC());
 
       // We found a class when only components are allowed, i.e. when not looking
       // for a function via a component.
-      case (_,               STATE_COMP_COMP())
-        then STATE_ERROR(STATE_COMP_COMP());
+      case (_,         COMP_COMP())
+        then ERROR(COMP_COMP());
 
       else
         algorithm
@@ -465,10 +465,10 @@ uniontype LookupState
   //      SourceInfo info;
 
   //    // Nothing to check in packages or components.
-  //    case (STATE_BEGIN(), _, _) then ();
-  //    case (STATE_PACKAGE(), _, _) then ();
-  //    case (STATE_COMP(), _, _) then ();
-  //    case (STATE_COMP_COMP(), _, _) then ();
+  //    case (BEGIN(), _, _) then ();
+  //    case (PACKAGE(), _, _) then ();
+  //    case (COMP(), _, _) then ();
+  //    case (COMP_COMP(), _, _) then ();
 
   //    // Check if the found element is encapsulated, then it's ok to look it up in
   //    // a non-package.

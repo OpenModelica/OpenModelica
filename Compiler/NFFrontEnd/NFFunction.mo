@@ -191,7 +191,7 @@ uniontype Function
     output ComponentRef functionRef;
     output Absyn.Path functionPath;
   protected
-    list<InstNode> nodes;
+    ComponentRef cref;
     InstNode found_scope;
   algorithm
     try
@@ -203,14 +203,15 @@ uniontype Function
     end try;
 
     // Look up the function and create a cref for it.
-    (node, nodes, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
+    (cref, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
+    node := ComponentRef.node(cref);
 
     for s in InstNode.scopeList(found_scope) loop
       functionPath := Absyn.QUALIFIED(InstNode.name(s), functionPath);
     end for;
 
     functionRef := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-    functionRef := Inst.makeCref(functionName, nodes, scope, info, functionRef);
+    functionRef := ComponentRef.append(cref, functionRef);
   end lookupFunction;
 
   public

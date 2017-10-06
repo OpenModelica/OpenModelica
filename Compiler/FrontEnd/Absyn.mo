@@ -4184,28 +4184,16 @@ algorithm
 end crefSetLastSubs;
 
 public function crefHasSubscripts "This function finds if a cref has subscripts"
-  input ComponentRef inComponentRef;
-  output Boolean outHasSubscripts;
+  input ComponentRef cref;
+  output Boolean hasSubscripts;
 algorithm
-  outHasSubscripts := match (inComponentRef)
-    local
-      Ident i;
-      Boolean b;
-      ComponentRef c;
-
-    case CREF_IDENT(subscripts = {}) then false;
-
-    case CREF_QUAL(subscripts = {},componentRef = c)
-      equation
-        b = crefHasSubscripts(c);
-      then
-        b;
-
-    case CREF_FULLYQUALIFIED(componentRef = c)
-      equation
-        b = crefHasSubscripts(c);
-      then
-        b;
+  hasSubscripts := match cref
+    case CREF_IDENT() then not listEmpty(cref.subscripts);
+    case CREF_QUAL(subscripts = {}) then crefHasSubscripts(cref.componentRef);
+    case CREF_FULLYQUALIFIED() then crefHasSubscripts(cref.componentRef);
+    case WILD() then false;
+    case ALLWILD() then false;
+    else true;
   end match;
 end crefHasSubscripts;
 

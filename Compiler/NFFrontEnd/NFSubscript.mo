@@ -38,6 +38,11 @@ protected
 
 public
   import Expression = NFExpression;
+  import Absyn;
+
+  record RAW_SUBSCRIPT
+    Absyn.Subscript subscript;
+  end RAW_SUBSCRIPT;
 
   record UNTYPED
     Expression exp;

@@ -1243,108 +1243,114 @@ function instCref
   input Absyn.ComponentRef absynCref;
   input InstNode scope;
   input SourceInfo info;
-  output Expression cref;
+  output Expression crefExp;
 
   import NFComponentRef.Origin;
 protected
-  InstNode node;
-  list<InstNode> nodes;
-  ComponentRef cr;
+  ComponentRef cref, prefixed_cref;
   InstNode found_scope;
   Type ty;
   Component comp;
 algorithm
-  (node, nodes, found_scope) := Lookup.lookupComponent(absynCref, scope, info);
+  (cref, found_scope) := Lookup.lookupComponent(absynCref, scope, info);
+  cref := instCrefSubscripts(cref, scope, info);
 
-  if InstNode.isComponent(node) then
-    comp := InstNode.component(node);
+  crefExp := match cref
+    case ComponentRef.CREF()
+      algorithm
+        if InstNode.isComponent(cref.node) then
+          comp := InstNode.component(cref.node);
 
-    cref := match comp
-      case Component.ITERATOR()
-        then Expression.CREF(Type.UNKNOWN(), ComponentRef.fromNode(node, comp.ty, {}, Origin.ITERATOR));
+          crefExp := match comp
+            case Component.ITERATOR()
+              algorithm
+                checkUnsubscriptable(cref.subscripts, cref.node, info);
+              then
+                Expression.CREF(Type.UNKNOWN(), ComponentRef.fromNode(cref.node, comp.ty, {}, Origin.ITERATOR));
 
-      case Component.ENUM_LITERAL()
-        then comp.literal;
+            case Component.ENUM_LITERAL()
+              algorithm
+                checkUnsubscriptable(cref.subscripts, cref.node, info);
+              then
+                comp.literal;
 
-      else
-        algorithm
-          cr := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-          cr := makeCref(absynCref, nodes, scope, info, cr);
-        then
-          Expression.CREF(Type.UNKNOWN(), cr);
-    end match;
-  else
-    ty := InstNode.getType(node);
+            else
+              algorithm
+                prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
+                prefixed_cref := ComponentRef.append(cref, prefixed_cref);
+              then
+                Expression.CREF(Type.UNKNOWN(), prefixed_cref);
 
-    ty := match ty
-      case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
-      case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
-      else
-        algorithm
-          // This should be caught by lookupComponent, only type name classes
-          // are allowed to be used where a component is expected.
-          assert(false, getInstanceName() + " got unknown class node");
-        then
-          fail();
-    end match;
+          end match;
+        else
+          ty := InstNode.getType(cref.node);
 
-    cref := Expression.TYPENAME(ty);
-  end if;
+          ty := match ty
+            case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
+            case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
+            else
+              algorithm
+                // This should be caught by lookupComponent, only type name classes
+                // are allowed to be used where a component is expected.
+                assert(false, getInstanceName() + " got unknown class node");
+              then
+                fail();
+          end match;
+
+          crefExp := Expression.TYPENAME(ty);
+        end if;
+      then
+        crefExp;
+
+    else Expression.CREF(Type.UNKNOWN(), cref);
+  end match;
 end instCref;
 
-function makeCref
-  input Absyn.ComponentRef absynCref;
-  input list<InstNode> nodes;
+function checkUnsubscriptable
+  input list<Subscript> subscripts;
+  input InstNode node;
+  input SourceInfo info;
+algorithm
+  if not listEmpty(subscripts) then
+    Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+      {InstNode.name(node) + Subscript.toStringList(subscripts),
+       String(listLength(subscripts)), "0"}, info);
+    fail();
+  end if;
+end checkUnsubscriptable;
+
+function instCrefSubscripts
+  input output ComponentRef cref;
   input InstNode scope;
   input SourceInfo info;
-  input ComponentRef accumCref = ComponentRef.EMPTY();
-  output ComponentRef cref;
-
-  import NFComponentRef.Origin;
 algorithm
-  cref := match (absynCref, nodes)
-    local
-      InstNode node;
-      list<InstNode> rest_nodes;
-      list<Subscript> subs;
-
-    case (Absyn.ComponentRef.CREF_IDENT(), {node})
+  () := match cref
+    case ComponentRef.CREF()
       algorithm
-        subs := list(instSubscript(s, scope, info) for s in absynCref.subscripts);
+        if not listEmpty(cref.subscripts) then
+          cref.subscripts := list(instSubscript(s, scope, info) for s in cref.subscripts);
+        end if;
+
+        cref.restCref := instCrefSubscripts(cref.restCref, scope, info);
       then
-        ComponentRef.CREF(node, subs, Type.UNKNOWN(), Origin.CREF, accumCref);
+        ();
 
-    case (Absyn.ComponentRef.CREF_QUAL(), node :: rest_nodes)
-      algorithm
-        subs := list(instSubscript(s, scope, info) for s in absynCref.subscripts);
-        cref := ComponentRef.CREF(node, subs, Type.UNKNOWN(), Origin.CREF, accumCref);
-      then
-        makeCref(absynCref.componentRef, rest_nodes, scope, info, cref);
-
-    case (Absyn.ComponentRef.CREF_FULLYQUALIFIED(), _)
-      then makeCref(absynCref.componentRef, nodes, scope, info, accumCref);
-
-    case (Absyn.ComponentRef.WILD(), _) then ComponentRef.WILD();
-    case (Absyn.ComponentRef.ALLWILD(), _) then ComponentRef.WILD();
-
-    else
-      algorithm
-        assert(false, getInstanceName() + " failed");
-      then
-        fail();
-
+    else ();
   end match;
-end makeCref;
+end instCrefSubscripts;
 
 function instSubscript
-  input Absyn.Subscript absynSub;
+  input Subscript subscript;
   input InstNode scope;
   input SourceInfo info;
-  output Subscript subscript;
+  output Subscript outSubscript;
 protected
   Expression exp;
+  Absyn.Subscript absynSub;
 algorithm
-  subscript := match absynSub
+  Subscript.RAW_SUBSCRIPT(subscript = absynSub) := subscript;
+
+  outSubscript := match absynSub
     case Absyn.Subscript.NOSUB() then Subscript.WHOLE();
     case Absyn.Subscript.SUBSCRIPT()
       algorithm

@@ -32,6 +32,7 @@
 encapsulated uniontype NFComponentRef
 protected
   import NFComponent.Component;
+  import Absyn;
   import DAE;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -70,12 +71,63 @@ public
     output ComponentRef cref = CREF(node, subs, ty, origin, EMPTY());
   end fromNode;
 
+  function fromAbsyn
+    input InstNode node;
+    input list<Absyn.Subscript> subs;
+    input Origin origin = Origin.CREF;
+    input ComponentRef restCref = EMPTY();
+    output ComponentRef cref;
+  protected
+    list<Subscript> sl;
+  algorithm
+    sl := list(Subscript.RAW_SUBSCRIPT(s) for s in subs);
+    cref := CREF(node, sl, Type.UNKNOWN(), origin, restCref);
+  end fromAbsyn;
+
+  function fromBuiltin
+    input InstNode node;
+    input Type ty;
+    output ComponentRef cref = CREF(node, {}, ty, Origin.SCOPE, EMPTY());
+  end fromBuiltin;
+
+  function isEmpty
+    input ComponentRef cref;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match cref
+      case EMPTY() then true;
+      else false;
+    end match;
+  end isEmpty;
+
+  function node
+    input ComponentRef cref;
+    output InstNode node;
+  algorithm
+    CREF(node = node) := cref;
+  end node;
+
   function rest
     input ComponentRef cref;
     output ComponentRef restCref;
   algorithm
     CREF(restCref = restCref) := cref;
   end rest;
+
+  function append
+    input output ComponentRef cref;
+    input ComponentRef restCref;
+  algorithm
+    cref := match cref
+      case CREF()
+        algorithm
+          cref.restCref := append(cref.restCref, restCref);
+        then
+          cref;
+
+      case EMPTY() then restCref;
+    end match;
+  end append;
 
   function getType
     input ComponentRef cref;
