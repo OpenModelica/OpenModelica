@@ -1536,7 +1536,7 @@ algorithm
 
       case BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr)
         equation
-          componentRef = DAE.CREF_IDENT(inName, DAE.T_REAL_DEFAULT, {DAE.INDEX(DAE.ICONST(outVarIndex))});
+          componentRef = DAE.CREF_IDENT(inName + intString(outVarIndex), DAE.T_REAL_DEFAULT, {});
           currEquation = BackendDAE.SOLVED_EQUATION(componentRef, exp, source, eqAttr);
           currVariable = BackendVariable.copyVarNewName(componentRef, inTemplateVar);
 

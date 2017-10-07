@@ -993,7 +993,11 @@ protected function differentiateCrefs
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
   output DAE.FunctionTree outFunctionTree;
+protected
+  constant Boolean debug = false;
 algorithm
+  if debug then print("\nDifferentiate Exp-Cref: "+ExpressionDump.printExpStr(inExp)+
+                      " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
@@ -1006,7 +1010,7 @@ algorithm
       BackendDAE.VarKind kind;
 
       list<BackendDAE.Var> vars;
-      DAE.Type tp;
+      DAE.Type tp, arrayType;
       DAE.Exp e, e1, zero, one;
       DAE.Exp res, res1;
       DAE.ComponentRef cr, cr1;
@@ -1028,37 +1032,33 @@ algorithm
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (expl_1, outFunctionTree) = List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         res = DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nExp-Cref\n records " + se1);
       then
         (res, outFunctionTree);
 
    // case for array without expanding the array
+   // for generic gradient
+   case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY(ty=arrayType)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
+      equation
+        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
+        res = DAE.CREF(cr, tp);
+      then
+        (res, inFunctionTree);
+
+   // case for array without expanding the array
    case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY()), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n simple cref: " + se1);
         cr = ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr = ComponentReference.prependStringCref(matrixName, cr);
 
-        e = Expression.makeCrefExp(cr, tp);
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nresults to exp: " + se1);
+        res = Expression.makeCrefExp(cr, tp);
       then
-        (e, inFunctionTree);
+        (res, inFunctionTree);
 
     // case for arrays
     case ((e as DAE.CREF(ty = DAE.T_ARRAY())), _, _, _, _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n Array " + se1);
-
         (e1,true) = Expression.extendArrExp(e,false);
         (res, outFunctionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nExp-Cref\n Array " + se1);
       then
         (res, outFunctionTree);
 
@@ -1072,8 +1072,6 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr, inDiffwrtCref);
         one = Expression.makeConstOne(tp);
-
-        //print("\nExp-Cref\n d(x)/d(x) = 1");
       then
         (one, inFunctionTree);
 
@@ -1082,7 +1080,6 @@ algorithm
       equation
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
 
-        //print("\nExp-Cref\n d(x)/d(x) = 1");
       then
         (zero, inFunctionTree);
 
@@ -1090,8 +1087,6 @@ algorithm
     case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFF_FULL_JACOBIAN(), _)
       equation
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-
-        //print("\nExp-Cref\n d(x)/d(x) = 1");
       then
         (zero, inFunctionTree);
 
@@ -1102,8 +1097,6 @@ algorithm
         (var,_) = BackendVariable.getVarSingle(cr, knvars);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-
-        //print("\nExp-Cref\n known variables = 0");
       then
         (zero, inFunctionTree);
 
@@ -1114,8 +1107,6 @@ algorithm
         //print("\nExp-Cref\n known vars: " + ComponentReference.printComponentRefStr(cr));
         true = listMember(kind,{BackendDAE.DISCRETE()}) or not Types.isReal(tp);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-
-        //print("\nExp-Cref\n discrete variables = 0");
       then
         (zero, inFunctionTree);
     //
@@ -1125,31 +1116,19 @@ algorithm
     // special rule for DUMMY_STATES, they become DUMMY_DER
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\nDUMMY_STATE: " + se1);
-
         (var,_) = BackendVariable.getVarSingle(cr, timevars);
         true = BackendVariable.isDummyStateVar(var);
         cr = ComponentReference.crefPrefixDer(cr);
         res = Expression.makeCrefExp(cr, tp);
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nresults to exp: " + se1);
       then
         (res, inFunctionTree);
 
     // Continuous-time variables (and for shared eq-systems, also unknown variables: keep them as-they-are)
     case ((e as DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n all other vars: " + se1);
-
         //({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
         (_,_) = BackendVariable.getVarSingle(cr, timevars);
         res = DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nresults to exp: " + se1);
       then
         (res, inFunctionTree);
 
@@ -1159,44 +1138,26 @@ algorithm
     // dependenent variable cref without subscript
     case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n independent cref: " + se1);
-
         cr1 = ComponentReference.crefStripLastSubs(cr);
         (_,_) = BackendVariable.getVar(cr1, timevars);
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-
-        //se1 = ExpressionDump.printExpStr(zero);
-        //print("\nresults to exp: " + se1);
       then
         (zero, inFunctionTree);
 
     // dependenent variable cref
     case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n independent cref: " + se1);
-
         (_,_) = BackendVariable.getVar(cr, timevars);
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-
-        //se1 = ExpressionDump.printExpStr(zero);
-        //print("\nresults to exp: " + se1);
       then
         (zero, inFunctionTree);
 
     // all other variable crefs are needed to differentiate
     case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n dependent cref: " + se1);
-
         cr = ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr = ComponentReference.prependStringCref(matrixName, cr);
         res = Expression.makeCrefExp(cr, tp);
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nresults to exp: " + se1);
       then
         (res, inFunctionTree);
 
@@ -1212,10 +1173,6 @@ algorithm
         cr = createSeedCrefName(cr, matrixName);
 
         res = DAE.CREF(cr, tp);
-
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n GG seed: " + se1);
-        //print(" *** diffCref : " + ComponentReference.printComponentRefStr(cr) + " w.r.t " + ComponentReference.printComponentRefStr(inDiffwrtCref) + "\n");
       then
         (res, inFunctionTree);
 
@@ -1227,14 +1184,8 @@ algorithm
         //Take care! state means => der(state)
         false = BackendVariable.isStateVar(var);
 
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n GG dummy: " + se1);
-
         cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nresults to exp: " + se1);
       then
         (res, inFunctionTree);
 
@@ -1245,14 +1196,8 @@ algorithm
         //Take care! state means => der(state)
         false = BackendVariable.isStateVar(var);
 
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n GG dummy: " + se1);
-
         cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
-
-        //se1 = ExpressionDump.printExpStr(res);
-        //print("\nresults to exp: " + se1);
       then
         (res, inFunctionTree);
 
@@ -1261,13 +1206,7 @@ algorithm
     // d(all other)/d(x) = 0
     case (DAE.CREF(ty=tp), _, _, BackendDAE.GENERIC_GRADIENT(), _)
       equation
-        //se1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-Cref\n GG zero: " + se1);
-
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-
-        //se1 = ExpressionDump.printExpStr(zero);
-        //print("\nresults to exp: " + se1);
       then
         (zero, inFunctionTree);
 
@@ -1281,7 +1220,8 @@ algorithm
         Debug.trace(serr);
       then
         fail();
-    end matchcontinue;
+  end matchcontinue;
+  if debug then print("Differentiate-Exp-result: " + ExpressionDump.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateCrefs;
 
 public function createDiffedCrefName
@@ -1289,11 +1229,16 @@ public function createDiffedCrefName
   input String inMatrixName;
   output DAE.ComponentRef outCref;
 protected
- String str;
+ list<DAE.Subscript> subs;
 algorithm
-  outCref := ComponentReference.replaceSubsWithString(inCref);
+  subs := ComponentReference.crefLastSubs(inCref);
+
+  outCref := ComponentReference.crefStripLastSubs(inCref);
+
   outCref := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, outCref);
   outCref := ComponentReference.prependStringCref(inMatrixName, outCref);
+  outCref := ComponentReference.crefSetLastSubs(outCref, subs);
+  outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
 end createDiffedCrefName;
 
 public function createDifferentiatedCrefName
@@ -1302,18 +1247,54 @@ public function createDifferentiatedCrefName
   input String inMatrixName;
   output DAE.ComponentRef outCref;
 protected
- String str;
+ list<DAE.Subscript> subs;
+ constant Boolean debug = false;
 algorithm
-  outCref := ComponentReference.replaceSubsWithString(inCref);
-  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix + inMatrixName, ComponentReference.crefTypeConsiderSubs(inCref), {}));
+  if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
+
+  // move subs and and type to lastCref, to move type replace by last type
+  // and move last cref type to the last cref.
+  subs := ComponentReference.crefLastSubs(inCref);
+  outCref := ComponentReference.crefStripLastSubs(inCref);
+  outCref := ComponentReference.replaceSubsWithString(outCref);
+  if debug then print("after full type  " + Types.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
+  outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
+  if debug then print("after strip: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+
+  // join crefs
+  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
   outCref := ComponentReference.joinCrefs(outCref, inX);
+  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+
+  // fix subs and type of the last cref
+  outCref := ComponentReference.crefSetLastSubs(outCref, subs);
+  outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
+  if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
 end createDifferentiatedCrefName;
+
 
 public function createSeedCrefName
   input DAE.ComponentRef inCref;
   input String inMatrixName;
   output DAE.ComponentRef outCref;
+protected
+  list<DAE.Subscript> subs;
+  constant Boolean debug = false;
 algorithm
+  /* TODO: check cref generation of seed vars with cosideration of the subscripts
+           with the folowing cold removeSimpleEquation eliminates to many equations.
+  /*
+  if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
+  if debug then print("after full type  " + Types.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
+  subs := ComponentReference.crefLastSubs(inCref);
+  outCref := ComponentReference.crefStripLastSubs(inCref);
+  outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
+  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent("Seed" + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
+  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+  outCref := ComponentReference.crefSetLastSubs(outCref, subs);
+  outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
+  if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
+  */
   outCref := ComponentReference.replaceSubsWithString(inCref);
   outCref := ComponentReference.makeCrefIdent(ComponentReference.crefModelicaStr(outCref) + "Seed" + inMatrixName, ComponentReference.crefTypeConsiderSubs(inCref), {});
 end createSeedCrefName;

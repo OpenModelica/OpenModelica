@@ -8194,13 +8194,16 @@ algorithm
       SimCode.JacobianMatrix jac;
       list<SimCode.JacobianColumn> cols;
       list<SimCode.SimEqSystem> colEqs;
+      list<SimCodeVar.SimVar> colVars;
     case(SOME(jac))
       equation
         SimCode.JAC_MATRIX(columns=cols, jacobianIndex=idx) = jac;
-        colEqs = List.flatten(list(a.columnEqns for a in cols));
+        colEqs  = List.flatten(list(a.columnEqns for a in cols));
+        colVars = List.flatten(list(a.columnVars for a in cols));
         print("\tJacobian idx: "+intString(idx)+"\n\t");
         dumpSimEqSystemLst(colEqs,"\n\t");
         print("\n");
+        dumpVarLst(colVars,"columnVars("+intString(listLength(colVars))+")");
       then ();
     case(NONE())
       then ();
