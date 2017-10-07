@@ -91,7 +91,7 @@ algorithm
   (systs, index, ht) := List.mapFold2(systs, encapsulateWhenConditions_EqSystem, 1, ht);
 
   // shared removedEqns
-  ((removedEqs, vars, eqns, index, ht)) :=
+  ((removedEqs, vars, eqns, index, _)) :=
       BackendEquation.traverseEquationArray(shared.removedEqs, encapsulateWhenConditions_Equation,
                                              (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(shared.removedEqs)), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), index, ht) );
   shared.removedEqs := removedEqs;
@@ -408,7 +408,6 @@ algorithm
       DoubleEndedList.push_list_front(vars, vars1);
 
       (elseWhenList, preStmts2, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
-      elseWhen = List.last(elseWhenList);
 
       if listEmpty(elseWhenList) then
         (stmts, preStmts, index) = encapsulateWhenConditions_Algorithms(rest, vars, inIndex);
@@ -429,7 +428,7 @@ algorithm
           stmts_ = stmt2::listAppend(stmts_, stmts);
         else
           (stmts, preStmts, index) = encapsulateWhenConditions_Algorithms(rest, vars, inIndex);
-          stmts = listAppend(preStmts, stmts);
+          stmts_ = listAppend(preStmts, stmts);
         end if;
       end if;
     then (stmts_, preStmts, index);
@@ -562,9 +561,8 @@ protected function findZeroCrossings1 "
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, partitionKind=partitionKind) := inSyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := inSyst;
   (outSyst, outShared) := match BackendDAEUtil.getSubClock(inSyst, inShared)
     local
       BackendDAE.Variables globalKnownVars;
@@ -1069,7 +1067,7 @@ algorithm
       DAE.Exp e, e1, e2, e_1, e_2, eres, iterator, range, range2;
       list<DAE.Exp> inExpLst, explst;
       BackendDAE.Variables vars, globalKnownVars;
-      BackendDAE.ZeroCrossingSet zeroCrossings, zeroCrossingsDummy, samples;
+      BackendDAE.ZeroCrossingSet zeroCrossings, samples;
       DoubleEndedList<BackendDAE.ZeroCrossing> relations;
       list<BackendDAE.ZeroCrossing> zcLstNew, zc_lst;
       DAE.Operator op;
@@ -1084,6 +1082,7 @@ algorithm
       list<DAE.Exp> le;
       tuple<Integer, BackendDAE.Variables, BackendDAE.Variables> tp1;
       ForArgType tpl;
+      tuple<BackendDAE.ZeroCrossingSet, DoubleEndedList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer> tp2;
 
     case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
     then (inExp, false, inTpl);
@@ -1148,8 +1147,8 @@ algorithm
         BackendDump.debugExpStr(inExp, "\n");
       end if;
       oldNumRelations := DoubleEndedList.length(relations);
-      (e_1, (_, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
-      (e_2, (_, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossingsDummy, relations, samples, numMathFunctions), tp1));
+      (e_1, (_, inExpLst, range, tp2, tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+      (e_2, (_, inExpLst, range, (_, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, tp2, tp1));
       if intGt(DoubleEndedList.length(relations), oldNumRelations) then
         e_1 := DAE.LBINARY(e_1, op, e_2);
         if Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator) then

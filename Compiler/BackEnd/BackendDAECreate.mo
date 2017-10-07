@@ -256,8 +256,8 @@ protected function chooseExternalAlias "Chooses a alias variable depending on wh
 author: waurich TUD 2016-10"
   input BackendDAE.Var var1;
   input BackendDAE.Var var2;
-  output BackendDAE.Var simVar = var1;
-  output BackendDAE.Var aliasVar = var2;
+  output BackendDAE.Var simVar;
+  output BackendDAE.Var aliasVar;
 algorithm
   if BackendVariable.varHasBindExp(var1) and not BackendVariable.varHasBindExp(var2)then
     simVar := var1;

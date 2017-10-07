@@ -8676,8 +8676,8 @@ protected function getDomNFields
   input DomainFieldsLst inDomFieldLst;
   input Absyn.ComponentRef inDomainCr;
   input SCode.SourceInfo info;
-  output Integer outN;
-  output List<Absyn.ComponentRef> outFieldLst;
+  output Integer outN = 0;
+  output List<Absyn.ComponentRef> outFieldLst = {};
 algorithm
   try
     (outN,outFieldLst) := List.findSome1(inDomFieldLst,domNFieldsFindFun,inDomainCr);

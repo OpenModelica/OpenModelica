@@ -4668,7 +4668,7 @@ algorithm
         res = BackendEquation.getEquationRHS(eq);
         (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, ({},vars,0,0,true));
         res = BackendEquation.getEquationLHS(eq);
-        (_, (cr_lst,_,count,paramCount,true)) = Expression.traverseExpTopDown(res, findCrefs, (cr_lst,vars,count,paramCount,true));
+        (_, (cr_lst,_,count,_,true)) = Expression.traverseExpTopDown(res, findCrefs, (cr_lst,vars,count,paramCount,true));
         keepEquation = true;
         if (count == 1) then
           if Flags.isSet(Flags.DEBUG_ALIAS) then
@@ -4987,11 +4987,9 @@ start module for detecting simple equation/expressions
 "
   input DAE.Exp inExp;
   output Boolean outIsSimple;
-  protected
-      DAE.Exp outExp;
 algorithm
    //print("Traverse "  + ExpressionDump.printExpStr(inExp) + "\n");
-  (outExp,outIsSimple) := Expression.traverseExpTopDown(inExp, checkOperator, true);
+  (_,outIsSimple) := Expression.traverseExpTopDown(inExp, checkOperator, true);
   //print("Simple: " +  boolString(outIsSimple) + "\n");
 end isSimple;
 

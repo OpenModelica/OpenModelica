@@ -130,13 +130,11 @@ the extendhashtable is not updated"
   end FuncTypeExp_ExpToBoolean;
 protected
   DAE.Exp dst;
-  HashTable2.HashTable ht,ht_1,eht,eht_1;
+  HashTable2.HashTable ht,ht_1;
   HashTable3.HashTable invHt,invHt_1;
-  list<DAE.Ident> iv;
   String s;
-  Option<HashTable2.HashTable> derConst;
 algorithm
-  REPLACEMENTS(ht,invHt,eht,iv,derConst) := repl;
+  REPLACEMENTS(ht,invHt,_,_,_) := repl;
   if not BaseHashTable.hasKey(inSrc,ht) then
     return;
   end if;
@@ -1729,7 +1727,7 @@ algorithm
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source,eqAttr)::inAcc,true);
 
-    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst=stmts), source=source, expand=crefExpand, attr=eqAttr), repl, _, _, _)
+    case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst=stmts), source=source, expand=crefExpand, attr=eqAttr), repl, _, _, _)
       equation
         (crefs,_) = Expression.extractUniqueCrefsFromStatmentS(stmts);
         // if there is no need for expanding the original equation, the replaced one shouldn't either

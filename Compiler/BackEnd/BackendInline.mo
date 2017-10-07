@@ -224,7 +224,7 @@ algorithm
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,attr),true);
 
-    case(BackendDAE.ALGORITHM(size,alg as DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr),_)
+    case(BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr),_)
       equation
         (stmts1,true) = Inline.inlineStatements(stmts,fns,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);

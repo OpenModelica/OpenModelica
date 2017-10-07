@@ -238,7 +238,7 @@ public function traverseEquationArray_WithStop<T> "author: lochel
     output T outExtraArg;
   end FuncWithStop;
 protected
-  Boolean continue_ = true;
+  Boolean continue_;
   BackendDAE.Equation eqn;
 algorithm
   for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
