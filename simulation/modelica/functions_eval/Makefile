@@ -11,6 +11,7 @@ functionTest5.mos \
 functionTest7.mos \
 functionTest8.mos \
 functionTest9.mos \
+NumberOfSymmetricBaseSystems.mos \
 simplifyIf1.mos \
 simplifyIf2.mos \
 ticket2535.mos \

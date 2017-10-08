@@ -1,0 +1,38 @@
+// status: correct
+// Based on ticket:4550
+
+loadString("function numberOfSymmetricBaseSystems
+    input Integer m=3;
+    output Integer n;
+  algorithm
+     n := if mod(m, 2) == 0 then product(if mod(m, i) == 0 then 2 else 1 for i in {2^j for j in 1:integer(log(m/2)/log(2))}) else 1;
+  end numberOfSymmetricBaseSystems;");getErrorString();
+numberOfSymmetricBaseSystems(1);getErrorString();
+numberOfSymmetricBaseSystems(2);getErrorString();
+numberOfSymmetricBaseSystems(3);getErrorString();
+numberOfSymmetricBaseSystems(4);getErrorString();
+numberOfSymmetricBaseSystems(5);getErrorString();
+numberOfSymmetricBaseSystems(6);getErrorString();
+numberOfSymmetricBaseSystems(7);getErrorString();
+numberOfSymmetricBaseSystems(8);getErrorString();
+
+// Result:
+// true
+// ""
+// 1
+// ""
+// 1
+// ""
+// 1
+// ""
+// 2
+// ""
+// 1
+// ""
+// 2
+// ""
+// 1
+// ""
+// 4
+// ""
+// endResult
