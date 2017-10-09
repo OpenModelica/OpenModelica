@@ -3680,6 +3680,8 @@ algorithm
     case (Values.INTEGER(i1), Values.INTEGER(i2)) then Values.INTEGER(max(i1, i2));
     case (Values.REAL(r1), Values.REAL(r2)) then Values.REAL(max(r1, r2));
     case (Values.BOOL(b1), Values.BOOL(b2)) then Values.BOOL(b1 or b2);
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL())
+      then if v1.index > v2.index then v1 else v2;
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
@@ -3756,6 +3758,8 @@ algorithm
     case (Values.INTEGER(i1), Values.INTEGER(i2)) then Values.INTEGER(min(i1, i2));
     case (Values.REAL(r1), Values.REAL(r2)) then Values.REAL(min(r1, r2));
     case (Values.BOOL(b1), Values.BOOL(b2)) then Values.BOOL(b1 and b2);
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL())
+      then if v1.index < v2.index then v1 else v2;
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);

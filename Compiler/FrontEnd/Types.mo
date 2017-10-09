@@ -7292,27 +7292,6 @@ algorithm
   end match;
 end varHasMetaRecordType;
 
-public function scalarSuperType
-  "Checks that the givens types are scalar and that one is subtype of the other (in the case of integers)."
-  input DAE.Type ity1;
-  input DAE.Type ity2;
-  output DAE.Type ty;
-algorithm
-  ty := match (ity1,ity2)
-    local Type ty1, ty2;
-    case (DAE.T_INTEGER(),DAE.T_INTEGER()) then DAE.T_INTEGER_DEFAULT;
-    case (DAE.T_REAL(),DAE.T_REAL())       then DAE.T_REAL_DEFAULT;
-    case (DAE.T_INTEGER(),DAE.T_REAL())    then DAE.T_REAL_DEFAULT;
-    case (DAE.T_REAL(),DAE.T_INTEGER())    then DAE.T_REAL_DEFAULT;
-    case (DAE.T_SUBTYPE_BASIC(complexType = ty1),ty2)          then scalarSuperType(ty1,ty2);
-    case (ty1,DAE.T_SUBTYPE_BASIC(complexType = ty2))          then scalarSuperType(ty1,ty2);
-
-    case (DAE.T_BOOL(),DAE.T_BOOL())       then DAE.T_BOOL_DEFAULT;
-    // adrpo: TODO? Why not string here?
-    // case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _))   then DAE.T_STRING_DEFAULT;
-  end match;
-end scalarSuperType;
-
 protected function optInteger
   input Option<Integer> inInt;
   output Integer outInt;

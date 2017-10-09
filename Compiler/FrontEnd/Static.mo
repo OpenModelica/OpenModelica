@@ -1865,6 +1865,14 @@ algorithm
       then
         (exp, ty, ty, NONE(), fn);
 
+    case (Absyn.IDENT("min"), DAE.T_ENUMERATION())
+      algorithm
+        v := Values.ENUM_LITERAL(Absyn.suffixPath(unboxedType.path,
+          List.last(unboxedType.names)), listLength(unboxedType.names));
+        (exp, ty) := Types.matchType(inExp, inType, DAE.T_ENUMERATION_DEFAULT, true);
+      then
+        (exp, ty, ty, SOME(v), fn);
+
     case (Absyn.IDENT("max"), DAE.T_REAL())
       algorithm
         r := realNeg(System.realMaxLit());
@@ -1892,6 +1900,13 @@ algorithm
       algorithm
         v := Values.STRING("");
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
+      then
+        (exp, ty, ty, SOME(v), fn);
+
+    case (Absyn.IDENT("max"), DAE.T_ENUMERATION())
+      algorithm
+        v := Values.ENUM_LITERAL(Absyn.suffixPath(unboxedType.path, listHead(unboxedType.names)), 1);
+        (exp, ty) := Types.matchType(inExp, inType, DAE.T_ENUMERATION_DEFAULT, true);
       then
         (exp, ty, ty, SOME(v), fn);
 
@@ -4508,36 +4523,30 @@ end elabBuiltinMin;
 protected function elabBuiltinMinMaxCommon
   "Helper function to elabBuiltinMin and elabBuiltinMax, containing common
   functionality."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
   input String inFnName;
   input list<Absyn.Exp> inFnArgs;
-  input Boolean inImpl;
-  input Prefix.Prefix inPrefix;
+  input Boolean impl;
+  input Prefix.Prefix prefix;
   input SourceInfo info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
+        output DAE.Exp outExp;
+        output DAE.Properties outProperties;
 algorithm
-  (outCache, outExp, outProperties):=
-  match (inCache, inEnv, inFnName, inFnArgs, inImpl, inPrefix, info)
+  (outExp, outProperties) := match inFnArgs
     local
       DAE.Exp arrexp_1,s1_1,s2_1, call;
       DAE.Type tp;
       DAE.Type ty,ty1,ty2,elt_ty;
       DAE.Const c,c1,c2;
-      FCore.Graph env;
       Absyn.Exp arrexp,s1,s2;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
       DAE.Properties p;
 
     // min|max(vector)
-    case (cache, env, _, {arrexp}, impl, pre, _)
+    case {arrexp}
       equation
         (cache, arrexp_1, DAE.PROP(ty, c), _) =
-          elabExpInExpression(cache, env, arrexp, impl,NONE(), true, pre, info);
+          elabExpInExpression(cache, env, arrexp, impl,NONE(), true, prefix, info);
         true = Types.isArray(ty);
         arrexp_1 = Expression.matrixToArray(arrexp_1);
         elt_ty = Types.arrayElementType(ty);
@@ -4545,25 +4554,23 @@ algorithm
         false = Types.isString(tp);
         call = Expression.makePureBuiltinCall(inFnName, {arrexp_1}, tp);
       then
-        (cache, call, DAE.PROP(elt_ty,c));
+        (call, DAE.PROP(elt_ty,c));
 
     // min|max(x,y) where x & y are scalars.
-    case (cache, env, _, {s1, s2}, impl, pre, _)
+    case {s1, s2}
       equation
         (cache, s1_1, DAE.PROP(ty1, c1), _) =
-          elabExpInExpression(cache, env, s1, impl,NONE(), true, pre, info);
+          elabExpInExpression(cache, env, s1, impl, NONE(), true, prefix, info);
         (cache, s2_1, DAE.PROP(ty2, c2), _) =
-          elabExpInExpression(cache, env, s2, impl,NONE(), true, pre, info);
+          elabExpInExpression(cache, env, s2, impl, NONE(), true, prefix, info);
 
-        ty = Types.scalarSuperType(ty1,ty2);
-        (s1_1,_) = Types.matchType(s1_1, ty1, ty, true);
-        (s2_1,_) = Types.matchType(s2_1, ty2, ty, true);
+        (s1_1, s2_1, ty, true) = Types.checkTypeCompat(s1_1, ty1, s2_1, ty2);
         c = Types.constAnd(c1, c2);
         tp = Types.simplifyType(ty);
         false = Types.isString(tp);
         call = Expression.makePureBuiltinCall(inFnName, {s1_1, s2_1}, tp);
       then
-        (cache, call, DAE.PROP(ty,c));
+        (call, DAE.PROP(ty,c));
 
   end match;
 end elabBuiltinMinMaxCommon;

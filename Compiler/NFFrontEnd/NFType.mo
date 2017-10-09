@@ -367,21 +367,6 @@ public
     end match;
   end dimensionCount;
 
-  function scalarSuperType
-    "Checks that the given types are scalar and that one is a subtype of the other."
-    input Type ty1;
-    input Type ty2;
-    output Type ty;
-  algorithm
-    ty := match (ty1, ty2)
-      case (INTEGER(), INTEGER()) then INTEGER();
-      case (REAL(), REAL()) then REAL();
-      case (INTEGER(), REAL()) then REAL();
-      case (REAL(), INTEGER()) then REAL();
-      case (BOOLEAN(), BOOLEAN()) then BOOLEAN();
-    end match;
-  end scalarSuperType;
-
   function toString
     input Type ty;
     output String str;
