@@ -7,6 +7,11 @@ LexerModelicaDiff.mo: lexerModelicaDiff.l OMCC/OMCC
 	cp lexerModelicaDiff.l OMCC/
 	cd OMCC && ./OMCC --lexer-only ModelicaDiff
 	mv OMCC/LexerModelicaDiff.mo "$@"
+LexerJSON.mo: lexerJSON.l OMCC/OMCC
+	test ! -f OMCC/LexerJSON.mo || rm OMCC/LexerJSON.mo
+	cp lexerJSON.l OMCC/
+	cd OMCC && ./OMCC --lexer-only JSON
+	mv OMCC/LexerJSON.mo "$@"
 OMCC/OMCC:
 	test -e OMCC/.git || git clone https://github.com/OpenModelica/OpenModelica-OMCC OMCC
 	cd OMCC && git fetch && git pull --ff-only
