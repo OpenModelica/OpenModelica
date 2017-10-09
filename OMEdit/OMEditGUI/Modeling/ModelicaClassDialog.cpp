@@ -742,7 +742,7 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   mpNameTextBox = new QLineEdit(mpLibraryTreeItem->getName());
   mpNameTextBox->selectAll();
   mpPathLabel = new Label(Helper::path);
-  mpPathTextBox = new QLineEdit;
+  mpPathTextBox = new QLineEdit(mpLibraryTreeItem->isTopLevel() ? "" : mpLibraryTreeItem->parent()->getNameStructure());
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
   connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
@@ -804,6 +804,16 @@ void DuplicateClassDialog::duplicateClass()
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
                           .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);
     return;
+  }
+  // check if path is not a system library
+  if (!mpPathTextBox->text().isEmpty()) {
+    LibraryTreeItem *pLibraryTreeItem;
+    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mpPathTextBox->text());
+    if (pLibraryTreeItem && pLibraryTreeItem->isSystemLibrary()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Cannot duplicate inside system library."), Helper::ok);
+      return;
+    }
   }
   // if everything is fine then duplicate the class.
   if (MainWindow::instance()->getOMCProxy()->copyClass(mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
