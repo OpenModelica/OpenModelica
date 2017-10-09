@@ -18,6 +18,7 @@ endif
 
 OMDEVMSYS=$(shell cygpath $$OMDEV)
 
+TOP_DIR=../../
 USE_METIS = -DUSE_METIS
 CORBAHOME = $(OMDEVMSYS)
 FMIINCLUDE = ../../3rdParty/FMIL/install/include

@@ -49,7 +49,7 @@ public function newStream
   input Integer port;
   input Boolean debug;
 
-  external "C" GraphStreamExt_newStream(OpenModelica.threadData(), streamName, host, port, debug) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_newStream(OpenModelica.threadData(), streamName, host, port, debug) annotation(Library = {"omcgraphstream","omcruntime"});
 end newStream;
 
 public function addNode
@@ -58,7 +58,7 @@ public function addNode
   input Integer timeId;
   input String nodeId;
 
-  external "C" GraphStreamExt_addNode(OpenModelica.threadData(), streamName, sourceId, timeId, nodeId) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_addNode(OpenModelica.threadData(), streamName, sourceId, timeId, nodeId) annotation(Library = {"omcgraphstream","omcruntime"});
 end addNode;
 
 public function addEdge
@@ -69,7 +69,7 @@ public function addEdge
   input String nodeIdTarget;
   input Boolean directed;
 
-  external "C" GraphStreamExt_addEdge(OpenModelica.threadData(), streamName, sourceId, timeId, nodeIdSource, nodeIdTarget, directed) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_addEdge(OpenModelica.threadData(), streamName, sourceId, timeId, nodeIdSource, nodeIdTarget, directed) annotation(Library = {"omcgraphstream","omcruntime"});
 end addEdge;
 
 public function addNodeAttribute
@@ -80,7 +80,7 @@ public function addNodeAttribute
   input String attributeName;
   input Values.Value attributeValue;
 
-  external "C" GraphStreamExt_addNodeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeId, attributeName, attributeValue) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_addNodeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeId, attributeName, attributeValue) annotation(Library = {"omcgraphstream","omcruntime"});
 end addNodeAttribute;
 
 public function changeNodeAttribute
@@ -92,7 +92,7 @@ public function changeNodeAttribute
   input Values.Value attributeValueOld;
   input Values.Value attributeValueNew;
 
-  external "C" GraphStreamExt_changeNodeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeId, attributeName, attributeValueOld, attributeValueNew) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_changeNodeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeId, attributeName, attributeValueOld, attributeValueNew) annotation(Library = {"omcgraphstream","omcruntime"});
 end changeNodeAttribute;
 
 public function addEdgeAttribute
@@ -104,7 +104,7 @@ public function addEdgeAttribute
   input String attributeName;
   input Values.Value attributeValue;
 
-  external "C" GraphStreamExt_addEdgeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeIdSource, nodeIdTarget, attributeName, attributeValue) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_addEdgeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeIdSource, nodeIdTarget, attributeName, attributeValue) annotation(Library = {"omcgraphstream","omcruntime"});
 end addEdgeAttribute;
 
 public function changeEdgeAttribute
@@ -117,7 +117,7 @@ public function changeEdgeAttribute
   input Values.Value attributeValueOld;
   input Values.Value attributeValueNew;
 
-  external "C" GraphStreamExt_changeEdgeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeIdSource, nodeIdTarget, attributeName, attributeValueOld, attributeValueNew) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_changeEdgeAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, nodeIdSource, nodeIdTarget, attributeName, attributeValueOld, attributeValueNew) annotation(Library = {"omcgraphstream","omcruntime"});
 end changeEdgeAttribute;
 
 public function addGraphAttribute
@@ -127,7 +127,7 @@ public function addGraphAttribute
   input String attributeName;
   input Values.Value attributeValue;
 
-  external "C" GraphStreamExt_addGraphAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, attributeName, attributeValue) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_addGraphAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, attributeName, attributeValue) annotation(Library = {"omcgraphstream","omcruntime"});
 end addGraphAttribute;
 
 public function changeGraphAttribute
@@ -138,11 +138,11 @@ public function changeGraphAttribute
   input Values.Value attributeValueOld;
   input Values.Value attributeValueNew;
 
-  external "C" GraphStreamExt_changeGraphAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, attributeName, attributeValueOld, attributeValueNew) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_changeGraphAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, attributeName, attributeValueOld, attributeValueNew) annotation(Library = {"omcgraphstream","omcruntime"});
 end changeGraphAttribute;
 
 public function cleanup
-  external "C" GraphStreamExt_cleanup(OpenModelica.threadData()) annotation(Library = "omcruntime");
+  external "C" GraphStreamExt_cleanup(OpenModelica.threadData()) annotation(Library = {"omcgraphstream","omcruntime"});
 end cleanup;
 
 annotation(__OpenModelica_Interface="frontend");

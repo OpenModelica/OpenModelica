@@ -14,7 +14,7 @@ OMHOME=$(OMBUILDDIR)
 LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lModelicaExternalC -lm \
--lomantlr3 -lregex -lwsock32 -llpsolve55 -luuid -lole32 $(GSLIB) -lws2_32 -limagehlp \
+-lomantlr3 -lregex -lwsock32 -llpsolve55 -luuid -lole32 -lws2_32 -limagehlp \
 -lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
 -Wl,--enable-stdcall-fixup -lstdc++ -static-libgcc \
 -L../../3rdParty/lpsolve/build/lib \
@@ -23,7 +23,6 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 $(EXTRA_LD_FLAGS)
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
-GSLIB = -L$(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/ -lnetstream
 CPPFLAGS=-I"$(OMHOME)/include/omc/c" -I../Util/ -DADD_METARECORD_DEFINITIONS=
 CORBALIBS=
 ULIMIT_CMD=true

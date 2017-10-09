@@ -19,8 +19,8 @@ else
 	configUnix =
 endif
 
-OMC_OBJ_SHARED = Dynload_omc$(OBJEXT) Error_omc$(OBJEXT) \
-  Print_omc.o GraphStreamExt_omc$(OBJEXT) \
+OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
+  Print_omc.o \
   ErrorMessage$(OBJEXT) systemimplmisc.o System_omc$(OBJEXT) \
   Lapack_omc.o Settings_omc$(OBJEXT) \
   UnitParserExt_omc.o unitparser.o \
@@ -32,16 +32,14 @@ OMC_OBJ_STUBS = corbaimpl_stub_omc.o
 OMC_OBJ_BOOT = $(OMC_OBJ_SHARED) $(OMC_OBJ_STUBS)
 
 OMC_OBJ = $(OMC_OBJ_SHARED) serializer.o \
-  HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o \
   ptolemyio_omc.o SimulationResults_omc.o \
-  BackendDAEEXT_omc.o matching.o matching_cheap.o \
   FMI_omc.o $(OMCCORBASRC)
 
 # Database_omc.o
 
 all: install
 .PHONY: all install
-install: libomcruntime$(SHREXT)
+install: libomcruntime$(SHREXT) libomcgraphstream.a libomcbackendruntime.a
 	cp libomcruntime$(SHREXT) $(builddir_lib)/$(TRIPLE)/omc/
 OBJEXT=.o
 BOOTH=../OpenModelicaBootstrappingHeader.h
@@ -50,18 +48,29 @@ ifeq ($(wildcard $(OMC)),)
 OBJEXT=.boot.o
 BOOTH=../boot/tarball-include/OpenModelicaBootstrappingHeader.h
 CPPFLAGS += -I../boot/tarball-include
-install_bootstrapping: libomcruntime-boot$(SHREXT)
+install_bootstrapping: libomcruntime-boot$(SHREXT) libomcgraphstream.a libomcbackendruntime.a
 else
 install_bootstrapping:
 	@echo "Skipping libomcruntime-boot.a since we already have an OMC executable"
 endif
 endif
 
+libomcgraphstream.a: GraphStreamExt_omc$(OBJEXT) $(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/libnetstream.a
+	rm -f $@
+	cp -a $(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/libnetstream.a "$@.tmp"
+	$(AR) -s -r "$@.tmp" GraphStreamExt_omc$(OBJEXT)
+	mv "$@.tmp" "$@"
+
+libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT)
+	rm -f $@
+	$(AR) -s -r "$@.tmp" $^
+	mv "$@.tmp" "$@"
+
 libomcruntime.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)
 
-libomcruntime-boot.a : $(OMC_OBJ_BOOT)
+libomcruntime-boot.a : $(OMC_OBJ_BOOT) Dynload_omc$(OBJEXT)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ_BOOT)
 

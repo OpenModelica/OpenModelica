@@ -37,13 +37,13 @@ ifeq ($(BOOTSTRAP_STAGE_1),1)
 OMCRUNTIMEAR=$(OMCRUNTIMEAR1)
 OMPARSEAR=../../Parser/libomparse-boot.a
 LOMPARSE=$(OMPARSEAR)
-LCOMPILERRUNTIME=$(abspath $(OMCRUNTIMEAR))
+LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a $(abspath $(OMCRUNTIMEAR))
 FMILIB_OR_BOOT=
 else
 OMCRUNTIMEAR=$(OMCRUNTIMEAR2)
 OMPARSEAR=$(OMHOME)/$(LIB_OMC)/libomparse.a
 LOMPARSE=-lomparse
-LCOMPILERRUNTIME=-lomcruntime
+LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a -lomcruntime
 FMILIB_OR_BOOT=$(FMILIB) -lexpat
 endif
 
