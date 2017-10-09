@@ -48,6 +48,7 @@ Log10.mo \
 MathematicalFunctions.mo \
 MaxArray.mo \
 MinMax.mo \
+MinMaxEnum.mo \
 Mod.mo \
 MultiFunctionReturnValueUseOnlyFirst.mo \
 NumericFunctions.mo \
