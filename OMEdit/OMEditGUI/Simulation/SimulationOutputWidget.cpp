@@ -233,66 +233,97 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Compilation"));
   mpGeneratedFilesTabWidget->setTabEnabled(1, false);
-  mGeneratedFilesList << ".c"
-                      << ".o"
-                      << "_01exo.c"
-                      << "_01exo.o"
-                      << "_02nls.c"
-                      << "_02nls.o"
-                      << "_03lsy.c"
-                      << "_03lsy.o"
-                      << "_04set.c"
-                      << "_04set.o"
-                      << "_05evt.c"
-                      << "_05evt.o"
-                      << "_06inz.c"
-                      << "_06inz.o"
-                      << "_07dly.c"
-                      << "_07dly.o"
-                      << "_08bnd.c"
-                      << "_08bnd.o"
-                      << "_09alg.c"
-                      << "_09alg.o"
-                      << "_10asr.c"
-                      << "_10asr.o"
-                      << "_11mix.c"
-                      << "_11mix.o"
-                      << "_11mix.h"
-                      << "_12jac.c"
-                      << "_12jac.o"
-                      << "_12jac.h"
-                      << "_13opt.c"
-                      << "_13opt.o"
-                      << "_13opt.h"
-                      << "_14lnz.c"
-                      << "_14lnz.o"
-                      << "_15syn.c"
-                      << "_15syn.o"
-                      << "_16dae.c"
-                      << "_16dae.o"
-                      << "_16dae.h"
-                      << "_17inl.c"
-                      << "_17inl.o"
-                      << "_functions.c"
-                      << "_functions.o"
-                      << "_functions.h"
-                      << "_records.c"
-                      << "_records.o"
-                      << "_includes.h"
-                      << "_literals.h"
-                      << "_model.h"
-                      << ".makefile";
+  mGeneratedFilesList << "%1.makefile";
+  // cpp-runtime generated files
+  if (simulationOptions.getTargetLanguage().compare("Cpp") == 0) {
+    mGeneratedFilesList << "%1.bat"
+                        << "OMCpp%1.cpp"
+                        << "OMCpp%1.h"
+                        << "OMCpp%1.exp"
+                        << "OMCpp%1.lib"
+                        << "OMCpp%1AlgLoopMain.cpp"
+                        << "OMCpp%1CalcHelperMain.cpp"
+                        << "OMCpp%1CalcHelperMain.obj"
+                        << "OMCpp%1FactoryExport.cpp"
+                        << "OMCpp%1Functions.cpp"
+                        << "OMCpp%1Functions.h"
+                        << "OMCpp%1Initialize.cpp"
+                        << "OMCpp%1Initialize.h"
+                        << "OMCpp%1Jacobian.cpp"
+                        << "OMCpp%1Jacobian.h"
+                        << "OMCpp%1Main.cpp"
+                        << "OMCpp%1Main.obj"
+                        << "OMCpp%1Mixed.cpp"
+                        << "OMCpp%1Mixed.h"
+                        << "OMCpp%1StateSelection.cpp"
+                        << "OMCpp%1StateSelection.h"
+                        << "OMCpp%1Types.h"
+                        << "OMCpp%1WriteOutput.cpp"
+                        << "OMCpp%1WriteOutput.h";
+  } else {
+    // c-runtime generated files
+    mGeneratedFilesList << "%1.c"
+                        << "%1.o"
+                        << "%1_01exo.c"
+                        << "%1_01exo.o"
+                        << "%1_02nls.c"
+                        << "%1_02nls.o"
+                        << "%1_03lsy.c"
+                        << "%1_03lsy.o"
+                        << "%1_04set.c"
+                        << "%1_04set.o"
+                        << "%1_05evt.c"
+                        << "%1_05evt.o"
+                        << "%1_06inz.c"
+                        << "%1_06inz.o"
+                        << "%1_07dly.c"
+                        << "%1_07dly.o"
+                        << "%1_08bnd.c"
+                        << "%1_08bnd.o"
+                        << "%1_09alg.c"
+                        << "%1_09alg.o"
+                        << "%1_10asr.c"
+                        << "%1_10asr.o"
+                        << "%1_11mix.c"
+                        << "%1_11mix.o"
+                        << "%1_11mix.h"
+                        << "%1_12jac.c"
+                        << "%1_12jac.o"
+                        << "%1_12jac.h"
+                        << "%1_13opt.c"
+                        << "%1_13opt.o"
+                        << "%1_13opt.h"
+                        << "%1_14lnz.c"
+                        << "%1_14lnz.o"
+                        << "%1_15syn.c"
+                        << "%1_15syn.o"
+                        << "%1_16dae.c"
+                        << "%1_16dae.o"
+                        << "%1_16dae.h"
+                        << "%1_17inl.c"
+                        << "%1_17inl.o"
+                        << "%1_functions.c"
+                        << "%1_functions.o"
+                        << "%1_functions.h"
+                        << "%1_records.c"
+                        << "%1_records.o"
+                        << "%1_includes.h"
+                        << "%1_literals.h"
+                        << "%1_model.h";
+  }
   if (mSimulationOptions.getShowGeneratedFiles()) {
     QString workingDirectory = mSimulationOptions.getWorkingDirectory();
     QString outputFile = mSimulationOptions.getOutputFileName();
     foreach (QString fileName, mGeneratedFilesList) {
       // filter *.o files and .makefile
       if (!fileName.endsWith(".o") && fileName.compare(".makefile") != 0) {
-        addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName));
+        addGeneratedFileTab(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
       }
     }
-    /* className_info.json tab */
-    addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_info.json"));
+    if (simulationOptions.getTargetLanguage().compare("C") == 0) {
+      /* className_info.json tab */
+      addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_info.json"));
+    }
     /* className_init.xml tab */
     addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_init.xml"));
   }
@@ -503,8 +534,8 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     QString workingDirectory = mSimulationOptions.getWorkingDirectory();
     QString outputFile = mSimulationOptions.getOutputFileName();
     foreach (QString fileName, mGeneratedFilesList) {
-      if (QFile::exists(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName))) {
-        QFile::remove(QString("%1/%2%3").arg(workingDirectory, outputFile, fileName));
+      if (QFile::exists(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)))) {
+        QFile::remove(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
       }
     }
   }

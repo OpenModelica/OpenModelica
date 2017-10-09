@@ -88,6 +88,7 @@ public:
     setReSimulate(false);
     setWorkingDirectory("");
     setFileName("");
+    setTargetLanguage("C");
   }
 
   void setClassName(QString className) {mClassName = className;}
@@ -184,6 +185,8 @@ public:
   QString getWorkingDirectory() const {return mWorkingDirectory;}
   void setFileName(QString fileName) {mFileName = fileName;}
   QString getFileName() const {return mFileName;}
+  void setTargetLanguage(QString targetLanguage) {mTargetLanguage = targetLanguage;}
+  QString getTargetLanguage() const {return mTargetLanguage;}
 private:
   QString mClassName;
   QString mStartTime;
@@ -232,6 +235,7 @@ private:
   bool mReSimulate;
   QString mWorkingDirectory;
   QString mFileName;
+  QString mTargetLanguage;
 };
 
 #endif // SIMULATIONOPTIONS_H

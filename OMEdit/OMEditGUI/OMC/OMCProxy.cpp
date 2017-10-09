@@ -1374,7 +1374,11 @@ QString OMCProxy::getClassComment(QString className)
   */
 QString OMCProxy::changeDirectory(QString directory)
 {
-  return mpOMCInterface->cd(directory);
+  QString result = mpOMCInterface->cd(directory);
+  if (result.isEmpty()) {
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!

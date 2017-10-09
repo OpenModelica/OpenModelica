@@ -1027,6 +1027,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setReSimulate(mIsReSimulate);
   simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   simulationOptions.setFileName(mFileName);
+  simulationOptions.setTargetLanguage(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText());
   return simulationOptions;
 }
 
@@ -1264,7 +1265,16 @@ void SimulationDialog::performSimulation()
   MainWindow::instance()->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
   MainWindow::instance()->getProgressBar()->setRange(0, 0);
   MainWindow::instance()->showProgressBar();
+  // create a folder with model name to dump the files in it.
+  QString modelDirPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
+  if (!QDir().exists(modelDirPath)) {
+    QDir().mkpath(modelDirPath);
+  }
+  // set the folder as working directory.
+  MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirPath);
   bool isTranslationSuccessful = mIsReSimulate ? true : translateModel(simulationParameters);
+  simulationOptions.setWorkingDirectory(modelDirPath);
+  MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   // hide the progress bar
   MainWindow::instance()->hideProgressBar();
   MainWindow::instance()->getStatusBar()->clearMessage();
@@ -1354,7 +1364,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    QStringList list = pOMCProxy->readSimulationResultVars(simulationOptions.getResultFileName());
+    QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
