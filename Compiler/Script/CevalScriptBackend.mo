@@ -4277,51 +4277,14 @@ protected function copyClass
   output Absyn.Program outProg;
 protected
   Absyn.Class cls;
-  String orig_file, delim, cls_path_str;
-  String pkg_path, library_path, dst_path;
-  Integer len, delim_len;
+  String orig_file, dst_path;
   Absyn.Path cls_path = inClassPath;
 algorithm
   Absyn.CLASS(info = SOURCEINFO(fileName = orig_file)) := inClass;
 
   dst_path := match inWithin
     // Destination is top scope, put the copy in a new file.
-    case Absyn.TOP()
-      algorithm
-        len := stringLength(orig_file);
-        delim := System.pathDelimiter();
-        delim_len := stringLength(delim);
-
-        // Figure out what the package is called.
-        if System.basename(orig_file) == "package.mo" then
-          // Get the part before package.mo.
-          pkg_path := System.dirname(orig_file);
-        else
-          // Remove the .mo suffix.
-          pkg_path := substring(orig_file, 1, len - 3);
-        end if;
-
-        // Figure out what the base path for the library is.
-        len := stringLength(pkg_path);
-        while true loop
-          cls_path_str := Absyn.pathString(cls_path, delim);
-
-          // Check if the given class path matches the end of the path.
-          if substring(pkg_path, len - stringLength(cls_path_str) + 1, len) == cls_path_str then
-            library_path := substring(pkg_path, 1, len - stringLength(cls_path_str) - delim_len);
-            break;
-          end if;
-
-          if Absyn.pathIsIdent(cls_path) then
-            library_path := pkg_path;
-            break;
-          end if;
-
-          // Remove the last part of the class path and try again.
-          cls_path := Absyn.stripLast(cls_path);
-        end while;
-      then
-        library_path + delim + inName + ".mo";
+    case Absyn.TOP() then "<interactive>";
 
     // Destination is within another class, put the copy in the same file as the
     // destination class.
