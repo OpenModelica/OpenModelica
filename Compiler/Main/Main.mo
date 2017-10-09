@@ -600,7 +600,7 @@ algorithm
   cls := Config.classToInstantiate();
   // If no class was explicitly specified, instantiate the last class in the
   // program. Otherwise, instantiate the given class name.
-  cname := if stringLength(cls) == 0 then Absyn.lastClassname(program) else Absyn.stringPath(cls);
+  cname := if stringEmpty(cls) then Absyn.lastClassname(program) else Absyn.stringPath(cls);
   st := GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable, program);
   (cache, env, dae) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
 end instantiate;

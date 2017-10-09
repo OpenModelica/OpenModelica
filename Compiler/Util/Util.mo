@@ -943,12 +943,6 @@ public function boolCompare
   output Integer outResult = if inN == inM then 0 elseif inN > inM then 1 else -1;
 end boolCompare;
 
-public function isEmptyString
-  "Returns true if string is the empty string."
-  input String inString;
-  output Boolean outIsEmpty = stringLength(inString) == 0;
-end isEmptyString;
-
 public function isNotEmptyString "Returns true if string is not the empty string."
   input String inString;
   output Boolean outIsNotEmpty = stringLength(inString) > 0;

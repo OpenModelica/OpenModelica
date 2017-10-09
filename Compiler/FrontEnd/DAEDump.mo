@@ -566,7 +566,6 @@ algorithm
   outString := matchcontinue (inVariableAttributesOption)
     local
       String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res1,res,startOriginStr;
-      Boolean is_empty;
       Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed,startOrigin;
       Option<DAE.StateSelect> stateSel;
       Option<DAE.Uncertainty> uncertainty;
@@ -591,8 +590,7 @@ algorithm
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
           initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str,dist_str,startOriginStr}, ", ");
-        is_empty = Util.isEmptyString(res_1);
-        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
+        res = if stringEmpty(res_1) then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -609,8 +607,7 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str,dist_str,startOriginStr}, ", ");
-        is_empty = Util.isEmptyString(res_1);
-        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
+        res = if stringEmpty(res_1) then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -623,8 +620,7 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,fixed_str,startOriginStr}, ", ");
-        is_empty = Util.isEmptyString(res_1);
-        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
+        res = if stringEmpty(res_1) then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -636,8 +632,7 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,startOriginStr}, ", ");
-        is_empty = Util.isEmptyString(res_1);
-        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
+        res = if stringEmpty(res_1) then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 
@@ -652,8 +647,7 @@ algorithm
         startOriginStr = getStartOrigin(startOrigin);
 
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,startOriginStr}, ", ");
-        is_empty = Util.isEmptyString(res_1);
-        res = if is_empty then "" else stringAppendList({"(",res_1,")"});
+        res = if stringEmpty(res_1) then "" else stringAppendList({"(",res_1,")"});
       then
         res;
 

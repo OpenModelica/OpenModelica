@@ -2264,7 +2264,6 @@ algorithm
     case((DAE.NAMEMOD(id,m))::_,_)
       equation
         s2  = prettyPrintMod(m,depth+1);
-        s2 = if stringLength(s2) == 0 then "" else s2;
         s2 = "(" + id + s2 + "), class or component " + id;
       then
         s2;
@@ -2297,7 +2296,6 @@ algorithm
     case DAE.NAMEMOD(id,m)
       equation
         s2  = prettyPrintMod(m,0);
-        s2 = if stringLength(s2) == 0 then "" else s2;
         s2 = id + s2;
       then
         s2;
