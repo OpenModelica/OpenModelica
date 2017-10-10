@@ -43,10 +43,11 @@ end scan;
 
 function scanString "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
   input String fileSource "input source code file";
+  input String fileName = "<StringSource>";
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens;
 algorithm
-  (tokens, errorTokens) := lex("<StringSource>",fileSource);
+  (tokens, errorTokens) := lex(fileName,fileSource);
 end scanString;
 
 
@@ -78,58 +79,66 @@ algorithm
   (token) := match (act)
     local
       Token tok;
-    case (1) // #line 26 "lexerJSON.l"
+    case (1) // #line 25 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (2) // #line 27 "lexerJSON.l"
+    case (2) // #line 26 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (3) // #line 28 "lexerJSON.l"
+    case (3) // #line 27 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NUMBER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (4) // #line 29 "lexerJSON.l"
+    case (4) // #line 28 "lexerJSON.l"
+      algorithm
+        tok := TOKEN(fileNm,TokenId.NUMBER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+      then tok;
+    case (5) // #line 29 "lexerJSON.l"
+      algorithm
+        tok := TOKEN(fileNm,TokenId.INTEGER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+      then tok;
+    case (6) // #line 30 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.TRUE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (5) // #line 30 "lexerJSON.l"
+    case (7) // #line 31 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FALSE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (6) // #line 31 "lexerJSON.l"
+    case (8) // #line 32 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NULL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (7) // #line 32 "lexerJSON.l"
+    case (9) // #line 33 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OBJECTBEGIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (8) // #line 33 "lexerJSON.l"
+    case (10) // #line 34 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OBJECTEND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (9) // #line 35 "lexerJSON.l"
+    case (11) // #line 36 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ARRAYBEGIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (10) // #line 37 "lexerJSON.l"
+    case (12) // #line 38 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ARRAYEND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (11) // #line 39 "lexerJSON.l"
+    case (13) // #line 40 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COMMA,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (12) // #line 40 "lexerJSON.l"
+    case (14) // #line 41 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (13) // #line 42 "lexerJSON.l"
+    case (15) // #line 43 "lexerJSON.l"
       algorithm
       then noToken;
-    case (14) // #line 44 "lexerJSON.l"
+    case (16) // #line 45 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId._NO_TOKEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
         errorTokens := tok :: errorTokens;
@@ -151,6 +160,7 @@ type TokenId = enumeration(
   COLON,
   COMMA,
   FALSE,
+  INTEGER,
   NULL,
   NUMBER,
   OBJECTBEGIN,
@@ -523,37 +533,36 @@ algorithm
 end checkArrayModelica;
 
 package LexTable
-  constant Integer yy_limit = 51;
-  constant Integer yy_finish = 99;
+  constant Integer yy_limit = 46;
+  constant Integer yy_finish = 82;
   constant Integer yy_acclist[:] = array(
-       15,   14,   13,   14,   14,   11,   14,   14,    3,   14,
-        3,   14,   12,   14,    9,   14,   14,   10,   14,   14,
-       14,   14,    7,   14,    8,   14,   13,    2,    1,    3,
-        3,    3,    3,    6,    4,    3,    3,    5,    3
+       17,   16,   15,   16,   16,   13,   16,    5,   16,   14,
+       16,   11,   16,   12,   16,   16,   16,   16,    9,   16,
+       10,   16,   15,    1,    5,    2,    3,    4,    8,    6,
+        3,    7
    );
   constant Integer yy_accept[:] = array(
-        1,    1,    1,    2,    3,    5,    6,    8,    9,   11,
-       13,   15,   17,   18,   20,   21,   22,   23,   25,   27,
-       28,   29,   30,   31,   32,   33,   33,   33,   33,   33,
-       34,   34,   34,   34,   34,   34,   34,   34,   34,   35,
-       36,   37,   37,   38,   38,   39,   39,   39,   39,   40,
-       40
+        1,    1,    1,    2,    3,    5,    6,    8,   10,   12,
+       14,   16,   17,   18,   19,   21,   23,   24,   24,   25,
+       25,   25,   26,   26,   26,   26,   26,   27,   27,   28,
+       28,   29,   29,   29,   29,   29,   29,   29,   30,   31,
+       31,   31,   32,   33,   33,   33
    );
   constant Integer yy_ec[:] = array(
         1,    1,    1,    1,    1,    1,    1,    1,    2,    2,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    3,    4,    5,    4,    4,    4,    4,    4,    4,
-        4,    4,    6,    7,    8,    9,   10,   11,   12,   12,
-       12,   12,   12,   12,   12,   12,   12,   13,    4,    4,
-        4,    4,    4,    4,   14,   14,   14,   14,   15,   14,
-        4,    4,    4,    4,    4,    4,    4,    4,    4,    4,
-        4,    4,    4,    4,    4,    4,    4,    4,    4,    4,
-       16,   17,   18,    4,    4,    4,   19,   20,   14,   14,
+        1,    2,    1,    3,    1,    1,    1,    1,    1,    1,
+        1,    1,    4,    5,    6,    7,    8,    9,    9,    9,
+        9,    9,    9,    9,    9,    9,    9,   10,    1,    1,
+        1,    1,    1,    1,   11,   11,   11,   11,   12,   11,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+       13,   14,   15,    1,    1,    1,   16,   17,   11,   11,
 
-       21,   22,    4,    4,    4,    4,    4,   23,    4,   24,
-        4,    4,    4,   25,   26,   27,   28,    4,    4,    4,
-        4,    4,   29,    4,   30,    4,    1,    1,    1,    1,
+       18,   19,    1,    1,    1,    1,    1,   20,    1,   21,
+        1,    1,    1,   22,   23,   24,   25,    1,    1,    1,
+        1,    1,   26,    1,   27,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -570,57 +579,53 @@ package LexTable
         1,    1,    1,    1,    1
    );
   constant Integer yy_meta[:] = array(
-        1,    1,    2,    2,    3,    2,    2,    2,    2,    3,
-        4,    4,    2,    4,    4,    2,    5,    2,    4,    6,
-        4,    6,    2,    3,    3,    2,    3,    3,    2,    2
+        1,    1,    2,    1,    1,    1,    1,    2,    3,    1,
+        3,    3,    1,    2,    1,    3,    4,    3,    4,    1,
+        2,    2,    1,    2,    2,    1,    1
    );
   constant Integer yy_base[:] = array(
-        0,    0,   98,   99,   29,   92,   99,   22,   99,   24,
-       99,   99,   67,   99,   73,   61,   61,   99,   99,   35,
-       99,   99,   99,   28,   30,    0,   59,   56,   41,   34,
-        0,   40,   31,   31,   36,   45,    0,   29,   99,   99,
-       47,   49,   52,    0,   99,   59,   39,   61,   63,   99,
-       74,   78,   81,   84,   87,   90
+        0,    0,   81,   82,   78,   25,   82,   22,   82,   82,
+       82,   63,   53,   55,   82,   82,   74,   27,   82,   50,
+       65,   26,   39,   53,   52,   37,   82,    0,   37,   45,
+       43,   27,   27,   24,    0,   47,   19,   82,   82,    0,
+       27,   23,   82,    0,   82,   56,   59,   61,   63,   65,
+       67
    );
   constant Integer yy_def[:] = array(
-       50,    1,   50,   50,   50,   51,   50,   50,   50,   50,
-       50,   50,   52,   50,   50,   50,   50,   50,   50,   50,
-       50,   50,   50,   50,   50,   53,   50,   50,   50,   50,
-       54,   50,   50,   50,   50,   50,   55,   50,   50,   50,
-       50,   50,   50,   56,   50,   50,   56,   50,   50,    0,
-       50,   50,   50,   50,   50,   50
+       45,    1,   45,   45,   45,   46,   45,   45,   45,   45,
+       45,   45,   45,   45,   45,   45,   45,   46,   45,   47,
+       45,   45,   45,   45,   45,   45,   45,   48,   45,   45,
+       45,   45,   45,   45,   49,   45,   45,   45,   45,   50,
+       45,   45,   45,   51,    0,   45,   45,   45,   45,   45,
+       45
    );
   constant Integer yy_nxt[:] = array(
-        4,    5,    5,    4,    6,    4,    7,    8,    4,    4,
-        9,   10,   11,    4,    4,   12,   13,   14,    4,    4,
-        4,   15,    4,   16,    4,    4,   17,    4,   18,   19,
-       20,   20,   23,   24,   25,   25,   20,   20,   30,   30,
-       25,   25,   35,   21,   30,   30,   41,   41,   36,   45,
-       42,   40,   42,   39,   36,   43,   43,   41,   41,   43,
-       43,   46,   43,   43,   48,   38,   48,   46,   34,   49,
-       49,   49,   49,   49,   49,   21,   21,   21,   33,   21,
-       21,   32,   21,   21,   31,   29,   31,   37,   28,   37,
-       44,   27,   44,   47,   26,   47,   22,   50,    3,   50,
+        4,    5,    6,    4,    7,    4,    4,    4,    8,    9,
+        4,    4,   10,    4,   11,    4,    4,    4,   12,    4,
+       13,    4,    4,   14,    4,   15,   16,   19,   21,   27,
+       22,   42,   21,   23,   22,   42,   43,   23,   20,   23,
+       20,   39,   30,   23,   30,   29,   38,   31,   36,   37,
+       41,   31,   41,   31,   36,   42,   18,   18,   18,   18,
+       18,   34,   18,   35,   35,   40,   40,   44,   44,   18,
+       18,   33,   32,   29,   28,   17,   26,   25,   24,   17,
+       45,    3,   45,   45,   45,   45,   45,   45,   45,   45,
+       45,   45,   45,   45,   45,   45,   45,   45,   45,   45,
 
-       50,   50,   50,   50,   50,   50,   50,   50,   50,   50,
-       50,   50,   50,   50,   50,   50,   50,   50,   50,   50,
-       50,   50,   50,   50,   50,   50,   50,   50,   50
+       45,   45,   45,   45,   45,   45,   45,   45,   45
    );
   constant Integer yy_chk[:] = array(
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        5,    5,    8,    8,   10,   10,   20,   20,   24,   24,
-       25,   25,   30,   47,   30,   30,   35,   35,   30,   38,
-       36,   34,   36,   33,   30,   36,   36,   41,   41,   42,
-       42,   41,   43,   43,   46,   32,   46,   41,   29,   46,
-       46,   48,   48,   49,   49,   51,   51,   51,   28,   51,
-       52,   27,   52,   52,   53,   17,   53,   54,   16,   54,
-       55,   15,   55,   56,   13,   56,    6,    3,   50,   50,
+        1,    1,    1,    1,    1,    1,    1,    6,    8,   18,
+        8,   42,   22,    8,   22,   41,   37,   22,    6,    8,
+       18,   34,   23,   22,   23,   29,   33,   23,   29,   32,
+       36,   31,   36,   30,   29,   36,   46,   46,   46,   46,
+       47,   26,   47,   48,   48,   49,   49,   50,   50,   51,
+       51,   25,   24,   21,   20,   17,   14,   13,   12,    5,
+        3,   45,   45,   45,   45,   45,   45,   45,   45,   45,
+       45,   45,   45,   45,   45,   45,   45,   45,   45,   45,
 
-       50,   50,   50,   50,   50,   50,   50,   50,   50,   50,
-       50,   50,   50,   50,   50,   50,   50,   50,   50,   50,
-       50,   50,   50,   50,   50,   50,   50,   50,   50
+       45,   45,   45,   45,   45,   45,   45,   45,   45
    );
 
 end LexTable;

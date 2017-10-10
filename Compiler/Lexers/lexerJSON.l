@@ -7,25 +7,26 @@ import StringUtil;
 public
 %}
 
-DIGITS [0-9]+
-INT [0-9]|[1-9]{DIGITS}|-[0-9]|-[1-9]{DIGITS}
-FRAC [.]{DIGITS}
-EXP {E}{DIGITS}
-E [eE][+-]?
-NUMBER {INT}|{INT}{FRAC}|{INT}{EXP}|{INT}{FRAC}{EXP}
-
+digit        [0-9]
+digitnondigit [_a-zA-Z0-9]
+digits       {digit}+
+exponent     ([e]|[E])([+]|[-])?{digits}
+real         {digits}[\.]{digits}({exponent})?
+real2        {digits}{exponent}
 
 HEX_DIGIT [0-9a-fA-F]
 
-UNESCAPEDCHAR [ -!#-\[\]-~]
 ESCAPEDCHAR \\["\\bfnrt/]
 UNICODECHAR \\u{HEX_DIGIT}{HEX_DIGIT}{HEX_DIGIT}{HEX_DIGIT}
 CHAR {UNESCAPEDCHAR}|{ESCAPEDCHAR}|{UNICODECHAR}
-CHARS {CHAR}+
+CHARS ([^"\\]|{ESCAPEDCHAR}|{UNICODECHAR})+
+DOUBLE_QUOTE ["]
 %%
-["]["] return STRING;
-["]{CHARS}["] return STRING;
-{NUMBER} return NUMBER;
+{DOUBLE_QUOTE}{DOUBLE_QUOTE} return STRING;
+{DOUBLE_QUOTE}{CHARS}{DOUBLE_QUOTE} return STRING;
+{real} return NUMBER;
+{real2} return NUMBER;
+{digits} return INTEGER;
 true return TRUE;
 false return FALSE;
 null return NULL;

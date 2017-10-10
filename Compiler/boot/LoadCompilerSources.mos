@@ -315,7 +315,9 @@ if true then /* Suppress output */
     "../FrontEnd/UnitAbsynBuilder.mo",
     "../FrontEnd/UnitChecker.mo",
 
+    "../Lexers/LexerJSON.mo",
     "../Lexers/LexerModelicaDiff.mo",
+    "../Parsers/JSON.mo",
     "../Parsers/SimpleModelicaParser.mo",
 
     "../Script/Refactor.mo",
