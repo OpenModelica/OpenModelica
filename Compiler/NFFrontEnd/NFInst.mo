@@ -66,8 +66,6 @@ import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
-import NFExtend;
-import NFImport;
 import Typing = NFTyping;
 import ExecStat.{execStat,execStatReset};
 import SCodeDump;
