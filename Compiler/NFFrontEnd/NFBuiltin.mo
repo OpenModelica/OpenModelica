@@ -208,7 +208,7 @@ constant InstNode STATESELECT_NEVER =
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
       STATESELECT_NEVER_BINDING,
-      NFComponent.CONST_ATTR,
+      Component.Attributes.DEFAULT(),
       Absyn.dummyInfo)),
     STATESELECT_NODE);
 
@@ -221,7 +221,7 @@ constant InstNode STATESELECT_AVOID =
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
       STATESELECT_AVOID_BINDING,
-      NFComponent.CONST_ATTR,
+      Component.Attributes.DEFAULT(),
       Absyn.dummyInfo)),
     STATESELECT_NODE);
 
@@ -234,7 +234,7 @@ constant InstNode STATESELECT_DEFAULT =
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
       STATESELECT_DEFAULT_BINDING,
-      NFComponent.CONST_ATTR,
+      Component.Attributes.DEFAULT(),
       Absyn.dummyInfo)),
     STATESELECT_NODE);
 
@@ -247,7 +247,7 @@ constant InstNode STATESELECT_PREFER =
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
       STATESELECT_PREFER_BINDING,
-      NFComponent.CONST_ATTR,
+      Component.Attributes.DEFAULT(),
       Absyn.dummyInfo)),
     STATESELECT_NODE);
 
@@ -260,7 +260,7 @@ constant InstNode STATESELECT_ALWAYS =
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
       STATESELECT_ALWAYS_BINDING,
-      NFComponent.CONST_ATTR,
+      Component.Attributes.DEFAULT(),
       Absyn.dummyInfo)),
     STATESELECT_NODE);
 

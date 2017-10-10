@@ -78,7 +78,7 @@ import NFSections.Sections;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
 import StringUtil;
-import NFPrefixes.{Variability, InnerOuter};
+import NFPrefixes.*;
 import Prefixes = NFPrefixes;
 
 public
@@ -128,12 +128,11 @@ end instClassInProgram;
 
 function instantiate
   input output InstNode node;
-  input Modifier modifier = Modifier.NOMOD();
   input InstNode parent = InstNode.EMPTY_NODE();
 algorithm
   node := partialInstClass(node);
   node := expandClass(node);
-  node := instClass(node, modifier, parent);
+  node := instClass(node, Modifier.NOMOD(), Component.Attributes.DEFAULT(), parent);
 end instantiate;
 
 function expand
@@ -273,6 +272,7 @@ algorithm
       InstNode ext_node;
       list<Dimension> dims;
       ClassTree tree;
+      Component.Attributes attr;
 
     case SCode.PARTS()
       algorithm
@@ -305,10 +305,11 @@ algorithm
 
         // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
         prefs := instClassPrefixes(def);
+        attr := instDerivedAttributes(cdef.attributes);
         dims := list(Dimension.RAW_DIM(d) for d in Absyn.typeSpecDimensions(ty));
         mod := Class.getModifier(InstNode.getClass(node));
 
-        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, cdef.attributes.direction);
+        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, attr);
         node := InstNode.updateClass(c, node);
       then
         node;
@@ -379,6 +380,33 @@ algorithm
 
   end match;
 end instClassPrefixes;
+
+function instDerivedAttributes
+  input SCode.Attributes scodeAttr;
+  output Component.Attributes attributes;
+protected
+  ConnectorType cty;
+  Variability var;
+  Direction dir;
+algorithm
+  attributes := match scodeAttr
+    case SCode.Attributes.ATTR(
+           connectorType = SCode.ConnectorType.POTENTIAL(),
+           variability = SCode.Variability.VAR(),
+           direction = Absyn.Direction.BIDIR())
+      then Component.Attributes.DEFAULT();
+
+    else
+      algorithm
+        cty := Prefixes.connectorTypeFromSCode(scodeAttr.connectorType);
+        var := Prefixes.variabilityFromSCode(scodeAttr.variability);
+        dir := Prefixes.directionFromSCode(scodeAttr.direction);
+      then
+        Component.Attributes.ATTRIBUTES(cty, Parallelism.NON_PARALLEL,
+          var, dir, InnerOuter.NOT_INNER_OUTER, Visibility.PUBLIC);
+
+  end match;
+end instDerivedAttributes;
 
 function expandExtends
   input output InstNode ext;
@@ -515,9 +543,10 @@ end expandBuiltinExtends;
 function instClass
   input output InstNode node;
   input Modifier modifier;
+  input output Component.Attributes attributes = Component.Attributes.DEFAULT();
   input InstNode parent = InstNode.EMPTY_NODE();
 protected
-  InstNode par, redecl_node;
+  InstNode par, redecl_node, base_node;
   Class cls, inst_cls;
   ClassTree cls_tree;
   Modifier cls_mod, mod;
@@ -538,7 +567,7 @@ algorithm
         end if;
 
         redecl_node := expand(cls_mod.element);
-        node := instClass(redecl_node, cls_mod.mod, parent);
+        node := instClass(redecl_node, cls_mod.mod, attributes, parent);
       then
         ();
 
@@ -564,11 +593,11 @@ algorithm
         InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
 
         // Instantiate the extends nodes.
-        ClassTree.mapExtends(cls_tree, function instExtends(parent = par));
+        ClassTree.mapExtends(cls_tree, function instExtends(attributes = attributes, parent = par));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(parent = par, scope = node));
+          function instComponent(attributes = attributes, parent = par, scope = node));
       then
         ();
 
@@ -577,7 +606,10 @@ algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
 
-        cls.baseClass := instClass(cls.baseClass, mod, parent);
+        attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
+        (base_node, attributes) := instClass(cls.baseClass, mod, attributes, parent);
+        cls.baseClass := base_node;
+        cls.attributes := attributes;
         node := InstNode.replaceClass(cls, node);
         updateComponentClass(parent, node);
       then
@@ -733,27 +765,39 @@ end modifyExtends;
 
 function instExtends
   input output InstNode node;
+  input Component.Attributes attributes;
   input InstNode parent;
 protected
   Class cls;
   ClassTree cls_tree;
+  Component.Attributes attr = attributes;
 algorithm
-  cls := InstNode.getClass(node);
+  if InstNode.isProtectedBaseClass(node) then
+    attr := match attr
+      case Component.Attributes.ATTRIBUTES()
+        algorithm
+          attr.visibility := Visibility.PROTECTED;
+        then
+          attr;
 
+      else NFComponent.PROTECTED_ATTR;
+    end match;
+  end if;
+
+  cls := InstNode.getClass(node);
   () := match cls
     case Class.EXPANDED_CLASS(elements = cls_tree)
       algorithm
-        ClassTree.mapExtends(cls_tree, function instExtends(parent = parent));
+        ClassTree.mapExtends(cls_tree, function instExtends(attributes = attr, parent = parent));
 
-        // TODO: Propagate visibility of extends clause to components.
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(parent = node, scope = node));
+          function instComponent(attributes = attr, parent = node, scope = node));
       then
         ();
 
     case Class.DERIVED_CLASS()
       algorithm
-        node := instExtends(cls.baseClass, parent);
+        node := instExtends(cls.baseClass, attr, parent);
       then
         ();
 
@@ -812,6 +856,7 @@ end applyModifier;
 
 function instComponent
   input InstNode node   "The component node to instantiate";
+  input Component.Attributes attributes "Attributes to be propagated to the component.";
   input InstNode parent "The parent of the component, usually another component";
   input InstNode scope  "The class scope containing the component";
 protected
@@ -821,7 +866,7 @@ protected
   Modifier mod, comp_mod;
   Binding binding;
   DAE.Type ty;
-  Component.Attributes attr;
+  Component.Attributes attr, cls_attr;
   list<Dimension> dims;
 algorithm
   comp_node := InstNode.resolveOuter(node);
@@ -843,7 +888,7 @@ algorithm
         inst_comp := InstNode.component(mod.element);
         inst_comp := Component.setModifier(comp_mod, inst_comp);
         InstNode.updateComponent(inst_comp, comp_node);
-        instComponent(comp_node, parent, InstNode.parent(mod.element));
+        instComponent(comp_node, attributes, parent, InstNode.parent(mod.element));
       then
         ();
 
@@ -859,13 +904,17 @@ algorithm
         comp_mod := Modifier.propagate(comp_mod);
 
         // Instantiate attributes and create the untyped components.
-        attr := instComponentAttributes(def.attributes, def.prefixes);
+        attr := instComponentAttributes(def.attributes, def.prefixes, attributes, comp_node);
         inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
-          binding, attr, SCode.isElementRedeclare(def), def.info);
+          binding, attr, def.info);
         InstNode.updateComponent(inst_comp, comp_node);
 
         // Instantiate the type of the component.
-        cls := instTypeSpec(def.typeSpec, comp_mod, scope, comp_node, def.info);
+        (cls, cls_attr) := instTypeSpec(def.typeSpec, comp_mod, attr, scope, comp_node, def.info);
+
+        if not referenceEq(attr, cls_attr) then
+          comp_node := InstNode.componentApply(comp_node, Component.setAttributes, cls_attr);
+        end if;
       then
         ();
 
@@ -890,37 +939,119 @@ end checkOuterComponentMod;
 function instComponentAttributes
   input SCode.Attributes compAttr;
   input SCode.Prefixes compPrefs;
+  input Component.Attributes outerAttributes;
+  input InstNode node;
   output Component.Attributes attributes;
 protected
-  DAE.ConnectorType cty;
-  DAE.VarParallelism par;
+  ConnectorType cty;
+  Parallelism par;
   Variability var;
-  DAE.VarDirection dir;
+  Direction dir;
   InnerOuter io;
-  DAE.VarVisibility vis;
+  Visibility vis;
 algorithm
-  cty := InstUtil.translateConnectorType(compAttr.connectorType);
-  par := InstUtil.translateParallelism(compAttr.parallelism);
-  var := Prefixes.variabilityFromSCode(compAttr.variability);
-  dir := InstUtil.translateDirection(compAttr.direction);
-  io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
-  vis := InstUtil.translateVisibility(compPrefs.visibility);
-  attributes := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis);
+  attributes := match (compAttr, compPrefs)
+    case (SCode.Attributes.ATTR(
+            connectorType = SCode.ConnectorType.POTENTIAL(),
+            parallelism = SCode.Parallelism.NON_PARALLEL(),
+            variability = SCode.Variability.VAR(),
+            direction = Absyn.Direction.BIDIR()),
+          SCode.Prefixes.PREFIXES(
+            visibility = SCode.Visibility.PUBLIC(),
+            innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER()))
+      then Component.Attributes.DEFAULT();
+
+    else
+      algorithm
+        cty := Prefixes.connectorTypeFromSCode(compAttr.connectorType);
+        par := Prefixes.parallelismFromSCode(compAttr.parallelism);
+        var := Prefixes.variabilityFromSCode(compAttr.variability);
+        dir := Prefixes.directionFromSCode(compAttr.direction);
+        io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
+        vis := Prefixes.visibilityFromSCode(compPrefs.visibility);
+      then
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis);
+  end match;
+
+  attributes := mergeComponentAttributes(outerAttributes, attributes, node);
 end instComponentAttributes;
+
+function mergeComponentAttributes
+  input Component.Attributes outerAttr;
+  input Component.Attributes innerAttr;
+  input InstNode node;
+  output Component.Attributes attr;
+algorithm
+  attr := match (outerAttr, innerAttr)
+    local
+      ConnectorType cty;
+      Parallelism par;
+      Variability var;
+      Direction dir;
+      InnerOuter io;
+      Visibility vis;
+
+    case (Component.Attributes.DEFAULT(), _) then innerAttr;
+    case (_, Component.Attributes.DEFAULT()) then outerAttr;
+    case (Component.Attributes.ATTRIBUTES(), Component.Attributes.ATTRIBUTES())
+      algorithm
+        cty := Prefixes.mergeConnectorType(outerAttr.connectorType, innerAttr.connectorType, node);
+        par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
+        var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
+        dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
+        vis := Prefixes.mergeVisibility(outerAttr.visibility, innerAttr.visibility);
+      then
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, vis);
+
+  end match;
+end mergeComponentAttributes;
+
+function mergeDerivedAttributes
+  input Component.Attributes outerAttr;
+  input Component.Attributes innerAttr;
+  input InstNode node;
+  output Component.Attributes attr;
+algorithm
+  attr := match (outerAttr, innerAttr)
+    local
+      ConnectorType cty;
+      Parallelism par;
+      Variability var;
+      Direction dir;
+      InnerOuter io;
+      Visibility vis;
+
+    case (_, Component.Attributes.DEFAULT()) then outerAttr;
+    case (Component.Attributes.DEFAULT(), _) then innerAttr;
+
+    case (Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis),
+          Component.Attributes.ATTRIBUTES())
+      algorithm
+        cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
+        var := Prefixes.variabilityMin(var, innerAttr.variability);
+        dir := Prefixes.mergeDirection(dir, innerAttr.direction, node);
+      then
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis);
+
+  end match;
+end mergeDerivedAttributes;
 
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
+  input Component.Attributes attributes;
   input InstNode scope;
   input InstNode parent;
   input SourceInfo info;
   output InstNode node;
+  output Component.Attributes outAttributes;
 algorithm
   node := match typeSpec
     case Absyn.TPATH()
       algorithm
         node := Lookup.lookupClassName(typeSpec.path, scope, info);
-        node := instantiate(node, modifier, parent);
+        node := expand(node);
+        (node, outAttributes) := instClass(node, modifier, attributes, parent);
       then
         node;
 
@@ -1763,7 +1894,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, node, node);
+      instComponent(n, Component.Attributes.DEFAULT(), node, node);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.

@@ -32,6 +32,19 @@
 encapsulated package NFPrefixes
 
 import DAE;
+import NFInstNode.InstNode;
+
+type ConnectorType = enumeration(
+  POTENTIAL,
+  FLOW,
+  STREAM
+);
+
+type Parallelism = enumeration(
+  NON_PARALLEL,
+  GLOBAL,
+  LOCAL
+);
 
 type Variability = enumeration(
   CONSTANT,
@@ -40,12 +53,121 @@ type Variability = enumeration(
   CONTINUOUS
 );
 
+type Direction = enumeration(
+  NONE,
+  INPUT,
+  OUTPUT
+);
+
 type InnerOuter = enumeration(
   NOT_INNER_OUTER,
   INNER,
   OUTER,
   INNER_OUTER
 );
+
+type Visibility = enumeration(
+  PUBLIC,
+  PROTECTED
+);
+
+function connectorTypeFromSCode
+  input SCode.ConnectorType scodeCty;
+  output ConnectorType cty;
+algorithm
+  cty := match scodeCty
+    case SCode.ConnectorType.POTENTIAL() then ConnectorType.POTENTIAL;
+    case SCode.ConnectorType.FLOW() then ConnectorType.FLOW;
+    case SCode.ConnectorType.STREAM() then ConnectorType.STREAM;
+  end match;
+end connectorTypeFromSCode;
+
+function connectorTypeToDAE
+  input ConnectorType cty;
+  output DAE.ConnectorType dcty;
+algorithm
+  dcty := match cty
+    case ConnectorType.POTENTIAL then DAE.ConnectorType.POTENTIAL();
+    case ConnectorType.FLOW then DAE.ConnectorType.FLOW();
+    case ConnectorType.STREAM then DAE.ConnectorType.STREAM(NONE());
+  end match;
+end connectorTypeToDAE;
+
+function connectorTypeString
+  input ConnectorType cty;
+  output String str;
+algorithm
+  str := match cty
+    case ConnectorType.FLOW then "flow";
+    case ConnectorType.STREAM then "stream";
+    else "";
+  end match;
+end connectorTypeString;
+
+function mergeConnectorType
+  input ConnectorType outerCty;
+  input ConnectorType innerCty;
+  input InstNode node;
+  output ConnectorType cty;
+algorithm
+  if outerCty == ConnectorType.POTENTIAL then
+    cty := innerCty;
+  elseif innerCty == ConnectorType.POTENTIAL then
+    cty := outerCty;
+  else
+    printPrefixError(connectorTypeString(outerCty), connectorTypeString(innerCty), node);
+  end if;
+end mergeConnectorType;
+
+function parallelismFromSCode
+  input SCode.Parallelism scodePar;
+  output Parallelism par;
+algorithm
+  par := match scodePar
+    case SCode.Parallelism.PARGLOBAL() then Parallelism.GLOBAL;
+    case SCode.Parallelism.PARLOCAL() then Parallelism.LOCAL;
+    case SCode.Parallelism.NON_PARALLEL() then Parallelism.NON_PARALLEL;
+  end match;
+end parallelismFromSCode;
+
+function parallelismToDAE
+  input Parallelism par;
+  output DAE.VarParallelism dpar;
+algorithm
+  dpar := match par
+    case Parallelism.GLOBAL then DAE.VarParallelism.PARGLOBAL();
+    case Parallelism.LOCAL then DAE.VarParallelism.PARLOCAL();
+    case Parallelism.NON_PARALLEL then DAE.VarParallelism.NON_PARALLEL();
+  end match;
+end parallelismToDAE;
+
+function parallelismString
+  input Parallelism par;
+  output String str;
+algorithm
+   str := match par
+    case Parallelism.GLOBAL then "parglobal";
+    case Parallelism.LOCAL then "parlocal";
+    else "";
+  end match;
+end parallelismString;
+
+function mergeParallelism
+  input Parallelism outerPar;
+  input Parallelism innerPar;
+  input InstNode node;
+  output Parallelism par;
+algorithm
+  if outerPar == Parallelism.NON_PARALLEL then
+    par := innerPar;
+  elseif innerPar == Parallelism.NON_PARALLEL then
+    par := outerPar;
+  elseif innerPar == outerPar then
+    par := innerPar;
+  else
+    printPrefixError(parallelismString(outerPar), parallelismString(innerPar), node);
+  end if;
+end mergeParallelism;
 
 function variabilityFromSCode
   input SCode.Variability scodeVar;
@@ -95,6 +217,54 @@ function variabilityMin
   output Variability var = if var1 > var2 then var2 else var1;
 end variabilityMin;
 
+function directionFromSCode
+  input Absyn.Direction scodeDir;
+  output Direction dir;
+algorithm
+  dir := match scodeDir
+    case Absyn.Direction.INPUT() then Direction.INPUT;
+    case Absyn.Direction.OUTPUT() then Direction.OUTPUT;
+    case Absyn.Direction.BIDIR() then Direction.NONE;
+  end match;
+end directionFromSCode;
+
+function directionToDAE
+  input Direction dir;
+  output DAE.VarDirection ddir;
+algorithm
+  ddir := match dir
+    case Direction.INPUT then DAE.VarDirection.INPUT();
+    case Direction.OUTPUT then DAE.VarDirection.OUTPUT();
+    case Direction.NONE then DAE.VarDirection.BIDIR();
+  end match;
+end directionToDAE;
+
+function directionString
+  input Direction dir;
+  output String str;
+algorithm
+  str := match dir
+    case Direction.INPUT then "input";
+    case Direction.OUTPUT then "output";
+    case Direction.NONE then "";
+  end match;
+end directionString;
+
+function mergeDirection
+  input Direction outerDir;
+  input Direction innerDir;
+  input InstNode node;
+  output Direction dir;
+algorithm
+  if outerDir == Direction.NONE then
+    dir := innerDir;
+  elseif innerDir == Direction.NONE then
+    dir := outerDir;
+  else
+    printPrefixError(directionString(outerDir), directionString(innerDir), node);
+  end if;
+end mergeDirection;
+
 function innerOuterFromSCode
   input Absyn.InnerOuter scodeIO;
   output InnerOuter io;
@@ -118,6 +288,44 @@ algorithm
     else "";
   end match;
 end innerOuterString;
+
+function visibilityFromSCode
+  input SCode.Visibility scodeVis;
+  output Visibility vis;
+algorithm
+  vis := match scodeVis
+    case SCode.Visibility.PUBLIC() then Visibility.PUBLIC;
+    else Visibility.PROTECTED;
+  end match;
+end visibilityFromSCode;
+
+function visibilityToDAE
+  input Visibility vis;
+  output DAE.VarVisibility dvis = if vis == Visibility.PUBLIC then
+    DAE.VarVisibility.PUBLIC() else DAE.VarVisibility.PROTECTED();
+end visibilityToDAE;
+
+function visibilityString
+  input Visibility vis;
+  output String str = if vis == Visibility.PUBLIC then "public" else "protected";
+end visibilityString;
+
+function mergeVisibility
+  input Visibility outerVis;
+  input Visibility innerVis;
+  output Visibility vis = if outerVis == Visibility.PROTECTED then outerVis else innerVis;
+end mergeVisibility;
+
+function printPrefixError
+  input String outerPrefix;
+  input String innerPrefix;
+  input InstNode node;
+algorithm
+  Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
+    {outerPrefix, InstNode.typeName(node), InstNode.name(node), innerPrefix},
+    InstNode.info(node));
+  fail();
+end printPrefixError;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFPrefixes;

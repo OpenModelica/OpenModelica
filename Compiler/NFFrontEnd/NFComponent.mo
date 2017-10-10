@@ -41,7 +41,7 @@ import SCode.Element;
 import SCode;
 import Type = NFType;
 import Expression = NFExpression;
-import NFPrefixes.{Variability, InnerOuter};
+import NFPrefixes.*;
 
 protected
 import NFInstUtil;
@@ -49,46 +49,59 @@ import List;
 import Prefixes = NFPrefixes;
 
 public
-constant Component.Attributes CONST_ATTR =
-  Component.Attributes.ATTRIBUTES(
-     DAE.NON_CONNECTOR(),
-     DAE.NON_PARALLEL(),
-     Variability.CONTINUOUS,
-     DAE.BIDIR(),
-     InnerOuter.NOT_INNER_OUTER,
-     DAE.PUBLIC());
-
 constant Component.Attributes INPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
-     DAE.NON_CONNECTOR(),
-     DAE.NON_PARALLEL(),
-     Variability.CONTINUOUS,
-     DAE.INPUT(),
-     InnerOuter.NOT_INNER_OUTER,
-     DAE.PUBLIC());
+    ConnectorType.POTENTIAL,
+    Parallelism.NON_PARALLEL,
+    Variability.CONTINUOUS,
+    Direction.INPUT,
+    InnerOuter.NOT_INNER_OUTER,
+    Visibility.PUBLIC
+  );
 
 constant Component.Attributes OUTPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
-     DAE.NON_CONNECTOR(),
-     DAE.NON_PARALLEL(),
-     Variability.CONTINUOUS,
-     DAE.OUTPUT(),
-     InnerOuter.NOT_INNER_OUTER,
-     DAE.PUBLIC());
+    ConnectorType.POTENTIAL,
+    Parallelism.NON_PARALLEL,
+    Variability.CONTINUOUS,
+    Direction.OUTPUT,
+    InnerOuter.NOT_INNER_OUTER,
+    Visibility.PUBLIC
+  );
+
+constant Component.Attributes PROTECTED_ATTR =
+  Component.Attributes.ATTRIBUTES(
+    ConnectorType.POTENTIAL,
+    Parallelism.NON_PARALLEL,
+    Variability.CONTINUOUS,
+    Direction.NONE,
+    InnerOuter.NOT_INNER_OUTER,
+    Visibility.PROTECTED
+  );
 
 uniontype Component
   uniontype Attributes
     record ATTRIBUTES
       // adrpo: keep the order in DAE.ATTR
-      DAE.ConnectorType connectorType;
-      DAE.VarParallelism parallelism;
+      ConnectorType connectorType;
+      Parallelism parallelism;
       Variability variability;
-      DAE.VarDirection direction;
+      Direction direction;
       InnerOuter innerOuter;
-      DAE.VarVisibility visibility;
+      Visibility visibility;
     end ATTRIBUTES;
 
     record DEFAULT end DEFAULT;
+
+    function isDefault
+      input Attributes attr;
+      output Boolean isDefault;
+    algorithm
+      isDefault := match attr
+        case DEFAULT() then true;
+        else false;
+      end match;
+    end isDefault;
   end Attributes;
 
   record COMPONENT_DEF
@@ -101,7 +114,6 @@ uniontype Component
     array<Dimension> dimensions;
     Binding binding;
     Component.Attributes attributes;
-    Boolean isRedeclare;
     SourceInfo info;
   end UNTYPED_COMPONENT;
 
@@ -304,6 +316,26 @@ uniontype Component
     end match;
   end getAttributes;
 
+  function setAttributes
+    input Component.Attributes attr;
+    input output Component component;
+  algorithm
+    () := match component
+      case UNTYPED_COMPONENT()
+        algorithm
+          component.attributes := attr;
+        then
+          ();
+
+      case TYPED_COMPONENT()
+        algorithm
+          component.attributes := attr;
+        then
+          ();
+
+    end match;
+  end setAttributes;
+
   function getBinding
     input Component component;
     output Binding b;
@@ -327,33 +359,23 @@ uniontype Component
 
   function direction
     input Component component;
-    output DAE.VarDirection direction;
+    output Direction direction;
   algorithm
     direction := match component
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(direction = direction)) then direction;
-      else DAE.VarDirection.BIDIR();
+      else Direction.NONE;
     end match;
   end direction;
 
   function isInput
     input Component component;
-    output Boolean isInput;
-  algorithm
-    isInput := match direction(component)
-      case DAE.VarDirection.INPUT() then true;
-      else false;
-    end match;
+    output Boolean isInput = direction(component) == Direction.INPUT;
   end isInput;
 
   function isOutput
     input Component component;
-    output Boolean isOutput;
-  algorithm
-    isOutput := match direction(component)
-      case DAE.VarDirection.OUTPUT() then true;
-      else false;
-    end match;
+    output Boolean isOutput = direction(component) == Direction.OUTPUT;
   end isOutput;
 
   function variability
@@ -362,11 +384,9 @@ uniontype Component
   algorithm
     variability := match component
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case TYPED_COMPONENT(attributes = Attributes.DEFAULT()) then Variability.CONTINUOUS;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case UNTYPED_COMPONENT(attributes = Attributes.DEFAULT()) then Variability.CONTINUOUS;
       case ITERATOR() then Variability.CONSTANT;
-      else fail();
+      else Variability.CONTINUOUS;
     end match;
   end variability;
 
@@ -382,27 +402,22 @@ uniontype Component
 
   function visibility
     input Component component;
-    output DAE.VarVisibility visibility;
+    output Visibility visibility;
   algorithm
     visibility := match component
       case COMPONENT_DEF() then
         if SCode.isElementProtected(component.definition) then
-          DAE.VarVisibility.PROTECTED() else DAE.VarVisibility.PUBLIC();
+          Visibility.PROTECTED else Visibility.PUBLIC;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(visibility = visibility)) then visibility;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(visibility = visibility)) then visibility;
       // Iterators and enumeration literals can't be accessed in a way where visibility matters.
-      else DAE.VarVisibility.PUBLIC();
+      else Visibility.PUBLIC;
     end match;
   end visibility;
 
   function isPublic
     input Component component;
-    output Boolean isInput;
-  algorithm
-    isInput := match visibility(component)
-      case DAE.VarVisibility.PUBLIC() then true;
-      else false;
-    end match;
+    output Boolean isInput = visibility(component) == Visibility.PUBLIC;
   end isPublic;
 
   function isRedeclare
@@ -411,7 +426,6 @@ uniontype Component
   algorithm
     isRedeclare := match component
       case COMPONENT_DEF() then SCode.isElementRedeclare(component.definition);
-      case UNTYPED_COMPONENT() then component.isRedeclare;
       else false;
     end match;
   end isRedeclare;

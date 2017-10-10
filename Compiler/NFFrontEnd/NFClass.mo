@@ -80,7 +80,7 @@ uniontype Class
     Modifier modifier;
     list<Dimension> dims;
     Class.Prefixes prefixes;
-    Absyn.Direction direction;
+    Component.Attributes attributes;
   end DERIVED_CLASS;
 
   record PARTIAL_BUILTIN
@@ -268,6 +268,27 @@ uniontype Class
       else {};
     end match;
   end getDimensions;
+
+  function isProtected
+    input Class cls;
+    output Boolean isProtected;
+  algorithm
+    isProtected := match cls
+      case EXPANDED_CLASS(prefixes = Prefixes.PREFIXES(visibility = SCode.Visibility.PROTECTED())) then true;
+      case DERIVED_CLASS(prefixes = Prefixes.PREFIXES(visibility = SCode.Visibility.PROTECTED())) then true;
+      else false;
+    end match;
+  end isProtected;
+
+  function getAttributes
+    input Class cls;
+    output Component.Attributes attr;
+  algorithm
+    attr := match cls
+      case DERIVED_CLASS() then cls.attributes;
+      else Component.Attributes.DEFAULT();
+    end match;
+  end getAttributes;
 
 end Class;
 

@@ -431,9 +431,21 @@ algorithm
   var := match attr
     case Component.Attributes.ATTRIBUTES()
       then
-        DAE.VAR(cref, Prefixes.variabilityToDAE(attr.variability), attr.direction,
-          attr.parallelism, attr.visibility, ty, binding, {}, attr.connectorType,
-          source, vattr, NONE(), Absyn.NOT_INNER_OUTER());
+        DAE.VAR(
+          cref,
+          Prefixes.variabilityToDAE(attr.variability),
+          Prefixes.directionToDAE(attr.direction),
+          Prefixes.parallelismToDAE(attr.parallelism),
+          Prefixes.visibilityToDAE(attr.visibility),
+          ty,
+          binding,
+          {},
+          Prefixes.connectorTypeToDAE(attr.connectorType),
+          source,
+          vattr,
+          NONE(),
+          Absyn.NOT_INNER_OUTER()
+        );
 
     else
       DAE.VAR(cref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),

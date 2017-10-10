@@ -943,6 +943,22 @@ uniontype InstNode
     end if;
   end countDimensions;
 
+  function isProtectedBaseClass
+    input InstNode node;
+    output Boolean isProtected;
+  algorithm
+    isProtected := match node
+      local
+        SCode.Element def;
+
+      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
+          SCode.Element.EXTENDS(visibility = SCode.Visibility.PROTECTED())))
+        then true;
+
+      else false;
+    end match;
+  end isProtectedBaseClass;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

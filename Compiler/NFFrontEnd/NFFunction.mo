@@ -36,7 +36,7 @@ import Expression = NFExpression;
 import Pointer;
 import NFInstNode.InstNode;
 import Type = NFType;
-import NFPrefixes.{Variability, InnerOuter};
+import NFPrefixes.*;
 
 protected
 import Inst = NFInst;
@@ -749,9 +749,9 @@ protected
 
             // Sort the components based on their direction.
             () := match paramDirection(n)
-              case DAE.VarDirection.INPUT() algorithm inputs := n :: inputs; then ();
-              case DAE.VarDirection.OUTPUT() algorithm outputs := n :: outputs; then ();
-              case DAE.VarDirection.BIDIR() algorithm locals := n :: locals; then ();
+              case Direction.INPUT algorithm inputs := n :: inputs; then ();
+              case Direction.OUTPUT algorithm outputs := n :: outputs; then ();
+              case Direction.NONE algorithm locals := n :: locals; then ();
             end match;
           end for;
         then
@@ -767,11 +767,11 @@ protected
 
   function paramDirection
     input InstNode component;
-    output DAE.VarDirection direction;
+    output Direction direction;
   protected
-    DAE.ConnectorType cty;
+    ConnectorType cty;
     InnerOuter io;
-    DAE.VarVisibility vis;
+    Visibility vis;
   algorithm
     Component.Attributes.ATTRIBUTES(
       connectorType = cty,
@@ -780,18 +780,12 @@ protected
       visibility = vis) := Component.getAttributes(InstNode.component(component));
 
     // Function components may not be connectors.
-    () := match cty
-      case DAE.ConnectorType.NON_CONNECTOR() then ();
-      else
-        algorithm
-          // TODO: This error will look weird if we get a connector that's neither
-          // flow nor stream. Maybe better to just say "formal parameter may not be
-          // connector".
-          Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
-            {DAEDump.dumpConnectorType(cty), InstNode.name(component)}, InstNode.info(component));
-        then
-          fail();
-    end match;
+    if cty <> ConnectorType.POTENTIAL then
+      Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
+        {Prefixes.connectorTypeString(cty), InstNode.name(component)},
+        InstNode.info(component));
+      fail();
+    end if;
 
     // Function components may not be inner/outer.
     if io <> InnerOuter.NOT_INNER_OUTER then
@@ -802,25 +796,19 @@ protected
     end if;
 
     // Formal parameters must be public, other function variables must be protected.
-    () := match (direction, vis)
-      case (DAE.VarDirection.INPUT(), DAE.VarVisibility.PUBLIC()) then ();
-      case (DAE.VarDirection.OUTPUT(), DAE.VarVisibility.PUBLIC()) then ();
-      case (DAE.VarDirection.BIDIR(), DAE.VarVisibility.PROTECTED()) then ();
-
-      case (_, DAE.VarVisibility.PUBLIC())
-        algorithm
-          Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-            {InstNode.name(component)}, InstNode.info(component));
-        then
-          fail();
-
-      case (_, DAE.VarVisibility.PROTECTED())
-        algorithm
-          Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
-            {InstNode.name(component)}, InstNode.info(component));
-        then
-          fail();
-    end match;
+    if direction <> Direction.NONE then
+      if vis == Visibility.PROTECTED then
+        Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+          {InstNode.name(component)}, InstNode.info(component));
+        fail();
+      end if;
+    else
+      if vis == Visibility.PUBLIC then
+        Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
+          {InstNode.name(component)}, InstNode.info(component));
+        fail();
+      end if;
+    end if;
   end paramDirection;
 
   function makeSlots
