@@ -30,6 +30,8 @@ ceval3.mo \
 ceval5.mo \
 ceval6.mo \
 ClassAsComponentError.mo \
+ClassAttributes1.mo \
+ClassAttributes2.mo \
 ClassExtends1.mo \
 ClassExtends2.mo \
 ClassExtends3.mo \
@@ -41,6 +43,8 @@ ClassMod1.mo \
 ClassMod2.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \
+ComponentAttributes1.mo \
+ComponentAttributes2.mo \
 cond4.mo \
 conn1.mo \
 conn2.mo \
@@ -133,6 +137,9 @@ ExtendSections.mo \
 ExtendSelf1.mo \
 ExtendSelf2.mo \
 ExtendSelf3.mo \
+ExtendsVisibility1.mo \
+ExtendsVisibility2.mo \
+ExtendsVisibility3.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -343,7 +350,6 @@ WhenNested1.mo \
 FAILINGTESTFILES=\
 ComponentAttr1.mo \
 dim2.mo \
-ExtendsVisibility.mo \
 DuplicateElements5.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
