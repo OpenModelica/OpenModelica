@@ -204,7 +204,7 @@ void SimulationDialog::setUpForm()
   if (currentIndex > -1) {
     mpMethodComboBox->setCurrentIndex(currentIndex);
   }
-  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslOptions(QString)));
+  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslIdaOptions(QString)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpMehtodHelpButton->setToolTip(tr("Integration help"));
@@ -225,38 +225,38 @@ void SimulationDialog::setUpForm()
     mpJacobianComboBox->setItemData(i + 1, jacobianMethodsDesc.at(i), Qt::ToolTipRole);
   }
   connect(mpJacobianComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateJacobianToolTip(int)));
-  // dassl options
-  mpDasslOptionsGroupBox = new QGroupBox(tr("DASSL/IDA Options"));
+  // dassl/ida options
+  mpDasslIdaOptionsGroupBox = new QGroupBox(tr("DASSL/IDA Options"));
   // no root finding
-  mpDasslRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
-  mpDasslRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of dassl"));
-  mpDasslRootFindingCheckBox->setChecked(true);
+  mpRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
+  mpRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of methods: dassl and ida."));
+  mpRootFindingCheckBox->setChecked(true);
   // no restart
-  mpDasslRestartCheckBox = new QCheckBox(tr("Restart After Event"));
-  mpDasslRestartCheckBox->setToolTip(tr("Activates the restart of dassl after an event is performed"));
-  mpDasslRestartCheckBox->setChecked(true);
+  mpRestartAfterEventCheckBox = new QCheckBox(tr("Restart After Event"));
+  mpRestartAfterEventCheckBox->setToolTip(tr("Activates the restart of the integration method after an event is performed, used by the methods: dassl, ida"));
+  mpRestartAfterEventCheckBox->setChecked(true);
   // initial step size
-  mpDasslInitialStepSizeLabel = new Label(tr("Initial Step Size:"));
-  mpDasslInitialStepSizeTextBox = new QLineEdit;
+  mpInitialStepSizeLabel = new Label(tr("Initial Step Size:"));
+  mpInitialStepSizeTextBox = new QLineEdit;
   // max step size
-  mpDasslMaxStepSizeLabel = new Label(tr("Maximum Step Size:"));
-  mpDasslMaxStepSizeTextBox = new QLineEdit;
+  mpMaxStepSizeLabel = new Label(tr("Maximum Step Size:"));
+  mpMaxStepSizeTextBox = new QLineEdit;
   // max integration order
-  mpDasslMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
-  mpDasslMaxIntegrationOrderSpinBox = new QSpinBox;
-  mpDasslMaxIntegrationOrderSpinBox->setValue(5);
-  // set the layout for DASSL options groupbox
-  QGridLayout *pDasslOptionsGridLayout = new QGridLayout;
-  pDasslOptionsGridLayout->setColumnStretch(1, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslRootFindingCheckBox, 0, 0, 1, 2);
-  pDasslOptionsGridLayout->addWidget(mpDasslRestartCheckBox, 1, 0, 1, 2);
-  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeLabel, 2, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeTextBox, 2, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeLabel, 3, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeTextBox, 3, 1);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderLabel, 4, 0);
-  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderSpinBox, 4, 1);
-  mpDasslOptionsGroupBox->setLayout(pDasslOptionsGridLayout);
+  mpMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
+  mpMaxIntegrationOrderSpinBox = new QSpinBox;
+  mpMaxIntegrationOrderSpinBox->setValue(5);
+  // set the layout for DASSL/Ida options groupbox
+  QGridLayout *pDasslIdaOptionsGridLayout = new QGridLayout;
+  pDasslIdaOptionsGridLayout->setColumnStretch(1, 1);
+  pDasslIdaOptionsGridLayout->addWidget(mpRootFindingCheckBox, 0, 0, 1, 2);
+  pDasslIdaOptionsGridLayout->addWidget(mpRestartAfterEventCheckBox, 1, 0, 1, 2);
+  pDasslIdaOptionsGridLayout->addWidget(mpInitialStepSizeLabel, 2, 0);
+  pDasslIdaOptionsGridLayout->addWidget(mpInitialStepSizeTextBox, 2, 1);
+  pDasslIdaOptionsGridLayout->addWidget(mpMaxStepSizeLabel, 3, 0);
+  pDasslIdaOptionsGridLayout->addWidget(mpMaxStepSizeTextBox, 3, 1);
+  pDasslIdaOptionsGridLayout->addWidget(mpMaxIntegrationOrderLabel, 4, 0);
+  pDasslIdaOptionsGridLayout->addWidget(mpMaxIntegrationOrderSpinBox, 4, 1);
+  mpDasslIdaOptionsGroupBox->setLayout(pDasslIdaOptionsGridLayout);
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
   pIntegrationGridLayout->setColumnStretch(1, 1);
@@ -267,7 +267,7 @@ void SimulationDialog::setUpForm()
   pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1, 1, 2);
   pIntegrationGridLayout->addWidget(mpJacobianLabel, 2, 0);
   pIntegrationGridLayout->addWidget(mpJacobianComboBox, 2, 1, 1, 2);
-  pIntegrationGridLayout->addWidget(mpDasslOptionsGroupBox, 3, 0, 1, 3);
+  pIntegrationGridLayout->addWidget(mpDasslIdaOptionsGroupBox, 3, 0, 1, 3);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("C/C++ Compiler Flags (Optional):"));
@@ -622,10 +622,10 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           mpClockComboBox->setCurrentIndex(mpClockComboBox->findText(value));
         } else if (simulationFlag.compare("cpu") == 0) {
           mpCPUTimeCheckBox->setChecked(true);
-        } else if (simulationFlag.compare("dasslnoRestart") == 0) {
-          mpDasslRestartCheckBox->setChecked(false);
-        } else if (simulationFlag.compare("dasslnoRootFinding") == 0) {
-          mpDasslRootFindingCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("noRestart") == 0) {
+          mpRestartAfterEventCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("noRootFinding") == 0) {
+          mpRootFindingCheckBox->setChecked(false);
         } else if (simulationFlag.compare("emit_protected") == 0) {
           mpProtectedVariablesCheckBox->setChecked(true);
         } else if (simulationFlag.compare("f") == 0) {
@@ -637,7 +637,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
         } else if (simulationFlag.compare("iit") == 0) {
           mpEquationSystemInitializationTimeTextBox->setText(value);
         } else if (simulationFlag.compare("initialStepSize") == 0) {
-          mpDasslInitialStepSizeTextBox->setText(value);
+          mpInitialStepSizeTextBox->setText(value);
         } else if (simulationFlag.compare("jacobian") == 0) {
           mpJacobianComboBox->setCurrentIndex(mpJacobianComboBox->findText(value));
         } else if (simulationFlag.compare("l") == 0) {
@@ -645,9 +645,9 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
         } else if (simulationFlag.compare("ls") == 0) {
           mpLinearSolverComboBox->setCurrentIndex(mpLinearSolverComboBox->findText(value));
         } else if (simulationFlag.compare("maxIntegrationOrder") == 0) {
-          mpDasslMaxIntegrationOrderSpinBox->setValue(value.toInt());
+          mpMaxIntegrationOrderSpinBox->setValue(value.toInt());
         } else if (simulationFlag.compare("maxStepSize") == 0) {
-          mpDasslMaxStepSizeTextBox->setText(value);
+          mpMaxStepSizeTextBox->setText(value);
         } else if (simulationFlag.compare("nls") == 0) {
           mpNonLinearSolverComboBox->setCurrentIndex(mpNonLinearSolverComboBox->findText(value));
         } else if (simulationFlag.compare("noEquidistantTimeGrid") == 0) {
@@ -704,15 +704,15 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpJacobianComboBox->setCurrentIndex(currentIndex);
     }
     // no root finding
-    mpDasslRootFindingCheckBox->setChecked(simulationOptions.getDasslRootFinding());
+    mpRootFindingCheckBox->setChecked(simulationOptions.getRootFinding());
     // no restart
-    mpDasslRestartCheckBox->setChecked(simulationOptions.getDasslRestart());
+    mpRestartAfterEventCheckBox->setChecked(simulationOptions.getRestartAfterEvent());
     // initial step size
-    mpDasslInitialStepSizeTextBox->setText(simulationOptions.getDasslInitialStepSize());
+    mpInitialStepSizeTextBox->setText(simulationOptions.getInitialStepSize());
     // max step size
-    mpDasslMaxStepSizeTextBox->setText(simulationOptions.getDasslMaxStepSize());
+    mpMaxStepSizeTextBox->setText(simulationOptions.getMaxStepSize());
     // max integration order
-    mpDasslMaxIntegrationOrderSpinBox->setValue(simulationOptions.getDasslMaxIntegration());
+    mpMaxIntegrationOrderSpinBox->setValue(simulationOptions.getMaxIntegration());
     // Compiler Flags
     mpCflagsTextBox->setDisabled(true);
     // Number of Processors
@@ -863,11 +863,11 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setMethod(mpMethodComboBox->currentText());
   simulationOptions.setTolerance(mpToleranceTextBox->text());
   simulationOptions.setJacobian(mpJacobianComboBox->itemData(mpJacobianComboBox->currentIndex()).toString());
-  simulationOptions.setDasslRootFinding(mpDasslRootFindingCheckBox->isChecked());
-  simulationOptions.setDasslRestart(mpDasslRestartCheckBox->isChecked());
-  simulationOptions.setDasslInitialStepSize(mpDasslInitialStepSizeTextBox->text());
-  simulationOptions.setDasslMaxStepSize(mpDasslMaxStepSizeTextBox->text());
-  simulationOptions.setDasslMaxIntegration(mpDasslMaxIntegrationOrderSpinBox->value());
+  simulationOptions.setRootFinding(mpRootFindingCheckBox->isChecked());
+  simulationOptions.setRestartAfterEvent(mpRestartAfterEventCheckBox->isChecked());
+  simulationOptions.setInitialStepSize(mpInitialStepSizeTextBox->text());
+  simulationOptions.setMaxStepSize(mpMaxStepSizeTextBox->text());
+  simulationOptions.setMaxIntegration(mpMaxIntegrationOrderSpinBox->value());
   simulationOptions.setCflags(mpCflagsTextBox->text());
   simulationOptions.setNumberOfProcessors(mpNumberOfProcessorsSpinBox->value());
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
@@ -936,27 +936,27 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpJacobianComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->currentText()));
   }
-  // dassl options
-  if (mpDasslOptionsGroupBox->isEnabled()) {
-    // dassl root finding
-    if (!mpDasslRootFindingCheckBox->isChecked()) {
-      simulationFlags.append("-dasslnoRootFinding");
+  // dassl/ida options
+  if (mpDasslIdaOptionsGroupBox->isEnabled()) {
+    // root finding
+    if (!mpRootFindingCheckBox->isChecked()) {
+      simulationFlags.append("-noRootFinding");
     }
-    // dassl restart
-    if (!mpDasslRestartCheckBox->isChecked()) {
-      simulationFlags.append("-dasslnoRestart");
+    // restart after event
+    if (!mpRestartAfterEventCheckBox->isChecked()) {
+      simulationFlags.append("-noRestart");
     }
-    // dassl initial step size
-    if (!mpDasslInitialStepSizeTextBox->text().isEmpty()) {
-      simulationFlags.append(QString("-initialStepSize=").append(mpDasslInitialStepSizeTextBox->text()));
+    // initial step size
+    if (!mpInitialStepSizeTextBox->text().isEmpty()) {
+      simulationFlags.append(QString("-initialStepSize=").append(mpInitialStepSizeTextBox->text()));
     }
-    // dassl max step size
-    if (!mpDasslMaxStepSizeTextBox->text().isEmpty()) {
-      simulationFlags.append(QString("-maxStepSize=").append(mpDasslMaxStepSizeTextBox->text()));
+    // max step size
+    if (!mpMaxStepSizeTextBox->text().isEmpty()) {
+      simulationFlags.append(QString("-maxStepSize=").append(mpMaxStepSizeTextBox->text()));
     }
-    // dassl max step size
-    if (mpDasslMaxIntegrationOrderSpinBox->value() != 5) {
-      simulationFlags.append(QString("-maxIntegrationOrder=").append(QString::number(mpDasslMaxIntegrationOrderSpinBox->value())));
+    // max step size
+    if (mpMaxIntegrationOrderSpinBox->value() != 5) {
+      simulationFlags.append(QString("-maxIntegrationOrder=").append(QString::number(mpMaxIntegrationOrderSpinBox->value())));
     }
   }
   // emit protected variables
@@ -1138,11 +1138,11 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (mpCPUTimeCheckBox->isChecked()) {
     simulationFlags.append(QString("%1=\"()\"").arg("cpu"));
   }
-  if (!mpDasslRestartCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("dasslnoRestart"));
+  if (!mpRestartAfterEventCheckBox->isChecked()) {
+    simulationFlags.append(QString("%1=\"()\"").arg("noRestart"));
   }
-  if (!mpDasslRootFindingCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("dasslnoRootFinding"));
+  if (!mpRootFindingCheckBox->isChecked()) {
+    simulationFlags.append(QString("%1=\"()\"").arg("noRootFinding"));
   }
   if (mpProtectedVariablesCheckBox->isChecked()) {
     simulationFlags.append(QString("%1=\"()\"").arg("emit_protected"));
@@ -1159,8 +1159,8 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty()) {
     simulationFlags.append(QString("%1=\"%2\"").arg("iit").arg(mpEquationSystemInitializationTimeTextBox->text()));
   }
-  if (!mpDasslInitialStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("initialStepSize").arg(mpDasslInitialStepSizeTextBox->text()));
+  if (!mpInitialStepSizeTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("initialStepSize").arg(mpInitialStepSizeTextBox->text()));
   }
   simulationFlags.append(QString("%1=\"%2\"").arg("jacobian").arg(mpJacobianComboBox->currentText()));
   if (!mpLinearizationTimeTextBox->text().isEmpty()) {
@@ -1169,11 +1169,11 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("%1=\"%2\"").arg("ls").arg(mpLinearSolverComboBox->currentText()));
   }
-  if (mpDasslMaxIntegrationOrderSpinBox->value() != 5) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("maxIntegrationOrder").arg(mpDasslMaxIntegrationOrderSpinBox->value()));
+  if (mpMaxIntegrationOrderSpinBox->value() != 5) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("maxIntegrationOrder").arg(mpMaxIntegrationOrderSpinBox->value()));
   }
-  if (!mpDasslMaxStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("maxStepSize").arg(mpDasslMaxStepSizeTextBox->text()));
+  if (!mpMaxStepSizeTextBox->text().isEmpty()) {
+    simulationFlags.append(QString("%1=\"%2\"").arg("maxStepSize").arg(mpMaxStepSizeTextBox->text()));
   }
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("%1=\"%2\"").arg("nls").arg(mpNonLinearSolverComboBox->currentText()));
@@ -1463,13 +1463,13 @@ void SimulationDialog::updateMethodToolTip(int index)
  * Enables/disables the Dassl options group box
  * \param method
  */
-void SimulationDialog::enableDasslOptions(QString method)
+void SimulationDialog::enableDasslIdaOptions(QString method)
 {
   if (method.compare("dassl") == 0 || method.compare("ida") == 0) {
-    mpDasslOptionsGroupBox->setEnabled(true);
+    mpDasslIdaOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
   } else {
-    mpDasslOptionsGroupBox->setEnabled(false);
+    mpDasslIdaOptionsGroupBox->setEnabled(false);
     mpEquidistantTimeGridCheckBox->setEnabled(false);
   }
 }

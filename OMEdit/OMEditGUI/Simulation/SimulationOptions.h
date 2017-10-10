@@ -49,11 +49,11 @@ public:
     setMethod("");
     setTolerance("");
     setJacobian("");
-    setDasslRootFinding(true);
-    setDasslRestart(true);
-    setDasslInitialStepSize("");
-    setDasslMaxStepSize("");
-    setDasslMaxIntegration(5);
+    setRootFinding(true);
+    setRestartAfterEvent(true);
+    setInitialStepSize("");
+    setMaxStepSize("");
+    setMaxIntegration(5);
     setCflags("");
     setNumberOfProcessors(1);
     setBuildOnly(false);
@@ -103,16 +103,16 @@ public:
   QString getTolerance() {return mTolerance;}
   void setJacobian(QString jacobian) {mJacobian = jacobian;}
   QString getJacobian() {return mJacobian;}
-  void setDasslRootFinding(bool dasslRootFinding) {mDasslRootFinding = dasslRootFinding;}
-  bool getDasslRootFinding() {return mDasslRootFinding;}
-  void setDasslRestart(bool dasslRestart) {mDasslRestart = dasslRestart;}
-  bool getDasslRestart() {return mDasslRestart;}
-  void setDasslInitialStepSize(QString dasslInitialStepSize) {mDasslInitialStepSize = dasslInitialStepSize;}
-  QString getDasslInitialStepSize() {return mDasslInitialStepSize;}
-  void setDasslMaxStepSize(QString dasslMaxStepSize) {mDasslMaxStepSize = dasslMaxStepSize;}
-  QString getDasslMaxStepSize() {return mDasslMaxStepSize;}
-  void setDasslMaxIntegration(int dasslMaxIntegration) {mDasslMaxIntegration = dasslMaxIntegration;}
-  int getDasslMaxIntegration() {return mDasslMaxIntegration;}
+  void setRootFinding(bool rootFinding) {mRootFinding = rootFinding;}
+  bool getRootFinding() {return mRootFinding;}
+  void setRestartAfterEvent(bool restartAfterEvent) {mRestartAfterEvent = restartAfterEvent;}
+  bool getRestartAfterEvent() {return mRestartAfterEvent;}
+  void setInitialStepSize(QString initialStepSize) {mInitialStepSize = initialStepSize;}
+  QString getInitialStepSize() {return mInitialStepSize;}
+  void setMaxStepSize(QString maxStepSize) {mMaxStepSize = maxStepSize;}
+  QString getMaxStepSize() {return mMaxStepSize;}
+  void setMaxIntegration(int maxIntegration) {mMaxIntegration = maxIntegration;}
+  int getMaxIntegration() {return mMaxIntegration;}
   void setCflags(QString cflags) {mCflags = cflags;}
   QString getCflags() {return mCflags;}
   void setNumberOfProcessors(int numberOfProcessors) {mNumberOfProcessors = numberOfProcessors;}
@@ -194,11 +194,11 @@ private:
   QString mMethod;
   QString mTolerance;
   QString mJacobian;
-  bool mDasslRootFinding;
-  bool mDasslRestart;
-  QString mDasslInitialStepSize;
-  QString mDasslMaxStepSize;
-  int mDasslMaxIntegration;
+  bool mRootFinding;
+  bool mRestartAfterEvent;
+  QString mInitialStepSize;
+  QString mMaxStepSize;
+  int mMaxIntegration;
   QString mCflags;
   int mNumberOfProcessors;
   bool mBuildOnly;
