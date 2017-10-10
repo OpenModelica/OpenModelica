@@ -171,6 +171,7 @@ if true then /* Suppress output */
     "../Util/AvlSetCR.mo",
     "../Util/AvlSetPath.mo",
     "../Util/AvlSetString.mo",
+    "../Util/AvlTreeCRToInt.mo",
     "../Util/BaseAvlTree.mo",
     "../Util/BaseAvlSet.mo",
     "../Util/BaseHashTable.mo",

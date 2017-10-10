@@ -1021,6 +1021,12 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> eqs;
   end sortSimpleAssignmentBasedOnLhs;
 
+  function lookupVR
+    input DAE.ComponentRef cr;
+    input SimCode.SimCode simCode;
+    output Integer vr;
+  end lookupVR;
+
 end SimCodeUtil;
 
 package SimCodeFunctionUtil

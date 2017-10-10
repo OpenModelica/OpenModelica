@@ -563,6 +563,7 @@ algorithm
                               if isFMU then (filenamePrefix+".fmutmp/sources/") else "",
                               fmuTargetName,
                               HpcOmSimCode.emptyHpcomData,
+                              if isFMU then getValueReferenceMapping(modelInfo) else AvlTreeCRToInt.EMPTY(),
                               varToArrayIndexMapping,
                               varToIndexMapping,
                               crefToSimVarHT,
@@ -13439,6 +13440,57 @@ algorithm
     (if k1==k2 then v1.index > v2.index else k1>k2)
     else t1>t2;
 end simvarGraterThan;
+
+public function lookupVR
+  input DAE.ComponentRef cr;
+  input SimCode.SimCode simCode;
+  output Integer vr;
+algorithm
+print("LookupVR " + ComponentReference.printComponentRefStr(cr) + "\n");
+  vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
+print("LookupVR " + ComponentReference.printComponentRefStr(cr) + " OK\n");
+end lookupVR;
+
+protected function getValueReferenceMapping
+  input SimCode.ModelInfo modelInfo;
+  output AvlTreeCRToInt.Tree tree;
+protected
+  Integer i;
+  SimCodeVar.SimVars vars;
+algorithm
+  tree := AvlTreeCRToInt.EMPTY();
+  vars := modelInfo.vars;
+  (i,tree) := getValueReferenceMapping2(vars.stateVars, 0, tree);
+  (i,tree) := getValueReferenceMapping2(vars.derivativeVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.algVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.discreteAlgVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.aliasVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.paramVars, i, tree);
+
+  (i,tree) := getValueReferenceMapping2(vars.intAlgVars, 0, tree);
+  (i,tree) := getValueReferenceMapping2(vars.intParamVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.intAliasVars, i, tree);
+
+  (i,tree) := getValueReferenceMapping2(vars.boolAlgVars, 0, tree);
+  (i,tree) := getValueReferenceMapping2(vars.boolParamVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.boolAliasVars, i, tree);
+
+  (i,tree) := getValueReferenceMapping2(vars.stringAlgVars, 0, tree);
+  (i,tree) := getValueReferenceMapping2(vars.stringParamVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.stringAliasVars, i, tree);
+end getValueReferenceMapping;
+
+protected function getValueReferenceMapping2
+  input list<SimCodeVar.SimVar> vars;
+  input output Integer i;
+  input output AvlTreeCRToInt.Tree tree;
+algorithm
+  for v in vars loop
+    tree := AvlTreeCRToInt.add(tree, v.name, i);
+    i := i + 1;
+  end for;
+end getValueReferenceMapping2;
+
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

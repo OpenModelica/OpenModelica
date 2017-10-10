@@ -52,6 +52,7 @@ encapsulated package SimCode
 
 // public imports
 import Absyn;
+import AvlTreeCRToInt;
 import BackendDAE;
 import DAE;
 import HashTable;
@@ -136,6 +137,7 @@ uniontype SimCode
     String fileNamePrefix, fullPathPrefix "Used in FMI where files are generated in a special directory";
     String fmuTargetName;
     HpcOmSimCode.HpcOmData hpcomData;
+    AvlTreeCRToInt.Tree valueReferences "Used in FMI";
     //maps each variable to an array of storage indices (with this information, arrays must not be unrolled) and a list for the array-dimensions
     //if the variable is not part of an array (if it is a scalar value), then the array has size 1
     HashTableCrIListArray.HashTable varToArrayIndexMapping;
