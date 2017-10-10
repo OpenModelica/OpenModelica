@@ -8,6 +8,7 @@ ExpandableArrayTest.mos \
 ExpressionTest.mos \
 GraphTest.mos \
 HashTableTest.mos \
+JSONParser.mos \
 PriorityQueue.mos \
 SimplifyTest.mos \
 System.mos \
