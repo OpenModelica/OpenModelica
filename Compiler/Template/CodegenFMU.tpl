@@ -2941,7 +2941,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   <<
   #include <simulation_data.h>
 
-  __attribute__((optimize(0),optnone))<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
+  OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
   void <%symbolName(modelNamePrefix(simCode),"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
   {
     simulationInfo->startTime = <%s.startTime%>;

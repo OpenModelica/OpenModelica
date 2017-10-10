@@ -659,7 +659,7 @@ template simulationFile_bnd(SimCode simCode)
 
     <%functionUpdateBoundVariableAttributes(simCode, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
-    <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
+    <%functionUpdateBoundParameters(parameterEquations, simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -2935,43 +2935,36 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
   >>
 end functionUpdateBoundVariableAttributes;
 
-template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, String modelNamePrefix)
+template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
+  let &eqFuncs = buffer ""
+  let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations), intMul(6 /* Binding equations are small */, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE)), fileNamePrefix, fullPathPrefix, modelNamePrefix, "updateBoundParameters", "08bnd", &eqFuncs)
   <<
-  <%(parameterEquations |> eq  => equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix) ; separator="\n")%>
+  <%eqFuncs%>
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%(parameterEquations |> eq  => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-
+    <%fncalls%>
     TRACE_POP
     return 0;
   }
   >>
 end functionUpdateBoundParameters;
 
-template functionInitialEquations(list<SimEqSystem> initalEquations, Integer numInitialEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
-  "Generates function in simulation file."
+template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs)
 ::=
   let () = System.tmpTickReset(0)
-  let nrfuncs = listLength(initalEquations)
-  let &eqfuncs = buffer ""
-  let &eqArray = buffer ""
   let &file = buffer ""
-  let multiFile = if intGt(numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE)) then "x"
-  let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
-                (initalEquations |> eq hasindex i0 =>
-                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
-                    ;separator="\n")
-              else
-                (List.balancedPartition(initalEquations,Flags.getConfigInt(Flags.EQUATIONS_PER_FILE)) |> eqs hasindex i0 =>
-                  let name = symbolName(modelNamePrefix,'functionInitialEquations_<%i0%>')
-                  let &eqfuncs += 'void <%name%>(DATA *data, threadData_t *threadData);<%\n%>'
+  let multiFile = if intGt(numEqs, equationsPerFile) then "x"
+  let fncalls = (List.balancedPartition(inEqs, equationsPerFile) |> eqs hasindex i0 =>
+                  let name = symbolName(modelNamePrefix,'<%funcName%>_<%i0%>')
+                  let &eqFuncs += 'void <%name%>(DATA *data, threadData_t *threadData);<%\n%>'
 
                   // To file
                   let &file += ((if multiFile then
-                    (let fileName = addFunctionIndex('<%fileNamePrefix%>_06inz_part', ".c")
+                    (let fileName = addFunctionIndex('<%fileNamePrefix%>_<%partName%>_part', ".c")
                     redirectToFile(fullPathPrefix + fileName) +
                   <<
                   <%simulationFileHeader(fileNamePrefix)%>
@@ -2981,6 +2974,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
                   >>)) +
                   (eqs |> eq => equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix) ; separator="\n") +
                   <<
+                  OMC_DISABLE_OPT
                   <%\n%>void <%name%>(DATA *data, threadData_t *threadData)
                   {
                     TRACE_PUSH
@@ -3003,6 +2997,21 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
 
                   )
 
+  let &eqFuncs += file
+  fncalls
+end functionEquationsMultiFiles;
+
+template functionInitialEquations(list<SimEqSystem> initalEquations, Integer numInitialEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let () = System.tmpTickReset(0)
+  let &eqfuncs = buffer ""
+  let &eqArray = buffer ""
+  let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
+                (initalEquations |> eq hasindex i0 =>
+                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
+                    ;separator="\n")
+                else functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix, "functionInitialEquations", "06inz", &eqfuncs)
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
                 <<
                 static void (*functionInitialEquations_systems[<%listLength(initalEquations)%>])(DATA *, threadData_t*) = {
@@ -3015,8 +3024,6 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
   <<
   <%eqfuncs%>
 
-  <%file%>
-
   <%eqArrayDecl%>
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data, threadData_t *threadData)
@@ -3024,7 +3031,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
     TRACE_PUSH
 
     data->simulationInfo->discreteCall = 1;
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, threadData, functionInitialEquations_systems);'
+    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%numInitialEquations%>, data, threadData, functionInitialEquations_systems);'
     else fncalls %>
     data->simulationInfo->discreteCall = 0;
 
