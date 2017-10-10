@@ -13143,5 +13143,18 @@ algorithm
   end match;
 end tupleHead;
 
+public function isSimpleLiteralValue "A value that requires nothing special during code generation. String literals are special and not included."
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
+    else false;
+  end match;
+end isSimpleLiteralValue;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

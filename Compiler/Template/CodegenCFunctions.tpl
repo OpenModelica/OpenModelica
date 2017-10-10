@@ -4304,11 +4304,11 @@ end getTempDeclMatchOutputName;
   used in Compiler/Template/CodegenQSS.tpl"
 ::=
   match codegenExpSanityCheck(exp, context)
-  case e as ICONST(__)          then '((modelica_integer) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
-  case e as RCONST(__)          then real
+  case e as ICONST(__)
+  case e as RCONST(__)
+  case e as BCONST(__)
+  case e as ENUM_LITERAL(__)    then daeExpSimpleLiteral(exp)
   case e as SCONST(__)          then daeExpSconst(string, &preExp, &varDecls)
-  case e as BCONST(__)          then boolStrC(bool)
-  case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp, &varDecls, &auxFunction)
   case e as BINARY(__)          then daeExpBinary(e, context, &preExp, &varDecls, &auxFunction)
   case e as UNARY(__)           then daeExpUnary(e, context, &preExp, &varDecls, &auxFunction)
@@ -4342,6 +4342,17 @@ end getTempDeclMatchOutputName;
   case e as CLKCONST(__)        then '#error "<%ExpressionDumpTpl.dumpExp(e,"\"")%>"'
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
+
+/* public */ template daeExpSimpleLiteral(Exp exp)
+ "Generates code for a simple literal expression."
+::=
+  match exp
+  case e as ICONST(__)          then '((modelica_integer) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
+  case e as RCONST(__)          then real
+  case e as BCONST(__)          then boolStrC(bool)
+  case e as ENUM_LITERAL(__)    then index
+  else error(sourceInfo(), 'Not a simple literal expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
+end daeExpSimpleLiteral;
 
 /* public */ template daeExpAsLValue(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
  "Generates code for an expression. Makes sure that the output is an lvalue (so you can take the address of it)."

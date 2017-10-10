@@ -659,7 +659,7 @@ template simulationFile_bnd(SimCode simCode)
 
     <%functionUpdateBoundVariableAttributes(simCode, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
-    <%functionUpdateBoundParameters(parameterEquations, simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode))%>
+    <%functionUpdateBoundParameters(selectScalarLiteralAssignments(parameterEquations), filterScalarLiteralAssignments(parameterEquations), simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -2935,17 +2935,18 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
   >>
 end functionUpdateBoundVariableAttributes;
 
-template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
+template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquations, list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &eqFuncs = buffer ""
-  let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations), intMul(6 /* Binding equations are small */, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE)), fileNamePrefix, fullPathPrefix, modelNamePrefix, "updateBoundParameters", "08bnd", &eqFuncs)
+  let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations), Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix, "updateBoundParameters", "08bnd", &eqFuncs)
   <<
   <%eqFuncs%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
+    <%sortSimpleAssignmentBasedOnLhs(simpleParameterEquations) |> eq as SES_SIMPLE_ASSIGN(__) => '<%cref(cref)%> = <%daeExpSimpleLiteral(exp)%>;' ; separator="\n" %>
     <%fncalls%>
     TRACE_POP
     return 0;

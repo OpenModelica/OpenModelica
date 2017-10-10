@@ -13384,5 +13384,61 @@ algorithm
    clockedPartitions := simcode.clockedPartitions;
 end getClockedPartitions;
 
+public function isScalarLiteralAssignment
+  input SimCode.SimEqSystem eq;
+  output Boolean b;
+algorithm
+  b := match eq
+    case SimCode.SES_SIMPLE_ASSIGN() then Expression.isSimpleLiteralValue(eq.exp);
+    else false;
+  end match;
+end isScalarLiteralAssignment;
+
+public function selectScalarLiteralAssignments
+  input output list<SimCode.SimEqSystem> eqs;
+algorithm
+  eqs := list(e for e guard isScalarLiteralAssignment(e) in eqs);
+end selectScalarLiteralAssignments;
+
+public function filterScalarLiteralAssignments
+  input output list<SimCode.SimEqSystem> eqs;
+algorithm
+  eqs := list(e for e guard not isScalarLiteralAssignment(e) in eqs);
+end filterScalarLiteralAssignments;
+
+public function sortSimpleAssignmentBasedOnLhs
+  input output list<SimCode.SimEqSystem> eqs;
+algorithm
+  eqs := List.sort(eqs, function lhsGreaterThan(simCode=getSimCode()));
+end sortSimpleAssignmentBasedOnLhs;
+
+protected function lhsGreaterThan
+  input SimCode.SimEqSystem eq1,eq2;
+  input SimCode.SimCode simCode;
+  output Boolean b;
+algorithm
+  b := match (eq1,eq2)
+    case (SimCode.SES_SIMPLE_ASSIGN(),SimCode.SES_SIMPLE_ASSIGN())
+      then simvarGraterThan(cref2simvar(eq1.cref, simCode), cref2simvar(eq2.cref, simCode));
+    else false;
+  end match;
+end lhsGreaterThan;
+
+protected function simvarGraterThan
+  input SimCodeVar.SimVar v1,v2;
+  output Boolean b;
+protected
+  Integer t1,t2,k1,k2;
+  // Sort according to type, varkind, index
+algorithm
+  k1 := valueConstructor(v1.varKind);
+  k2 := valueConstructor(v2.varKind);
+  t1 := valueConstructor(v1.type_);
+  t2 := valueConstructor(v2.type_);
+  b := if t1==t2 then
+    (if k1==k2 then v1.index > v2.index else k1>k2)
+    else t1>t2;
+end simvarGraterThan;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

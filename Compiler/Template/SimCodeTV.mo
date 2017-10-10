@@ -1005,6 +1005,22 @@ package SimCodeUtil
     input SimCodeFunction.Context context;
     output DAE.Exp outExp;
   end codegenExpSanityCheck;
+
+  function selectScalarLiteralAssignments
+    input list<SimCode.SimEqSystem> inEqs;
+    output list<SimCode.SimEqSystem> eqs;
+  end selectScalarLiteralAssignments;
+
+  function filterScalarLiteralAssignments
+    input list<SimCode.SimEqSystem> inEqs;
+    output list<SimCode.SimEqSystem> eqs;
+  end filterScalarLiteralAssignments;
+
+  function sortSimpleAssignmentBasedOnLhs
+    input list<SimCode.SimEqSystem> inEqs;
+    output list<SimCode.SimEqSystem> eqs;
+  end sortSimpleAssignmentBasedOnLhs;
+
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
