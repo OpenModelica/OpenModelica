@@ -632,7 +632,7 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_SHARED=
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55 -lfmilib -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55 -lzmq $LIBUUID"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
@@ -706,7 +706,7 @@ else
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS $LIBLPSOLVE55 -lfmilib -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS $LIBLPSOLVE55 -lzmq $LIBUUID"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   OS_TARGET="linux"

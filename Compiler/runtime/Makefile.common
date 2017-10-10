@@ -33,7 +33,7 @@ OMC_OBJ_BOOT = $(OMC_OBJ_SHARED) $(OMC_OBJ_STUBS)
 
 OMC_OBJ = $(OMC_OBJ_SHARED) serializer.o \
   ptolemyio_omc.o SimulationResults_omc.o \
-  FMI_omc.o $(OMCCORBASRC)
+  $(OMCCORBASRC)
 
 # Database_omc.o
 
@@ -61,7 +61,7 @@ libomcgraphstream.a: GraphStreamExt_omc$(OBJEXT) $(TOP_DIR)/3rdParty/graphstream
 	$(AR) -s -r "$@.tmp" GraphStreamExt_omc$(OBJEXT)
 	mv "$@.tmp" "$@"
 
-libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT)
+libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT) FMI_omc.o
 	rm -f $@
 	$(AR) -s -r "$@.tmp" $^
 	mv "$@.tmp" "$@"

@@ -53,7 +53,7 @@ public function initializeFMIImport
   output list<FMI.ModelVariables> outModelVariablesList;
   external "C" result=FMIImpl__initializeFMIImport(inFileName, inWorkingDirectory, inFMILogLevel, inInputConnectors, inOutputConnectors, inIsModelDescriptionImport,
   outFMIContext, outFMIInstance, outFMIInfo, outTypeDefinitionsList, outExperimentAnnotation, outModelVariablesInstance, outModelVariablesList)
-    annotation(Library = {"omcruntime","fmilib"});
+    annotation(Library = {"omcbackendruntime","omcruntime","fmilib"});
 end initializeFMIImport;
 
 public function releaseFMIImport
@@ -61,7 +61,7 @@ public function releaseFMIImport
   input Option<Integer> inFMIInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   input Option<Integer> inFMIContext "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   input String inFMIVersion;
-  external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext, inFMIVersion) annotation(Library = {"omcruntime","fmilib"});
+  external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext, inFMIVersion) annotation(Library = {"omcbackendruntime","omcruntime","fmilib"});
 end releaseFMIImport;
 
 annotation(__OpenModelica_Interface="util");
