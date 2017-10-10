@@ -204,6 +204,11 @@ algorithm
       syst.orderedEqs := orderedEqs_new;
       syst.orderedVars := orderedVars;
 
+      // Check for unbalanced system
+      if not intEq(BackendEquation.equationArraySize(orderedEqs_new), orderedVars.numberOfVars) then
+        Error.addCompilerWarning("After manipulating the system with postOptModule wrapFunctionCalls the system is unbalanced. This indicates that the original system is singular. You can use -d=dumpCSE and -d=dumpCSE_verbose for more information.");
+      end if;
+
       // Reset Matching
       syst.m := NONE();
       syst.mT := NONE();
