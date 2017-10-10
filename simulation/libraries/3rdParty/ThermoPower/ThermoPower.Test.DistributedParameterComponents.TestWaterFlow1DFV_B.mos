@@ -11,8 +11,8 @@ simulate(ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B); g
 // true
 // ""
 // "Check of ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B completed successfully.
-// Class ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B has 418 equation(s) and 418 variable(s).
-// 168 of these are trivial equation(s)."
+// Class ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B has 420 equation(s) and 420 variable(s).
+// 170 of these are trivial equation(s)."
 // ""
 // record SimulationResult
 //     resultFile = "ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B_res.mat",
