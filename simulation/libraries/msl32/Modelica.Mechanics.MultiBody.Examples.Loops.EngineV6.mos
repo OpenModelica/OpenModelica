@@ -7,7 +7,7 @@
 //
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
-setCommandLineOptions({"+d=backenddaeinfo,stateselection"}); getErrorString();
+setCommandLineOptions("-d=backenddaeinfo,stateselection --maxSizeLinearTearing=4000"); getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6);
@@ -25,7 +25,7 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// {true}
+// true
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6

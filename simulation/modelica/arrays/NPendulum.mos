@@ -6,6 +6,7 @@
 //setCommandLineOptions("+preOptModules=simplifyIfEquations,removeEqualFunctionCalls,partitionIndependentBlocks,expandDerOperator,findStateOrder,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,resolveLoops,evalFunc");
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 loadFile("NPendulum.mo"); getErrorString();
+setCommandLineOptions("--maxSizeLineartearing=4000"); getErrorString();
 simulate(NPendulum, stopTime=1, numberOfIntervals=500); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
   "ReferenceFiles/NPendulum_10.mat",
@@ -13,6 +14,8 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
   {"phi[10]"});
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

@@ -52,7 +52,11 @@ val(x[2], 1.0);
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
 // 10.0
 // 9.980736544657136
 // 1.0
@@ -64,7 +68,11 @@ val(x[2], 1.0);
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
 // 10.0
 // 9.980736544657136
 // 0.9999999999999999
@@ -76,7 +84,11 @@ val(x[2], 1.0);
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
 // 10.0
 // 9.980736544657136
 // 1.0
@@ -88,7 +100,11 @@ val(x[2], 1.0);
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
 // 9.999999999999998
 // 9.980736544657136
 // 1.0

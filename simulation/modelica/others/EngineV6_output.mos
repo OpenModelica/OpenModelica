@@ -5,12 +5,15 @@
 loadModel(Modelica,{"3.2.1"});
 loadFile("EngineV6_output.mo");getErrorString();
 setDebugFlags("evalOutputOnly"); getErrorString();
+setCommandLineOptions("--maxSizeLineartearing=4000"); getErrorString();
 simulate(EngineV6_output); getErrorString();
   
 val(crankshaftSpeed,1.0); getErrorString();
 
 // Result:
 // true
+// true
+// ""
 // true
 // ""
 // true
