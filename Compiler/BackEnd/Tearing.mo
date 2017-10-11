@@ -312,9 +312,7 @@ algorithm
       true = BackendDAEUtil.getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        if debugFlag then
-          Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
-        end if;
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
         fail();
       end if;
       if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
@@ -341,9 +339,7 @@ algorithm
       false = BackendDAEUtil.getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       if intGt(listLength(vindx),maxSize) then
-        if debugFlag then
-          Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
-        end if;
+        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
         fail();
       end if;
       if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then

@@ -52,7 +52,7 @@
 
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
-int linearSparseSolverMinSize = 4001;
+int linearSparseSolverMinSize = 201;
 double nonlinearSparseSolverMaxDensity = 0.2;
 int nonlinearSparseSolverMinSize = 10001;
 double maxStepFactor = 1e12;
