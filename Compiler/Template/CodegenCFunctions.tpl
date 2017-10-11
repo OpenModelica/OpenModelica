@@ -6486,30 +6486,34 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let &tmpVarDecls += (match identType
       case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
       else (match iter.exp case RANGE(__) then "" else '<%arrayType%> <%loopVar%>;<%\n%>'))
-    let firstIndex = match iter.exp case RANGE(__) then tempDecl(identType,&tmpVarDecls) else (match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls))
+    let firstIndex = match iter.exp case RANGE(__) then "" else (match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls))
     let rangeExpStep = (match iter.exp case RANGE(step=NONE()) then "1 /* Range step-value */" case RANGE(step=SOME(step)) then '<%daeExp(step,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range step-value */' else "")
     let rangeExpStop = (match iter.exp case RANGE(__) then '<%daeExp(stop,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range stop-value */' else "")
     let rangeExp = (match iter.exp case RANGE(__) then '<%daeExp(start,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range start-value */' else daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction))
     let &rangeExpPre += if rangeExpStep then '<%stepVar%> = <%rangeExpStep%>;<%\n%>'
     let &rangeExpPre += if rangeExpStop then '<%stopVar%> = <%rangeExpStop%>;<%\n%>'
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
-    let &rangeExpPre += if rangeExpStop then
+    let &rangeExpPre += (if rangeExpStop then
+      let check =
       <<
       if (<%stepVar%> == 0) {
         FILE_INFO info = omc_dummyFileInfo;
         omc_assert(threadData, info, "Range with a step of zero.");
       }<%\n%>
       >>
+      match iter.exp
+      case RANGE(step=SOME(DAE.ICONST(integer=0))) then check
+      case RANGE(step=NONE())
+      case RANGE(step=SOME(DAE.ICONST(__))) then ""
+      else check)
     let isArrayWithLength = if rangeExpStop then (match ri.path case IDENT(name="array") then "1" else "") else ""
     let &tmpVarDecls += if isArrayWithLength then 'modelica_integer <%iter.id%>_length;<%\n%>'
-    let &rangeExpPre += match iter.exp case RANGE(__) then '<%firstIndex%> = <%iteratorName%> /* Remember the range start-value */;<%\n%>' else (if firstIndex then '<%firstIndex%> = 1;<%\n%>')
+    let &rangeExpPre += match iter.exp case RANGE(__) then "" else (if firstIndex then '<%firstIndex%> = 1;<%\n%>')
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "")
-    let &rangeExpPre += match iter.exp case RANGE(__) then '<%iteratorName%> = (<%rangeExp%>)-<%stepVar%>;<%\n%>' /* We pre-increment the counter, so subtract the step for the first variable for ranges */
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let &rangeExpPre += if isArrayWithLength then
-      <<
-      <%iter.id%>_length = ((<%stopVar%>-<%firstIndex%>)/<%stepVar%>)+1;
-      >>
+      '<%iter.id%>_length = ((<%stopVar%>-<%if firstIndex then firstIndex else iteratorName %>)/<%stepVar%>)+1;<%\n%>'
+    let &rangeExpPre += match iter.exp case RANGE(__) then '<%iteratorName%> = (<%rangeExp%>)-<%stepVar%>;<%\n%>' /* We pre-increment the counter, so subtract the step for the first variable for ranges */
     let guardExp =
       <<
       <%&guardExpPre%>
