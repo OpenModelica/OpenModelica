@@ -677,19 +677,35 @@ template getRealFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates getReal function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars, numParams=numParams, numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal)) then
+  let ixFirstParam = intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))
+  let ixFirstAlias = intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal)))
+  let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
   <<
+  <%if numAlgAliasVars then
+  <<
+  static const int realAliasIndexes[<%numAlgAliasVars%>] = {
+    <%vars.aliasVars |> v as SIMVAR(__) => aliasSetVR(simCode, aliasvar) ; separator=", "; align=20; alignSeparator=",\n" %>
+  };
+
+  >>
+  %>
   fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr) {
-    switch (vr) {
-      <%vars.stateVars |> var => SwitchVars(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.derivativeVars |> var => SwitchVars(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.algVars |> var => SwitchVars(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.discreteAlgVars |> var => SwitchVars(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.paramVars |> var => SwitchParameters(simCode, var, "realParameter") ;separator="\n"%>
-      <%vars.aliasVars |> var => SwitchAliasVars(simCode, var, "Real","-") ;separator="\n"%>
-      default:
-        return 0;
+    if (vr < <%ixFirstParam%>) {
+      return comp->fmuData->localData[0]->realVars[vr];
     }
+    if (vr < <%ixFirstAlias%>) {
+      return comp->fmuData->simulationInfo->realParameter[vr-<%ixFirstParam%>];
+    }
+    <%if numAlgAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = realAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix>=0 ? getReal(comp, ix) : -getReal(comp, -(ix+1));
+    }
+    >>
+    %>
+    return NAN;
   }
 
   >>
@@ -699,40 +715,77 @@ template setRealFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setReal function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars, numParams=numParams, numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal)) then
+  let ixFirstParam = intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))
+  let ixFirstAlias = intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal)))
+  let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
   <<
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
-    switch (vr) {
-      <%vars.stateVars |> var => SwitchVarsSet(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.derivativeVars |> var => SwitchVarsSet(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.algVars |> var => SwitchVarsSet(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.discreteAlgVars |> var => SwitchVarsSet(simCode, var, "realVars") ;separator="\n"%>
-      <%vars.paramVars |> var => SwitchParametersSet(simCode, var, "realParameter") ;separator="\n"%>
-      <%vars.aliasVars |> var => SwitchAliasVarsSet(simCode, var, "Real", "-") ;separator="\n"%>
-      default:
-        return fmi2Error;
+    if (vr < <%ixFirstParam%>) {
+      comp->fmuData->localData[0]->realVars[vr] = value;
+      return fmi2OK;
     }
-    return fmi2OK;
+    if (vr < <%ixFirstAlias%>) {
+      comp->fmuData->simulationInfo->realParameter[vr-<%ixFirstParam%>] = value;
+      return fmi2OK;
+    }
+    <%if numAlgAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = realAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix >= 0 ? setReal(comp, ix, value) : setReal(comp, -(ix+1), -value);
+    }
+    >>
+    %>
+    return fmi2Error;
   }
 
   >>
 end setRealFunction2;
 
+template aliasSetVR(SimCode simCode, AliasVariable v)
+::=
+  match v
+  case NOALIAS(__) then error(sourceInfo(), "aliasSetVR expected an alias")
+  case ALIAS(__) then lookupVR(varName,simCode)
+  case NEGATEDALIAS(__) then intSub(-1, lookupVR(varName,simCode)) /* Subtracting 1 is necessary to make vr=0 possible to have a negative alias */
+end aliasSetVR;
+
 template getIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates setInteger function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, numIntParams=numParams, numIntAlgVars=numAlgVars)) then
+  let ixFirstParam = numAlgVars
+  let ixFirstAlias = intAdd(numParams, numAlgVars)
+  let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
   <<
+  <% if numAliasVars then
+  <<
+  static const int intAliasIndexes[<%numAliasVars%>] = {
+    <%vars.intAliasVars |> v as SIMVAR(__) => aliasSetVR(simCode, aliasvar) ; separator=", "; align=20; alignSeparator=",\n" %>
+  };
+
+  >>
+  %>
   fmi2Integer getInteger(ModelInstance* comp, const fmi2ValueReference vr) {
-    switch (vr) {
-      <%vars.intAlgVars |> var => SwitchVars(simCode, var, "integerVars") ;separator="\n"%>
-      <%vars.intParamVars |> var => SwitchParameters(simCode, var, "integerParameter") ;separator="\n"%>
-      <%vars.intAliasVars |> var => SwitchAliasVars(simCode, var, "Integer", "-") ;separator="\n"%>
-      default:
-        return 0;
+    if (vr < <%ixFirstParam%>) {
+      return comp->fmuData->localData[0]->integerVars[vr];
     }
+    if (vr < <%ixFirstAlias%>) {
+      return comp->fmuData->simulationInfo->integerParameter[vr-<%ixFirstParam%>];
+    }
+    <% if numAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = intAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix>=0 ? getInteger(comp, ix) : -getInteger(comp, -(ix+1));
+    }
+    >>
+    %>
+    return 0;
   }
+
   >>
 end getIntegerFunction2;
 
@@ -740,17 +793,29 @@ template setIntegerFunction2(SimCode simCode, ModelInfo modelInfo)
  "Generates getInteger function for c file."
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numIntAliasVars=numAliasVars, numIntParams=numParams, numIntAlgVars=numAlgVars)) then
+  let ixFirstParam = numAlgVars
+  let ixFirstAlias = intAdd(numParams, numAlgVars)
+  let ixEnd = intAdd(numAliasVars,intAdd(numParams, numAlgVars))
   <<
   fmi2Status setInteger(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Integer value) {
-    switch (vr) {
-      <%vars.intAlgVars |> var => SwitchVarsSet(simCode, var, "integerVars") ;separator="\n"%>
-      <%vars.intParamVars |> var => SwitchParametersSet(simCode, var, "integerParameter") ;separator="\n"%>
-      <%vars.intAliasVars |> var => SwitchAliasVarsSet(simCode, var, "Integer", "-") ;separator="\n"%>
-      default:
-        return fmi2Error;
+    if (vr < <%ixFirstParam%>) {
+      comp->fmuData->localData[0]->integerVars[vr] = value;
+      return fmi2OK;
     }
-    return fmi2OK;
+    if (vr < <%ixFirstAlias%>) {
+      comp->fmuData->simulationInfo->integerParameter[vr-<%ixFirstParam%>] = value;
+      return fmi2OK;
+    }
+    <% if numAliasVars then
+    <<
+    if (vr < <%ixEnd%>) {
+      int ix = intAliasIndexes[vr-<%ixFirstAlias%>];
+      return ix >= 0 ? setInteger(comp, ix, value) : setInteger(comp, -(ix+1), -value);
+    }
+    >>
+    %>
+    return fmi2Error;
   }
   >>
 end setIntegerFunction2;

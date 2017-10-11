@@ -13446,9 +13446,7 @@ public function lookupVR
   input SimCode.SimCode simCode;
   output Integer vr;
 algorithm
-print("LookupVR " + ComponentReference.printComponentRefStr(cr) + "\n");
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
-print("LookupVR " + ComponentReference.printComponentRefStr(cr) + " OK\n");
 end lookupVR;
 
 protected function getValueReferenceMapping
@@ -13464,8 +13462,8 @@ algorithm
   (i,tree) := getValueReferenceMapping2(vars.derivativeVars, i, tree);
   (i,tree) := getValueReferenceMapping2(vars.algVars, i, tree);
   (i,tree) := getValueReferenceMapping2(vars.discreteAlgVars, i, tree);
-  (i,tree) := getValueReferenceMapping2(vars.aliasVars, i, tree);
   (i,tree) := getValueReferenceMapping2(vars.paramVars, i, tree);
+  (i,tree) := getValueReferenceMapping2(vars.aliasVars, i, tree);
 
   (i,tree) := getValueReferenceMapping2(vars.intAlgVars, 0, tree);
   (i,tree) := getValueReferenceMapping2(vars.intParamVars, i, tree);

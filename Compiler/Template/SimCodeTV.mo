@@ -33,6 +33,11 @@ package builtin
     output Integer c;
   end intAdd;
 
+  function intNeg
+    input Integer a;
+    output Integer b;
+  end intNeg;
+
   function boolAnd
     input Boolean b1;
     input Boolean b2;
